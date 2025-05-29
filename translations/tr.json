@@ -6,13 +6,30 @@
 		"authors": [
 			"Erkin Alp Güney",
 			"Erkinalp",
+			"Mory",
 			"Slickdaddy"
 		]
 	},
+	"vc": {
+		"joinstream": "Yayını izle",
+		"leavestream": "Yayından ayrıl",
+		"joinForStream": "İzlemek için Sesli Kanal'a katılın.",
+		"stopstream": "Yayını Durdur",
+		"joiningStream": "Yayına katılınılıyor..."
+	},
 	"readableName": "Türkçe",
+	"pinMessage": "Mesajı Sabitle",
+	"unableToPin": "Mesaj sabitlenemiyor",
 	"reply": "Yanıtla",
 	"copyrawtext": "Ham metni kopyala",
 	"copymessageid": "Mesaj kimliğini kopyala",
+	"media": {
+		"notFound": "Medya bulunamadı",
+		"loading": "Yükleniyor",
+		"download": "Medyayı indir",
+		"artist": "Sanatçı: $1",
+		"length": "Süre: $1 dakika ve $2 saniye"
+	},
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Kullanıcının sunucu için davet oluşturmasına izin verir",
@@ -45,7 +62,7 @@
 			"MANAGE_NICKNAMES": "Kullanıcının diğer üyelerin takma adlarını değiştirmesine izin verir",
 			"MANAGE_ROLES": "Kullanıcının rolleri düzenlemesine ve yönetmesine izin verir",
 			"MANAGE_WEBHOOKS": "Webhook'ların yönetimine ve düzenlenmesine izin verir",
-			"MANAGE_GUILD_EXPRESSIONS": "Emoji, çıkartma ve ses panolarını yönetmeye izin verir",
+			"MANAGE_GUILD_EXPRESSIONS": "Emojileri, çıkartmaları ve ses panosunu yönetmeye olanak tanır",
 			"USE_APPLICATION_COMMANDS": "Kullanıcının uygulama komutlarını kullanmasına izin verir",
 			"REQUEST_TO_SPEAK": "Kullanıcının sahne kanalında konuşma isteğinde bulunmasına izin verir",
 			"MANAGE_EVENTS": "Kullanıcının etkinlikleri düzenlemesine ve yönetmesine izin verir",
@@ -118,7 +135,7 @@
 		}
 	},
 	"hideBlockedMessages": "Bu kullanıcıyı engellediniz, bu mesajları gizlemek için tıklayın.",
-	"showBlockedMessages": "Bu kullanıcıyı engellediniz, $1 engellenmiş mesajı görmek için tıklayın.",
+	"showBlockedMessages": "Bu kullanıcıyı engellediniz, $1 engellenen {{PLURAL:$1| mesaj|mesajları}} görmek için tıklayın.",
 	"deleteConfirm": "Bunu silmek istediğinizden emin misiniz?",
 	"yes": "Evet",
 	"no": "Hayır",
@@ -138,6 +155,10 @@
 	"typing": "$2 {{PLURAL:$1|yazıyor|yazıyorlar}}",
 	"noMessages": "Burada mesaj görünmüyor, ilk siz bir şey söyleyin!",
 	"blankMessage": "Boş Mesaj",
+	"spoiler": "Spoiler",
+	"accessibility": {
+		"name": "Erişilebilirlik"
+	},
 	"channel": {
 		"copyId": "Kanal kimliğini kopyala",
 		"markRead": "Okundu olarak işaretle",
