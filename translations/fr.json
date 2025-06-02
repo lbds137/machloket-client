@@ -1,10 +1,18 @@
 {
 	"@metadata": {
 		"authors": [
+			"Derugon",
 			"EmDashUser002",
 			"Mahabarata",
 			"Wladek92"
 		]
+	},
+	"vc": {
+		"joinstream": "Regarder la diffusion",
+		"leavestream": "Quitter la diffusion",
+		"joinForStream": "Rejoignez l’appel vocal pour regarder",
+		"stopstream": "Arrêter la diffusion",
+		"joiningStream": "Connexion à la diffusion en cours…"
 	},
 	"readableName": "français",
 	"pinMessage": "Épingler le message",
@@ -12,6 +20,15 @@
 	"reply": "Répondre",
 	"copyrawtext": "Copier le texte brut",
 	"copymessageid": "Copier l'identifiant du message",
+	"media": {
+		"notFound": "Le support n’a pas pu être trouvé",
+		"loading": "Chargement en cours",
+		"download": "Télécharger le support",
+		"moreInfo": "Plus d’infos",
+		"artist": "Artiste : $1",
+		"composer": "Compositeur : $1",
+		"length": "Durée : $1 minute(s) et $2 seconde(s)"
+	},
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Permet à l'utilisateur de créer des invitations pour la guilde",
@@ -137,7 +154,10 @@
 	"typing": "$2 {{PLURAL:$1|est|sont}} en train d'écrire",
 	"noMessages": "Il n'y a aucun message ici, soyez le premier à dire quelque chose !",
 	"blankMessage": "Message vide",
+	"spoiler": "Divulgâcheur",
 	"accessibility": {
+		"name": "Accessibilité",
+		"roleColors": "Désactiver les couleurs des rôles",
 		"playGif": "Faire lire le fichier GIF:",
 		"gifSettings": {
 			"hover": "Survol",
@@ -145,7 +165,10 @@
 			"never": "Jamais"
 		}
 	},
+	"searchGifs": "Rechercher sur Tenor",
 	"channel": {
+		"creating": "Création du canal",
+		"name": "Canal",
 		"copyId": "Copier l'identifiant du canal",
 		"markRead": "Marquer comme lu",
 		"settings": "Paramètres",
@@ -162,13 +185,37 @@
 		"selectName": "Nom du canal",
 		"selectCatName": "Nom de la catégorie",
 		"createChannel": "Créer un canal",
-		"createCatagory": "Créer une catégorie"
+		"createCatagory": "Créer une catégorie",
+		"permissions": "Droits"
+	},
+	"delete": "Supprimer",
+	"webhooks": {
+		"createdAt": "Créé à $1",
+		"name": "Nom :",
+		"token": "Jeton de l’accroche Internet : `$1`",
+		"url": "URL de l’accroche Internet : `$1`",
+		"avatar": "Avatar",
+		"createdBy": "Créé par :",
+		"notFound": "L’utilisateur n’est plus dans la guilde",
+		"channel": "Canal",
+		"copyURL": "Copier l’URL de l’accroche Internet",
+		"newWebHook": "Nouvelle accroche Internet",
+		"EnterWebhookName": "Saisissez le nom de l’accroche Internet",
+		"base": "Accroches Internet",
+		"sillyDefaults": "Capitaine Crochet\nBillie Crochets\nSainte Ernette",
+		"type1": "Entrant",
+		"type2": "Abonné au canal",
+		"type3": "Application",
+		"type": "Type : $1",
+		"deleteWebhook": "Supprimer l’accroche Internet",
+		"areYouSureDelete": "Êtes-vous sûr(e) de vouloir supprimer $1 ?"
 	},
 	"switchAccounts": "Changer de compte ⇌",
 	"accountNotStart": "Impossible de démarrer le compte",
 	"home": {
 		"uptimeStats": "Temps de disponibilité : \n tout le temps : $1 % \n cette semaine : $2 % \n aujourd'hui : $3 %",
-		"warnOffiline": "L'instance est hors ligne, impossible de se connecter"
+		"warnOffiline": "L'instance est hors ligne, impossible de se connecter",
+		"icon": "Icône de l’instance de $1"
 	},
 	"htmlPages": {
 		"idpermissions": "Cela permettra au robot de :",
@@ -192,15 +239,25 @@
 		"box1Items": "Messagerie en direct|Prise en charge de commentaires|Invitations|Changement de compte|Paramètres utilisateur|Portail des développeurs|Invitations de robots|Prise en charge des traductions",
 		"compatableInstances": "Instances compatibles avec Spacebar :",
 		"box3title": "Contribuer au client Jank",
-		"box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bugs, de code ou même simplement en signalant des fautes de frappe."
+		"box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bugs, de code ou même simplement en signalant des fautes de frappe.",
+		"trans": "Traduire",
+		"transTitle": "Traduire le client Jank",
+		"transDesc": "Vous pouvez aider à traduire le client Jank dans votre propre langue !"
 	},
+	"form": {
+		"captcha": "Attendez, êtes-vous un humain ?"
+	},
+	"useTemplate": "Utiliser $1 comme modèle",
+	"useTemplateButton": "Utiliser le modèle",
 	"register": {
+		"register": "S’inscrire",
 		"passwordError:": "Mot de passe : $1",
 		"usernameError": "Nom d’utilisateur : $1",
 		"emailError": "Courriel : $1",
 		"DOBError": "Date de naissance : $1",
 		"agreeTOS": "J'accepte les [Conditions d'Utilisation]($1) :",
-		"noTOS": "Cette instance n'a pas de conditions d'utilisation, acceptez quand même les conditions d'utilisation :"
+		"noTOS": "Cette instance n'a pas de conditions d'utilisation, acceptez quand même les conditions d'utilisation :",
+		"tos": "Vous devez accepter les conditions d’utilisation"
 	},
 	"leaving": "Vous quittez Spacebar",
 	"goingToURL": "Vous partez sur $1. Etes-vous sûr de vouloir y aller ?",
@@ -208,13 +265,28 @@
 	"goThereTrust": "Aller là-bas et faire confiance à l'avenir",
 	"nevermind": "Tant pis",
 	"submit": "soumettre",
+	"edit": "Modifier",
 	"guild": {
+		"template": "Modèle :",
+		"viewTemplate": "Afficher le modèle",
 		"createFromTemplate": "Guilde à partir du modèle",
+		"tempUseCount": "Le modèle a été utilisé $1 fois{{PLURAL:$1|}}",
+		"tempCreatedBy": "Modèle créé par :",
+		"editingTemplate": "Modification de $1",
+		"createNewTemplate": "Créer un nouveau modèle",
+		"templates": "Modèles",
+		"templateName": "Nom du modèle :",
+		"templateDesc": "Description du modèle :",
+		"templcateMetaDesc": "Un modèle permet aux autres d’utiliser cette guilde comme base pour leurs propres guildes. Ce processus en copiera les canaux, les rôles et les paramètres, mais pas les messages, les robots ou l’icône de guilde.",
+		"invites": "Invités",
+		"templateNameShort": "Le nom du modèle doit comporter au moins 2 caractères",
+		"templateURL": "URL du modèle : $1",
 		"bannedBy": "Bloqué par :",
 		"banReason": "Raison de bloquer $1 :",
 		"bans": "Bloquages",
 		"ruleId": "Canal des règles :",
 		"community": "Communauté",
+		"creating": "Création de la guilde",
 		"copyId": "Copier l'identifiant de la guilde",
 		"markRead": "Marquer comme lu",
 		"notifications": "Notifications",
@@ -253,9 +325,13 @@
 		"stickWelcomeReact?": "Inviter les membres de votre guilde à réagir avec un autocollant lorsque quelqu'un la rejoint",
 		"boostMessage?": "Envoyer un message lorsque quelqu'un booste votre guilde",
 		"helpTips?": "Envoyer des conseils utiles à votre guilde",
-		"defaultNoti": "Définir les paramètres de notification par défaut de votre guilde"
+		"defaultNoti": "Définir les paramètres de notification par défaut de votre guilde",
+		"howJoin": "Comment des personnes peuvent-elles rejoindre votre guilde ?",
+		"COMMUNITY": "Demander à adhérer",
+		"INVITES_DISABLED": "Sur invitation seulement",
+		"DISCOVERABLE": "Découverte"
 	},
-	"welcomeMessages": "Bienvenue $1! Ravi de vous voir! Bonjour, enchanté de vous rencontrer $1! Bienvenue, on espère que vous avez apporté de la pizza $1!",
+	"welcomeMessages": "Bienvenue $1 ! Ravi de vous voir !\nBonjour $1, enchanté de vous rencontrer !\nBienvenue, on espère que vous avez apporté de la pizza $1 !",
 	"role": {
 		"displaySettings": "Paramètres d'affichage",
 		"name": "Nom du rôle :",
@@ -271,11 +347,20 @@
 		"save": "Enregistrer les modifications"
 	},
 	"localuser": {
+		"install": "Installer",
+		"installJank": "Installer le client Jank",
+		"installDesc": "Installer le client Jank vous permettra de l’ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Jank dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
+		"addStatus": "Ajouter l’état",
+		"status": "État",
+		"statusWarn": "Spacebar présente des bogues avec cette fonctionnalité et ne sera mise à jour qu’après actualisation, et ne la respectera souvent pas",
+		"customStatusWarn": "Spacebar ne prend pas en charge l’affichage d’un état personnalisé pour le moment. Par conséquent, même si elle accepte l’état, elle n’en fera rien",
 		"settings": "Paramètres",
 		"userSettings": "Paramètres de l'utilisateur",
 		"themesAndSounds": "Thèmes et sons",
 		"theme:": "Thème",
 		"notisound": "Son de notification :",
+		"customSound": "Son personnalisé",
+		"soundTooLarge": "Le son que vous avez essayé de télécharger était trop volumineux, réessayez",
 		"accentColor": "Couleur d'accentuation :",
 		"enableEVoice": "Activer la prise en charge vocale expérimentale",
 		"VoiceWarning": "Etes-vous sûr de vouloir activer cela ? C'est très expérimental et est susceptible de causer des problèmes (cette fonctionnalité est destinée aux développeurs, veuillez ne pas l'activer si vous ne savez pas ce que vous faites)",
@@ -331,7 +416,13 @@
 		"advancedBot": "Paramètres avancés du robot",
 		"botInviteCreate": "Créateur d'invitations de robot",
 		"language": "Langue :",
-		"connections": "Connexions"
+		"connections": "Connexions",
+		"deleteAccount": "Suppression du compte",
+		"areYouSureDelete": "Êtes-vous sûr de vouloir supprimer votre compte ? Si oui, saisissez la phrase $1",
+		"sillyDeleteConfirmPhrase": "Shrek est l'amour, Shrek est la vie",
+		"deleteAccountButton": "Supprimer le compte",
+		"mustTypePhrase": "Pour supprimer votre compte, vous devez saisir la phrase",
+		"manageInstance": "Gérer l’instance"
 	},
 	"search": {
 		"back": "Retour",
@@ -342,6 +433,24 @@
 		"search": "Rechercher",
 		"nofind": "Il semble qu'il n'y ait aucun message correspondant à votre recherche, essayez peut-être d'élargir votre recherche pour essayer de trouver ce que vous recherchez"
 	},
+	"manageInstance": {
+		"stop": "Arrêter l’instance",
+		"AreYouSureStop": "Êtes-vous sûr(e) de vouloir arrêter cette instance ?",
+		"createTokens": "Créer des jetons d’enregistrement",
+		"count": "Compteur :",
+		"length": "Longueur :",
+		"format": "Format :",
+		"TokenFormats": {
+			"plain": "Texte brut",
+			"JSON": "JSON formaté",
+			"URLs": "URLs d’invitation"
+		},
+		"create": "Créer",
+		"clientURL": "URL du client :",
+		"regType": "Enregistrer le type d’URL du jeton",
+		"genericType": "Générique",
+		"copy": "Copier"
+	},
 	"unpinMessage": "Ne plus épingler le message",
 	"noPins": "Il semble qu'il n'y ait rien ici... pour l'instant",
 	"message": {
@@ -351,6 +460,7 @@
 		"edited": "(modifié)",
 		"deleted": "Message supprimé",
 		"attached": "Pièce jointe envoyée",
+		"retry": "Renvoyer le message d’erreur",
 		"pin": "$1 a épinglé un message"
 	},
 	"instanceStats": {
@@ -387,10 +497,16 @@
 		"expireAfter": "Expire après :",
 		"channel:": "Canal :",
 		"inviteMaker": "Créateur d'invitations",
-		"createInvite": "Créer une invitation"
+		"createInvite": "Créer une invitation",
+		"used": "Utilisé $1 fois{{PLURAL:$1|}}.",
+		"forChannel": "Pour le canal : $1",
+		"createdAt": "Créé : $1",
+		"expires": "Expire : $1",
+		"never": "Jamais",
+		"maxUses": "Utilisations maximales : $1"
 	},
 	"friends": {
-		"blocked": "Bloqués",
+		"blocked": "Bloqué(e)",
 		"blockedusers": "Utilisateurs bloqués :",
 		"addfriend": "Ajouter un ami",
 		"removeFriend": "Supprimer un ami",
@@ -417,6 +533,9 @@
 		"copyId": "Copier l'ID de l'utilisateur",
 		"online": "En ligne",
 		"offline": "Hors ligne",
+		"invisible": "Invisible",
+		"dnd": "Ne pas déranger",
+		"idle": "Inactif",
 		"message": "Envoyer un message à l'utilisateur",
 		"block": "Bloquer l'utilisateur",
 		"unblock": "Débloquer l'utilisateur",
@@ -426,13 +545,21 @@
 		"addRole": "Ajouter des rôles",
 		"removeRole": "Enlever des rôles",
 		"editServerProfile": "Modifier le profil du serveur",
+		"instanceBan": "Banissement sur l’instance",
+		"confirmInstBan": "Êtes-vous sûr de vouloir bannir $1 sur l’instance ?",
 		"unban": "Débloquer $1"
 	},
 	"login": {
 		"checking": "Vérification de l'instance",
 		"allGood": "Tout va bien",
 		"invalid": "Instance invalide, réessayez",
-		"waiting": "En attente de vérification de l'instance"
+		"waiting": "En attente de vérification de l'instance",
+		"recover": "Mot de passe oublié ?",
+		"pasteInfo": "Collez l’URL de récupération ici :",
+		"newPassword": "Nouveau mot de passe :",
+		"enterPAgain": "Saisissez à nouveau le mot de passe :",
+		"recovery": "Mot de passe oublié",
+		"login": "Se connecter"
 	},
 	"member": {
 		"kick": "Expulser $1 de $2",
@@ -488,8 +615,16 @@
 		"errEmjMust": "Vous devez inclure un emoji avec votre autocollant",
 		"tags": "Emoji associé :"
 	},
+	"widget": "Widget de la guilde",
+	"widgetEnabled": "Widget activé",
+	"incorrectURLS": "## Cette instance a probablement envoyé des URL incorrectes.\n### Si vous êtes le propriétaire de l’instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Jank tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l’instance ?",
+	"jankInfo": "Informations sur le client",
+	"instInfo": "Informations sur l’instance",
+	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Jank]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Jank](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribueez au client Jank](https://github.com/MathMan05/JankClient)\n\n[Contribuez à la maintenance du serveur sur lequel repose le client Jank](https://github.com/spacebarchat/server)\n\nDroits calculés : $3",
 	"uploadFilesText": "Téléversez vos fichiers ici !",
 	"errorReconnect": "Impossible de se connecter au serveur, nouvelle tentative dans **$1** secondes...",
 	"retrying": "Nouvelle tentative...",
-	"unableToConnect": "Impossible de se connecter au serveur Spacebar. Veuillez essayer de vous déconnecter et de vous reconnecter."
+	"unableToConnect": "Impossible de se connecter au serveur Spacebar. Veuillez essayer de vous déconnecter et de vous reconnecter.",
+	"bot": "ROBOT",
+	"webhook": "ACCROCHE INTERNET"
 }
