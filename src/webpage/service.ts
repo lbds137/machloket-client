@@ -56,26 +56,19 @@ function samedomain(url: string | URL) {
 let enabled = "false";
 let offline = false;
 
-const htmlFiles = new Set(["/app", "/login", "/home", "/register", "/oauth2/auth", "/reset"]);
-function isHtml(url: string): string | void {
-	const path = new URL(url).pathname;
-	if (htmlFiles.has(path) || htmlFiles.has(path + ".html")) {
-		return path + path.endsWith(".html") ? "" : ".html";
-	}
-}
 function toPath(url: string): string {
 	const Url = new URL(url);
-	let html = isHtml(url);
+	let html: string | undefined = undefined;
 	if (!html) {
 		const path = Url.pathname;
 		if (path.startsWith("/channels")) {
-			html = "./app.html";
+			html = "./app";
 		} else if (path.startsWith("/invite/") || path === "/invite") {
-			html = "./invite.html";
+			html = "./invite";
 		} else if (path.startsWith("/template/") || path === "/template") {
-			html = "./template.html";
+			html = "./template";
 		} else if (path === "/") {
-			html = "./home.html";
+			html = "./home";
 		}
 	}
 	return html || Url.pathname;

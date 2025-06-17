@@ -136,7 +136,7 @@ class Localuser {
 		switchAccountDiv.classList.add("switchtable");
 		switchAccountDiv.textContent = I18n.getTranslation("switchAccounts");
 		switchAccountDiv.addEventListener("click", () => {
-			window.location.href = "/login.html";
+			window.location.href = "/login";
 		});
 		table.append(switchAccountDiv);
 

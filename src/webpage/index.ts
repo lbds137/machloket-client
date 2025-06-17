@@ -11,7 +11,7 @@ import {I18n} from "./i18n.js";
 	await I18n.done;
 
 	if (!(sessionStorage.getItem("currentuser") || Localuser.users.currentuser)) {
-		window.location.href = "/login.html";
+		window.location.href = "/login";
 		return;
 	}
 	{
