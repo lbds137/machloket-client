@@ -138,7 +138,7 @@ fetch("/instances.json")
 				}
 				div.append(statbox);
 				div.onclick = (_) => {
-					if (instance.online) {
+					if (instance.online !== false) {
 						makeRegister(true, instance.name);
 					} else {
 						alert(I18n.getTranslation("home.warnOffiline"));
