@@ -407,7 +407,7 @@ class Localuser {
 								token: this.token,
 								capabilities: 16381,
 								properties: {
-									browser: "Jank Client",
+									browser: "Fermi",
 									client_build_number: 0, //might update this eventually lol
 									release_channel: "Custom",
 									browser_user_agent: navigator.userAgent,
@@ -3158,7 +3158,7 @@ class Localuser {
 			(guildName ? " | " + guildName : "") +
 			" | " +
 			this.instancePing.name +
-			" | Jank Client";
+			" | Fermi";
 	}
 	async instanceStats() {
 		const dialog = new Dialog("");

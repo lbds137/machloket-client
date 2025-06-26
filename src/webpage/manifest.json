@@ -1,16 +1,16 @@
 {
-  "name": "Jank Client",
-  "icons": [
-    {
-      "src": "/logo.webp",
-      "sizes": "512x512"
-    }
-  ],
-  "start_url": "/channels/@me",
-  "display": "standalone",
-  "scope": "/",
-  "theme_color": "#05050a",
-  "description": "Welcome to the Jank Client, a spacebar FOSS client implementation",
-  "background_color": "#05050a",
-  "offline_enabled": true
+	"name": "Fermi",
+	"icons": [
+		{
+			"src": "/logo.webp",
+			"sizes": "512x512"
+		}
+	],
+	"start_url": "/channels/@me",
+	"display": "standalone",
+	"scope": "/",
+	"theme_color": "#05050a",
+	"description": "A lightweight chat app for all of your spacebar needs!",
+	"background_color": "#05050a",
+	"offline_enabled": true
 }
