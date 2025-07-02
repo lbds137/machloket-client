@@ -218,7 +218,7 @@
 	"htmlPages": {
 		"idpermissions": "This will allow the bot to:",
 		"addBot": "Add to server",
-		"loadingText": "Jank Client is loading",
+		"loadingText": "Fermi is loading",
 		"loaddesc": "This shouldn't take long",
 		"switchaccounts": "Switch Accounts",
 		"instanceField": "Instance:",
@@ -232,15 +232,15 @@
 		"createAccount": "Create account",
 		"alreadyHave": "Already have an account?",
 		"openClient": "Open Client",
-		"welcomeJank": "Welcome to Jank Client",
-		"box1title": "Jank Client is a Spacebar-compatible client seeking to be as good as it can be with many features including:",
+		"welcomeJank": "Welcome to Fermi",
+		"box1title": "Fermi is a Spacebar-compatible client seeking to be as good as it can be with many features including:",
 		"box1Items": "Direct Messaging|Reactions support|Invites|Account switching|User settings|Developer portal|Bot invites|Translation support",
 		"compatableInstances": "Spacebar-Compatible Instances:",
-		"box3title": "Contribute to Jank Client",
+		"box3title": "Contribute to Fermi",
 		"box3description": "We always appreciate some help, whether that be in the form of bug reports, or code, or even just pointing out some typos.",
 		"trans": "Translate",
-		"transTitle": "Translate Jank Client",
-		"transDesc": "You can help translate Jank Client into your own language!"
+		"transTitle": "Translate Fermi",
+		"transDesc": "You can help translate Fermi into your own language!"
 	},
 	"form": {
 		"captcha": "Wait, are you a human?"
@@ -346,8 +346,8 @@
 	},
 	"localuser": {
 		"install": "Install",
-		"installJank": "Install Jank Client",
-		"installDesc": "Installing Jank Client will allow you to open it in its own window and act like its own app! You can also just continue to use Jank Client in the web browser like you have been and it'll work the same.",
+		"installJank": "Install Fermi",
+		"installDesc": "Installing Fermi will allow you to open it in its own window and act like its own app! You can also just continue to use Fermi in the web browser like you have been and it'll work the same.",
 		"addStatus": "Add status",
 		"status": "Status",
 		"statusWarn": "Spacebar has bugs with this feature and will only update after a refresh, and will often not respect it",
@@ -615,10 +615,10 @@
 	},
 	"widget": "Guild Widget",
 	"widgetEnabled": "Widget enabled",
-	"incorrectURLS": "## This instance has likely sent the incorrect URLs.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Jank Client to automatically try to fix this error to let you connect to the instance?",
+	"incorrectURLS": "## This instance has likely sent the incorrect URLs.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Fermi to automatically try to fix this error to let you connect to the instance?",
 	"jankInfo": "Client Information",
 	"instInfo": "Instance Information",
-	"clientDesc": "Client version: $1\n\n[Join the official Jank Client guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Jank Client](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Jank client](https://github.com/MathMan05/JankClient)\n\n[Help maintain the server jank client relies on](https://github.com/spacebarchat/server)\n\nCalculated rights: $3",
+	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\nCalculated rights: $3",
 	"uploadFilesText": "Upload your files here!",
 	"errorReconnect": "Unable to connect to the server, retrying in **$1** seconds...",
 	"retrying": "Retrying...",
