@@ -2990,9 +2990,8 @@ class Localuser {
 			return undefined;
 		}
 		const guild = this.guildids.get(guildid);
-		const borked = true;
+		const borked = false;
 		if (!guild || (borked && guild.member_count > 250)) {
-			//sorry puyo, I need to fix member resolving while it's broken on large guilds
 			try {
 				const req = await fetch(this.info.api + "/guilds/" + guildid + "/members/" + id, {
 					headers: this.headers,
