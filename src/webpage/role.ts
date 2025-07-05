@@ -31,6 +31,7 @@ class Role extends SnowFlake {
 			}
 			(this as any)[thing] = (json as any)[thing];
 		}
+		document.body.style.setProperty(`--role-${this.id}`, this.getColor());
 		this.permissions = new Permissions(json.permissions);
 		this.owner = owner;
 	}
@@ -41,6 +42,7 @@ class Role extends SnowFlake {
 			}
 			(this as any)[thing] = (json as any)[thing];
 		}
+		document.body.style.setProperty(`--role-${this.id}`, this.getColor());
 		this.permissions.allow = BigInt(json.permissions);
 	}
 	get guild(): Guild {

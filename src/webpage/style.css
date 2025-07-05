@@ -2191,10 +2191,12 @@ img.bigembedimg {
 }
 .profile .pfpDiv {
 	position: absolute;
+	z-index: 2;
+	top: 20px;
 }
 .profile .pfp {
-	height: 48px;
-	width: 48px;
+	height: 64px;
+	width: 64px;
 	margin: 8px 0 0 8px;
 	cursor: auto;
 }
@@ -2208,6 +2210,10 @@ img.bigembedimg {
 	border: 2.5px solid var(--black);
 	border-radius: 50%;
 }
+.profile .statusDiv {
+	width: 14px;
+	height: 14px;
+}
 .onlinestatus {
 	background: var(--green);
 }
@@ -2215,9 +2221,12 @@ img.bigembedimg {
 	background: var(--primary-bg);
 }
 .banner {
+	background: yellow;
 	height: 100px;
 	width: 100%;
 	object-fit: cover;
+	position: absolute !important;
+	/* z-index: 2; */
 }
 .badge {
 	display: inline-flex;
@@ -2241,9 +2250,8 @@ img.bigembedimg {
 	border-radius: 8px;
 	box-sizing: border-box;
 	overflow-y: auto;
-}
-.profile:has(.banner) .infosection {
-	margin-top: 8px;
+	padding-top: 30px;
+	z-index: 1;
 }
 .infosection h2,
 .infosection h3 {

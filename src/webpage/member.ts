@@ -441,6 +441,18 @@ class Member extends SnowFlake {
 		}
 		return false;
 	}
+	getTopColor() {
+		if (!this.localuser.perminfo.user.disableColors) {
+			return "";
+		}
+		for (const thing of this.roles) {
+			const color = thing.getColor();
+			if (color) {
+				return thing.id;
+			}
+		}
+		return "";
+	}
 	getColor() {
 		if (!this.localuser.perminfo.user.disableColors) {
 			return "";
@@ -471,7 +483,7 @@ class Member extends SnowFlake {
 
 				}
 				*/
-			html.style.color = this.getColor();
+			html.style.color = `var(--role-${this.getTopColor()})`;
 		}
 
 		//this.profileclick(html);
