@@ -2302,8 +2302,10 @@ class Channel extends SnowFlake {
 		if (this.localuser.play) {
 			this.localuser.playSound();
 		}
-		if (!("Notification" in window)) {
-		} else if (Notification.permission === "granted") {
+		if ("Notification" in window && Notification.permission === "granted") {
+			if (message.author.relationshipType == 2) {
+				return;
+			}
 			let noticontent: string | undefined | null = message.content.textContent;
 			if (message.embeds[0]) {
 				noticontent ||= message.embeds[0]?.json.title;
