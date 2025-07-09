@@ -88,7 +88,9 @@
 		"userField": "Benotzernumm:",
 		"pw2Field": "Passwuert nach eng Kéier aginn:",
 		"dobField": "Gebuertsdatum:",
-		"trans": "Iwwersetzen"
+		"trans": "Iwwersetzen",
+		"transTitle": "Fermi iwwersetzen",
+		"transDesc": "Dir kënnt dobäi hëllefe fir Fermi an Är eege Sprooch z'iwwersetzen!"
 	},
 	"useTemplate": "$1 als Schabloun benotzen",
 	"useTemplateButton": "Schabloun benotzen",
@@ -134,6 +136,7 @@
 	},
 	"localuser": {
 		"install": "Installéieren",
+		"installJank": "Fermi installéieren",
 		"status": "Status",
 		"settings": "Astellungen",
 		"userSettings": "Benotzerastellungen",
