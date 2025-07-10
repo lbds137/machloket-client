@@ -76,7 +76,7 @@
 			"MODERATE_MEMBERS": "Erlaubt es dem Benutzer, andere Benutzer zeitlich auszuschließen, um zu verhindern, dass sie Nachrichten im Chat und in Threads senden oder darauf reagieren, sowie um zu verhindern, dass sie in Sprach- und Bühnenkanälen sprechen",
 			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Ermöglicht das Anzeigen von Einblicken in Rollenabonnements",
 			"USE_SOUNDBOARD": "Erlaubt die Verwendung eines Soundboards in einem Sprachkanal",
-			"CREATE_GUILD_EXPRESSIONS": "Erlaubt die Erstellung von Emojis, Stickern und Soundboard-Sounds, sowie die Bearbeitung und Löschung derer, die vom aktuellen Benutzer erstellt wurden.",
+			"CREATE_GUILD_EXPRESSIONS": "Erlaubt die Erstellung von Emojis, Stickern und Soundboard-Sounds sowie die Bearbeitung und Löschung derer, die vom aktuellen Benutzer erstellt wurden.",
 			"CREATE_EVENTS": "Erlaubt die Erstellung von geplanten Ereignissen und die Bearbeitung und Löschung der von dem aktuellen Benutzer erstellten Ereignisse.",
 			"USE_EXTERNAL_SOUNDS": "Ermöglicht die Verwendung benutzerdefinierter Soundboard-Sounds von anderen Servern",
 			"SEND_VOICE_MESSAGES": "Ermöglicht Senden von Sprachnachrichten",
