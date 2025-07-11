@@ -2562,6 +2562,10 @@ fieldset input[type="radio"] {
 	background: var(--secondary-bg);
 	overflow: hidden;
 	cursor: pointer;
+	position: relative;
+	.banner {
+		position: relative !important;
+	}
 }
 .discovery-guild:hover {
 	background: var(--secondary-hover);
