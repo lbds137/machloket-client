@@ -78,6 +78,9 @@ body {
 	min-height: 0;
 	display: flex;
 }
+.traceBars {
+	height: 30px;
+}
 .flexttb {
 	min-width: 0;
 	display: flex;
@@ -2706,6 +2709,22 @@ fieldset input[type="radio"] {
 	.optionElement {
 		margin-top: 8px;
 	}
+}
+.traceHead {
+	cursor: pointer;
+	border-bottom: black solid 4px;
+}
+.traceDiv {
+	padding: 5px 10px;
+}
+.traceBars {
+	padding: 10px 0px;
+}
+.dropDownTrace {
+	background: var(--primary-hover);
+	padding: 20px 10px;
+	border-radius: 10px;
+	border: black solid 4px;
 }
 .optionElement,
 .FormSettings > button {

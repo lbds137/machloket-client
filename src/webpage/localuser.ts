@@ -32,7 +32,12 @@ import {badgeArr} from "./Dbadges.js";
 import {Rights} from "./rights.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Sticker} from "./sticker.js";
-
+import {Hover} from "./hover.js";
+type traceObj = {
+	micros: number;
+	calls?: (string | traceObj)[];
+};
+type trace = [string, traceObj];
 const wsCodesRetry = new Set([4000, 4001, 4002, 4003, 4005, 4007, 4008, 4009]);
 interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
@@ -260,6 +265,16 @@ class Localuser {
 		} else {
 			mic.classList.add("svg-mic");
 		}
+	}
+	trace: {trace: trace; time: Date}[] = [];
+	handleTrace(str: string[]) {
+		const json = str.map((_) => JSON.parse(_)) as trace[];
+		console.log(json);
+		this.trace.push(
+			...json.map((trace) => {
+				return {trace, time: new Date()};
+			}),
+		);
 	}
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
@@ -591,6 +606,7 @@ class Localuser {
 		this.perminfo.user.rights = rights;
 	}
 	async handleEvent(temp: wsjson) {
+		if (temp.d._trace) this.handleTrace(temp.d._trace);
 		console.debug(temp);
 		if (temp.s) this.lastSequence = temp.s;
 		if (temp.op === 9 && this.ws) {
@@ -2269,6 +2285,98 @@ class Localuser {
 				//@ts-expect-error have to do this :3
 				await installP.prompt();
 			});
+		}
+		if (this.trace.length) {
+			const traces = settings.addButton(I18n.localuser.trace());
+			const traceArr = this.trace;
+
+			const sel = traces.addSelect(
+				"",
+				() => {},
+				this.trace.map((_) =>
+					I18n.trace.traces(
+						_.trace[0],
+						_.trace[1].micros / 1000 + "",
+						_.time.getHours() + ":" + _.time.getMinutes(),
+					),
+				),
+			);
+			function generateTraceHTML(trace: trace): HTMLElement {
+				const div = document.createElement("div");
+				div.classList.add("traceDiv", "flexttb");
+
+				const head = document.createElement("div");
+				div.append(head);
+
+				const title = document.createElement("h3");
+				title.textContent = I18n.trace.totalTime(trace[1].micros / 1000 + "", trace[0]);
+				head.append(title);
+
+				if (!trace[1].calls) return div;
+
+				let objs: {name: string; val: traceObj}[] = [];
+				{
+					const names = trace[1].calls.filter((_) => typeof _ === "string");
+					const vals = trace[1].calls.filter((_) => _ instanceof Object);
+					let i = 0;
+					for (const name of names) {
+						const val = vals[i];
+						objs.push({name, val});
+						i++;
+					}
+				}
+
+				const bars = document.createElement("div");
+				bars.classList.add("flexltr", "traceBars");
+
+				const colors = ["red", "orange", "yellow", "lime", "blue", "indigo", "violet"];
+				let i = 0;
+				for (const thing of objs) {
+					const bar = document.createElement("div");
+					bar.style.setProperty(
+						"flex-grow",
+						Math.ceil((thing.val.micros / trace[1].micros) * 1000) + "",
+					);
+					bar.style.setProperty("background", colors[i % colors.length]);
+					bars.append(bar);
+					new Hover(I18n.trace.totalTime(thing.val.micros / 1000 + "", thing.name)).addEvent(bar);
+					i++;
+				}
+				const body = document.createElement("div");
+				div.append(body);
+				head.append(bars);
+				let dropped = false;
+				head.onclick = () => {
+					if (!trace[1].calls) return;
+					if (dropped) {
+						dropped = false;
+						body.innerHTML = "";
+						return;
+					}
+
+					let i = 0;
+					for (const obj of objs) {
+						body.append(generateTraceHTML([obj.name, obj.val]));
+						i++;
+					}
+					dropped = true;
+				};
+
+				div.classList.add("dropDownTrace");
+				head.classList.add("traceHead");
+				return div;
+			}
+			const blank = document.createElement("div");
+			traces.addHTMLArea(blank);
+			const updateInfo = () => {
+				const trace = traceArr[sel.index];
+				blank.innerHTML = "";
+				blank.append(generateTraceHTML(trace.trace));
+			};
+			sel.onchange = () => {
+				updateInfo();
+			};
+			updateInfo();
 		}
 		settings.show();
 	}

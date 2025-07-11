@@ -344,7 +344,12 @@
 		"unsaved": "Careful, you have unsaved changes",
 		"save": "Save changes"
 	},
+	"trace": {
+		"totalTime": "$2: $1ms",
+		"traces": "$1 ($2ms) $3"
+	},
 	"localuser": {
+		"trace": "Traces",
 		"install": "Install",
 		"installJank": "Install Fermi",
 		"installDesc": "Installing Fermi will allow you to open it in its own window and act like its own app! You can also just continue to use Fermi in the web browser like you have been and it'll work the same.",

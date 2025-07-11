@@ -3,6 +3,7 @@ interface readyjson {
 	t: "READY";
 	s: number;
 	d: {
+		_trace?: string[];
 		v: number;
 		user: mainuserjson;
 		user_settings: {
