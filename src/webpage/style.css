@@ -1743,9 +1743,6 @@ span.instanceStatus {
 	display: inline-block;
 	padding: 1px;
 	margin-left: 3px;
-	background: var(--secondary-bg);
-	border: solid black 2px;
-	border-radius: 4px;
 	cursor: default;
 	width: 20px;
 	height: 20px;
