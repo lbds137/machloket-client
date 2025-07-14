@@ -1739,6 +1739,22 @@ span.instanceStatus {
 	word-break: break-all;
 	cursor: pointer;
 }
+.roleIcon {
+	display: inline-block;
+	padding: 1px;
+	margin-left: 3px;
+	background: var(--secondary-bg);
+	border: solid black 2px;
+	border-radius: 4px;
+	cursor: default;
+	width: 20px;
+	height: 20px;
+	object-fit: contain;
+}
+.userwrap {
+	display: flex;
+	align-items: flex-end;
+}
 .pinText {
 	cursor: pointer;
 }

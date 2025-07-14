@@ -603,9 +603,9 @@ class Message extends SnowFlake {
 				author.bind(minipfp, this.guild);
 				username.textContent = author.username;
 				author.bind(username, this.guild);
-				Member.resolveMember(author, this.guild).then((_) => {
-					if (_) {
-						username.textContent = _.name;
+				Member.resolveMember(author, this.guild).then((member) => {
+					if (member) {
+						username.textContent = member.name;
 					}
 				});
 			});
@@ -643,14 +643,17 @@ class Message extends SnowFlake {
 				const username = document.createElement("span");
 				username.classList.add("username");
 				this.author.bind(username, this.guild);
-				Member.resolveMember(this.author, this.guild).then((_) => {
-					if (_) {
-						username.textContent = _.name;
+				Member.resolveMember(this.author, this.guild).then((member) => {
+					if (member) {
+						username.textContent = member.name;
+						const icon = member.getRoleIcon();
+						if (icon) username.after(icon);
 					}
 				});
 				div.classList.add("topMessage");
 				username.textContent = this.author.username;
 				const userwrap = document.createElement("div");
+				userwrap.classList.add("userwrap");
 				userwrap.appendChild(username);
 				if (this.author.bot) {
 					const username = document.createElement("span");

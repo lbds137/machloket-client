@@ -35,6 +35,22 @@ class Role extends SnowFlake {
 		this.permissions = new Permissions(json.permissions);
 		this.owner = owner;
 	}
+	getIcon(): HTMLElement | void {
+		const hover = new Hover(this.name);
+		if (this.unicode_emoji) {
+			const span = document.createElement("span");
+			span.textContent = this.unicode_emoji;
+			span.classList.add("roleIcon");
+			hover.addEvent(span);
+			return span;
+		}
+		if (this.icon) {
+			const img = createImg(this.info.cdn + "/role-icons/" + this.id + "/" + this.icon + ".webp");
+			img.classList.add("roleIcon");
+			hover.addEvent(img);
+			return img;
+		}
+	}
 	newJson(json: rolesjson) {
 		for (const thing of Object.keys(json)) {
 			if (thing === "id" || thing === "permissions") {
@@ -68,6 +84,8 @@ class Role extends SnowFlake {
 }
 export {Role};
 import {Options} from "./settings.js";
+import {createImg} from "./utils/utils.js";
+import {Hover} from "./hover.js";
 class PermissionToggle implements OptionsElement<number> {
 	readonly rolejson: {
 		name: string;

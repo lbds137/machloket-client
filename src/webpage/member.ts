@@ -417,6 +417,15 @@ class Member extends SnowFlake {
 			return maybe;
 		}
 	}
+	getRoleIcon() {
+		for (const role of this.roles) {
+			const icon = role.getIcon();
+			if (icon) {
+				return icon;
+			}
+		}
+		return;
+	}
 	public getPresence(presence: presencejson | undefined) {
 		this.user.getPresence(presence);
 	}
