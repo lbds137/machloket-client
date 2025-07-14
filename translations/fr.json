@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Bananax47",
 			"Derugon",
 			"EmDashUser002",
 			"Mahabarata",
@@ -220,7 +221,7 @@
 	"htmlPages": {
 		"idpermissions": "Cela permettra au robot de :",
 		"addBot": "Ajouter au serveur",
-		"loadingText": "Le client Jank est en cours de chargement",
+		"loadingText": "Le client Fermi est en cours de chargement",
 		"loaddesc": "Cela ne devrait pas prendre longtemps",
 		"switchaccounts": "Changer de compte",
 		"instanceField": "Instance :",
@@ -234,15 +235,15 @@
 		"createAccount": "Créer un compte",
 		"alreadyHave": "Vous avez déjà un compte ?",
 		"openClient": "Ouvrir le client",
-		"welcomeJank": "Bienvenue dans le client Jank",
-		"box1title": "Le client Jank est un client compatible avec Spacebar qui cherche à être aussi bon que possible avec de nombreuses fonctionnalités, notamment :",
+		"welcomeJank": "Bienvenue dans le client Fermi",
+		"box1title": "Le client Fermi est un client compatible avec Spacebar qui cherche à être aussi bon que possible avec de nombreuses fonctionnalités, notamment :",
 		"box1Items": "Messagerie en direct|Prise en charge de commentaires|Invitations|Changement de compte|Paramètres utilisateur|Portail des développeurs|Invitations de robots|Prise en charge des traductions",
 		"compatableInstances": "Instances compatibles avec Spacebar :",
-		"box3title": "Contribuer au client Jank",
+		"box3title": "Contribuer au client Fermi",
 		"box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bugs, de code ou même simplement en signalant des fautes de frappe.",
 		"trans": "Traduire",
-		"transTitle": "Traduire le client Jank",
-		"transDesc": "Vous pouvez aider à traduire le client Jank dans votre propre langue !"
+		"transTitle": "Traduire le client Fermi",
+		"transDesc": "Vous pouvez aider à traduire le client Fermi dans votre propre langue !"
 	},
 	"form": {
 		"captcha": "Attendez, êtes-vous un humain ?"
@@ -346,10 +347,15 @@
 		"unsaved": "Attention, vous avez des modifications non enregistrées",
 		"save": "Enregistrer les modifications"
 	},
+	"trace": {
+		"totalTime": "$2: $1ms",
+		"traces": "$1 ($2ms) $3"
+	},
 	"localuser": {
+		"trace": "Traces",
 		"install": "Installer",
-		"installJank": "Installer le client Jank",
-		"installDesc": "Installer le client Jank vous permettra de l’ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Jank dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
+		"installJank": "Installer le client Fermi",
+		"installDesc": "Installer le client Fermi vous permettra de l’ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Fermi dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
 		"addStatus": "Ajouter l’état",
 		"status": "État",
 		"statusWarn": "Spacebar présente des bogues avec cette fonctionnalité et ne sera mise à jour qu’après actualisation, et ne la respectera souvent pas",
@@ -617,10 +623,10 @@
 	},
 	"widget": "Widget de la guilde",
 	"widgetEnabled": "Widget activé",
-	"incorrectURLS": "## Cette instance a probablement envoyé des URL incorrectes.\n### Si vous êtes le propriétaire de l’instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Jank tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l’instance ?",
+	"incorrectURLS": "## Cette instance a probablement envoyé des URL incorrectes.\n### Si vous êtes le propriétaire de l’instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Fermi tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l’instance ?",
 	"jankInfo": "Informations sur le client",
 	"instInfo": "Informations sur l’instance",
-	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Jank]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Jank](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribueez au client Jank](https://github.com/MathMan05/JankClient)\n\n[Contribuez à la maintenance du serveur sur lequel repose le client Jank](https://github.com/spacebarchat/server)\n\nDroits calculés : $3",
+	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribueez au client Fermi](https://github.com/MathMan05/Fermi)\n\n[Contribuez à la maintenance du serveur sur lequel repose le client Fermi](https://github.com/spacebarchat/server)\n\nDroits calculés : $3",
 	"uploadFilesText": "Téléversez vos fichiers ici !",
 	"errorReconnect": "Impossible de se connecter au serveur, nouvelle tentative dans **$1** secondes...",
 	"retrying": "Nouvelle tentative...",
