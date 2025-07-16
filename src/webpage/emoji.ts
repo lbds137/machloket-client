@@ -18,7 +18,7 @@ class Emoji {
 	id?: string;
 	emoji?: string;
 	animated: boolean;
-	owner: Guild | Localuser;
+	owner?: Guild | Localuser;
 	get guild() {
 		if (this.owner instanceof Guild) {
 			return this.owner;
@@ -32,10 +32,7 @@ class Emoji {
 			return this.owner;
 		}
 	}
-	get info() {
-		return this.owner.info;
-	}
-	constructor(json: emojijson, owner: Guild | Localuser) {
+	constructor(json: emojijson, owner?: Guild | Localuser) {
 		this.name = json.name;
 		this.id = json.id;
 		this.animated = json.animated || false;
@@ -53,12 +50,18 @@ class Emoji {
 	}
 	getHTML(bigemoji: boolean = false) {
 		if (this.id) {
+			if (!this.owner) throw new Error("owner is missing for custom emoji!");
 			const emojiElem = document.createElement("img");
 			emojiElem.classList.add("md-emoji");
 			emojiElem.classList.add(bigemoji ? "bigemoji" : "smallemoji");
 			emojiElem.crossOrigin = "anonymous";
 			emojiElem.src =
-				this.info.cdn + "/emojis/" + this.id + "." + (this.animated ? "gif" : "png") + "?size=32";
+				this.owner.info.cdn +
+				"/emojis/" +
+				this.id +
+				"." +
+				(this.animated ? "gif" : "png") +
+				"?size=32";
 			emojiElem.alt = this.name;
 			emojiElem.loading = "lazy";
 
@@ -147,7 +150,7 @@ class Emoji {
 		this: typeof Emoji,
 		x: number,
 		y: number,
-		localuser: Localuser,
+		localuser?: Localuser,
 	): Promise<Emoji> {
 		let res: (r: Emoji) => void;
 		this;
@@ -231,76 +234,77 @@ class Emoji {
 		body.classList.add("emojiBody");
 
 		let isFirst = true;
+		if (localuser) {
+			[
+				localuser.lookingguild,
+				...localuser.guilds.filter((guild) => guild !== localuser.lookingguild),
+			]
+				.filter((_) => _ !== undefined)
+				.filter((guild) => guild.id != "@me" && guild.emojis.length > 0)
+				.forEach((guild) => {
+					const select = document.createElement("div");
+					select.classList.add("emojiSelect");
 
-		[
-			localuser.lookingguild,
-			...localuser.guilds.filter((guild) => guild !== localuser.lookingguild),
-		]
-			.filter((_) => _ !== undefined)
-			.filter((guild) => guild.id != "@me" && guild.emojis.length > 0)
-			.forEach((guild) => {
-				const select = document.createElement("div");
-				select.classList.add("emojiSelect");
-
-				if (guild.properties.icon) {
-					const img = document.createElement("img");
-					img.classList.add("pfp", "servericon", "emoji-server");
-					img.crossOrigin = "anonymous";
-					img.src =
-						localuser.info.cdn +
-						"/icons/" +
-						guild.properties.id +
-						"/" +
-						guild.properties.icon +
-						".png?size=48";
-					img.alt = "Server: " + guild.properties.name;
-					select.appendChild(img);
-				} else {
-					const div = document.createElement("span");
-					div.textContent = guild.properties.name
-						.replace(/'s /g, " ")
-						.replace(/\w+/g, (word) => word[0])
-						.replace(/\s/g, "");
-					select.append(div);
-				}
-
-				selection.append(select);
-
-				const clickEvent = () => {
-					search.value = "";
-					updateSearch.call(this);
-					title.textContent = guild.properties.name;
-					body.innerHTML = "";
-					for (const emojit of guild.emojis) {
-						const emojiElem = document.createElement("div");
-						emojiElem.classList.add("emojiSelect");
-
-						const emojiClass = new Emoji(
-							{
-								id: emojit.id as string,
-								name: emojit.name,
-								animated: emojit.animated as boolean,
-							},
-							localuser,
-						);
-						emojiElem.append(emojiClass.getHTML());
-						body.append(emojiElem);
-
-						emojiElem.addEventListener("click", () => {
-							res(emojiClass);
-							if (Contextmenu.currentmenu !== "") {
-								Contextmenu.currentmenu.remove();
-							}
-						});
+					if (guild.properties.icon) {
+						const img = document.createElement("img");
+						img.classList.add("pfp", "servericon", "emoji-server");
+						img.crossOrigin = "anonymous";
+						img.src =
+							localuser.info.cdn +
+							"/icons/" +
+							guild.properties.id +
+							"/" +
+							guild.properties.icon +
+							".png?size=48";
+						img.alt = "Server: " + guild.properties.name;
+						select.appendChild(img);
+					} else {
+						const div = document.createElement("span");
+						div.textContent = guild.properties.name
+							.replace(/'s /g, " ")
+							.replace(/\w+/g, (word) => word[0])
+							.replace(/\s/g, "");
+						select.append(div);
 					}
-				};
 
-				select.addEventListener("click", clickEvent);
-				if (isFirst) {
-					clickEvent();
-					isFirst = false;
-				}
-			});
+					selection.append(select);
+
+					const clickEvent = () => {
+						search.value = "";
+						updateSearch.call(this);
+						title.textContent = guild.properties.name;
+						body.innerHTML = "";
+						for (const emojit of guild.emojis) {
+							const emojiElem = document.createElement("div");
+							emojiElem.classList.add("emojiSelect");
+
+							const emojiClass = new Emoji(
+								{
+									id: emojit.id as string,
+									name: emojit.name,
+									animated: emojit.animated as boolean,
+								},
+								localuser,
+							);
+							emojiElem.append(emojiClass.getHTML());
+							body.append(emojiElem);
+
+							emojiElem.addEventListener("click", () => {
+								res(emojiClass);
+								if (Contextmenu.currentmenu !== "") {
+									Contextmenu.currentmenu.remove();
+								}
+							});
+						}
+					};
+
+					select.addEventListener("click", clickEvent);
+					if (isFirst) {
+						clickEvent();
+						isFirst = false;
+					}
+				});
+		}
 
 		if (Contextmenu.currentmenu !== "") {
 			Contextmenu.currentmenu.remove();
@@ -344,7 +348,7 @@ class Emoji {
 		search.focus();
 		return promise;
 	}
-	static searchEmoji(search: string, localuser: Localuser, results = 50): [Emoji, number][] {
+	static searchEmoji(search: string, localuser?: Localuser, results = 50): [Emoji, number][] {
 		//NOTE this function is used for searching in the emoji picker for reactions, and the emoji auto-fill
 		const ranked: [emojijson, number][] = [];
 		function similar(json: emojijson) {
@@ -364,11 +368,13 @@ class Emoji {
 			}
 		}
 		const weakGuild = new WeakMap<emojijson, Guild>();
-		for (const guild of localuser.guilds) {
-			if (guild.id !== "@me" && guild.emojis.length !== 0) {
-				for (const emoji of guild.emojis) {
-					if (similar(emoji)) {
-						weakGuild.set(emoji, guild);
+		if (localuser) {
+			for (const guild of localuser.guilds) {
+				if (guild.id !== "@me" && guild.emojis.length !== 0) {
+					for (const emoji of guild.emojis) {
+						if (similar(emoji)) {
+							weakGuild.set(emoji, guild);
+						}
 					}
 				}
 			}

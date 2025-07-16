@@ -564,27 +564,31 @@ class MDInput implements OptionsElement<string> {
 		this.onSubmit(this.value);
 	}
 }
-class EmojiInput implements OptionsElement<Emoji | undefined> {
+class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	readonly label: string;
 	readonly owner: Options;
-	readonly onSubmit: (str: Emoji | undefined) => void;
+	readonly onSubmit: (str: Emoji | undefined | null) => void;
 	input!: WeakRef<HTMLInputElement>;
-	value!: Emoji | undefined;
-	localuser: Localuser;
+	value!: Emoji | undefined | null;
+	localuser?: Localuser;
+	clear: boolean;
 	constructor(
 		label: string,
-		onSubmit: (str: Emoji | undefined) => void,
+		onSubmit: (str: Emoji | undefined | null) => void,
 		owner: Options,
-		localuser: Localuser,
-		{initEmoji = undefined}: {initEmoji: undefined | Emoji},
+		localuser?: Localuser,
+		{initEmoji = undefined, clear = false}: {initEmoji?: undefined | Emoji; clear?: boolean} = {},
 	) {
 		this.label = label;
 		this.owner = owner;
 		this.onSubmit = onSubmit;
 		this.value = initEmoji;
 		this.localuser = localuser;
+		this.clear = !!clear;
 	}
 	generateHTML(): HTMLElement {
+		const outDiv = document.createElement("div");
+		outDiv.classList.add("flexltr");
 		const div = document.createElement("div");
 		div.classList.add("flexltr", "emojiForm");
 		const label = document.createElement("span");
@@ -614,22 +618,39 @@ class EmojiInput implements OptionsElement<Emoji | undefined> {
 			})();
 		};
 		div.append(label, emoji);
-		return div;
+		outDiv.append(div);
+		if (this.clear) {
+			const button = document.createElement("button");
+			button.textContent = I18n.settings.clear();
+			button.onclick = () => {
+				this.value = null;
+				emoji.remove();
+				this.onchange(null);
+				this.owner.changed();
+				emoji = document.createElement("span");
+				emoji.classList.add("emptyEmoji");
+				div.append(emoji);
+			};
+			outDiv.append(button);
+		}
+
+		return outDiv;
 	}
-	onchange = (_: Emoji | undefined) => {};
-	watchForChange(func: (arg1: Emoji | undefined) => void) {
+	onchange = (_: Emoji | undefined | null) => {};
+	watchForChange(func: (arg1: Emoji | undefined | null) => void) {
 		this.onchange = func;
 	}
 	submit() {
 		this.onSubmit(this.value);
 	}
 }
-class FileInput implements OptionsElement<FileList | null> {
+
+class FileInput implements OptionsElement<FileList | null | undefined> {
 	readonly label: string;
 	readonly owner: Options;
 	readonly onSubmit: (str: FileList | null) => void;
 	input!: WeakRef<HTMLInputElement>;
-	value!: FileList | null;
+	value: FileList | null | undefined = undefined;
 	clear: boolean;
 	constructor(
 		label: string,
@@ -656,7 +677,7 @@ class FileInput implements OptionsElement<FileList | null> {
 		innerDiv.append(input);
 		if (this.clear) {
 			const button = document.createElement("button");
-			button.textContent = "Clear";
+			button.textContent = I18n.settings.clear();
 			button.onclick = (_) => {
 				if (this.onchange) {
 					this.onchange(null);
@@ -679,8 +700,8 @@ class FileInput implements OptionsElement<FileList | null> {
 			}
 		}
 	}
-	onchange: ((str: FileList | null) => void) | null = null;
-	watchForChange(func: (str: FileList | null) => void) {
+	onchange: ((str: FileList | null | undefined) => void) | null = null;
+	watchForChange(func: (str: FileList | null | undefined) => void) {
 		this.onchange = func;
 	}
 	submit() {
@@ -688,6 +709,95 @@ class FileInput implements OptionsElement<FileList | null> {
 		if (input) {
 			this.onSubmit(input.files);
 		}
+	}
+}
+class ImageInput extends FileInput {
+	img: HTMLElement;
+	constructor(
+		label: string,
+		onSubmit: (str: FileList | null) => void,
+		owner: Options,
+		{clear = false, initImg = "", width = -1, objectFit = ""} = {},
+	) {
+		super(label, onSubmit, owner, {clear});
+
+		console.log(initImg);
+		let hasimg = "" !== initImg;
+		const input = document.createElement("input");
+		input.type = "file";
+		input.oninput = this.onChange.bind(this);
+		this.input = new WeakRef(input);
+		input.accept = "image/*";
+		const img = document.createElement("img");
+		img.src = initImg;
+
+		img.onclick = () => {
+			input.click();
+		};
+		const button = document.createElement("button");
+		button.textContent = I18n.settings.clear();
+		button.onclick = (_) => {
+			img.src = "";
+			if (this.onchange) {
+				this.onchange(null);
+			}
+			this.value = null;
+			this.owner.changed();
+			hasimg = false;
+			genImg();
+		};
+		this.clearbutton = button;
+
+		input.addEventListener("change", () => {
+			if (!input.files) return;
+			const reader = new FileReader();
+			reader.onload = (imgf) => {
+				const res = imgf.target?.result;
+				if (!res) return;
+				if (typeof res !== "string") return;
+				img.src = res;
+				hasimg = true;
+				genImg();
+			};
+			reader.readAsDataURL(input.files[0]);
+		});
+		const div = document.createElement("div");
+		const span = document.createElement("span");
+		span.textContent = I18n.settings.img();
+		const genImg = () => {
+			console.warn(hasimg);
+			if (hasimg) {
+				div.append(img);
+				span.remove();
+			} else {
+				div.append(span);
+				img.remove();
+			}
+		};
+		if (width !== -1) {
+			div.style.width = width + "px";
+			img.style.width = width + "px";
+		}
+		if (objectFit) img.style.objectFit = objectFit;
+		console.warn(objectFit);
+		this.img = div;
+		genImg();
+	}
+	clearbutton: HTMLButtonElement;
+	generateHTML(): HTMLDivElement {
+		const div = document.createElement("div");
+		const span = document.createElement("span");
+		span.textContent = this.label;
+		div.append(span);
+		const innerDiv = document.createElement("div");
+		innerDiv.classList.add("flexltr", "fileinputdiv");
+		innerDiv.append(this.img);
+
+		if (this.clear) {
+			innerDiv.append(this.clearbutton);
+		}
+		div.append(innerDiv);
+		return div;
 	}
 }
 
@@ -988,11 +1098,12 @@ class Options implements OptionsElement<void> {
 	addEmojiInput(
 		label: string,
 		onSubmit: (str: Emoji | undefined) => void,
-		localuser: Localuser,
-		{initEmoji = undefined} = {} as {initEmoji?: Emoji},
+		localuser?: Localuser,
+		{initEmoji = undefined, clear = false} = {} as {initEmoji?: Emoji; clear?: boolean},
 	) {
 		const emoji = new EmojiInput(label, onSubmit, this, localuser, {
 			initEmoji: initEmoji,
+			clear,
 		});
 		this.options.push(emoji);
 		this.generate(emoji);
@@ -1024,6 +1135,16 @@ class Options implements OptionsElement<void> {
 		this.options.push(select);
 		this.generate(select);
 		return select;
+	}
+	addImageInput(
+		label: string,
+		onSubmit: (files: FileList | null) => void,
+		{clear = false, initImg = "", width = -1, objectFit = ""} = {},
+	) {
+		const FI = new ImageInput(label, onSubmit, this, {clear, initImg, width, objectFit});
+		this.options.push(FI);
+		this.generate(FI);
+		return FI;
 	}
 	addFileInput(label: string, onSubmit: (files: FileList | null) => void, {clear = false} = {}) {
 		const FI = new FileInput(label, onSubmit, this, {clear});
@@ -1547,14 +1668,33 @@ class Form implements OptionsElement<object> {
 		}
 		return FI;
 	}
+	addImageInput(
+		label: string,
+		formName: string,
+		{required = false, files = "one", clear = false, initImg = "", width = -1, objectFit = ""} = {},
+	) {
+		const FI = this.options.addImageInput(label, (_) => {}, {clear, initImg, width, objectFit});
+		if (files !== "one" && files !== "multi") throw new Error("files should equal one or multi");
+		this.fileOptions.set(FI, {files});
+		this.names.set(formName, FI);
+		if (required) {
+			this.required.add(FI);
+		}
+		return FI;
+	}
 	addEmojiInput(
 		label: string,
 		formName: string,
-		localuser: Localuser,
-		{initEmoji = undefined, required = false} = {} as {initEmoji?: Emoji; required: boolean},
+		localuser?: Localuser,
+		{initEmoji = undefined, required = false, clear = false} = {} as {
+			initEmoji?: Emoji;
+			required: boolean;
+			clear?: boolean;
+		},
 	) {
 		const emoji = this.options.addEmojiInput(label, () => {}, localuser, {
 			initEmoji: initEmoji,
+			clear,
 		});
 		if (required) {
 			this.required.add(emoji);
@@ -1732,15 +1872,13 @@ class Form implements OptionsElement<object> {
 						});
 						promises.push(promise);
 						continue;
-					} else if (input.value === undefined) {
-						continue;
 					}
 				} else {
 					console.error(options.files + " is not currently implemented");
 				}
 			} else if (input instanceof EmojiInput) {
 				if (!input.value) {
-					(build as any)[thing] = undefined;
+					(build as any)[thing] = input.value;
 				} else if (input.value.id) {
 					(build as any)[thing] = input.value.id;
 				} else if (input.value.emoji) {

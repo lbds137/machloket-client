@@ -86,6 +86,7 @@ export {Role};
 import {Options} from "./settings.js";
 import {createImg} from "./utils/utils.js";
 import {Hover} from "./hover.js";
+import {Emoji} from "./emoji.js";
 class PermissionToggle implements OptionsElement<number> {
 	readonly rolejson: {
 		name: string;
@@ -226,11 +227,11 @@ class RoleList extends Buttons {
 		this.redoButtons();
 	}
 	makeguildmenus(option: Options) {
-		option.addButtonInput("", I18n.getTranslation("role.displaySettings"), () => {
+		option.addButtonInput("", I18n.role.displaySettings(), () => {
 			const role = this.guild.roleids.get(this.curid as string);
 			if (!role) return;
 			const form = option.addSubForm(
-				I18n.getTranslation("role.displaySettings"),
+				I18n.role.displaySettings(),
 				(e) => {
 					if ("name" in e && typeof e.name === "string") {
 						option.name = e.name;
@@ -245,18 +246,37 @@ class RoleList extends Buttons {
 					traditionalSubmit: true,
 				},
 			);
-			form.addTextInput(I18n.getTranslation("role.name"), "name", {
+			form.addTextInput(I18n.role.name(), "name", {
 				initText: role.name,
 			});
-			form.addCheckboxInput(I18n.getTranslation("role.hoisted"), "hoist", {
+			form.addCheckboxInput(I18n.role.hoisted(), "hoist", {
 				initState: role.hoist,
 			});
-			form.addCheckboxInput(I18n.getTranslation("role.mentionable"), "mentionable", {
+			form.addCheckboxInput(I18n.role.mentionable(), "mentionable", {
 				initState: role.mentionable,
 			});
 			const color = "#" + role.color.toString(16).padStart(6, "0");
-			const colorI = form.addColorInput(I18n.getTranslation("role.color"), "color", {
+			const colorI = form.addColorInput(I18n.role.color(), "color", {
 				initColor: color,
+			});
+			form.addEmojiInput(I18n.role.roleEmoji(), "unicode_emoji", undefined, {
+				initEmoji: role.unicode_emoji
+					? new Emoji(
+							{
+								name: "Emoji",
+								emoji: role.unicode_emoji,
+							},
+							undefined,
+						)
+					: undefined,
+				required: false,
+				clear: true,
+			});
+			form.addImageInput(I18n.role.roleFileIcon(), "icon", {
+				initImg: role.icon
+					? role.info.cdn + "/role-icons/" + role.id + "/" + role.icon + ".webp"
+					: "",
+				clear: true,
 			});
 			form.addPreprocessor((obj: any) => {
 				obj.color = Number("0x" + colorI.colorContent.substring(1));

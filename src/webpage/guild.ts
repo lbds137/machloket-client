@@ -287,8 +287,20 @@ class Guild extends SnowFlake {
 				initText: this.properties.name,
 			});
 
-			form.addFileInput(I18n.getTranslation("guild.banner:"), "banner", {clear: true});
-			form.addFileInput(I18n.getTranslation("guild.icon:"), "icon", {clear: true});
+			form.addImageInput(I18n.getTranslation("guild.banner:"), "banner", {
+				clear: true,
+				width: 96 * 3,
+				initImg: this.banner
+					? this.info.cdn + "/icons/" + this.id + "/" + this.banner + ".png?size=256"
+					: "",
+				objectFit: "cover",
+			});
+			form.addImageInput(I18n.getTranslation("guild.icon:"), "icon", {
+				clear: true,
+				initImg: this.properties.icon
+					? this.info.cdn + "/icons/" + this.id + "/" + this.properties.icon + ".png"
+					: "",
+			});
 
 			form.addHR();
 

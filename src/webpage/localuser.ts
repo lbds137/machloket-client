@@ -1295,7 +1295,9 @@ class Localuser {
 					}
 				});
 			});
-			form.addFileInput(I18n.getTranslation("guild.icon:"), "icon", {files: "one"});
+			form.addImageInput(I18n.getTranslation("guild.icon:"), "icon", {
+				clear: true,
+			});
 			form.addTextInput(I18n.getTranslation("guild.name:"), "name", {required: true});
 			const loading = new Dialog("");
 			loading.float.options.addTitle(I18n.guild.creating());
@@ -1332,7 +1334,7 @@ class Localuser {
 			const template = form.addTextInput(I18n.guild.template(), "template", {
 				initText: templateID || "",
 			});
-			form.addFileInput(I18n.getTranslation("guild.icon:"), "icon", {files: "one"});
+			form.addImageInput(I18n.getTranslation("guild.icon:"), "icon", {files: "one", clear: true});
 			form.addTextInput(I18n.getTranslation("guild.name:"), "name", {required: true});
 
 			const loading = new Dialog("");
@@ -1533,14 +1535,14 @@ class Localuser {
 			const settingsRight = userOptions.addOptions("");
 			settingsRight.addHTMLArea(hypotheticalProfile);
 
-			const finput = settingsLeft.addFileInput(
+			const finput = settingsLeft.addImageInput(
 				I18n.getTranslation("uploadPfp"),
 				(_) => {
 					if (file) {
 						this.updatepfp(file);
 					}
 				},
-				{clear: true},
+				{clear: true, initImg: this.user.getpfpsrc()},
 			);
 			finput.watchForChange((_) => {
 				if (!_) {
@@ -1559,14 +1561,19 @@ class Localuser {
 				}
 			});
 			let bfile: undefined | File | null;
-			const binput = settingsLeft.addFileInput(
+			const binput = settingsLeft.addImageInput(
 				I18n.getTranslation("uploadBanner"),
 				(_) => {
 					if (bfile !== undefined) {
 						this.updatebanner(bfile);
 					}
 				},
-				{clear: true},
+				{
+					clear: true,
+					width: 96 * 3,
+					initImg: this.user.banner ? this.user.getBannerUrl() : "",
+					objectFit: "cover",
+				},
 			);
 			binput.watchForChange((_) => {
 				if (!_) {
@@ -2391,6 +2398,7 @@ class Localuser {
 			headers: this.headers,
 		});
 		const json = await res.json();
+		console.error(json);
 		const form = container.addSubForm(json.name, () => {}, {
 			fetchURL: this.info.api + "/applications/" + appId,
 			method: "PATCH",
@@ -2401,7 +2409,10 @@ class Localuser {
 		form.addMDInput(I18n.getTranslation("localuser.description"), "description", {
 			initText: json.description,
 		});
-		form.addFileInput("Icon:", "icon");
+		form.addImageInput("Icon:", "icon", {
+			clear: true,
+			initImg: json.icon ? this.info.cdn + "/app-icons/" + appId + "/" + json.icon : "",
+		});
 		form.addTextInput(I18n.getTranslation("localuser.privacyPolcyURL"), "privacy_policy_url", {
 			initText: json.privacy_policy_url,
 		});
@@ -2441,7 +2452,7 @@ class Localuser {
 		if (!json.bot) {
 			return alert(I18n.getTranslation("localuser.confuseNoBot"));
 		}
-		const bot: mainuserjson = json.bot;
+		const bot: User = new User(json.bot, this);
 		const form = container.addSubForm(
 			I18n.getTranslation("localuser.editingBot", bot.username),
 			(out) => {
@@ -2457,7 +2468,10 @@ class Localuser {
 		form.addTextInput(I18n.getTranslation("localuser.botUsername"), "username", {
 			initText: bot.username,
 		});
-		form.addFileInput(I18n.getTranslation("localuser.botAvatar"), "avatar");
+		form.addImageInput(I18n.getTranslation("localuser.botAvatar"), "avatar", {
+			initImg: bot.getpfpsrc(),
+			clear: true,
+		});
 		form.addButtonInput("", I18n.getTranslation("localuser.resetToken"), async () => {
 			if (!confirm(I18n.getTranslation("localuser.confirmReset"))) {
 				return;

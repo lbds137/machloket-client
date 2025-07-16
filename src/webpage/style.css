@@ -1733,6 +1733,26 @@ span.instanceStatus {
 	gap: 4px;
 	width: 100%;
 }
+.fileinputdiv > div {
+	width: 64px;
+	height: 64px;
+	object-fit: contain;
+	background: var(--secondary-bg);
+	border-radius: 16px;
+	cursor: pointer;
+	img {
+		width: 64px;
+		height: 64px;
+		object-fit: contain;
+		border-radius: 16px;
+	}
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	span {
+		text-align: center;
+	}
+}
 .username {
 	margin-top: auto;
 	font-weight: bold;

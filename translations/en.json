@@ -338,11 +338,15 @@
 		"color": "Color",
 		"remove": "Remove role",
 		"delete": "Delete Role",
-		"confirmDelete": "Are you sure you want to delete $1?"
+		"confirmDelete": "Are you sure you want to delete $1?",
+		"roleEmoji": "Role emoji:",
+		"roleFileIcon": "Role Icon:"
 	},
 	"settings": {
 		"unsaved": "Careful, you have unsaved changes",
-		"save": "Save changes"
+		"save": "Save changes",
+		"img": "Upload image",
+		"clear": "Clear"
 	},
 	"trace": {
 		"totalTime": "$2: $1ms",
