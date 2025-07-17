@@ -731,9 +731,6 @@ class ImageInput extends FileInput {
 		const img = document.createElement("img");
 		img.src = initImg;
 
-		img.onclick = () => {
-			input.click();
-		};
 		const button = document.createElement("button");
 		button.textContent = I18n.settings.clear();
 		button.onclick = (_) => {
@@ -781,6 +778,9 @@ class ImageInput extends FileInput {
 		if (objectFit) img.style.objectFit = objectFit;
 		console.warn(objectFit);
 		this.img = div;
+		div.onclick = () => {
+			input.click();
+		};
 		genImg();
 	}
 	clearbutton: HTMLButtonElement;
