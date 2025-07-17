@@ -4,6 +4,7 @@
 			"Bananax47",
 			"Derugon",
 			"EmDashUser002",
+			"Goombiis",
 			"Mahabarata",
 			"Wladek92"
 		]
@@ -341,11 +342,15 @@
 		"color": "Couleur",
 		"remove": "Enlever le rôle",
 		"delete": "Supprimer le rôle",
-		"confirmDelete": "Voulez-vous vraiment supprimer $1 ?"
+		"confirmDelete": "Voulez-vous vraiment supprimer $1 ?",
+		"roleEmoji": "Emoji de rôle :",
+		"roleFileIcon": "Icône de rôle :"
 	},
 	"settings": {
 		"unsaved": "Attention, vous avez des modifications non enregistrées",
-		"save": "Enregistrer les modifications"
+		"save": "Enregistrer les modifications",
+		"img": "Importer une image",
+		"clear": "Effacer"
 	},
 	"trace": {
 		"totalTime": "$2: $1ms",
