@@ -425,6 +425,7 @@ select {
 .fileinputdiv {
 	width: 100%;
 	justify-content: space-between;
+	margin-top: 4px;
 }
 input[type="file"] {
 	flex: 1 0;
@@ -1746,9 +1747,11 @@ span.instanceStatus {
 		object-fit: contain;
 		border-radius: 16px;
 	}
+
 	display: flex;
 	justify-content: center;
 	align-items: center;
+
 	span {
 		text-align: center;
 	}
