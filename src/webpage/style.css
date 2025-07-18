@@ -2917,6 +2917,9 @@ fieldset input[type="radio"] {
 		width: 0px;
 		padding: 0;
 	}
+	.searchBox:empty::after {
+		content: "";
+	}
 	#searchX {
 		position: absolute;
 		width: 24px;
