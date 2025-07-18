@@ -2458,7 +2458,7 @@ img.bigembedimg {
 	height: 100%;
 	width: 100%;
 	background: color-mix(in srgb, var(--black) 75%, transparent);
-	z-index: 2;
+	z-index: 4;
 }
 .imgfit {
 	max-height: 85svh;
