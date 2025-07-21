@@ -6,6 +6,7 @@
 			"Byte",
 			"Mrmaffen",
 			"SergeCroise",
+			"Simon04",
 			"SomeRandomDeveloper"
 		]
 	},
@@ -345,7 +346,8 @@
 	},
 	"settings": {
 		"unsaved": "Vorsicht, du hast nicht gespeicherte Änderungen",
-		"save": "Änderungen speichern"
+		"save": "Änderungen speichern",
+		"img": "Bild hochladen"
 	},
 	"localuser": {
 		"install": "Installieren",

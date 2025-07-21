@@ -36,7 +36,7 @@
 	},
 	"deleteConfirm": "Sidd Dir sécher, datt Dir dat läsche wëllt?",
 	"yes": "Jo",
-	"no": "Neen",
+	"no": "Nee",
 	"todayAt": "Haut um $1",
 	"yesterdayAt": "Gëschter um $1",
 	"botSettings": "Bot-Astellungen",
@@ -132,9 +132,15 @@
 		"delete": "Roll läschen"
 	},
 	"settings": {
-		"save": "Ännerunge späicheren"
+		"save": "Ännerunge späicheren",
+		"img": "Bild eroplueden"
+	},
+	"trace": {
+		"totalTime": "$2: $1&nbsp;ms",
+		"traces": "$1 ($2:&nbsp;ms) $3"
 	},
 	"localuser": {
+		"trace": "Spueren",
 		"install": "Installéieren",
 		"installJank": "Fermi installéieren",
 		"status": "Status",
