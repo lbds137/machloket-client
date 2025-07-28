@@ -21,8 +21,8 @@
 			"MANAGE_GUILD_EXPRESSIONS": "允許管理表情符號、貼圖和音效板"
 		},
 		"readableNames": {
-			"KICK_MEMBERS": "踢出會員",
-			"BAN_MEMBERS": "禁止會員",
+			"KICK_MEMBERS": "踢出成員",
+			"BAN_MEMBERS": "禁止成員",
 			"ADMINISTRATOR": "管理員",
 			"MANAGE_CHANNELS": "管理頻道",
 			"STREAM": "影片",
@@ -214,14 +214,23 @@
 	},
 	"replyingTo": "正在回覆給$1",
 	"user": {
+		"copyId": "複製使用者 ID",
 		"online": "線上",
 		"offline": "離線",
 		"invisible": "不可見",
 		"dnd": "請勿打擾",
 		"idle": "閒置",
-		"unblock": "解除封鎖使用者"
+		"block": "封鎖使用者",
+		"unblock": "解除封鎖使用者",
+		"friendReq": "好友請求",
+		"kick": "踢出成員",
+		"ban": "禁止成員"
 	},
 	"login": {
+		"recover": "忘記密碼？",
+		"newPassword": "新密碼：",
+		"enterPAgain": "再次輸入新密碼：",
+		"recovery": "忘記密碼",
 		"login": "登入"
 	},
 	"member": {
@@ -231,5 +240,6 @@
 		"image": "圖片：",
 		"name": "名稱：",
 		"desc": "描述"
-	}
+	},
+	"jankInfo": "客戶端資訊"
 }
