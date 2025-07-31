@@ -27,13 +27,16 @@
 			"MANAGE_CHANNELS": "管理頻道",
 			"STREAM": "影片",
 			"USE_EXTERNAL_SOUNDS": "使用外部音效",
-			"SEND_VOICE_MESSAGES": "傳送語音訊息"
+			"SEND_VOICE_MESSAGES": "傳送語音訊息",
+			"SEND_POLLS": "建立投票"
 		}
 	},
 	"yes": "是",
 	"no": "否",
 	"botSettings": "機器人設定",
 	"uploadPfp": "上傳 pfp：",
+	"profileColor": "個人檔案色彩",
+	"UrlGen": "URL 產生",
 	"accessibility": {
 		"playGif": "播放動圖：",
 		"gifSettings": {
@@ -41,6 +44,7 @@
 			"never": "永不"
 		}
 	},
+	"searchGifs": "搜尋 Tenor",
 	"channel": {
 		"name": "頻道",
 		"markRead": "標記為已讀",
@@ -75,7 +79,9 @@
 		"emailField": "電子郵件：",
 		"pwField": "密碼：",
 		"loginButton": "登入",
+		"noAccount": "還沒有帳號？",
 		"userField": "使用者名稱：",
+		"pw2Field": "再次輸入密碼：",
 		"dobField": "出生日期：",
 		"createAccount": "建立帳號",
 		"alreadyHave": "已經有帳號了嗎？",
@@ -114,6 +120,8 @@
 		"noDelete": "沒事",
 		"loadingDiscovery": "載入中…",
 		"disoveryTitle": "公會發現（$1 {{PLURAL:$1|項目}}）",
+		"default": "預設（$1）",
+		"description:": "描述：",
 		"systemSelect:": "系統訊息頻道："
 	},
 	"role": {
@@ -206,7 +214,13 @@
 		"30d": "30 天",
 		"never": "永不"
 	},
+	"invite": {
+		"inviteLinkCode": "邀請連結/代碼"
+	},
 	"friends": {
+		"blocked": "已封鎖",
+		"blockedusers": "已封鎖使用者：",
+		"notfound": "找不到使用者",
 		"online": "線上",
 		"online:": "線上好友：",
 		"friendlist": "好友清單",
@@ -235,6 +249,13 @@
 	},
 	"member": {
 		"nick:": "暱稱："
+	},
+	"emoji": {
+		"title": "表情符號",
+		"upload": "上傳表情符號",
+		"image:": "圖片：",
+		"name:": "名稱：",
+		"confirmDel": "您確定要刪除這個表情符號？"
 	},
 	"sticker": {
 		"image": "圖片：",

@@ -12,7 +12,8 @@
 			"Pacha Tchernof",
 			"StealthTheAB",
 			"StealthTheAngryBird",
-			"Vl1"
+			"Vl1",
+			"Yupik"
 		]
 	},
 	"readableName": "Русский",
@@ -421,7 +422,8 @@
 		"checking": "Проверка инстанции",
 		"allGood": "Всё в порядке",
 		"invalid": "Неверная инстанция, попрбуйте снова",
-		"waiting": "Ожидание для проверки инстанции"
+		"waiting": "Ожидание для проверки инстанции",
+		"newPassword": "Новый пароль:"
 	},
 	"member": {
 		"kick": "Выгнать $1 из $2",
