@@ -1,0 +1,266 @@
+{
+	"@metadata": {
+		"authors": [
+			"Kly",
+			"張詠涵"
+		]
+	},
+	"readableName": "繁體中文",
+	"reply": "回覆",
+	"copyrawtext": "複製原始文字",
+	"copymessageid": "複製訊息 ID",
+	"media": {
+		"notFound": "找不到媒體",
+		"loading": "載入中",
+		"download": "下載媒體",
+		"moreInfo": "更多資訊",
+		"composer": "作曲家：$1"
+	},
+	"permissions": {
+		"descriptions": {
+			"MANAGE_GUILD_EXPRESSIONS": "允許管理表情符號、貼圖和音效板"
+		},
+		"readableNames": {
+			"KICK_MEMBERS": "踢出成員",
+			"BAN_MEMBERS": "禁止成員",
+			"ADMINISTRATOR": "管理員",
+			"MANAGE_CHANNELS": "管理頻道",
+			"STREAM": "影片",
+			"USE_EXTERNAL_SOUNDS": "使用外部音效",
+			"SEND_VOICE_MESSAGES": "傳送語音訊息",
+			"SEND_POLLS": "建立投票"
+		}
+	},
+	"yes": "是",
+	"no": "否",
+	"botSettings": "機器人設定",
+	"uploadPfp": "上傳 pfp：",
+	"profileColor": "個人檔案色彩",
+	"UrlGen": "URL 產生",
+	"accessibility": {
+		"playGif": "播放動圖：",
+		"gifSettings": {
+			"always": "總是",
+			"never": "永不"
+		}
+	},
+	"searchGifs": "搜尋 Tenor",
+	"channel": {
+		"name": "頻道",
+		"markRead": "標記為已讀",
+		"settings": "設定",
+		"delete": "刪除頻道",
+		"voice": "語音",
+		"text": "文字",
+		"announcement": "公告",
+		"name:": "名稱：",
+		"topic:": "主題：",
+		"nsfw:": "工作場所不宜：",
+		"selectType": "選擇頻道類型",
+		"selectName": "頻道名稱",
+		"selectCatName": "分類名稱",
+		"createChannel": "建立頻道",
+		"createCatagory": "建立分類",
+		"permissions": "權限"
+	},
+	"delete": "刪除",
+	"webhooks": {
+		"createdAt": "建立於 $1",
+		"name": "名稱：",
+		"channel": "頻道",
+		"type3": "應用程式",
+		"type": "類型：$1"
+	},
+	"switchAccounts": "切換帳號 ⇌",
+	"htmlPages": {
+		"loadingText": "Fermi 載入中",
+		"loaddesc": "這應該不會花很長時間",
+		"switchaccounts": "切換帳號",
+		"emailField": "電子郵件：",
+		"pwField": "密碼：",
+		"loginButton": "登入",
+		"noAccount": "還沒有帳號？",
+		"userField": "使用者名稱：",
+		"pw2Field": "再次輸入密碼：",
+		"dobField": "出生日期：",
+		"createAccount": "建立帳號",
+		"alreadyHave": "已經有帳號了嗎？",
+		"welcomeJank": "歡迎來到 Fermi",
+		"box3title": "為 Fermi 做出貢獻",
+		"trans": "翻譯",
+		"transTitle": "翻譯 Fermi",
+		"transDesc": "您可以協助將 Fermi 翻譯成您自己的語言！"
+	},
+	"form": {
+		"captcha": "請等一下，您是人類嗎？"
+	},
+	"useTemplateButton": "使用模板",
+	"register": {
+		"register": "註冊",
+		"passwordError:": "密碼：$1",
+		"usernameError": "使用者名稱：$1",
+		"emailError": "電子郵件：$1",
+		"DOBError": "出生日期：$1"
+	},
+	"edit": "編輯",
+	"guild": {
+		"template": "模板：",
+		"templates": "模板",
+		"templateName": "模板名稱：",
+		"templateDesc": "模板描述：",
+		"name:": "名稱：",
+		"all": "全部",
+		"none": "無",
+		"confirmLeave": "您確定您要離開嗎？",
+		"yesLeave": "是的，我確定",
+		"noLeave": "沒事",
+		"confirmDelete": "您確定要刪除$1嗎？",
+		"serverName": "伺服器名稱：",
+		"yesDelete": "是的，我確定",
+		"noDelete": "沒事",
+		"loadingDiscovery": "載入中…",
+		"disoveryTitle": "公會發現（$1 {{PLURAL:$1|項目}}）",
+		"default": "預設（$1）",
+		"description:": "描述：",
+		"systemSelect:": "系統訊息頻道："
+	},
+	"role": {
+		"displaySettings": "顯示設定",
+		"color": "色彩",
+		"confirmDelete": "您確定要刪除$1嗎？"
+	},
+	"settings": {
+		"img": "上傳圖片",
+		"clear": "清除"
+	},
+	"trace": {
+		"totalTime": "$2：$1 毫秒"
+	},
+	"localuser": {
+		"install": "安裝",
+		"installJank": "安裝 Fermi",
+		"addStatus": "新增狀態",
+		"status": "狀態",
+		"settings": "設定",
+		"userSettings": "使用者設定",
+		"themesAndSounds": "主題與音效",
+		"theme:": "主題",
+		"notisound": "通知音效：",
+		"customSound": "自訂音效",
+		"VoiceWarning": "您確定要啟用這個功能嗎？這是非常實驗性的，可能會引發問題。（此功能僅供開發者使用，如果您不確定操作，請不要啟用。）",
+		"updateSettings": "更新設定",
+		"SWOffline": "僅離線",
+		"clearCache": "清除快取",
+		"CheckUpdate": "檢查更新",
+		"accountSettings": "帳號設定",
+		"badCode": "無效代碼",
+		"2faCode:": "代碼：",
+		"badPassword": "密碼不正確",
+		"changeEmail": "更改電子郵件",
+		"password:": "密碼",
+		"newEmail:": "新電子郵件",
+		"changeUsername": "更改使用者名稱",
+		"newUsername": "新使用者名稱：",
+		"changePassword": "更改密碼",
+		"oldPassword:": "舊密碼：",
+		"newPassword:": "新密碼：",
+		"PasswordsNoMatch": "密碼不符合",
+		"disableConnection": "此連接已被伺服器端禁用",
+		"devPortal": "開發者入口網站",
+		"createApp": "建立應用程式",
+		"team:": "團隊：",
+		"appName": "應用程式名稱：",
+		"description": "描述：",
+		"manageBot": "管理機器人",
+		"addBot": "新增機器人",
+		"confirmAddBot": "您確定要在此應用程式中新增機器人嗎？此操作無法取消。",
+		"confuseNoBot": "由於某種原因，此應用程式目前還沒有機器人。",
+		"botUsername": "機器人使用者名稱：",
+		"advancedBot": "進階機器人設定",
+		"language": "語言：",
+		"deleteAccountButton": "刪除帳號"
+	},
+	"search": {
+		"new": "新",
+		"old": "舊",
+		"search": "搜尋"
+	},
+	"manageInstance": {
+		"count": "數量：",
+		"length": "長度：",
+		"format": "格式：",
+		"TokenFormats": {
+			"plain": "純文字",
+			"JSON": "JSON 格式"
+		}
+	},
+	"message": {
+		"delete": "删除訊息",
+		"edit": "編輯訊息"
+	},
+	"instanceStats": {
+		"servers": "伺服器：$1",
+		"messages": "訊息：$1",
+		"members": "成員：$1"
+	},
+	"inviteOptions": {
+		"title": "邀請他人",
+		"30m": "30 分",
+		"1h": "1 小時",
+		"6h": "6 小時",
+		"12h": "12 小時",
+		"1d": "1 天",
+		"7d": "7 天",
+		"30d": "30 天",
+		"never": "永不"
+	},
+	"invite": {
+		"inviteLinkCode": "邀請連結/代碼"
+	},
+	"friends": {
+		"blocked": "已封鎖",
+		"blockedusers": "已封鎖使用者：",
+		"notfound": "找不到使用者",
+		"online": "線上",
+		"online:": "線上好友：",
+		"friendlist": "好友清單",
+		"friends": "好友"
+	},
+	"replyingTo": "正在回覆給$1",
+	"user": {
+		"copyId": "複製使用者 ID",
+		"online": "線上",
+		"offline": "離線",
+		"invisible": "不可見",
+		"dnd": "請勿打擾",
+		"idle": "閒置",
+		"block": "封鎖使用者",
+		"unblock": "解除封鎖使用者",
+		"friendReq": "好友請求",
+		"kick": "踢出成員",
+		"ban": "禁止成員"
+	},
+	"login": {
+		"recover": "忘記密碼？",
+		"newPassword": "新密碼：",
+		"enterPAgain": "再次輸入新密碼：",
+		"recovery": "忘記密碼",
+		"login": "登入"
+	},
+	"member": {
+		"nick:": "暱稱："
+	},
+	"emoji": {
+		"title": "表情符號",
+		"upload": "上傳表情符號",
+		"image:": "圖片：",
+		"name:": "名稱：",
+		"confirmDel": "您確定要刪除這個表情符號？"
+	},
+	"sticker": {
+		"image": "圖片：",
+		"name": "名稱：",
+		"desc": "描述"
+	},
+	"jankInfo": "客戶端資訊"
+}
