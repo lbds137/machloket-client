@@ -22,6 +22,11 @@ async function moveFiles(curPath: string, newPath: string) {
 					minify: true,
 					sourceMaps: true,
 					isModule: true,
+					jsc: {
+						minify: {
+							mangle: !process.argv.includes("watch"),
+						},
+					},
 				});
 				await Promise.all([
 					fs.writeFile(
