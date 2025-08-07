@@ -227,6 +227,9 @@
 		"friends": "好友"
 	},
 	"replyingTo": "正在回覆給$1",
+	"DMs": {
+		"markRead": "標記為已讀"
+	},
 	"user": {
 		"copyId": "複製使用者 ID",
 		"online": "線上",
@@ -248,7 +251,12 @@
 		"login": "登入"
 	},
 	"member": {
+		"reason:": "原因：",
 		"nick:": "暱稱："
+	},
+	"badge": {
+		"bot_commands": "支援指令",
+		"legacy_username": "擁有舊使用者名稱"
 	},
 	"emoji": {
 		"title": "表情符號",
@@ -262,5 +270,9 @@
 		"name": "名稱：",
 		"desc": "描述"
 	},
-	"jankInfo": "客戶端資訊"
+	"jankInfo": "客戶端資訊",
+	"uploadFilesText": "在此上傳您的檔案！",
+	"errorReconnect": "無法連接到伺服器，將在 **$1** 秒後重試…",
+	"retrying": "正在重試…",
+	"unableToConnect": "無法連接到 Spacebar 伺服器。請嘗試登出並重新登入。"
 }
