@@ -8,6 +8,7 @@ import {
 import {Emoji} from "./emoji.js";
 import {I18n} from "./i18n.js";
 import {Localuser} from "./localuser.js";
+import {MarkDown} from "./markdown.js";
 
 interface OptionsElement<x> {
 	//
@@ -188,13 +189,12 @@ class DateInput extends TextInput {
 		return div;
 	}
 }
-const mdProm = import("./markdown.js");
 class SettingsMDText implements OptionsElement<void> {
 	readonly onSubmit!: (str: string) => void;
 	value!: void;
-	text: string;
+	text: MarkDown;
 	elm!: WeakRef<HTMLSpanElement>;
-	constructor(text: string) {
+	constructor(text: MarkDown) {
 		this.text = text;
 	}
 	generateHTML(): HTMLSpanElement {
@@ -203,15 +203,14 @@ class SettingsMDText implements OptionsElement<void> {
 		this.setText(this.text);
 		return span;
 	}
-	setText(text: string) {
+	setText(text: MarkDown) {
 		this.text = text;
 		if (this.elm) {
 			const span = this.elm.deref();
 			if (span) {
 				span.innerHTML = "";
-				mdProm.then((e) => {
-					span.append(new e.MarkDown(text, undefined).makeHTML());
-				});
+
+				span.append(text.makeHTML());
 			}
 		}
 	}
@@ -1209,7 +1208,7 @@ class Options implements OptionsElement<void> {
 		this.generate(text);
 		return text;
 	}
-	addMDText(str: string) {
+	addMDText(str: MarkDown) {
 		const text = new SettingsMDText(str);
 		this.options.push(text);
 		this.generate(text);
@@ -1771,7 +1770,7 @@ class Form implements OptionsElement<object> {
 	addText(str: string) {
 		return this.options.addText(str);
 	}
-	addMDText(str: string) {
+	addMDText(str: MarkDown) {
 		return this.options.addMDText(str);
 	}
 	addHR() {

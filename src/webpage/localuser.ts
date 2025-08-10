@@ -2279,7 +2279,12 @@ class Localuser {
 			img.width = 128;
 			img.height = 128;
 			const ver = await (await fetch("/getupdates")).text();
-			jankInfo.addMDText(I18n.clientDesc(ver, window.location.origin, this.rights.allow + ""));
+			jankInfo.addMDText(
+				new MarkDown(
+					I18n.clientDesc(ver, window.location.origin, this.rights.allow + ""),
+					undefined,
+				),
+			);
 			jankInfo.addButtonInput("", I18n.instInfo(), () => {
 				this.instanceStats();
 			});

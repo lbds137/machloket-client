@@ -24,6 +24,7 @@ import {webhookMenu} from "./webhooks.js";
 import {createImg} from "./utils/utils.js";
 import {Sticker} from "./sticker.js";
 import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
+import {MarkDown} from "./markdown.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
@@ -47,11 +48,14 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 			const inviter = new User(invite.inviter, guild.localuser);
 
 			opt.addMDText(
-				window.location.origin +
-					"/invite/" +
-					invite.code +
-					"?" +
-					new URLSearchParams([["instance", guild.info.wellknown]]),
+				new MarkDown(
+					window.location.origin +
+						"/invite/" +
+						invite.code +
+						"?" +
+						new URLSearchParams([["instance", guild.info.wellknown]]),
+					undefined,
+				),
 			);
 
 			opt.addText(I18n.invite.used(invite.uses + ""));
@@ -755,8 +759,11 @@ class Guild extends SnowFlake {
 					);
 					const search = new URLSearchParams([["instance", this.info.wellknown]]);
 					form.addMDText(
-						I18n.guild.templateURL(
-							window.location.origin + "/template/" + temp.code + "?" + search,
+						new MarkDown(
+							I18n.guild.templateURL(
+								window.location.origin + "/template/" + temp.code + "?" + search,
+							),
+							undefined,
 						),
 					);
 

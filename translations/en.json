@@ -627,7 +627,7 @@
 	"incorrectURLS": "## This instance has likely sent the incorrect URLs.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Fermi to automatically try to fix this error to let you connect to the instance?",
 	"jankInfo": "Client Information",
 	"instInfo": "Instance Information",
-	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\nCalculated rights: $3",
+	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermi.chat/)\n\nCalculated rights: $3",
 	"uploadFilesText": "Upload your files here!",
 	"errorReconnect": "Unable to connect to the server, retrying in **$1** seconds...",
 	"retrying": "Retrying...",

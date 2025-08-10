@@ -1,4 +1,5 @@
 import {I18n} from "../i18n.js";
+import {MarkDown} from "../markdown.js";
 import {Dialog} from "../settings.js";
 let instances:
 	| {
@@ -496,7 +497,7 @@ export async function getapiurls(str: string): Promise<
 			>((res) => {
 				const menu = new Dialog("");
 				const options = menu.float.options;
-				options.addMDText(I18n.incorrectURLS());
+				options.addMDText(new MarkDown(I18n.incorrectURLS(), undefined));
 				const opt = options.addOptions("", {ltr: true});
 				let clicked = false;
 				opt.addButtonInput("", I18n.yes(), async () => {
@@ -552,6 +553,8 @@ export async function getapiurls(str: string): Promise<
 					if (clicked) return;
 					clicked = true;
 					try {
+						//TODO make this a promise race for when the server just never responds
+						//TODO maybe try to strip ports as another way to fix it
 						if (!(await fetch(urls.api + "/ping")).ok) {
 							res(false);
 							menu.hide();

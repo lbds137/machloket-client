@@ -6,40 +6,95 @@ import child_process from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-async function moveFiles(curPath: string, newPath: string) {
+async function moveFiles(curPath: string, newPath: string, first = true) {
 	async function processFile(file: string) {
 		const Prom: Promise<unknown>[] = [];
 		if ((await fs.stat(path.join(curPath, file))).isDirectory()) {
 			await fs.mkdir(path.join(newPath, file));
-			Prom.push(moveFiles(path.join(curPath, file), path.join(newPath, file)));
+			Prom.push(moveFiles(path.join(curPath, file), path.join(newPath, file), false));
 		} else {
 			if (!file.endsWith(".ts")) {
+				if (file.endsWith(".html")) {
+					for (const [, match] of (await fs.readFile(path.join(curPath, file)))
+						.toString()
+						.matchAll(/<script.*?src="(.*?)"/gm)) {
+						const sPathTemp = path.format({
+							root: path.join(__dirname, "src", "webpage"),
+							base: match,
+						});
+						const temp2 = path.parse(sPathTemp);
+						//@ts-ignore
+						delete temp2.base;
+						temp2.ext = "ts";
+						const sPath = path.format(temp2);
+						let mod = await swc.bundle({
+							entry: sPath,
+							target: "browser",
+							output: {
+								path: path.parse(sPath).dir,
+								name: path.parse(sPath).base,
+							},
+							module: {
+								minify: true,
+								sourceMaps: true,
+								isModule: true,
+								jsc: {
+									minify: {
+										mangle: !process.argv.includes("watch"),
+									},
+								},
+							},
+							options: {
+								minify: !process.argv.includes("watch"),
+								jsc: {
+									minify: {
+										mangle: !process.argv.includes("watch"),
+									},
+								},
+							},
+						});
+						const code = mod[path.parse(sPath).base] || mod;
+						const newfileDir = path.join(newPath, path.parse(sPath).name);
+						if (code.map) console.log("map");
+						await Promise.all([
+							fs.writeFile(
+								newfileDir + ".js",
+								code.code + "\n" + `//# sourceMappingURL= ${path.parse(sPath).name}.js.map`,
+							),
+							code.map ? fs.writeFile(newfileDir + ".js.map", code.map as string) : null,
+						]);
+					}
+				}
 				await fs.copyFile(path.join(curPath, file), path.join(newPath, file));
 			} else {
 				const plainname = file.split(".ts")[0];
 				const newfileDir = path.join(newPath, plainname);
-				const mod = await swc.transformFile(path.join(curPath, file), {
-					minify: true,
-					sourceMaps: true,
-					isModule: true,
-					jsc: {
-						minify: {
-							mangle: !process.argv.includes("watch"),
-						},
-					},
-				});
-				await Promise.all([
-					fs.writeFile(
-						newfileDir + ".js",
-						mod.code + "\n" + `//# sourceMappingURL= ${plainname}.js.map`,
-					),
-					fs.writeFile(newfileDir + ".js.map", mod.map as string),
-				]);
+				let mod = first
+					? await swc.transformFile(path.join(curPath, file), {
+							minify: true,
+							sourceMaps: true,
+							isModule: true,
+							jsc: {
+								minify: {
+									mangle: !process.argv.includes("watch"),
+								},
+							},
+						})
+					: false;
+				if (mod) {
+					await Promise.all([
+						fs.writeFile(
+							newfileDir + ".js",
+							mod.code + "\n" + `//# sourceMappingURL= ${plainname}.js.map`,
+						),
+						mod.map ? fs.writeFile(newfileDir + ".js.map", mod.map as string) : null,
+					]);
+				}
 			}
 		}
 		await Promise.all(Prom);
 	}
-	await Promise.all((await fs.readdir(curPath)).map(processFile));
+	await Promise.all((await fs.readdir(curPath)).map((_) => processFile(_)));
 }
 async function build() {
 	console.time("build");

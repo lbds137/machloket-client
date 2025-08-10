@@ -1,6 +1,7 @@
 import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {webhookType} from "./jsontypes.js";
+import {MarkDown} from "./markdown.js";
 import {Member} from "./member.js";
 import {Dialog, Options} from "./settings.js";
 import {SnowFlake} from "./snowflake.js";
@@ -136,8 +137,8 @@ async function webhookMenu(
 				moveChannels.map((_) => _.id),
 			);
 
-			form.addMDText(I18n.webhooks.token(hook.token));
-			form.addMDText(I18n.webhooks.url(hook.url));
+			form.addMDText(new MarkDown(I18n.webhooks.token(hook.token), undefined));
+			form.addMDText(new MarkDown(I18n.webhooks.url(hook.url), undefined));
 			form.addText(I18n.webhooks.type(typeText));
 			form.addButtonInput("", I18n.webhooks.copyURL(), () => {
 				navigator.clipboard.writeText(hook.url);
