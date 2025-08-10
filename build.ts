@@ -55,7 +55,6 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 						});
 						const code = mod[path.parse(sPath).base] || mod;
 						const newfileDir = path.join(newPath, path.parse(sPath).name);
-						if (code.map) console.log("map");
 						await Promise.all([
 							fs.writeFile(
 								newfileDir + ".js",
@@ -106,10 +105,6 @@ async function build() {
 	await fs.mkdir(path.join(__dirname, "dist"));
 	console.timeEnd("Cleaning dir");
 
-	console.time("Moving and compiling files");
-	await moveFiles(path.join(__dirname, "src"), path.join(__dirname, "dist"));
-	console.timeEnd("Moving and compiling files");
-
 	console.time("Moving translations");
 	try {
 		await fs.mkdir(path.join(__dirname, "dist", "webpage", "translations"));
@@ -124,10 +119,14 @@ async function build() {
 		fs.writeFile(path.join(__dirname, "dist", "webpage", "translations", lang), str);
 	}
 	await fs.writeFile(
-		path.join(__dirname, "dist", "webpage", "translations", "langs.js"),
+		path.join(__dirname, "src", "webpage", "translations", "langs.js"),
 		`const langs=${JSON.stringify(langobj)};export{langs}`,
 	);
 	console.timeEnd("Moving translations");
+
+	console.time("Moving and compiling files");
+	await moveFiles(path.join(__dirname, "src"), path.join(__dirname, "dist"));
+	console.timeEnd("Moving and compiling files");
 
 	console.time("Adding git commit hash");
 	const revision = child_process.execSync("git rev-parse HEAD").toString().trim();
