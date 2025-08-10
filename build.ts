@@ -105,7 +105,7 @@ async function build() {
 	await fs.mkdir(path.join(__dirname, "dist"));
 	console.timeEnd("Cleaning dir");
 
-	console.time("Moving translations");
+	console.time("Creating translation JS file");
 	try {
 		await fs.mkdir(path.join(__dirname, "dist", "webpage", "translations"));
 	} catch {}
@@ -116,7 +116,6 @@ async function build() {
 		const str = await fs.readFile(path.join(__dirname, "translations", lang));
 		const json = JSON.parse(str.toString());
 		langobj[lang] = json.readableName;
-		fs.writeFile(path.join(__dirname, "dist", "webpage", "translations", lang), str);
 	}
 	try {
 		await fs.mkdir(path.join(__dirname, "src", "webpage", "translations"));
@@ -125,11 +124,25 @@ async function build() {
 		path.join(__dirname, "src", "webpage", "translations", "langs.js"),
 		`const langs=${JSON.stringify(langobj)};export{langs}`,
 	);
-	console.timeEnd("Moving translations");
+	console.timeEnd("Creating translation JS file");
 
 	console.time("Moving and compiling files");
 	await moveFiles(path.join(__dirname, "src"), path.join(__dirname, "dist"));
 	console.timeEnd("Moving and compiling files");
+
+	console.time("Moving translations");
+	try {
+		await fs.mkdir(path.join(__dirname, "dist", "webpage", "translations"));
+	} catch {}
+	for (const lang of langs) {
+		const str = await fs.readFile(path.join(__dirname, "translations", lang));
+		const json = JSON.parse(str.toString());
+		fs.writeFile(path.join(__dirname, "dist", "webpage", "translations", lang), str);
+	}
+	try {
+		await fs.mkdir(path.join(__dirname, "src", "webpage", "translations"));
+	} catch {}
+	console.timeEnd("Moving translations");
 
 	console.time("Adding git commit hash");
 	const revision = child_process.execSync("git rev-parse HEAD").toString().trim();
