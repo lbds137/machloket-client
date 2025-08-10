@@ -118,6 +118,9 @@ async function build() {
 		langobj[lang] = json.readableName;
 		fs.writeFile(path.join(__dirname, "dist", "webpage", "translations", lang), str);
 	}
+	try {
+		await fs.mkdir(path.join(__dirname, "src", "webpage", "translations"));
+	} catch {}
 	await fs.writeFile(
 		path.join(__dirname, "src", "webpage", "translations", "langs.js"),
 		`const langs=${JSON.stringify(langobj)};export{langs}`,
