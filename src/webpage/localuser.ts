@@ -85,7 +85,7 @@ class Localuser {
 		this.userinfo.localuserStore = e;
 	}
 	static users = getBulkUsers();
-	static showAccountSwitcher(thisUser: Localuser): void {
+	static async showAccountSwitcher(thisUser: Localuser): Promise<Localuser> {
 		const table = document.createElement("div");
 		table.classList.add("flexttb", "accountSwitcher");
 
@@ -114,6 +114,7 @@ class Localuser {
 			table.append(userInfo);
 
 			userInfo.addEventListener("click", () => {
+				const onswap = thisUser.onswap;
 				thisUser.unload();
 				thisUser.swapped = true;
 				const loading = document.getElementById("loading") as HTMLDivElement;
@@ -134,6 +135,7 @@ class Localuser {
 				});
 
 				userInfo.remove();
+				onswap?.(thisUser);
 			});
 		}
 
@@ -223,6 +225,7 @@ class Localuser {
 		);
 		return menu;
 	}
+	onswap?: (l: Localuser) => void;
 	constructor(userinfo: Specialuser | -1) {
 		Play.playURL("/audio/sounds.jasf").then((_) => {
 			this.play = _;
