@@ -26,6 +26,14 @@
 			"ADMINISTRATOR": "管理員",
 			"MANAGE_CHANNELS": "管理頻道",
 			"STREAM": "影片",
+			"MANAGE_MESSAGES": "管理訊息",
+			"ATTACH_FILES": "附加檔案",
+			"READ_MESSAGE_HISTORY": "閱讀訊息歷史紀錄",
+			"MUTE_MEMBERS": "噤聲成員",
+			"DEAFEN_MEMBERS": "蒙蔽成員",
+			"MOVE_MEMBERS": "移動成員",
+			"CHANGE_NICKNAME": "更改暱稱",
+			"MANAGE_NICKNAMES": "管理暱稱",
 			"USE_EXTERNAL_SOUNDS": "使用外部音效",
 			"SEND_VOICE_MESSAGES": "傳送語音訊息",
 			"SEND_POLLS": "建立投票"
@@ -33,10 +41,16 @@
 	},
 	"yes": "是",
 	"no": "否",
+	"todayAt": "今日於$1",
+	"yesterdayAt": "昨日$1",
+	"otherAt": "$1於$2",
 	"botSettings": "機器人設定",
 	"uploadPfp": "上傳 pfp：",
 	"profileColor": "個人檔案色彩",
+	"leaveGuild": "離開公會",
+	"confirmGuildLeave": "您確定您要離開$1",
 	"UrlGen": "URL 產生",
+	"typing": "$2{{PLURAL:$1|正在}}輸入",
 	"accessibility": {
 		"playGif": "播放動圖：",
 		"gifSettings": {
@@ -47,6 +61,7 @@
 	"searchGifs": "搜尋 Tenor",
 	"channel": {
 		"name": "頻道",
+		"copyId": "複製頻道 ID",
 		"markRead": "標記為已讀",
 		"settings": "設定",
 		"delete": "刪除頻道",
@@ -68,6 +83,7 @@
 		"createdAt": "建立於 $1",
 		"name": "名稱：",
 		"channel": "頻道",
+		"type2": "頻道追蹤者",
 		"type3": "應用程式",
 		"type": "類型：$1"
 	},
@@ -102,14 +118,32 @@
 		"emailError": "電子郵件：$1",
 		"DOBError": "出生日期：$1"
 	},
+	"submit": "提交",
 	"edit": "編輯",
 	"guild": {
 		"template": "模板：",
+		"createNewTemplate": "建立新模板",
 		"templates": "模板",
 		"templateName": "模板名稱：",
 		"templateDesc": "模板描述：",
+		"templateNameShort": "模板名稱必須至少包含 2 個字元",
+		"templateURL": "模板 URL：$1",
+		"community": "社群",
+		"creating": "建立公會中",
+		"copyId": "複製公會 ID",
+		"markRead": "標記為已讀",
+		"notifications": "通知",
+		"leave": "離開公會",
+		"settings": "設定",
+		"delete": "刪除公會",
 		"name:": "名稱：",
+		"icon:": "圖示：",
+		"overview": "概要",
+		"banner:": "橫幅：",
+		"region:": "區域：",
+		"selectnoti": "選擇通知類型",
 		"all": "全部",
+		"onlyMentions": "僅提及",
 		"none": "無",
 		"confirmLeave": "您確定您要離開嗎？",
 		"yesLeave": "是的，我確定",
@@ -118,11 +152,13 @@
 		"serverName": "伺服器名稱：",
 		"yesDelete": "是的，我確定",
 		"noDelete": "沒事",
+		"create": "建立公會",
 		"loadingDiscovery": "載入中…",
 		"disoveryTitle": "公會發現（$1 {{PLURAL:$1|項目}}）",
 		"default": "預設（$1）",
 		"description:": "描述：",
-		"systemSelect:": "系統訊息頻道："
+		"systemSelect:": "系統訊息頻道：",
+		"INVITES_DISABLED": "僅邀請"
 	},
 	"role": {
 		"displaySettings": "顯示設定",
@@ -178,9 +214,14 @@
 		"botUsername": "機器人使用者名稱：",
 		"advancedBot": "進階機器人設定",
 		"language": "語言：",
+		"deleteAccount": "帳號刪除",
+		"areYouSureDelete": "您確定要刪除您的帳號嗎？如果是，請輸入詞組$1",
 		"deleteAccountButton": "刪除帳號"
 	},
 	"search": {
+		"back": "上一頁",
+		"next": "下一頁",
+		"page": "第 $1 頁",
 		"new": "新",
 		"old": "舊",
 		"search": "搜尋"
@@ -192,13 +233,19 @@
 		"TokenFormats": {
 			"plain": "純文字",
 			"JSON": "JSON 格式"
-		}
+		},
+		"create": "建立",
+		"clientURL": "客戶端 URL：",
+		"genericType": "通用",
+		"copy": "複製"
 	},
 	"message": {
 		"delete": "删除訊息",
-		"edit": "編輯訊息"
+		"edit": "編輯訊息",
+		"edited": "（已編輯）"
 	},
 	"instanceStats": {
+		"users": "已註冊的使用者：$1",
 		"servers": "伺服器：$1",
 		"messages": "訊息：$1",
 		"members": "成員：$1"
@@ -215,12 +262,18 @@
 		"never": "永不"
 	},
 	"invite": {
-		"inviteLinkCode": "邀請連結/代碼"
+		"inviteLinkCode": "邀請連結/代碼",
+		"expireAfter": "期限至:",
+		"channel:": "頻道：",
+		"expires": "期限：$1",
+		"never": "永不"
 	},
 	"friends": {
 		"blocked": "已封鎖",
 		"blockedusers": "已封鎖使用者：",
 		"notfound": "找不到使用者",
+		"all": "全部",
+		"all:": "全部朋友：",
 		"online": "線上",
 		"online:": "線上好友：",
 		"friendlist": "好友清單",
@@ -255,6 +308,15 @@
 		"nick:": "暱稱："
 	},
 	"badge": {
+		"guild_booster_lvl1": "增強公會",
+		"guild_booster_lvl2": "增強公會",
+		"guild_booster_lvl3": "增強公會",
+		"guild_booster_lvl4": "增強公會",
+		"guild_booster_lvl5": "增強公會",
+		"guild_booster_lvl6": "增強公會",
+		"guild_booster_lvl7": "增強公會",
+		"guild_booster_lvl8": "增強公會",
+		"guild_booster_lvl9": "公會已增強了一段時間",
 		"bot_commands": "支援指令",
 		"legacy_username": "擁有舊使用者名稱"
 	},
