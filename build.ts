@@ -40,7 +40,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 								isModule: true,
 								jsc: {
 									minify: {
-										mangle: !process.argv.includes("watch"),
+										mangle: false,
 									},
 								},
 							},
@@ -48,7 +48,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 								minify: !process.argv.includes("watch"),
 								jsc: {
 									minify: {
-										mangle: !process.argv.includes("watch"),
+										mangle: false,
 									},
 								},
 							},
