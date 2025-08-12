@@ -104,7 +104,6 @@ window.addEventListener("popstate", (e) => {
 	//console.log(e.state,"state:3")
 });
 async function handleEnter(event: KeyboardEvent): Promise<void> {
-	console.log("enter!");
 	if (thisUser.keyup(event)) {
 		return;
 	}
