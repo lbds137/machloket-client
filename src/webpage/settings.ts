@@ -1940,7 +1940,7 @@ class Form implements OptionsElement<object> {
 						if (await handleCaptcha(json, build, this.captcha)) {
 							return await doFetch();
 						}
-						const match = this.fetchURL.match(/https?:\/\/[^\/]*\/api\/v9/gm);
+						const match = this.fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
 						if (match) {
 							const tried = await handle2fa(json, match[0]);
 							if (tried) {

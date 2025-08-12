@@ -1771,7 +1771,7 @@ class Localuser {
 								headers: this.headers,
 							},
 						);
-						form.addTextInput(I18n.getTranslation("localuser.2faCode"), "code", {required: true});
+						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
 					});
 				} else {
 					security.addButtonInput("", I18n.getTranslation("localuser.2faEnable"), async () => {
