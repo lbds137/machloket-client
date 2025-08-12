@@ -468,7 +468,9 @@
 		"deleted": "Deleted message",
 		"attached": "Sent an attachment",
 		"retry": "Resend errored message",
-		"pin": "$1 has pinned a message"
+		"pin": "$1 has pinned a message",
+		"viewrest": "View rest",
+		"fullMessage": "Full message:"
 	},
 	"instanceStats": {
 		"name": "Instance stats: $1",

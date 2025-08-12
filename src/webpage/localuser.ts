@@ -85,7 +85,7 @@ class Localuser {
 		this.userinfo.localuserStore = e;
 	}
 	static users = getBulkUsers();
-	static async showAccountSwitcher(thisUser: Localuser): Promise<Localuser> {
+	static async showAccountSwitcher(thisUser: Localuser) {
 		const table = document.createElement("div");
 		table.classList.add("flexttb", "accountSwitcher");
 
@@ -281,6 +281,7 @@ class Localuser {
 	}
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
+		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
 		this.ready = ready;
 		this.guilds = [];
