@@ -6,6 +6,7 @@
 			"EmDashUser002",
 			"Goombiis",
 			"Mahabarata",
+			"Urhixidur",
 			"Wladek92"
 		]
 	},
@@ -241,7 +242,7 @@
 		"box1Items": "Messagerie en direct|Prise en charge de commentaires|Invitations|Changement de compte|Paramètres utilisateur|Portail des développeurs|Invitations de robots|Prise en charge des traductions",
 		"compatableInstances": "Instances compatibles avec Spacebar :",
 		"box3title": "Contribuer au client Fermi",
-		"box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bugs, de code ou même simplement en signalant des fautes de frappe.",
+		"box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bogues, de code ou même simplement en signalant des fautes de frappe.",
 		"trans": "Traduire",
 		"transTitle": "Traduire le client Fermi",
 		"transDesc": "Vous pouvez aider à traduire le client Fermi dans votre propre langue !"
@@ -472,7 +473,9 @@
 		"deleted": "Message supprimé",
 		"attached": "Pièce jointe envoyée",
 		"retry": "Renvoyer le message d’erreur",
-		"pin": "$1 a épinglé un message"
+		"pin": "$1 a épinglé un message",
+		"viewrest": "Afficher le reste",
+		"fullMessage": "Message complet :"
 	},
 	"instanceStats": {
 		"name": "Statistiques de l'instance : $1",
@@ -586,8 +589,8 @@
 		"hypesquad_house_1": "Bravoure",
 		"hypesquad_house_2": "Brillance",
 		"hypesquad_house_3": "Équilibre",
-		"bug_hunter_level_1": "Chasseur de bugs niveau 1",
-		"bug_hunter_level_2": "Chasseur de bugs niveau 2",
+		"bug_hunter_level_1": "Chasseur de bogues niveau 1",
+		"bug_hunter_level_2": "Chasseur de bogues niveau 2",
 		"active_developer": "Développeur actif",
 		"verified_developer": "Développeur vérifié",
 		"early_supporter": "Supporteur de la première heure",
@@ -616,7 +619,7 @@
 	},
 	"sticker": {
 		"title": "Autocollants",
-		"upload": "Télécharger des autocollants",
+		"upload": "Téléverser des autocollants",
 		"image": "Image :",
 		"name": "Nom :",
 		"desc": "Description",
@@ -631,7 +634,7 @@
 	"incorrectURLS": "## Cette instance a probablement envoyé des URL incorrectes.\n### Si vous êtes le propriétaire de l’instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Fermi tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l’instance ?",
 	"jankInfo": "Informations sur le client",
 	"instInfo": "Informations sur l’instance",
-	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribueez au client Fermi](https://github.com/MathMan05/Fermi)\n\n[Contribuez à la maintenance du serveur sur lequel repose le client Fermi](https://github.com/spacebarchat/server)\n\nDroits calculés : $3",
+	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribueez au client Fermi](https://github.com/MathMan05/Fermi)\n\n[Contribuez à la maintenance du serveur sur lequel repose le client Fermi](https://github.com/spacebarchat/server)\n\n[Lisez le blog](https://blog.fermi.chat/)\n\nDroits calculés : $3",
 	"uploadFilesText": "Téléversez vos fichiers ici !",
 	"errorReconnect": "Impossible de se connecter au serveur, nouvelle tentative dans **$1** secondes...",
 	"retrying": "Nouvelle tentative...",
