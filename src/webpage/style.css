@@ -81,6 +81,10 @@ body {
 .traceBars {
 	height: 30px;
 }
+#recentBlog {
+	padding-top: 12px;
+	gap: 12px;
+}
 .flexttb {
 	min-width: 0;
 	display: flex;

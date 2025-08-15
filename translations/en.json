@@ -27,6 +27,11 @@
 		"composer": "Composer: $1",
 		"length": "Length: $1 minutes and $2 seconds"
 	},
+	"blog": {
+		"blog": "Blog",
+		"fermi": "Fermi Blog",
+		"desc": "You can help translate Fermi into your own language!"
+	},
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Allows the user to create invites for the guild",

@@ -17,6 +17,10 @@ const serverbox = document.getElementById("instancebox") as HTMLDivElement;
 	const box4title = document.getElementById("box4title");
 	const box4description = document.getElementById("box4description");
 	const translate = document.getElementById("translate");
+
+	const box5title = document.getElementById("box5title");
+	const box5description = document.getElementById("box5description");
+	const blog = document.getElementById("blog");
 	if (
 		openClient &&
 		welcomeJank &&
@@ -27,8 +31,15 @@ const serverbox = document.getElementById("instancebox") as HTMLDivElement;
 		box1Items &&
 		box4title &&
 		box4description &&
-		translate
+		translate &&
+		box5title &&
+		box5description &&
+		blog
 	) {
+		blog.textContent = I18n.blog.blog();
+		box5title.textContent = I18n.blog.fermi();
+		box5description.textContent = I18n.blog.desc();
+
 		openClient.textContent = I18n.getTranslation("htmlPages.openClient");
 		welcomeJank.textContent = I18n.getTranslation("htmlPages.welcomeJank");
 		box1title.textContent = I18n.getTranslation("htmlPages.box1title");
@@ -60,7 +71,26 @@ const serverbox = document.getElementById("instancebox") as HTMLDivElement;
 		);
 	}
 })();
-
+const recent = document.getElementById("recentBlog");
+if (recent) {
+	fetch("https://blog.fermi.chat/feed_json_created.json")
+		.then((_) => _.json())
+		.then(
+			(json: {
+				items: {
+					url: string;
+					title: string;
+				}[];
+			}) => {
+				for (const thing of json.items) {
+					const a = document.createElement("a");
+					a.href = thing.url;
+					a.textContent = thing.title;
+					recent.append(a);
+				}
+			},
+		);
+}
 fetch("/instances.json")
 	.then((_) => _.json())
 	.then(
