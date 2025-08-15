@@ -1341,7 +1341,7 @@ span.instanceStatus {
 }
 /* Member Info (DM/Member List) */
 .liststyle {
-	padding: 4px 8px;
+	padding: 3px 8px;
 	border-radius: 4px;
 	align-items: center;
 	gap: 8px;
@@ -2163,6 +2163,9 @@ img.bigembedimg {
 .memberList {
 	padding-bottom: 16px;
 	color: var(--primary-text-soft);
+	.flexttb {
+		padding-left: 4px;
+	}
 }
 .memberList h3 {
 	margin: 0 8px 4px 8px;
@@ -2548,6 +2551,7 @@ fieldset input[type="radio"] {
 	cursor: pointer;
 	align-items: center;
 	flex-shrink: 0;
+	margin-bottom: 10px;
 }
 .switchtable:hover {
 	background: var(--primary-hover);
