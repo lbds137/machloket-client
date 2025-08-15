@@ -2199,7 +2199,7 @@ img.bigembedimg {
 	background: var(--secondary-bg);
 	border-radius: 4px;
 	box-shadow: 0 0 8px var(--shadow);
-	z-index: 2;
+	z-index: 102;
 
 	hr {
 		width: 90%;
@@ -2478,12 +2478,13 @@ img.bigembedimg {
 }
 /* Fullscreen and Modal (TEMP) */
 .background {
+	contain-intrinsic-width: AUTO 100px;
 	position: fixed;
 	top: 0;
 	height: 100%;
 	width: 100%;
 	background: color-mix(in srgb, var(--black) 75%, transparent);
-	z-index: 4;
+	z-index: 102;
 }
 .imgfit {
 	max-height: 85svh;

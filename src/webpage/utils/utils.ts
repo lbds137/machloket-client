@@ -110,6 +110,42 @@ export class Specialuser {
 			console.error("There are fundamentally missing pieces of info missing from this user");
 		}
 	}
+	async logout() {
+		for (let i = 0; i < 3; i++) {
+			try {
+				const ok = (
+					await fetch(this.serverurls.api + "/auth/logout", {
+						method: "POST",
+						headers: {Authorization: this.token},
+					})
+				).ok;
+				if (ok) break;
+			} catch {}
+			if (i == 2) {
+				const d = new Dialog("");
+				if (
+					await new Promise<boolean>((res) => {
+						const buttons = d.options.addOptions(I18n.logout.error.title(), {
+							ltr: true,
+						});
+						buttons.addText(I18n.logout.error.desc());
+						buttons.addButtonInput("", I18n.logout.error.cont(), () => {
+							res(false);
+							d.hide();
+						});
+						buttons.addButtonInput("", I18n.logout.error.cancel(), () => {
+							res(true);
+							d.hide();
+						});
+						d.show();
+					})
+				)
+					return false;
+			}
+		}
+		this.remove();
+		return true;
+	}
 	remove() {
 		const info = getBulkInfo();
 		delete info.users[this.uid];

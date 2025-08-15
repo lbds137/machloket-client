@@ -208,9 +208,7 @@ class Emoji {
 
 				emojiElem.addEventListener("click", () => {
 					res(emoji);
-					if (Contextmenu.currentmenu !== "") {
-						Contextmenu.currentmenu.remove();
-					}
+					Contextmenu.declareMenu();
 				});
 			}
 		}
@@ -220,9 +218,7 @@ class Emoji {
 		search.addEventListener("keyup", (e) => {
 			if (e.key === "Enter" && topEmoji) {
 				res(topEmoji);
-				if (Contextmenu.currentmenu !== "") {
-					Contextmenu.currentmenu.remove();
-				}
+				Contextmenu.declareMenu();
 			}
 		});
 
@@ -291,9 +287,7 @@ class Emoji {
 
 							emojiElem.addEventListener("click", () => {
 								res(emojiClass);
-								if (Contextmenu.currentmenu !== "") {
-									Contextmenu.currentmenu.remove();
-								}
+								Contextmenu.declareMenu();
 							});
 						}
 					};
@@ -306,11 +300,8 @@ class Emoji {
 				});
 		}
 
-		if (Contextmenu.currentmenu !== "") {
-			Contextmenu.currentmenu.remove();
-		}
+		Contextmenu.declareMenu(menu);
 		document.body.append(menu);
-		Contextmenu.currentmenu = menu;
 		Contextmenu.keepOnScreen(menu);
 		let i = 0;
 		for (const thing of Emoji.emojis) {
@@ -330,9 +321,7 @@ class Emoji {
 					body.append(emoji);
 					emoji.onclick = (_) => {
 						res(emojit);
-						if (Contextmenu.currentmenu !== "") {
-							Contextmenu.currentmenu.remove();
-						}
+						Contextmenu.declareMenu();
 					};
 				}
 			};

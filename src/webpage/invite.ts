@@ -1,4 +1,5 @@
 import {I18n} from "./i18n.js";
+import {AccountSwitcher} from "./utils/switcher.js";
 import {getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 
@@ -77,70 +78,26 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 			}
 		});
 
-	function showAccounts(): void {
-		const table = document.createElement("dialog");
-		for (const user of joinable) {
-			console.log(user.pfpsrc);
-
-			const userinfo = document.createElement("div");
-			userinfo.classList.add("flexltr", "switchtable");
-
-			const pfp = document.createElement("img");
-			pfp.src = user.pfpsrc;
-			pfp.classList.add("pfp");
-			userinfo.append(pfp);
-
-			const userDiv = document.createElement("div");
-			userDiv.classList.add("userinfo");
-			userDiv.textContent = user.username;
-			userDiv.append(document.createElement("br"));
-
-			const span = document.createElement("span");
-			span.textContent = user.serverurls.wellknown.replace("https://", "").replace("http://", "");
-			span.classList.add("serverURL");
-			userDiv.append(span);
-
-			userinfo.append(userDiv);
-			table.append(userinfo);
-
-			userinfo.addEventListener("click", () => {
-				console.log(user);
-				fetch(`${urls!.api}/invites/${code}`, {
-					method: "POST",
-					headers: {
-						Authorization: user.token,
-					},
-				}).then(() => {
-					users.currentuser = user.uid;
-					sessionStorage.setItem("currentuser", user.uid);
-					localStorage.setItem("userinfos", JSON.stringify(users));
-					window.location.href = "/channels/" + guildinfo.id;
-				});
-			});
-		}
-
-		const td = document.createElement("div");
-		td.classList.add("switchtable");
-		td.textContent = I18n.getTranslation("invite.loginOrCreateAccount");
-		td.addEventListener("click", () => {
-			const l = new URLSearchParams("?");
-			l.set("goback", window.location.href);
-			l.set("instance", well!);
-			window.location.href = "/login?" + l.toString();
+	async function showAccounts() {
+		console.log("showing!");
+		const user = await new AccountSwitcher((user) => {
+			return !!(well && user.serverurls.wellknown.includes(well));
+		}).show();
+		fetch(`${urls!.api}/invites/${code}`, {
+			method: "POST",
+			headers: {
+				Authorization: user.token,
+			},
+		}).then(() => {
+			users.currentuser = user.uid;
+			sessionStorage.setItem("currentuser", user.uid);
+			localStorage.setItem("userinfos", JSON.stringify(users));
+			window.location.href = "/channels/" + guildinfo.id;
 		});
-
-		if (!joinable.length) {
-			const l = new URLSearchParams("?");
-			l.set("goback", window.location.href);
-			l.set("instance", well!);
-			window.location.href = "/login?" + l.toString();
-		}
-
-		table.append(td);
-		table.classList.add("flexttb", "accountSwitcher");
-		console.log(table);
-		document.body.append(table);
 	}
 
-	document.getElementById("AcceptInvite")!.addEventListener("click", showAccounts);
+	document.getElementById("AcceptInvite")!.addEventListener("click", (e) => {
+		e.stopImmediatePropagation();
+		showAccounts();
+	});
 })();

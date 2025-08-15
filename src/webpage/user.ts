@@ -712,9 +712,6 @@ class User extends SnowFlake {
 		y: number,
 		guild: Guild | null | Member = null,
 	): Promise<HTMLDivElement> {
-		if (Contextmenu.currentmenu != "") {
-			Contextmenu.currentmenu.remove();
-		}
 		const membres = (async () => {
 			if (!guild) return;
 			let member: Member | undefined;
@@ -848,7 +845,7 @@ class User extends SnowFlake {
 			});
 		}
 		if (x !== -1) {
-			Contextmenu.currentmenu = div;
+			Contextmenu.declareMenu(div);
 			document.body.appendChild(div);
 			Contextmenu.keepOnScreen(div);
 		}

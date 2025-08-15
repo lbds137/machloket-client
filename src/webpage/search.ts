@@ -59,10 +59,7 @@ class Search<E> {
 			container.append(bar);
 			container.append(options);
 			document.body.append(container);
-			if (Contextmenu.currentmenu != "") {
-				Contextmenu.currentmenu.remove();
-			}
-			Contextmenu.currentmenu = container;
+			Contextmenu.declareMenu(container);
 			Contextmenu.keepOnScreen(container);
 		});
 	}

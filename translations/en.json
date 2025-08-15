@@ -32,6 +32,15 @@
 		"fermi": "Fermi Blog",
 		"desc": "Read or subscribe to the blog for updates on Fermi!"
 	},
+	"logout": {
+		"logout": "Logout",
+		"error": {
+			"title": "An error occurred trying to log you out",
+			"desc": "Fermi was unable to log you out,\n do you wish to remove the account anyways?",
+			"cancel": "Cancel",
+			"cont": "Continue Anyways"
+		}
+	},
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Allows the user to create invites for the guild",

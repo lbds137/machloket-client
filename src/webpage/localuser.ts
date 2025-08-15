@@ -8,7 +8,6 @@ import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
 import {
 	channeljson,
 	guildjson,
-	mainuserjson,
 	memberjson,
 	memberlistupdatejson,
 	messageCreateJson,
@@ -33,6 +32,7 @@ import {Rights} from "./rights.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Sticker} from "./sticker.js";
 import {Hover} from "./hover.js";
+import {AccountSwitcher} from "./utils/switcher.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -86,72 +86,29 @@ class Localuser {
 	}
 	static users = getBulkUsers();
 	static async showAccountSwitcher(thisUser: Localuser) {
-		const table = document.createElement("div");
-		table.classList.add("flexttb", "accountSwitcher");
+		const specialUser = await new AccountSwitcher().show();
 
-		for (const user of Object.values(this.users.users)) {
-			const specialUser = user as Specialuser;
-			const userInfo = document.createElement("div");
-			userInfo.classList.add("flexltr", "switchtable");
+		const onswap = thisUser.onswap;
+		thisUser.unload();
+		thisUser.swapped = true;
+		const loading = document.getElementById("loading") as HTMLDivElement;
+		loading.classList.remove("doneloading");
+		loading.classList.add("loading");
 
-			const pfp = createImg(specialUser.pfpsrc);
-			pfp.classList.add("pfp");
-			userInfo.append(pfp);
+		thisUser = new Localuser(specialUser);
+		Localuser.users.currentuser = specialUser.uid;
+		sessionStorage.setItem("currentuser", specialUser.uid);
+		localStorage.setItem("userinfos", JSON.stringify(Localuser.users));
 
-			const userDiv = document.createElement("div");
-			userDiv.classList.add("userinfo");
-			userDiv.textContent = specialUser.username;
-			userDiv.append(document.createElement("br"));
-
-			const span = document.createElement("span");
-			span.textContent = specialUser.serverurls.wellknown
-				.replace("https://", "")
-				.replace("http://", "");
-			span.classList.add("serverURL");
-			userDiv.append(span);
-
-			userInfo.append(userDiv);
-			table.append(userInfo);
-
-			userInfo.addEventListener("click", () => {
-				const onswap = thisUser.onswap;
-				thisUser.unload();
-				thisUser.swapped = true;
-				const loading = document.getElementById("loading") as HTMLDivElement;
-				loading.classList.remove("doneloading");
-				loading.classList.add("loading");
-
-				thisUser = new Localuser(specialUser);
-				Localuser.users.currentuser = specialUser.uid;
-				sessionStorage.setItem("currentuser", specialUser.uid);
-				localStorage.setItem("userinfos", JSON.stringify(Localuser.users));
-
-				thisUser.initwebsocket().then(() => {
-					thisUser.loaduser();
-					thisUser.init();
-					loading.classList.add("doneloading");
-					loading.classList.remove("loading");
-					console.log("done loading");
-				});
-
-				userInfo.remove();
-				onswap?.(thisUser);
-			});
-		}
-
-		const switchAccountDiv = document.createElement("div");
-		switchAccountDiv.classList.add("switchtable");
-		switchAccountDiv.textContent = I18n.getTranslation("switchAccounts");
-		switchAccountDiv.addEventListener("click", () => {
-			window.location.href = "/login";
+		thisUser.initwebsocket().then(() => {
+			thisUser.loaduser();
+			thisUser.init();
+			loading.classList.add("doneloading");
+			loading.classList.remove("loading");
+			console.log("done loading");
 		});
-		table.append(switchAccountDiv);
 
-		if (Contextmenu.currentmenu) {
-			Contextmenu.currentmenu.remove();
-		}
-		Contextmenu.currentmenu = table;
-		document.body.append(table);
+		onswap?.(thisUser);
 	}
 	static userMenu = this.generateUserMenu();
 	static generateUserMenu() {
@@ -1747,7 +1704,7 @@ class Localuser {
 			});
 		}
 		{
-			const security = settings.addButton(I18n.getTranslation("localuser.accountSettings"));
+			const security = settings.addButton(I18n.localuser.accountSettings());
 			const genSecurity = () => {
 				security.removeAll();
 				if (this.mfa_enabled) {
@@ -1956,6 +1913,13 @@ class Localuser {
 							localStorage.removeItem("logbad");
 						}
 					};
+				}
+				{
+					security.addButtonInput("", I18n.logout.logout(), async () => {
+						if (await this.userinfo.logout()) {
+							window.location.href = "/";
+						}
+					});
 				}
 			};
 			genSecurity();
@@ -2579,10 +2543,7 @@ class Localuser {
 		menu.style.right = window.innerWidth - rect.right + "px";
 		document.body.append(menu);
 		Contextmenu.keepOnScreen(menu);
-		if (Contextmenu.currentmenu !== "") {
-			Contextmenu.currentmenu.remove();
-		}
-		Contextmenu.currentmenu = menu;
+		Contextmenu.declareMenu(menu);
 		const trending = (await (
 			await fetch(
 				this.info.api + "/gifs/trending?" + new URLSearchParams([["locale", I18n.lang]]),

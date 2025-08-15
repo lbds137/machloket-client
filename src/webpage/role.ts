@@ -426,10 +426,7 @@ class RoleList extends Buttons {
 				div.style.top = (box.top ^ 0) + "px";
 				div.append(bar);
 				document.body.append(div);
-				if (Contextmenu.currentmenu != "") {
-					Contextmenu.currentmenu.remove();
-				}
-				Contextmenu.currentmenu = div;
+				Contextmenu.declareMenu(div);
 				Contextmenu.keepOnScreen(div);
 				bar.onchange = () => {
 					div.remove();

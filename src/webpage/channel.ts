@@ -414,9 +414,7 @@ class Channel extends SnowFlake {
 		div.style.right = window.innerWidth - rect.right + "px";
 		document.body.append(div);
 		Contextmenu.keepOnScreen(div);
-		if (Contextmenu.currentmenu !== "") {
-			Contextmenu.currentmenu.remove();
-		}
+		Contextmenu.declareMenu(div);
 		this.last_pin_timestamp = this.lastpin;
 		const l = (e: MouseEvent) => {
 			if (e.target instanceof HTMLElement && div.contains(e.target)) {

@@ -117,19 +117,40 @@ class Seperator<x, y> implements menuPart<x, y> {
 	}
 }
 class Contextmenu<x, y> {
-	static currentmenu: HTMLElement | "";
+	static currentmenu: HTMLElement | "" = "";
+	static prevmenus: HTMLElement[] = [];
 	name: string;
 	buttons: menuPart<x, y>[];
 	div!: HTMLDivElement;
-	static setup() {
-		Contextmenu.currentmenu = "";
-		document.addEventListener("click", (event) => {
-			if (Contextmenu.currentmenu === "") {
-				return;
-			}
-			if (!Contextmenu.currentmenu.contains(event.target as Node)) {
+	static declareMenu(html: HTMLElement | false = false, keep: false | true | HTMLElement = false) {
+		if (Contextmenu.currentmenu !== "") {
+			if (keep === false) {
 				Contextmenu.currentmenu.remove();
-				Contextmenu.currentmenu = "";
+			} else if (keep === true) {
+				this.prevmenus.push(Contextmenu.currentmenu);
+			} else {
+				while (Contextmenu.currentmenu && Contextmenu.currentmenu !== keep) {
+					Contextmenu.currentmenu.remove();
+					Contextmenu.currentmenu = this.prevmenus.pop() || "";
+				}
+				if (Contextmenu.currentmenu) {
+					this.prevmenus.push(Contextmenu.currentmenu);
+				}
+			}
+		}
+		if (html) {
+			Contextmenu.currentmenu = html;
+		} else {
+			Contextmenu.currentmenu = this.prevmenus.pop() || "";
+		}
+	}
+	static setup() {
+		Contextmenu.declareMenu();
+		document.addEventListener("click", (event) => {
+			while (Contextmenu.currentmenu) {
+				if (!Contextmenu.currentmenu.contains(event.target as Node)) {
+					Contextmenu.declareMenu();
+				}
 			}
 		});
 	}
@@ -153,7 +174,7 @@ class Contextmenu<x, y> {
 	addSeperator(visable?: (obj1: x, obj2: y) => boolean) {
 		this.buttons.push(new Seperator(visable));
 	}
-	makemenu(x: number, y: number, addinfo: x, other: y) {
+	makemenu(x: number, y: number, addinfo: x, other: y, keep: boolean | HTMLElement = false) {
 		const div = document.createElement("div");
 		div.classList.add("contextmenu", "flexttb");
 
@@ -166,9 +187,8 @@ class Contextmenu<x, y> {
 		//NOTE I don't know if this'll ever actually happen in reality
 		if (div.childNodes.length === 0) return;
 
-		if (Contextmenu.currentmenu !== "") {
-			Contextmenu.currentmenu.remove();
-		}
+		Contextmenu.declareMenu(div, keep);
+
 		if (y > 0) {
 			div.style.top = y + "px";
 		} else {
@@ -178,7 +198,7 @@ class Contextmenu<x, y> {
 		document.body.appendChild(div);
 		Contextmenu.keepOnScreen(div);
 		console.log(div);
-		Contextmenu.currentmenu = div;
+
 		return this.div;
 	}
 	bindContextmenu(
@@ -243,16 +263,17 @@ class Contextmenu<x, y> {
 	}
 	static keepOnScreen(obj: HTMLElement) {
 		const html = document.documentElement.getBoundingClientRect();
-		const docheight = html.height;
+		const docheight = window.innerHeight;
 		const docwidth = html.width;
 		const box = obj.getBoundingClientRect();
 		console.log(box, docheight, docwidth);
 		if (box.right > docwidth) {
 			console.log("test");
-			obj.style.left = docwidth - box.width + "px";
+			obj.style.left = Math.floor(docwidth - box.width) + "px";
 		}
 		if (box.bottom > docheight) {
-			obj.style.top = docheight - box.height + "px";
+			debugger;
+			obj.style.top = Math.floor(docheight - box.height) + "px";
 		}
 	}
 }

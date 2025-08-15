@@ -141,9 +141,7 @@ class Sticker extends SnowFlake {
 
 				emojiElem.addEventListener("click", () => {
 					res(sticker);
-					if (Contextmenu.currentmenu !== "") {
-						Contextmenu.currentmenu.remove();
-					}
+					Contextmenu.declareMenu();
 				});
 			}
 		};
@@ -153,9 +151,7 @@ class Sticker extends SnowFlake {
 		search.addEventListener("keyup", (e) => {
 			if (e.key === "Enter" && topSticker) {
 				res(topSticker);
-				if (Contextmenu.currentmenu !== "") {
-					Contextmenu.currentmenu.remove();
-				}
+				Contextmenu.declareMenu();
 			}
 		});
 
@@ -212,9 +208,7 @@ class Sticker extends SnowFlake {
 					body.append(stickerElem);
 					stickerElem.addEventListener("click", () => {
 						res(sticker);
-						if (Contextmenu.currentmenu !== "") {
-							Contextmenu.currentmenu.remove();
-						}
+						Contextmenu.declareMenu();
 					});
 				}
 			};
@@ -226,11 +220,8 @@ class Sticker extends SnowFlake {
 			}
 		});
 
-		if (Contextmenu.currentmenu !== "") {
-			Contextmenu.currentmenu.remove();
-		}
+		Contextmenu.declareMenu(menu);
 		document.body.append(menu);
-		Contextmenu.currentmenu = menu;
 		Contextmenu.keepOnScreen(menu);
 		menu.append(selection);
 		menu.append(body);
