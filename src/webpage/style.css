@@ -2495,7 +2495,7 @@ img.bigembedimg {
 	max-height: 85svh;
 	max-width: 85svw;
 }
-.background > .centeritem {
+.centeritem.profile {
 	width: 80%;
 	height: 80%;
 }
