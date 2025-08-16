@@ -2,7 +2,7 @@ import {User} from "./user.js";
 import {Role} from "./role.js";
 import {Guild} from "./guild.js";
 import {SnowFlake} from "./snowflake.js";
-import {memberjson, presencejson} from "./jsontypes.js";
+import {highMemberJSON, memberjson, presencejson} from "./jsontypes.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Options, Settings} from "./settings.js";
 
@@ -432,15 +432,17 @@ class Member extends SnowFlake {
 	/**
 	 * @todo
 	 */
-	highInfo() {
-		fetch(
-			this.info.api +
-				"/users/" +
-				this.id +
-				"/profile?with_mutual_guilds=true&with_mutual_friends_count=true&guild_id=" +
-				this.guild.id,
-			{headers: this.guild.headers},
-		);
+	async highInfo() {
+		return (await (
+			await fetch(
+				this.info.api +
+					"/users/" +
+					this.id +
+					"/profile?with_mutual_guilds=true&with_mutual_friends_count=true&guild_id=" +
+					this.guild.id,
+				{headers: this.guild.headers},
+			)
+		).json()) as highMemberJSON;
 	}
 	hasRole(ID: string) {
 		for (const thing of this.roles) {

@@ -10,9 +10,9 @@ import {Search} from "./search.js";
 import {I18n} from "./i18n.js";
 import {Direct} from "./direct.js";
 import {Hover} from "./hover.js";
-import {Dialog} from "./settings.js";
+import {Dialog, Float} from "./settings.js";
 import {createImg} from "./utils/utils.js";
-
+import {Permissions} from "./permissions.js";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -707,6 +707,194 @@ class User extends SnowFlake {
 
 		return badges;
 	}
+	async fullProfile(guild: Guild | null | Member = null) {
+		console.log(guild);
+		const membres = (async () => {
+			if (!guild) return;
+			let member: Member | undefined;
+			if (guild instanceof Guild) {
+				member = await Member.resolveMember(this, guild);
+			} else {
+				member = guild;
+			}
+			return member;
+		})();
+		const background = document.createElement("div");
+		background.classList.add("background");
+		background.onclick = () => background.remove();
+		const div = document.createElement("div");
+		div.onclick = (e) => e.stopImmediatePropagation();
+		div.classList.add("centeritem", "profile");
+
+		if (this.accent_color) {
+			div.style.setProperty(
+				"--accent_color",
+				`#${this.accent_color.toString(16).padStart(6, "0")}`,
+			);
+		} else {
+			div.style.setProperty("--accent_color", "transparent");
+		}
+		const banner = this.getBanner(guild);
+		div.append(banner);
+		membres.then((member) => {
+			if (!member) return;
+			if (member.accent_color && member.accent_color !== 0) {
+				div.style.setProperty(
+					"--accent_color",
+					`#${member.accent_color.toString(16).padStart(6, "0")}`,
+				);
+			}
+		});
+
+		const badgediv = document.createElement("div");
+		badgediv.classList.add("badges");
+		(async () => {
+			const badges = await this.getBadges();
+			for (const badgejson of badges) {
+				const badge = document.createElement(badgejson.link ? "a" : "div");
+				badge.classList.add("badge");
+				let src: string;
+				if (URL.canParse(badgejson.icon)) {
+					src = badgejson.icon;
+				} else {
+					src = this.info.cdn + "/badge-icons/" + badgejson.icon + ".png";
+				}
+				const img = createImg(src, undefined, badgediv);
+
+				badge.append(img);
+				let hovertxt: string;
+				if (badgejson.translate) {
+					hovertxt = I18n.getTranslation("badge." + badgejson.description);
+				} else {
+					hovertxt = badgejson.description;
+				}
+				const hover = new Hover(hovertxt);
+				hover.addEvent(badge);
+				if (badgejson.link && badge instanceof HTMLAnchorElement) {
+					badge.href = badgejson.link;
+				}
+				badgediv.append(badge);
+			}
+		})();
+		const pfp = this.buildstatuspfp(guild);
+		div.appendChild(pfp);
+		const userbody = document.createElement("div");
+		userbody.classList.add("flexttb", "infosection");
+		div.appendChild(userbody);
+		const usernamehtml = document.createElement("h2");
+		usernamehtml.textContent = this.username;
+		userbody.appendChild(usernamehtml);
+		userbody.appendChild(badgediv);
+		const discrimatorhtml = document.createElement("h3");
+		discrimatorhtml.classList.add("tag");
+		discrimatorhtml.textContent = `${this.username}#${this.discriminator}`;
+		userbody.appendChild(discrimatorhtml);
+
+		const pronounshtml = document.createElement("p");
+		pronounshtml.textContent = this.pronouns || "";
+		pronounshtml.classList.add("pronouns");
+		userbody.appendChild(pronounshtml);
+
+		membres.then((member) => {
+			if (!member) return;
+			if (member.pronouns && member.pronouns !== "") {
+				pronounshtml.textContent = member.pronouns;
+			}
+		});
+
+		const rule = document.createElement("hr");
+		userbody.appendChild(rule);
+		const float = new Float("");
+		const buttons = float.options.addButtons("", {top: true, titles: false});
+		{
+			const info = buttons.add(I18n.profile.userInfo());
+			const infoDiv = document.createElement("div");
+			infoDiv.classList.add("flexttb");
+			infoDiv.append(I18n.profile.bio(), document.createElement("hr"));
+			const biohtml = this.bio.makeHTML();
+			infoDiv.appendChild(biohtml);
+
+			membres.then((member) => {
+				if (!member) return;
+				if (member.bio && member.bio !== "") {
+					//TODO make markdown take Guild
+					infoDiv.insertBefore(new MarkDown(member.bio, this.localuser).makeHTML(), biohtml);
+					biohtml.remove();
+				}
+			});
+			info.addHTMLArea(infoDiv);
+
+			if (guild) {
+				membres.then((member) => {
+					if (!member) return;
+					usernamehtml.textContent = member.name;
+					const roles = document.createElement("div");
+					roles.classList.add("flexltr", "rolesbox");
+					for (const role of member.roles) {
+						if (role.id === member.guild.id) continue;
+						const roleDiv = document.createElement("div");
+						roleDiv.classList.add("rolediv");
+						const color = document.createElement("div");
+						roleDiv.append(color);
+						color.style.setProperty("--role-color", `#${role.color.toString(16).padStart(6, "0")}`);
+						color.classList.add("colorrolediv");
+						const span = document.createElement("span");
+						roleDiv.append(span);
+						span.textContent = role.name;
+						roles.append(roleDiv);
+					}
+					infoDiv.append(roles);
+				});
+			}
+		}
+		(async () => {
+			const memb = await membres;
+			if (!memb) return;
+			const perms = buttons.add(I18n.profile.permInfo());
+			const permDiv = document.createElement("div");
+			permDiv.classList.add("permbox");
+			const permsL = Permissions.info()
+				.filter((_) => memb.hasPermission(_.name))
+				.map((_) => _.readableName);
+			for (const perm of permsL) {
+				const span = document.createElement("span");
+				span.textContent = perm;
+				permDiv.append(span);
+			}
+			perms.addHTMLArea(permDiv);
+
+			const mut = buttons.add(I18n.profile.mut());
+			const mutDiv = document.createElement("div");
+			const high = await memb.highInfo();
+			mutDiv.append(
+				...high.mutual_guilds
+					.map((_) => [this.localuser.guildids.get(_.id), _.nick] as const)
+					.map(([guild, nick]) => {
+						if (!guild) return;
+						const icon = guild.generateGuildIcon();
+						const box = document.createElement("div");
+						box.classList.add("mutGuildBox", "flexltr");
+
+						const info = document.createElement("div");
+						info.classList.add("flexttb");
+						info.append(guild.properties.name);
+						box.append(icon, info);
+						if (nick) info.append(nick);
+						return box;
+					})
+					.filter((_) => _ !== undefined),
+			);
+			mut.addHTMLArea(mutDiv);
+		})();
+
+		userbody.append(float.generateHTML());
+
+		document.body.append(background);
+		background.append(div);
+		console.log(background);
+		return background;
+	}
+
 	async buildprofile(
 		x: number,
 		y: number,
@@ -783,6 +971,12 @@ class User extends SnowFlake {
 			}
 		})();
 		const pfp = this.buildstatuspfp(guild);
+		pfp.onclick = (e) => {
+			this.fullProfile(guild);
+			div.remove();
+			e.stopImmediatePropagation();
+			e.preventDefault();
+		};
 		div.appendChild(pfp);
 		const userbody = document.createElement("div");
 		userbody.classList.add("flexttb", "infosection");

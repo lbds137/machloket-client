@@ -177,6 +177,12 @@
 			"never": "Never"
 		}
 	},
+	"profile": {
+		"userInfo": "User Info",
+		"bio": "About me:",
+		"permInfo": "Permissions",
+		"mut": "Mutual guilds"
+	},
 	"searchGifs": "Search Tenor",
 	"channel": {
 		"creating": "Creating channel",

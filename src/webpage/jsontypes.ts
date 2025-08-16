@@ -252,6 +252,12 @@ type memberjson = {
 	pending: boolean;
 	last_message_id?: boolean; //What???
 };
+export type highMemberJSON = mainuserjson & {
+	mutual_guilds: {
+		id: string;
+		nick: null | string;
+	}[];
+};
 type emojijson = {
 	name: string;
 	id?: string;

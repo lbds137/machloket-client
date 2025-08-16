@@ -26,14 +26,16 @@ export class Buttons implements OptionsElement<unknown> {
 	warndiv!: HTMLElement;
 	value: unknown;
 	top = false;
-	constructor(name: string, {top = false} = {}) {
+	titles = true;
+	constructor(name: string, {top = false, titles = true} = {}) {
 		this.top = top;
 		this.buttons = [];
 		this.name = name;
+		this.titles = titles;
 	}
 	add(name: string, thing?: Options | undefined) {
 		if (!thing) {
-			thing = new Options(name, this);
+			thing = new Options(this.titles ? name : "", this);
 		}
 		const button = [name, thing] as [string, string | Options];
 		this.buttons.push(button);
@@ -1043,8 +1045,8 @@ class Options implements OptionsElement<void> {
 		this.generate(options);
 		return options;
 	}
-	addButtons(name: string, {top = false} = {}) {
-		const buttons = new Buttons(name, {top});
+	addButtons(name: string, {top = false, titles = true} = {}) {
+		const buttons = new Buttons(name, {top, titles});
 		this.options.push(buttons);
 		this.generate(buttons);
 		return buttons;
