@@ -854,7 +854,7 @@ class User extends SnowFlake {
 			const permDiv = document.createElement("div");
 			permDiv.classList.add("permbox");
 			const permsL = Permissions.info()
-				.filter((_) => memb.hasPermission(_.name))
+				.filter((_) => memb.hasPermission(_.name, false))
 				.map((_) => _.readableName);
 			for (const perm of permsL) {
 				const span = document.createElement("span");

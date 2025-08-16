@@ -559,8 +559,8 @@ class Member extends SnowFlake {
 			headers,
 		});
 	}
-	hasPermission(name: string): boolean {
-		if (this.isAdmin()) {
+	hasPermission(name: string, adminOver = true): boolean {
+		if (this.isAdmin() && adminOver) {
 			return true;
 		}
 		for (const thing of this.roles) {
