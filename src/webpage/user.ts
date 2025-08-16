@@ -877,7 +877,9 @@ class User extends SnowFlake {
 
 						const info = document.createElement("div");
 						info.classList.add("flexttb");
-						info.append(guild.properties.name);
+						const gname = document.createElement("span");
+						gname.textContent = guild.properties.name;
+						info.append(gname);
 						box.append(icon, info);
 						if (nick) info.append(nick);
 						return box;
@@ -886,8 +888,9 @@ class User extends SnowFlake {
 			);
 			mut.addHTMLArea(mutDiv);
 		})();
-
-		userbody.append(float.generateHTML());
+		const fhtml = float.generateHTML();
+		fhtml.style.overflow = "auto";
+		userbody.append(fhtml);
 
 		document.body.append(background);
 		background.append(div);

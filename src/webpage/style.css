@@ -2802,6 +2802,7 @@ fieldset input[type="radio"] {
 	background: var(--primary-bg);
 	padding: 6px;
 	cursor: pointer;
+	margin-top: 6px;
 
 	img {
 		width: 48px !important;
