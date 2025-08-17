@@ -1353,6 +1353,7 @@ span.instanceStatus {
 	span {
 		font-size: 0.9rem;
 		margin-left: 4px;
+		font-weight: 600;
 	}
 }
 .liststyle .statusDiv {
@@ -2164,7 +2165,7 @@ img.bigembedimg {
 	padding-bottom: 16px;
 	color: var(--primary-text-soft);
 	.flexttb {
-		padding-left: 4px;
+		padding-left: 8px;
 	}
 }
 .memberList h3 {
