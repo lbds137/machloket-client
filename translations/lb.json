@@ -16,6 +16,18 @@
 		"composer": "Komponist: $1",
 		"length": "Längt: $1 Minutten a(n) $2 Sekonnen"
 	},
+	"blog": {
+		"blog": "Blog",
+		"fermi": "Fermi-Blog"
+	},
+	"logout": {
+		"logout": "Ausloggen",
+		"error": {
+			"title": "Beim Versuch Iech auszeloggen ass e Feeler geschitt",
+			"cancel": "Ofbriechen",
+			"cont": "Trotzdeem virufueren"
+		}
+	},
 	"permissions": {
 		"readableNames": {
 			"ADMINISTRATOR": "Administrateur",
@@ -50,6 +62,10 @@
 			"always": "Ëmmer",
 			"never": "Ni"
 		}
+	},
+	"profile": {
+		"userInfo": "Benotzerinformatiounen",
+		"bio": "Iwwer mech:"
 	},
 	"channel": {
 		"creating": "Kanal uleeën",
@@ -194,7 +210,8 @@
 		"delete": "Message läschen",
 		"edit": "Message änneren",
 		"edited": "(geännert)",
-		"deleted": "Geläschte Message"
+		"deleted": "Geläschte Message",
+		"fullMessage": "Vollstännege Message:"
 	},
 	"instanceStats": {
 		"users": "Registréiert Benotzer: $1",

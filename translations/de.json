@@ -5,6 +5,7 @@
 			"Brettchenweber",
 			"Byte",
 			"Mrmaffen",
+			"Russianbabe1978",
 			"SergeCroise",
 			"Simon04",
 			"SomeRandomDeveloper"
@@ -463,7 +464,9 @@
 		"deleted": "Gelöschte Nachricht",
 		"attached": "Anhang gesendet",
 		"retry": "Fehlerhafte Nachricht erneut senden",
-		"pin": "$1 hat eine Nachricht angeheftet"
+		"pin": "$1 hat eine Nachricht angeheftet",
+		"viewrest": "Rest anzeigen",
+		"fullMessage": "Vollständige Nachricht:"
 	},
 	"instanceStats": {
 		"name": "Instanzstatistik: $1",
