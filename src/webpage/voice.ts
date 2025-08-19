@@ -528,19 +528,39 @@ a=rtcp-mux\r`;
 
 				const senders = this.senders.difference(this.ssrcMap);
 				console.log(senders, this.ssrcMap);
+				let made12 = false;
+				this.pc
+					?.getStats()
+					.then((_) => _.forEach((_) => _.type === "local-candidate" || console.error(_)));
+				console.log(pc.localDescription?.sdp);
 				for (const sender of senders) {
-					console.log(sender);
-					const d = (await sender.getStats()) as Map<string, any>;
-					console.log([...d]);
-					for (const thing of d) {
-						if (thing[1].ssrc) {
-							this.ssrcMap.set(sender, thing[1].ssrc);
+					const d = await sender.getStats();
+					let found = false;
+					d.forEach((thing) => {
+						if (thing.ssrc) {
+							made12 = true;
+							found = true;
+							this.ssrcMap.set(sender, thing.ssrc);
 							this.makeOp12(sender);
 							console.warn("ssrc");
 						}
+					});
+					//TODO Firefox made me do this, if I can figure out how to not do this, that'd be great
+					if (!found && pc.localDescription?.sdp) {
+						const sdp = Voice.parsesdp(pc.localDescription.sdp);
+
+						const index = pc.getTransceivers().findIndex((_) => _.sender === sender);
+						const temp = sdp.medias[index].atr.get("ssrc");
+						if (temp) {
+							const ssrc = +[...temp][0].split(" ")[0];
+							this.ssrcMap.set(sender, ssrc);
+							this.makeOp12(sender);
+							console.warn("ssrc");
+							made12 = true;
+						}
 					}
 				}
-				if (this.senders.size === 0) {
+				if (!made12) {
 					console.warn("this was ran :3");
 					this.makeOp12();
 				}
@@ -555,13 +575,16 @@ a=rtcp-mux\r`;
 				}
 			};
 			function logState(thing: string, message = "") {
-				console.log(thing + (message ? ":" + message : ""));
+				console.log("log state: " + thing + (message ? ":" + message : ""));
 			}
 			pc.addEventListener("negotiationneeded", async () => {
 				logState("negotiationneeded");
 				await sendOffer();
 				console.log(this.ssrcMap);
 			});
+			pc.onicecandidate = (e) => {
+				console.warn(e.candidate);
+			};
 			pc.addEventListener("signalingstatechange", async () => {
 				logState("signalingstatechange", pc.signalingState);
 				detectDone();
@@ -591,9 +614,11 @@ a=rtcp-mux\r`;
 			pc.addEventListener("icegatheringstatechange", async () => {
 				logState("icegatheringstatechange", pc.iceGatheringState);
 				detectDone();
-				if (this.pc && this.counter) {
-					if (pc.iceGatheringState === "complete") {
+				console.log(this.counter, this.pc);
+				if (pc.iceGatheringState === "complete") {
+					if (this.pc && this.counter) {
 						pc.setLocalDescription();
+						console.warn("set local desc");
 					}
 				}
 			});
@@ -643,31 +668,37 @@ a=rtcp-mux\r`;
 		}
 
 		console.log(this.ssrcMap);
-		this.ws.send(
-			JSON.stringify({
-				op: 12,
-				d: {
-					audio_ssrc:
-						sender?.track?.kind === "audio" ? this.ssrcMap.get(sender as RTCRtpSender) : 0,
-					video_ssrc,
-					rtx_ssrc,
-					streams: [
-						{
-							type: "video",
-							rid: "100",
-							ssrc: video_ssrc,
-							active: !!video_ssrc,
-							quality: 100,
-							rtx_ssrc: rtx_ssrc,
-							max_bitrate: 2500000, //TODO
-							max_framerate, //TODO
-							max_resolution: {type: "fixed", width, height},
-						},
-					],
-				},
-			}),
-		);
-		this.status = "Sending audio streams";
+		try {
+			console.error("start 12");
+			this.ws.send(
+				JSON.stringify({
+					op: 12,
+					d: {
+						audio_ssrc:
+							sender?.track?.kind === "audio" ? this.ssrcMap.get(sender as RTCRtpSender) : 0,
+						video_ssrc,
+						rtx_ssrc,
+						streams: [
+							{
+								type: "video",
+								rid: "100",
+								ssrc: video_ssrc,
+								active: !!video_ssrc,
+								quality: 100,
+								rtx_ssrc: rtx_ssrc,
+								max_bitrate: 2500000, //TODO
+								max_framerate, //TODO
+								max_resolution: {type: "fixed", width, height},
+							},
+						],
+					},
+				}),
+			);
+			this.status = "Sending audio streams";
+			console.error("made 12");
+		} catch (e) {
+			console.error(e);
+		}
 	}
 	senders: Set<RTCRtpSender> = new Set();
 	recivers = new Set<RTCRtpReceiver>();
