@@ -824,11 +824,23 @@ class User extends SnowFlake {
 			});
 			info.addHTMLArea(infoDiv);
 
+			const roles = document.createElement("div");
+			const joined = document.createElement("div");
+			joined.textContent = I18n.profile.joined(new Date(this.getUnixTime()).toLocaleString());
+			infoDiv.append(roles, document.createElement("hr"), joined);
+
 			if (guild) {
 				membres.then((member) => {
 					if (!member) return;
+					const p = document.createElement("p");
+					p.textContent = I18n.profile.joinedMember(
+						member.guild.properties.name,
+						new Date(member.joined_at).toLocaleString(),
+					);
+					joined.append(p);
+
 					usernamehtml.textContent = member.name;
-					const roles = document.createElement("div");
+
 					roles.classList.add("flexltr", "rolesbox");
 					for (const role of member.roles) {
 						if (role.id === member.guild.id) continue;
@@ -843,7 +855,6 @@ class User extends SnowFlake {
 						span.textContent = role.name;
 						roles.append(roleDiv);
 					}
-					infoDiv.append(roles);
 				});
 			}
 		}

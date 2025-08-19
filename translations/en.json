@@ -181,7 +181,9 @@
 		"userInfo": "User Info",
 		"bio": "About me:",
 		"permInfo": "Permissions",
-		"mut": "Mutual guilds"
+		"mut": "Mutual guilds",
+		"joined":"Account made: $1",
+		"joinedMember":"Joined $1: $2"
 	},
 	"searchGifs": "Search Tenor",
 	"channel": {
