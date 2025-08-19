@@ -32,6 +32,20 @@
 		"composer": "Compositeur : $1",
 		"length": "Durée : $1 minute(s) et $2 seconde(s)"
 	},
+	"blog": {
+		"blog": "Blogue",
+		"fermi": "Blogue de Fermi",
+		"desc": "Lisez ou abonnez-vous au blogue pour des actualités sur Fermi !"
+	},
+	"logout": {
+		"logout": "Se déconnecter",
+		"error": {
+			"title": "Une erreur s’est produite lots de la tentative de déconnexion",
+			"desc": "Fermi n’a pas pu vous déconnecter,\n souhaitez-vous malgré tout retirer le compte ?",
+			"cancel": "Annuler",
+			"cont": "Continuer malgré tout"
+		}
+	},
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Permet à l'utilisateur de créer des invitations pour la guilde",
@@ -167,6 +181,12 @@
 			"always": "Toujours",
 			"never": "Jamais"
 		}
+	},
+	"profile": {
+		"userInfo": "Informations sur l’utilisateur",
+		"bio": "À mon sujet :",
+		"permInfo": "Autorisations",
+		"mut": "Guildes mutuelles"
 	},
 	"searchGifs": "Rechercher sur Tenor",
 	"channel": {
