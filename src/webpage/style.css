@@ -2939,6 +2939,7 @@ fieldset input[type="radio"] {
 		0 0 24px var(--shadow),
 		0 0 1px var(--primary-text);
 	box-sizing: border-box;
+	z-index: 2;
 }
 .savediv button {
 	margin-left: 12px;
