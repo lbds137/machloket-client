@@ -6,8 +6,10 @@
 		"authors": [
 			"Amire80",
 			"Aprenik",
+			"Dolbaeb",
 			"Kaganer",
 			"Kareyac",
+			"Melted",
 			"Okras",
 			"Pacha Tchernof",
 			"StealthTheAB",
@@ -16,12 +18,38 @@
 			"Yupik"
 		]
 	},
+	"vc": {
+		"joinstream": "Смотреть стрим",
+		"leavestream": "Прекратить просмотр",
+		"stopstream": "Прекратить стрим",
+		"joiningStream": "Присоединяемся к стриму..."
+	},
 	"readableName": "Русский",
+	"pinMessage": "Закрепить сообщение",
+	"unableToPin": "Не удалось закрепить сообщение",
 	"reply": "Ответить",
 	"copyrawtext": "Скопировать текст",
 	"copymessageid": "Копировать ID сообщения",
 	"media": {
-		"loading": "Загружается"
+		"notFound": "Медиа не найдено",
+		"loading": "Загружается",
+		"download": "Загрузить медиа",
+		"moreInfo": "Подробнее",
+		"length": "Продолжительность: $1 минут(ы) $2 секунд(ы)"
+	},
+	"blog": {
+		"blog": "Блог",
+		"fermi": "Блог Fermi",
+		"desc": "Читайте или подписывайтесь на блог, чтобы быть в курсе новостей о Fermi!"
+	},
+	"logout": {
+		"logout": "Выйти",
+		"error": {
+			"title": "Произошла ошибка при попытке выхода из аккаунта",
+			"desc": "Fermi не удалось выйти из аккаунта,\n Вы все равно хотите удалить учетную запись?",
+			"cancel": "Отмена",
+			"cont": "Всё равно продолжить"
+		}
 	},
 	"permissions": {
 		"descriptions": {
@@ -148,6 +176,18 @@
 	"typing": "$2 {{PLURAL:$1|печатают|печатает}}",
 	"noMessages": "Похоже, здесь нет сообщений. Будьте первым, кто что-нибудь напишет!",
 	"blankMessage": "Пустое сообщение",
+	"spoiler": "Спойлер",
+	"accessibility": {
+		"roleColors": "Отключить цвета ролей",
+		"playGif": "Воспроизвести GIF:",
+		"gifSettings": {
+			"always": "Всегда",
+			"never": "Никогда"
+		}
+	},
+	"profile": {
+		"userInfo": "Информация об участнике"
+	},
 	"channel": {
 		"copyId": "Копировать ID канала",
 		"markRead": "Пометить как прочитанное",
