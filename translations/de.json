@@ -625,7 +625,7 @@
 	"incorrectURLS": "## Diese Instanz hat wahrscheinlich die falschen URLs gesendet.\n### Wenn Du der Instanzbesitzer sind, lies [hier](https://docs.spacebar.chat/setup/server/) unter *Verbindung von Remotecomputern herstellen* nach, um das Problem zu beheben.\nSoll Fermi automatisch versuchen diesen Fehler zu beheben, damit Du eine Verbindung zur Instanz herstellen kannst?",
 	"jankInfo": "Client-Information",
 	"instInfo": "Instanzinformation",
-	"clientDesc": "Client-Version: $1 \n\n[Tritt der offiziellen Fermi-Gilde bei]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Hilf Fermi zu übersetzen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Hilf Fermi zu entwickeln](https://github.com/MathMan05/Fermi)\n\n[Hilf den Server zu pflegen, auf den Fermi angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
+	"clientDesc": "Client-Version: $1 \n\n[Tritt der offiziellen Fermi-Gilde bei]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Hilf, Fermi zu übersetzen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Hilf, Fermi zu entwickeln](https://github.com/MathMan05/Fermi)\n\n[Hilf, den Server zu pflegen, auf den Fermi angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
 	"uploadFilesText": "Lade hier deine Dateien hoch!",
 	"errorReconnect": "Verbindung zum Server konnte nicht hergestellt werden. Neuer Versuch in **$1** Sekunden …",
 	"retrying": "Erneuter Versuch...",
