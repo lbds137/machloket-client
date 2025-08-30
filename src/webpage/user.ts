@@ -496,7 +496,7 @@ class User extends SnowFlake {
 				nameBox.append(notFound);
 			}
 		});
-		this.bind(div, guild);
+		this.bind(div, guild, undefined);
 		return div;
 	}
 	buildstatuspfp(guild: Guild | void | Member | null): HTMLDivElement {
@@ -541,7 +541,12 @@ class User extends SnowFlake {
 		}
 	}
 
-	bind(html: HTMLElement, guild: Guild | null = null, error = true): void {
+	bind(
+		html: HTMLElement,
+		guild: Guild | null = null,
+		error = true,
+		button: "right" | "left" = "right",
+	): void {
 		if (guild && guild.id !== "@me") {
 			Member.resolveMember(this, guild)
 				.then((member) => {
@@ -557,14 +562,14 @@ class User extends SnowFlake {
 					if (member) {
 						member.bind(html);
 					} else {
-						User.contextmenu.bindContextmenu(html, this, undefined);
+						User.contextmenu.bindContextmenu(html, this, undefined, undefined, undefined, button);
 					}
 				})
 				.catch((err) => {
 					console.log(err);
 				});
 		} else {
-			User.contextmenu.bindContextmenu(html, this, undefined);
+			User.contextmenu.bindContextmenu(html, this, undefined, undefined, undefined, button);
 		}
 		if (guild) {
 			this.profileclick(html, guild);
@@ -913,6 +918,7 @@ class User extends SnowFlake {
 		x: number,
 		y: number,
 		guild: Guild | null | Member = null,
+		zIndex = -1,
 	): Promise<HTMLDivElement> {
 		const membres = (async () => {
 			if (!guild) return;
@@ -925,7 +931,9 @@ class User extends SnowFlake {
 			return member;
 		})();
 		const div = document.createElement("div");
-
+		if (zIndex !== -1) {
+			div.style.zIndex = zIndex + "";
+		}
 		if (this.accent_color) {
 			div.style.setProperty(
 				"--accent_color",
@@ -1100,8 +1108,18 @@ class User extends SnowFlake {
 		}
 	}
 	profileclick(obj: HTMLElement, guild?: Guild): void {
+		const getIndex = (elm: HTMLElement) => {
+			const index = getComputedStyle(elm).zIndex;
+			if (index === "auto") {
+				if (elm.parentElement) {
+					return getIndex(elm.parentElement);
+				}
+			}
+			return +index;
+		};
 		obj.onclick = (e: MouseEvent) => {
-			this.buildprofile(e.clientX, e.clientY, guild);
+			const index = 1 + getIndex(obj);
+			this.buildprofile(e.clientX, e.clientY, guild, index);
 			e.stopPropagation();
 		};
 	}

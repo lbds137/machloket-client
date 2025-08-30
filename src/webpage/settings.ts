@@ -824,15 +824,22 @@ class HtmlArea implements OptionsElement<void> {
  */
 class Float {
 	options: Options;
+	html: WeakRef<HTMLElement> = new WeakRef(document.createElement("div"));
 	/**
 	 * This is a simple wrapper class for Options to make it happy so it can be used outside of Settings.
 	 */
 	constructor(name: string, options = {ltr: false, noSubmit: true}) {
 		this.options = new Options(name, this, options);
 	}
-	changed = () => {};
+	changed(d: HTMLElement) {
+		const html = this.html.deref();
+		if (!html) return;
+		html.append(d);
+	}
 	generateHTML() {
-		return this.options.generateHTML();
+		const html = this.options.generateHTML();
+		this.html = new WeakRef(html);
+		return html;
 	}
 }
 class Dialog {
@@ -852,16 +859,14 @@ class Dialog {
 		center.classList.add("centeritem", "nonimagecenter");
 		center.classList.remove("titlediv");
 		background.append(center);
-		center.onclick = (e) => {
-			e.stopImmediatePropagation();
-		};
 		document.body.append(background);
 		this.background = new WeakRef(background);
 		background.onclick = (_) => {
-			if (hideOnClick) {
+			if (hideOnClick && _.target === background) {
 				background.remove();
 			}
 		};
+		return center;
 	}
 	hide() {
 		const background = this.background.deref();
@@ -1098,7 +1103,7 @@ class Options implements OptionsElement<void> {
 	}
 	addEmojiInput(
 		label: string,
-		onSubmit: (str: Emoji | undefined) => void,
+		onSubmit: (str: Emoji | null | undefined) => void,
 		localuser?: Localuser,
 		{initEmoji = undefined, clear = false} = {} as {initEmoji?: Emoji; clear?: boolean},
 	) {

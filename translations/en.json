@@ -288,6 +288,13 @@
 	"edit": "Edit",
 	"guild": {
 		"template": "Template:",
+		"admins":"Find Admins",
+		"adminMenu":{
+			"finding":"Finding Admins",
+			"permission":"Permissions:",
+			"changePerms":"Change Permissions to find",
+			"owner":"Find the owner","ownName":"Owner"
+		},
 		"viewTemplate": "View Template",
 		"createFromTemplate": "Guild From Template",
 		"tempUseCount": "Template has been used $1 {{PLURAL:$1|time|times}}",

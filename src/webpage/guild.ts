@@ -263,6 +263,13 @@ class Guild extends SnowFlake {
 				},
 			},
 		);
+		//TODO make icon for this
+		Guild.contextmenu.addButton(
+			() => I18n.guild.admins(),
+			function (this: Guild) {
+				this.findAdmin();
+			},
+		);
 
 		Guild.contextmenu.addSeperator();
 		Guild.contextmenu.addButton(
@@ -272,6 +279,180 @@ class Guild extends SnowFlake {
 			},
 		);
 		//TODO mute guild button
+	}
+	async findAdmin() {
+		const menu = new Dialog(I18n.guild.admins());
+		menu.options.addText("Loading");
+		menu.show();
+		const roles = new Set(
+			Object.entries(
+				(await (
+					await fetch(this.info.api + `/guilds/${this.id}/roles/member-counts/`, {
+						headers: this.headers,
+					})
+				).json()) as {[key: string]: number},
+			)
+				.map(([id, count]) => {
+					return [this.roleids.get(id), count] as [Role, number];
+				})
+				//Just in case, this should never fire
+				.filter((_) => _[0] !== undefined)
+				//Filter out those who have too many users
+				.filter((_) => _[1] > 1000)
+				.map((_) => _[0]),
+		);
+		const everyone = this.roleids.get(this.id);
+		if (everyone) roles.add(everyone);
+		menu.options.removeAll();
+		let owner = true;
+		let perms = [
+			"ADMINISTRATOR",
+			"BAN_MEMBERS",
+			"KICK_MEMBERS",
+			"MANAGE_GUILD",
+			"MANAGE_CHANNELS",
+			"MODERATE_MEMBERS",
+			"MANAGE_ROLES",
+			"MANAGE_MESSAGES",
+			"MANAGE_NICKNAMES",
+			"MANAGE_WEBHOOKS",
+			"MANAGE_EVENTS",
+			"MANAGE_THREADS",
+		].filter((_) => {
+			for (const role of roles) {
+				if (role.permissions.hasPermission(_, false)) {
+					return false;
+				}
+			}
+			return true;
+		});
+
+		menu.options.addButtonInput("", I18n.guild.adminMenu.changePerms(), () => {
+			const d = new Dialog("", {noSubmit: false});
+			const opt = d.options;
+			opt
+				.addCheckboxInput(
+					I18n.guild.adminMenu.owner(),
+					(b) => {
+						owner = b;
+						d.hide();
+						queueMicrotask(() => loadResults());
+					},
+					{
+						initState: owner,
+					},
+				)
+				.watchForChange(() => opt.changed());
+			for (const perm of Permissions.info().filter((_) => {
+				for (const role of roles) {
+					if (role.permissions.hasPermission(_.name, false)) {
+						return false;
+					}
+				}
+				return true;
+			})) {
+				opt.addHR();
+				opt
+					.addCheckboxInput(
+						perm.readableName,
+						(b) => {
+							if (b) {
+								perms.push(perm.name);
+							} else {
+								perms = perms.filter((_) => _ !== perm.name);
+							}
+						},
+						{
+							initState: perms.includes(perm.name),
+						},
+					)
+					.watchForChange(() => opt.changed());
+				opt.addText(perm.description);
+			}
+			d.show().style.width = "80%";
+		});
+
+		const retDiv = document.createElement("div");
+		menu.options.addHTMLArea(retDiv);
+		const loadResults = async () => {
+			retDiv.textContent = I18n.guild.adminMenu.finding();
+			const results = new Set(
+				(
+					await Promise.all(
+						this.roles
+							.filter((_) => {
+								for (const perm of perms) {
+									if (_.permissions.hasPermission(perm, false)) {
+										return true;
+									}
+								}
+								return false;
+							})
+							.map(async (_) => {
+								return (
+									await fetch(`${this.info.api}/guilds/${this.id}/roles/${_.id}/member-ids`, {
+										headers: this.headers,
+									})
+								).json() as Promise<string[]>;
+							}),
+					)
+				).flat(),
+			);
+			if (owner) {
+				results.add(this.properties.owner_id);
+			}
+			const members = (
+				await Promise.all(
+					[...results].map(async (_) => {
+						const json = await this.localuser.resolvemember(_, this.id);
+						return json ? Member.new(json, this) : undefined;
+					}),
+				)
+			).filter((_) => _ !== undefined);
+			members.sort((a, b) => {
+				return a.name < b.name ? 1 : -1;
+			});
+			retDiv.innerHTML = "";
+			retDiv.append(
+				...members.map((memb) => {
+					const div = document.createElement("div");
+					div.classList.add("flexltr", "adminList");
+					const name = document.createElement("b");
+					name.textContent = memb.name;
+					const nameBox = document.createElement("div");
+					nameBox.classList.add("flexttb");
+
+					const roles = document.createElement("div");
+					roles.classList.add("flexltr");
+					roles.append(
+						...perms
+							.filter((_) => memb.hasPermission(_, false))
+							.map((perm) => {
+								const span = document.createElement("span");
+								//@ts-ignore
+								span.textContent = I18n.permissions.readableNames[perm]();
+								return span;
+							}),
+					);
+					if (owner && memb.id === this.properties.owner_id) {
+						const span = document.createElement("span");
+						span.textContent = I18n.guild.adminMenu.ownName();
+						roles.append(span);
+					}
+
+					nameBox.append(name, roles);
+
+					const pfp = memb.user.buildpfp(memb, div);
+
+					div.append(pfp, nameBox);
+
+					memb.user.bind(div, this, undefined);
+					return div;
+				}),
+			);
+			console.log(members);
+		};
+		loadResults();
 	}
 	generateSettings() {
 		const settings = new Settings(I18n.getTranslation("guild.settingsFor", this.properties.name));

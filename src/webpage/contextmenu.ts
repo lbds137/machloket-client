@@ -147,6 +147,7 @@ class Contextmenu<x, y> {
 	static setup() {
 		Contextmenu.declareMenu();
 		document.addEventListener("click", (event) => {
+			console.log(event.target, Contextmenu.currentmenu);
 			while (Contextmenu.currentmenu && !Contextmenu.currentmenu.contains(event.target as Node)) {
 				Contextmenu.declareMenu();
 			}
@@ -270,7 +271,6 @@ class Contextmenu<x, y> {
 			obj.style.left = Math.floor(docwidth - box.width) + "px";
 		}
 		if (box.bottom > docheight) {
-			debugger;
 			obj.style.top = Math.floor(docheight - box.height) + "px";
 		}
 	}

@@ -74,6 +74,35 @@ body {
 		margin-left: 4px;
 	}
 }
+.adminList {
+	width: 95%;
+	background: var(--secondary-bg);
+	padding: 6px;
+	margin-bottom: 6px;
+	border-radius: 10px;
+	cursor: pointer;
+	img {
+		width: 48px;
+		height: 48px;
+	}
+	.flexttb {
+		margin-left: 10px;
+		display: flex;
+		justify-content: center;
+
+		.flexltr {
+			span {
+				margin-right: 4px;
+				text-wrap: nowrap;
+				background: var(--primary-bg);
+				padding: 2px;
+				border-radius: 3px;
+				margin-bottom: 4px;
+			}
+			flex-wrap: wrap;
+		}
+	}
+}
 .flexltr {
 	min-height: 0;
 	display: flex;
@@ -2923,17 +2952,20 @@ fieldset input[type="radio"] {
 .tritoggle input:last-child {
 	accent-color: var(--red);
 }
+.nonimagecenter > .flexltr.savediv {
+	padding: 16px !important;
+}
 .savediv {
 	position: fixed;
 	bottom: 24px;
 	right: 50%;
 	transform: translateX(50%);
-	padding: 16px;
-	background: var(--secondary-bg);
+	padding: 16px !important;
+	background: var(--secondary-bg) !important;
 	font-size: 1.2em;
 	font-weight: bold;
 	color: var(--secondary-text);
-	border-radius: 8px;
+	border-radius: 8px !important;
 	align-items: center;
 	box-shadow:
 		0 0 24px var(--shadow),
