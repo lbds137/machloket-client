@@ -186,7 +186,9 @@
 		"userInfo": "Informations sur l’utilisateur",
 		"bio": "À mon sujet :",
 		"permInfo": "Autorisations",
-		"mut": "Guildes mutuelles"
+		"mut": "Guildes mutuelles",
+		"joined": "Compte créé : $1",
+		"joinedMember": "A rejoint $1 : $2"
 	},
 	"searchGifs": "Rechercher sur Tenor",
 	"channel": {
