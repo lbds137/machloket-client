@@ -288,6 +288,14 @@
 	"edit": "編輯",
 	"guild": {
 		"template": "模板：",
+		"admins": "尋找管理員",
+		"adminMenu": {
+			"finding": "尋找管理員",
+			"permission": "權限：",
+			"changePerms": "更改權限來尋找",
+			"owner": "尋找擁有者",
+			"ownName": "擁有者"
+		},
 		"viewTemplate": "查看模板",
 		"createFromTemplate": "公會模板",
 		"tempUseCount": "模板已使用 $1 {{PLURAL:$1|次}}",
