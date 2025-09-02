@@ -358,7 +358,7 @@
 		"INVITES_DISABLED": "Invite only",
 		"DISCOVERABLE": "Discovery"
 	},
-	"welcomeMessages": "Welcome $1! Nice to see ya!\nHello, nice to meat you $1!\nWelcome, hope you brought pizza $1!",
+	"welcomeMessages": "Welcome $1! Nice to see ya!\nHello, nice to meet you $1!\nWelcome, hope you brought pizza $1!",
 	"role": {
 		"displaySettings": "Display settings",
 		"name": "Role name:",
