@@ -6,6 +6,7 @@
 			"EmDashUser002",
 			"Goombiis",
 			"Mahabarata",
+			"Pyschobbens",
 			"Urhixidur",
 			"Wladek92"
 		]
@@ -293,6 +294,14 @@
 	"edit": "Modifier",
 	"guild": {
 		"template": "Modèle :",
+		"admins": "Trouver des administrateurs",
+		"adminMenu": {
+			"finding": "Trouver des administrateurs",
+			"permission": "Autorisations",
+			"changePerms": "Modifier les autorisations pour rechercher",
+			"owner": "Trouver le propriétaire",
+			"ownName": "Propriétaire"
+		},
 		"viewTemplate": "Afficher le modèle",
 		"createFromTemplate": "Guilde à partir du modèle",
 		"tempUseCount": "Le modèle a été utilisé $1 fois{{PLURAL:$1|}}",

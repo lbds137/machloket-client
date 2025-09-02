@@ -104,6 +104,7 @@
 		"userField": "Benotzernumm:",
 		"pw2Field": "Passwuert nach eng Kéier aginn:",
 		"dobField": "Gebuertsdatum:",
+		"createAccount": "Kont uleeën",
 		"trans": "Iwwersetzen",
 		"transTitle": "Fermi iwwersetzen",
 		"transDesc": "Dir kënnt dobäi hëllefe fir Fermi an Är eege Sprooch z'iwwersetzen!"
@@ -119,6 +120,12 @@
 	"edit": "Änneren",
 	"guild": {
 		"template": "Schabloun:",
+		"admins": "Administrateure fannen",
+		"adminMenu": {
+			"finding": "Administrateure fannen",
+			"owner": "De Besëtzer fannen",
+			"ownName": "Besëtzer"
+		},
 		"viewTemplate": "Schabloun weisen",
 		"tempCreatedBy": "Schabloun ugeluecht vum:",
 		"createNewTemplate": "Nei Schabloun uleeën",

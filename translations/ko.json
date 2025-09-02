@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Bisang",
 			"McDutchie",
 			"Suleiman the Magnificent Television",
 			"YeBoy371",
@@ -160,6 +161,14 @@
 	},
 	"submit": "제출",
 	"guild": {
+		"admins": "관리자 찾기",
+		"adminMenu": {
+			"finding": "관리자 찾기",
+			"permission": "권한:",
+			"changePerms": "찾기 위해 권한 변경",
+			"owner": "소유자 찾기",
+			"ownName": "소유자"
+		},
 		"markRead": "읽은 것으로 표시",
 		"notifications": "알림",
 		"settings": "설정",
