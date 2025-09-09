@@ -606,7 +606,6 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			(async () => {
-				const Emoji = (await import("./emoji.js")).Emoji;
 				const emj = await Emoji.emojiPicker(e.x, e.y, this.localuser);
 				if (emj) {
 					this.value = emj;

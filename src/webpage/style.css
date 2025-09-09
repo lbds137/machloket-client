@@ -2407,7 +2407,7 @@ img.bigembedimg {
 	box-sizing: border-box;
 	user-select: none;
 	background: var(--secondary-bg);
-	z-index: 4;
+	z-index: 104;
 
 	input {
 		width: 1in;
