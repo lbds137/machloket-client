@@ -194,7 +194,8 @@ class RoleList extends Buttons {
 		} else {
 			this.permission = new Permissions("0");
 		}
-		this.makeguildmenus(options);
+		//TODO maybe make channels work correctly with this (role permissions aren't currently saved)
+		if (!channel) this.makeguildmenus(options);
 		for (const thing of Permissions.info()) {
 			options.options.push(new PermissionToggle(thing, this.permission, options));
 		}
@@ -280,6 +281,7 @@ class RoleList extends Buttons {
 			});
 			form.addPreprocessor((obj: any) => {
 				obj.color = Number("0x" + colorI.colorContent.substring(1));
+				obj.permissions = this.permission.allow.toString();
 
 				console.log(obj.color);
 			});
