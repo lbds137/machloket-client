@@ -88,10 +88,10 @@
 			"USE_SOUNDBOARD": "Allows for using soundboard in a voice channel",
 			"CREATE_GUILD_EXPRESSIONS": "Allows for creating emojis, stickers, and soundboard sounds, and editing and deleting those created by the current user.",
 			"CREATE_EVENTS": "Allows for creating scheduled events, and editing and deleting those created by the current user.",
-			"USE_EXTERNAL_SOUNDS": "Allows the usage of custom soundboard sounds from other servers",
+			"USE_EXTERNAL_SOUNDS": "Allows the usage of custom soundboard sounds from other guilds",
 			"SEND_VOICE_MESSAGES": "Allows sending voice messages",
 			"SEND_POLLS": "Allows sending polls",
-			"USE_EXTERNAL_APPS": "Allows user-installed apps to send public responses. When disabled, users will still be allowed to use their apps but the responses will be ephemeral. This only applies to apps not also installed to the server."
+			"USE_EXTERNAL_APPS": "Allows user-installed apps to send public responses. When disabled, users will still be allowed to use their apps but the responses will be ephemeral. This only applies to apps not also installed to the guild."
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "Create invite",
@@ -239,7 +239,7 @@
 	},
 	"htmlPages": {
 		"idpermissions": "This will allow the bot to:",
-		"addBot": "Add to server",
+		"addBot": "Add to guild",
 		"loadingText": "Fermi is loading",
 		"loaddesc": "This shouldn't take long",
 		"switchaccounts": "Switch Accounts",
@@ -337,7 +337,7 @@
 		"yesLeave": "Yes, I'm sure",
 		"noLeave": "Nevermind",
 		"confirmDelete": "Are you sure you want to delete $1?",
-		"serverName": "Name of server:",
+		"serverName": "Name of guild:",
 		"yesDelete": "Yes, I'm sure",
 		"noDelete": "Nevermind",
 		"create": "Create guild",
@@ -504,7 +504,7 @@
 	"instanceStats": {
 		"name": "Instance stats: $1",
 		"users": "Registered users: $1",
-		"servers": "Servers: $1",
+		"servers": "Guilds: $1",
 		"messages": "Messages: $1",
 		"members": "Members: $1"
 	},
@@ -582,7 +582,7 @@
 		"ban": "Ban member",
 		"addRole": "Add roles",
 		"removeRole": "Remove roles",
-		"editServerProfile": "Edit server profile",
+		"editServerProfile": "Edit guild profile",
 		"instanceBan": "Instance ban",
 		"confirmInstBan": "Are you sure you want to instance ban $1?",
 		"unban": "Unban $1"
