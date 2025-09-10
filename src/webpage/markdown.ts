@@ -757,12 +757,19 @@ class MarkDown {
 
 					if (partsFound === 0 && txt[j] === "]") {
 						if (
-							txt[j + 1] === "(" &&
-							txt[j + 2] === "h" &&
-							txt[j + 3] === "t" &&
-							txt[j + 4] === "t" &&
-							txt[j + 5] === "p" &&
-							(txt[j + 6] === "s" || txt[j + 6] === ":")
+							(txt[j + 1] === "(" &&
+								txt[j + 2] === "h" &&
+								txt[j + 3] === "t" &&
+								txt[j + 4] === "t" &&
+								txt[j + 5] === "p" &&
+								(txt[j + 6] === "s" || txt[j + 6] === ":")) ||
+							(txt[j + 1] === "(" &&
+								txt[j + 2] === "<" &&
+								txt[j + 3] === "h" &&
+								txt[j + 4] === "t" &&
+								txt[j + 5] === "t" &&
+								txt[j + 6] === "p" &&
+								(txt[j + 7] === "s" || txt[j + 7] === ":"))
 						) {
 							partsFound++;
 						} else {
@@ -773,13 +780,15 @@ class MarkDown {
 						break;
 					}
 				}
-
+				console.warn(partsFound);
 				if (partsFound === 2) {
 					appendcurrent();
 
-					const parts = build.join("").match(/^\[(.+)\]\((https?:.+?)( ('|").+('|"))?\)$/);
+					const parts = build.join("").match(/^\[(.+)\]\(<?(https?:.+?)>?( ('|").+('|"))?\)$/);
+					console.warn(parts);
 					if (parts) {
 						const linkElem = document.createElement("a");
+
 						if (URL.canParse(parts[2])) {
 							i = j;
 							MarkDown.safeLink(linkElem, parts[2]);
