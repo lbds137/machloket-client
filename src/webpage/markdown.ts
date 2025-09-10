@@ -76,7 +76,7 @@ class MarkDown {
 		}
 		for (let i = 0; i < txt.length; i++) {
 			if (txt[i] === "\n" || i === 0) {
-				const first = i === 0;
+				let first = i === 0;
 				if (first) {
 					i--;
 				}
@@ -130,6 +130,75 @@ class MarkDown {
 						span.append(element);
 					} finally {
 						i -= 1;
+						continue;
+					}
+				}
+				const bullet = new Set("*+- ");
+				if (bullet.has(txt[i + 1])) {
+					let list = document.createElement("ul");
+					let depth = 0;
+					while (true) {
+						let j = i + 1;
+						let build = "";
+						for (; txt[j] === " "; j++) {
+							build += txt[j];
+						}
+						build += txt[j];
+						j++;
+						build += txt[j];
+						j++;
+						const match = build.match(/( *)[+*-] $/);
+						if (match) {
+							const arr: string[] = [];
+							for (; txt[j] && txt[j] !== "\n"; j++) {
+								arr.push(txt[j]);
+							}
+							i = j;
+							const line = this.markdown(arr);
+							if (keep) {
+								if (!first) {
+									current.textContent += "\n";
+								} else {
+									first = false;
+								}
+								current.textContent += build;
+								appendcurrent();
+								span.append(line);
+								depth = 2;
+							} else {
+								const curDepth = 0 | (match[1].length / 2);
+								if (curDepth > depth) {
+									depth++;
+									const newlist = document.createElement("ul");
+									list.append(newlist);
+									list = newlist;
+								} else {
+									while (curDepth < depth) {
+										depth--;
+										list = list.parentElement as HTMLUListElement;
+									}
+								}
+								const li = document.createElement("li");
+								li.append(line);
+								list.append(li);
+							}
+						} else {
+							break;
+						}
+						if (!txt[j]) {
+							break;
+						}
+					}
+					if (depth !== 0 || list.children.length) {
+						if (!keep) {
+							while (0 < depth) {
+								depth--;
+								list = list.parentElement as HTMLUListElement;
+							}
+							appendcurrent();
+							span.append(list);
+						}
+						i--;
 						continue;
 					}
 				}
@@ -457,73 +526,105 @@ class MarkDown {
 					continue;
 				}
 			}
-			if (txt[i] === "<" && (txt[i + 1] === "@" || txt[i + 1] === "#") && this.localuser) {
-				let id = "";
-				let j = i + 2;
-				const numbers = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
-				for (; txt[j] !== undefined; j++) {
-					const char = txt[j];
-					if (!numbers.has(char)) {
-						break;
+			if (txt[i] === "<") {
+				if ((txt[i + 1] === "@" || txt[i + 1] === "#") && this.localuser) {
+					let id = "";
+					let j = i + 2;
+					const numbers = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+					for (; txt[j] !== undefined; j++) {
+						const char = txt[j];
+						if (!numbers.has(char)) {
+							break;
+						}
+						id += char;
 					}
-					id += char;
-				}
 
-				if (txt[j] === ">") {
-					appendcurrent();
-					const last = getCurLast();
-					if (
-						last instanceof HTMLBRElement ||
-						(last instanceof HTMLElement && last.contentEditable === "false")
-					) {
-						span.append(document.createElement("span"));
+					if (txt[j] === ">") {
+						appendcurrent();
+						const last = getCurLast();
+						if (
+							last instanceof HTMLBRElement ||
+							(last instanceof HTMLElement && last.contentEditable === "false")
+						) {
+							span.append(document.createElement("span"));
+						}
+						const mention = document.createElement("span");
+						mention.classList.add("mentionMD");
+						mention.contentEditable = "false";
+						const char = txt[i + 1];
+						i = j;
+						switch (char) {
+							case "@":
+								const user = this.localuser.userMap.get(id);
+								if (user) {
+									mention.textContent = `@${user.name}`;
+									let guild: null | Guild = null;
+									if (this.owner instanceof Channel) {
+										guild = this.owner.guild;
+									}
+									if (!keep) {
+										user.bind(mention, guild);
+									}
+									if (guild) {
+										Member.resolveMember(user, guild).then((member) => {
+											if (member) {
+												mention.textContent = `@${member.name}`;
+											}
+										});
+									}
+								} else {
+									mention.textContent = "@unknown";
+								}
+								break;
+							case "#":
+								const channel = this.localuser.channelids.get(id);
+								if (channel) {
+									mention.textContent = `#${channel.name}`;
+									if (!keep) {
+										mention.onclick = (_) => {
+											if (!this.localuser) return;
+											this.localuser.goToChannel(id);
+										};
+									}
+								} else {
+									mention.textContent = "#unknown";
+								}
+								break;
+						}
+						span.appendChild(mention);
+						mention.setAttribute("real", `<${char}${id}>`);
+						continue;
 					}
-					const mention = document.createElement("span");
-					mention.classList.add("mentionMD");
-					mention.contentEditable = "false";
-					const char = txt[i + 1];
-					i = j;
-					switch (char) {
-						case "@":
-							const user = this.localuser.userMap.get(id);
-							if (user) {
-								mention.textContent = `@${user.name}`;
-								let guild: null | Guild = null;
-								if (this.owner instanceof Channel) {
-									guild = this.owner.guild;
-								}
-								if (!keep) {
-									user.bind(mention, guild);
-								}
-								if (guild) {
-									Member.resolveMember(user, guild).then((member) => {
-										if (member) {
-											mention.textContent = `@${member.name}`;
-										}
-									});
-								}
-							} else {
-								mention.textContent = "@unknown";
-							}
+				} else {
+					let j = i + 1;
+					let build = "";
+					const invalid = new Set([">", "<"]);
+					for (; txt[j] !== undefined; j++) {
+						const char = txt[j];
+						if (invalid.has(char)) {
 							break;
-						case "#":
-							const channel = this.localuser.channelids.get(id);
-							if (channel) {
-								mention.textContent = `#${channel.name}`;
-								if (!keep) {
-									mention.onclick = (_) => {
-										if (!this.localuser) return;
-										this.localuser.goToChannel(id);
-									};
-								}
-							} else {
-								mention.textContent = "#unknown";
-							}
-							break;
+						}
+						build += char;
 					}
-					span.appendChild(mention);
-					mention.setAttribute("real", `<${char}${id}>`);
-					continue;
+					if (URL.canParse(build) && txt[j] === ">") {
+						const url = new URL(build);
+						const allowedProticals = new Set(["https:", "http:"]);
+						if (allowedProticals.has(url.protocol)) {
+							i = j + 1;
+
+							if (keep) {
+								current.textContent += `<${build}>`;
+							} else {
+								appendcurrent();
+								const a = document.createElement("a");
+								MarkDown.safeLink(a, build);
+								a.textContent = build;
+								a.target = "_blank";
+								span.appendChild(a);
+							}
+							continue;
+						}
+					}
 				}
 			}
 			if (txt[i] === "<" && txt[i + 1] === "t" && txt[i + 2] === ":") {
@@ -694,7 +795,13 @@ class MarkDown {
 					}
 				}
 			}
-
+			if (txt[i] === "\\") {
+				if (keep) {
+					current.textContent += txt[i];
+				}
+				i++;
+				current.textContent += txt[i];
+			}
 			current.textContent += txt[i];
 		}
 		appendcurrent();
