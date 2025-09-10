@@ -2387,6 +2387,10 @@ img.bigembedimg {
 	align-items: center;
 	gap: 4px;
 }
+ul {
+	margin-top: 2px;
+	margin-bottom: 2px;
+}
 .colorrolediv {
 	height: 12px;
 	width: 12px;
