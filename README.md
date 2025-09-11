@@ -26,4 +26,10 @@ The current hosted instance of Fermi https://fermi.chat/
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=MathMan05/Fermi&type=Date)](https://www.star-history.com/#MathMan05/Fermi&Date)
+<a href="https://www.star-history.com/#MathMan05/Fermi&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=MathMan05/Fermi&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=MathMan05/Fermi&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=MathMan05/Fermi&type=Date" />
+ </picture>
+</a>
