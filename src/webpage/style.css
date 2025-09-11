@@ -3161,10 +3161,12 @@ fieldset input[type="radio"] {
 	}
 	.contextmenu,
 	.profile,
-	.emojiPicker {
+	.emojiPicker,
+	.gifmenu {
 		top: unset !important;
-		bottom: 0;
-		width: 100%;
+		bottom: 0 !important;
+		right: unset !important;
+		width: 100% !important;
 		box-sizing: border-box;
 		border-radius: 16px 16px 0 0;
 		box-shadow:
