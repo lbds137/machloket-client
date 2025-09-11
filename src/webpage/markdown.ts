@@ -610,7 +610,7 @@ class MarkDown {
 						const url = new URL(build);
 						const allowedProticals = new Set(["https:", "http:"]);
 						if (allowedProticals.has(url.protocol)) {
-							i = j + 1;
+							i = j;
 
 							if (keep) {
 								current.textContent += `<${build}>`;
@@ -780,7 +780,6 @@ class MarkDown {
 						break;
 					}
 				}
-				console.warn(partsFound);
 				if (partsFound === 2) {
 					appendcurrent();
 
