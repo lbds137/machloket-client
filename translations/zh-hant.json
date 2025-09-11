@@ -88,10 +88,10 @@
 			"USE_SOUNDBOARD": "允許在語頻道中使用音效面板",
 			"CREATE_GUILD_EXPRESSIONS": "允許建立表情符號、貼圖、音效面板用音效，以及編輯和刪除由目前使用者所建立以上內容。",
 			"CREATE_EVENTS": "允許建立計劃事件，以及編輯和刪除目前使用者建立的事件。",
-			"USE_EXTERNAL_SOUNDS": "允許使用來自其他伺服器的自訂音效面板音效",
+			"USE_EXTERNAL_SOUNDS": "允許使用來自其他公會的自訂音效面板音效",
 			"SEND_VOICE_MESSAGES": "允許發送語音訊息",
 			"SEND_POLLS": "允許發送投票調查",
-			"USE_EXTERNAL_APPS": "允許使用者安裝的應用程式發送公開回應。當停用後，使用者仍可使用該應用程式，但僅能短暫回應。此設定僅適用於未安裝到伺服器的應用程式。"
+			"USE_EXTERNAL_APPS": "允許使用者安裝的應用程式發送公開回應。當停用後，使用者仍可使用該應用程式，但僅能短暫回應。此設定僅適用於未安裝到公會的應用程式。"
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "建立邀請",
@@ -239,7 +239,7 @@
 	},
 	"htmlPages": {
 		"idpermissions": "這將允許機器人：",
-		"addBot": "新增到伺服器",
+		"addBot": "新增到公會",
 		"loadingText": "Fermi 載入中",
 		"loaddesc": "這應該不會花很長時間",
 		"switchaccounts": "切換帳號",
@@ -338,7 +338,7 @@
 		"yesLeave": "是的，我確定",
 		"noLeave": "沒事",
 		"confirmDelete": "您確定要刪除$1嗎？",
-		"serverName": "伺服器名稱：",
+		"serverName": "公會名稱：",
 		"yesDelete": "是的，我確定",
 		"noDelete": "沒事",
 		"create": "建立公會",
@@ -488,6 +488,8 @@
 		"genericType": "通用",
 		"copy": "複製"
 	},
+	"emojiSelect": "表情符號：",
+	"noEmojiFont": "使用系統表情符號",
 	"unpinMessage": "取消置頂訊息",
 	"noPins": "這裡目前似乎什麼都沒有…",
 	"message": {
@@ -505,7 +507,7 @@
 	"instanceStats": {
 		"name": "實例統計：$1",
 		"users": "已註冊的使用者：$1",
-		"servers": "伺服器：$1",
+		"servers": "公會：$1",
 		"messages": "訊息：$1",
 		"members": "成員：$1"
 	},
@@ -583,7 +585,7 @@
 		"ban": "禁止成員",
 		"addRole": "新增角色",
 		"removeRole": "移除角色",
-		"editServerProfile": "編輯伺服器設定檔",
+		"editServerProfile": "編輯公會設定檔",
 		"instanceBan": "禁止實例",
 		"confirmInstBan": "您確定要禁止實例$1嗎？",
 		"unban": "解禁$1"
