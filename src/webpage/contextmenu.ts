@@ -147,7 +147,6 @@ class Contextmenu<x, y> {
 	static setup() {
 		Contextmenu.declareMenu();
 		document.addEventListener("click", (event) => {
-			console.log(event.target, Contextmenu.currentmenu);
 			while (Contextmenu.currentmenu && !Contextmenu.currentmenu.contains(event.target as Node)) {
 				Contextmenu.declareMenu();
 			}

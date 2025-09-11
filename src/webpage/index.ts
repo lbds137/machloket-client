@@ -315,25 +315,25 @@ pinnedM.onclick = (e) => {
 	};
 };
 const emojiTB = document.getElementById("emojiTB") as HTMLElement;
-emojiTB.onmousedown = (e) => {
+emojiTB.onmousedown = (e) => e.stopImmediatePropagation();
+emojiTB.onclick = (e) => {
 	e.preventDefault();
 	e.stopImmediatePropagation();
 	thisUser.TBEmojiMenu(emojiTB.getBoundingClientRect());
 };
-emojiTB.onclick = (e) => e.stopImmediatePropagation();
 
 const gifTB = document.getElementById("gifTB") as HTMLElement;
-gifTB.onmousedown = (e) => {
+gifTB.onmousedown = (e) => e.stopImmediatePropagation();
+gifTB.onclick = (e) => {
 	e.preventDefault();
 	e.stopImmediatePropagation();
 	thisUser.makeGifBox(gifTB.getBoundingClientRect());
 };
-gifTB.onclick = (e) => e.stopImmediatePropagation();
 
 const stickerTB = document.getElementById("stickerTB") as HTMLElement;
-stickerTB.onmousedown = (e) => {
+stickerTB.onmousedown = (e) => e.stopImmediatePropagation();
+stickerTB.onclick = (e) => {
 	e.preventDefault();
 	e.stopImmediatePropagation();
 	thisUser.makeStickerBox(stickerTB.getBoundingClientRect());
 };
-stickerTB.onclick = (e) => e.stopImmediatePropagation();
