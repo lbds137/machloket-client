@@ -70,8 +70,8 @@ class File {
 			};
 			div.append(img);
 			if (this.width && !fullScreen) {
-				div.style.maxWidth = this.width + "px";
-				div.style.maxHeight = this.height + "px";
+				div.style.width = this.width + "px";
+				div.style.height = this.height + "px";
 			}
 			if (!fullScreen) {
 				if (OSpoiler) {
