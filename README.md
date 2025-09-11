@@ -22,3 +22,8 @@ The official SpaceBar server for Fermi https://fermi.chat/invite/USgYJo?instance
 old invite for the official client https://dev.app.spacebar.chat/invite/USgYJo
 
 The current hosted instance of Fermi https://fermi.chat/
+
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=MathMan05/Fermi&type=Date)](https://www.star-history.com/#MathMan05/Fermi&Date)
