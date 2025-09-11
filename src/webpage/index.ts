@@ -9,7 +9,7 @@ import {I18n} from "./i18n.js";
 
 let templateID = new URLSearchParams(window.location.search).get("templateID");
 await I18n.done;
-
+Localuser.loadFont();
 if (!(sessionStorage.getItem("currentuser") || Localuser.users.currentuser)) {
 	window.location.href = "/login";
 	throw 0;

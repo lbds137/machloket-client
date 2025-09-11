@@ -487,6 +487,8 @@
 		"genericType": "Generic",
 		"copy": "Copy"
 	},
+	"emojiSelect":"Emoji:",
+	"noEmojiFont":"Use system Emoji",
 	"unpinMessage": "Unpin Message",
 	"noPins": "There seems to be nothing here... yet",
 	"message": {

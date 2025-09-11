@@ -1680,6 +1680,27 @@ class Localuser {
 					{initColor: userinfos.accent_color},
 				);
 			}
+			{
+				const options = [[null, I18n.noEmojiFont()], ...Localuser.fonts] as const;
+				const cur = localStorage.getItem("emoji-font");
+				let index = options.findIndex((_) => _[1] == cur);
+				if (index === -1) index = 0;
+				tas.addSelect(
+					I18n.emojiSelect(),
+					(index) => {
+						if (options[index][0]) {
+							localStorage.setItem("emoji-font", options[index][1]);
+						} else {
+							localStorage.removeItem("emoji-font");
+						}
+						Localuser.loadFont();
+					},
+					options.map((font) => font[1]),
+					{
+						defaultIndex: index,
+					},
+				);
+			}
 		}
 		{
 			const update = settings.addButton(I18n.getTranslation("localuser.updateSettings"));
@@ -3077,6 +3098,33 @@ class Localuser {
 		Map<string, (returns: memberjson | undefined) => void>
 	>();
 	readonly presences: Map<string, presencejson> = new Map();
+	static font?: FontFace;
+	static async loadFont() {
+		const fontName = localStorage.getItem("emoji-font");
+		if (this.font) {
+			//TODO see when/if this can be removed
+			//@ts-ignore this is stupid. it's been here since 2020
+			document.fonts.delete(this.font);
+		}
+		const realname = this.fonts.find((_) => _[1] === fontName)?.[0];
+		if (realname) {
+			const font = new FontFace("emojiFont", `url("/emoji/${realname}")`);
+			await font.load();
+			console.error("fun");
+			//TODO see when/if this can be removed
+			//@ts-ignore this is stupid. it's been here since 2020
+			document.fonts.add(font);
+			console.log(font);
+			this.font = font;
+		}
+	}
+	static get fonts() {
+		return [
+			["NotoColorEmoji-Regular.ttf", "Noto Color Emoji"],
+			["OpenMoji-color-glyf_colr_0.woff2", "OpenMoji"],
+			["Twemoji-16.0.1.ttf", "Twemoji"],
+		] as const;
+	}
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
 		if (guildid === "@me") {
 			return undefined;

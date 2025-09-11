@@ -3,7 +3,7 @@ body {
 	height: 100%;
 	margin: 0;
 	background: var(--secondary-bg);
-	font-family: var(--font);
+	font-family: var(--font), emojiFont;
 	color: var(--primary-text);
 	overflow: hidden; /* avoid "bounce" */
 	-webkit-text-size-adjust: 100%;
