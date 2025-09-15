@@ -52,7 +52,7 @@
 	},
 	"switchAccounts": "Accounts wisselen ⇌",
 	"htmlPages": {
-		"addBot": "Toevoegen aan server",
+		"addBot": "Toevoegen aan gilde",
 		"loaddesc": "Dit zou niet lang moeten duren",
 		"switchaccounts": "Accounts wisselen",
 		"emailField": "E-mail:",
@@ -83,7 +83,7 @@
 		"onlyMentions": "alleen vermeldingen",
 		"none": "geen",
 		"yesLeave": "Ja, ik weet het zeker",
-		"serverName": "Naam van de server:",
+		"serverName": "Naam van het gilde:",
 		"yesDelete": "Ja, ik weet het zeker",
 		"emptytitle": "Vreemde plek",
 		"default": "Standaard ($1)",
@@ -123,6 +123,7 @@
 		"oldPassword:": "Oud wachtwoord:",
 		"newPassword:": "Nieuw wachtwoord:",
 		"PasswordsNoMatch": "Wachtwoorden komen niet overeen",
+		"disableConnection": "Deze verbinding is bij de server uitgeschakeld",
 		"team:": "Team:",
 		"description": "Beschrijving:",
 		"manageBot": "Beheer bot",
@@ -142,7 +143,7 @@
 	},
 	"instanceStats": {
 		"users": "Geregistreerde gebruikers: $1",
-		"servers": "Servers: $1",
+		"servers": "Gilden: $1",
 		"messages": "Berichten: $1",
 		"members": "Leden: $1"
 	},
@@ -210,6 +211,9 @@
 		"image:": "Afbeelding:",
 		"name:": "Naam:"
 	},
-	"errorReconnect": "Kan geen verbinding maken met de server, opnieuw proberen over ** $1 ** seconden...",
-	"retrying": "Opnieuw proberen..."
+	"incorrectURLS": "## Deze server heeft waarschijnlijk de verkeerde URL’s verzonden.\n### Als u de eigenaar van de server bent, kijk dan [hier](https://docs.spacebar.chat/setup/server/) onder *Verbinding maken vanaf externe machines* om het probleem te verhelpen.\n Wilt u dat Fermi automatisch probeert deze fout te verhelpen, zodat u verbinding kunt maken met de server?",
+	"clientDesc": "Cliëntversie: $1 \n\n[Sluit u aan bij het officiële Fermi-gilde]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help Fermi te vertalen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help Fermi te maken](https://github.com/MathMan05/Fermi)\n\n[Help de server waar Fermi op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n[Lees het blog](https://blog.fermi.chat/)\n\nBerekende rechten: $3",
+	"errorReconnect": "Kan geen verbinding maken met de server. Het wordt over **$1** seconden opnieuw geprobeerd…",
+	"retrying": "Opnieuw proberen...",
+	"unableToConnect": "Kan geen verbinding maken met de Spacebar-server. Probeer u af en weer aan te melden."
 }

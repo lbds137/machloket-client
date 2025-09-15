@@ -212,6 +212,7 @@
 		"genericType": "Geneeresch",
 		"copy": "Kopéieren"
 	},
+	"emojiSelect": "Emoji:",
 	"message": {
 		"reactionAdd": "Reaktioun derbäisetzen",
 		"delete": "Message läschen",
