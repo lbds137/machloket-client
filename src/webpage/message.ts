@@ -986,11 +986,12 @@ class Message extends SnowFlake {
 				thing.count++;
 				if (member.id === this.localuser.user.id) {
 					thing.me = true;
-					this.updateReactions();
-					return;
 				}
+				this.updateReactions();
+				return;
 			}
 		}
+		console.log(data, this.reactions);
 		this.reactions.push({
 			count: 1,
 			emoji: data,
