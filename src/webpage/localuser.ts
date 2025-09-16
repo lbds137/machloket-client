@@ -3092,6 +3092,20 @@ class Localuser {
 
 	keydown: (event: KeyboardEvent) => unknown = () => {};
 	keyup: (event: KeyboardEvent) => boolean = () => false;
+	handleKeyUp(event: KeyboardEvent): boolean {
+		if (this.keyup(event)) {
+			return true;
+		}
+		if (event.key === "Escape") {
+			if (event.ctrlKey) {
+				this.lookingguild?.markAsRead();
+			} else {
+				this.channelfocus?.readbottom();
+			}
+		}
+
+		return false;
+	}
 	//---------- resolving members code -----------
 	readonly waitingmembers = new Map<
 		string,

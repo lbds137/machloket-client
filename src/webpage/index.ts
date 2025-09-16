@@ -104,7 +104,7 @@ window.addEventListener("popstate", (e) => {
 	//console.log(e.state,"state:3")
 });
 async function handleEnter(event: KeyboardEvent): Promise<void> {
-	if (thisUser.keyup(event)) {
+	if (thisUser.handleKeyUp(event)) {
 		return;
 	}
 	const channel = thisUser.channelfocus;
