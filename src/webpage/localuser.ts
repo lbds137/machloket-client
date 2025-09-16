@@ -184,9 +184,13 @@ class Localuser {
 	}
 	onswap?: (l: Localuser) => void;
 	constructor(userinfo: Specialuser | -1) {
-		Play.playURL("/audio/sounds.jasf").then((_) => {
-			this.play = _;
-		});
+		const func = () => {
+			Play.playURL("/audio/sounds.jasf").then((_) => {
+				this.play = _;
+			});
+			document.removeEventListener("click", func);
+		};
+		document.addEventListener("click", func);
 		if (userinfo === -1) {
 			this.rights = new Rights("");
 			return;
@@ -1648,23 +1652,33 @@ class Localuser {
 				};
 				const sounds = [...AVoice.sounds, I18n.localuser.customSound()];
 				const initIndex = sounds.indexOf(this.getNotificationSound());
-				tas
-					.addSelect(
-						I18n.getTranslation("localuser.notisound"),
-						(index) => {
-							this.setNotificationSound(sounds[index]);
-						},
-						sounds,
-						{defaultIndex: initIndex},
-					)
-					.watchForChange((index) => {
-						initArea(index);
-						this.playSound(sounds[index]);
-					});
+				const select = tas.addSelect(
+					I18n.localuser.notisound(),
+					(index) => {
+						this.setNotificationSound(sounds[index]);
+					},
+					sounds,
+					{defaultIndex: initIndex},
+				);
+				select.watchForChange((index) => {
+					initArea(index);
+					this.playSound(sounds[index]);
+				});
+				const input = document.createElement("input");
+				input.type = "range";
+				input.value = this.getNotiVolume() + "";
+				input.min = "0";
+				input.max = "100";
+				input.onchange = () => {
+					this.setNotificationVolume(+input.value);
+					this.playSound(sounds[select.index]);
+				};
 
 				const area = document.createElement("div");
 				initArea(initIndex);
 				tas.addHTMLArea(area);
+				tas.addText(I18n.notiVolume());
+				tas.addHTMLArea(input);
 			}
 
 			{
@@ -3356,21 +3370,34 @@ class Localuser {
 			this.urlsToRefresh.push([url, res]);
 		});
 	}
+	getNotiVolume(): number {
+		const userinfos = getBulkInfo();
+		return userinfos.preferences.volume || 100;
+	}
+	setNotificationVolume(volume: number) {
+		const userinfos = getBulkInfo();
+		userinfos.preferences.volume = volume;
+		localStorage.setItem("userinfos", JSON.stringify(userinfos));
+	}
 	setNotificationSound(sound: string) {
 		const userinfos = getBulkInfo();
 		userinfos.preferences.notisound = sound;
 		localStorage.setItem("userinfos", JSON.stringify(userinfos));
 	}
 	playSound(name = this.getNotificationSound()) {
+		const volume = this.getNotiVolume();
 		if (this.play) {
 			const voice = this.play.audios.get(name);
 			if (voice) {
-				voice.play();
+				voice.play(volume / 100);
 			} else if (this.perminfo.sound && this.perminfo.sound.cSound) {
 				const audio = document.createElement("audio");
+				audio.volume = volume / 100;
 				audio.src = this.perminfo.sound.cSound;
 				audio.play().catch();
 			}
+		} else {
+			console.error("play object is missing");
 		}
 	}
 	getNotificationSound() {

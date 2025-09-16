@@ -381,6 +381,7 @@
 		"totalTime": "$2: $1ms",
 		"traces": "$1 ($2ms) $3"
 	},
+	"notiVolume":"Notification volume:",
 	"localuser": {
 		"trace": "Traces",
 		"install": "Install",

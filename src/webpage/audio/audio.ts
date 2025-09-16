@@ -22,10 +22,10 @@ export class Audio {
 		}
 		return new Audio(name, tracks);
 	}
-	async play() {
+	async play(volume: number) {
 		for (const thing of this.tracks) {
 			if (thing instanceof Track) {
-				thing.play();
+				thing.play(volume);
 			} else {
 				await new Promise((res) => setTimeout(res, thing));
 			}

@@ -82,14 +82,17 @@ class AVoice {
 	}
 	play(): void {
 		if (this.playing) {
+			console.warn("playing?");
 			return;
 		}
 		this.source.connect(this.gainNode);
 		this.playing = true;
 	}
-	playL() {
+	playL(volume: number) {
+		this.gainNode.gain.value *= volume;
 		this.play();
 		setTimeout(() => {
+			this.gainNode.gain.value /= volume;
 			this.stop();
 		}, this.length);
 	}

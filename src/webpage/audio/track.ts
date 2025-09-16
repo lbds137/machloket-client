@@ -33,10 +33,10 @@ export class Track {
 		}
 		return new Track(play2);
 	}
-	async play() {
+	async play(volume: number) {
 		for (const thing of this.seq) {
 			if (thing instanceof AVoice) {
-				thing.playL();
+				thing.playL(volume);
 			} else {
 				await new Promise((res) => setTimeout(res, thing));
 			}
