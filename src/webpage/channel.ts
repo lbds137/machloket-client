@@ -2246,6 +2246,10 @@ class Channel extends SnowFlake {
 			}
 		}
 	}
+	async goToBottom() {
+		await this.tryfocusinfinate();
+		if (this.lastmessageid) this.infinite.focus(this.lastmessageid);
+	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (this.localuser.channelfocus !== this) {
 			if (this.fakeMessageMap.has(this.id)) {
@@ -2271,6 +2275,9 @@ class Channel extends SnowFlake {
 			this.lastreadmessageid = messagez.id;
 			if (next) {
 				next.generateMessage();
+			}
+			if (this == this.localuser.channelfocus) {
+				await this.goToBottom();
 			}
 		}
 		this.unreads();

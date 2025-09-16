@@ -3101,7 +3101,9 @@ class Localuser {
 				this.lookingguild?.markAsRead();
 			} else {
 				this.channelfocus?.readbottom();
+				this.channelfocus?.goToBottom();
 			}
+			return true;
 		}
 
 		return false;
