@@ -2621,8 +2621,10 @@ class Localuser {
 			if (sValue !== search.value) {
 				return;
 			}
-			let left = 0,
-				right = 0;
+			const width = menu.getBoundingClientRect().width;
+			let left = 0;
+			let right = width < 370 ? Infinity : 0;
+			console.warn(right, width);
 			for (const gif of gifReturns) {
 				const div = document.createElement("div");
 				div.classList.add("gifBox");
@@ -2660,7 +2662,7 @@ class Localuser {
 					}
 				};
 			}
-			gifs.style.height = Math.max(left, right) + "px";
+			gifs.style.height = (right == Infinity ? left : Math.max(left, right)) + "px";
 		};
 		let last = "";
 		search.onkeyup = () => {
