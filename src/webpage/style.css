@@ -3162,6 +3162,7 @@ fieldset input[type="radio"] {
 	.contextmenu,
 	.profile,
 	.emojiPicker,
+	.stickerPicker,
 	.gifmenu {
 		top: unset !important;
 		bottom: 0 !important;
