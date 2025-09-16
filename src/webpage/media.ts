@@ -73,7 +73,12 @@ type mediaEvents =
 			type: "end";
 	  };
 
-function makePlayBox(mor: string | media, player: MediaPlayer, ctime = 0) {
+function makePlayBox(
+	mor: string | media,
+	player: MediaPlayer,
+	ctime = 0,
+	url: Promise<string> | void,
+) {
 	const div = document.createElement("div");
 	div.classList.add("flexltr", "Mplayer");
 
@@ -104,131 +109,134 @@ function makePlayBox(mor: string | media, player: MediaPlayer, ctime = 0) {
 	barDiv.append(bar, time);
 	vDiv.append(title, barDiv);
 	div.append(button, vDiv, more);
-	MediaPlayer.IdentifyFile(mor).then((thing) => {
-		let audio: HTMLAudioElement | undefined = undefined;
+	(async () => {
+		if (url) mor = await url;
+		MediaPlayer.IdentifyFile(mor).then((thing) => {
+			let audio: HTMLAudioElement | undefined = undefined;
 
-		if (!thing) {
-			const span = document.createElement("span");
-			span.textContent = I18n.media.notFound();
-			return;
-		}
-		menu.bindContextmenu(
-			more,
-			thing,
-			undefined,
-			() => {},
-			() => {},
-			"left",
-		);
-		player.addListener(thing.src, followUpdates, div);
-		let int = setInterval((_) => {}, 1000);
-		if (mor instanceof Object) {
-			const audioo = new Audio(mor.src);
-			audioo.load();
-			audioo.autoplay = true;
-			audioo.currentTime = ctime / 1000;
-			int = setInterval(() => {
-				if (button.classList.contains("svg-pause")) {
-					player.addUpdate(mor.src, {type: "playing", time: audioo.currentTime * 1000});
+			if (!thing) {
+				const span = document.createElement("span");
+				span.textContent = I18n.media.notFound();
+				return;
+			}
+			menu.bindContextmenu(
+				more,
+				thing,
+				undefined,
+				() => {},
+				() => {},
+				"left",
+			);
+			player.addListener(thing.src, followUpdates, div);
+			let int = setInterval((_) => {}, 1000);
+			if (mor instanceof Object) {
+				const audioo = new Audio(mor.src);
+				audioo.load();
+				audioo.autoplay = true;
+				audioo.currentTime = ctime / 1000;
+				int = setInterval(() => {
+					if (button.classList.contains("svg-pause")) {
+						player.addUpdate(mor.src, {type: "playing", time: audioo.currentTime * 1000});
+					}
+				}, 100) as unknown as number;
+				audioo.onplay = () => {
+					player.addUpdate(mor.src, {type: "play"});
+				};
+				audioo.onpause = () => {
+					player.addUpdate(thing.src, {type: "pause"});
+				};
+				audioo.onloadeddata = () => {
+					audio = audioo;
+				};
+				audioo.onended = () => {
+					player.addUpdate(mor.src, {type: "end"});
+				};
+			}
+			button.onclick = () => {
+				if (!player.isPlaying(thing.src)) {
+					player.setToTopList(thing, +bar.value * 1000);
+				} else {
+					player.addUpdate(thing.src, {
+						type: "audio",
+						t: button.classList.contains("svg-play") ? "start" : "stop",
+					});
 				}
-			}, 100) as unknown as number;
-			audioo.onplay = () => {
-				player.addUpdate(mor.src, {type: "play"});
 			};
-			audioo.onpause = () => {
-				player.addUpdate(thing.src, {type: "pause"});
-			};
-			audioo.onloadeddata = () => {
-				audio = audioo;
-			};
-			audioo.onended = () => {
-				player.addUpdate(mor.src, {type: "end"});
-			};
-		}
-		button.onclick = () => {
-			if (!player.isPlaying(thing.src)) {
-				player.setToTopList(thing, +bar.value * 1000);
-			} else {
+			function followUpdates(cur: mediaEvents) {
+				if (audio && cur.type !== "playing") {
+				}
+				if (cur.type == "audio" && audio) {
+					if (cur.t == "start") {
+						audio.play();
+					} else if (cur.t == "stop") {
+						audio.pause();
+					} else if (cur.t == "skip" && audio) {
+						audio.currentTime = cur.time / 1000;
+					}
+				}
+				if (cur.type == "audio" && cur.t == "skip") {
+					bar.value = "" + cur.time / 1000;
+				}
+				if (cur.type == "playing") {
+					regenTime(cur.time);
+					bar.value = "" + cur.time / 1000;
+					button.classList.add("svg-pause");
+					button.classList.remove("svg-play");
+				} else if (cur.type === "play") {
+					button.classList.add("svg-pause");
+					button.classList.remove("svg-play");
+				} else if (cur.type === "pause") {
+					button.classList.add("svg-play");
+					button.classList.remove("svg-pause");
+				} else if (cur.type === "end") {
+					clearInterval(int);
+					if (audio) {
+						audio.pause();
+						audio.src = "";
+						player.end();
+					}
+					button.classList.add("svg-play");
+					button.classList.remove("svg-pause");
+					regenTime();
+				}
+			}
+
+			const med = thing;
+			if (med.img) {
+				let img: HTMLImageElement;
+				if (mor instanceof Object) {
+					img = button;
+				} else {
+					img = document.createElement("img");
+					div.append(img);
+				}
+				img.classList.add("media-small");
+				img.src = med.img.url;
+			}
+			function timeToString(time: number) {
+				const minutes = Math.floor(time / 1000 / 60);
+				const seconds = Math.round(time / 1000 - minutes * 60) + "";
+				return `${minutes}:${seconds.padStart(2, "0")}`;
+			}
+			bar.oninput = () => {
 				player.addUpdate(thing.src, {
 					type: "audio",
-					t: button.classList.contains("svg-play") ? "start" : "stop",
+					t: "skip",
+					time: +bar.value * 1000,
 				});
-			}
-		};
-		function followUpdates(cur: mediaEvents) {
-			if (audio && cur.type !== "playing") {
-			}
-			if (cur.type == "audio" && audio) {
-				if (cur.t == "start") {
-					audio.play();
-				} else if (cur.t == "stop") {
-					audio.pause();
-				} else if (cur.t == "skip" && audio) {
-					audio.currentTime = cur.time / 1000;
-				}
-			}
-			if (cur.type == "audio" && cur.t == "skip") {
-				bar.value = "" + cur.time / 1000;
-			}
-			if (cur.type == "playing") {
-				regenTime(cur.time);
-				bar.value = "" + cur.time / 1000;
-				button.classList.add("svg-pause");
-				button.classList.remove("svg-play");
-			} else if (cur.type === "play") {
-				button.classList.add("svg-pause");
-				button.classList.remove("svg-play");
-			} else if (cur.type === "pause") {
-				button.classList.add("svg-play");
-				button.classList.remove("svg-pause");
-			} else if (cur.type === "end") {
-				clearInterval(int);
-				if (audio) {
-					audio.pause();
-					audio.src = "";
-					player.end();
-				}
-				button.classList.add("svg-play");
-				button.classList.remove("svg-pause");
-				regenTime();
-			}
-		}
+				regenTime(+bar.value * 1000);
+			};
+			async function regenTime(curTime: number = 0) {
+				const len = await med.length;
+				bar.disabled = false;
+				bar.max = "" + len / 1000;
 
-		const med = thing;
-		if (med.img) {
-			let img: HTMLImageElement;
-			if (mor instanceof Object) {
-				img = button;
-			} else {
-				img = document.createElement("img");
-				div.append(img);
+				time.textContent = `${timeToString(curTime)}/${timeToString(len)}`;
 			}
-			img.classList.add("media-small");
-			img.src = med.img.url;
-		}
-		function timeToString(time: number) {
-			const minutes = Math.floor(time / 1000 / 60);
-			const seconds = Math.round(time / 1000 - minutes * 60) + "";
-			return `${minutes}:${seconds.padStart(2, "0")}`;
-		}
-		bar.oninput = () => {
-			player.addUpdate(thing.src, {
-				type: "audio",
-				t: "skip",
-				time: +bar.value * 1000,
-			});
-			regenTime(+bar.value * 1000);
-		};
-		async function regenTime(curTime: number = 0) {
-			const len = await med.length;
-			bar.disabled = false;
-			bar.max = "" + len / 1000;
-
-			time.textContent = `${timeToString(curTime)}/${timeToString(len)}`;
-		}
-		regenTime();
-		title.textContent = thing.title;
-	});
+			regenTime();
+			title.textContent = thing.title;
+		});
+	})();
 	return div;
 }
 

@@ -3312,6 +3312,34 @@ class Localuser {
 		dialog.options.addText(I18n.getTranslation("instanceStats.messages", json.counts.message));
 		dialog.options.addText(I18n.getTranslation("instanceStats.members", json.counts.members));
 	}
+	refrshTimeOut?: NodeJS.Timeout;
+	urlsToRefresh: [string, (arg: string) => void][] = [];
+	refreshURL(url: string): Promise<string> {
+		if (!this.refrshTimeOut) {
+			this.refrshTimeOut = setTimeout(async () => {
+				const refreshes = this.urlsToRefresh;
+				this.urlsToRefresh = [];
+				delete this.refrshTimeOut;
+				const body: {
+					refreshed_urls: string[];
+				} = await (
+					await fetch(this.info.api + "/attachments/refresh-urls", {
+						method: "POST",
+						body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
+						headers: this.headers,
+					})
+				).json();
+				let i = 0;
+				for (const url of body.refreshed_urls) {
+					refreshes[i][1](url);
+					i++;
+				}
+			}, 100);
+		}
+		return new Promise((res) => {
+			this.urlsToRefresh.push([url, res]);
+		});
+	}
 	setNotificationSound(sound: string) {
 		const userinfos = getBulkInfo();
 		userinfos.preferences.notisound = sound;

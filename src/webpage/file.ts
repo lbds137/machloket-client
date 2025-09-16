@@ -37,7 +37,10 @@ class File {
 			return spoil;
 		}
 		OSpoiler ||= this.filename.startsWith("SPOILER_");
+
 		const src = this.proxy_url || this.url;
+		const url = this.refreshURL();
+
 		this.width ||= 1000;
 		this.height ||= 1000;
 		if (this.width && this.height) {
@@ -68,6 +71,10 @@ class File {
 					full.show();
 				}
 			};
+			if (url)
+				url.then((src) => {
+					img.setSrcs(src);
+				});
 			div.append(img);
 			if (this.width && !fullScreen) {
 				div.style.width = this.width + "px";
@@ -85,6 +92,10 @@ class File {
 			const video = document.createElement("video");
 			const source = document.createElement("source");
 			source.src = src;
+			if (url)
+				url.then((src) => {
+					source.src = src;
+				});
 			video.append(source);
 			source.type = this.content_type;
 			video.controls = !temp;
@@ -100,22 +111,32 @@ class File {
 			}
 			return video;
 		} else if (this.content_type.startsWith("audio/")) {
-			const a = this.getAudioHTML();
+			const a = this.getAudioHTML(url);
 			if (OSpoiler) {
 				a.append(makeSpoilerHTML());
 			}
 			return a;
 		} else {
-			const uk = this.createunknown();
+			const uk = this.createunknown(url);
 			if (OSpoiler) {
 				uk.append(makeSpoilerHTML());
 			}
 			return uk;
 		}
 	}
-	private getAudioHTML() {
+	refreshURL(url = this.proxy_url || this.url): Promise<string> | void {
+		if (!this.owner) return;
+		const urlObj = new URL(url);
+		if (urlObj.host === new URL(this.owner.info.cdn).host) {
+			if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >= Date.now() - 5000) {
+				return;
+			}
+			return this.owner.localuser.refreshURL(url);
+		}
+	}
+	private getAudioHTML(url: Promise<string> | void) {
 		const src = this.proxy_url || this.url;
-		return makePlayBox(src, player);
+		return makePlayBox(src, player, 0, url);
 	}
 	upHTML(files: Blob[], file: globalThis.File): HTMLElement {
 		const div = document.createElement("div");
@@ -181,7 +202,7 @@ class File {
 			null,
 		);
 	}
-	createunknown(): HTMLElement {
+	createunknown(url: Promise<string> | void): HTMLElement {
 		console.log("🗎");
 		const src = this.proxy_url || this.url;
 		const div = document.createElement("table");
@@ -197,6 +218,10 @@ class File {
 		if (src) {
 			const a = document.createElement("a");
 			a.href = src;
+			if (url)
+				url.then((_) => {
+					a.href = _;
+				});
 			a.textContent = this.filename;
 			nametd.append(a);
 		} else {
