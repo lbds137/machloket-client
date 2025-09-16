@@ -2248,7 +2248,7 @@ class Channel extends SnowFlake {
 	}
 	async goToBottom() {
 		await this.tryfocusinfinate();
-		if (this.lastmessageid) this.infinite.focus(this.lastmessageid);
+		if (this.lastmessageid) this.infinite.focus(this.lastmessageid, false);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (this.localuser.channelfocus !== this) {
