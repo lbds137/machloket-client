@@ -280,15 +280,17 @@ class Member extends SnowFlake {
 		}
 	}
 	update(memberjson: memberjson) {
-		if (memberjson.roles) {
-			this.roles = [];
-		}
 		for (const key of Object.keys(memberjson)) {
 			if (key === "guild" || key === "owner" || key === "user") {
 				continue;
 			}
 
 			if (key === "roles") {
+				if ((memberjson.roles[0] as unknown) instanceof Object) {
+					memberjson.roles = (memberjson.roles as any[]).map((_) => _.id);
+					console.error("Member role is incorrectly sent as role object instead of role ID");
+				}
+				this.roles = [];
 				for (const strrole of memberjson.roles) {
 					const role = this.guild.roleids.get(strrole);
 					if (!role) continue;
