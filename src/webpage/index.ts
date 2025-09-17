@@ -145,7 +145,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 			thisUser.channelfocus.replyingto = null;
 		}
 		channel.sendMessage(markdown.rawString, {
-			attachments: images.filter((_, i) => pasteImageElement.contains(imagesHtml[i])),
+			attachments: images.filter((_, i) => document.contains(imagesHtml[i])),
 			embeds: [], // Add an empty array for the embeds property
 			replyingto: replyingTo,
 			sticker_ids: [],
