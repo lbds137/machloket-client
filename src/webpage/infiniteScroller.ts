@@ -337,7 +337,7 @@ class InfiniteScroller {
 					resolve(true);
 				}, 1000);
 			});
-			await this.focus(id, !element, true);
+			await this.focus(id, !element && flash, true);
 		} else {
 			console.warn("elm not exist");
 		}
