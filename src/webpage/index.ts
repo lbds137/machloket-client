@@ -47,16 +47,24 @@ function regSwap(l: Localuser) {
 		regSwap(l);
 	};
 	l.fileExtange = (img, html) => {
+		const blobArr: Blob[] = [];
+		const htmlArr: HTMLElement[] = [];
+		let i = 0;
 		for (const img of imagesHtml) {
-			pasteImageElement.removeChild(img);
+			if (pasteImageElement.contains(img)) {
+				pasteImageElement.removeChild(img);
+				blobArr.push(images[i]);
+				htmlArr.push(img);
+			} else {
+				i++;
+			}
 		}
-		const ret = [images, imagesHtml] as [Blob[], HTMLElement[]];
 		images = img;
 		imagesHtml = html;
 		for (const img of imagesHtml) {
 			pasteImageElement.append(img);
 		}
-		return ret;
+		return [blobArr, htmlArr];
 	};
 }
 try {
@@ -137,7 +145,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 			thisUser.channelfocus.replyingto = null;
 		}
 		channel.sendMessage(markdown.rawString, {
-			attachments: images,
+			attachments: images.filter((_, i) => pasteImageElement.contains(imagesHtml[i])),
 			embeds: [], // Add an empty array for the embeds property
 			replyingto: replyingTo,
 			sticker_ids: [],
@@ -147,7 +155,8 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 		}
 		while (images.length) {
 			images.pop();
-			pasteImageElement.removeChild(imagesHtml.pop() as HTMLElement);
+			const elm = imagesHtml.pop() as HTMLElement;
+			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
 		}
 
 		typebox.innerHTML = "";
