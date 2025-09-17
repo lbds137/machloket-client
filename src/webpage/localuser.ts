@@ -2739,6 +2739,7 @@ class Localuser {
 			);
 		}
 	}
+	fileExtange!: (files: Blob[], html: HTMLElement[]) => [Blob[], HTMLElement[]];
 	MDSearchOptions(
 		options: [string, string, void | HTMLElement][],
 		original: string,

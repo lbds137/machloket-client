@@ -9,6 +9,7 @@ import {SnowFlake} from "./snowflake.js";
 import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
 import {Float, FormError} from "./settings.js";
+import {CustomHTMLDivElement} from "./index.js";
 
 class Direct extends Guild {
 	declare channelids: {[key: string]: Group};
@@ -442,6 +443,15 @@ class Group extends Channel {
 		return div;
 	}
 	async getHTML(addstate = true) {
+		if (this.localuser.channelfocus) {
+			this.localuser.channelfocus.collectBox();
+		}
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		const md = typebox.markdown;
+		typebox.textContent = this.textSave;
+		md.boxupdate(Infinity);
+		this.localuser.fileExtange(this.files, this.htmls);
+
 		const pinnedM = document.getElementById("pinnedMDiv");
 		if (pinnedM) {
 			if (this.unreadPins()) {
@@ -480,6 +490,7 @@ class Group extends Channel {
 		(document.getElementById("upload") as HTMLElement).style.visibility = "visible";
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "visible";
 		(document.getElementById("typebox") as HTMLDivElement).focus();
+
 		await this.putmessages();
 		await prom;
 		this.localuser.getSidePannel();

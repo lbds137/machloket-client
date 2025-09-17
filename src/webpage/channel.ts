@@ -27,6 +27,7 @@ import {mobile} from "./utils/utils.js";
 import {webhookMenu} from "./webhooks.js";
 import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
+import {CustomHTMLDivElement} from "./index.js";
 
 declare global {
 	interface NotificationOptions {
@@ -1420,8 +1421,27 @@ class Channel extends SnowFlake {
 			}
 		};
 	}
-
+	files: Blob[] = [];
+	htmls: HTMLElement[] = [];
+	textSave = "";
+	collectBox() {
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		const [files, html] = this.localuser.fileExtange([], []);
+		this.files = files;
+		this.htmls = html;
+		this.textSave = MarkDown.gatherBoxText(typebox);
+		typebox.textContent = "";
+	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined) {
+		if (this.localuser.channelfocus) {
+			this.localuser.channelfocus.collectBox();
+		}
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		const md = typebox.markdown;
+		typebox.textContent = this.textSave;
+		md.boxupdate(Infinity);
+		this.localuser.fileExtange(this.files, this.htmls);
+
 		if (getMessages === undefined) {
 			getMessages = this.type !== 2 || !this.localuser.voiceAllowed;
 		}

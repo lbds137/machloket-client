@@ -46,6 +46,18 @@ function regSwap(l: Localuser) {
 		thisUser = l;
 		regSwap(l);
 	};
+	l.fileExtange = (img, html) => {
+		for (const img of imagesHtml) {
+			pasteImageElement.removeChild(img);
+		}
+		const ret = [images, imagesHtml] as [Blob[], HTMLElement[]];
+		images = img;
+		imagesHtml = html;
+		for (const img of imagesHtml) {
+			pasteImageElement.append(img);
+		}
+		return ret;
+	};
 }
 try {
 	const current = sessionStorage.getItem("currentuser") || Localuser.users.currentuser;
@@ -143,7 +155,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 	}
 }
 
-interface CustomHTMLDivElement extends HTMLDivElement {
+export interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
 }
 
@@ -203,8 +215,8 @@ markdown.giveBox(typebox);
 		return span;
 	});
 }
-const images: Blob[] = [];
-const imagesHtml: HTMLElement[] = [];
+let images: Blob[] = [];
+let imagesHtml: HTMLElement[] = [];
 
 document.addEventListener("paste", async (e: ClipboardEvent) => {
 	if (!e.clipboardData) return;
