@@ -382,6 +382,12 @@
 		"traces": "$1 ($2ms) $3"
 	},
 	"notiVolume":"Notification volume:",
+	"blog":{
+		"blog":"Blog",
+		"wantUpdates":"Would you like to get weekly blog updates on the state of Fermi?",
+		"blogUpdates":"Blog updates:",
+		"gotoPost":"Go to post"
+	},
 	"localuser": {
 		"trace": "Traces",
 		"install": "Install",

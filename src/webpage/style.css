@@ -3457,6 +3457,21 @@ img.error::after {
 	left: 0px;
 	position: absolute;
 }
+.blogDiv {
+	background: var(--secondary-bg);
+	padding: 10px;
+	border-radius: 3px;
+	cursor: pointer;
+	div {
+		width: 100%;
+		h2 {
+			width: 100%;
+			border-bottom: solid var(--primary-text) 1px;
+			margin-bottom: 15px;
+			padding-bottom: 8px;
+		}
+	}
+}
 .gifBox {
 	img {
 		max-width: 196px;

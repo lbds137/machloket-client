@@ -80,9 +80,10 @@ if (recent) {
 				items: {
 					url: string;
 					title: string;
+					content_html: string;
 				}[];
 			}) => {
-				for (const thing of json.items) {
+				for (const thing of json.items.slice(0, 5)) {
 					const a = document.createElement("a");
 					a.href = thing.url;
 					a.textContent = thing.title;

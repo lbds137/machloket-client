@@ -240,8 +240,44 @@ class Localuser {
 			}),
 		);
 	}
+	async queryBlog() {
+		this.perminfo.localuser ??= {};
+		const bstate = localStorage.getItem("blogUpdates") as "Yes" | "No" | "Wait" | null;
+		if (!bstate) {
+			localStorage.setItem("blogUpdates", "Wait");
+		} else if (bstate === "Wait") {
+			const pop = new Dialog("");
+			pop.options.addText(I18n.blog.wantUpdates());
+			const opts = pop.options.addOptions("", {ltr: true});
+			opts.addButtonInput("", I18n.yes(), () => {
+				localStorage.setItem("blogUpdates", "Yes");
+				this.queryBlog();
+				pop.hide();
+			});
+			opts.addButtonInput("", I18n.no(), () => {
+				localStorage.setItem("blogUpdates", "No");
+				this.queryBlog();
+				pop.hide();
+			});
+			pop.show();
+		} else if (bstate === "Yes") {
+			const post = (await this.getPosts()).items[0];
+			if (this.perminfo.localuser.mostRecent !== post.url) {
+				this.perminfo.localuser.mostRecent = post.url;
+				const pop = new Dialog(post.title);
+				//TODO implement images for the rendering of this
+				pop.options.addText(post.content_html);
+				pop.options.addButtonInput("", I18n.blog.gotoPost(), () => {
+					window.open(post.url);
+					pop.hide();
+				});
+				pop.show();
+			}
+		}
+	}
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
+		this.queryBlog();
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
 		this.ready = ready;
@@ -1477,6 +1513,16 @@ class Localuser {
 			body: JSON.stringify(json),
 		});
 	}
+	async getPosts() {
+		return (await (await fetch("https://blog.fermi.chat/feed_json_created.json")).json()) as {
+			items: {
+				url: string;
+				title: string;
+				content_html: string;
+				image: null | string;
+			}[];
+		};
+	}
 	async showusersettings() {
 		const settings = new Settings(I18n.getTranslation("localuser.settings"));
 		{
@@ -2300,6 +2346,41 @@ class Localuser {
 				//@ts-expect-error have to do this :3
 				await installP.prompt();
 			});
+		}
+		{
+			const blog = settings.addButton(I18n.blog.blog());
+			blog.addCheckboxInput(
+				I18n.blog.blogUpdates(),
+				(check) => {
+					if (check) {
+						localStorage.setItem("blogUpdates", "Yes");
+					} else {
+						localStorage.setItem("blogUpdates", "No");
+					}
+				},
+				{initState: localStorage.getItem("blogUpdates") === "Yes"},
+			);
+			(async () => {
+				const posts = await this.getPosts();
+				for (const post of posts.items) {
+					const div = document.createElement("div");
+					div.classList.add("flexltr", "blogDiv");
+					if (post.image) {
+						//TODO handle this case, no blog posts currently do this
+					}
+					const titleStuff = document.createElement("div");
+					titleStuff.classList.add("flexttb");
+
+					const h2 = document.createElement("h2");
+					h2.textContent = post.title;
+
+					const p = document.createElement("p");
+					p.textContent = post.content_html;
+					titleStuff.append(h2, p);
+					div.append(titleStuff);
+					blog.addHTMLArea(div);
+				}
+			})();
 		}
 		if (this.trace.length) {
 			const traces = settings.addButton(I18n.localuser.trace());
