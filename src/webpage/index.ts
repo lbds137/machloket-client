@@ -124,9 +124,21 @@ window.addEventListener("popstate", (e) => {
 	//console.log(e.state,"state:3")
 });
 async function handleEnter(event: KeyboardEvent): Promise<void> {
+	if (event.key === "Escape") {
+		while (images.length) {
+			images.pop();
+			const elm = imagesHtml.pop() as HTMLElement;
+			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
+		}
+		if (thisUser.channelfocus) {
+			thisUser.channelfocus.replyingto = null;
+			thisUser.channelfocus.makereplybox();
+		}
+	}
 	if (thisUser.handleKeyUp(event)) {
 		return;
 	}
+
 	const channel = thisUser.channelfocus;
 	if (!channel) return;
 	if (markdown.rawString === "" && event.key === "ArrowUp") {

@@ -1001,6 +1001,7 @@ class Channel extends SnowFlake {
 			typebox.classList.add("typeboxreplying");
 		} else {
 			replybox.classList.add("hideReplyBox");
+			replybox.innerHTML = "";
 			typebox.classList.remove("typeboxreplying");
 		}
 	}
