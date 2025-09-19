@@ -5,7 +5,7 @@ RUN apt-get update ; apt-get upgrade -y ; apt-get install -y build-essential
 COPY . .
 RUN npm i ; npm run build
 
-FROM node:18-alpine
+FROM node:20-alpine
 
 EXPOSE 8080
 WORKDIR /exec
