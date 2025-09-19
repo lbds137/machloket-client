@@ -369,7 +369,8 @@
 		"delete": "Delete Role",
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"roleEmoji": "Role emoji:",
-		"roleFileIcon": "Role Icon:"
+		"roleFileIcon": "Role Icon:",
+		"deleting":"Deleting role..."
 	},
 	"settings": {
 		"unsaved": "Careful, you have unsaved changes",

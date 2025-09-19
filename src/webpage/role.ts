@@ -4,7 +4,7 @@ import {Guild} from "./guild.js";
 import {SnowFlake} from "./snowflake.js";
 import {rolesjson} from "./jsontypes.js";
 import {Search} from "./search.js";
-import {OptionsElement, Buttons} from "./settings.js";
+import {OptionsElement, Buttons, Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Channel} from "./channel.js";
 import {I18n} from "./i18n.js";
@@ -208,9 +208,17 @@ class RoleList extends Buttons {
 			this.permission = new Permissions("0");
 		}
 		//TODO maybe make channels work correctly with this (role permissions aren't currently saved)
-		if (!channel) this.makeguildmenus(options);
+		if (!channel) {
+			this.makeguildmenus(options);
+		}
 		for (const thing of Permissions.info()) {
 			options.options.push(new PermissionToggle(thing, this.permission, options));
+		}
+		if (!channel) {
+			options.addButtonInput("", I18n.role.delete(), () => {
+				const role = this.permissions.find((_) => _[0].id === this.curid)?.[0];
+				if (role) this.deleteRole(role);
+			});
 		}
 		for (const i of permissions) {
 			this.buttons.push([i[0].name, i[0].id]);
@@ -320,17 +328,35 @@ class RoleList extends Buttons {
 		);
 		return menu;
 	}
+
+	deleteRole(role: Role) {
+		const dio = new Dialog(I18n.role.confirmDelete(role.name));
+		const opt = dio.options.addOptions("", {ltr: true});
+		opt.addButtonInput("", I18n.yes(), async () => {
+			opt.removeAll();
+			opt.addText(I18n.role.deleting());
+			await fetch(role.info.api + "/guilds/" + role.guild.id + "/roles/" + role.id, {
+				method: "DELETE",
+				headers: role.headers,
+			});
+			if (this.curid === role.id) {
+				const id = this.permissions.filter((_) => _[0].id !== role.id)[0][0].id;
+				const elm = this.htmlarea.deref();
+				if (elm) this.generateHTMLArea(id, elm);
+			}
+			dio.hide();
+		});
+		opt.addButtonInput("", I18n.no(), () => {
+			dio.hide();
+		});
+		dio.show();
+	}
 	private static GuildRoleMenu() {
 		const menu = new Contextmenu<RoleList, Role>("role settings");
 		menu.addButton(
 			() => I18n.getTranslation("role.delete"),
 			function (role) {
-				if (!confirm(I18n.getTranslation("role.confirmDelete"))) return;
-				console.log(role);
-				fetch(this.info.api + "/guilds/" + this.guild.id + "/roles/" + role.id, {
-					method: "DELETE",
-					headers: this.headers,
-				});
+				this.deleteRole(role);
 			},
 			{
 				visable: (role) => role.id !== role.guild.id,
