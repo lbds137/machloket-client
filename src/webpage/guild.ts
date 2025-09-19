@@ -263,11 +263,35 @@ class Guild extends SnowFlake {
 				},
 			},
 		);
+
 		//TODO make icon for this
 		Guild.contextmenu.addButton(
 			() => I18n.guild.admins(),
 			function (this: Guild) {
 				this.findAdmin();
+			},
+		);
+		Guild.contextmenu.addSeperator();
+		Guild.contextmenu.addButton(
+			() => I18n.channel.createChannel(),
+			function () {
+				this.createchannels();
+			},
+			{
+				visable: function () {
+					return this.member.hasPermission("MANAGE_CHANNELS");
+				},
+			},
+		);
+		Guild.contextmenu.addButton(
+			() => I18n.channel.createCatagory(),
+			function () {
+				this.createcategory();
+			},
+			{
+				visable: function () {
+					return this.member.hasPermission("MANAGE_CHANNELS");
+				},
 			},
 		);
 
