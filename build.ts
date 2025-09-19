@@ -25,7 +25,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 						const temp2 = path.parse(sPathTemp);
 						//@ts-ignore
 						delete temp2.base;
-						temp2.ext = "ts";
+						temp2.ext = ".ts";
 						const sPath = path.format(temp2);
 						let mod = await swc.bundle({
 							entry: sPath,
