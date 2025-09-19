@@ -2612,7 +2612,8 @@ class Localuser {
 			Bot.InviteMaker(appId, form, this.info);
 		});
 	}
-	readonly autofillregex = Object.freeze(/[@#:]([a-z0-9 ]*)$/i);
+	//TODO make this an option
+	readonly autofillregex = Object.freeze(/[@#:]([a-zA-Z0-9]*)$/i);
 	mdBox() {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const typeMd = typebox.markdown;
