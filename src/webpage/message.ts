@@ -272,14 +272,17 @@ class Message extends SnowFlake {
 		for (const thing in messagejson.mentions) {
 			this.mentions[thing] = new User(messagejson.mentions[thing], this.localuser);
 		}
+
+		this.mention_roles = messagejson.mention_roles
+			.map((role: string | {id: string}) => {
+				return this.guild.roleids.get(role instanceof Object ? role.id : role);
+			})
+			.filter((_) => _ !== undefined);
+
 		if (!this.member && this.guild.id !== "@me") {
 			this.author.resolvemember(this.guild).then((_) => {
 				this.member = _;
 			});
-		}
-		if (this.mentions?.length || this.mention_roles?.length) {
-			//currently mention_roles isn't implemented on the spacebar servers
-			console.log(this.mentions, this.mention_roles);
 		}
 		if (this.mentionsuser(this.localuser.user)) {
 			console.log(this);
@@ -345,14 +348,16 @@ class Message extends SnowFlake {
 			console.error(e);
 		}
 	}
+	mention_everyone!: boolean;
 	mentionsuser(userd: User | Member) {
+		if (this.mention_everyone) return true;
 		if (userd instanceof User) {
 			return this.mentions.includes(userd);
 		} else if (userd instanceof Member) {
 			if (this.mentions.includes(userd.user)) {
 				return true;
 			} else {
-				return !new Set(this.mentions).isDisjointFrom(new Set(userd.roles)); //if the message mentions a role the user has
+				return !new Set(this.mention_roles).isDisjointFrom(new Set(userd.roles)); //if the message mentions a role the user has
 			}
 		} else {
 			return false;
@@ -459,11 +464,10 @@ class Message extends SnowFlake {
 		if (!premessage && !dupe) {
 			premessage = this.channel.messages.get(this.channel.idToPrev.get(this.id) as string);
 		}
-		for (const user of this.mentions) {
-			if (user === this.localuser.user) {
-				div.classList.add("mentioned");
-			}
+		if (this.mentionsuser(this.guild.member)) {
+			div.classList.add("mentioned");
 		}
+
 		if (this === this.channel.replyingto) {
 			div.classList.add("replying");
 		}

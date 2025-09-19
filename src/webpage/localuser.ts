@@ -1,6 +1,6 @@
 import {Guild} from "./guild.js";
 import {Channel} from "./channel.js";
-import {Direct} from "./direct.js";
+import {Direct, Group} from "./direct.js";
 import {AVoice} from "./audio/voice.js";
 import {User} from "./user.js";
 import {createImg, getapiurls, getBulkUsers, installPGet, SW} from "./utils/utils.js";
@@ -2947,18 +2947,55 @@ class Localuser {
 		return new User(await (await fetch(this.info.api + "/users/" + id)).json(), this);
 	}
 	MDFineMentionGen(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
-		let members: [Member, number][] = [];
-		if (this.lookingguild) {
-			for (const member of this.lookingguild.members) {
-				const rank = member.compare(name);
-				if (rank > 0) {
-					members.push([member, rank]);
+		let members: [Member | Role | User | "@everyone", number][] = [];
+		if (this.lookingguild && name !== "everyone") {
+			if (this.lookingguild.id === "@me") {
+				const dirrect = this.channelfocus as Group;
+
+				for (const user of dirrect.users) {
+					const rank = user.compare(name);
+					if (rank > 0) {
+						members.push([user, rank]);
+					}
+				}
+			} else {
+				for (const member of this.lookingguild.members) {
+					const rank = member.compare(name);
+					if (rank > 0) {
+						members.push([member, rank]);
+					}
+				}
+				for (const role of this.lookingguild.roles.filter((_) => _.id !== this.lookingguild?.id)) {
+					const rank = role.compare(name);
+					if (rank > 0) {
+						members.push([role, rank]);
+					}
 				}
 			}
+			function similar(str2: string | null | undefined) {
+				if (!str2) return 0;
+				const strl = Math.max(name.length, 1);
+				if (str2.includes(name)) {
+					return strl / str2.length;
+				} else if (str2.toLowerCase().includes(name.toLowerCase())) {
+					return strl / str2.length / 1.2;
+				}
+				return 0;
+			}
+			const everyoneScore = similar("everyone");
+			if (everyoneScore) members.push(["@everyone", everyoneScore]);
 		}
 		members.sort((a, b) => b[1] - a[1]);
 		this.MDSearchOptions(
-			members.map((a) => ["@" + a[0].name, `<@${a[0].id}> `, undefined]),
+			members.map((a) => [
+				a[0] === "@everyone" ? "@everyone" : "@" + a[0].name,
+				a[0] instanceof Role
+					? `<@&${a[0].id}> `
+					: a[0] === "@everyone"
+						? "@everyone "
+						: `<@${a[0].id}> `,
+				undefined,
+			]),
 			original,
 			box,
 			typebox,
@@ -2969,43 +3006,45 @@ class Localuser {
 			this.MDFineMentionGen(name, original, box, typebox);
 			const nonce = Math.floor(Math.random() * 10 ** 8) + "";
 			if (this.lookingguild.member_count <= this.lookingguild.members.size) return;
-			this.ws.send(
-				JSON.stringify({
-					op: 8,
-					d: {
-						guild_id: [this.lookingguild.id],
-						query: name,
-						limit: 8,
-						presences: true,
-						nonce,
-					},
-				}),
-			);
-			this.searchMap.set(nonce, async (e) => {
-				console.log(e);
-				if (e.members && e.members[0]) {
-					if (e.members[0].user) {
-						for (const thing of e.members) {
-							await Member.new(thing, this.lookingguild as Guild);
-						}
-					} else {
-						const prom1: Promise<User>[] = [];
-						for (const thing of e.members) {
-							prom1.push(this.getUser(thing.id));
-						}
-						Promise.all(prom1);
-						for (const thing of e.members) {
-							if (!this.userMap.has(thing.id)) {
-								console.warn("Dumb server bug for this member", thing);
-								continue;
+			if (this.lookingguild.id !== "@me") {
+				this.ws.send(
+					JSON.stringify({
+						op: 8,
+						d: {
+							guild_id: [this.lookingguild.id],
+							query: name,
+							limit: 8,
+							presences: true,
+							nonce,
+						},
+					}),
+				);
+				this.searchMap.set(nonce, async (e) => {
+					console.log(e);
+					if (e.members && e.members[0]) {
+						if (e.members[0].user) {
+							for (const thing of e.members) {
+								await Member.new(thing, this.lookingguild as Guild);
 							}
-							await Member.new(thing, this.lookingguild as Guild);
+						} else {
+							const prom1: Promise<User>[] = [];
+							for (const thing of e.members) {
+								prom1.push(this.getUser(thing.id));
+							}
+							Promise.all(prom1);
+							for (const thing of e.members) {
+								if (!this.userMap.has(thing.id)) {
+									console.warn("Dumb server bug for this member", thing);
+									continue;
+								}
+								await Member.new(thing, this.lookingguild as Guild);
+							}
 						}
+						if (!typebox.rawString.startsWith(original)) return;
+						this.MDFineMentionGen(name, original, box, typebox);
 					}
-					if (!typebox.rawString.startsWith(original)) return;
-					this.MDFineMentionGen(name, original, box, typebox);
-				}
-			});
+				});
+			}
 		}
 	}
 	findEmoji(search: string, orginal: string, box: HTMLDivElement, typebox: MarkDown) {

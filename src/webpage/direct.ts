@@ -353,7 +353,9 @@ dmPermissions.setPermission("STREAM", 1);
 dmPermissions.setPermission("USE_VAD", 1);
 //@ts-ignore No clue how to fix this dumb bug lol
 class Group extends Channel {
+	//TODO remove user
 	user: User;
+	users: User[];
 	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
 	static setupcontextmenu() {
 		this.contextmenu.addButton(
@@ -395,11 +397,13 @@ class Group extends Channel {
 		this.owner = owner;
 		this.headers = this.guild.headers;
 		this.name = json.recipients[0]?.username;
-		if (json.recipients[0]) {
-			this.user = new User(json.recipients[0], this.localuser);
-		} else {
-			this.user = this.localuser.user;
-		}
+
+		const userSet = new Set(json.recipients.map((user) => new User(user, this.localuser)));
+		userSet.add(this.localuser.user);
+		this.users = [...userSet];
+
+		this.user = this.users[0];
+
 		this.name ??= this.localuser.user.username;
 		this.parent_id!;
 		this.parent!;

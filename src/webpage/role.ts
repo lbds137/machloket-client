@@ -61,6 +61,19 @@ class Role extends SnowFlake {
 		document.body.style.setProperty(`--role-${this.id}`, this.getColor());
 		this.permissions.allow = BigInt(json.permissions);
 	}
+	compare(str: string) {
+		function similar(str2: string | null | undefined) {
+			if (!str2) return 0;
+			const strl = Math.max(str.length, 1);
+			if (str2.includes(str)) {
+				return strl / str2.length;
+			} else if (str2.toLowerCase().includes(str.toLowerCase())) {
+				return strl / str2.length / 1.2;
+			}
+			return 0;
+		}
+		return Math.max(similar(this.name), similar(this.id) / 1.5);
+	}
 	get guild(): Guild {
 		return this.owner;
 	}

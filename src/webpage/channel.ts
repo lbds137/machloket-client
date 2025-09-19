@@ -1439,6 +1439,7 @@ class Channel extends SnowFlake {
 		}
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const md = typebox.markdown;
+		md.owner = this;
 		typebox.textContent = this.textSave;
 		md.boxupdate(Infinity);
 		this.localuser.fileExtange(this.files, this.htmls);

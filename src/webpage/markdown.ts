@@ -526,10 +526,33 @@ class MarkDown {
 					continue;
 				}
 			}
+			if (txt[i] === "@") {
+				let j = i + 1;
+				let everyone = true;
+				for (const char of "everyone") {
+					if (char !== txt[j]) {
+						everyone = false;
+						break;
+					}
+					j++;
+				}
+				if (everyone) {
+					i = j - 1;
+					const mention = document.createElement("span");
+					mention.classList.add("mentionMD");
+					mention.contentEditable = "false";
+					mention.textContent = "@everyone";
+					appendcurrent();
+					span.appendChild(mention);
+					mention.setAttribute("real", `@everyone`);
+					continue;
+				}
+			}
 			if (txt[i] === "<") {
 				if ((txt[i + 1] === "@" || txt[i + 1] === "#") && this.localuser) {
 					let id = "";
-					let j = i + 2;
+					const role = txt[i + 1] === "@" && txt[i + 2] === "&";
+					let j = i + 2 + +role;
 					const numbers = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 					for (; txt[j] !== undefined; j++) {
 						const char = txt[j];
@@ -555,25 +578,36 @@ class MarkDown {
 						i = j;
 						switch (char) {
 							case "@":
-								const user = this.localuser.userMap.get(id);
-								if (user) {
-									mention.textContent = `@${user.name}`;
-									let guild: null | Guild = null;
+								if (role) {
 									if (this.owner instanceof Channel) {
-										guild = this.owner.guild;
-									}
-									if (!keep) {
-										user.bind(mention, guild);
-									}
-									if (guild) {
-										Member.resolveMember(user, guild).then((member) => {
-											if (member) {
-												mention.textContent = `@${member.name}`;
-											}
-										});
+										const role = this.owner.guild.roleids.get(id);
+										if (role) {
+											mention.textContent = `@${role.name}`;
+										} else {
+											mention.textContent = "@unknown-role";
+										}
 									}
 								} else {
-									mention.textContent = "@unknown";
+									const user = this.localuser.userMap.get(id);
+									if (user) {
+										mention.textContent = `@${user.name}`;
+										let guild: null | Guild = null;
+										if (this.owner instanceof Channel) {
+											guild = this.owner.guild;
+										}
+										if (!keep) {
+											user.bind(mention, guild);
+										}
+										if (guild) {
+											Member.resolveMember(user, guild).then((member) => {
+												if (member) {
+													mention.textContent = `@${member.name}`;
+												}
+											});
+										}
+									} else {
+										mention.textContent = "@unknown";
+									}
 								}
 								break;
 							case "#":
@@ -592,7 +626,7 @@ class MarkDown {
 								break;
 						}
 						span.appendChild(mention);
-						mention.setAttribute("real", `<${char}${id}>`);
+						mention.setAttribute("real", `<${char}${role ? "&" : ""}${id}>`);
 						continue;
 					}
 				} else {
