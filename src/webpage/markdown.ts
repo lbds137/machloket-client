@@ -583,6 +583,7 @@ class MarkDown {
 										const role = this.owner.guild.roleids.get(id);
 										if (role) {
 											mention.textContent = `@${role.name}`;
+											mention.style.color = `var(--role-${role.id})`;
 										} else {
 											mention.textContent = "@unknown-role";
 										}
