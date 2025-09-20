@@ -7,6 +7,7 @@ import {createImg, getapiurls, getBulkUsers, installPGet, SW} from "./utils/util
 import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
 import {
 	channeljson,
+	guildFolder,
 	guildjson,
 	memberjson,
 	memberlistupdatejson,
@@ -275,9 +276,11 @@ class Localuser {
 			}
 		}
 	}
+	guildFolders: guildFolder[] = [];
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
 		this.queryBlog();
+		this.guildFolders = ready.d.user_settings.guild_folders;
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
 		this.ready = ready;
@@ -1187,6 +1190,301 @@ class Localuser {
 		channels.appendChild(html);
 		return guild;
 	}
+	dragMap = new WeakMap<
+		HTMLElement,
+		| Guild
+		| {
+				guilds: Guild[];
+				color: number;
+				name: string;
+				id: number;
+		  }
+	>();
+	dragged?: HTMLElement;
+	makeGuildDragable(
+		elm: HTMLElement,
+		thing:
+			| Guild
+			| {
+					guilds: Guild[];
+					color: number;
+					name: string;
+					id: number;
+			  },
+	) {
+		this.dragMap.set(elm, thing);
+		elm.addEventListener("dragstart", (e) => {
+			this.dragged = elm;
+			e.stopImmediatePropagation();
+		});
+		elm.addEventListener("dragend", () => {
+			delete this.dragged;
+		});
+
+		elm.style.position = "relative";
+		elm.draggable = true;
+		elm.addEventListener("dragenter", (event) => {
+			console.log("enter");
+			event.preventDefault();
+			event.stopImmediatePropagation();
+		});
+		const guildWithin = (guild?: Guild) => {
+			return !this.guildOrder.find((_) => _ === guild);
+		};
+		elm.addEventListener("dragover", (event) => {
+			event.stopImmediatePropagation();
+			const thingy = this.dragMap.get(this.dragged as HTMLElement);
+			if (!thingy) return;
+			if (this.dragged === elm) return;
+			if (!(thingy instanceof Guild) && guildWithin(thing as Guild)) return;
+			const height = elm.getBoundingClientRect().height;
+			if (event.offsetY < 0.3 * 48) {
+				elm.classList.add("dragTopView");
+				elm.classList.remove("dragFolderView");
+				elm.classList.remove("dragBottomView");
+			} else if (height - event.offsetY < 0.3 * 48) {
+				elm.classList.remove("dragTopView");
+				elm.classList.remove("dragFolderView");
+				elm.classList.add("dragBottomView");
+			} else {
+				elm.classList.remove("dragTopView");
+				elm.classList.remove("dragBottomView");
+				if (thingy instanceof Guild && (!(thing instanceof Guild) || !guildWithin(thing))) {
+					elm.classList.add("dragFolderView");
+				}
+			}
+			event.preventDefault();
+		});
+		elm.addEventListener("dragleave", () => {
+			elm.classList.remove("dragFolderView");
+			elm.classList.remove("dragTopView");
+			elm.classList.remove("dragBottomView");
+		});
+		elm.addEventListener("drop", async (event) => {
+			event.stopImmediatePropagation();
+			if (!this.dragged) return;
+			const drag = this.dragged;
+			const thingy = this.dragMap.get(this.dragged);
+			if (!thingy) return;
+			elm.classList.remove("dragFolderView");
+			elm.classList.remove("dragTopView");
+			elm.classList.remove("dragBottomView");
+
+			if (!(thingy instanceof Guild) && guildWithin(thing as Guild)) return;
+			if (this.dragged === elm) return;
+
+			const height = elm.getBoundingClientRect().height;
+			let arr = this.guildOrder;
+			console.warn(arr === this.guildOrder);
+			let found = arr.find((elm) => {
+				if (elm === thing) {
+					return true;
+				}
+				if (!(elm instanceof Guild) && elm.guilds.find((_) => _ === thing)) {
+					return true;
+				}
+				return false;
+			});
+			if (found && "guilds" in found && found !== thing) arr = found.guilds;
+			console.warn(arr === this.guildOrder);
+			const removeThingy = (thing = thingy) => {
+				const index = this.guildOrder.indexOf(thing);
+				if (-1 !== index) this.guildOrder.splice(index, 1);
+				this.guildOrder.forEach((_) => {
+					if (!(_ instanceof Guild)) {
+						const index = _.guilds.indexOf(thing as Guild);
+						if (-1 !== index) _.guilds.splice(index, 1);
+					}
+				});
+			};
+			console.log(arr, found);
+			if (event.offsetY < 0.3 * 48) {
+				removeThingy();
+				elm.before(this.dragged);
+				const index = arr.indexOf(thing);
+				arr.splice(index, 0, thingy);
+			} else if (height - event.offsetY < 0.3 * 48) {
+				removeThingy();
+				elm.after(this.dragged);
+				arr.splice(arr.indexOf(thing) + 1, 0, thingy);
+			} else if (thingy instanceof Guild && (!(thing instanceof Guild) || !guildWithin(thing))) {
+				if (thing instanceof Guild) {
+					await new Promise<void>((res) => {
+						const dia = new Dialog(I18n.folder.create());
+						const opt = dia.options;
+						const color = opt.addColorInput(I18n.folder.color(), () => {});
+						const name = opt.addTextInput(I18n.folder.name(), () => {});
+						opt.addButtonInput("", I18n.submit(), () => {
+							removeThingy();
+
+							let id = 1;
+							while (this.guildOrder.find((_) => _.id === id)) {
+								id++;
+							}
+							const folder = {
+								color: +("0x" + (color.value || "#0").split("#")[1]),
+								name: name.value,
+								guilds: [thing, thingy],
+								id,
+							};
+
+							this.guildOrder.splice(this.guildOrder.indexOf(thing), 1, folder);
+							const hold = document.createElement("hr");
+							elm.after(hold);
+							hold.after(
+								this.makeFolder(
+									folder,
+									new Map([
+										[thing, elm],
+										[thingy, drag],
+									]),
+								),
+							);
+							hold.remove();
+
+							dia.hide();
+							res();
+						});
+						dia.show();
+					});
+				} else {
+					removeThingy();
+					thing.guilds.push(thingy);
+					elm.append(drag);
+				}
+			}
+			console.log(this.guildOrder);
+			this.guildOrder = this.guildOrder.filter((folder) => {
+				if (folder instanceof Guild) return true;
+				if (folder.guilds.length === 0) {
+					const servers = document.getElementById("servers");
+					if (servers)
+						Array.from(servers.children).forEach((_) => {
+							const html = _ as HTMLElement;
+							if (this.dragMap.get(html) === folder) html.remove();
+						});
+					return false;
+				}
+				return true;
+			});
+			await this.saveGuildOrder();
+		});
+	}
+	async saveGuildOrder() {
+		const guild_folders: guildFolder[] = this.guildOrder.map((elm) => {
+			if (elm instanceof Guild) {
+				return {
+					id: 0,
+					name: "",
+					guild_ids: [elm.id],
+					color: 0,
+				};
+			} else {
+				return {
+					id: elm.id,
+					name: elm.name,
+					guild_ids: elm.guilds.map((guild) => guild.id),
+					color: elm.color,
+				};
+			}
+		});
+
+		await fetch(this.info.api + "/users/@me/settings", {
+			method: "PATCH",
+			headers: this.headers,
+			body: JSON.stringify({guild_folders}),
+		});
+	}
+	makeGuildIcon(guild: Guild) {
+		const divy = guild.generateGuildIcon();
+		guild.HTMLicon = divy;
+		this.makeGuildDragable(divy, guild);
+		return divy;
+	}
+	makeFolder(
+		folder: {color: number; id: number; name: string; guilds: Guild[]},
+		icons = new Map<Guild, HTMLElement | undefined>(),
+	) {
+		const folderDiv = document.createElement("div");
+		folderDiv.classList.add("folder-div");
+		const iconDiv = document.createElement("div");
+		iconDiv.classList.add("folder-icon-div");
+		const icon = document.createElement("span");
+		icon.classList.add("svg-folder");
+
+		const menu = new Contextmenu<void, void>("");
+		menu.addButton(I18n.folder.edit(), () => {
+			const dio = new Dialog(I18n.folder.edit());
+			const opt = dio.options;
+			const name = opt.addTextInput(I18n.folder.name(), () => {}, {
+				initText: folder.name,
+			});
+			const color = opt.addColorInput(I18n.folder.color(), () => {}, {
+				initColor: "#" + folder.color.toString(16),
+			});
+			opt.addButtonInput("", I18n.submit(), async () => {
+				folder.name = name.value;
+				folder.color = +("0x" + (color.value || "#0").split("#")[1]);
+				icon.style.setProperty("--folder-color", "#" + folder.color.toString(16).padStart(6, "0"));
+				if (!folder.color) icon.style.removeProperty("--folder-color");
+				await this.saveGuildOrder();
+				dio.hide();
+			});
+			dio.show();
+		});
+
+		menu.bindContextmenu(iconDiv);
+		if (folder.color !== null) {
+			icon.style.setProperty("--folder-color", "#" + folder.color.toString(16).padStart(6, "0"));
+			if (!folder.color) icon.style.removeProperty("--folder-color");
+		}
+		iconDiv.append(icon);
+		const divy = document.createElement("div");
+		divy.append(
+			...folder.guilds.map((guild) => {
+				const icon = icons.get(guild);
+				if (icon) return icon;
+				return this.makeGuildIcon(guild);
+			}),
+		);
+		divy.classList.add("guilds-div-folder");
+		folderDiv.append(iconDiv, divy);
+		let height = -1;
+		const toggle = async (fast = false) => {
+			if (height === -1) {
+				divy.style.overflow = "clip";
+				height = divy.getBoundingClientRect().height;
+				divy.style.height = height + "px";
+				await new Promise((res) => requestAnimationFrame(res));
+				divy.style.height = "0px";
+				this.perminfo.folderStates[folder.id].state = true;
+			} else {
+				divy.style.height = height + "px";
+				if (!fast) await new Promise((res) => setTimeout(res, 200));
+				divy.style.height = "unset";
+				height = -1;
+				divy.style.overflow = "unset";
+				this.perminfo.folderStates[folder.id].state = false;
+			}
+		};
+		iconDiv.onclick = () => toggle();
+		this.perminfo.folderStates ??= {};
+		this.perminfo.folderStates[folder.id] ??= {};
+		if (this.perminfo.folderStates[folder.id].state === true) {
+			toggle(true);
+		}
+		this.makeGuildDragable(folderDiv, folder);
+		return folderDiv;
+	}
+	guildOrder: (
+		| Guild
+		| {
+				guilds: Guild[];
+				color: number;
+				name: string;
+				id: number;
+		  }
+	)[] = [];
 	buildservers(): void {
 		const serverlist = document.getElementById("servers") as HTMLDivElement; //
 		const outdiv = document.createElement("div");
@@ -1218,15 +1516,57 @@ class Localuser {
 		const br = document.createElement("hr");
 		br.classList.add("lightbr");
 		serverlist.appendChild(br);
-		for (const thing of this.guilds) {
-			if (thing instanceof Direct) {
-				(thing as Direct).unreaddms();
-				continue;
+		const guilds = new Set(this.guilds);
+		const dirrect = this.guilds.find((_) => _ instanceof Direct) as Direct;
+		dirrect.unreaddms();
+		guilds.delete(dirrect);
+		const folders = this.guildFolders
+			.map((folder) => {
+				return {
+					guilds: folder.guild_ids
+						.map((id) => {
+							const guild = this.guildids.get(id);
+							if (!guild) {
+								console.error(`guild ${id} does not exist`);
+								return;
+							}
+							if (!guilds.has(guild)) {
+								console.error(`guild ${id} is already in a folder`);
+								return;
+							}
+							guilds.delete(guild);
+							return guild;
+						})
+						.filter((_) => _ !== undefined),
+					color: folder.color,
+					name: folder.name,
+					id: folder.id,
+				};
+			})
+			.filter((_) => {
+				if (_.guilds.length === 0) {
+					console.error("empty folder depected");
+					return false;
+				}
+				return true;
+			})
+			.map((folder) => {
+				if (folder.id === 0 && folder.guilds.length === 1) {
+					return folder.guilds[0];
+				}
+				return folder;
+			});
+		const guildOrder = [...guilds, ...folders];
+		this.guildOrder = guildOrder;
+		for (const thing of guildOrder) {
+			if (thing instanceof Guild) {
+				serverlist.append(this.makeGuildIcon(thing));
+			} else {
+				const folderDiv = this.makeFolder(thing);
+				serverlist.append(folderDiv);
 			}
-			const divy = thing.generateGuildIcon();
-			thing.HTMLicon = divy;
-			serverlist.append(divy);
 		}
+
 		{
 			const br = document.createElement("hr");
 			br.classList.add("lightbr");

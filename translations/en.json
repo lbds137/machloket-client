@@ -372,6 +372,12 @@
 		"roleFileIcon": "Role Icon:",
 		"deleting":"Deleting role..."
 	},
+	"folder":{
+		"name":"Folder name:",
+		"color":"Folder color:",
+		"create":"Create new folder",
+		"edit":"Edit folder"
+	},
 	"settings": {
 		"unsaved": "Careful, you have unsaved changes",
 		"save": "Save changes",

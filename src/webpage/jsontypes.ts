@@ -27,7 +27,7 @@ interface readyjson {
 			}; //might be missing things here
 			gateway_connected: boolean;
 			gif_auto_play: boolean;
-			guild_folders: []; //need an example of this not empty
+			guild_folders: guildFolder[];
 			guild_positions: []; //need an example of this not empty
 			inline_attachment_media: boolean;
 			inline_embed_media: boolean;
@@ -122,6 +122,13 @@ interface readyjson {
 		};
 	};
 }
+export interface guildFolder {
+	color: number;
+	guild_ids: string[];
+	id: number;
+	name: string;
+}
+
 interface readySuplemental {
 	op: 0;
 	t: "READY_SUPPLEMENTAL";

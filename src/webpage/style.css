@@ -571,6 +571,13 @@ textarea {
 	display: block;
 	mask-size: cover !important;
 }
+.svg-folder {
+	mask: url(/icons/folder.svg);
+	background-color: var(--folder-color, var(--accent-color));
+	mask-size: contain !important;
+	width: 36px;
+	height: 36px;
+}
 .svg-stream {
 	mask: url(/icons/stream.svg);
 	mask-size: contain !important;
@@ -1105,7 +1112,28 @@ span.instanceStatus {
 	background: var(--typebox-bg);
 	border-radius: 8px;
 }
-
+.folder-icon-div {
+	width: 44px;
+	height: 44px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background: var(--primary-text-soft);
+	border-radius: 16px;
+	margin: 2px;
+	margin-bottom: 8px;
+	cursor: pointer;
+}
+.folder-div {
+	background: color-mix(in srgb, var(--primary-text-soft), 70% transparent);
+	padding: 3px;
+	margin: -3px;
+	border-radius: 16px;
+	margin-bottom: 6px;
+}
+.guilds-div-folder {
+	transition: height 0.2s;
+}
 /* Server List */
 #servers {
 	flex: 0 0 auto;
@@ -3456,6 +3484,17 @@ img.error::after {
 	bottom: -3px;
 	left: 0px;
 	position: absolute;
+}
+.dragFolderView::before {
+	content: "";
+	width: 24px;
+	height: 24px;
+	background: var(--green);
+	top: 12px;
+	left: -6px;
+	border-radius: 100%;
+	position: absolute;
+	pointer-events: none;
 }
 .blogDiv {
 	background: var(--secondary-bg);

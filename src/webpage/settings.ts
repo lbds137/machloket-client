@@ -358,15 +358,16 @@ class ColorInput implements OptionsElement<string> {
 	readonly onSubmit: (str: string) => void;
 	colorContent: string;
 	input!: WeakRef<HTMLInputElement>;
-	value!: string;
+	value: string;
 	constructor(
 		label: string,
 		onSubmit: (str: string) => void,
 		owner: Options,
-		{initColor = ""} = {},
+		{initColor = "#000000"} = {},
 	) {
 		this.label = label;
 		this.colorContent = initColor;
+		this.value = initColor;
 		this.owner = owner;
 		this.onSubmit = onSubmit;
 	}
