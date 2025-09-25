@@ -3814,15 +3814,14 @@ class Localuser {
 				const refreshes = this.urlsToRefresh;
 				this.urlsToRefresh = [];
 				delete this.refrshTimeOut;
+				const res = await fetch(this.info.api + "/attachments/refresh-urls", {
+					method: "POST",
+					body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
+					headers: this.headers,
+				});
 				const body: {
 					refreshed_urls: string[];
-				} = await (
-					await fetch(this.info.api + "/attachments/refresh-urls", {
-						method: "POST",
-						body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
-						headers: this.headers,
-					})
-				).json();
+				} = await res.json();
 				let i = 0;
 				for (const url of body.refreshed_urls) {
 					refreshes[i][1](url);
