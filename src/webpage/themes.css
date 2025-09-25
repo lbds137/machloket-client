@@ -119,6 +119,7 @@
 	--dock-bg: color-mix(in srgb, #171717 68%, var(--accent-color));
 	--spoiler-hover: color-mix(in srgb, #111111 80%, var(--accent-color));
 	--card-bg: color-mix(in srgb, #0b0b0b 70%, var(--accent-color));
+	--spoiler-bg: #000000;
 }
 
 /* Optional Variables */
