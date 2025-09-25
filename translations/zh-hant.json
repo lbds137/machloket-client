@@ -29,8 +29,9 @@
 	},
 	"blog": {
 		"blog": "部落格",
-		"fermi": "Fermi 部落格",
-		"desc": "閱讀或訂閱部落格來獲得 Fermi 的最新資訊！"
+		"wantUpdates": "您想取得有關 Fermi 狀態的每週部落格更新嗎？",
+		"blogUpdates": "部落格更新：",
+		"gotoPost": "前往文章"
 	},
 	"logout": {
 		"logout": "登出",
@@ -370,7 +371,14 @@
 		"delete": "刪除角色",
 		"confirmDelete": "您確定要刪除$1嗎？",
 		"roleEmoji": "角色表情符號：",
-		"roleFileIcon": "角色圖示："
+		"roleFileIcon": "角色圖示：",
+		"deleting": "正在刪除角色…"
+	},
+	"folder": {
+		"name": "資料夾名稱：",
+		"color": "資料夾色彩：",
+		"create": "建立新資料夾",
+		"edit": "編輯資料夾"
 	},
 	"settings": {
 		"unsaved": "請留意，您有尚未儲存的更改",
@@ -382,6 +390,7 @@
 		"totalTime": "$2：$1 毫秒",
 		"traces": "$1（$2 毫秒）$3"
 	},
+	"notiVolume": "通知音量：",
 	"localuser": {
 		"trace": "軌跡",
 		"install": "安裝",

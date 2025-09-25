@@ -4,6 +4,7 @@
 			"Bananax47",
 			"Derugon",
 			"EmDashUser002",
+			"Gomoko",
 			"Goombiis",
 			"Mahabarata",
 			"Pyschobbens",
@@ -34,9 +35,7 @@
 		"length": "Durée : $1 minute(s) et $2 seconde(s)"
 	},
 	"blog": {
-		"blog": "Blogue",
-		"fermi": "Blogue de Fermi",
-		"desc": "Lisez ou abonnez-vous au blogue pour des actualités sur Fermi !"
+		"blog": "Blogue"
 	},
 	"logout": {
 		"logout": "Se déconnecter",
@@ -94,10 +93,10 @@
 			"USE_SOUNDBOARD": "Permet d'utiliser la table des sons dans un canal vocal",
 			"CREATE_GUILD_EXPRESSIONS": "Permet de créer des émojis, des autocollants et des sons de carte son ainsi que de modifier et de supprimer ceux créés par l'utilisateur actuel.",
 			"CREATE_EVENTS": "Permet de créer des événements planifiés, ainsi que de modifier et de supprimer ceux créés par l'utilisateur actuel.",
-			"USE_EXTERNAL_SOUNDS": "Permet l'utilisation de sons personnalisés de cartes son provenant d'autres serveurs",
+			"USE_EXTERNAL_SOUNDS": "Permet l'utilisation de sons personnalisés de cartes son provenant d'autres guildes",
 			"SEND_VOICE_MESSAGES": "Permet d'envoyer des messages vocaux",
 			"SEND_POLLS": "Permet d'envoyer des sondages",
-			"USE_EXTERNAL_APPS": "Permet aux applications installées par l'utilisateur d'envoyer des réponses publiques. Lorsque cette option est désactivée, les utilisateurs seront toujours autorisés à utiliser leurs applications mais les réponses seront éphémères. Cela s'applique uniquement aux applications qui ne sont pas également installées sur le serveur."
+			"USE_EXTERNAL_APPS": "Permet aux applications installées par l'utilisateur d'envoyer des réponses publiques. Lorsque cette option est désactivée, les utilisateurs seront toujours autorisés à utiliser leurs applications mais les réponses seront éphémères. Cela s'applique uniquement aux applications qui ne sont pas également installées sur la guilde."
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "Créer une invitation",
@@ -245,7 +244,7 @@
 	},
 	"htmlPages": {
 		"idpermissions": "Cela permettra au robot de :",
-		"addBot": "Ajouter au serveur",
+		"addBot": "Ajouter à la guilde",
 		"loadingText": "Le client Fermi est en cours de chargement",
 		"loaddesc": "Cela ne devrait pas prendre longtemps",
 		"switchaccounts": "Changer de compte",
@@ -344,7 +343,7 @@
 		"yesLeave": "Oui, j'en suis sûr",
 		"noLeave": "Tant pis",
 		"confirmDelete": "Voulez-vous vraiment supprimer $1 ?",
-		"serverName": "Nom du serveur :",
+		"serverName": "Nom de la guilde :",
 		"yesDelete": "Oui, j'en suis sûr",
 		"noDelete": "Tant pis",
 		"create": "Créer une guilde",
@@ -388,6 +387,7 @@
 		"totalTime": "$2: $1ms",
 		"traces": "$1 ($2ms) $3"
 	},
+	"notiVolume": "Volume de notification :",
 	"localuser": {
 		"trace": "Traces",
 		"install": "Installer",
@@ -494,6 +494,8 @@
 		"genericType": "Générique",
 		"copy": "Copier"
 	},
+	"emojiSelect": "Émoji :",
+	"noEmojiFont": "Utiliser le système des Émojis",
 	"unpinMessage": "Ne plus épingler le message",
 	"noPins": "Il semble qu'il n'y ait rien ici... pour l'instant",
 	"message": {
@@ -511,7 +513,7 @@
 	"instanceStats": {
 		"name": "Statistiques de l'instance : $1",
 		"users": "Utilisateurs enregistrés : $1",
-		"servers": "Serveurs : $1",
+		"servers": "Guildes : $1",
 		"messages": "Messages : $1",
 		"members": "Membres : $1"
 	},
@@ -589,7 +591,7 @@
 		"ban": "Bannir un membre",
 		"addRole": "Ajouter des rôles",
 		"removeRole": "Enlever des rôles",
-		"editServerProfile": "Modifier le profil du serveur",
+		"editServerProfile": "Modifier le profil de la guilde",
 		"instanceBan": "Banissement sur l’instance",
 		"confirmInstBan": "Êtes-vous sûr de vouloir bannir $1 sur l’instance ?",
 		"unban": "Débloquer $1"

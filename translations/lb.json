@@ -17,8 +17,7 @@
 		"length": "Längt: $1 Minutten a(n) $2 Sekonnen"
 	},
 	"blog": {
-		"blog": "Blog",
-		"fermi": "Fermi-Blog"
+		"blog": "Blog"
 	},
 	"logout": {
 		"logout": "Ausloggen",
@@ -152,7 +151,14 @@
 	},
 	"role": {
 		"color": "Faarf",
-		"delete": "Roll läschen"
+		"delete": "Roll läschen",
+		"deleting": "Roll gëtt geläscht …"
+	},
+	"folder": {
+		"name": "Numm vum Dossier:",
+		"color": "Faarf vum Dossier:",
+		"create": "Neien Dossier uleeën",
+		"edit": "Dossier änneren"
 	},
 	"settings": {
 		"save": "Ännerunge späicheren",

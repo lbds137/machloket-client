@@ -10,6 +10,19 @@
 		]
 	},
 	"readableName": "{{doc-important|This should be the name of the language you are translating into, in that language. Please DO NOT translate this into your language’s word for “English”!}}",
+	"permissions": {
+		"descriptions": {
+			"DEAFEN_MEMBERS": "To deafen means to temporarily disable your ability to hear any audio from a voice channel, while also muting your own microphone so others cannot hear you. Unlike muting, which only stops others from hearing you, deafening affects both incoming and outgoing audio, completely disabling your participation in the voice channel's audio.",
+			"MANAGE_GUILD_EXPRESSIONS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
+			"USE_SOUNDBOARD": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
+			"CREATE_GUILD_EXPRESSIONS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
+			"USE_EXTERNAL_SOUNDS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear."
+		},
+		"readableNames": {
+			"DEAFEN_MEMBERS": "To deafen means to temporarily disable your ability to hear any audio from a voice channel, while also muting your own microphone so others cannot hear you. Unlike muting, which only stops others from hearing you, deafening affects both incoming and outgoing audio, completely disabling your participation in the voice channel's audio.",
+			"USE_SOUNDBOARD": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear."
+		}
+	},
 	"typing": "$1 is the number of people typing and $2 is the names of the people typing separated by commas",
 	"webhooks": {
 		"sillyDefaults": "{{doc-important|This is just a list of silly default names for webhooks, do not feel the need to translate dirrectly, and no need for the same count}}"
