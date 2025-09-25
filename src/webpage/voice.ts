@@ -464,15 +464,14 @@ a=group:BUNDLE ${bundles.join(" ")}\r`;
 				mode = "recvonly";
 			}
 			if (grouping.media === "audio") {
+				const port = [...grouping.ports][0];
 				build += `
-m=audio ${parsed1.port} UDP/TLS/RTP/SAVPF 111\r
+m=audio ${parsed1.port} UDP/TLS/RTP/SAVPF ${port}\r
 ${cline}\r
-a=rtpmap:111 opus/48000/2\r
-a=fmtp:111 minptime=10;useinbandfec=1;usedtx=1\r
+a=rtpmap:${port} opus/48000/2\r
+a=fmtp:${port} minptime=10;useinbandfec=1;usedtx=1\r
 a=rtcp:${rtcport}\r
-a=rtcp-fb:111 transport-cc\r
-a=extmap:1 urn:ietf:params:rtp-hdrext:ssrc-audio-level\r
-a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+a=rtcp-fb:${port} transport-cc\r
 a=setup:passive\r
 a=mid:${bundles[i]}${audioUsers[ai] && audioUsers[ai][1] ? `\r\na=msid:${audioUsers[ai][1]}-${audioUsers[ai][0]} a${audioUsers[ai][1]}-${audioUsers[ai][0]}\r` : "\r"}
 a=maxptime:60\r
@@ -484,25 +483,31 @@ a=candidate:${candidate}${audioUsers[ai] && audioUsers[ai][1] ? `\r\na=ssrc:${au
 a=rtcp-mux\r`;
 				ai++;
 			} else {
+				const set = grouping.atr.get("rtpmap") || new Set();
+				let port1 = "";
+				let port2 = "";
+				for (const thing of set) {
+					if (thing.includes("H264/90000") && !port1) {
+						port1 = thing.split(" ")[0];
+					} else if (thing.includes("rtx/90000") && !port2) {
+						port2 = thing.split(" ")[0];
+					}
+				}
+
 				build += `
-m=video ${parsed1.port} UDP/TLS/RTP/SAVPF 103 104\r
+m=video ${parsed1.port} UDP/TLS/RTP/SAVPF ${port1} ${port2}\r
 ${cline}\r
-a=rtpmap:103 H264/90000\r
-a=rtpmap:104 rtx/90000\r
-a=fmtp:103 x-google-max-bitrate=2500;level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r
-a=fmtp:104 apt=103\r
+a=rtpmap:${port1} H264/90000\r
+a=rtpmap:${port2} rtx/90000\r
+a=fmtp:${port1} level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f\r
+a=fmtp:${port2} apt=${port1}\r
 a=rtcp:${rtcport}\r
-a=rtcp-fb:103 ccm fir\r
-a=rtcp-fb:103 nack\r
-a=rtcp-fb:103 nack pli\r
-a=rtcp-fb:103 goog-remb\r
-a=rtcp-fb:103 transport-cc\r
-a=extmap:2 http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
-a=extmap:3 http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
-a=extmap:14 urn:ietf:params:rtp-hdrext:toffset\r
-a=extmap:13 urn:3gpp:video-orientation\r
-a=extmap:5 http://www.webrtc.org/experiments/rtp-hdrext/playout-delay
-a=setup:passive
+a=rtcp-fb:${port1} ccm fir\r
+a=rtcp-fb:${port1} nack\r
+a=rtcp-fb:${port1} nack pli\r
+a=rtcp-fb:${port1} goog-remb\r
+a=rtcp-fb:${port1} transport-cc\r
+a=setup:passive\r
 a=mid:${bundles[i]}${videoUsers[vi] && videoUsers[vi][1] ? `\r\na=msid:${videoUsers[vi][1]}-${videoUsers[vi][0]} v${videoUsers[vi][1]}-${videoUsers[vi][0]}\r` : "\r"}
 a=${videoUsers[vi] && videoUsers[vi][1] ? "sendonly" : mode}\r
 a=ice-ufrag:${ICE_UFRAG}\r
@@ -518,13 +523,31 @@ a=rtcp-mux\r`;
 		return build;
 	}
 	counter?: string;
+	forceNext: boolean;
 	negotationneeded() {
 		if (this.pc) {
 			const pc = this.pc;
-			const sendOffer = async () => {
-				console.trace("neg need");
-				await pc.setLocalDescription();
-				console.log("set local");
+			let setting = false;
+			const setLocal = async (forced: boolean = this.forceNext) => {
+				if (setting) return;
+				const val = (Math.random() * 1000) ^ 0;
+
+				setting = true;
+				const offer = await pc.createOffer();
+				if (offer.sdp === pc.localDescription?.sdp || forced) {
+					if (forced) console.log("foced :3");
+					logState("update", "will Sent offer " + val);
+					await pc.setLocalDescription();
+					logState("update", "Sent offer " + val);
+				}
+				setting = false;
+				this.forceNext = false;
+			};
+			const sendOffer = async (forced = this.forceNext) => {
+				if (!setting) {
+					setLocal(forced);
+					console.log("set local");
+				}
 
 				const senders = this.senders.difference(this.ssrcMap);
 				console.log(senders, this.ssrcMap);
@@ -579,12 +602,13 @@ a=rtcp-mux\r`;
 			}
 			pc.addEventListener("negotiationneeded", async () => {
 				logState("negotiationneeded");
-				await sendOffer();
+				await sendOffer(true);
 				console.log(this.ssrcMap);
 			});
 			pc.onicecandidate = (e) => {
 				console.warn(e.candidate);
 			};
+
 			pc.addEventListener("signalingstatechange", async () => {
 				logState("signalingstatechange", pc.signalingState);
 				detectDone();
@@ -597,8 +621,11 @@ a=rtcp-mux\r`;
 							sdp: this.cleanServerSDP(counter),
 							type: "answer",
 						};
-						console.log(remote);
+						console.log([remote.sdp, this.pc.localDescription?.sdp]);
+						const val = (Math.random() * 1000) ^ 0;
+						logState("update", "start sent remote " + val);
 						await pc.setRemoteDescription(remote);
+						logState("update", "end sent remote " + val);
 					}
 				} else {
 					console.warn("uh oh!");
@@ -608,7 +635,9 @@ a=rtcp-mux\r`;
 				logState("connectionstatechange", pc.connectionState);
 				detectDone();
 				if (pc.connectionState === "connecting") {
-					await pc.setLocalDescription();
+					//logState("update2", "start Set local desc");
+					//await pc.setLocalDescription();
+					//logState("update2", "Set local desc");
 				}
 			});
 			pc.addEventListener("icegatheringstatechange", async () => {
@@ -616,17 +645,18 @@ a=rtcp-mux\r`;
 				detectDone();
 				console.log(this.counter, this.pc);
 				if (pc.iceGatheringState === "complete") {
+					if (setting) return;
 					if (this.pc && this.counter) {
-						pc.setLocalDescription();
-						console.warn("set local desc");
+						setLocal();
 					}
 				}
 			});
 			pc.addEventListener("iceconnectionstatechange", async () => {
 				logState("iceconnectionstatechange", pc.iceConnectionState);
+
 				detectDone();
 				if (pc.iceConnectionState === "checking") {
-					sendOffer();
+					await sendOffer();
 				}
 			});
 		}
@@ -874,6 +904,7 @@ a=rtcp-mux\r`;
 
 		sender.setStreams(caml);
 		await sender.replaceTrack(cam);
+		this.forceNext = true;
 
 		console.warn("replaced track", cam);
 		this.pc?.setLocalDescription();
@@ -1069,12 +1100,19 @@ a=rtcp-mux\r`;
 		}
 		let sendsdp = "a=extmap-allow-mixed";
 		let first = true;
+
 		for (const media of parsed.medias) {
 			for (const thing of first
-				? ["ice-ufrag", "ice-pwd", "ice-options", "fingerprint", "extmap", "rtpmap"]
-				: ["extmap", "rtpmap"]) {
-				const thing2 = media.atr.get(thing);
-				if (!thing2) continue;
+				? (["ice-ufrag", "ice-pwd", "ice-options", "fingerprint", "extmap", "rtpmap"] as const)
+				: (["extmap", "rtpmap"] as const)) {
+				let thing2 = media.atr.get(thing);
+				if (!thing2) {
+					thing2 = parsed.atr.get(thing);
+					if (!thing2) {
+						console.error("couldn't find " + thing);
+						continue;
+					}
+				}
 				for (const thing3 of thing2) {
 					if (thing === "rtpmap") {
 						const name = thing3.split(" ")[1].split("/")[0];
@@ -1089,6 +1127,7 @@ a=rtcp-mux\r`;
 			}
 			first = false;
 		}
+		console.log(sendsdp);
 		if (this.ws) {
 			this.ws.send(
 				JSON.stringify({
