@@ -459,10 +459,21 @@ a=group:BUNDLE ${bundles.join(" ")}\r`;
 		let vi = -1;
 		let i = 0;
 		for (const grouping of parsed.medias) {
-			let mode = "inactive";
-			if (i < 2) {
-				mode = "recvonly";
-			}
+			const cur =
+				([...grouping.atr]
+					.map((_) => _[0].trim())
+					.find((_) =>
+						new Set(["inactive", "recvonly", "sendonly", "sendrecv"]).has(_),
+					) as "inactive") ||
+				"recvonly" ||
+				"sendonly" ||
+				"sendrecv";
+			const mode = {
+				inactive: "inactive",
+				recvonly: "sendonly",
+				sendonly: "recvonly",
+				sendrecv: "sendrecv",
+			}[cur];
 			if (grouping.media === "audio") {
 				const port = [...grouping.ports][0];
 				build += `
@@ -520,10 +531,11 @@ a=rtcp-mux\r`;
 			i++;
 		}
 		build += "\n";
+		console.log(ld.sdp, "fime :3");
 		return build;
 	}
 	counter?: string;
-	forceNext: boolean;
+	forceNext: boolean = false;
 	negotationneeded() {
 		if (this.pc) {
 			const pc = this.pc;
@@ -675,8 +687,14 @@ a=rtcp-mux\r`;
 		let width = 1280;
 		let height = 720;
 		if (this.cam && this.cammera) {
+			const cammera = this.cammera;
+			const cam = this.cam;
+			let attemps = 0;
 			do {
-				const stats = (await this.cam.sender.getStats()) as Map<string, any>;
+				if (attemps > 10) {
+					return;
+				}
+				const stats = (await cam.sender.getStats()) as Map<string, any>;
 				Array.from(stats).forEach((_) => {
 					if (_[1].ssrc) {
 						video_ssrc = _[1].ssrc;
@@ -686,9 +704,9 @@ a=rtcp-mux\r`;
 						rtx_ssrc = _[1].rtxSsrc;
 					}
 				});
-				const settings = this.cammera.getSettings();
+				const settings = cammera.getSettings();
 				console.error(settings);
-
+				attemps++;
 				await new Promise((res) => setTimeout(res, 100));
 			} while (!video_ssrc || !rtx_ssrc);
 			//width = settings.width || 0;
@@ -885,6 +903,7 @@ a=rtcp-mux\r`;
 		while (!this.cam) {
 			await new Promise((res) => setTimeout(res, 100));
 		}
+		debugger;
 		console.warn("test test test test video sent!");
 		const tracks = caml.getVideoTracks();
 		const [cam] = tracks;
@@ -907,7 +926,7 @@ a=rtcp-mux\r`;
 		this.forceNext = true;
 
 		console.warn("replaced track", cam);
-		this.pc?.setLocalDescription();
+		this.pc?.setLocalDescription((await this.pc?.createOffer()) || {});
 		if (this.settings.stream) {
 			this.makeOp12();
 		} else {
