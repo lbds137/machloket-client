@@ -131,7 +131,9 @@ class File {
 			if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >= Date.now() - 5000) {
 				return;
 			}
-			return this.owner.localuser.refreshURL(url);
+			const newUrl = this.owner.localuser.refreshURL(url);
+			newUrl.then((_) => (this.proxy_url = _));
+			return newUrl;
 		}
 	}
 	private getAudioHTML(url: Promise<string> | void) {
