@@ -971,6 +971,7 @@ a=rtcp-mux\r`;
 		}
 	}
 	onconnect = () => {};
+	streams = new Set<MediaStreamTrack>();
 	async startWebRTC() {
 		this.status = "makingOffer";
 		const pc = new RTCPeerConnection();
@@ -986,7 +987,10 @@ a=rtcp-mux\r`;
 			if (e.track.kind === "video") {
 				//TODO I don't know why but without this firefox bugs out on streams
 				if (media.id.match("{")) return;
-				console.log(media, this.vidusers);
+				if (this.owner.currentVoice?.voiceMap.get(this.userid) === this) {
+					return;
+				}
+				this.streams.add(e.track);
 				const video = document.createElement("video");
 				forceVideo(video);
 				this.onVideo(video, userId);
