@@ -7,6 +7,11 @@ import {
 	voiceStatus,
 	webRTCSocket,
 } from "./jsontypes.js";
+function forceVideo(video: HTMLVideoElement) {
+	video.addEventListener("pause", () => {
+		video.play();
+	});
+}
 class VoiceFactory {
 	settings: {id: string};
 	handleGateway: (obj: Object) => void;
@@ -418,7 +423,15 @@ class Voice {
 		this.hoffer = e;
 	}
 	fingerprint?: string;
-	cleanServerSDP(sdp: string): string {
+	async cleanServerSDP(sdp: string): Promise<string> {
+		const out = await this.getCamInfo();
+		if (out.rtx_ssrc) {
+			this.vidusers.set(out.rtx_ssrc, this.userid);
+			console.log(out);
+		} else {
+			const i = [...this.vidusers].findIndex((_) => _[1] === this.userid);
+			this.vidusers.delete(i);
+		}
 		const pc = this.pc;
 		if (!pc) throw new Error("pc isn't defined");
 		const ld = pc.localDescription;
@@ -492,6 +505,7 @@ a=ice-pwd:${ICE_PWD}\r
 a=fingerprint:${FINGERPRINT}\r
 a=candidate:${candidate}${audioUsers[ai] && audioUsers[ai][1] ? `\r\na=ssrc:${audioUsers[ai][0]} cname:${audioUsers[ai][1]}-${audioUsers[ai][0]}\r` : "\r"}
 a=rtcp-mux\r`;
+				console.log(audioUsers[ai], "audio user");
 				ai++;
 			} else {
 				const set = grouping.atr.get("rtpmap") || new Set();
@@ -527,15 +541,26 @@ a=fingerprint:${FINGERPRINT}\r
 a=candidate:${candidate}${videoUsers[vi] && videoUsers[vi][1] ? `\r\na=ssrc:${videoUsers[vi][0]} cname:${videoUsers[vi][1]}-${videoUsers[vi][0]}\r` : "\r"}
 a=rtcp-mux\r`;
 				vi++;
+				console.log(mode, "fine me :3");
 			}
 			i++;
 		}
 		build += "\n";
-		console.log(ld.sdp, "fime :3");
+		console.log(ld.sdp, "fime :3", build, this.pc?.remoteDescription?.sdp);
 		return build;
 	}
 	counter?: string;
 	forceNext: boolean = false;
+	async updateRemote() {
+		const counter = this.counter;
+		if (!counter || !this.pc) return;
+		const remote: {sdp: string; type: RTCSdpType} = {
+			sdp: await this.cleanServerSDP(counter),
+			type: "answer",
+		};
+		console.log([remote.sdp, this.pc.localDescription?.sdp]);
+		await this.pc.setRemoteDescription(remote);
+	}
 	negotationneeded() {
 		if (this.pc) {
 			const pc = this.pc;
@@ -628,15 +653,9 @@ a=rtcp-mux\r`;
 				if (this.pc && this.counter) {
 					console.warn("in here :3");
 					if (pc.signalingState === "have-local-offer") {
-						const counter = this.counter;
-						const remote: {sdp: string; type: RTCSdpType} = {
-							sdp: this.cleanServerSDP(counter),
-							type: "answer",
-						};
-						console.log([remote.sdp, this.pc.localDescription?.sdp]);
 						const val = (Math.random() * 1000) ^ 0;
 						logState("update", "start sent remote " + val);
-						await pc.setRemoteDescription(remote);
+						await this.updateRemote();
 						logState("update", "end sent remote " + val);
 					}
 				} else {
@@ -673,26 +692,16 @@ a=rtcp-mux\r`;
 			});
 		}
 	}
-	async makeOp12(
-		sender: RTCRtpSender | undefined | [RTCRtpSender, number] = this.ssrcMap.entries().next().value,
-	) {
-		console.warn("making 12?");
-		if (!this.ws) return;
-		if (sender instanceof Array) {
-			sender = sender[0];
-		}
+	async getCamInfo() {
 		let video_ssrc = 0;
 		let rtx_ssrc = 0;
-		let max_framerate = 20;
-		let width = 1280;
-		let height = 720;
-		if (this.cam && this.cammera) {
-			const cammera = this.cammera;
-			const cam = this.cam;
-			let attemps = 0;
+		const cammera = this.cammera;
+		const cam = this.cam;
+		let attemps = 0;
+		if (cam && cammera) {
 			do {
 				if (attemps > 10) {
-					return;
+					return {video_ssrc, rtx_ssrc};
 				}
 				const stats = (await cam.sender.getStats()) as Map<string, any>;
 				Array.from(stats).forEach((_) => {
@@ -709,8 +718,23 @@ a=rtcp-mux\r`;
 				attemps++;
 				await new Promise((res) => setTimeout(res, 100));
 			} while (!video_ssrc || !rtx_ssrc);
-			//width = settings.width || 0;
-			//height = settings.height || 0;
+		}
+		return {video_ssrc, rtx_ssrc};
+	}
+	async makeOp12(
+		sender: RTCRtpSender | undefined | [RTCRtpSender, number] = this.ssrcMap.entries().next().value,
+	) {
+		console.warn("making 12?");
+		if (!this.ws) return;
+		if (sender instanceof Array) {
+			sender = sender[0];
+		}
+
+		let max_framerate = 20;
+		let width = 1280;
+		let height = 720;
+		const {rtx_ssrc, video_ssrc} = await this.getCamInfo();
+		if (this.cam && this.cammera) {
 		} else if (!sender) {
 			return;
 		}
@@ -903,7 +927,6 @@ a=rtcp-mux\r`;
 		while (!this.cam) {
 			await new Promise((res) => setTimeout(res, 100));
 		}
-		debugger;
 		console.warn("test test test test video sent!");
 		const tracks = caml.getVideoTracks();
 		const [cam] = tracks;
@@ -913,6 +936,7 @@ a=rtcp-mux\r`;
 		this.cammera = cam;
 
 		const video = document.createElement("video");
+		forceVideo(video);
 		this.onVideo(video, this.userid);
 		this.videos.set(this.userid, video);
 		video.srcObject = caml;
@@ -947,15 +971,18 @@ a=rtcp-mux\r`;
 			}
 			const userId = media.id.split("-")[0];
 			if (e.track.kind === "video") {
+				//TODO I don't know why but without this firefox bugs out on streams
+				if (media.id.match("{")) return;
 				console.log(media, this.vidusers);
 				const video = document.createElement("video");
+				forceVideo(video);
 				this.onVideo(video, userId);
 				this.videos.set(userId, video);
 				video.srcObject = media;
 
 				video.autoplay = true;
 
-				console.log("gotVideo?");
+				console.log("gotVideo?", media);
 				return;
 			}
 
@@ -994,6 +1021,7 @@ a=rtcp-mux\r`;
 		}
 		this.cam = pc.addTransceiver("video", {
 			direction: "sendonly",
+			streams: [],
 			sendEncodings: [
 				{active: true, maxBitrate: 2500000, scaleResolutionDownBy: 1, maxFramerate: 20},
 			],
@@ -1009,6 +1037,7 @@ a=rtcp-mux\r`;
 		if (this.settings.live) {
 			this.cam = pc.addTransceiver("video", {
 				direction: "sendonly",
+				streams: [],
 				sendEncodings: [
 					{active: true, maxBitrate: 2500000, scaleResolutionDownBy: 1, maxFramerate: 20},
 				],

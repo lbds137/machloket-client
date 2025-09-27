@@ -275,6 +275,7 @@ body {
 	video {
 		position: absolute;
 		flex-grow: 1;
+		flex-shrink: 1;
 	}
 }
 .voiceUsers:has(.bigBox) > * {
@@ -387,7 +388,7 @@ samp {
 	word-break: break-word;
 }
 video {
-	max-height: 50svh;
+	max-height: 100%;
 	max-width: 100%;
 }
 .dateline {
