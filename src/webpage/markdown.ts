@@ -769,7 +769,7 @@ class MarkDown {
 					if (parts && parts[2]) {
 						appendcurrent();
 						i = j;
-						const isEmojiOnly = txt.join("").trim() === buildjoin.trim();
+						const isEmojiOnly = txt.join("").trim() === buildjoin.trim() && !stdsize;
 						const owner = this.owner instanceof Channel ? this.owner.guild : this.owner;
 						if (!owner) continue;
 						const emoji = new Emoji(

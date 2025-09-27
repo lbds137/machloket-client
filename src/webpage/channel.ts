@@ -380,14 +380,14 @@ class Channel extends SnowFlake {
 		} else {
 			this.lastmessageid = undefined;
 		}
-		this.setUpInfiniteScroller();
-		this.perminfo ??= {};
 		if (this.type === 2 && this.localuser.voiceFactory) {
 			this.voice = this.localuser.voiceFactory.makeVoice(this.guild.id, this.id, {
 				bitrate: this.bitrate,
 			});
 			this.setUpVoice();
 		}
+		this.setUpInfiniteScroller();
+		this.perminfo ??= {};
 	}
 	get perminfo() {
 		return this.guild.perminfo.channels[this.id];

@@ -208,6 +208,23 @@
 		"createCatagory": "Create category",
 		"permissions": "Permissions"
 	},
+	"Voice":{
+		"status":{
+			"done":"Done",
+			"notconnected":"Not connected",
+			"sendingStreams":"Sending audio streams",
+			"conectionFailed":"Connection Failed",
+			"makingOffer":"Making offer",
+			"startingRTC":"Starting RTC connection",
+			"noSDP":"No SDP",
+			"waitingMainWS":"Waiting for main WS",
+			"badWS":"Bad response from WS",
+			"waitingURL":"Waiting for voice URL",
+			"wsOpen":"Waiting for WS to open",
+			"wsAuth":"waiting for WS to authorize",
+			"left":"Left voice chat"
+		}
+	},
 	"delete": "Delete",
 	"webhooks": {
 		"createdAt": "Created at $1",

@@ -216,7 +216,7 @@ class VoiceFactory {
 			let video = false;
 			voice.onSatusChange = (e) => {
 				console.warn(e);
-				if (e === "Done" && stream && !video) {
+				if (e === "done" && stream && !video) {
 					console.error("starting to stream");
 					voice.startVideo(stream);
 					video = true;
@@ -272,11 +272,24 @@ class VoiceFactory {
 		obj.gotUrl();
 	}
 }
-
+export type voiceStatusStr =
+	| "done"
+	| "notconnected"
+	| "sendingStreams"
+	| "conectionFailed"
+	| "makingOffer"
+	| "startingRTC"
+	| "noSDP"
+	| "waitingMainWS"
+	| "waitingURL"
+	| "badWS"
+	| "wsOpen"
+	| "wsAuth"
+	| "left";
 class Voice {
-	private pstatus: string = "not connected";
-	public onSatusChange: (e: string) => unknown = () => {};
-	set status(e: string) {
+	private pstatus: voiceStatusStr = "notconnected";
+	public onSatusChange: (e: voiceStatusStr) => unknown = () => {};
+	set status(e: voiceStatusStr) {
 		console.log("state changed: " + e);
 		this.pstatus = e;
 		this.onSatusChange(e);
@@ -631,7 +644,7 @@ a=rtcp-mux\r`;
 					pc.iceConnectionState === "connected" &&
 					pc.connectionState === "connected"
 				) {
-					this.status = "Done";
+					this.status = "done";
 				}
 			};
 			function logState(thing: string, message = "") {
@@ -766,7 +779,7 @@ a=rtcp-mux\r`;
 					},
 				}),
 			);
-			this.status = "Sending audio streams";
+			this.status = "sendingStreams";
 			console.error("made 12");
 		} catch (e) {
 			console.error(e);
@@ -825,7 +838,7 @@ a=rtcp-mux\r`;
 		if (this.pc && this.offer) {
 			this.counter = data.d.sdp;
 		} else {
-			this.status = "Connection failed";
+			this.status = "conectionFailed";
 		}
 	}
 	reciverMap = new Map<number, RTCRtpReceiver>();
@@ -959,10 +972,10 @@ a=rtcp-mux\r`;
 	}
 	onconnect = () => {};
 	async startWebRTC() {
-		this.status = "Making offer";
+		this.status = "makingOffer";
 		const pc = new RTCPeerConnection();
 		pc.ontrack = async (e) => {
-			this.status = "Done";
+			this.status = "done";
 			this.onconnect();
 			const media = e.streams[0];
 			if (!media) {
@@ -1060,14 +1073,14 @@ a=rtcp-mux\r`;
 		let sdp = this.offer;
 		if (!sdp) {
 			const offer = await this.makeOffer();
-			this.status = "Starting RTC connection";
+			this.status = "startingRTC";
 			sdp = offer.sdp;
 			this.offer = sdp;
 		}
 
 		await pc.setLocalDescription();
 		if (!sdp) {
-			this.status = "No SDP";
+			this.status = "noSDP";
 			this.ws?.close();
 			return;
 		}
@@ -1235,7 +1248,7 @@ a=rtcp-mux\r`;
 	async join() {
 		console.warn("Joining");
 		this.open = true;
-		this.status = "waiting for main WS";
+		this.status = "waitingMainWS";
 	}
 	onMemberChange = (_member: memberjson | string, _joined: boolean) => {};
 	userids = new Map<string, {deaf: boolean; muted: boolean; video: boolean; live: boolean}>();
@@ -1262,7 +1275,7 @@ a=rtcp-mux\r`;
 		}
 		if (update.user_id === this.userid && this.open && !this.ws) {
 			if (!update) {
-				this.status = "bad responce from WS";
+				this.status = "badWS";
 				return;
 			}
 			this.session_id = update.session_id;
@@ -1272,7 +1285,7 @@ a=rtcp-mux\r`;
 	session_id?: string;
 	async startWS(session_id: string, server_id: string) {
 		if (!this.urlobj.url) {
-			this.status = "waiting for Voice URL";
+			this.status = "waitingURL";
 			await this.urlobj.geturl;
 			if (!this.open) {
 				this.leave();
@@ -1285,7 +1298,7 @@ a=rtcp-mux\r`;
 		ws.onclose = () => {
 			this.leave();
 		};
-		this.status = "waiting for WS to open";
+		this.status = "wsOpen";
 		ws.addEventListener("message", (m) => {
 			this.packet(m);
 		});
@@ -1298,7 +1311,7 @@ a=rtcp-mux\r`;
 			this.leave();
 			return;
 		}
-		this.status = "waiting for WS to authorize";
+		this.status = "wsAuth";
 		ws.send(
 			JSON.stringify({
 				op: 0,
@@ -1324,7 +1337,7 @@ a=rtcp-mux\r`;
 	async leave() {
 		console.warn("leave");
 		this.open = false;
-		this.status = "Left voice chat";
+		this.status = "left";
 		if (!this.settings.stream) this.owner.video = false;
 		this.onLeave();
 

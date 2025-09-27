@@ -930,7 +930,7 @@ class Localuser {
 		if (this.voiceFactory) {
 			this.voiceFactory.onJoin = (voice) => {
 				voice.onSatusChange = (status) => {
-					this.changeVCStatus(status);
+					this.changeVCStatus(I18n.Voice.status[status]());
 				};
 			};
 		}
@@ -3284,7 +3284,10 @@ class Localuser {
 		if (this.userMap.has(id)) {
 			return this.userMap.get(id) as User;
 		}
-		return new User(await (await fetch(this.info.api + "/users/" + id)).json(), this);
+		return new User(
+			await (await fetch(this.info.api + "/users/" + id, {headers: this.headers})).json(),
+			this,
+		);
 	}
 	MDFineMentionGen(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
 		let members: [Member | Role | User | "@everyone", number][] = [];
