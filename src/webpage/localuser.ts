@@ -929,7 +929,12 @@ class Localuser {
 		if (!statuselm || !VoiceGuild || !VoiceButtons) throw new Error("Missing status element");
 
 		statuselm.textContent = I18n.Voice.status[status]();
-		VoiceGuild.textContent = `${channel.guild.properties.name} / ${channel.name}`;
+		const guildName = document.createElement("span");
+		guildName.textContent = channel.guild.properties.name;
+		const channelName = document.createElement("span");
+		channelName.textContent = channel.name;
+		VoiceGuild.innerHTML = ``;
+		VoiceGuild.append(guildName, " / ", channelName);
 		VoiceGuild.onclick = () => {
 			this.goToChannel(channel.id);
 		};
