@@ -1393,10 +1393,13 @@ class Channel extends SnowFlake {
 
 		voiceArea.append(users, buttonRow);
 		this.voice.onVideo = (vid, id) => {
+			this.localuser.regenVoiceIcons();
 			console.warn("happened");
 			this.boxVid(id, vid);
+			updateVideoIcon();
 		};
 		this.voice.onGotStream = (_vid, id) => {
+			this.localuser.regenVoiceIcons();
 			updateLiveIcon();
 			this.decorateLive(id);
 		};
@@ -1408,6 +1411,8 @@ class Channel extends SnowFlake {
 		};
 		this.voice.onLeaveStream = (id) => {
 			this.decorateLive(id);
+			updateLiveIcon();
+			this.localuser.regenVoiceIcons();
 		};
 
 		this.voice.onLeave = () => {

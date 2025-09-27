@@ -23,7 +23,7 @@ import {Dialog, Form, FormError, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
 import {Bot} from "./bot.js";
 import {Role} from "./role.js";
-import {VoiceFactory} from "./voice.js";
+import {VoiceFactory, voiceStatusStr} from "./voice.js";
 import {I18n, langmap} from "./i18n.js";
 import {Emoji} from "./emoji.js";
 import {Play} from "./audio/play.js";
@@ -921,16 +921,119 @@ class Localuser {
 		);
 		return undefined;
 	}
-	changeVCStatus(status: string) {
+	regenVoiceIcons = () => {};
+	changeVCStatus(status: voiceStatusStr, channel: Channel) {
 		const statuselm = document.getElementById("VoiceStatus");
-		if (!statuselm) throw new Error("Missing status element");
-		statuselm.textContent = status;
+		const VoiceGuild = document.getElementById("VoiceGuild");
+		const VoiceButtons = document.getElementById("VoiceButtons");
+		if (!statuselm || !VoiceGuild || !VoiceButtons) throw new Error("Missing status element");
+
+		statuselm.textContent = I18n.Voice.status[status]();
+		VoiceGuild.textContent = `${channel.guild.properties.name} / ${channel.name}`;
+		VoiceGuild.onclick = () => {
+			this.goToChannel(channel.id);
+		};
+
+		VoiceButtons.innerHTML = "";
+
+		const leave = document.createElement("div");
+		const leaveIcon = document.createElement("span");
+		leaveIcon.classList.add("svg-hangup");
+		leave.append(leaveIcon);
+
+		leave.onclick = () => {
+			channel.voice?.leave();
+		};
+
+		const screenShare = document.createElement("div");
+		const screenShareIcon = document.createElement("span");
+		const updateStreamIcon = () => {
+			screenShareIcon.classList.remove("svg-stopstream", "svg-stream");
+			if (channel.voice?.isLive()) {
+				screenShareIcon.classList.add("svg-stopstream");
+			} else {
+				screenShareIcon.classList.add("svg-stream");
+			}
+		};
+		updateStreamIcon();
+
+		screenShare.append(screenShareIcon);
+
+		screenShare.onclick = async () => {
+			if (channel.voice?.isLive()) {
+				channel.voice.stopStream();
+			} else {
+				const stream = await navigator.mediaDevices.getDisplayMedia();
+				await channel.voice?.createLive(stream);
+			}
+			updateStreamIcon();
+		};
+
+		const video = document.createElement("div");
+		const videoIcon = document.createElement("span");
+		const updateVideoIconIcon = () => {
+			videoIcon.classList.remove("svg-novideo", "svg-video");
+			if (this.voiceFactory?.video) {
+				videoIcon.classList.add("svg-video");
+			} else {
+				videoIcon.classList.add("svg-novideo");
+			}
+		};
+		updateVideoIconIcon();
+
+		video.append(videoIcon);
+
+		video.onclick = async () => {
+			if (this.voiceFactory?.video) {
+				channel.voice?.stopVideo();
+			} else {
+				const cam = await navigator.mediaDevices.getUserMedia({
+					video: {
+						advanced: [
+							{
+								aspectRatio: 1.75,
+							},
+						],
+					},
+				});
+				if (!cam) return;
+				channel.voice?.startVideo(cam);
+			}
+			updateVideoIconIcon();
+		};
+
+		this.regenVoiceIcons = () => {
+			updateStreamIcon();
+			updateVideoIconIcon();
+		};
+		VoiceButtons.append(leave, video, screenShare);
+
+		const clear = () => {
+			statuselm.textContent = "";
+			VoiceGuild.textContent = "";
+			VoiceButtons.innerHTML = "";
+		};
+		const conSet = new Set(["notconnected"]);
+		if (conSet.has(status)) {
+			setTimeout(() => {
+				if (statuselm.textContent === I18n.Voice.status[status]()) {
+					clear();
+				}
+			}, 2000);
+		} else if (status === "left") {
+			clear();
+		}
 	}
 	handleVoice() {
 		if (this.voiceFactory) {
 			this.voiceFactory.onJoin = (voice) => {
 				voice.onSatusChange = (status) => {
-					this.changeVCStatus(I18n.Voice.status[status]());
+					let channel: Channel | undefined = undefined;
+					for (const guild of this.guilds) {
+						channel ||= guild.channels.find((_) => _.voice === voice);
+					}
+					if (channel) this.changeVCStatus(status, channel);
+					else console.error("Uh, no channel found?");
 				};
 			};
 		}

@@ -171,7 +171,8 @@ class VoiceFactory {
 				stream_key,
 			},
 		});
-		return new Promise<Voice>(async (res) => {
+
+		const voice = await new Promise<Voice>(async (res) => {
 			this.live.set(stream_key, res);
 			this.steamTokens.set(
 				stream_key,
@@ -180,6 +181,12 @@ class VoiceFactory {
 				}),
 			);
 		});
+		stream.getTracks().forEach((track) =>
+			track.addEventListener("ended", () => {
+				this.leaveLive();
+			}),
+		);
+		return voice;
 	}
 	async streamCreate(create: streamCreate) {
 		const prom1 = this.steamTokens.get(create.d.stream_key);
@@ -646,6 +653,7 @@ a=rtcp-mux\r`;
 				) {
 					this.status = "done";
 				}
+				console.log(pc.signalingState, pc.iceConnectionState, pc.connectionState);
 			};
 			function logState(thing: string, message = "") {
 				console.log("log state: " + thing + (message ? ":" + message : ""));
@@ -878,17 +886,17 @@ a=rtcp-mux\r`;
 	videos = new Map<string, HTMLVideoElement>();
 	cam?: RTCRtpTransceiver;
 	cammera?: MediaStreamTrack;
-	stopVideo() {
+	async stopVideo() {
 		if (!this.cam) return;
 		this.owner.video = false;
-		if (!this.cammera) return;
+		if (!this.cammera || !this.pc) return;
 		this.cammera.stop();
 		this.cammera = undefined;
 
 		this.cam.sender.replaceTrack(null);
 		this.cam.direction = "inactive";
 
-		this.pc?.setLocalDescription();
+		this.pc.setLocalDescription(await this.pc.createOffer());
 
 		this.owner.updateSelf();
 
@@ -958,8 +966,9 @@ a=rtcp-mux\r`;
 		const sender = this.cam.sender;
 		this.senders.add(sender);
 
-		sender.setStreams(caml);
 		await sender.replaceTrack(cam);
+		sender.setStreams(caml);
+
 		this.forceNext = true;
 
 		console.warn("replaced track", cam);
@@ -990,12 +999,14 @@ a=rtcp-mux\r`;
 				if (this.owner.currentVoice?.voiceMap.get(this.userid) === this) {
 					return;
 				}
+
 				this.streams.add(e.track);
 				const video = document.createElement("video");
 				forceVideo(video);
 				this.onVideo(video, userId);
 				this.videos.set(userId, video);
 				video.srcObject = media;
+				console.log(video);
 
 				video.autoplay = true;
 

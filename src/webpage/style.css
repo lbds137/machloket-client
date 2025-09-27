@@ -582,6 +582,7 @@ textarea {
 .svg-stream {
 	mask: url(/icons/stream.svg);
 	mask-size: contain !important;
+	background: var(--primary-text);
 }
 .svg-stopstream {
 	mask: url(/icons/stopstream.svg);
@@ -591,6 +592,7 @@ textarea {
 .svg-video {
 	mask: url(/icons/video.svg);
 	mask-size: contain !important;
+	background: var(--primary-text);
 }
 .svg-novideo {
 	mask: url(/icons/novideo.svg);
@@ -1430,14 +1432,64 @@ span.instanceStatus {
 #VoiceBox {
 	margin: 2px 0;
 	background: var(--dock-bg);
+	div {
+		width: 100%;
+	}
 }
 #VoiceStatus {
 	padding: 8px;
 	font-weight: bold;
+	padding-bottom: 2px;
 }
 #VoiceStatus:empty {
 	padding: 0;
 }
+#VoiceButtons:empty {
+	padding: 0;
+	height: 0;
+}
+#VoiceButtons {
+	height: 46px;
+	display: flex;
+	align-items: stretch;
+	width: 100%;
+
+	div {
+		flex-grow: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--primary-bg);
+		margin: 6px;
+		border-radius: 6px;
+		cursor: pointer;
+		span {
+			height: 24px;
+			width: 24px;
+			display: block;
+		}
+		transition: background 0.1s;
+		&:hover {
+			background: color-mix(in srgb, var(--primary-bg), 20% var(--primary-text));
+		}
+	}
+}
+
+#VoiceGuild {
+	padding-left: 8px;
+	font-weight: bold;
+	padding-bottom: 4px;
+	font-size: 14px;
+	cursor: pointer;
+	width: fit-content;
+}
+#VoiceGuild:hover {
+	text-decoration: underline;
+}
+#VoiceGuild:empty {
+	padding: 0;
+}
+
 #userdock {
 	padding: 4px 6px;
 	background: var(--dock-bg);

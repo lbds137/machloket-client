@@ -210,7 +210,7 @@
 	},
 	"Voice":{
 		"status":{
-			"done":"Done",
+			"done":"Connected",
 			"notconnected":"Not connected",
 			"sendingStreams":"Sending audio streams",
 			"conectionFailed":"Connection Failed",
