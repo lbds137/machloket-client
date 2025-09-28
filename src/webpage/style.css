@@ -1689,7 +1689,7 @@ span.instanceStatus {
 .searchBox {
 	white-space: nowrap;
 	height: 0.075in;
-	padding: 7px 10px 13px 10px;
+	padding: 4px 10px 16px 10px;
 	background: var(--dock-bg);
 	border-radius: 4px;
 	/* overflow-y: auto; */
@@ -1698,7 +1698,6 @@ span.instanceStatus {
 	width: 3in;
 	margin: 0 0.1in;
 	overflow: hidden;
-
 	flex-shrink: 0;
 	transition: width 0.2s;
 }
