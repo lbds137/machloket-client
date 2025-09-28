@@ -1046,10 +1046,11 @@ class Channel extends SnowFlake {
 			this.localuser.channelfocus?.infinite.delete();
 			this.localuser.channelfocus = undefined;
 		}
-		await this.getHTML(true, false);
+		await this.getHTML(true);
 		console.warn(id);
-		await this.buildmessages(id);
-		//debugger;
+		try {
+			await this.buildmessages(id);
+		} catch {}
 		this.infinite.focus(id, true, true);
 	}
 	editLast() {
@@ -1066,7 +1067,7 @@ class Channel extends SnowFlake {
 		(document.getElementById("typebox") as HTMLDivElement).contentEditable = "" + false;
 		(document.getElementById("upload") as HTMLElement).style.visibility = "hidden";
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "hidden";
-		const messages = document.getElementById("channelw") as HTMLDivElement;
+		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
 		const messageContainers = Array.from(messages.getElementsByClassName("messagecontainer"));
 		for (const thing of messageContainers) {
 			thing.remove();
@@ -1438,7 +1439,7 @@ class Channel extends SnowFlake {
 		this.textSave = MarkDown.gatherBoxText(typebox);
 		typebox.textContent = "";
 	}
-	async getHTML(addstate = true, getMessages: boolean | void = undefined) {
+	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
 		if (this.localuser.channelfocus) {
 			this.localuser.channelfocus.collectBox();
 		}
@@ -1453,7 +1454,7 @@ class Channel extends SnowFlake {
 			getMessages = this.type !== 2 || !this.localuser.voiceAllowed;
 		}
 
-		const messages = document.getElementById("channelw") as HTMLDivElement;
+		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
 		const messageContainers = Array.from(messages.getElementsByClassName("messagecontainer"));
 		for (const thing of messageContainers) {
 			thing.remove();
@@ -1506,8 +1507,12 @@ class Channel extends SnowFlake {
 			this.myhtml.classList.add("viewChannel");
 		}
 		const id = ++Channel.genid;
-		if (this.localuser.channelfocus) {
+		if (this.localuser.channelfocus && this.localuser.channelfocus !== this) {
 			this.localuser.channelfocus.infinite.delete();
+		} else if (this.localuser.channelfocus === this && !aroundMessage) {
+			if (this.lastmessageid)
+				this.infinite.focus(aroundMessage || this.lastmessageid, !!aroundMessage, true);
+			return;
 		}
 		this.guild.prevchannel = this;
 		this.guild.perminfo.prevchannel = this.id;
@@ -1553,7 +1558,7 @@ class Channel extends SnowFlake {
 		}
 		this.makereplybox();
 
-		if (getMessages) await this.buildmessages();
+		if (getMessages) await this.buildmessages(aroundMessage);
 		//loading.classList.remove("loading");
 	}
 	typingmap: Map<Member, number> = new Map();
@@ -1796,6 +1801,10 @@ class Channel extends SnowFlake {
 				//out.buildmessages();
 			});
 	}
+	async getArround(id: string) {
+		this.grabBefore(id);
+		this.grabAfter(id);
+	}
 	topid!: string;
 	async grabBefore(id: string) {
 		if (this.topid && id === this.topid) {
@@ -1849,7 +1858,7 @@ class Channel extends SnowFlake {
 	async tryfocusinfinate(id: string | void) {
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
-		const messages = document.getElementById("channelw") as HTMLDivElement;
+		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
 		const messageContainers = Array.from(messages.getElementsByClassName("messagecontainer"));
 		for (const thing of messageContainers) {
 			thing.remove();
@@ -1892,8 +1901,11 @@ class Channel extends SnowFlake {
 		this.infinite.updatestuff();
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
-			this.infinite.focus(id, false); //if someone could figure out how to make this work correctly without this, that's be great :P
+
+			await this.infinite.focus(id, false); //if someone could figure out how to make this work correctly without this, that's be great :P
 			loading.classList.remove("loading");
+
+			this.infinite.focus(id, false, true);
 		});
 		//this.infinite.focus(id.id,false);
 	}
@@ -2274,8 +2286,8 @@ class Channel extends SnowFlake {
 		}
 	}
 	async goToBottom() {
-		await this.tryfocusinfinate();
-		if (this.lastmessageid) this.infinite.focus(this.lastmessageid, false);
+		if (this.localuser.channelfocus !== this) await this.tryfocusinfinate();
+		if (this.lastmessageid) this.infinite.focus(this.lastmessageid, false, true);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (this.localuser.channelfocus !== this) {
@@ -2360,7 +2372,7 @@ class Channel extends SnowFlake {
 			});
 			notification.addEventListener("click", (_) => {
 				window.focus();
-				this.getHTML();
+				this.getHTML(true, true);
 			});
 		} else if (Notification.permission !== "denied") {
 			Notification.requestPermission().then(() => {

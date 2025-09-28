@@ -174,7 +174,7 @@ class InfiniteScroller {
 					this.scrollTop += this.averageheight;
 				}
 			}
-			if (this.scrollTop > this.maxDist) {
+			if (this.scrollTop > this.maxDist && this.remove) {
 				const html = this.HTMLElements.shift();
 				if (html) {
 					again = true;
@@ -220,7 +220,7 @@ class InfiniteScroller {
 					this.scrollBottom += this.averageheight;
 				}
 			}
-			if (scrollBottom > this.maxDist) {
+			if (scrollBottom > this.maxDist && this.remove) {
 				const html = this.HTMLElements.pop();
 				if (html) {
 					await this.destroyFromID(html[1]);
@@ -243,6 +243,7 @@ class InfiniteScroller {
 	}
 
 	async watchForChange(stop = false): Promise<boolean> {
+		if (!this.remove) return false;
 		if (stop == true) {
 			let prom = this.changePromise;
 			while (this.changePromise) {
@@ -294,6 +295,7 @@ class InfiniteScroller {
 
 		return await this.changePromise;
 	}
+	remove = true;
 	async focus(id: string, flash = true, sec = false): Promise<void> {
 		let element: HTMLElement | undefined;
 		for (const thing of this.HTMLElements) {
@@ -301,7 +303,7 @@ class InfiniteScroller {
 				element = thing[0];
 			}
 		}
-		if (sec && element) {
+		if (sec && element && document.contains(element)) {
 			if (flash) {
 				element.scrollIntoView({
 					behavior: "smooth",
@@ -330,14 +332,27 @@ class InfiniteScroller {
 			this.HTMLElements = [];
 			await this.firstElement(id);
 			this.updatestuff();
-			await this.watchForChange(true);
+			this.remove = false;
+			await Promise.all([
+				this.watchForBottom(),
+				this.watchForTop(),
+				//TODO not sure why this fixes things
+				new Promise<boolean>((res) => {
+					setTimeout(() => {
+						res(true);
+					}, 10);
+				}),
+			]);
+
 			this.changePromise = new Promise<boolean>((resolve) => {
 				setTimeout(() => {
 					this.changePromise = undefined;
 					resolve(true);
 				}, 1000);
 			});
+			await new Promise<void>((res) => queueMicrotask(res));
 			await this.focus(id, !element && flash, true);
+			this.remove = true;
 		} else {
 			console.warn("elm not exist");
 		}

@@ -3632,10 +3632,13 @@ class Localuser {
 							htmls.push(h3);
 						}
 						const html = message.buildhtml(undefined, true);
+						if (message.div) console.error(message.div);
 						html.addEventListener("click", async () => {
 							try {
 								sideContainDiv.classList.add("hideSearchDiv");
-								await message.channel.focus(message.id);
+								(await message.channel.getmessage(message.id))?.deleteDiv();
+
+								await message.channel.getHTML(true, true, message.id);
 							} catch (e) {
 								console.error(e);
 							}
