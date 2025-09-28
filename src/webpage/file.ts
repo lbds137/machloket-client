@@ -97,7 +97,7 @@ class File {
 					source.src = src;
 				});
 			video.append(source);
-			source.type = this.content_type;
+			//source.type = this.content_type;
 			video.controls = !temp;
 			if (this.width && this.height) {
 				video.width = this.width;
