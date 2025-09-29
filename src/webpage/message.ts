@@ -189,7 +189,7 @@ class Message extends SnowFlake {
 			() => {},
 			{
 				visable: function () {
-					return this.nonce.length <= 9;
+					return this.nonce.length <= 9 && this.nonce.length !== 0;
 				},
 				enabled: () => false,
 			},
