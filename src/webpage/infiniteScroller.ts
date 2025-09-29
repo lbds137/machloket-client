@@ -331,7 +331,13 @@ class InfiniteScroller {
 			}
 			this.HTMLElements = [];
 			await this.firstElement(id);
-			this.updatestuff();
+			this.changePromise = new Promise<boolean>((resolve) => {
+				setTimeout(() => {
+					this.changePromise = undefined;
+					resolve(true);
+				}, 1000);
+			});
+			await this.updatestuff();
 			this.remove = false;
 			await Promise.all([
 				this.watchForBottom(),
@@ -344,12 +350,6 @@ class InfiniteScroller {
 				}),
 			]);
 
-			this.changePromise = new Promise<boolean>((resolve) => {
-				setTimeout(() => {
-					this.changePromise = undefined;
-					resolve(true);
-				}, 1000);
-			});
 			await new Promise<void>((res) => queueMicrotask(res));
 			await this.focus(id, !element && flash, true);
 			this.remove = true;

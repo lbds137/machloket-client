@@ -1481,6 +1481,7 @@ class Channel extends SnowFlake {
 				chatArea.style.setProperty("display", "none");
 			} else {
 				chatArea.style.removeProperty("display");
+				getMessages = true;
 			}
 			this.setUpVoiceArea();
 		}
