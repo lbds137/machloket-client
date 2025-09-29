@@ -49,6 +49,9 @@ class File {
 			this.width /= scale;
 			this.height /= scale;
 		}
+		if (this.height === null) {
+			this.height = 96 * 3;
+		}
 
 		if (this.content_type.startsWith("image/")) {
 			const div = document.createElement("div");
@@ -97,10 +100,10 @@ class File {
 			video.append(source);
 			//source.type = this.content_type;
 			video.controls = !temp;
-			if (this.width && this.height) {
-				video.width = this.width;
-				video.height = this.height;
-			}
+
+			if (this.width) video.width = this.width;
+			if (this.height) video.height = this.height;
+
 			if (OSpoiler) {
 				const div = document.createElement("div");
 				div.style.setProperty("position", "relative");
