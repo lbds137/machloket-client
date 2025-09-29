@@ -89,7 +89,7 @@ class Message extends SnowFlake {
 		);
 
 		Message.contextmenu.addButton(
-			() => I18n.getTranslation("message.reactionAdd"),
+			() => I18n.message.reactionAdd(),
 			function (this: Message, _, e: MouseEvent) {
 				Emoji.emojiPicker(e.x, e.y, this.localuser).then((_) => {
 					this.reactionToggle(_);
@@ -101,6 +101,17 @@ class Message extends SnowFlake {
 				},
 				visable: function () {
 					return this.channel.hasPermission("ADD_REACTIONS");
+				},
+			},
+		);
+		Message.contextmenu.addButton(
+			() => I18n.message.reactions(),
+			function (this: Message) {
+				this.viewReactions();
+			},
+			{
+				visable: function () {
+					return !!this.reactions.length;
 				},
 			},
 		);
@@ -194,6 +205,53 @@ class Message extends SnowFlake {
 				enabled: () => false,
 			},
 		);
+	}
+	viewReactions() {
+		const dio = new Dialog(I18n.message.reactionsTitle());
+		const div = document.createElement("div");
+		div.classList.add("flexltr");
+		const reactions = document.createElement("div");
+		reactions.classList.add("flexttb", "reactionList");
+
+		const list = document.createElement("div");
+		list.classList.add("flexttb", "reactionUserList");
+		let curSelect = document.createElement("div");
+		reactions.append(
+			...this.reactions.map((reaction) => {
+				const button = document.createElement("div");
+
+				console.log(reaction);
+				const emoji = new Emoji(reaction.emoji, this.guild);
+				button.append(emoji.getHTML(), `(${reaction.count})`);
+				let users: User[] | undefined = undefined;
+				button.onclick = async () => {
+					curSelect.classList.remove("current");
+
+					curSelect = button;
+					curSelect.classList.add("current");
+					if (!users) {
+						const f = await fetch(
+							`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reaction.emoji.name}?limit=3&type=0`,
+							{headers: this.headers},
+						);
+						users = ((await f.json()) as userjson[]).map((_) => new User(_, this.localuser));
+					}
+					list.innerHTML = "";
+					list.append(
+						...users.map((user) => {
+							return user.createWidget(this.guild);
+						}),
+					);
+				};
+
+				return button;
+			}),
+		);
+		//@ts-ignore
+		[...reactions.children][0].click();
+		div.append(reactions, list);
+		dio.options.addHTMLArea(div);
+		dio.show();
 	}
 	nonce: string = "";
 	setEdit() {

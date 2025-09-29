@@ -525,6 +525,7 @@
 	"noPins": "There seems to be nothing here... yet",
 	"message": {
 		"reactionAdd": "Add reaction",
+		"reactions":"View Reactions",
 		"delete": "Delete message",
 		"edit": "Edit message",
 		"edited": "(edited)",
@@ -533,7 +534,8 @@
 		"retry": "Resend errored message",
 		"pin": "$1 has pinned a message",
 		"viewrest": "View rest",
-		"fullMessage": "Full message:"
+		"fullMessage": "Full message:",
+		"reactionsTitle":"Reactions"
 	},
 	"instanceStats": {
 		"name": "Instance stats: $1",

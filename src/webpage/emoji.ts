@@ -69,11 +69,11 @@ class Emoji {
 			hover.addEvent(emojiElem);
 
 			return emojiElem;
-		} else if (this.emoji) {
+		} else if (this.emoji || this.name) {
 			const emojiElem = document.createElement("span");
 			emojiElem.classList.add("md-emoji");
 			emojiElem.classList.add(bigemoji ? "bigemoji" : "smallemoji");
-			emojiElem.textContent = this.emoji;
+			emojiElem.textContent = this.emoji || this.name;
 
 			const hover = new Hover(this.humanName);
 			hover.addEvent(emojiElem);

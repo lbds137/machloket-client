@@ -388,6 +388,7 @@ class Member extends SnowFlake {
 		);
 	}
 	static async resolveMember(user: User, guild: Guild): Promise<Member | undefined> {
+		if (guild.id === "@me") return;
 		if (user.webhook) return undefined;
 		const maybe = user.members.get(guild);
 		if (!user.members.has(guild)) {
