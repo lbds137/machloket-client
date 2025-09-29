@@ -99,7 +99,7 @@ class Direct extends Guild {
 		loading.classList.remove("loading");
 		this.localuser.getSidePannel();
 
-		const messages = document.getElementById("channelw") as HTMLDivElement;
+		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
 		for (const thing of Array.from(messages.getElementsByClassName("messagecontainer"))) {
 			thing.remove();
 		}
