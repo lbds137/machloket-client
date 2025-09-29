@@ -182,7 +182,20 @@ class Message extends SnowFlake {
 				color: "red",
 			},
 		);
+
+		Message.contextmenu.addSeperator();
+		Message.contextmenu.addButton(
+			() => I18n.usedFermi(),
+			() => {},
+			{
+				visable: function () {
+					return this.nonce.length <= 9;
+				},
+				enabled: () => false,
+			},
+		);
 	}
+	nonce: string = "";
 	setEdit() {
 		const prev = this.channel.editing;
 		this.channel.editing = this;

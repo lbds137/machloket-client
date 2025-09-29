@@ -1368,7 +1368,18 @@ class Channel extends SnowFlake {
 		};
 		live.classList.add("callVoiceIcon");
 
-		buttonRow.append(mute, video, live, call);
+		const chat = document.createElement("div");
+		const chatspan = document.createElement("span");
+		chatspan.classList.add("svg-frmessage");
+		chat.append(chatspan);
+		updateLiveIcon();
+		chat.onclick = async () => {
+			this.voiceMode = this.voiceMode === "VoiceOnly" ? "ChatAndVoice" : "VoiceOnly";
+			this.getHTML(true);
+		};
+		chat.classList.add("callVoiceIcon");
+
+		buttonRow.append(mute, video, live, call, chat);
 
 		const users = document.createElement("div");
 		const mut = new MutationObserver(() => {
@@ -1466,7 +1477,11 @@ class Channel extends SnowFlake {
 		if (getMessages) {
 			chatArea.style.removeProperty("display");
 		} else {
-			chatArea.style.setProperty("display", "none");
+			if (this.voiceMode === "VoiceOnly") {
+				chatArea.style.setProperty("display", "none");
+			} else {
+				chatArea.style.removeProperty("display");
+			}
 			this.setUpVoiceArea();
 		}
 
@@ -2372,6 +2387,7 @@ class Channel extends SnowFlake {
 			});
 			notification.addEventListener("click", (_) => {
 				window.focus();
+
 				this.getHTML(true, true);
 			});
 		} else if (Notification.permission !== "denied") {
@@ -2383,6 +2399,7 @@ class Channel extends SnowFlake {
 			});
 		}
 	}
+	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
 	async addRoleToPerms(role: Role) {
 		await fetch(this.info.api + "/channels/" + this.id + "/permissions/" + role.id, {
 			method: "PUT",

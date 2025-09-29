@@ -229,6 +229,7 @@ body {
 #voiceArea {
 	background: var(--black);
 	position: relative;
+	min-width: 60%;
 }
 .voiceUsers {
 	padding: 20px;

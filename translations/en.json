@@ -225,6 +225,7 @@
 			"left":"Left voice chat"
 		}
 	},
+	"usedFermi":"Used Fermi",
 	"delete": "Delete",
 	"webhooks": {
 		"createdAt": "Created at $1",
