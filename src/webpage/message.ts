@@ -667,7 +667,7 @@ class Message extends SnowFlake {
 					username.textContent = "Blocked user";
 					return;
 				}
-				if (message.attachments?.length || message.embeds?.length) {
+				if (message.attachments?.length || message.embeds?.length || message.stickers.length) {
 					const b = document.createElement("b");
 					b.innerText = I18n.getTranslation("message.attached");
 					b.style.paddingRight = "4px";
