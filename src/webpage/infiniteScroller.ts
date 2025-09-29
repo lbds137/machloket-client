@@ -331,28 +331,21 @@ class InfiniteScroller {
 			}
 			this.HTMLElements = [];
 			await this.firstElement(id);
-			this.changePromise = new Promise<boolean>((resolve) => {
-				setTimeout(() => {
-					this.changePromise = undefined;
-					resolve(true);
-				}, 1000);
-			});
-			await this.updatestuff();
-			this.remove = false;
-			await Promise.all([
-				this.watchForBottom(),
-				this.watchForTop(),
-				//TODO not sure why this fixes things
-				new Promise<boolean>((res) => {
-					setTimeout(() => {
-						res(true);
-					}, 10);
-				}),
-			]);
+			this.changePromise = new Promise<boolean>(async (resolve) => {
+				await this.updatestuff();
+				this.remove = false;
+				await Promise.all([this.watchForBottom(), this.watchForTop()]);
 
-			await new Promise<void>((res) => queueMicrotask(res));
-			await this.focus(id, !element && flash, true);
-			this.remove = true;
+				await new Promise<void>((res) => queueMicrotask(res));
+				await this.focus(id, !element && flash, true);
+				this.remove = true;
+				//TODO figure out why this fixes it and fix it for real :P
+				await new Promise(requestAnimationFrame);
+				await new Promise(requestAnimationFrame);
+				this.changePromise = undefined;
+				resolve(true);
+			});
+			await this.changePromise;
 		} else {
 			console.warn("elm not exist");
 		}
