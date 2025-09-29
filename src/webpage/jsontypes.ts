@@ -67,14 +67,14 @@ interface readyjson {
 				channel_overrides: {
 					message_notifications: number;
 					muted: boolean;
-					mute_config: {selected_time_window: number; end_time: number};
+					mute_config: mute_config | null;
 					channel_id: string;
 				}[];
 				message_notifications: number;
 				flags: number;
 				hide_muted_channels: boolean;
 				mobile_push: boolean;
-				mute_config: null;
+				mute_config: mute_config | null;
 				mute_scheduled_events: boolean;
 				muted: boolean;
 				notify_highlights: number;
@@ -121,6 +121,10 @@ interface readyjson {
 			flags: number;
 		};
 	};
+}
+export interface mute_config {
+	selected_time_window: number;
+	end_time: number;
 }
 export interface guildFolder {
 	color: number;

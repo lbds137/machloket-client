@@ -15,6 +15,7 @@ import {
 	filejson,
 	messageCreateJson,
 	messagejson,
+	mute_config,
 	readyjson,
 	startTypingjson,
 } from "./jsontypes.js";
@@ -66,16 +67,14 @@ class Channel extends SnowFlake {
 	voice?: Voice;
 	bitrate: number = 128000;
 
-	muted: boolean = false;
-	mute_config = {selected_time_window: -1, end_time: 0};
+	mute_config: mute_config | null = {selected_time_window: -1, end_time: 0};
 	handleUserOverrides(settings: {
 		message_notifications: number;
 		muted: boolean;
-		mute_config: {selected_time_window: number; end_time: number};
+		mute_config: mute_config | null;
 		channel_id: string;
 	}) {
 		this.message_notifications = settings.message_notifications;
-		this.muted = settings.muted;
 		this.mute_config = settings.mute_config;
 	}
 	static setupcontextmenu() {
@@ -102,9 +101,31 @@ class Channel extends SnowFlake {
 		this.contextmenu.addSeperator();
 		//TODO notifcations icon
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("guild.notifications"),
+			() => I18n.guild.notifications(),
 			function () {
 				this.setnotifcation();
+			},
+		);
+		this.contextmenu.addButton(
+			() => I18n.channel.mute(),
+			function () {
+				this.muteChannel();
+			},
+			{
+				visable: function () {
+					return !this.muted;
+				},
+			},
+		);
+		this.contextmenu.addButton(
+			() => I18n.channel.unmute(),
+			function () {
+				this.unmuteChannel();
+			},
+			{
+				visable: function () {
+					return this.muted;
+				},
 			},
 		);
 
@@ -148,6 +169,73 @@ class Channel extends SnowFlake {
 				navigator.clipboard.writeText(this.id);
 			},
 		);
+	}
+	unmuteChannel() {
+		const mute_config = {
+			selected_time_window: -1,
+			end_time: 0,
+		};
+		fetch(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
+			method: "PATCH",
+			headers: this.headers,
+			body: JSON.stringify({
+				channel_overrides: {
+					[this.id]: {
+						message_notifications: this.mentions,
+						muted: true,
+						mute_config,
+						channel_id: this.id,
+					},
+				},
+			}),
+		});
+		this.mute_config = mute_config;
+		this.html?.deref()?.classList.remove("muted");
+		this.unreads();
+		this.guild.unreads();
+	}
+	muteChannel() {
+		const dio = new Dialog(I18n.channel.mute());
+		const opt = dio.options;
+		let time = 1800;
+		opt.addSelect(
+			I18n.muteDuration(),
+			() => {},
+			["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"].map((e) =>
+				I18n.getTranslation("inviteOptions." + e),
+			),
+		).onchange = (e) => {
+			time = [1800, 3600, 21600, 43200, 86400, 604800, 2592000, 1 << 30][e];
+		};
+		opt.addButtonInput("", I18n.submit(), () => {
+			const mute_config = {
+				selected_time_window: time,
+				end_time: Math.floor(new Date(Date.now() + time * 1000).getTime()),
+			};
+			fetch(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({
+					channel_overrides: {
+						[this.id]: {
+							message_notifications: this.mentions,
+							muted: false,
+							mute_config,
+							channel_id: this.id,
+						},
+					},
+				}),
+			});
+			this.mute_config = mute_config;
+			this.html?.deref()?.classList.add("muted");
+			dio.hide();
+			this.unreads();
+			this.guild.unreads();
+		});
+		dio.show();
+	}
+	get muted() {
+		return !!this.mute_config && new Date(this.mute_config.end_time).getTime() > Date.now();
 	}
 	createInvite() {
 		const div = document.createElement("div");
@@ -471,6 +559,7 @@ class Channel extends SnowFlake {
 		}
 	}
 	get hasunreads(): boolean {
+		if (this.muted) return false;
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return false;
 		}
@@ -566,6 +655,16 @@ class Channel extends SnowFlake {
 	voiceUsers = new WeakRef(document.createElement("div"));
 	createguildHTML(admin = false): HTMLDivElement {
 		const div = document.createElement("div");
+
+		if (this.muted) {
+			div.classList.add("muted");
+			setTimeout(
+				() => {
+					div.classList.remove("muted");
+				},
+				Math.min((this.mute_config?.end_time as number) - Date.now(), 2147483647),
+			);
+		}
 		this.html = new WeakRef(div);
 		if (!this.visable) {
 			let quit = true;
@@ -662,6 +761,7 @@ class Channel extends SnowFlake {
 			}
 			const button = document.createElement("button");
 			button.classList.add("channelbutton");
+
 			div.append(button);
 			const myhtml = document.createElement("span");
 			myhtml.classList.add("ellipsis");
@@ -2349,10 +2449,17 @@ class Channel extends SnowFlake {
 		if (this.localuser.lookingguild?.prevchannel === this && document.hasFocus()) {
 			return;
 		}
-		if (this.notification === "all") {
-			this.notify(messagez);
-		} else if (this.notification === "mentions" && messagez.mentionsuser(this.localuser.user)) {
-			this.notify(messagez);
+		if (!this.muted) {
+			if (
+				!this.guild.mute_config ||
+				new Date(this.guild.mute_config.end_time).getTime() < Date.now()
+			) {
+				if (this.notification === "all") {
+					this.notify(messagez);
+				} else if (this.notification === "mentions" && messagez.mentionsuser(this.localuser.user)) {
+					this.notify(messagez);
+				}
+			}
 		}
 	}
 	notititle(message: Message): string {

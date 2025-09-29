@@ -1318,6 +1318,14 @@ span.instanceStatus {
 	flex-direction: column;
 	margin-bottom: 2px;
 	position: relative;
+	&.muted {
+		span {
+			color: color-mix(in srgb, var(--primary-text-soft), transparent);
+			&.svgicon {
+				background: color-mix(in srgb, var(--primary-text-soft), transparent);
+			}
+		}
+	}
 }
 .channelbutton {
 	height: 2em;

@@ -186,6 +186,7 @@
 		"joinedMember":"Joined $1: $2"
 	},
 	"searchGifs": "Search Tenor",
+	"muteDuration":"Unmute in:",
 	"channel": {
 		"creating": "Creating channel",
 		"name": "Channel",
@@ -197,6 +198,8 @@
 		"settingsFor": "Settings for $1",
 		"voice": "Voice",
 		"text": "Text",
+		"mute":"Mute Channel",
+		"unmute":"Unmute Channel",
 		"announcement": "Announcements",
 		"name:": "Name:",
 		"topic:": "Topic:",
@@ -335,6 +338,7 @@
 		"copyId": "Copy guild id",
 		"markRead": "Mark as read",
 		"notifications": "Notifications",
+		"mute":"Mute Guild",
 		"leave": "Leave guild",
 		"settings": "Settings",
 		"delete": "Delete guild",

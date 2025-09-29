@@ -16,6 +16,7 @@ import {
 	extendedProperties,
 	banObj,
 	templateSkim,
+	mute_config,
 } from "./jsontypes.js";
 import {User} from "./user.js";
 import {I18n} from "./i18n.js";
@@ -1295,18 +1296,19 @@ class Guild extends SnowFlake {
 	set perminfo(e) {
 		this.localuser.perminfo.guilds[this.id] = e;
 	}
+	mute_config!: mute_config | null;
 	notisetting(settings: {
 		channel_overrides: {
 			message_notifications: number;
 			muted: boolean;
-			mute_config: {selected_time_window: number; end_time: number};
+			mute_config: mute_config;
 			channel_id: string;
 		}[];
 		message_notifications: any;
 		flags?: number;
 		hide_muted_channels?: boolean;
 		mobile_push?: boolean;
-		mute_config?: null;
+		mute_config: null | mute_config;
 		mute_scheduled_events?: boolean;
 		muted?: boolean;
 		notify_highlights?: number;
@@ -1315,6 +1317,7 @@ class Guild extends SnowFlake {
 		version?: number;
 		guild_id?: string;
 	}) {
+		this.mute_config = this.mute_config;
 		this.message_notifications = settings.message_notifications;
 		for (const override of settings.channel_overrides) {
 			const channel = this.localuser.channelids.get(override.channel_id);
