@@ -205,6 +205,18 @@
 		"createChannel": "Создать канал",
 		"createCatagory": "Создать категорию"
 	},
+	"Voice": {
+		"status": {
+			"done": "Подключен",
+			"notconnected": "Не подключен",
+			"sendingStreams": "Отправка аудиопотоков",
+			"conectionFailed": "Ошибка соединения",
+			"startingRTC": "Запуск RTC-соединения",
+			"noSDP": "Нет СДП",
+			"badWS": "Плохой ответ от WS",
+			"left": "Левый голосовой чат"
+		}
+	},
 	"switchAccounts": "Переключение между аккаунтами ⇌",
 	"accountNotStart": "Не удаётся запустить учётную запись",
 	"home": {

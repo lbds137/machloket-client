@@ -209,6 +209,23 @@
 		"createCatagory": "建立分類",
 		"permissions": "權限"
 	},
+	"Voice": {
+		"status": {
+			"done": "完成",
+			"notconnected": "未連接",
+			"sendingStreams": "傳送音訊串流",
+			"conectionFailed": "連接失敗",
+			"makingOffer": "產生 offer",
+			"startingRTC": "開始 RTC 連接",
+			"noSDP": "無 SDP",
+			"waitingMainWS": "等待主要 WS",
+			"badWS": "WS 回應不佳",
+			"waitingURL": "等待語音 URL",
+			"wsOpen": "等待 WS 開啟",
+			"wsAuth": "等待 WS 授權",
+			"left": "已離開語音聊天"
+		}
+	},
 	"delete": "刪除",
 	"webhooks": {
 		"createdAt": "建立於 $1",

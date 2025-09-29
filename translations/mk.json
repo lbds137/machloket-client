@@ -208,6 +208,23 @@
 		"createCatagory": "Создај категорија",
 		"permissions": "Дозволи"
 	},
+	"Voice": {
+		"status": {
+			"done": "Поврзано",
+			"notconnected": "Неповрзано",
+			"sendingStreams": "Испраќа аудиопренос",
+			"conectionFailed": "Поврзувањето не успеа",
+			"makingOffer": "Дава понуда",
+			"startingRTC": "Покрева RTC-поврзување",
+			"noSDP": "Нема SDP",
+			"waitingMainWS": "Чека на главниот WS",
+			"badWS": "Лош одговор од WS",
+			"waitingURL": "Чека на URL за глас",
+			"wsOpen": "Чека да се отвори WS",
+			"wsAuth": "чека овластување од WS",
+			"left": "Напушти гласовен разговор"
+		}
+	},
 	"delete": "Избриши",
 	"webhooks": {
 		"createdAt": "Создадено на $1",

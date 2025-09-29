@@ -29,7 +29,9 @@
 		"length": "Duração: $1 minutos e $2 segundos"
 	},
 	"blog": {
-		"blog": "Blogue"
+		"blog": "Blogue",
+		"wantUpdates": "Você gostaria de receber atualizações semanais do blog sobre o estado do Fermi?",
+		"blogUpdates": "Atualizações do blog:"
 	},
 	"logout": {
 		"logout": "Encerrar a sessão",
@@ -401,7 +403,7 @@
 		"accentColor": "Cor de destaque:",
 		"enableEVoice": "Habilitar suporte a Voz experimental",
 		"VoiceWarning": "Você tem certeza que quer habilitar isto? É bem experimental e pode causar problemas. (esta função é somente para desenvolvedores, não a ative se não sabe o que está fazendo)",
-		"updateSettings": "Atualizar configurações",
+		"updateSettings": "Configurações de atualização",
 		"swSettings": "Configuração do Trabalhador de Serviço",
 		"SWOff": "Desligado",
 		"SWOffline": "Somente offline",

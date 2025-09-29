@@ -7,6 +7,7 @@
 			"Gomoko",
 			"Goombiis",
 			"Mahabarata",
+			"McDutchie",
 			"Pyschobbens",
 			"Urhixidur",
 			"Wladek92"
@@ -164,7 +165,7 @@
 	"pronouns": "Pronoms :",
 	"bio": "Biographie :",
 	"profileColor": "Couleur du profil",
-	"botGuilds": "Le robot des guildes est dans :",
+	"botGuilds": "Guildes auxquelles appartient le robot :",
 	"leaveGuild": "Quitter la guilde",
 	"confirmGuildLeave": "Etes-vous sûr de vouloir quitter $1",
 	"UrlGen": "Générateur d'URL",

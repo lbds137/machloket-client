@@ -23,6 +23,7 @@
 			"USE_SOUNDBOARD": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear."
 		}
 	},
+	"botGuilds": "This means \"the guilds that the bot is in\" (i.e., is a member of).",
 	"typing": "$1 is the number of people typing and $2 is the names of the people typing separated by commas",
 	"webhooks": {
 		"sillyDefaults": "{{doc-important|This is just a list of silly default names for webhooks, do not feel the need to translate dirrectly, and no need for the same count}}"

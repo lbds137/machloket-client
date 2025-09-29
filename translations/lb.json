@@ -86,6 +86,14 @@
 		"createChannel": "Kanal uleeën",
 		"createCatagory": "Kategorie uleeën"
 	},
+	"Voice": {
+		"status": {
+			"done": "Verbonnen",
+			"notconnected": "Net verbonnen",
+			"conectionFailed": "Verbindung feelgeschloen",
+			"noSDP": "Keen SDP"
+		}
+	},
 	"delete": "Läschen",
 	"webhooks": {
 		"name": "Numm:",
