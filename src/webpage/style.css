@@ -2266,6 +2266,7 @@ img.bigembedimg {
 	background: var(--sidebar-bg);
 	flex-direction: column;
 	justify-content: space-between;
+	z-index: 4;
 }
 #sideDiv {
 	overflow-y: auto;
