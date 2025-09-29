@@ -208,6 +208,22 @@ class Contextmenu<x, y> {
 		click: "right" | "left" = "right",
 	) {
 		const func = (event: MouseEvent) => {
+			const selectedText = window.getSelection();
+			if (selectedText) {
+				//Don't override context menus for highlighted text
+				for (let ranges = 0; ranges < selectedText.rangeCount; ranges++) {
+					const range = selectedText.getRangeAt(ranges);
+					const rect = range.getBoundingClientRect();
+					if (
+						rect.left < event.clientX &&
+						rect.right > event.clientX &&
+						rect.top < event.clientY &&
+						rect.bottom > event.clientY
+					) {
+						return;
+					}
+				}
+			}
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			this.makemenu(event.clientX, event.clientY, addinfo, other);
