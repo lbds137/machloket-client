@@ -41,8 +41,6 @@ class File {
 		const src = this.proxy_url || this.url;
 		const url = this.refreshURL();
 
-		this.width ||= 1000;
-		this.height ||= 1000;
 		if (this.width && this.height) {
 			let scale = 1;
 			const max = 96 * 3;
