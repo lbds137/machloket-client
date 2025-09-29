@@ -838,13 +838,6 @@ class MarkDown {
 					}
 				}
 			}
-			if (txt[i] === "\\") {
-				if (keep) {
-					current.textContent += txt[i];
-				}
-				i++;
-				current.textContent += txt[i];
-			}
 			current.textContent += txt[i];
 		}
 		appendcurrent();

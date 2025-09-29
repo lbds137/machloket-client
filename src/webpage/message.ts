@@ -200,7 +200,7 @@ class Message extends SnowFlake {
 			() => {},
 			{
 				visable: function () {
-					return this.nonce.length <= 9 && this.nonce.length !== 0;
+					return !!this.nonce && this.nonce.length <= 9 && this.nonce.length !== 0;
 				},
 				enabled: () => false,
 			},
@@ -305,7 +305,7 @@ class Message extends SnowFlake {
 				}
 				continue;
 			} else if (thing === "content") {
-				this.content = new MarkDown(messagejson[thing], this.channel);
+				this.content = new MarkDown(messagejson[thing] || "", this.channel);
 				continue;
 			} else if (thing === "id") {
 				continue;
