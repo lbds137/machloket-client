@@ -2147,6 +2147,7 @@ class Channel extends SnowFlake {
 		div?.remove();
 		this.fakeMessages.delete(message);
 		message.deleteEvent();
+		this.messages.delete(id);
 
 		for (const {url} of message.attachments) {
 			try {
@@ -2191,12 +2192,15 @@ class Channel extends SnowFlake {
 			this,
 		);
 		this.nonceMap.set(nonce, m.id);
-		if (this.lastmessageid) {
-			this.idToNext.set(this.lastmessageid, m.id);
-			this.idToPrev.set(m.id, this.lastmessageid);
-		}
-		this.lastmessage = m;
-		this.lastmessageid = m.id;
+		const makeRecent = () => {
+			if (this.lastmessageid) {
+				this.idToNext.set(this.lastmessageid, m.id);
+				this.idToPrev.set(m.id, this.lastmessageid);
+			}
+			this.lastmessage = m;
+			this.lastmessageid = m.id;
+		};
+		makeRecent();
 
 		const html = m.buildhtml(this.lastmessage, true);
 		html.classList.add("messagediv", "loadingMessage");
@@ -2238,6 +2242,8 @@ class Channel extends SnowFlake {
 				loadingP.textContent = File.filesizehuman(sofar) + " / " + File.filesizehuman(total);
 			},
 			failed: (retry: () => void) => {
+				m.deleteEvent();
+				makeRecent();
 				loadingP.remove();
 				html.append(buttons);
 				retryB.onclick = () => {
