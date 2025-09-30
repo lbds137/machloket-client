@@ -111,7 +111,7 @@ class InfiniteScroller {
 		}
 		this.scrollTop = this.div.scrollTop;
 
-		if (!this.scrollBottom && !(await this.watchForChange())) {
+		if (this.scrollBottom < 5 && !(await this.watchForChange())) {
 			this.reachesBottom();
 		}
 		if (!this.scrollTop) {
