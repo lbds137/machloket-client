@@ -1114,7 +1114,7 @@ class Message extends SnowFlake {
 	}
 	buildhtml(premessage?: Message | undefined, dupe = false): HTMLElement {
 		const id = this.channel.nonceMap.get(this.nonce);
-		if (id) {
+		if (id && !dupe) {
 			this.channel.destroyFakeMessage(id);
 		}
 		if (dupe) {
