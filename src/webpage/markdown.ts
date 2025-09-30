@@ -983,6 +983,12 @@ class MarkDown {
 				return;
 			}
 			elm.onmouseup = (_) => {
+				let parent: HTMLElement | null = elm;
+				while (parent) {
+					if (parent.classList.contains("unspoiled")) break;
+					if (parent.classList.contains("spoiler")) return;
+					parent = parent.parentElement;
+				}
 				if (_.button === 2) return;
 				console.log(":3");
 				function open() {

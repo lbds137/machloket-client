@@ -2027,10 +2027,10 @@ span.instanceStatus {
 }
 .spoiler {
 	background: var(--spoiler-bg);
-	color: var(--spoiler-bg) !important;
+	color: var(--spoiler-bg);
 	cursor: pointer;
 	a {
-		color: var(--spoiler-bg) !important;
+		color: var(--spoiler-bg);
 	}
 }
 .spoiler:hover {
@@ -2039,6 +2039,9 @@ span.instanceStatus {
 }
 .unspoiled {
 	color: var(--spoiler-text);
+}
+a.unspoiled {
+	color: var(--link) !important;
 }
 .quote {
 	display: inline-block;

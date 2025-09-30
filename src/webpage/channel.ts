@@ -572,11 +572,10 @@ class Channel extends SnowFlake {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return false;
 		}
+		const lastreadmessage = this.messages.get(this.lastreadmessageid as string);
 		return (
-			Boolean(this.lastmessageid) &&
-			(!this.lastreadmessageid ||
-				SnowFlake.stringToUnixTime(this.lastmessageid as string) >
-					SnowFlake.stringToUnixTime(this.lastreadmessageid)) &&
+			!!this.lastmessage &&
+			(!lastreadmessage || this.lastmessage.timestamp > lastreadmessage.timestamp) &&
 			this.type !== 4
 		);
 	}
