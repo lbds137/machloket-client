@@ -395,10 +395,14 @@ class Channel extends SnowFlake {
 			},
 			async (id: string): Promise<HTMLElement> => {
 				//await new Promise(_=>{setTimeout(_,Math.random()*10)})
-				const messgage = this.messages.get(id);
+				const message = this.messages.get(id);
 				try {
-					if (messgage) {
-						return messgage.buildhtml();
+					if (message) {
+						const html = this.fakeMessages.get(message);
+						if (html) {
+							return html;
+						}
+						return message.buildhtml();
 					} else {
 						console.error(id + " not found");
 					}
@@ -411,6 +415,11 @@ class Channel extends SnowFlake {
 				const message = this.messages.get(id);
 				try {
 					if (message) {
+						const html = this.fakeMessages.get(message);
+						if (html) {
+							html.remove();
+							return true;
+						}
 						message.deleteDiv();
 						return true;
 					}
@@ -1642,12 +1651,6 @@ class Channel extends SnowFlake {
 			return;
 		}
 
-		const ghostMessages = document.getElementById("ghostMessages") as HTMLElement;
-		ghostMessages.innerHTML = "";
-		for (const thing of this.fakeMessages) {
-			ghostMessages.append(thing[1]);
-		}
-
 		const prom = this.infinite.delete();
 		if (getMessages) {
 			const loading = document.getElementById("loadingdiv") as HTMLDivElement;
@@ -2135,26 +2138,29 @@ class Channel extends SnowFlake {
 				return "default";
 		}
 	}
-	fakeMessages: [Message, HTMLElement][] = [];
-	fakeMessageMap = new Map<string, [Message, HTMLElement]>();
+	fakeMessages = new Map<Message, HTMLElement>();
+	nonceMap = new Map<string, string>();
 	destroyFakeMessage(id: string) {
-		const message = this.fakeMessageMap.get(id);
+		const message = this.messages.get(id);
 		if (!message) return;
-		this.fakeMessages = this.fakeMessages.filter((_) => _[0] !== message[0]);
-		message[1].remove();
-		for (const {url} of message[0].attachments) {
+		const div = this.fakeMessages.get(message);
+		div?.remove();
+		this.fakeMessages.delete(message);
+		message.deleteEvent();
+
+		for (const {url} of message.attachments) {
 			try {
 				URL.revokeObjectURL(url);
 			} catch {}
 		}
-		this.fakeMessageMap.delete(id);
 	}
 
-	makeFakeMessage(
+	async makeFakeMessage(
 		content: string,
 		files: filejson[] = [],
 		reply = undefined,
 		sticker_ids: string[],
+		nonce: string,
 	) {
 		const m = new Message(
 			{
@@ -2183,15 +2189,18 @@ class Channel extends SnowFlake {
 					.filter((_) => _ !== undefined),
 			},
 			this,
-			true,
 		);
-		const ghostMessages = document.getElementById("ghostMessages");
-		if (!ghostMessages) throw Error("oops");
+		this.nonceMap.set(nonce, m.id);
+		if (this.lastmessageid) {
+			this.idToNext.set(this.lastmessageid, m.id);
+			this.idToPrev.set(m.id, this.lastmessageid);
+		}
+		this.lastmessage = m;
+		this.lastmessageid = m.id;
+
 		const html = m.buildhtml(this.lastmessage, true);
 		html.classList.add("messagediv", "loadingMessage");
-		console.log(html);
-		ghostMessages.append(html);
-		this.fakeMessages.push([m, html]);
+		this.fakeMessages.set(m, html);
 		let loadingP = document.createElement("span");
 
 		const buttons = document.createElement("div");
@@ -2203,7 +2212,7 @@ class Channel extends SnowFlake {
 		const dont = document.createElement("button");
 		dont.textContent = I18n.message.delete();
 		dont.onclick = (_) => {
-			this.fakeMessages = this.fakeMessages.filter((_) => _[0] !== m);
+			this.fakeMessages.delete(m);
 			html.remove();
 			for (const {url} of m.attachments) {
 				URL.revokeObjectURL(url);
@@ -2211,14 +2220,15 @@ class Channel extends SnowFlake {
 		};
 		dont.style.marginLeft = "4px";
 		buttons.append(retryB, dont);
+
+		if (this === this.localuser.channelfocus) {
+			if (!this.infinitefocus) {
+				await this.tryfocusinfinate();
+			}
+			await this.infinite.addedBottom();
+		}
+
 		return {
-			gotid: (id: string) => {
-				this.fakeMessageMap.set(id, [m, html]);
-				const m2 = this.messages.get(id);
-				if (m2 && m2.div) {
-					this.destroyFakeMessage(id);
-				}
-			},
 			progress: (total: number, sofar: number) => {
 				if (total < 20000 || sofar === total) {
 					loadingP.remove();
@@ -2273,24 +2283,13 @@ class Channel extends SnowFlake {
 		let prom: Promise<void>;
 		let res: XMLHttpRequest;
 		let funcs: {
-			gotid: (id: string) => void;
 			progress: (total: number, sofar: number) => void;
 			failed: (restart: () => void) => void;
 		};
 		const progress = (e: ProgressEvent<EventTarget>) => {
 			funcs.progress(e.total, e.loaded);
 		};
-		const promiseHandler = (resolve: () => void) => {
-			res.onload = () => {
-				if (res.status !== 200) {
-					fail();
-					return;
-				}
-				resolve();
-				console.log(res.response);
-				funcs.gotid(res.response.id);
-			};
-		};
+
 		const fail = () => {
 			console.warn("failed");
 			funcs.failed(() => {
@@ -2302,12 +2301,23 @@ class Channel extends SnowFlake {
 				res.send(rbody);
 			});
 		};
+
+		const promiseHandler = (resolve: () => void) => {
+			res.onload = () => {
+				if (res.status !== 200) {
+					fail();
+					return;
+				}
+				resolve();
+			};
+		};
+
 		let rbody: string | FormData;
 		let ctype: string | undefined;
 		if (attachments.length === 0) {
 			const body = {
 				content,
-				nonce: Math.floor(Math.random() * 1000000000),
+				nonce: Math.floor(Math.random() * 1000000000) + "",
 				message_reference: undefined,
 				sticker_ids,
 			};
@@ -2322,7 +2332,13 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
 			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
 			res.setRequestHeader("Authorization", this.headers.Authorization);
-			funcs = this.makeFakeMessage(content, [], body.message_reference, sticker_ids);
+			funcs = await this.makeFakeMessage(
+				content,
+				[],
+				body.message_reference,
+				sticker_ids,
+				body.nonce,
+			);
 			try {
 				res.send((rbody = JSON.stringify(body)));
 			} catch {
@@ -2339,7 +2355,7 @@ class Channel extends SnowFlake {
 			const formData = new FormData();
 			const body = {
 				content,
-				nonce: Math.floor(Math.random() * 1000000000),
+				nonce: Math.floor(Math.random() * 1000000000) + "",
 				message_reference: undefined,
 				sticker_ids,
 			};
@@ -2359,7 +2375,7 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages", true);
 
 			res.setRequestHeader("Authorization", this.headers.Authorization);
-			funcs = this.makeFakeMessage(
+			funcs = await this.makeFakeMessage(
 				content,
 				attachments.map((_) => ({
 					id: "string",
@@ -2370,6 +2386,7 @@ class Channel extends SnowFlake {
 				})),
 				body.message_reference,
 				sticker_ids,
+				body.nonce,
 			);
 			try {
 				res.send((rbody = formData));
@@ -2407,8 +2424,9 @@ class Channel extends SnowFlake {
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (this.localuser.channelfocus !== this) {
-			if (this.fakeMessageMap.has(this.id)) {
-				this.destroyFakeMessage(this.id);
+			const id = this.nonceMap.get(messagep.d.nonce);
+			if (id) {
+				this.destroyFakeMessage(id);
 			}
 		}
 		if (!this.hasPermission("VIEW_CHANNEL")) {

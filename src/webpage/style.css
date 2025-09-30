@@ -1636,9 +1636,7 @@ span.instanceStatus {
 	flex-shrink: 0;
 	margin-top: 8px;
 }
-#ghostMessages {
-	transform: translate(0px, -22px);
-}
+
 #pasteimage:empty {
 	height: 0;
 	padding: 0;

@@ -84,8 +84,6 @@ class Direct extends Guild {
 		return ddiv;
 	}
 	noChannel(addstate: boolean) {
-		const ghostMessages = document.getElementById("ghostMessages");
-		if (ghostMessages) ghostMessages.innerHTML = "";
 		if (addstate) {
 			history.pushState([this.id, undefined], "", "/channels/" + this.id);
 		}
@@ -464,11 +462,7 @@ class Group extends Channel {
 				pinnedM.classList.remove("unreadPin");
 			}
 		}
-		const ghostMessages = document.getElementById("ghostMessages") as HTMLElement;
-		ghostMessages.innerHTML = "";
-		for (const thing of this.fakeMessages) {
-			ghostMessages.append(thing[1]);
-		}
+
 		const id = ++Channel.genid;
 		if (this.localuser.channelfocus) {
 			this.localuser.channelfocus.infinite.delete();
