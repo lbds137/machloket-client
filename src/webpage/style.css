@@ -2028,8 +2028,11 @@ span.instanceStatus {
 }
 .spoiler {
 	background: var(--spoiler-bg);
-	color: var(--spoiler-bg);
+	color: var(--spoiler-bg) !important;
 	cursor: pointer;
+	a {
+		color: var(--spoiler-bg) !important;
+	}
 }
 .spoiler:hover {
 	background: var(--spoiler-hover);
