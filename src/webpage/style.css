@@ -2894,9 +2894,13 @@ fieldset input[type="radio"] {
 	transition: background 0.1s;
 	position: relative;
 }
+.infosection {
+	.activeSetting {
+		border-bottom: white solid 1px;
+	}
+}
 .activeSetting {
-	background: color-mix(in srgb, var(--secondary-bg) 60%, transparent);
-	border-bottom: white solid 1px;
+	background: var(--secondary-hover);
 }
 .SettingsButton:hover {
 	background: var(--settings-panel-hover);
