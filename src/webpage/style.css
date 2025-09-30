@@ -3093,11 +3093,12 @@ fieldset input[type="radio"] {
 }
 .tritoggle input {
 	margin: 0 2px;
+	accent-color: var(--grey);
 }
 .tritoggle input:first-child {
 	accent-color: var(--green);
 }
-.tritoggle input:last-child {
+.tritoggle input:nth-child(3) {
 	accent-color: var(--red);
 }
 .nonimagecenter > .flexltr.savediv {
