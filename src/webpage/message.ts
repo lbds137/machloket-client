@@ -118,7 +118,7 @@ class Message extends SnowFlake {
 
 		Message.contextmenu.addSeperator();
 		Message.contextmenu.addButton(
-			() => I18n.getTranslation("copyrawtext"),
+			() => I18n.copyrawtext(),
 			function (this: Message) {
 				navigator.clipboard.writeText(this.content.rawString);
 			},
@@ -126,6 +126,17 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-copy",
 				},
+			},
+		);
+		Message.contextmenu.addButton(
+			() => I18n.copyLink(),
+			function (this: Message) {
+				navigator.clipboard.writeText(
+					`${window.location.origin}/channels/${this.guild.id}/${this.channel.id}/${this.id}`,
+				);
+			},
+			{
+				//TODO make icon
 			},
 		);
 		Message.contextmenu.addButton(

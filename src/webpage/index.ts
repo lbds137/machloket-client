@@ -6,7 +6,9 @@ import {MarkDown} from "./markdown.js";
 import {Message} from "./message.js";
 import {File} from "./file.js";
 import {I18n} from "./i18n.js";
-
+if (window.location.pathname === "/app") {
+	window.location.pathname = "/channels/@me";
+}
 let templateID = new URLSearchParams(window.location.search).get("templateID");
 await I18n.done;
 Localuser.loadFont();
@@ -119,7 +121,7 @@ const pasteImageElement = document.getElementById("pasteimage") as HTMLDivElemen
 let replyingTo: Message | null = null;
 window.addEventListener("popstate", (e) => {
 	if (e.state instanceof Object) {
-		thisUser.goToChannel(e.state[1], false);
+		thisUser.goToState(e.state);
 	}
 	//console.log(e.state,"state:3")
 });

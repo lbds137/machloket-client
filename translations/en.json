@@ -17,6 +17,7 @@
 	"unableToPin": "Unable to pin message",
 	"reply": "Reply",
 	"copyrawtext": "Copy raw text",
+	"copyLink":"Copy message link",
 	"copymessageid": "Copy message id",
 	"media": {
 		"notFound": "Media could not be found",

@@ -63,26 +63,7 @@ interface readyjson {
 			version: number;
 		};
 		user_guild_settings: {
-			entries: {
-				channel_overrides: {
-					message_notifications: number;
-					muted: boolean;
-					mute_config: mute_config | null;
-					channel_id: string;
-				}[];
-				message_notifications: number;
-				flags: number;
-				hide_muted_channels: boolean;
-				mobile_push: boolean;
-				mute_config: mute_config | null;
-				mute_scheduled_events: boolean;
-				muted: boolean;
-				notify_highlights: number;
-				suppress_everyone: boolean;
-				suppress_roles: boolean;
-				version: number;
-				guild_id: string;
-			}[];
+			entries: GuildOverrides[];
 			partial: boolean;
 			version: number;
 		};
@@ -121,6 +102,26 @@ interface readyjson {
 			flags: number;
 		};
 	};
+}
+export interface GuildOverrides {
+	channel_overrides: {
+		message_notifications: number;
+		muted: boolean;
+		mute_config: mute_config | null;
+		channel_id: string;
+	}[];
+	message_notifications: number;
+	flags: number;
+	hide_muted_channels: boolean;
+	mobile_push: boolean;
+	mute_config: mute_config | null;
+	mute_scheduled_events: boolean;
+	muted: boolean;
+	notify_highlights: number;
+	suppress_everyone: boolean;
+	suppress_roles: boolean;
+	version: number;
+	guild_id: string;
 }
 export interface mute_config {
 	selected_time_window: number;

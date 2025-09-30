@@ -444,7 +444,7 @@ class Group extends Channel {
 
 		return div;
 	}
-	async getHTML(addstate = true) {
+	async getHTML(addstate = true, _: boolean | void = undefined, aroundMessage?: string) {
 		if (this.localuser.channelfocus) {
 			this.localuser.channelfocus.collectBox();
 		}
@@ -474,7 +474,11 @@ class Group extends Channel {
 		this.localuser.channelfocus = this;
 		const prom = this.infinite.delete();
 		if (addstate) {
-			history.pushState([this.guild_id, this.id], "", "/channels/" + this.guild_id + "/" + this.id);
+			history.pushState(
+				[this.guild_id, this.id, aroundMessage],
+				"",
+				"/channels/" + this.guild_id + "/" + this.id + (aroundMessage ? `/${aroundMessage}` : ""),
+			);
 		}
 		this.localuser.pageTitle("@" + this.name);
 		(document.getElementById("channelTopic") as HTMLElement).setAttribute("hidden", "");
@@ -495,17 +499,16 @@ class Group extends Channel {
 		if (id !== Channel.genid) {
 			return;
 		}
-		this.buildmessages();
+		this.buildmessages(aroundMessage);
 	}
 	async messageCreate(messagep: {d: messagejson}) {
 		if (this.localuser.channelfocus !== this) {
-			if (this.fakeMessageMap.has(this.id)) {
-				this.destroyFakeMessage(this.id);
+			const id = this.nonceMap.get(messagep.d.nonce);
+			if (id) {
+				this.destroyFakeMessage(id);
 			}
 		}
-		if (this.fakeMessageMap.has(messagep.d.id)) {
-			this.destroyFakeMessage(messagep.d.id);
-		}
+
 		this.mentions++;
 		const messagez = new Message(messagep.d, this);
 

@@ -1604,7 +1604,11 @@ class Channel extends SnowFlake {
 			}
 		}
 		if (addstate) {
-			history.pushState([this.guild_id, this.id], "", "/channels/" + this.guild_id + "/" + this.id);
+			history.pushState(
+				[this.guild_id, this.id, aroundMessage],
+				"",
+				"/channels/" + this.guild_id + "/" + this.id + (aroundMessage ? `/${aroundMessage}` : ""),
+			);
 		}
 		this.localuser.pageTitle("#" + this.name);
 		const channelTopic = document.getElementById("channelTopic") as HTMLSpanElement;
@@ -1971,10 +1975,10 @@ class Channel extends SnowFlake {
 	}
 	async buildmessages(id: string | void) {
 		this.infinitefocus = false;
-		await this.tryfocusinfinate(id);
+		await this.tryfocusinfinate(id, !!id);
 	}
 	infinitefocus = false;
-	async tryfocusinfinate(id: string | void) {
+	async tryfocusinfinate(id: string | void, falsh = false) {
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
 		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
@@ -2021,10 +2025,10 @@ class Channel extends SnowFlake {
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
 
-			await this.infinite.focus(id, false); //if someone could figure out how to make this work correctly without this, that's be great :P
+			await this.infinite.focus(id, falsh); //if someone could figure out how to make this work correctly without this, that's be great :P
 			loading.classList.remove("loading");
 
-			this.infinite.focus(id, false, true);
+			this.infinite.focus(id, falsh, true);
 		});
 		//this.infinite.focus(id.id,false);
 	}

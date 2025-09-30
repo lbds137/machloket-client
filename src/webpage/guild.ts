@@ -17,6 +17,7 @@ import {
 	banObj,
 	templateSkim,
 	mute_config,
+	GuildOverrides,
 } from "./jsontypes.js";
 import {User} from "./user.js";
 import {I18n} from "./i18n.js";
@@ -1297,26 +1298,7 @@ class Guild extends SnowFlake {
 		this.localuser.perminfo.guilds[this.id] = e;
 	}
 	mute_config!: mute_config | null;
-	notisetting(settings: {
-		channel_overrides: {
-			message_notifications: number;
-			muted: boolean;
-			mute_config: mute_config;
-			channel_id: string;
-		}[];
-		message_notifications: any;
-		flags?: number;
-		hide_muted_channels?: boolean;
-		mobile_push?: boolean;
-		mute_config: null | mute_config;
-		mute_scheduled_events?: boolean;
-		muted?: boolean;
-		notify_highlights?: number;
-		suppress_everyone?: boolean;
-		suppress_roles?: boolean;
-		version?: number;
-		guild_id?: string;
-	}) {
+	notisetting(settings: GuildOverrides) {
 		this.mute_config = this.mute_config;
 		this.message_notifications = settings.message_notifications;
 		for (const override of settings.channel_overrides) {
@@ -1648,23 +1630,23 @@ class Guild extends SnowFlake {
 		}
 		return this.member.hasRole(r);
 	}
-	loadChannel(ID?: string | undefined | null, addstate = true) {
+	loadChannel(ID?: string | undefined | null, addstate = true, message?: string) {
 		if (ID) {
 			const channel = this.localuser.channelids.get(ID);
 			if (channel) {
-				channel.getHTML(addstate);
+				channel.getHTML(addstate, undefined, message);
 				return;
 			}
 		}
 		if (this.prevchannel && ID !== null && this.prevchannel.visable) {
 			console.log(this.prevchannel);
-			this.prevchannel.getHTML(addstate);
+			this.prevchannel.getHTML(addstate, undefined, message);
 			return;
 		}
 		if (this.id !== "@me") {
 			for (const thing of this.channels) {
 				if (thing.type !== 4) {
-					thing.getHTML(addstate);
+					thing.getHTML(addstate, undefined, message);
 					return;
 				}
 			}

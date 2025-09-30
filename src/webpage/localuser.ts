@@ -1191,15 +1191,26 @@ class Localuser {
 			console.log("false? :3");
 		}
 	}
+	async goToState(state: [string, string | undefined, string | undefined]) {
+		const [guildid, channelid, messageid] = state;
+		if (!channelid) {
+			if (guildid === "@me") {
+				const dir = this.guildids.get("@me") as Direct;
+				dir.loadChannel(null, false);
+			}
+			return;
+		}
+		this.goToChannel(channelid, true, messageid);
+	}
 	gotoid: string | undefined;
-	async goToChannel(id: string, addstate = true) {
-		const channel = this.channelids.get(id);
+	async goToChannel(channelid: string, addstate = true, messageid: undefined | string = undefined) {
+		const channel = this.channelids.get(channelid);
 		if (channel) {
 			const guild = channel.guild;
 			guild.loadGuild();
-			guild.loadChannel(id, addstate);
+			guild.loadChannel(channelid, addstate, messageid);
 		} else {
-			this.gotoid = id;
+			this.gotoid = channelid;
 		}
 	}
 	delChannel(json: channeljson): void {
@@ -1222,7 +1233,7 @@ class Localuser {
 			if (!guild) {
 				return;
 			}
-			guild.loadChannel(location[5]);
+			guild.loadChannel(location[5], true, location[6]);
 			this.channelfocus = this.channelids.get(location[5]);
 		}
 	}
