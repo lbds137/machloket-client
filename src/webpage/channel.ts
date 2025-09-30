@@ -2170,7 +2170,7 @@ class Channel extends SnowFlake {
 				guild_id: this.guild.id,
 				id: "fake" + Math.random(),
 				content: content.trim(),
-				timestamp: new Date() + "",
+				timestamp: new Date().toISOString(),
 				edited_timestamp: null,
 				mentions: [],
 				mention_roles: [],
@@ -2179,7 +2179,7 @@ class Channel extends SnowFlake {
 				tts: false,
 				embeds: [],
 				reactions: [],
-				nonce: Math.random() + "",
+				nonce,
 				type: 0,
 				pinned: false,
 				message_reference: reply,
@@ -2192,6 +2192,7 @@ class Channel extends SnowFlake {
 			this,
 		);
 		this.nonceMap.set(nonce, m.id);
+		const prev = this.lastmessage;
 		const makeRecent = () => {
 			if (this.lastmessageid) {
 				this.idToNext.set(this.lastmessageid, m.id);
@@ -2202,7 +2203,7 @@ class Channel extends SnowFlake {
 		};
 		makeRecent();
 
-		const html = m.buildhtml(this.lastmessage, true);
+		const html = m.buildhtml(prev, true);
 		html.classList.add("messagediv", "loadingMessage");
 		this.fakeMessages.set(m, html);
 		let loadingP = document.createElement("span");
