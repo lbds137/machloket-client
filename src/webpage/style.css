@@ -1720,6 +1720,7 @@ span.instanceStatus {
 	color: var(--primary-text-soft);
 	position: absolute;
 	top: 4px;
+	cursor: text;
 }
 .searchBox {
 	white-space: nowrap;
