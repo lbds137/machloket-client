@@ -1158,7 +1158,7 @@ span.instanceStatus {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background: var(--primary-text-soft);
+	background: var(--folder-bg);
 	border-radius: 16px;
 	margin: 2px;
 	margin-bottom: 8px;

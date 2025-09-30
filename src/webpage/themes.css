@@ -103,6 +103,7 @@
 
 	--secondary-bg: color-mix(in srgb, #222222 72%, var(--accent-color));
 	--secondary-hover: color-mix(in srgb, #222222 65%, var(--accent-color));
+	--folder-bg: color-mix(in srgb, var(--primary-text-soft) 70%, var(--accent-color));
 
 	--servers-bg: color-mix(in srgb, #0b0b0b 70%, var(--accent-color));
 	--channels-bg: color-mix(in srgb, #292929 68%, var(--accent-color));
@@ -137,6 +138,7 @@ body {
 	--shadow: color-mix(in srgb, var(--black) 30%, transparent);
 	--scrollbar: var(--primary-text-soft);
 	--scrollbar-track: var(--primary-hover);
+	--folder-bg: var(--primary-text-soft);
 
 	--blank-bg: var(--channels-bg);
 	--divider: color-mix(in srgb, var(--primary-text), transparent);
