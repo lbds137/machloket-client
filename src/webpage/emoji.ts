@@ -1,6 +1,7 @@
 import {Contextmenu} from "./contextmenu.js";
 import {Guild} from "./guild.js";
 import {Hover} from "./hover.js";
+import {I18n} from "./i18n.js";
 import {emojijson} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {BinRead} from "./utils/binaryUtils.js";
@@ -300,10 +301,36 @@ class Emoji {
 				});
 		}
 
+		let i = 0;
+
 		Contextmenu.declareMenu(menu);
 		document.body.append(menu);
 		Contextmenu.keepOnScreen(menu);
-		let i = 0;
+		const recent = localuser?.favorites.emojiFreq();
+		if (recent && recent.length >= 15 && localuser) {
+			const select = document.createElement("div");
+			select.classList.add("svg-history");
+			selection.append(select);
+			console.log("appended");
+			select.onclick = () => {
+				title.textContent = I18n.recentEmoji();
+				body.innerHTML = "";
+				for (const [emj] of recent) {
+					const emoji = Emoji.getEmojiFromIDOrString(emj, localuser);
+					const emojihtml = document.createElement("div");
+					emojihtml.classList.add("emojiSelect");
+					emojihtml.append(emoji.getHTML());
+					body.append(emojihtml);
+					emojihtml.onclick = (_) => {
+						res(emoji);
+						Contextmenu.declareMenu();
+					};
+				}
+			};
+			select.click();
+			i++;
+		}
+
 		for (const thing of Emoji.emojis) {
 			const select = document.createElement("div");
 			select.textContent = thing.emojis[0].emoji;

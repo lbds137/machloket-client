@@ -13,6 +13,8 @@
 		"joiningStream": "Joining stream..."
 	},
 	"favoriteGifs":"Favorited Gifs",
+	"recentEmoji":"Recent Emoji",
+	"noStickers":"You seem to be in an odd spot, there are no stickers for you to use!",
 	"readableName": "English",
 	"pinMessage": "Pin Message",
 	"unableToPin": "Unable to pin message",

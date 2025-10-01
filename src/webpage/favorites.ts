@@ -13,11 +13,14 @@ interface permStore {
 		emojiFrecency: favandfreq["emojiFrecency"]["emojis"];
 		emojiReactionFrecency: favandfreq["emojiReactionFrecency"]["emojis"];
 		guildAndChannelFrecency: favandfreq["guildAndChannelFrecency"]["guildAndChannels"];
+		favorite_stickers: string[];
+		sticker_frecency: favandfreq["sticker_frecency"]["stickers"];
+		favorite_emojis: string[];
 	};
 	needsSave: saveImportance;
 	lastSave: number;
 	lastDecay: number;
-	old: favandfreq;
+	old: favandfreqimp;
 }
 type RecursivePartial<T> = {
 	[P in keyof T]?: T[P] extends (infer U)[]
@@ -26,6 +29,16 @@ type RecursivePartial<T> = {
 			? RecursivePartial<T[P]>
 			: T[P];
 };
+
+type favandfreqimp = Omit<
+	favandfreq,
+	| "application_command_frecency"
+	| "favorite_soundboard_sounds"
+	| "application_frecency"
+	| "heard_sound_frecency"
+	| "played_sound_frecency"
+>;
+
 export class Favorites {
 	owner: Localuser;
 	// ----- stuff that needs to store ----
@@ -33,10 +46,13 @@ export class Favorites {
 	private emojiFrecency: favandfreq["emojiFrecency"]["emojis"] = {};
 	private emojiReactionFrecency: favandfreq["emojiReactionFrecency"]["emojis"] = {};
 	private guildAndChannelFrecency: favandfreq["guildAndChannelFrecency"]["guildAndChannels"] = {};
+	private favorite_stickers: string[] = [];
+	private sticker_frecency: favandfreq["sticker_frecency"]["stickers"] = {};
+	private favorite_emojis: string[] = [];
 	needsSave: saveImportance = 0;
 	lastSave = 0;
 	lastDecay = 0;
-	old!: favandfreq;
+	old!: favandfreqimp;
 	// ----- end of stuff that needs to store ----
 	get info() {
 		return this.owner.info;
@@ -61,7 +77,14 @@ export class Favorites {
 		store.current.emojiFrecency ||= {};
 		store.current.emojiReactionFrecency ||= {};
 		store.current.guildAndChannelFrecency ||= {};
-		const old: Partial<favandfreq> = (store.old ||= {}) as Partial<favandfreq>;
+		store.current.sticker_frecency ||= {};
+		store.current.favorite_stickers = [];
+		store.current.favorite_emojis = [];
+		function deapClone(clone: any) {
+			const val = JSON.parse(JSON.stringify(clone));
+			return val;
+		}
+		const old = deapClone((store.old = {})) as Partial<favandfreqimp>;
 		old.favoriteGifs ||= {
 			gifs: {},
 			hideTooltip: false,
@@ -75,6 +98,14 @@ export class Favorites {
 		old.guildAndChannelFrecency ||= {
 			guildAndChannels: {},
 		};
+
+		old.favorite_emojis ||= [];
+		old.favorite_stickers ||= [];
+		old.sticker_frecency ||= {
+			stickers: {},
+		};
+		store.old = old;
+
 		store.needsSave ||= 0;
 		store.lastSave ||= Date.now();
 		store.lastDecay ||= Date.now();
@@ -82,12 +113,12 @@ export class Favorites {
 		this.needsSave = store.needsSave;
 		this.lastSave = store.lastSave;
 		this.lastDecay = store.lastDecay;
-		function deapClone(clone: any) {
-			const val = JSON.parse(JSON.stringify(clone));
-			return val;
-		}
-		this.old = deapClone(store.old) as favandfreq;
 
+		this.old = old as favandfreq;
+
+		this.favorite_emojis = deapClone(store.current.favorite_emojis);
+		this.sticker_frecency = deapClone(store.current.sticker_frecency);
+		this.favorite_stickers = deapClone(store.current.favorite_stickers);
 		this.gifs = deapClone(store.current.gifs);
 		this.emojiFrecency = deapClone(store.current.emojiFrecency);
 		this.emojiReactionFrecency = deapClone(store.current.emojiReactionFrecency);
@@ -101,6 +132,9 @@ export class Favorites {
 				gifs: this.gifs,
 				emojiReactionFrecency: this.emojiReactionFrecency,
 				guildAndChannelFrecency: this.guildAndChannelFrecency,
+				favorite_stickers: this.favorite_stickers,
+				sticker_frecency: this.sticker_frecency,
+				favorite_emojis: this.favorite_emojis,
 			},
 			lastDecay: this.lastDecay,
 			lastSave: this.lastSave,
@@ -110,22 +144,29 @@ export class Favorites {
 	}
 	async saveNetwork() {
 		await this.startSync(false);
-		const body: favandfreq & {versions: any} = {
-			versions: {clientVersion: 10, serverVersion: 0, dataVersion: 60},
-			favoriteGifs: {
-				gifs: this.gifs,
-				hideTooltip: false,
-			},
-			emojiFrecency: {
-				emojis: this.emojiFrecency,
-			},
-			emojiReactionFrecency: {
-				emojis: this.emojiReactionFrecency,
-			},
-			guildAndChannelFrecency: {
-				guildAndChannels: this.guildAndChannelFrecency,
+		const body: {settings: favandfreqimp} = {
+			settings: {
+				favoriteGifs: {
+					gifs: this.gifs,
+					hideTooltip: false,
+				},
+				emojiFrecency: {
+					emojis: this.emojiFrecency,
+				},
+				emojiReactionFrecency: {
+					emojis: this.emojiReactionFrecency,
+				},
+				guildAndChannelFrecency: {
+					guildAndChannels: this.guildAndChannelFrecency,
+				},
+				favorite_stickers: this.favorite_stickers,
+				sticker_frecency: {
+					stickers: this.sticker_frecency,
+				},
+				favorite_emojis: this.favorite_emojis,
 			},
 		};
+		console.warn(body);
 		const res = await fetch(this.info.api + "/users/@me/settings-proto/2/json", {
 			method: "PATCH",
 			headers: this.headers,
@@ -137,8 +178,8 @@ export class Favorites {
 		const sat = fetch(this.info.api + "/users/@me/settings-proto/2/json", {
 			headers: this.headers,
 		});
-		const res: Partial<favandfreq> = await (await sat).json();
-		this.saveDifs(res, save);
+		const res: {settings: Partial<favandfreq>} = await (await sat).json();
+		this.saveDifs(res.settings, save);
 	}
 	async setup() {
 		try {
@@ -149,10 +190,10 @@ export class Favorites {
 		}
 		console.log(this);
 	}
-	getOld(): favandfreq {
+	getOld(): favandfreqimp {
 		return this.old;
 	}
-	setOld(newold: favandfreq) {
+	setOld(newold: favandfreqimp) {
 		this.old = newold;
 		this.saveLocal();
 		return;
@@ -203,7 +244,7 @@ export class Favorites {
 	}
 	saveDifs(diffs: Partial<favandfreq>, save = true) {
 		const old = this.getOld();
-		if (diffs.favoriteGifs) {
+		if (diffs.favoriteGifs?.gifs) {
 			const oldKeys = new Set(Object.keys(old.favoriteGifs.gifs));
 			const newKeys = new Set(Object.keys(this.gifs));
 			const removedKeys = oldKeys.difference(newKeys);
@@ -216,7 +257,34 @@ export class Favorites {
 			}
 			old.favoriteGifs.gifs = this.gifs = diffs.favoriteGifs.gifs;
 		}
-		if (diffs.emojiFrecency) {
+
+		if (diffs.favorite_stickers) {
+			const oldKeys = new Set(Object.keys(old.favorite_stickers));
+			const newKeys = new Set(Object.keys(this.favorite_stickers));
+			const removedKeys = oldKeys.difference(newKeys);
+			const addedKeys = newKeys.difference(oldKeys);
+
+			diffs.favorite_stickers = diffs.favorite_stickers.filter((_) => !removedKeys.has(_));
+
+			diffs.favorite_stickers = [...new Set([...diffs.favorite_stickers, ...addedKeys])];
+
+			old.favorite_stickers = this.favorite_stickers = diffs.favorite_stickers;
+		}
+
+		if (diffs.favorite_emojis) {
+			const oldKeys = new Set(Object.keys(old.favorite_emojis));
+			const newKeys = new Set(Object.keys(this.favorite_emojis));
+			const removedKeys = oldKeys.difference(newKeys);
+			const addedKeys = newKeys.difference(oldKeys);
+
+			diffs.favorite_emojis = diffs.favorite_emojis.filter((_) => !removedKeys.has(_));
+
+			diffs.favorite_emojis = [...new Set([...diffs.favorite_emojis, ...addedKeys])];
+
+			old.favorite_emojis = this.favorite_emojis = diffs.favorite_emojis;
+		}
+
+		if (diffs.emojiFrecency?.emojis) {
 			this.mixNewOldNetwork(
 				this.emojiFrecency,
 				old.emojiFrecency.emojis,
@@ -224,7 +292,7 @@ export class Favorites {
 			);
 			old.emojiFrecency.emojis = this.emojiFrecency = diffs.emojiFrecency.emojis;
 		}
-		if (diffs.emojiReactionFrecency) {
+		if (diffs.emojiReactionFrecency?.emojis) {
 			this.mixNewOldNetwork(
 				this.emojiReactionFrecency,
 				old.emojiReactionFrecency.emojis,
@@ -233,7 +301,7 @@ export class Favorites {
 			old.emojiReactionFrecency.emojis = this.emojiReactionFrecency =
 				diffs.emojiReactionFrecency.emojis;
 		}
-		if (diffs.guildAndChannelFrecency) {
+		if (diffs.guildAndChannelFrecency?.guildAndChannels) {
 			this.mixNewOldNetwork(
 				this.guildAndChannelFrecency,
 				old.guildAndChannelFrecency.guildAndChannels,
@@ -243,6 +311,15 @@ export class Favorites {
 				diffs.guildAndChannelFrecency.guildAndChannels;
 		}
 
+		if (diffs.sticker_frecency?.stickers) {
+			this.mixNewOldNetwork(
+				this.sticker_frecency,
+				old.sticker_frecency.stickers,
+				diffs.sticker_frecency.stickers,
+			);
+			old.sticker_frecency.stickers = this.sticker_frecency = diffs.sticker_frecency.stickers;
+		}
+
 		this.setOld(old);
 
 		this.decayScore(save);
@@ -250,16 +327,36 @@ export class Favorites {
 	favoriteGifs() {
 		return structuredClone(Object.values(this.gifs).sort((a, b) => a.order - b.order));
 	}
+	favoriteStickers() {
+		return structuredClone(this.favorite_stickers);
+	}
+	stickersFreq() {
+		return Object.entries(this.sticker_frecency).sort((a, b) => b[1].score - a[1].score);
+	}
+	favoriteEmojis() {
+		return structuredClone(this.favorite_emojis);
+	}
 	emojiFreq() {
-		return Object.values(this.emojiFrecency).sort((a, b) => b.score - a.score);
+		return Object.entries(this.emojiFrecency).sort((a, b) => b[1].score - a[1].score);
 	}
 	emojiReactFreq() {
 		return Object.entries(this.emojiReactionFrecency).sort((a, b) => b[1].score - a[1].score);
 	}
 	async addEmoji(nameOrID: string) {
-		console.log(this.emojiReactionFrecency === this.guildAndChannelFrecency);
-
 		const obj = (this.emojiFrecency[nameOrID] ??= {
+			totalUses: 0,
+			recentUses: [],
+			frecency: -1,
+			score: 0,
+		});
+		obj.totalUses++;
+		obj.recentUses.unshift(Math.floor(Date.now()) + "");
+		obj.recentUses = obj.recentUses.splice(0, 20);
+		obj.score += 100;
+		await this.save(saveImportance.low);
+	}
+	async addStickerFreq(id: string) {
+		const obj = (this.sticker_frecency[id] ??= {
 			totalUses: 0,
 			recentUses: [],
 			frecency: -1,
@@ -301,6 +398,25 @@ export class Favorites {
 		delete this.gifs[name];
 		await this.save(saveImportance.high);
 	}
+
+	async favoriteSticker(id: string) {
+		this.favorite_stickers.push(id);
+		await this.save(saveImportance.high);
+	}
+	async unfavoriteSticker(id: string) {
+		this.favorite_stickers = this.favorite_stickers.filter((_) => _ !== id);
+		await this.save(saveImportance.high);
+	}
+
+	async favoriteEmoji(idorname: string) {
+		this.favorite_emojis.push(idorname);
+		await this.save(saveImportance.high);
+	}
+	async unfavoriteEmoji(idorname: string) {
+		this.favorite_emojis = this.favorite_emojis.filter((_) => _ !== idorname);
+		await this.save(saveImportance.high);
+	}
+
 	async favoriteGif(
 		name: string,
 		gif: Omit<favandfreq["favoriteGifs"]["gifs"][""], "order" | "format">,
@@ -338,6 +454,7 @@ export class Favorites {
 			thing.score *= decay;
 			thing.score ^= 0;
 		});
+		this.lastDecay = Date.now();
 		if (save) await this.save(saveImportance.low);
 	}
 

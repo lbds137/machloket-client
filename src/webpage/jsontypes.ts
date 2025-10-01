@@ -141,6 +141,11 @@ export interface freq {
 }
 //https://docs.discord.food/resources/user-settings-proto#frecency-user-settings-object
 export interface favandfreq {
+	versions?: {
+		client_version: number;
+		server_version: number;
+		data_version: number;
+	};
 	favoriteGifs: {
 		gifs: {
 			[key: string]: {
@@ -165,6 +170,34 @@ export interface favandfreq {
 	};
 	emojiReactionFrecency: {
 		emojis: {
+			[key: string]: freq;
+		};
+	};
+	favorite_stickers: string[];
+	sticker_frecency: {
+		stickers: {
+			[key: string]: freq;
+		};
+	};
+	favorite_emojis: string[];
+	application_command_frecency: {
+		application_commands: {
+			[key: string]: freq;
+		};
+	};
+	favorite_soundboard_sounds: string[];
+	application_frecency: {
+		applications: {
+			[key: string]: freq;
+		};
+	};
+	heard_sound_frecency: {
+		heard_sounds: {
+			[key: string]: freq;
+		};
+	};
+	played_sound_frecency: {
+		played_sounds: {
 			[key: string]: freq;
 		};
 	};

@@ -1,6 +1,7 @@
 import {Contextmenu} from "./contextmenu.js";
 import {Guild} from "./guild.js";
 import {Hover} from "./hover.js";
+import {I18n} from "./i18n.js";
 import {stickerJson} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {SnowFlake} from "./snowflake.js";
@@ -106,6 +107,16 @@ class Sticker extends SnowFlake {
 		]
 			.filter((guild) => guild !== undefined)
 			.filter((guild) => guild.id != "@me" && guild.stickers.length > 0);
+		if (guilds.length === 0) {
+			const title = document.createElement("h2");
+			title.textContent = I18n.noStickers();
+			topBar.append(title);
+			menu.append(topBar);
+			Contextmenu.declareMenu(menu);
+			document.body.append(menu);
+			Contextmenu.keepOnScreen(menu);
+			return new Promise(() => {});
+		}
 		const title = document.createElement("h2");
 		title.textContent = guilds[0].properties.name;
 		title.classList.add("emojiTitle");

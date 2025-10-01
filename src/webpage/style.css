@@ -604,6 +604,19 @@ textarea {
 	display: block;
 	mask-size: cover !important;
 }
+.svg-history {
+	width: 36px;
+	height: 36px;
+	background: var(--black);
+	mask: url(/icons/history.svg);
+	mask-size: cover !important;
+	flex-shrink: 0;
+	cursor: pointer;
+
+	&:hover {
+		background: var(--black);
+	}
+}
 .svg-folder {
 	mask: url(/icons/folder.svg);
 	background-color: var(--folder-color, var(--accent-color));

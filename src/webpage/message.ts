@@ -933,7 +933,6 @@ class Message extends SnowFlake {
 							.emojiReactFreq()
 							.slice(0, 6)
 							.filter(([emoji]) => {
-								console.log(emoji, this.reactions);
 								return !this.reactions.find(
 									(_) => _.emoji.id === emoji || _.emoji.emoji === emoji || _.emoji.name === emoji,
 								)?.me;

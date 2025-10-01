@@ -3590,7 +3590,6 @@ class Localuser {
 				emoji.getHTML(),
 				() => {
 					this.favorites.addEmoji(emoji.id || (emoji.emoji as string));
-					this.favorites.save(4);
 				},
 			];
 		});
