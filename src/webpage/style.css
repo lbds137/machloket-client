@@ -12,6 +12,19 @@ body {
 	height: 100svh;
 	background: var(--primary-bg);
 }
+.mutFriends {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+
+	.createdWebhook {
+		flex-grow: 1;
+		background: var(--primary-bg);
+		margin-bottom: 6px;
+		width: 100%;
+		box-sizing: border-box;
+	}
+}
 .createdWebhook {
 	display: flex;
 	align-items: center;
@@ -23,9 +36,9 @@ body {
 	cursor: pointer;
 
 	.pfp {
-		width: 0.5in;
-		height: 0.5in;
-		margin-right: 0.15in;
+		width: 0.5in !important;
+		height: 0.5in !important;
+		margin-right: 0.15in !important;
 	}
 }
 .Mplayer {

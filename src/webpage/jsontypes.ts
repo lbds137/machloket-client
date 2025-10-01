@@ -341,6 +341,8 @@ export type highMemberJSON = mainuserjson & {
 		id: string;
 		nick: null | string;
 	}[];
+	//Only reason this is optional is due to the fact that this is really new and I want to make sure the type checker checks this for me :3
+	mutual_friends?: userjson[];
 };
 type emojijson = {
 	name: string;

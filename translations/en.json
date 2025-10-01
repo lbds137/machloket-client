@@ -185,7 +185,8 @@
 		"userInfo": "User Info",
 		"bio": "About me:",
 		"permInfo": "Permissions",
-		"mut": "Mutual guilds",
+		"mut": "Mutual Guilds",
+		"mutFriends":"Mutual Friends",
 		"joined":"Account made: $1",
 		"joinedMember":"Joined $1: $2"
 	},

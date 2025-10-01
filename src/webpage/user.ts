@@ -493,7 +493,8 @@ class User extends SnowFlake {
 		}
 		return pfp;
 	}
-	createWidget(guild: Guild) {
+	createWidget(guild?: Guild) {
+		guild = this.localuser.guildids.get("@me") as Guild;
 		const div = document.createElement("div");
 		div.classList.add("flexltr", "createdWebhook");
 		//TODO make sure this is something I can actually do here
@@ -508,7 +509,7 @@ class User extends SnowFlake {
 			if (_) {
 				name.textContent = _.name;
 				pfp.src = _.getpfpsrc();
-			} else {
+			} else if (guild.id !== "@me") {
 				const notFound = document.createElement("span");
 				notFound.textContent = I18n.webhooks.notFound();
 				nameBox.append(notFound);
@@ -921,6 +922,25 @@ class User extends SnowFlake {
 					.filter((_) => _ !== undefined),
 			);
 			mut.addHTMLArea(mutDiv);
+
+			if (high.mutual_friends) {
+				const friends = buttons.add(I18n.profile.mutFriends());
+				const div = document.createElement("div");
+				div.classList.add("mutFriends");
+				div.append(
+					...high.mutual_friends
+						.map((_) => new User(_, this.localuser))
+						.map((user) => {
+							const html = user.createWidget(this.localuser.lookingguild);
+							html.onclick = (e) => {
+								e.stopImmediatePropagation();
+								e.preventDefault();
+							};
+							return html;
+						}),
+				);
+				friends.addHTMLArea(div);
+			}
 		})();
 		const fhtml = float.generateHTML();
 		fhtml.style.overflow = "auto";

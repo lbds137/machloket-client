@@ -441,7 +441,7 @@ class Member extends SnowFlake {
 				this.info.api +
 					"/users/" +
 					this.id +
-					"/profile?with_mutual_guilds=true&with_mutual_friends_count=true&guild_id=" +
+					"/profile?with_mutual_guilds=true&with_mutual_friends=true&guild_id=" +
 					this.guild.id,
 				{headers: this.guild.headers},
 			)
