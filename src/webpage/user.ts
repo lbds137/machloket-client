@@ -935,6 +935,8 @@ class User extends SnowFlake {
 							html.onclick = (e) => {
 								e.stopImmediatePropagation();
 								e.preventDefault();
+								user.fullProfile(guild);
+								background.remove();
 							};
 							return html;
 						}),
