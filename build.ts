@@ -44,7 +44,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 									},
 								},
 							},
-							externalModules: ["./translations/langs.js"],
+							externalModules: ["/translations/langs.js"],
 							options: {
 								minify: !process.argv.includes("watch"),
 								jsc: {
