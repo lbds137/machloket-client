@@ -3097,6 +3097,7 @@ class Localuser {
 			-20 + rect.top - window.innerHeight,
 			this,
 		);
+		this.favorites.addStickerFreq(sticker.id);
 		console.log(sticker);
 		if (this.channelfocus) {
 			this.channelfocus.sendMessage("", {
