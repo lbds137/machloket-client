@@ -3106,6 +3106,7 @@ class Localuser {
 			this.channelfocus.replyingto = null;
 		}
 	}
+
 	async makeGifBox(rect: DOMRect) {
 		interface fullgif {
 			id: string;
@@ -3140,6 +3141,56 @@ class Localuser {
 		gifbox.classList.add("gifbox");
 		const search = document.createElement("input");
 		let gifs = gifbox;
+		const placeGifs = (
+			gifs: HTMLDivElement,
+			gifReturns: {src: string; width: number; height: number; title?: string}[],
+		) => {
+			const width = menu.getBoundingClientRect().width;
+			let left = 0;
+			let right = width < 370 ? Infinity : 0;
+			console.warn(right, width);
+			for (const gif of gifReturns) {
+				const div = document.createElement("div");
+				div.classList.add("gifBox");
+				const img = createImg(gif.src);
+				this.refreshIfNeeded(gif.src).then((url) => {
+					if (url === gif.src) return;
+					img.setSrcs(url);
+				});
+				if (gif.title) img.alt = gif.title;
+				const scale = gif.width / 196;
+
+				img.width = gif.width / scale;
+				img.height = gif.height / scale;
+				div.append(img);
+
+				if (left <= right) {
+					div.style.top = left + "px";
+					left += Math.ceil(img.height) + 10;
+					div.style.left = "5px";
+				} else {
+					div.style.top = right + "px";
+					right += Math.ceil(img.height) + 10;
+					div.style.left = "210px";
+				}
+
+				gifs.append(div);
+
+				div.onclick = () => {
+					if (this.channelfocus) {
+						this.channelfocus.sendMessage(gif.src, {
+							embeds: [],
+							attachments: [],
+							sticker_ids: [],
+							replyingto: this.channelfocus.replyingto,
+						});
+						menu.remove();
+						this.channelfocus.replyingto = null;
+					}
+				};
+			}
+			gifs.style.height = (right == Infinity ? left : Math.max(left, right)) + "px";
+		};
 		const searchBox = async () => {
 			gifs.remove();
 			if (search.value === "") {
@@ -3166,48 +3217,12 @@ class Localuser {
 			if (sValue !== search.value) {
 				return;
 			}
-			const width = menu.getBoundingClientRect().width;
-			let left = 0;
-			let right = width < 370 ? Infinity : 0;
-			console.warn(right, width);
-			for (const gif of gifReturns) {
-				const div = document.createElement("div");
-				div.classList.add("gifBox");
-				const img = document.createElement("img");
-				img.src = gif.gif_src;
-				img.alt = gif.title;
-				const scale = gif.width / 196;
-
-				img.width = gif.width / scale;
-				img.height = gif.height / scale;
-				div.append(img);
-
-				if (left <= right) {
-					div.style.top = left + "px";
-					left += Math.ceil(img.height) + 10;
-					div.style.left = "5px";
-				} else {
-					div.style.top = right + "px";
-					right += Math.ceil(img.height) + 10;
-					div.style.left = "210px";
-				}
-
-				gifs.append(div);
-
-				div.onclick = () => {
-					if (this.channelfocus) {
-						this.channelfocus.sendMessage(gif.url, {
-							embeds: [],
-							attachments: [],
-							sticker_ids: [],
-							replyingto: this.channelfocus.replyingto,
-						});
-						menu.remove();
-						this.channelfocus.replyingto = null;
-					}
-				};
-			}
-			gifs.style.height = (right == Infinity ? left : Math.max(left, right)) + "px";
+			placeGifs(
+				gifs,
+				gifReturns.map((gif) => {
+					return {src: gif.gif_src, width: gif.width, height: gif.height, title: gif.title};
+				}),
+			);
 		};
 		let last = "";
 		search.onkeyup = () => {
@@ -3219,6 +3234,47 @@ class Localuser {
 		};
 		search.classList.add("searchGifBar");
 		search.placeholder = I18n.searchGifs();
+		const favs = this.favorites.favoriteGifs();
+		if (favs.length) {
+			favs.forEach(async (_) => (_.src = await this.refreshIfNeeded(_.src)));
+
+			const div = document.createElement("div");
+			div.classList.add("gifPreviewBox");
+			const img = document.createElement("img");
+			img.src = favs[0].src;
+			img.src = await this.refreshIfNeeded(img.src);
+			const title = document.createElement("span");
+			title.textContent = I18n.favoriteGifs();
+			div.append(img, title);
+			gifbox.append(div);
+			div.onclick = (e) => {
+				e.stopImmediatePropagation();
+				search.remove();
+				gifs.remove();
+				gifs = document.createElement("div");
+				gifs.classList.add("gifbox");
+
+				const div = document.createElement("div");
+				div.classList.add("flexltr", "title");
+
+				const back = document.createElement("span");
+				back.classList.add("svg-leftArrow");
+				back.onclick = (e) => {
+					e.stopImmediatePropagation();
+					div.remove();
+					gifs.remove();
+					gifs = gifbox;
+					menu.append(search, gifbox);
+				};
+
+				const title = document.createElement("h3");
+				title.textContent = I18n.favoriteGifs();
+				div.append(back, title);
+
+				menu.append(div, gifs);
+				placeGifs(gifs, favs);
+			};
+		}
 		for (const category of trending.categories) {
 			const div = document.createElement("div");
 			div.classList.add("gifPreviewBox");
@@ -3946,6 +4002,20 @@ class Localuser {
 	}
 	refrshTimeOut?: NodeJS.Timeout;
 	urlsToRefresh: [string, (arg: string) => void][] = [];
+	async refreshIfNeeded(url: string) {
+		const urlObj = new URL(url);
+		if (urlObj.host === new URL(this.info.cdn).host) {
+			if (urlObj.searchParams.get("ex")) {
+				if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >= Date.now() - 5000) {
+					return url;
+				}
+			}
+			const newUrl = this.refreshURL(url);
+			newUrl.then((_) => (url = _));
+			return newUrl;
+		}
+		return url;
+	}
 	refreshURL(url: string): Promise<string> {
 		if (!this.refrshTimeOut) {
 			this.refrshTimeOut = setTimeout(async () => {

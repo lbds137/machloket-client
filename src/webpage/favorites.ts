@@ -51,6 +51,9 @@ export class Favorites {
 	get store() {
 		return (this.owner.perminfo.favoriteStore || {}) as permStore;
 	}
+	hasGif(gif: string) {
+		return !!this.gifs[gif];
+	}
 	loadFromLocal() {
 		const store: RecursivePartial<permStore> = this.store;
 		store.current ||= {};
@@ -245,7 +248,7 @@ export class Favorites {
 		this.decayScore(save);
 	}
 	favoriteGifs() {
-		return Object.values(this.gifs).sort((a, b) => a.order - b.order);
+		return structuredClone(Object.values(this.gifs).sort((a, b) => a.order - b.order));
 	}
 	emojiFreq() {
 		return Object.values(this.emojiFrecency).sort((a, b) => b.score - a.score);
@@ -294,8 +297,19 @@ export class Favorites {
 		obj.score += 100;
 		await this.save(saveImportance.low);
 	}
-	async favoriteGif(name: string, gif: favandfreq["favoriteGifs"]["gifs"][""]) {
-		this.gifs[name] = gif;
+	async unfavoriteGif(name: string) {
+		delete this.gifs[name];
+		await this.save(saveImportance.high);
+	}
+	async favoriteGif(
+		name: string,
+		gif: Omit<favandfreq["favoriteGifs"]["gifs"][""], "order" | "format">,
+	) {
+		this.gifs[name] = {
+			...gif,
+			format: 1,
+			order: Object.keys(this.gifs).length + 1,
+		};
 		await this.save(saveImportance.high);
 	}
 	async removeFavoriteGif(name: string) {

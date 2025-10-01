@@ -611,6 +611,27 @@ textarea {
 	width: 36px;
 	height: 36px;
 }
+.messageimgdiv:hover {
+	.svg-gifstar {
+		top: 4px;
+	}
+}
+.svg-gifstar {
+	mask: url(/icons/gifstar.svg);
+	mask-size: contain !important;
+	width: 24px;
+	height: 24px;
+	position: absolute;
+	top: -30px;
+	right: 5px;
+	transition: top 0.2s;
+	transition-timing-function: ease-in;
+	background: white;
+	cursor: pointer;
+	&.favorited {
+		background: yellow;
+	}
+}
 .svg-stream {
 	mask: url(/icons/stream.svg);
 	mask-size: contain !important;
@@ -1652,6 +1673,9 @@ span.instanceStatus {
 }
 .messageimgdiv {
 	position: relative;
+	overflow: clip;
+	width: fit-content;
+	height: fit-content;
 }
 .messageimg {
 	height: 100%;
@@ -2676,6 +2700,15 @@ ul {
 .imgfit {
 	max-height: 85svh;
 	max-width: 85svw;
+	display: flex;
+
+	img {
+		flex-shrink: 1;
+		height: auto;
+		max-width: inherit;
+		width: auto;
+		max-height: inherit;
+	}
 }
 .centeritem.profile {
 	width: 80%;
@@ -3562,14 +3595,28 @@ fieldset input[type="radio"] {
 	overflow-x: clip;
 }
 .searchGifBar {
+	background: var(--black);
+}
+.gifmenu .title {
+	display: flex;
+	align-items: center;
+}
+.searchGifBar,
+.gifmenu .title {
 	height: 0.3in;
 	margin: 0.15in 0.15in 0 0.15in;
 	flex-shrink: 0;
-	background: var(--black);
+
 	border: none;
 	border-radius: 4px;
 	font-size: 0.2in;
 	padding: 0 0.1in;
+	span {
+		width: 16px;
+		height: 16px;
+		background: var(--primary-text);
+		cursor: pointer;
+	}
 }
 img.error {
 	position: relative;

@@ -171,6 +171,8 @@ class Embed {
 		return div;
 	}
 	generateImage() {
+		const div = document.createElement("div");
+		div.classList.add("messageimgdiv");
 		const img = createImg(this.json.thumbnail.proxy_url);
 		img.classList.add("messageimg");
 		img.onclick = () => {
@@ -199,7 +201,37 @@ class Embed {
 		img.style.width = this.json.thumbnail.width + "px";
 		img.style.height = this.json.thumbnail.height + "px";
 		console.log(this.json, "Image fix");
-		return img;
+
+		img.isAnimated().then((animated) => {
+			if (!animated || !this.owner) return;
+			const url =
+				new URL(this.json.thumbnail.url).origin + new URL(this.json.thumbnail.url).pathname;
+			const span = document.createElement("span");
+			span.classList.add("svg-gifstar");
+			if (this.owner.localuser.favorites.hasGif(url)) {
+				span.classList.add("favorited");
+			}
+			div.append(span);
+
+			span.onclick = () => {
+				if (!this.owner) return;
+				const fav = this.owner.localuser.favorites;
+
+				if (fav.hasGif(url)) {
+					span.classList.remove("favorited");
+					fav.unfavoriteGif(url);
+				} else {
+					span.classList.add("favorited");
+					fav.favoriteGif(url, {
+						src: url,
+						width: this.json.thumbnail.width,
+						height: this.json.thumbnail.height,
+					});
+				}
+			};
+		});
+		div.append(img);
+		return div;
 	}
 	generateLink() {
 		const table = document.createElement("table");

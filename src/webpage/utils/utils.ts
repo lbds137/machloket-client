@@ -626,7 +626,7 @@ export async function getapiurls(str: string): Promise<
 	}
 	return false;
 }
-function isAnimated(src: string) {
+async function isAnimated(src: string) {
 	try {
 		src = new URL(src).pathname;
 	} catch {}
@@ -645,13 +645,18 @@ export function createImg(
 		img.classList.add("error");
 	});
 	elm ||= img;
-	if (src && isAnimated(src)) {
-		img.crossOrigin = "anonymous";
+	if (src) {
+		isAnimated(src).then((animated) => {
+			if (animated) {
+				img.crossOrigin = "anonymous";
+			}
+			img.src = settings !== "always" ? staticsrc || src || "" : src || "";
+		});
 	}
 	img.onload = async () => {
 		if (settings === "always") return;
 		if (!src) return;
-		if (isAnimated(src) && !staticsrc) {
+		if ((await isAnimated(src)) && !staticsrc) {
 			let s = staticImgMap.get(src);
 			if (s) {
 				staticsrc = await s;
@@ -683,15 +688,22 @@ export function createImg(
 			img.src = staticsrc;
 		}
 	};
-	img.src = settings !== "always" ? staticsrc || src || "" : src || "";
+
 	return Object.assign(img, {
 		setSrcs: (nsrc: string, nstaticsrc: string | void) => {
 			src = nsrc;
 			staticsrc = nstaticsrc;
-			if (src && isAnimated(src)) {
-				img.crossOrigin = "anonymous";
+			if (src) {
+				isAnimated(src).then((animated) => {
+					if (animated) {
+						img.crossOrigin = "anonymous";
+					}
+					img.src = settings !== "always" ? staticsrc || src || "" : src || "";
+				});
 			}
-			img.src = settings !== "always" ? staticsrc || src || "" : src || "";
+		},
+		isAnimated: async () => {
+			return !!(src && (await isAnimated(src)));
 		},
 	});
 }

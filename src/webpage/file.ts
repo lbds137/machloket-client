@@ -5,7 +5,7 @@ import {makePlayBox, MediaPlayer} from "./media.js";
 import {I18n} from "./i18n.js";
 import {createImg} from "./utils/utils.js";
 class File {
-	owner: Message | null;
+	readonly owner: Message | null;
 	id: string;
 	filename: string;
 	content_type: string;
@@ -55,7 +55,7 @@ class File {
 
 		if (this.content_type.startsWith("image/")) {
 			const div = document.createElement("div");
-			const img = createImg(src);
+			const img = createImg(src, undefined, div);
 			if (!fullScreen) {
 				img.classList.add("messageimg");
 				div.classList.add("messageimgdiv");
@@ -81,14 +81,39 @@ class File {
 				div.style.width = this.width + "px";
 				div.style.height = this.height + "px";
 			}
+			img.isAnimated().then((animated) => {
+				if (!animated || !this.owner || fullScreen) return;
+				const url = new URL(this.url).origin + new URL(this.url).pathname;
+				const span = document.createElement("span");
+				span.classList.add("svg-gifstar");
+				if (this.owner.localuser.favorites.hasGif(url)) {
+					span.classList.add("favorited");
+				}
+				div.append(span);
+
+				span.onclick = () => {
+					if (!this.owner || !this.width || !this.height) return;
+					const fav = this.owner.localuser.favorites;
+
+					if (fav.hasGif(url)) {
+						span.classList.remove("favorited");
+						fav.unfavoriteGif(url);
+					} else {
+						span.classList.add("favorited");
+						fav.favoriteGif(url, {
+							src: url,
+							width: this.width,
+							height: this.height,
+						});
+					}
+				};
+			});
 			if (!fullScreen) {
 				if (OSpoiler) {
 					div.append(makeSpoilerHTML());
 				}
-				return div;
-			} else {
-				return img;
 			}
+			return div;
 		} else if (this.content_type.startsWith("video/")) {
 			const video = document.createElement("video");
 			const source = document.createElement("source");
