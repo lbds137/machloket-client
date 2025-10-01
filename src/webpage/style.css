@@ -3597,6 +3597,9 @@ fieldset input[type="radio"] {
 .searchGifBar {
 	background: var(--black);
 }
+.vr-message {
+	border-right: 1px solid var(--black) !important;
+}
 .gifmenu .title {
 	display: flex;
 	align-items: center;
