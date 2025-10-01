@@ -166,7 +166,6 @@ export class Favorites {
 				favorite_emojis: {emojis: this.favorite_emojis},
 			},
 		};
-		console.warn(body);
 		const res = await fetch(this.info.api + "/users/@me/settings-proto/2/json", {
 			method: "PATCH",
 			headers: this.headers,
@@ -191,7 +190,6 @@ export class Favorites {
 		} catch (e) {
 			console.error(e);
 		}
-		console.log(this);
 	}
 	getOld(): favandfreqimp {
 		return this.old;
