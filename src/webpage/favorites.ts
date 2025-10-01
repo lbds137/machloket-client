@@ -84,7 +84,7 @@ export class Favorites {
 			const val = JSON.parse(JSON.stringify(clone));
 			return val;
 		}
-		const old = deapClone((store.old = {})) as Partial<favandfreqimp>;
+		const old = deapClone((store.old ||= {})) as Partial<favandfreqimp>;
 		old.favoriteGifs ||= {
 			gifs: {},
 			hideTooltip: false,
