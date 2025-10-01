@@ -400,7 +400,7 @@ export class Favorites {
 		obj.recentUses.unshift(Math.floor(Date.now()) + "");
 		obj.recentUses = obj.recentUses.splice(0, 5);
 		obj.score += 100;
-		await this.save(saveImportance.low);
+		await this.save(saveImportance.verylow);
 	}
 	async unfavoriteGif(name: string) {
 		delete this.gifs[name];
