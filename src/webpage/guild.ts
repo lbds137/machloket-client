@@ -1448,14 +1448,17 @@ class Guild extends SnowFlake {
 		});
 	}
 	HTMLicon?: HTMLElement;
-	static generateGuildIcon(guild: Guild | (invitejson["guild"] & {info: {cdn: string}})) {
+	static generateGuildIcon(
+		guild: Guild | (invitejson["guild"] & {info: {cdn: string}}),
+		autoLink = true,
+	) {
 		const divy = document.createElement("div");
 		divy.classList.add("servernoti");
 
 		const noti = document.createElement("div");
 		noti.classList.add("unread");
 		divy.append(noti);
-		if (guild instanceof Guild) {
+		if (guild instanceof Guild && autoLink) {
 			guild.localuser.guildhtml.set(guild.id, divy);
 			guild.html = divy;
 		}
@@ -1502,8 +1505,8 @@ class Guild extends SnowFlake {
 		}
 		return divy;
 	}
-	generateGuildIcon() {
-		return Guild.generateGuildIcon(this);
+	generateGuildIcon(autoLink = true) {
+		return Guild.generateGuildIcon(this, autoLink);
 	}
 	confirmDelete() {
 		let confirmname = "";

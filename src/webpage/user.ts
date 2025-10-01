@@ -800,6 +800,7 @@ class User extends SnowFlake {
 				badgediv.append(badge);
 			}
 		})();
+
 		const pfp = this.buildstatuspfp(guild);
 		div.appendChild(pfp);
 		const userbody = document.createElement("div");
@@ -882,6 +883,7 @@ class User extends SnowFlake {
 				});
 			}
 		}
+
 		(async () => {
 			const memb = await membres;
 			if (!memb) return;
@@ -901,12 +903,14 @@ class User extends SnowFlake {
 			const mut = buttons.add(I18n.profile.mut());
 			const mutDiv = document.createElement("div");
 			const high = await memb.highInfo();
+
 			mutDiv.append(
 				...high.mutual_guilds
 					.map((_) => [this.localuser.guildids.get(_.id), _.nick] as const)
 					.map(([guild, nick]) => {
 						if (!guild) return;
-						const icon = guild.generateGuildIcon();
+						const icon = guild.generateGuildIcon(false);
+
 						const box = document.createElement("div");
 						box.classList.add("mutGuildBox", "flexltr");
 
