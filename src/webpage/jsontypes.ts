@@ -133,7 +133,42 @@ export interface guildFolder {
 	id: number;
 	name: string;
 }
-
+export interface freq {
+	totalUses: number;
+	recentUses: string[];
+	frecency: -1;
+	score: number;
+}
+//https://docs.discord.food/resources/user-settings-proto#frecency-user-settings-object
+export interface favandfreq {
+	favoriteGifs: {
+		gifs: {
+			[key: string]: {
+				format: 1;
+				src: string;
+				width: number;
+				height: number;
+				order: number;
+			};
+		};
+		hideTooltip: boolean;
+	};
+	emojiFrecency: {
+		emojis: {
+			[key: string]: freq;
+		};
+	};
+	guildAndChannelFrecency: {
+		guildAndChannels: {
+			[key: string]: freq;
+		};
+	};
+	emojiReactionFrecency: {
+		emojis: {
+			[key: string]: freq;
+		};
+	};
+}
 interface readySuplemental {
 	op: 0;
 	t: "READY_SUPPLEMENTAL";

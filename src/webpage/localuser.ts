@@ -34,6 +34,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {Sticker} from "./sticker.js";
 import {Hover} from "./hover.js";
 import {AccountSwitcher} from "./utils/switcher.js";
+import {Favorites} from "./favorites.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -192,6 +193,7 @@ class Localuser {
 			document.removeEventListener("click", func);
 		};
 		document.addEventListener("click", func);
+		//TODO get rid of this garbage
 		if (userinfo === -1) {
 			this.rights = new Rights("");
 			return;
@@ -207,12 +209,14 @@ class Localuser {
 			"Content-type": "application/json; charset=UTF-8",
 			Authorization: this.userinfo.token,
 		};
+		this.favorites = new Favorites(this);
 		const rights = this.perminfo.user.rights || "875069521787904";
 		this.rights = new Rights(rights);
 
 		if (this.perminfo.user.disableColors === undefined) this.perminfo.user.disableColors = true;
 		this.updateTranslations();
 	}
+	favorites!: Favorites;
 	readysup = false;
 	get voiceAllowed() {
 		return this.readysup || localStorage.getItem("Voice enabled");
@@ -1200,7 +1204,7 @@ class Localuser {
 			}
 			return;
 		}
-		this.goToChannel(channelid, true, messageid);
+		this.goToChannel(channelid, false, messageid);
 	}
 	gotoid: string | undefined;
 	async goToChannel(channelid: string, addstate = true, messageid: undefined | string = undefined) {
@@ -3244,6 +3248,7 @@ class Localuser {
 			-20 + rect.top - window.innerHeight,
 			this,
 		);
+		this.favorites.addEmoji(emoji.id || (emoji.emoji as string));
 		p();
 		const md = typebox.markdown;
 		this.MDReplace(
@@ -3282,7 +3287,10 @@ class Localuser {
 	}
 	fileExtange!: (files: Blob[], html: HTMLElement[]) => [Blob[], HTMLElement[]];
 	MDSearchOptions(
-		options: [string, string, void | HTMLElement][],
+		options: (
+			| [string, string, void | HTMLElement]
+			| [string, string, void | HTMLElement, () => void]
+		)[],
 		original: string,
 		div: HTMLDivElement,
 		typebox: MarkDown,
@@ -3324,6 +3332,7 @@ class Localuser {
 					box.focus();
 				}
 				this.MDReplace(thing[1], original, typebox);
+				thing[3]?.();
 				div.innerHTML = "";
 				remove();
 			};
@@ -3511,13 +3520,17 @@ class Localuser {
 	}
 	findEmoji(search: string, orginal: string, box: HTMLDivElement, typebox: MarkDown) {
 		const emj = Emoji.searchEmoji(search, this, 10);
-		const map = emj.map(([emoji]): [string, string, HTMLElement] => {
+		const map = emj.map(([emoji]): [string, string, HTMLElement, () => void] => {
 			return [
 				emoji.name,
 				emoji.id
 					? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>`
 					: (emoji.emoji as string),
 				emoji.getHTML(),
+				() => {
+					this.favorites.addEmoji(emoji.id || (emoji.emoji as string));
+					this.favorites.save(4);
+				},
 			];
 		});
 		this.MDSearchOptions(map, orginal, box, typebox);

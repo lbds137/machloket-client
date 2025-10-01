@@ -284,18 +284,18 @@ class Message extends SnowFlake {
 		if (emoji instanceof Emoji && !emoji.id && emoji.emoji) {
 			emoji = emoji.emoji;
 		}
-		let remove = false;
-		for (const thing of this.reactions) {
-			if (thing.emoji.name === emoji) {
-				remove = thing.me;
-				break;
-			}
-		}
+		let remove = !!this.reactions.find((_) => _.emoji.name === emoji)?.me;
+
 		let reactiontxt: string;
 		if (emoji instanceof Emoji) {
 			reactiontxt = `${emoji.name}:${emoji.id}`;
 		} else {
 			reactiontxt = encodeURIComponent(emoji);
+		}
+		if (!remove) {
+			this.localuser.favorites.addReactEmoji(
+				emoji instanceof Emoji ? emoji.id || (emoji.emoji as string) : emoji,
+			);
 		}
 		fetch(
 			`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactiontxt}/@me`,
@@ -927,6 +927,36 @@ class Message extends SnowFlake {
 				if (this.div) {
 					buttons = document.createElement("div");
 					buttons.classList.add("messageButtons", "flexltr");
+					let addedRec = false;
+					if (this.channel.hasPermission("ADD_REACTIONS")) {
+						const favs = this.localuser.favorites
+							.emojiReactFreq()
+							.slice(0, 6)
+							.filter(([emoji]) => {
+								console.log(emoji, this.reactions);
+								return !this.reactions.find(
+									(_) => _.emoji.id === emoji || _.emoji.emoji === emoji || _.emoji.name === emoji,
+								)?.me;
+							})
+							.slice(0, 3);
+						for (const [emoji] of favs) {
+							addedRec = true;
+							const container = document.createElement("button");
+							if (isNaN(+emoji)) {
+								container.append(emoji);
+							} else {
+								const emj = Emoji.getEmojiFromIDOrString(emoji, this.localuser);
+								container.append(emj.getHTML(false));
+							}
+							container.onclick = () => {
+								this.reactionToggle(emoji);
+							};
+							buttons.append(container);
+						}
+					}
+					if (addedRec) {
+						Array.from(buttons.children).at(-1)?.classList.add("vr-message");
+					}
 					if (this.channel.hasPermission("SEND_MESSAGES")) {
 						const container = document.createElement("button");
 						const reply = document.createElement("span");
