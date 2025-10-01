@@ -1472,7 +1472,7 @@ class Guild extends SnowFlake {
 			const img = createImg(guild.info.cdn + "/icons/" + guild.id + "/" + icon + ".png");
 			img.classList.add("pfp", "servericon");
 			divy.appendChild(img);
-			if (guild instanceof Guild) {
+			if (guild instanceof Guild && autoLink) {
 				img.onclick = () => {
 					console.log(guild.loadGuild);
 					guild.loadGuild();
