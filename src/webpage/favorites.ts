@@ -99,8 +99,8 @@ export class Favorites {
 			guildAndChannels: {},
 		};
 
-		old.favorite_emojis ||= [];
-		old.favorite_stickers ||= [];
+		old.favorite_emojis ||= {emojis: []};
+		old.favorite_stickers ||= {sticker_ids: []};
 		old.sticker_frecency ||= {
 			stickers: {},
 		};
@@ -159,11 +159,11 @@ export class Favorites {
 				guildAndChannelFrecency: {
 					guildAndChannels: this.guildAndChannelFrecency,
 				},
-				favorite_stickers: this.favorite_stickers,
+				favorite_stickers: {sticker_ids: this.favorite_stickers},
 				sticker_frecency: {
 					stickers: this.sticker_frecency,
 				},
-				favorite_emojis: this.favorite_emojis,
+				favorite_emojis: {emojis: this.favorite_emojis},
 			},
 		};
 		console.warn(body);
@@ -172,7 +172,10 @@ export class Favorites {
 			headers: this.headers,
 			body: JSON.stringify(body),
 		});
-		res;
+		if (res.ok) {
+			this.needsSave = saveImportance.no;
+			this.lastSave = Date.now();
+		}
 	}
 	async startSync(save = true) {
 		const sat = fetch(this.info.api + "/users/@me/settings-proto/2/json", {
@@ -258,30 +261,37 @@ export class Favorites {
 			old.favoriteGifs.gifs = this.gifs = diffs.favoriteGifs.gifs;
 		}
 
-		if (diffs.favorite_stickers) {
-			const oldKeys = new Set(Object.keys(old.favorite_stickers));
+		if (diffs.favorite_stickers?.sticker_ids) {
+			const oldKeys = new Set(Object.keys(old.favorite_stickers.sticker_ids));
 			const newKeys = new Set(Object.keys(this.favorite_stickers));
 			const removedKeys = oldKeys.difference(newKeys);
 			const addedKeys = newKeys.difference(oldKeys);
 
-			diffs.favorite_stickers = diffs.favorite_stickers.filter((_) => !removedKeys.has(_));
+			diffs.favorite_stickers.sticker_ids = diffs.favorite_stickers.sticker_ids.filter(
+				(_) => !removedKeys.has(_),
+			);
 
-			diffs.favorite_stickers = [...new Set([...diffs.favorite_stickers, ...addedKeys])];
+			diffs.favorite_stickers.sticker_ids = [
+				...new Set([...diffs.favorite_stickers.sticker_ids, ...addedKeys]),
+			];
 
-			old.favorite_stickers = this.favorite_stickers = diffs.favorite_stickers;
+			old.favorite_stickers.sticker_ids = this.favorite_stickers =
+				diffs.favorite_stickers.sticker_ids;
 		}
 
-		if (diffs.favorite_emojis) {
-			const oldKeys = new Set(Object.keys(old.favorite_emojis));
+		if (diffs.favorite_emojis?.emojis) {
+			const oldKeys = new Set(Object.keys(old.favorite_emojis.emojis));
 			const newKeys = new Set(Object.keys(this.favorite_emojis));
 			const removedKeys = oldKeys.difference(newKeys);
 			const addedKeys = newKeys.difference(oldKeys);
 
-			diffs.favorite_emojis = diffs.favorite_emojis.filter((_) => !removedKeys.has(_));
+			diffs.favorite_emojis.emojis = diffs.favorite_emojis.emojis.filter(
+				(_) => !removedKeys.has(_),
+			);
 
-			diffs.favorite_emojis = [...new Set([...diffs.favorite_emojis, ...addedKeys])];
+			diffs.favorite_emojis.emojis = [...new Set([...diffs.favorite_emojis.emojis, ...addedKeys])];
 
-			old.favorite_emojis = this.favorite_emojis = diffs.favorite_emojis;
+			old.favorite_emojis.emojis = this.favorite_emojis = diffs.favorite_emojis.emojis;
 		}
 
 		if (diffs.emojiFrecency?.emojis) {

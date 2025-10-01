@@ -173,13 +173,17 @@ export interface favandfreq {
 			[key: string]: freq;
 		};
 	};
-	favorite_stickers: string[];
+	favorite_stickers: {
+		sticker_ids: string[];
+	};
 	sticker_frecency: {
 		stickers: {
 			[key: string]: freq;
 		};
 	};
-	favorite_emojis: string[];
+	favorite_emojis: {
+		emojis: string[];
+	};
 	application_command_frecency: {
 		application_commands: {
 			[key: string]: freq;
