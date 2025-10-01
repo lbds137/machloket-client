@@ -607,7 +607,7 @@ textarea {
 .svg-history {
 	width: 36px;
 	height: 36px;
-	background: var(--black);
+	background: var(--primary-text-soft);
 	mask: url(/icons/history.svg);
 	mask-size: cover !important;
 	flex-shrink: 0;
