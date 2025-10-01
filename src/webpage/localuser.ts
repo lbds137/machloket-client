@@ -3341,7 +3341,10 @@ class Localuser {
 			);
 		}
 	}
-	fileExtange!: (files: Blob[], html: HTMLElement[]) => [Blob[], HTMLElement[]];
+	fileExtange!: (
+		files: Blob[],
+		html: WeakMap<Blob, HTMLElement>,
+	) => [Blob[], WeakMap<Blob, HTMLElement>];
 	MDSearchOptions(
 		options: (
 			| [string, string, void | HTMLElement]

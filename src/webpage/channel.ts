@@ -1548,11 +1548,11 @@ class Channel extends SnowFlake {
 		};
 	}
 	files: Blob[] = [];
-	htmls: HTMLElement[] = [];
+	htmls = new WeakMap<Blob, HTMLElement>();
 	textSave = "";
 	collectBox() {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		const [files, html] = this.localuser.fileExtange([], []);
+		const [files, html] = this.localuser.fileExtange([], new WeakMap<Blob, HTMLElement>());
 		this.files = files;
 		this.htmls = html;
 		this.textSave = MarkDown.gatherBoxText(typebox);

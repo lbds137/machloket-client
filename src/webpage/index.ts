@@ -50,20 +50,23 @@ function regSwap(l: Localuser) {
 	};
 	l.fileExtange = (img, html) => {
 		const blobArr: Blob[] = [];
-		const htmlArr: HTMLElement[] = [];
+		const htmlArr = imagesHtml;
 		let i = 0;
-		for (const img of imagesHtml) {
+		for (const file of images) {
+			const img = imagesHtml.get(file);
+			if (!img) continue;
 			if (pasteImageElement.contains(img)) {
 				pasteImageElement.removeChild(img);
 				blobArr.push(images[i]);
-				htmlArr.push(img);
 			} else {
 				i++;
 			}
 		}
 		images = img;
 		imagesHtml = html;
-		for (const img of imagesHtml) {
+		for (const file of images) {
+			const img = imagesHtml.get(file);
+			if (!img) throw new Error("Image without HTML, exiting");
 			pasteImageElement.append(img);
 		}
 		return [blobArr, htmlArr];
@@ -128,8 +131,7 @@ window.addEventListener("popstate", (e) => {
 async function handleEnter(event: KeyboardEvent): Promise<void> {
 	if (event.key === "Escape") {
 		while (images.length) {
-			images.pop();
-			const elm = imagesHtml.pop() as HTMLElement;
+			const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
 			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
 		}
 		if (thisUser.channelfocus) {
@@ -158,8 +160,9 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 		if (thisUser.channelfocus) {
 			thisUser.channelfocus.replyingto = null;
 		}
+
 		channel.sendMessage(markdown.rawString, {
-			attachments: images.filter((_, i) => document.contains(imagesHtml[i])),
+			attachments: images.filter((_) => document.contains(imagesHtml.get(_) || null)),
 			embeds: [], // Add an empty array for the embeds property
 			replyingto: replyingTo,
 			sticker_ids: [],
@@ -168,8 +171,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 			thisUser.channelfocus.makereplybox();
 		}
 		while (images.length) {
-			images.pop();
-			const elm = imagesHtml.pop() as HTMLElement;
+			const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
 			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
 		}
 
@@ -239,7 +241,7 @@ markdown.giveBox(typebox);
 	});
 }
 let images: Blob[] = [];
-let imagesHtml: HTMLElement[] = [];
+let imagesHtml = new WeakMap<Blob, HTMLElement>();
 
 document.addEventListener("paste", async (e: ClipboardEvent) => {
 	if (!e.clipboardData) return;
@@ -250,7 +252,7 @@ document.addEventListener("paste", async (e: ClipboardEvent) => {
 		const html = fileInstance.upHTML(images, file);
 		pasteImageElement.appendChild(html);
 		images.push(file);
-		imagesHtml.push(html);
+		imagesHtml.set(file, html);
 	}
 });
 
@@ -320,7 +322,7 @@ document.addEventListener("drop", (e) => {
 				const html = fileInstance.upHTML(images, file);
 				pasteImageElement.appendChild(html);
 				images.push(file);
-				imagesHtml.push(html);
+				imagesHtml.set(file, html);
 			}
 		}
 	}
@@ -344,7 +346,7 @@ pinnedM.onclick = (e) => {
 				const html = fileInstance.upHTML(images, file);
 				pasteImageElement.appendChild(html);
 				images.push(file);
-				imagesHtml.push(html);
+				imagesHtml.set(file, html);
 			}
 		}
 	};
