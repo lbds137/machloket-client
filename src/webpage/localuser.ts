@@ -9,6 +9,7 @@ import {
 	channeljson,
 	guildFolder,
 	guildjson,
+	mainuserjson,
 	memberjson,
 	memberlistupdatejson,
 	messageCreateJson,
@@ -3067,7 +3068,8 @@ class Localuser {
 		form.addButtonInput("", I18n.getTranslation("localuser.advancedBot"), () => {
 			const token = this.botTokens.get(appId);
 			if (token) {
-				const botc = new Bot(bot, token, this);
+				//TODO check if this is actually valid or not
+				const botc = new Bot(bot as unknown as mainuserjson, token, this);
 				botc.settings();
 			}
 		});
