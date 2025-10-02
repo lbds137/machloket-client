@@ -572,12 +572,19 @@ class Channel extends SnowFlake {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return false;
 		}
-		const lastreadmessage = this.messages.get(this.lastreadmessageid as string);
-		return (
-			!!this.lastmessage &&
-			(!lastreadmessage || this.lastmessage.timestamp > lastreadmessage.timestamp) &&
-			this.type !== 4
-		);
+		let lastreadmessage = this.messages.get(this.lastreadmessageid as string)?.timestamp;
+		if (
+			lastreadmessage === undefined &&
+			this.lastreadmessageid &&
+			!isNaN(+this.lastreadmessageid)
+		) {
+			lastreadmessage = SnowFlake.stringToUnixTime(this.lastreadmessageid);
+		}
+		let lastmessage = this.lastmessage?.timestamp;
+		if (lastmessage === undefined && this.lastmessageid && !isNaN(+this.lastmessageid)) {
+			lastmessage = SnowFlake.stringToUnixTime(this.lastmessageid);
+		}
+		return !!lastmessage && (!lastreadmessage || lastmessage > lastreadmessage) && this.type !== 4;
 	}
 	hasPermission(name: string, member = this.guild.member): boolean {
 		if (member.isAdmin()) {
@@ -1893,6 +1900,12 @@ class Channel extends SnowFlake {
 		if (id === this.lastmessage?.id) {
 			return;
 		}
+		let tempy: string | undefined = id;
+		while (tempy && tempy.includes("fake")) {
+			tempy = this.idToNext.get(tempy);
+		}
+		if (!tempy) return;
+		id = tempy;
 		await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id, {
 			headers: this.headers,
 		})
@@ -1932,6 +1945,12 @@ class Channel extends SnowFlake {
 		if (this.topid && id === this.topid) {
 			return;
 		}
+		let tempy: string | undefined = id;
+		while (tempy && tempy.includes("fake")) {
+			tempy = this.idToPrev.get(tempy);
+		}
+		if (!tempy) return;
+		id = tempy;
 
 		await fetch(this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100", {
 			headers: this.headers,
@@ -2048,17 +2067,20 @@ class Channel extends SnowFlake {
 		return id;
 	}
 	private findClosest(id: string | undefined) {
+		const mTime = (id: string) => {
+			return this.messages.get(id)?.timestamp || -1;
+		};
 		if (!this.lastmessageid || !id) return;
 		let flake: string | undefined = this.lastmessageid;
-		const time = SnowFlake.stringToUnixTime(id);
-		let flaketime = SnowFlake.stringToUnixTime(flake);
+		const time = mTime(id);
+		let flaketime = mTime(flake);
 		while (flake && time < flaketime) {
 			flake = this.idToPrev.get(flake);
 
 			if (!flake) {
 				return;
 			}
-			flaketime = SnowFlake.stringToUnixTime(flake);
+			flaketime = mTime(flake);
 		}
 		return flake;
 	}

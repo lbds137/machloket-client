@@ -4005,8 +4005,7 @@ class Localuser {
 		dialog.options.addText(I18n.getTranslation("instanceStats.messages", json.counts.message));
 		dialog.options.addText(I18n.getTranslation("instanceStats.members", json.counts.members));
 	}
-	refrshTimeOut?: NodeJS.Timeout;
-	urlsToRefresh: [string, (arg: string) => void][] = [];
+
 	async refreshIfNeeded(url: string) {
 		const urlObj = new URL(url);
 		if (urlObj.host === new URL(this.info.cdn).host) {
@@ -4021,6 +4020,9 @@ class Localuser {
 		}
 		return url;
 	}
+
+	refrshTimeOut?: NodeJS.Timeout;
+	urlsToRefresh: [string, (arg: string) => void][] = [];
 	refreshURL(url: string): Promise<string> {
 		if (!this.refrshTimeOut) {
 			this.refrshTimeOut = setTimeout(async () => {

@@ -2629,6 +2629,7 @@ ul {
 	border-radius: 6px;
 	cursor: pointer;
 	display: flex;
+	margin-bottom: 8px;
 }
 .stickerPicker {
 	position: absolute;
