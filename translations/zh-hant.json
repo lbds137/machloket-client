@@ -12,11 +12,15 @@
 		"stopstream": "停止直播",
 		"joiningStream": "正在加入直播…"
 	},
+	"favoriteGifs": "收藏的 Gif 圖檔",
+	"recentEmoji": "近期的表情符號",
+	"noStickers": "您似乎處在一個奇怪的位置，這裡沒有貼圖可以供您使用！",
 	"readableName": "繁體中文",
 	"pinMessage": "置頂訊息",
 	"unableToPin": "無法置頂訊息",
 	"reply": "回覆",
 	"copyrawtext": "複製原始文字",
+	"copyLink": "複製訊息連結",
 	"copymessageid": "複製訊息 ID",
 	"media": {
 		"notFound": "找不到媒體",
@@ -187,6 +191,7 @@
 		"joinedMember": "已加入$1：$2"
 	},
 	"searchGifs": "搜尋 Tenor",
+	"muteDuration": "取消噤聲：",
 	"channel": {
 		"creating": "建立頻道",
 		"name": "頻道",
@@ -198,6 +203,8 @@
 		"settingsFor": "$1的設定",
 		"voice": "語音",
 		"text": "文字",
+		"mute": "噤聲頻道",
+		"unmute": "取消噤聲頻道",
 		"announcement": "公告",
 		"name:": "名稱：",
 		"topic:": "主題：",
@@ -211,7 +218,7 @@
 	},
 	"Voice": {
 		"status": {
-			"done": "完成",
+			"done": "已連接",
 			"notconnected": "未連接",
 			"sendingStreams": "傳送音訊串流",
 			"conectionFailed": "連接失敗",
@@ -226,6 +233,7 @@
 			"left": "已離開語音聊天"
 		}
 	},
+	"usedFermi": "已使用 Fermi",
 	"delete": "刪除",
 	"webhooks": {
 		"createdAt": "建立於 $1",
@@ -336,6 +344,7 @@
 		"copyId": "複製公會 ID",
 		"markRead": "標記為已讀",
 		"notifications": "通知",
+		"mute": "噤聲公會",
 		"leave": "離開公會",
 		"settings": "設定",
 		"delete": "刪除公會",
@@ -520,6 +529,7 @@
 	"noPins": "這裡目前似乎什麼都沒有…",
 	"message": {
 		"reactionAdd": "添加反應",
+		"reactions": "查看反應",
 		"delete": "删除訊息",
 		"edit": "編輯訊息",
 		"edited": "（已編輯）",
@@ -528,7 +538,8 @@
 		"retry": "重新發送錯誤訊息",
 		"pin": "$1已置頂一則訊息",
 		"viewrest": "查看剩餘內容",
-		"fullMessage": "完整訊息："
+		"fullMessage": "完整訊息：",
+		"reactionsTitle": "反應"
 	},
 	"instanceStats": {
 		"name": "實例統計：$1",

@@ -229,11 +229,13 @@
 	"emojiSelect": "Emoji:",
 	"message": {
 		"reactionAdd": "Reaktioun derbäisetzen",
+		"reactions": "Reaktioune weisen",
 		"delete": "Message läschen",
 		"edit": "Message änneren",
 		"edited": "(geännert)",
 		"deleted": "Geläschte Message",
-		"fullMessage": "Vollstännege Message:"
+		"fullMessage": "Vollstännege Message:",
+		"reactionsTitle": "Reaktiounen"
 	},
 	"instanceStats": {
 		"users": "Registréiert Benotzer: $1",
