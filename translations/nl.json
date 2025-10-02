@@ -12,11 +12,15 @@
 		"stopstream": "Uitzending stoppen",
 		"joiningStream": "Verbindt met uitzending…"
 	},
+	"favoriteGifs": "Favoriete GIFs",
+	"recentEmoji": "Recente emoji",
+	"noStickers": "Je lijkt in een vreemde situatie te zitten, er zijn namelijk geen stickers die je kunt gebruiken!",
 	"readableName": "Nederlands",
 	"pinMessage": "Bericht vastzetten",
 	"unableToPin": "Bericht kan niet worden vastgezet",
 	"reply": "Antwoorden",
 	"copyrawtext": "Ruwe tekst kopiëren",
+	"copyLink": "Koppeling naar bericht kopiëren",
 	"copymessageid": "Bericht-ID kopiëren",
 	"media": {
 		"notFound": "Mediabestand kon niet worden gevonden",
@@ -183,10 +187,12 @@
 		"bio": "Over mij:",
 		"permInfo": "Machtigingen",
 		"mut": "Onderlinge gilden",
+		"mutFriends": "Wederzijdse vrienden",
 		"joined": "Account aangemaakt: $1",
 		"joinedMember": "Toegetreden tot $1: $2"
 	},
 	"searchGifs": "Tenor doorzoeken",
+	"muteDuration": "Ontdempen in:",
 	"channel": {
 		"creating": "Kanaal wordt aangemaakt",
 		"name": "Kanaal",
@@ -198,6 +204,8 @@
 		"settingsFor": "Instellingen voor $1",
 		"voice": "Spraak",
 		"text": "Tekst",
+		"mute": "Kanaal dempen",
+		"unmute": "Kanaal ontdempen",
 		"announcement": "Aankondigingen",
 		"name:": "Naam:",
 		"topic:": "Onderwerp:",
@@ -226,6 +234,7 @@
 			"left": "Heeft de voicechat verlaten"
 		}
 	},
+	"usedFermi": "Fermi gebruikt",
 	"delete": "Verwijderen",
 	"webhooks": {
 		"createdAt": "Aangemaakt op $1",
@@ -336,6 +345,7 @@
 		"copyId": "Gilde-ID kopiëren",
 		"markRead": "Markeren als gelezen",
 		"notifications": "Meldingen",
+		"mute": "Gilde dempen",
 		"leave": "Gilde verlaten",
 		"settings": "Instellingen",
 		"delete": "Gilde verwijderen",
@@ -520,6 +530,7 @@
 	"noPins": "Hier is (nog) niets te zien.",
 	"message": {
 		"reactionAdd": "Reactie toevoegen",
+		"reactions": "Reacties bekijken",
 		"delete": "Bericht verwijderen",
 		"edit": "Bericht bewerken",
 		"edited": "(bewerkt)",
@@ -528,7 +539,8 @@
 		"retry": "Bericht met fout opnieuw verzenden",
 		"pin": "$1 heeft een bericht vastgezet",
 		"viewrest": "De rest bekijken",
-		"fullMessage": "Volledig bericht:"
+		"fullMessage": "Volledig bericht:",
+		"reactionsTitle": "Reacties"
 	},
 	"instanceStats": {
 		"name": "Serverstatistieken: $1",
