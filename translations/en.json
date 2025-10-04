@@ -190,6 +190,8 @@
 		"joined":"Account made: $1",
 		"joinedMember":"Joined $1: $2"
 	},
+	"channelLink":"# $1",
+	"messageLink":"Message in # $1",
 	"searchGifs": "Search Tenor",
 	"muteDuration":"Unmute in:",
 	"channel": {

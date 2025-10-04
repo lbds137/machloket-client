@@ -518,9 +518,15 @@ class MarkDown {
 					appendcurrent();
 					const a = document.createElement("a");
 					//a.href=build;
-					MarkDown.safeLink(a, build);
+
 					a.textContent = build;
+					const replace = MarkDown.safeLink(a, build, this.localuser);
+					if (replace) {
+						a.textContent = replace;
+						a.classList.add("mentionMD");
+					}
 					a.target = "_blank";
+
 					i = j - 1;
 					span.appendChild(a);
 					continue;
@@ -652,8 +658,13 @@ class MarkDown {
 							} else {
 								appendcurrent();
 								const a = document.createElement("a");
-								MarkDown.safeLink(a, build);
-								a.textContent = build;
+								const text = MarkDown.safeLink(a, build, this.localuser);
+								if (text) {
+									a.textContent = text;
+									a.classList.add("mentionMD");
+								} else {
+									a.textContent = build;
+								}
 								a.target = "_blank";
 								span.appendChild(a);
 							}
@@ -974,9 +985,33 @@ class MarkDown {
 		return build;
 	}
 	static readonly trustedDomains = new Set([location.host]);
-	static safeLink(elm: HTMLElement, url: string) {
+	static safeLink(
+		elm: HTMLElement,
+		url: string,
+		localuser: Localuser | null = null,
+	): string | void {
+		if (elm instanceof HTMLAnchorElement) {
+			elm.rel = "noopener noreferrer";
+		}
 		if (URL.canParse(url)) {
 			const Url = new URL(url);
+			if (localuser) {
+				const [_, _2, ...path] = Url.pathname.split("/");
+
+				const guild = localuser.guildids.get(path[0]);
+				const channel = guild?.getChannel(path[1]);
+				if (channel) {
+					const message = isNaN(+path[2]) ? undefined : path[2];
+					elm.onmouseup = (_) => {
+						channel.getHTML(true, true, message);
+					};
+					if (message) {
+						return I18n.messageLink(channel.name);
+					} else {
+						return I18n.channelLink(channel.name);
+					}
+				}
+			}
 			if (elm instanceof HTMLAnchorElement && this.trustedDomains.has(Url.host)) {
 				elm.href = url;
 				elm.target = "_blank";

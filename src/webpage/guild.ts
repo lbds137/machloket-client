@@ -306,6 +306,9 @@ class Guild extends SnowFlake {
 		);
 		//TODO mute guild button
 	}
+	getChannel(id: string) {
+		return this.channels.find((_) => _.id === id);
+	}
 	async findAdmin() {
 		const menu = new Dialog(I18n.guild.admins());
 		menu.options.addText("Loading");
