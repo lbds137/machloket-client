@@ -187,9 +187,12 @@
 		"bio": "關於我：",
 		"permInfo": "權限",
 		"mut": "互助公會",
+		"mutFriends": "共同好友",
 		"joined": "已建立帳號：$1",
 		"joinedMember": "已加入$1：$2"
 	},
+	"channelLink": "# $1",
+	"messageLink": "在 # $1 的訊息",
 	"searchGifs": "搜尋 Tenor",
 	"muteDuration": "取消噤聲：",
 	"channel": {
