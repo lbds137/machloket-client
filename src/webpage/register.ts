@@ -9,8 +9,8 @@ export async function makeRegister(trasparentBg = false, instance = "") {
 	opt.addTitle(I18n.htmlPages.createAccount());
 	const picker = opt.addInstancePicker(
 		(info) => {
-			const api = info.login + (info.login.startsWith("/") ? "/" : "");
-			form.fetchURL = api + "/auth/register";
+			const api = info.login + (info.login.endsWith("/") ? "" : "/");
+			form.fetchURL = api + "auth/register";
 			tosLogic(md);
 		},
 		{instance},

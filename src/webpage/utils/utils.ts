@@ -566,7 +566,13 @@ export async function getapiurls(str: string): Promise<
 					tempurls.login.protocol = protical;
 
 					try {
-						if (!(await fetch(tempurls.api + "/ping")).ok) {
+						if (
+							!(
+								await fetch(
+									tempurls.api + (tempurls.api.toString().endsWith("/") ? "" : "/") + "ping",
+								)
+							).ok
+						) {
 							res(false);
 							menu.hide();
 							return;
