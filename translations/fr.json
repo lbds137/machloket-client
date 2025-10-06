@@ -10,6 +10,7 @@
 			"McDutchie",
 			"Pyschobbens",
 			"Urhixidur",
+			"WillyM",
 			"Wladek92"
 		]
 	},
@@ -20,6 +21,9 @@
 		"stopstream": "Arrêter la diffusion",
 		"joiningStream": "Connexion à la diffusion en cours…"
 	},
+	"favoriteGifs": "Gifs favoris",
+	"recentEmoji": "Emoji récents",
+	"noStickers": "Vous semblez être dans une situation étrange, il n'y a pas d'autocollants à utiliser pour vous!",
 	"readableName": "français",
 	"pinMessage": "Épingler le message",
 	"unableToPin": "Impossible d'épingler le message",
@@ -188,6 +192,7 @@
 		"bio": "À mon sujet :",
 		"permInfo": "Autorisations",
 		"mut": "Guildes mutuelles",
+		"mutFriends": "Amis communs",
 		"joined": "Compte créé : $1",
 		"joinedMember": "A rejoint $1 : $2"
 	},

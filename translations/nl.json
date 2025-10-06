@@ -191,6 +191,8 @@
 		"joined": "Account aangemaakt: $1",
 		"joinedMember": "Toegetreden tot $1: $2"
 	},
+	"channelLink": "# $1",
+	"messageLink": "Bericht in # $1",
 	"searchGifs": "Tenor doorzoeken",
 	"muteDuration": "Ontdempen in:",
 	"channel": {
