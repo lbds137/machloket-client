@@ -3,16 +3,14 @@ import {Channel} from "./channel.js";
 import {Message} from "./message.js";
 import {Localuser} from "./localuser.js";
 import {User} from "./user.js";
-import {channeljson, dirrectjson, memberjson, messagejson} from "./jsontypes.js";
+import {channeljson, dirrectjson, memberjson} from "./jsontypes.js";
 import {Permissions} from "./permissions.js";
 import {SnowFlake} from "./snowflake.js";
 import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
 import {Float, FormError} from "./settings.js";
-import {CustomHTMLDivElement} from "./index.js";
 
 class Direct extends Guild {
-	declare channelids: {[key: string]: Group};
 	channels: Group[];
 	getUnixTime(): number {
 		throw new Error("Do not call this for Direct, it does not make sense");
@@ -20,10 +18,7 @@ class Direct extends Guild {
 	constructor(json: dirrectjson[], owner: Localuser) {
 		super(-1, owner, null);
 		this.message_notifications = 0;
-		this.owner = owner;
-		this.headers = this.localuser.headers;
 		this.channels = [];
-		this.channelids = {};
 		// @ts-ignore it's a hack, but it's a hack that works
 		this.properties = {};
 		this.roles = [];
@@ -33,14 +28,12 @@ class Direct extends Guild {
 		for (const thing of json) {
 			const temp = new Group(thing, this);
 			this.channels.push(temp);
-			this.channelids[temp.id] = temp;
 			this.localuser.channelids.set(temp.id, temp);
 		}
 		this.headchannels = this.channels;
 	}
 	createChannelpac(json: any) {
 		const thischannel = new Group(json, this);
-		this.channelids[thischannel.id] = thischannel;
 		this.channels.push(thischannel);
 		this.localuser.channelids.set(thischannel.id, thischannel);
 		this.sortchannels();
@@ -48,7 +41,7 @@ class Direct extends Guild {
 		return thischannel;
 	}
 	delChannel(json: channeljson) {
-		const channel = this.channelids[json.id];
+		const channel = this.localuser.channelids.get(json.id) as Group;
 		super.delChannel(json);
 		if (channel) {
 			channel.del();
@@ -311,10 +304,10 @@ class Direct extends Guild {
 	giveMember(_member: memberjson) {
 		throw new Error("not a real guild, can't give member object");
 	}
-	getRole(/* ID: string */) {
+	getRole() {
 		return null;
 	}
-	hasRole(/* r: string */) {
+	hasRole() {
 		return false;
 	}
 	isAdmin() {
@@ -392,8 +385,7 @@ class Group extends Channel {
 	}
 	constructor(json: dirrectjson, owner: Direct) {
 		super(-1, owner, json.id);
-		this.owner = owner;
-		this.headers = this.guild.headers;
+
 		this.name = json.recipients[0]?.username;
 
 		const userSet = new Set(json.recipients.map((user) => new User(user, this.localuser)));
@@ -418,6 +410,7 @@ class Group extends Channel {
 		this.updatePosition();
 	}
 	updatePosition() {
+		//TODO see if fake messages break this
 		if (this.lastmessageid) {
 			this.position = SnowFlake.stringToUnixTime(this.lastmessageid);
 		} else {
@@ -443,127 +436,6 @@ class Group extends Channel {
 		};
 
 		return div;
-	}
-	async getHTML(addstate = true, _: boolean | void = undefined, aroundMessage?: string) {
-		if (this.localuser.channelfocus) {
-			this.localuser.channelfocus.collectBox();
-		}
-		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		const md = typebox.markdown;
-		typebox.textContent = this.textSave;
-		md.boxupdate(Infinity);
-		this.localuser.fileExtange(this.files, this.htmls);
-
-		const pinnedM = document.getElementById("pinnedMDiv");
-		if (pinnedM) {
-			if (this.unreadPins()) {
-				pinnedM.classList.add("unreadPin");
-			} else {
-				pinnedM.classList.remove("unreadPin");
-			}
-		}
-
-		const id = ++Channel.genid;
-		if (this.localuser.channelfocus) {
-			this.localuser.channelfocus.infinite.delete();
-		}
-		if (this.guild !== this.localuser.lookingguild) {
-			this.guild.loadGuild();
-		}
-		this.guild.prevchannel = this;
-		this.localuser.channelfocus = this;
-		const prom = this.infinite.delete();
-		if (addstate) {
-			history.pushState(
-				[this.guild_id, this.id, aroundMessage],
-				"",
-				"/channels/" + this.guild_id + "/" + this.id + (aroundMessage ? `/${aroundMessage}` : ""),
-			);
-		}
-		this.localuser.pageTitle("@" + this.name);
-		(document.getElementById("channelTopic") as HTMLElement).setAttribute("hidden", "");
-
-		const loading = document.getElementById("loadingdiv") as HTMLDivElement;
-		Channel.regenLoadingMessages();
-
-		loading.classList.add("loading");
-		this.rendertyping();
-		(document.getElementById("typebox") as HTMLDivElement).contentEditable = "" + true;
-		(document.getElementById("upload") as HTMLElement).style.visibility = "visible";
-		(document.getElementById("typediv") as HTMLElement).style.visibility = "visible";
-		(document.getElementById("typebox") as HTMLDivElement).focus();
-
-		await this.putmessages();
-		await prom;
-		this.localuser.getSidePannel();
-		if (id !== Channel.genid) {
-			return;
-		}
-		this.buildmessages(aroundMessage);
-	}
-	async messageCreate(messagep: {d: messagejson}) {
-		if (this.localuser.channelfocus !== this) {
-			const id = this.nonceMap.get(messagep.d.nonce);
-			if (id) {
-				this.destroyFakeMessage(id);
-			}
-		}
-
-		this.mentions++;
-		const messagez = new Message(messagep.d, this);
-
-		if (this.lastmessageid) {
-			this.idToNext.set(this.lastmessageid, messagez.id);
-			this.idToPrev.set(messagez.id, this.lastmessageid);
-		}
-		this.idToNext.set(messagez.id, undefined);
-		this.lastmessageid = messagez.id;
-
-		if (messagez.author === this.localuser.user) {
-			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
-			this.lastreadmessageid = messagez.id;
-			if (next) {
-				next.generateMessage();
-			}
-		}
-
-		if (messagez.author === this.localuser.user) {
-			this.lastreadmessageid = messagez.id;
-			if (this.myhtml) {
-				this.myhtml.classList.remove("cunread");
-			}
-		} else {
-			if (this.myhtml) {
-				this.myhtml.classList.add("cunread");
-			}
-		}
-		this.unreads();
-		this.updatePosition();
-		this.infinite.addedBottom();
-		this.guild.sortchannels();
-		if (this.myhtml) {
-			const parrent = this.myhtml.parentElement as HTMLElement;
-			parrent.prepend(this.myhtml);
-		}
-		if (this === this.localuser.channelfocus) {
-			if (!this.infinitefocus) {
-				await this.tryfocusinfinate();
-			}
-			await this.infinite.addedBottom();
-		}
-		this.unreads();
-		if (messagez.author === this.localuser.user) {
-			this.mentions = 0;
-			return;
-		}
-		if (this.localuser.lookingguild?.prevchannel === this && document.hasFocus()) {
-			return;
-		}
-		if (this.notification === "all") {
-			this.notify(messagez);
-		} else if (this.notification === "mentions" && messagez.mentionsuser(this.localuser.user)) {
-			this.notify(messagez);
-		}
 	}
 	notititle(message: Message) {
 		return message.author.username;
@@ -617,9 +489,7 @@ class Group extends Channel {
 		} else {
 		}
 	}
-	isAdmin(): boolean {
-		return false;
-	}
+
 	hasPermission(name: string): boolean {
 		return dmPermissions.hasPermission(name);
 	}

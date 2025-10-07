@@ -1230,19 +1230,21 @@ class Guild extends SnowFlake {
 		this.banner = json.banner;
 	}
 	constructor(json: guildjson | -1, owner: Localuser, member: memberjson | User | null) {
+		super(typeof json === "number" ? "@me" : json.id);
+		this.owner = owner;
+		this.perminfo ??= {channels: {}};
+		this.headers = this.owner.headers;
+
 		if (json === -1 || member === null) {
-			super("@me");
 			return;
 		}
 		if (json.stickers.length) {
 			console.log(json.stickers, ":3");
 		}
-		super(json.id);
-		this.owner = owner;
+
 		this.large = json.large;
 		this.member_count = json.member_count;
 		this.emojis = json.emojis || [];
-		this.headers = this.owner.headers;
 		this.channels = [];
 		if (json.properties) {
 			this.properties = json.properties;
@@ -1259,7 +1261,6 @@ class Guild extends SnowFlake {
 		}
 
 		this.message_notifications = 0;
-
 		this.sortRoles();
 		if (member instanceof User) {
 			console.warn(member);
@@ -1278,7 +1279,6 @@ class Guild extends SnowFlake {
 			});
 		}
 
-		this.perminfo ??= {channels: {}};
 		for (const thing of json.channels) {
 			const temp = new Channel(thing, this);
 			this.channels.push(temp);

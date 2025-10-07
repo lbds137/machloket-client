@@ -46,7 +46,7 @@ class Channel extends SnowFlake {
 	children!: Channel[];
 	guild_id!: string;
 	permission_overwrites!: Map<string, Permissions>;
-	permission_overwritesar!: [Role, Permissions][];
+	permission_overwritesar: [Role, Permissions][] = [];
 	topic!: string;
 	nsfw!: boolean;
 	position: number = 0;
@@ -435,13 +435,16 @@ class Channel extends SnowFlake {
 	last_pin_timestamp?: string;
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
+
+		this.owner = owner;
+		this.headers = this.owner.headers;
+
 		if (json === -1) {
 			return;
 		}
 		this.editing;
 		this.type = json.type;
-		this.owner = owner;
-		this.headers = this.owner.headers;
+
 		this.name = json.name;
 		if (json.parent_id) {
 			this.parent_id = json.parent_id;
@@ -452,9 +455,6 @@ class Channel extends SnowFlake {
 		this.permission_overwrites = new Map();
 		this.permission_overwritesar = [];
 		for (const thing of json.permission_overwrites) {
-			if (thing.id === "1182819038095799904" || thing.id === "1182820803700625444") {
-				continue;
-			}
 			if (!this.permission_overwrites.has(thing.id)) {
 				//either a bug in the server requires this, or the API is cursed
 				this.permission_overwrites.set(thing.id, new Permissions(thing.allow, thing.deny));
@@ -2163,15 +2163,16 @@ class Channel extends SnowFlake {
 				return "default";
 		}
 	}
-	fakeMessages = new Map<Message, HTMLElement>();
+	fakeMessages = new WeakMap<Message, HTMLElement>();
 	nonceMap = new Map<string, string>();
 	destroyFakeMessage(id: string) {
 		const message = this.messages.get(id);
 		if (!message) return;
+		message.deleteEvent();
+
 		const div = this.fakeMessages.get(message);
 		div?.remove();
 		this.fakeMessages.delete(message);
-		message.deleteEvent();
 		this.messages.delete(id);
 
 		for (const {url} of message.attachments) {
@@ -2455,12 +2456,6 @@ class Channel extends SnowFlake {
 		if (this.lastmessageid) this.infinite.focus(this.lastmessageid, false, true);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
-		if (this.localuser.channelfocus !== this) {
-			const id = this.nonceMap.get(messagep.d.nonce);
-			if (id) {
-				this.destroyFakeMessage(id);
-			}
-		}
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return;
 		}
@@ -2469,6 +2464,11 @@ class Channel extends SnowFlake {
 		if (this.lastmessageid) {
 			this.idToNext.set(this.lastmessageid, messagez.id);
 			this.idToPrev.set(messagez.id, this.lastmessageid);
+			if (!this.messages.has(this.lastmessageid)) {
+				console.error("something bad happened");
+			}
+		} else {
+			console.error("something bad happened");
 		}
 		if (messagez.mentionsuser(this.localuser.user) && messagez.author !== this.localuser.user) {
 			this.mentions++;

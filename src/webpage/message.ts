@@ -471,6 +471,7 @@ class Message extends SnowFlake {
 		});
 	}
 	deleteEvent() {
+		if (!this.channel.messages.has(this.id)) return;
 		console.log("deleted");
 		if (this.div) {
 			this.div.remove();
@@ -479,8 +480,7 @@ class Message extends SnowFlake {
 		}
 		const prev = this.channel.idToPrev.get(this.id);
 		const next = this.channel.idToNext.get(this.id);
-		this.channel.idToPrev.delete(this.id);
-		this.channel.idToNext.delete(this.id);
+
 		this.channel.messages.delete(this.id);
 		if (prev && next) {
 			this.channel.idToPrev.set(next, prev);
