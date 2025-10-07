@@ -1087,6 +1087,9 @@ class Localuser {
 		if (channel.voice && this.voiceAllowed) {
 			return;
 		}
+		if (guild.id === "@me" && (channel as Group).users.length === 1) {
+			return;
+		}
 		if (list) {
 			const counts = new Map<string, number>();
 			for (const thing of list.d.ops[0].items) {
