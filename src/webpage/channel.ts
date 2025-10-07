@@ -2026,14 +2026,12 @@ class Channel extends SnowFlake {
 				previd = messager.id;
 
 				if (messages.done && i < 99) {
-					console.error(i, "find me :3");
 					this.topid = previd;
 				}
 
 				i++;
 			}
 			if (i < 100) {
-				console.error(i, "find me :3");
 				this.allthewayup = true;
 				if (i === 0) {
 					this.topid = id;
