@@ -47,6 +47,7 @@ class Direct extends Guild {
 			channel.del();
 		}
 	}
+	freindDiv?: HTMLDivElement;
 	getHTML() {
 		const voiceArea = document.getElementById("voiceArea") as HTMLElement;
 		voiceArea.innerHTML = "";
@@ -66,6 +67,7 @@ class Direct extends Guild {
 		const icon = document.createElement("span");
 		icon.classList.add("svgicon", "svg-friends", "space");
 		freindDiv.append(icon);
+		this.freindDiv = freindDiv;
 
 		freindDiv.append(I18n.getTranslation("friends.friends"));
 		ddiv.append(freindDiv);
@@ -79,6 +81,9 @@ class Direct extends Guild {
 	noChannel(addstate: boolean) {
 		if (addstate) {
 			history.pushState([this.id, undefined], "", "/channels/" + this.id);
+		}
+		if (this.freindDiv) {
+			this.freindDiv.classList.add("viewChannel");
 		}
 		this.localuser.pageTitle(I18n.getTranslation("friends.friendlist"));
 		const channelTopic = document.getElementById("channelTopic") as HTMLSpanElement;

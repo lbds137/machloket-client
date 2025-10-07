@@ -1501,6 +1501,10 @@ span.instanceStatus {
 	cursor: pointer;
 	flex-shrink: 0;
 	margin-bottom: 4px;
+	transition: background 0.2s;
+	&.viewChannel {
+		background: #00000050;
+	}
 }
 .memberListStyle {
 	span {
@@ -3517,7 +3521,6 @@ fieldset input[type="radio"] {
 }
 .friendsbutton {
 	transition: background-color 0.2s;
-	background-color: #00000050;
 	padding: 0.08in;
 }
 .bigemoji {

@@ -29,6 +29,7 @@ import {webhookMenu} from "./webhooks.js";
 import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
+import {Direct} from "./direct.js";
 
 declare global {
 	interface NotificationOptions {
@@ -1573,6 +1574,9 @@ class Channel extends SnowFlake {
 		typebox.textContent = "";
 	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
+		if (this.owner instanceof Direct) {
+			this.owner.freindDiv?.classList.remove("viewChannel");
+		}
 		if (this.localuser.channelfocus) {
 			this.localuser.channelfocus.collectBox();
 		}
