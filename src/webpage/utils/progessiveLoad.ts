@@ -1,7 +1,7 @@
 export class ProgressiveArray {
 	read?: ReadableStreamDefaultReader<Uint8Array>;
 	controller: AbortController;
-	cbuff? = new Uint8Array(0);
+	cbuff?: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
 	index = 0;
 	sizeLeft = 0;
 	ready: Promise<void>;
