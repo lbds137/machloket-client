@@ -581,6 +581,12 @@ class Channel extends SnowFlake {
 		) {
 			lastreadmessage = SnowFlake.stringToUnixTime(this.lastreadmessageid);
 		}
+		if (this.guild.member) {
+			const joinedAt = new Date(this.guild.member.joined_at).getTime();
+			if (!lastreadmessage || lastreadmessage < joinedAt) {
+				lastreadmessage = joinedAt;
+			}
+		}
 		let lastmessage = this.lastmessage?.getTimeStamp();
 		if (lastmessage === undefined && this.lastmessageid && !isNaN(+this.lastmessageid)) {
 			lastmessage = SnowFlake.stringToUnixTime(this.lastmessageid);
