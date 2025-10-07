@@ -1958,6 +1958,13 @@ class Channel extends SnowFlake {
 			if (i === 0) {
 				this.idToNext.set(id, undefined);
 			}
+			{
+				const res = this.afterProms.get(previd);
+				if (res) {
+					res();
+					this.beforeProms.delete(previd);
+				}
+			}
 			res();
 			this.afterProm = undefined;
 			if (this.afterProms.size !== 0) {
@@ -2031,6 +2038,13 @@ class Channel extends SnowFlake {
 				if (i === 0) {
 					this.topid = id;
 					this.idToPrev.set(id, undefined);
+				}
+			}
+			{
+				const res = this.beforeProms.get(previd);
+				if (res) {
+					res();
+					this.beforeProms.delete(previd);
 				}
 			}
 			this.beforeProm = undefined;
