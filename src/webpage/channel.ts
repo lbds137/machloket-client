@@ -30,6 +30,7 @@ import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
+import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 
 declare global {
 	interface NotificationOptions {
@@ -1907,100 +1908,139 @@ class Channel extends SnowFlake {
 		}
 		this.children = build;
 	}
+	afterProm?: Promise<void>;
+	afterProms = new Map<string, () => void>();
 	async grabAfter(id: string) {
 		if (id === this.lastmessage?.id) {
 			return;
 		}
+		if (this.afterProm) return this.afterProm;
 		let tempy: string | undefined = id;
 		while (tempy && tempy.includes("fake")) {
 			tempy = this.idToNext.get(tempy);
 		}
 		if (!tempy) return;
 		id = tempy;
-		await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id, {
-			headers: this.headers,
-		})
-			.then((j) => {
-				return j.json();
-			})
-			.then((response) => {
-				if (response.length === 0) {
-					this.idToNext.set(id, undefined);
+		this.afterProm = new Promise(async (res) => {
+			const messages = await ProgessiveDecodeJSON<messagejson[]>(
+				this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id,
+				{
+					headers: this.headers,
+				},
+			);
+			let i = 0;
+			let previd: string = id;
+			for await (const obj of messages) {
+				let messager: Message;
+				const response = await obj.getWhole();
+				let willbreak = false;
+				if (this.messages.has(response.id)) {
+					messager = this.messages.get(response.id) as Message;
+					willbreak = true;
+				} else {
+					messager = new Message(response, this);
 				}
-				let previd: string = id;
-				for (const i in response) {
-					let messager: Message;
-					let willbreak = false;
-					if (this.messages.has(response[i].id)) {
-						messager = this.messages.get(response[i].id) as Message;
-						willbreak = true;
-					} else {
-						messager = new Message(response[i], this);
-					}
-					this.idToPrev.set(messager.id, previd);
-					this.idToNext.set(previd, messager.id);
-					previd = messager.id;
-					if (willbreak) {
-						break;
-					}
+				this.idToPrev.set(messager.id, previd);
+				this.idToNext.set(previd, messager.id);
+
+				const res = this.afterProms.get(previd);
+				if (res) {
+					res();
+					this.beforeProms.delete(previd);
 				}
-				//out.buildmessages();
-			});
+
+				previd = messager.id;
+				if (willbreak) {
+					break;
+				}
+				i++;
+			}
+			if (i === 0) {
+				this.idToNext.set(id, undefined);
+			}
+			res();
+			this.afterProm = undefined;
+			if (this.afterProms.size !== 0) {
+				const [id] = this.afterProms.entries().next().value as [string, () => void];
+				this.grabAfter(id);
+			}
+		});
+		return new Promise<void>((res) => this.afterProms.set(id, res));
 	}
 	async getArround(id: string) {
 		this.grabBefore(id);
 		this.grabAfter(id);
 	}
 	topid!: string;
+	beforeProm?: Promise<void>;
+	beforeProms = new Map<string, () => void>();
 	async grabBefore(id: string) {
+		if (this.beforeProm) return this.beforeProm;
 		if (this.topid && id === this.topid) {
 			return;
 		}
-		let tempy: string | undefined = id;
-		while (tempy && tempy.includes("fake")) {
-			tempy = this.idToPrev.get(tempy);
-		}
-		if (!tempy) return;
-		id = tempy;
-
-		await fetch(this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100", {
-			headers: this.headers,
-		})
-			.then((j) => {
-				return j.json();
-			})
-			.then((response: messagejson[]) => {
-				if (response.length < 100) {
-					this.allthewayup = true;
-					if (response.length === 0) {
-						this.topid = id;
-						this.idToPrev.set(id, undefined);
-					}
+		this.beforeProm = new Promise<void>(async (res) => {
+			let tempy: string | undefined = id;
+			while (tempy && tempy.includes("fake")) {
+				tempy = this.idToPrev.get(tempy);
+			}
+			if (!tempy) {
+				res();
+				return;
+			}
+			id = tempy;
+			const messages = await ProgessiveDecodeJSON<messagejson[]>(
+				this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100",
+				{
+					headers: this.headers,
+				},
+			);
+			let previd = id;
+			let i = 0;
+			for await (const messageProm of messages) {
+				const response = await messageProm.getWhole();
+				let messager: Message;
+				if (this.messages.has(response.id)) {
+					console.log("flaky");
+					messager = this.messages.get(response.id) as Message;
+				} else {
+					messager = new Message(response, this);
 				}
-				let previd = id;
-				for (const i in response) {
-					let messager: Message;
-					let willbreak = false;
-					if (this.messages.has(response[i].id)) {
-						console.log("flaky");
-						messager = this.messages.get(response[i].id) as Message;
-						willbreak = true;
-					} else {
-						messager = new Message(response[i], this);
-					}
 
-					this.idToNext.set(messager.id, previd);
-					this.idToPrev.set(previd, messager.id);
-					previd = messager.id;
+				this.idToNext.set(messager.id, previd);
+				this.idToPrev.set(previd, messager.id);
 
-					if (Number(i) === response.length - 1 && response.length < 100) {
-						this.topid = previd;
-					}
-					if (willbreak) {
-						break;
-					}
+				const res = this.beforeProms.get(previd);
+				if (res) {
+					res();
+					this.beforeProms.delete(previd);
 				}
-			});
+
+				previd = messager.id;
+
+				if (messages.done && i < 99) {
+					console.error(i, "find me :3");
+					this.topid = previd;
+				}
+
+				i++;
+			}
+			if (i < 100) {
+				console.error(i, "find me :3");
+				this.allthewayup = true;
+				if (i === 0) {
+					this.topid = id;
+					this.idToPrev.set(id, undefined);
+				}
+			}
+			this.beforeProm = undefined;
+			res();
+			if (this.beforeProms.size !== 0) {
+				const [id] = this.beforeProms.entries().next().value as [string, () => void];
+				this.grabBefore(id);
+			}
+		});
+		return new Promise<void>((res) => this.beforeProms.set(id, res));
 	}
 	async buildmessages(id: string | void) {
 		this.infinitefocus = false;

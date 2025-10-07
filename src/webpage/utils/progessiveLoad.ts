@@ -191,6 +191,11 @@ class ArrayProgressive<T, X extends Array<T>> {
 
 		return ret;
 	}
+	async *[Symbol.asyncIterator]() {
+		while (!this.done) {
+			yield await this.getNext();
+		}
+	}
 	/**
 	 * this only gets what's left, not everything
 	 */

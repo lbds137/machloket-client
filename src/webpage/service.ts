@@ -123,6 +123,9 @@ self.addEventListener("fetch", (e) => {
 	if (event.request.method === "POST") {
 		return;
 	}
+	if (new URL(event.request.url).pathname.startsWith("/api/")) {
+		return;
+	}
 	try {
 		event.respondWith(getfile(event));
 	} catch (e) {
