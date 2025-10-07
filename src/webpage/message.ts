@@ -32,7 +32,7 @@ class Message extends SnowFlake {
 		message_id: string;
 	};
 	type!: number;
-	timestamp!: number;
+	private timestamp!: number | string;
 	content!: MarkDown;
 	static del: Promise<void>;
 	static resolve: Function;
@@ -53,6 +53,9 @@ class Message extends SnowFlake {
 	member: Member | undefined;
 	reactions!: messagejson["reactions"];
 	pinned!: boolean;
+	getTimeStamp() {
+		return new Date(this.timestamp).getTime();
+	}
 	static setup() {
 		this.del = new Promise((_) => {
 			this.resolve = _;

@@ -187,13 +187,14 @@ class Localuser {
 	}
 	onswap?: (l: Localuser) => void;
 	constructor(userinfo: Specialuser | -1) {
+		const events = ["click", "keydown", "touchstart"] as const;
 		const func = () => {
 			Play.playURL("/audio/sounds.jasf").then((_) => {
 				this.play = _;
 			});
-			document.removeEventListener("click", func);
+			events.forEach((event) => document.removeEventListener(event, func));
 		};
-		document.addEventListener("click", func);
+		events.forEach((event) => document.addEventListener(event, func));
 		//TODO get rid of this garbage
 		if (userinfo === -1) {
 			this.rights = new Rights("");
@@ -1645,7 +1646,7 @@ class Localuser {
 		serverlist.appendChild(br);
 		const guilds = new Set(this.guilds);
 		const dirrect = this.guilds.find((_) => _ instanceof Direct) as Direct;
-		dirrect.unreaddms();
+
 		guilds.delete(dirrect);
 		const folders = this.guildFolders
 			.map((folder) => {
@@ -1720,6 +1721,7 @@ class Localuser {
 			});
 		}
 		this.unreads();
+		dirrect.unreaddms();
 	}
 	passTemplateID(id: string) {
 		this.createGuild(id);

@@ -3,7 +3,7 @@ import {Channel} from "./channel.js";
 import {Message} from "./message.js";
 import {Localuser} from "./localuser.js";
 import {User} from "./user.js";
-import {channeljson, dirrectjson, memberjson} from "./jsontypes.js";
+import {channeljson, dirrectjson, memberjson, readyjson} from "./jsontypes.js";
 import {Permissions} from "./permissions.js";
 import {SnowFlake} from "./snowflake.js";
 import {Contextmenu} from "./contextmenu.js";
@@ -406,6 +406,7 @@ class Group extends Channel {
 			this.lastmessageid = undefined;
 		}
 		this.mentions = 0;
+
 		this.setUpInfiniteScroller();
 		this.updatePosition();
 	}
@@ -440,12 +441,18 @@ class Group extends Channel {
 	notititle(message: Message) {
 		return message.author.username;
 	}
+	readStateInfo(json: readyjson["d"]["read_state"]["entries"][0]): void {
+		super.readStateInfo(json);
+		if (this.lastmessageid !== this.lastreadmessageid && this.mentions === 0) {
+			this.mentions++;
+		}
+	}
 	readbottom() {
 		super.readbottom();
 		this.unreads();
 	}
 	all: WeakRef<HTMLElement> = new WeakRef(document.createElement("div"));
-	noti: WeakRef<HTMLElement> = new WeakRef(document.createElement("div"));
+	noti?: WeakRef<HTMLElement>;
 	del() {
 		const all = this.all.deref();
 		if (all) {
@@ -460,7 +467,7 @@ class Group extends Channel {
 		const current = this.all.deref();
 		if (this.hasunreads) {
 			{
-				const noti = this.noti.deref();
+				const noti = this.noti?.deref();
 				if (noti) {
 					noti.textContent = this.mentions + "";
 					return;

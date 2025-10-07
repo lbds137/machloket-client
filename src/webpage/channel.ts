@@ -572,7 +572,8 @@ class Channel extends SnowFlake {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return false;
 		}
-		let lastreadmessage = this.messages.get(this.lastreadmessageid as string)?.timestamp;
+		if (this.mentions) return true;
+		let lastreadmessage = this.messages.get(this.lastreadmessageid as string)?.getTimeStamp();
 		if (
 			lastreadmessage === undefined &&
 			this.lastreadmessageid &&
@@ -580,7 +581,7 @@ class Channel extends SnowFlake {
 		) {
 			lastreadmessage = SnowFlake.stringToUnixTime(this.lastreadmessageid);
 		}
-		let lastmessage = this.lastmessage?.timestamp;
+		let lastmessage = this.lastmessage?.getTimeStamp();
 		if (lastmessage === undefined && this.lastmessageid && !isNaN(+this.lastmessageid)) {
 			lastmessage = SnowFlake.stringToUnixTime(this.lastmessageid);
 		}
@@ -2464,9 +2465,6 @@ class Channel extends SnowFlake {
 		if (this.lastmessageid) {
 			this.idToNext.set(this.lastmessageid, messagez.id);
 			this.idToPrev.set(messagez.id, this.lastmessageid);
-			if (!this.messages.has(this.lastmessageid)) {
-				console.error("something bad happened");
-			}
 		} else {
 			console.error("something bad happened");
 		}
@@ -2518,6 +2516,8 @@ class Channel extends SnowFlake {
 	notify(message: Message, deep = 0) {
 		if (this.localuser.play) {
 			this.localuser.playSound();
+		} else {
+			console.warn("no play 3:");
 		}
 		if ("Notification" in window && Notification.permission === "granted") {
 			if (message.author.relationshipType == 2) {
