@@ -250,7 +250,7 @@ document.addEventListener("paste", async (e: ClipboardEvent) => {
 	for (const file of Array.from(e.clipboardData.files)) {
 		const fileInstance = File.initFromBlob(file);
 		e.preventDefault();
-		const html = fileInstance.upHTML(images, file);
+		const html = fileInstance.upHTML(images, imagesHtml, file);
 		pasteImageElement.appendChild(html);
 		images.push(file);
 		imagesHtml.set(file, html);
@@ -320,7 +320,7 @@ document.addEventListener("drop", (e) => {
 			console.log(data.files);
 			for (const file of Array.from(data.files)) {
 				const fileInstance = File.initFromBlob(file);
-				const html = fileInstance.upHTML(images, file);
+				const html = fileInstance.upHTML(images, imagesHtml, file);
 				pasteImageElement.appendChild(html);
 				images.push(file);
 				imagesHtml.set(file, html);
@@ -344,7 +344,7 @@ pinnedM.onclick = (e) => {
 		if (input.files) {
 			for (const file of Array.from(input.files)) {
 				const fileInstance = File.initFromBlob(file);
-				const html = fileInstance.upHTML(images, file);
+				const html = fileInstance.upHTML(images, imagesHtml, file);
 				pasteImageElement.appendChild(html);
 				images.push(file);
 				imagesHtml.set(file, html);

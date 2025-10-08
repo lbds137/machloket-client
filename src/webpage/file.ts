@@ -166,7 +166,7 @@ class File {
 		const src = this.proxy_url || this.url;
 		return makePlayBox(src, player, 0, url);
 	}
-	upHTML(files: Blob[], file: globalThis.File): HTMLElement {
+	upHTML(files: Blob[], map: WeakMap<Blob, HTMLElement>, file: globalThis.File): HTMLElement {
 		const div = document.createElement("div");
 		let contained = this.getHTML(true, false, file.name.startsWith("SPOILER_"));
 		div.classList.add("containedFile");
@@ -206,6 +206,7 @@ class File {
 				sicon.classList.add("svg-unspoiler");
 				sicon.classList.remove("svg-spoiler");
 			}
+			map.set(file, div);
 			contained.remove();
 			contained = this.getHTML(true, false, file.name.startsWith("SPOILER_"));
 			div.append(contained);
