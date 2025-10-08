@@ -895,19 +895,22 @@ textarea {
 	border-radius: 0.05in;
 	transform: translate(-50%, 0);
 
-	animation-duration: 0.2s;
-	animation-name: fade-in;
+	animation-duration: 0.1s;
+	animation-name: fade-in-hover;
+	animation-timing-function: ease-out;
 
-	border: solid 0.03in var(--black);
+	border: solid 0.03in var(--dock-bg);
 	z-index: 200;
 }
-@keyframes fade-in {
+@keyframes fade-in-hover {
 	from {
 		opacity: 0;
+		transform: translate(-50%, 0) scale(0.9) translateY(-10px);
 	}
 
 	to {
 		opacity: 1;
+		transform: translate(-50%, 0);
 	}
 }
 .editMessage {
@@ -2489,16 +2492,13 @@ img.bigembedimg {
 		animation-duration: 0.2s;
 		animation-name: fade-in;
 		animation-fill-mode: forwards;
-		animation-timing-function: ease-in-out;
+		animation-timing-function: cubic-bezier(0.28, 0.48, 0.24, 1.27);
 	}
 }
 @keyframes fade-in {
 	0% {
 		transform: translateY(30px);
 		opacity: 0;
-	}
-	80% {
-		opacity: 0.6;
 	}
 	100% {
 		transform: translateY(0);
@@ -2754,6 +2754,8 @@ ul {
 	align-items: center;
 	justify-content: center;
 
+	animation-name: bg-fade;
+	animation-duration: 0.2s;
 	> * {
 		animation-duration: 0.2s;
 		animation-name: fade-in-back-settings;
@@ -2761,7 +2763,15 @@ ul {
 			animation-name: fade-in-back;
 		}
 		animation-fill-mode: forwards;
-		animation-timing-function: ease-in-out;
+		animation-timing-function: ease-out;
+	}
+}
+@keyframes bg-fade {
+	0% {
+		background: transparent;
+	}
+	100% {
+		background: color-mix(in srgb, var(--black) 75%, transparent);
 	}
 }
 @keyframes fade-in-back-settings {
@@ -3829,7 +3839,6 @@ img.error::after {
 		max-width: 32px !important;
 		max-height: 32px !important;
 		flex-shrink: 0;
-		font-size: 28px;
 	}
 }
 .emptyEmoji {
