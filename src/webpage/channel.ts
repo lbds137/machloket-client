@@ -1946,7 +1946,7 @@ class Channel extends SnowFlake {
 				const res = this.afterProms.get(previd);
 				if (res) {
 					res();
-					this.beforeProms.delete(previd);
+					this.afterProms.delete(previd);
 				}
 
 				previd = messager.id;
@@ -1975,8 +1975,12 @@ class Channel extends SnowFlake {
 		return new Promise<void>((res) => this.afterProms.set(id, res));
 	}
 	async getArround(id: string) {
-		this.grabBefore(id);
-		this.grabAfter(id);
+		if (!this.messages.has(id)) {
+			await this.getmessage(id);
+		} else {
+			console.log("have " + id);
+		}
+		await Promise.all([this.grabBefore(id), this.grabAfter(id)]);
 	}
 	topid!: string;
 	beforeProm?: Promise<void>;
@@ -2060,6 +2064,7 @@ class Channel extends SnowFlake {
 	}
 	infinitefocus = false;
 	async tryfocusinfinate(id: string | void, falsh = false) {
+		if (typeof id === "string" && !this.messages.has(id)) await this.getmessage(id);
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
 		const messages = document.getElementById("scrollWrap") as HTMLDivElement;

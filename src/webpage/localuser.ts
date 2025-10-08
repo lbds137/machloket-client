@@ -2317,7 +2317,6 @@ class Localuser {
 							password: true,
 						});
 						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
-						debugger;
 						form.setValue("secret", secret);
 					});
 				}

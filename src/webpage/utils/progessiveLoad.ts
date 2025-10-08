@@ -72,7 +72,11 @@ export class ProgressiveArray {
 		this.backChar = char;
 	}
 	close() {
-		this.controller.abort();
+		try {
+			this.controller.abort();
+		} catch {
+			//Ignore error when trying to close after it was closed
+		}
 	}
 }
 
