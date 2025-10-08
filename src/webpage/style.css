@@ -906,6 +906,7 @@ textarea {
 	from {
 		opacity: 0;
 		transform: translate(-50%, 0) scale(0.9) translateY(-10px);
+		user-select: none;
 	}
 
 	to {
