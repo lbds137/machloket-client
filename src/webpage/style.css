@@ -2785,6 +2785,21 @@ ul {
 		opacity: 1;
 	}
 }
+.bgRemove {
+	animation-duration: 0.2s;
+	animation-name: bg-out;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease-out;
+}
+@keyframes bg-out {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: scale(1.1);
+	}
+}
 @keyframes fade-in-back {
 	0% {
 		opacity: 0;
@@ -3080,6 +3095,7 @@ fieldset input[type="radio"] {
 		opacity: 0;
 	}
 }
+
 .titlediv {
 	height: 100%;
 }

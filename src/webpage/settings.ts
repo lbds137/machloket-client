@@ -2122,7 +2122,11 @@ class Settings extends Buttons {
 	}
 	hide() {
 		if (this.html) {
-			this.html.remove();
+			const html = this.html;
+			html.classList.add("bgRemove");
+			html.addEventListener("animationend", (e: AnimationEvent) => {
+				if (e.animationName === "bg-out") html.remove();
+			});
 			this.html = null;
 		}
 	}
