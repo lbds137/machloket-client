@@ -2754,8 +2754,9 @@ ul {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-
-	animation-name: bg-fade;
+	&:not(.menu) {
+		animation-name: bg-fade;
+	}
 	animation-duration: 0.2s;
 	> * {
 		animation-duration: 0.2s;
