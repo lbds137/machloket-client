@@ -135,6 +135,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
 		}
 		if (thisUser.channelfocus) {
+			thisUser.channelfocus?.replyingto?.div?.classList.remove("replying");
 			thisUser.channelfocus.replyingto = null;
 			thisUser.channelfocus.makereplybox();
 		}
