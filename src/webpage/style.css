@@ -894,6 +894,7 @@ textarea {
 	padding: 0.04in;
 	border-radius: 0.05in;
 	transform: translate(-50%, 0);
+	pointer-events: none;
 
 	animation-duration: 0.1s;
 	animation-name: fade-in-hover;
