@@ -13,11 +13,15 @@
 		"stopstream": "Interromper transmissão",
 		"joiningStream": "Juntando-se a transmissão..."
 	},
+	"favoriteGifs": "Gifs Favoritos",
+	"recentEmoji": "Emojis Recentes",
+	"noStickers": "Isso é meio estranho, não tem nenhum adesivo aqui para usar!",
 	"readableName": "Português do Brasil",
 	"pinMessage": "Fixar mensagem",
 	"unableToPin": "Não foi possível fixar a mensagem",
 	"reply": "Responder",
 	"copyrawtext": "Copiar texto bruto",
+	"copyLink": "Copiar link da mensagem",
 	"copymessageid": "Copiar ID da mensagem",
 	"media": {
 		"notFound": "Não foi possível encontrar a mídia",
@@ -31,7 +35,8 @@
 	"blog": {
 		"blog": "Blogue",
 		"wantUpdates": "Você gostaria de receber atualizações semanais do blog sobre o estado do Fermi?",
-		"blogUpdates": "Atualizações do blog:"
+		"blogUpdates": "Atualizações do blog:",
+		"gotoPost": "Ir ao post"
 	},
 	"logout": {
 		"logout": "Encerrar a sessão",
@@ -183,10 +188,14 @@
 		"bio": "Sobre mim:",
 		"permInfo": "Permissões",
 		"mut": "Guildas mútuas",
+		"mutFriends": "Amigos mútuos",
 		"joined": "Conta criada em: $1",
 		"joinedMember": "Entrou em $1 em: $2"
 	},
+	"channelLink": "# $1",
+	"messageLink": "Mensageie # $1",
 	"searchGifs": "Pesquisar no Tenor",
+	"muteDuration": "Dessilenciar em:",
 	"channel": {
 		"creating": "Criando canal",
 		"name": "Canal",
@@ -198,6 +207,8 @@
 		"settingsFor": "Configurações para $1",
 		"voice": "Voz",
 		"text": "Texto",
+		"mute": "Silenciar Canal",
+		"unmute": "Dessilenciar Canal",
 		"announcement": "Anúncios",
 		"name:": "Nome:",
 		"topic:": "Tópico:",
@@ -209,6 +220,24 @@
 		"createCatagory": "Criar categoria",
 		"permissions": "Permissões"
 	},
+	"Voice": {
+		"status": {
+			"done": "Conectado",
+			"notconnected": "Não conectado",
+			"sendingStreams": "Enviando audio",
+			"conectionFailed": "Conexão falhou",
+			"makingOffer": "Fazendo oferta",
+			"startingRTC": "Conectando ao RTC",
+			"noSDP": "Sem SDP",
+			"waitingMainWS": "Esperando pelo WS principal",
+			"badWS": "Resposta ruim do WS",
+			"waitingURL": "Esperando pela URL de voz",
+			"wsOpen": "Esperando o WS abrir",
+			"wsAuth": "Esperando autorização do WS",
+			"left": "Saiu do canal de voz"
+		}
+	},
+	"usedFermi": "Usou Fermi",
 	"delete": "Apagar",
 	"webhooks": {
 		"createdAt": "Criado em $1",
@@ -319,6 +348,7 @@
 		"copyId": "Copiar id da guilda",
 		"markRead": "Marcar como lida",
 		"notifications": "Notificações",
+		"mute": "Silenciar Guilda",
 		"leave": "Sair da guilda",
 		"settings": "Configurações",
 		"delete": "Apagar guilda",
@@ -371,7 +401,14 @@
 		"delete": "Apagar cargo",
 		"confirmDelete": "Tem certeza de que quer apagar $1?",
 		"roleEmoji": "Emoji do cargo:",
-		"roleFileIcon": "Ícone do cargo:"
+		"roleFileIcon": "Ícone do cargo:",
+		"deleting": "Apagando cargo..."
+	},
+	"folder": {
+		"name": "Nome da pasta:",
+		"color": "Cor da pasta:",
+		"create": "Criar nova pasta",
+		"edit": "Editar pasta"
 	},
 	"settings": {
 		"unsaved": "Cuidado, você tem mudanças que não foram salvas",
@@ -496,6 +533,7 @@
 	"noPins": "Parece que não tem nada aqui... ainda",
 	"message": {
 		"reactionAdd": "Adicionar reação",
+		"reactions": "Ver Reações",
 		"delete": "Excluir mensagem",
 		"edit": "Editar mensagem",
 		"edited": "editado",
@@ -504,7 +542,8 @@
 		"retry": "Reenviar mensagem com erro",
 		"pin": "$1 fixou uma mensagem",
 		"viewrest": "Ver o resto",
-		"fullMessage": "Mensagem completa:"
+		"fullMessage": "Mensagem completa:",
+		"reactionsTitle": "Reações"
 	},
 	"instanceStats": {
 		"name": "Informações da Instância: $1",

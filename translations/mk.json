@@ -190,6 +190,8 @@
 		"joined": "Направена сметка: $1",
 		"joinedMember": "Се придружи на $1: $2"
 	},
+	"channelLink": "бр. $1",
+	"messageLink": "Порака во бр. $1",
 	"searchGifs": "Пребарај по Тенор",
 	"muteDuration": "Вклучи звук во:",
 	"channel": {
