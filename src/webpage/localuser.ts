@@ -360,6 +360,8 @@ class Localuser {
 		}
 
 		this.pingEndpoint();
+
+		this.generateFavicon();
 	}
 	inrelation = new Set<User>();
 	outoffocus(): void {
@@ -901,6 +903,7 @@ class Localuser {
 					console.warn("Unhandled case " + temp.t, temp);
 				}
 			}
+			this.generateFavicon();
 		} else if (temp.op === 10) {
 			if (!this.ws) return;
 			console.log("heartbeat down");
@@ -1934,6 +1937,67 @@ class Localuser {
 			const html = this.guildhtml.get(thing.id);
 			thing.unreads(html);
 		}
+	}
+	static favC = document.createElement("canvas");
+	static favCTX = this.favC.getContext("2d") as CanvasRenderingContext2D;
+	static favImg = this.getFaviconImg();
+	static getFaviconImg() {
+		const img = document.createElement("img");
+		img.src = "/logo.webp";
+		return img;
+	}
+	last = "-1";
+	generateFavicon() {
+		const make = () => {
+			const favicon = document.getElementById("favicon") as HTMLLinkElement;
+
+			let text = this.totalMentions() + "";
+			if (this.last === text) return;
+			this.last = text;
+			if (text === "0") {
+				favicon.href = "/favicon.ico";
+				return;
+			}
+			if (+text > 99) text = "+99";
+
+			const c = Localuser.favC;
+			c.width = 256;
+			c.height = 256;
+			const ctx = Localuser.favCTX;
+			ctx.drawImage(Localuser.favImg, 0, 0, c.width, c.height);
+			ctx.fillStyle = "#F00";
+			const pos = 0.675;
+
+			ctx.beginPath();
+			ctx.arc(c.width * pos, c.height * pos, c.width * (1 - pos), 0, 2 * Math.PI);
+			ctx.fill();
+
+			ctx.fillStyle = "#FFF";
+
+			ctx.font = `bolder ${text.length === 1 ? 150 : 100}px sans-serif`;
+
+			const messure = ctx.measureText(text);
+			const height = messure.fontBoundingBoxAscent + messure.fontBoundingBoxDescent;
+			ctx.fillText(text, c.width * pos - messure.width / 2, c.height * pos + height / 2 - 25);
+
+			favicon.href = c.toDataURL("image/x-icon");
+		};
+		if (Localuser.favImg.complete) {
+			make();
+		}
+		Localuser.favImg.onload = () => {
+			make();
+		};
+	}
+	totalMentions() {
+		let sum = 0;
+		for (const guild of this.guilds) {
+			sum += guild.mentions;
+		}
+		for (const channel of (this.guildids.get("@me") as Direct).channels) {
+			sum += channel.mentions;
+		}
+		return sum;
 	}
 	async typingStart(typing: startTypingjson): Promise<void> {
 		const channel = this.channelids.get(typing.d.channel_id);
