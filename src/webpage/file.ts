@@ -59,19 +59,25 @@ class File {
 			if (!fullScreen) {
 				img.classList.add("messageimg");
 				div.classList.add("messageimgdiv");
+				img.onclick = () => {
+					if (this.owner) {
+						const full = new ImagesDisplay(
+							this.owner.attachments,
+							this.owner.attachments.indexOf(this),
+						);
+						full.show();
+					} else {
+						const full = new ImagesDisplay([this]);
+						full.show();
+					}
+				};
+			} else {
+				img.onclick = (e) => {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+				};
 			}
-			img.onclick = () => {
-				if (this.owner) {
-					const full = new ImagesDisplay(
-						this.owner.attachments,
-						this.owner.attachments.indexOf(this),
-					);
-					full.show();
-				} else {
-					const full = new ImagesDisplay([this]);
-					full.show();
-				}
-			};
+
 			if (url)
 				url.then((src) => {
 					img.setSrcs(src);
