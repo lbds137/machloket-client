@@ -3647,7 +3647,6 @@ fieldset input[type="radio"] {
 		padding: 0.06in 0.1in;
 		border-radius: 0.1in;
 		border: solid 1px var(--black);
-		flex-shrink: 1;
 	}
 }
 .fixedsearch {
