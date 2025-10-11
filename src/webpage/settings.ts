@@ -878,6 +878,13 @@ class Dialog {
 				removeAni(background);
 			}
 		};
+		background.tabIndex = 0;
+		background.focus();
+		background.onkeydown = (e) => {
+			if (e.key === "Escape" && hideOnClick) {
+				removeAni(background);
+			}
+		};
 		return center;
 	}
 	hide() {

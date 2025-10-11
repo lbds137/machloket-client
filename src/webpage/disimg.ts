@@ -72,6 +72,11 @@ class ImagesDisplay {
 		this.background.onclick = (_) => {
 			this.hide();
 		};
+		this.background.onkeydown = (e) => {
+			if (e.key === "Escape") {
+				this.hide();
+			}
+		};
 		document.body.append(this.background);
 		this.background.setAttribute("tabindex", "0");
 		this.background.focus();
