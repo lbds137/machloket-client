@@ -81,7 +81,7 @@ class InfiniteScroller {
 			func();
 		}).observe(scroll);
 
-		new ResizeObserver(this.watchForChange.bind(this)).observe(scroll);
+		new ResizeObserver(() => this.watchForChange()).observe(scroll);
 
 		await this.firstElement(initialId);
 		this.updatestuff();
@@ -196,6 +196,16 @@ class InfiniteScroller {
 				this.div.prepend(fragment, fragment);
 			}
 		}
+	}
+	deleteId(id: string) {
+		this.HTMLElements = this.HTMLElements.filter(([elm, elmid]) => {
+			if (id === elmid) {
+				elm.remove();
+				return false;
+			} else {
+				return true;
+			}
+		});
 	}
 
 	async watchForBottom(already = false, fragment = new DocumentFragment()): Promise<boolean> {

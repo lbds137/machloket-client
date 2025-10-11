@@ -476,6 +476,7 @@ class Message extends SnowFlake {
 	deleteEvent() {
 		if (!this.channel.messages.has(this.id)) return;
 		console.log("deleted");
+		this.channel.infinite.deleteId(this.id);
 		if (this.div) {
 			this.div.remove();
 			this.div.innerHTML = "";
