@@ -37,18 +37,18 @@ class Role extends SnowFlake {
 	}
 	getIcon(): HTMLElement | void {
 		const hover = new Hover(this.name);
+		if (this.icon) {
+			const img = createImg(this.info.cdn + "/role-icons/" + this.id + "/" + this.icon + ".webp");
+			img.classList.add("roleIcon");
+			hover.addEvent(img);
+			return img;
+		}
 		if (this.unicode_emoji) {
 			const span = document.createElement("span");
 			span.textContent = this.unicode_emoji;
 			span.classList.add("roleIcon");
 			hover.addEvent(span);
 			return span;
-		}
-		if (this.icon) {
-			const img = createImg(this.info.cdn + "/role-icons/" + this.id + "/" + this.icon + ".webp");
-			img.classList.add("roleIcon");
-			hover.addEvent(img);
-			return img;
 		}
 	}
 	newJson(json: rolesjson) {
