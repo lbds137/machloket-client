@@ -787,7 +787,7 @@ class MarkDown {
 							{name: buildjoin, id: parts[2], animated: Boolean(parts[1])},
 							owner,
 						);
-						span.appendChild(emoji.getHTML(isEmojiOnly));
+						span.appendChild(emoji.getHTML(isEmojiOnly, !keep));
 
 						continue;
 					}

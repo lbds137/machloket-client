@@ -11,7 +11,7 @@ import {I18n} from "./i18n.js";
 import {Direct} from "./direct.js";
 import {Hover} from "./hover.js";
 import {Dialog, Float} from "./settings.js";
-import {createImg} from "./utils/utils.js";
+import {createImg, removeAni} from "./utils/utils.js";
 import {Permissions} from "./permissions.js";
 class User extends SnowFlake {
 	owner: Localuser;
@@ -745,7 +745,9 @@ class User extends SnowFlake {
 		})();
 		const background = document.createElement("div");
 		background.classList.add("background");
-		background.onclick = () => background.remove();
+		background.onclick = () => {
+			removeAni(background);
+		};
 		const div = document.createElement("div");
 		div.onclick = (e) => e.stopImmediatePropagation();
 		div.classList.add("centeritem", "profile");
@@ -940,7 +942,7 @@ class User extends SnowFlake {
 								e.stopImmediatePropagation();
 								e.preventDefault();
 								user.fullProfile(guild);
-								background.remove();
+								removeAni(background);
 							};
 							return html;
 						}),

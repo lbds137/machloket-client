@@ -4,6 +4,7 @@ import {
 	getStringURLMapPair,
 	instancefetch,
 	instanceinfo,
+	removeAni,
 } from "./utils/utils.js";
 import {Emoji} from "./emoji.js";
 import {I18n} from "./i18n.js";
@@ -874,7 +875,7 @@ class Dialog {
 		this.background = new WeakRef(background);
 		background.onclick = (_) => {
 			if (hideOnClick && _.target === background) {
-				background.remove();
+				removeAni(background);
 			}
 		};
 		return center;
@@ -882,7 +883,7 @@ class Dialog {
 	hide() {
 		const background = this.background.deref();
 		if (!background) return;
-		background.remove();
+		removeAni(background);
 	}
 }
 class InstancePicker implements OptionsElement<instanceinfo | null> {

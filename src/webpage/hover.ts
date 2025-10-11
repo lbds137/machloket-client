@@ -3,7 +3,14 @@ import {MarkDown} from "./markdown.js";
 
 class Hover {
 	str: string | MarkDown | (() => Promise<MarkDown | string> | MarkDown | string);
-	constructor(txt: string | MarkDown | (() => Promise<MarkDown | string> | MarkDown | string)) {
+	customHTML?: () => HTMLElement;
+	weak: boolean;
+	constructor(
+		txt: string | MarkDown | (() => Promise<MarkDown | string> | MarkDown | string),
+		{customHTML, weak}: {customHTML?: () => HTMLElement; weak: boolean} = {weak: true},
+	) {
+		this.customHTML = customHTML;
+		this.weak = weak;
 		this.str = txt;
 	}
 	static map = new WeakMap<HTMLElement, () => void>();
@@ -64,28 +71,35 @@ class Hover {
 	async makeHover(elm: HTMLElement) {
 		if (!document.contains(elm)) return document.createElement("div");
 		const div = document.createElement("div");
-		if (this.str instanceof MarkDown) {
-			div.append(this.str.makeHTML());
-		} else if (this.str instanceof Function) {
-			const hover = await this.str();
-			if (hover instanceof MarkDown) {
-				div.append(hover.makeHTML());
-			} else {
-				div.innerText = hover;
-			}
+
+		if (this.customHTML) {
+			div.append(this.customHTML());
 		} else {
-			div.innerText = this.str;
+			if (this.str instanceof MarkDown) {
+				div.append(this.str.makeHTML());
+			} else if (this.str instanceof Function) {
+				const hover = await this.str();
+				if (hover instanceof MarkDown) {
+					div.append(hover.makeHTML());
+				} else {
+					div.innerText = hover;
+				}
+			} else {
+				div.innerText = this.str;
+			}
 		}
+
 		const box = elm.getBoundingClientRect();
 		div.style.top = box.bottom + 4 + "px";
 		div.style.left = Math.floor(box.left + box.width / 2) + "px";
 		div.classList.add("hoverthing");
-		div.addEventListener("mouseover", () => {
-			div.remove();
-		});
+		if (this.weak) {
+			div.addEventListener("mouseover", () => {
+				div.remove();
+			});
+		}
 		document.body.append(div);
 		Contextmenu.keepOnScreen(div);
-		console.log(div, elm);
 		return div;
 	}
 }

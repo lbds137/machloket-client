@@ -462,6 +462,21 @@ type channeljson = {
 	default_thread_rate_limit_per_user: number;
 	position: number;
 };
+export interface emojiSource {
+	type: "GUILD" | "APPLICATION";
+	guild?: {
+		id: string;
+		name: string;
+		icon: string | null;
+		description?: string;
+		features: string[];
+		nsfw: boolean;
+	};
+	application?: {
+		id: string;
+		name: string;
+	};
+}
 type rolesjson = {
 	id: string;
 	guild_id: string;

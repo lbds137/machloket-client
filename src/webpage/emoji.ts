@@ -2,9 +2,10 @@ import {Contextmenu} from "./contextmenu.js";
 import {Guild} from "./guild.js";
 import {Hover} from "./hover.js";
 import {I18n} from "./i18n.js";
-import {emojijson} from "./jsontypes.js";
+import {emojijson, emojiSource} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {BinRead} from "./utils/binaryUtils.js";
+import {removeAni} from "./utils/utils.js";
 
 //I need to recompile the emoji format for translation
 class Emoji {
@@ -49,7 +50,40 @@ class Emoji {
 		}
 		return this.name;
 	}
-	getHTML(bigemoji: boolean = false) {
+	static emojiMap = new WeakMap<Localuser, Map<string, emojiSource | void>>();
+	static async lookupEmoji(id: string, localuser: Localuser): Promise<emojiSource | void> {
+		const guild = localuser.guilds.find((guild) => guild.emojis.find((emoji) => emoji.id === id));
+		if (guild) {
+			return {
+				type: "GUILD",
+				guild: {
+					id: guild.id,
+					name: guild.properties.name,
+					nsfw: guild.properties.nsfw,
+					icon: guild.properties.icon,
+					features: guild.properties.features,
+					description: guild.properties.description,
+				},
+			};
+		}
+
+		const map = this.emojiMap.get(localuser) || new Map();
+		this.emojiMap.set(localuser, map);
+
+		if (map.has(id)) return map.get(id);
+
+		const res = await fetch(localuser.info.api + `/emojis/${id}/source`, {
+			headers: localuser.headers,
+		});
+		if (res.status === 403) {
+			map.set(id, undefined);
+			return undefined;
+		}
+		const json = (await res.json()) as emojiSource;
+		map.set(id, json);
+		return json;
+	}
+	getHTML(bigemoji: boolean = false, click = true) {
 		if (this.id) {
 			if (!this.owner) throw new Error("owner is missing for custom emoji!");
 			const emojiElem = document.createElement("img");
@@ -68,6 +102,99 @@ class Emoji {
 
 			const hover = new Hover(this.humanName);
 			hover.addEvent(emojiElem);
+			if (click)
+				emojiElem.onclick = async (e) => {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+					const div = document.createElement("div");
+					div.style.top = e.clientY + "px";
+					div.style.left = e.clientX + "px";
+					div.classList.add("flexttb", "EmojiGuildMenu");
+
+					const localuser = this.localuser as Localuser;
+					const lookup = await Emoji.lookupEmoji(this.id as string, localuser);
+
+					const top = document.createElement("div");
+					top.classList.add("flexltr", "GuildEmojiTop");
+
+					const toptext = document.createElement("div");
+					toptext.classList.add("flexttb");
+					div.append(toptext);
+
+					const name = document.createElement("span");
+					name.textContent = `:${this.humanName}:`;
+
+					const desc = document.createElement("span");
+
+					toptext.append(name, desc);
+					top.append(this.getHTML(true, false), toptext);
+
+					if (!lookup?.guild) {
+						desc.textContent = I18n.emoji.found.private();
+						return;
+					}
+					const guild = localuser.guildids.get(lookup.guild?.id as string);
+					if (guild) {
+						if (localuser.lookingguild === guild) {
+							desc.textContent = I18n.emoji.found.this();
+						} else {
+							desc.textContent = I18n.emoji.found.other();
+						}
+					} else {
+						desc.textContent = I18n.emoji.found.not();
+					}
+
+					const h3 = document.createElement("h3");
+					h3.textContent = I18n.emoji.from();
+
+					const guildRow = document.createElement("div");
+					guildRow.classList.add("flexltr", "guildEmojiRow");
+
+					const guildText = document.createElement("div");
+					guildText.classList.add("flexttb", "guildEmojiText");
+
+					const guildName = document.createElement("span");
+					guildName.textContent = lookup.guild.name;
+
+					const guildDesc = document.createElement("span");
+					if (lookup.guild.features.find((_) => _ === "DISCOVERABLE")) {
+						if (lookup.guild.description) {
+							guildDesc.textContent = lookup.guild.description;
+						}
+					} else {
+						guildDesc.textContent = I18n.emoji.privateGuild();
+					}
+
+					guildText.append(guildName, guildDesc);
+					if (!guild) {
+						const button = document.createElement("button");
+						button.textContent = I18n.emoji.join();
+						button.classList.add("emojiJoin");
+						guildText.append(button);
+						button.onclick = async () => {
+							const joinRes = await fetch(
+								localuser.info.api + "/guilds/" + lookup.guild?.id + "/members/@me",
+								{
+									method: "PUT",
+									headers: localuser.headers,
+								},
+							);
+							if (joinRes.ok) {
+								removeAni(div);
+							}
+						};
+					}
+					guildRow.append(
+						Guild.generateGuildIcon({...lookup.guild, info: localuser.info}, false)
+							.lastChild as HTMLElement,
+						guildText,
+					);
+					div.append(top, h3, guildRow);
+
+					document.body.append(div);
+					Contextmenu.keepOnScreen(div);
+					Contextmenu.declareMenu(div);
+				};
 
 			return emojiElem;
 		} else if (this.emoji || this.name) {
@@ -204,7 +331,7 @@ class Emoji {
 				const emojiElem = document.createElement("div");
 				emojiElem.classList.add("emojiSelect");
 
-				emojiElem.append(emoji.getHTML());
+				emojiElem.append(emoji.getHTML(false, false));
 				body.append(emojiElem);
 
 				emojiElem.addEventListener("click", () => {
@@ -283,7 +410,7 @@ class Emoji {
 								},
 								localuser,
 							);
-							emojiElem.append(emojiClass.getHTML());
+							emojiElem.append(emojiClass.getHTML(false, false));
 							body.append(emojiElem);
 
 							emojiElem.addEventListener("click", () => {
@@ -319,7 +446,7 @@ class Emoji {
 					const emoji = Emoji.getEmojiFromIDOrString(emj, localuser);
 					const emojihtml = document.createElement("div");
 					emojihtml.classList.add("emojiSelect");
-					emojihtml.append(emoji.getHTML());
+					emojihtml.append(emoji.getHTML(false, false));
 					body.append(emojihtml);
 					emojihtml.onclick = (_) => {
 						res(emoji);
@@ -344,7 +471,7 @@ class Emoji {
 				for (const emojit of thing.emojis.map((_) => new Emoji(_, localuser))) {
 					const emoji = document.createElement("div");
 					emoji.classList.add("emojiSelect");
-					emoji.append(emojit.getHTML());
+					emoji.append(emojit.getHTML(false, false));
 					body.append(emoji);
 					emoji.onclick = (_) => {
 						res(emojit);

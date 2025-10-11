@@ -12,6 +12,13 @@ body {
 	height: 100svh;
 	background: var(--primary-bg);
 }
+.emojiJoin {
+	background: var(--green);
+	margin-top: 6px;
+	&:hover {
+		background: color-mix(in srgb, var(--green), 20% white);
+	}
+}
 .mutFriends {
 	display: flex;
 	flex-direction: column;
@@ -2759,6 +2766,15 @@ ul {
 		animation-name: bg-fade;
 	}
 	animation-duration: 0.2s;
+	&.removeElm {
+		animation-name: bg-fade-out;
+		> * {
+			&.centeritem {
+				animation-name: fade-in-back-out;
+			}
+		}
+	}
+
 	> * {
 		animation-duration: 0.2s;
 		animation-name: fade-in-back-settings;
@@ -2767,6 +2783,14 @@ ul {
 		}
 		animation-fill-mode: forwards;
 		animation-timing-function: ease-out;
+	}
+}
+@keyframes bg-fade-out {
+	0% {
+		background: color-mix(in srgb, var(--black) 75%, transparent);
+	}
+	100% {
+		background: transparent;
 	}
 }
 @keyframes bg-fade {
@@ -2799,6 +2823,15 @@ ul {
 	100% {
 		opacity: 0;
 		transform: scale(1.1);
+	}
+}
+@keyframes fade-in-back-out {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: scale(0.9);
 	}
 }
 @keyframes fade-in-back {
@@ -3096,7 +3129,32 @@ fieldset input[type="radio"] {
 		opacity: 0;
 	}
 }
-
+@keyframes fade-shrink {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+}
+@keyframes fade-grow-in {
+	0% {
+		opacity: 0;
+	}
+	1% {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+	100% {
+		opacity: 1;
+	}
+}
+.EmojiGuildMenu.removeElm {
+	animation-duration: 0.2s;
+	animation-name: fade-shrink;
+	animation-timing-function: ease-in;
+}
 .titlediv {
 	height: 100%;
 }
@@ -3873,4 +3931,37 @@ img.error::after {
 .solidBackground {
 	background: var(--secondary-bg);
 	opacity: 1;
+}
+.EmojiGuildMenu {
+	position: absolute;
+	background: var(--dock-bg);
+	padding: 6px;
+	border-radius: 6px;
+	width: 350px;
+
+	animation-duration: 0.2s;
+	animation-name: fade-grow-in;
+	animation-timing-function: ease-out;
+}
+.GuildEmojiTop {
+	background: var(--primary-bg);
+	padding: 8px;
+	border-radius: 6px;
+	margin-bottom: 10px;
+	img {
+		margin-right: 10px;
+	}
+}
+
+.guildEmojiRow {
+	img {
+		margin-right: 8px;
+		margin-bottom: 0px;
+		flex-shrink: 0;
+	}
+	margin: 4px;
+}
+.guildEmojiText {
+	display: flex;
+	justify-content: center;
 }

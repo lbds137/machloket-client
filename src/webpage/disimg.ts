@@ -1,4 +1,5 @@
 import {File} from "./file.js";
+import {removeAni} from "./utils/utils.js";
 
 class ImagesDisplay {
 	files: File[];
@@ -77,7 +78,7 @@ class ImagesDisplay {
 	}
 	hide() {
 		if (this.background) {
-			this.background.remove();
+			removeAni(this.background);
 		}
 	}
 }

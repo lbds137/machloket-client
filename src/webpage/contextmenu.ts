@@ -1,4 +1,4 @@
-import {mobile} from "./utils/utils.js";
+import {mobile, removeAni} from "./utils/utils.js";
 type iconJson =
 	| {
 			src: string;
@@ -89,7 +89,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		intext.onclick = (e) => {
 			e.preventDefault();
 			e.stopImmediatePropagation();
-			menu.remove();
+			removeAni(menu);
 			this.onClick.call(obj1, obj2, e);
 		};
 
@@ -125,12 +125,12 @@ class Contextmenu<x, y> {
 	static declareMenu(html: HTMLElement | false = false, keep: false | true | HTMLElement = false) {
 		if (Contextmenu.currentmenu !== "") {
 			if (keep === false) {
-				Contextmenu.currentmenu.remove();
+				removeAni(Contextmenu.currentmenu);
 			} else if (keep === true) {
 				this.prevmenus.push(Contextmenu.currentmenu);
 			} else {
 				while (Contextmenu.currentmenu && Contextmenu.currentmenu !== keep) {
-					Contextmenu.currentmenu.remove();
+					removeAni(Contextmenu.currentmenu);
 					Contextmenu.currentmenu = this.prevmenus.pop() || "";
 				}
 				if (Contextmenu.currentmenu) {
@@ -280,9 +280,7 @@ class Contextmenu<x, y> {
 		const docheight = window.innerHeight;
 		const docwidth = html.width;
 		const box = obj.getBoundingClientRect();
-		console.log(box, docheight, docwidth);
 		if (box.right > docwidth) {
-			console.log("test");
 			obj.style.left = Math.floor(docwidth - box.width) + "px";
 		}
 		if (box.bottom > docheight) {

@@ -178,7 +178,7 @@ class Guild extends SnowFlake {
 	parent_id!: string;
 	member!: Member;
 	html!: HTMLElement;
-	emojis!: emojipjson[];
+	emojis: emojipjson[] = [];
 	large!: boolean;
 	stickers!: Sticker[];
 	members = new Set<Member>();
@@ -1452,7 +1452,7 @@ class Guild extends SnowFlake {
 	}
 	HTMLicon?: HTMLElement;
 	static generateGuildIcon(
-		guild: Guild | (invitejson["guild"] & {info: {cdn: string}}),
+		guild: Guild | {id: string; name: string; icon: string | null; info: {cdn: string}},
 		autoLink = true,
 	) {
 		const divy = document.createElement("div");

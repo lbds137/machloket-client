@@ -686,7 +686,16 @@
 		"upload": "Upload Emojis",
 		"image:": "Image:",
 		"name:": "Name:",
-		"confirmDel": "Are you sure you want to delete this emoji?"
+		"confirmDel": "Are you sure you want to delete this emoji?",
+		"from":"This emoji is from",
+		"privateGuild":"This guild is private",
+		"join":"Join Guild",
+		"found":{
+			"this":"This Emoji is from this guild.",
+			"other":"This Emoji is from one of your other guilds.",
+			"not":"This Emoji is not from one of your guilds, you must join it to be able to use this emoji",
+			"private":"The Guild for this Emoji can't be found"
+		}
 	},
 	"sticker": {
 		"title": "Stickers",

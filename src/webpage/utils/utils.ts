@@ -639,6 +639,15 @@ async function isAnimated(src: string) {
 	return src.endsWith(".apng") || src.endsWith(".gif");
 }
 const staticImgMap = new Map<string, string | Promise<string>>();
+export async function removeAni(elm: HTMLElement) {
+	elm.classList.add("removeElm");
+	const ani = elm.getAnimations();
+	await Promise.race([
+		Promise.all(ani.map((_) => _.finished)),
+		new Promise<void>((res) => setTimeout(res, 500)),
+	]);
+	elm.remove();
+}
 export function createImg(
 	src: string | undefined,
 	staticsrc: string | void,
