@@ -3638,6 +3638,8 @@ fieldset input[type="radio"] {
 	padding: 0.2in;
 	overflow-y: auto;
 	height: 100%;
+	align-items: stretch;
+	box-sizing: border-box;
 
 	> div {
 		background: #00000030;
@@ -3645,6 +3647,7 @@ fieldset input[type="radio"] {
 		padding: 0.06in 0.1in;
 		border-radius: 0.1in;
 		border: solid 1px var(--black);
+		flex-shrink: 1;
 	}
 }
 .fixedsearch {
