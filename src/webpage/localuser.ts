@@ -1928,6 +1928,7 @@ class Localuser {
 	unreads(): void {
 		for (const thing of this.guilds) {
 			if (thing.id === "@me") {
+				thing.unreads();
 				continue;
 			}
 			const html = this.guildhtml.get(thing.id);
