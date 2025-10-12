@@ -109,6 +109,7 @@ class Direct extends Guild {
 					div.classList.add("flexltr");
 					const check = document.createElement("input");
 					check.type = "checkbox";
+					check.checked = invited.has(friend);
 					check.onchange = () => {
 						if (check.checked) {
 							invited.add(friend);
