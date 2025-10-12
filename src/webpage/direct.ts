@@ -617,11 +617,10 @@ class Group extends Channel {
 			noti.classList.add("unread", "notiunread", "pinged");
 			noti.textContent = "" + this.mentions;
 			this.noti = new WeakRef(noti);
-			div.append(noti);
 			const buildpfp = this.makeIcon();
 			this.all = new WeakRef(div);
 			buildpfp.classList.add("mentioned");
-			div.append(buildpfp);
+			div.append(buildpfp, noti);
 			sentdms.append(div);
 			div.onclick = (_) => {
 				this.guild.loadGuild();

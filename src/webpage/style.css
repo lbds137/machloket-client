@@ -1334,7 +1334,8 @@ span.instanceStatus {
 	/* border: 4px solid var(--servers-bg); */
 	/* border-radius: 50%; */
 	pointer-events: none;
-	z-index: 1;
+	z-index: 0;
+	top: 0px;
 }
 
 /* Channel Panel */

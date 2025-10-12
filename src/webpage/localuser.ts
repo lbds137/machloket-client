@@ -1198,8 +1198,8 @@ class Localuser {
 	async getSidePannel() {
 		if (this.ws && this.channelfocus) {
 			console.log(this.channelfocus.guild.id);
+			this.memberListUpdate();
 			if (this.channelfocus.guild.id === "@me") {
-				this.memberListUpdate();
 				return;
 			}
 			this.ws.send(
