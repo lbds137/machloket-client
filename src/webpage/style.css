@@ -3153,8 +3153,10 @@ fieldset input[type="radio"] {
 	top: 0;
 	background: var(--settings-bg);
 	animation-duration: 0.2s;
-
 	animation-name: fadeOldSettings;
+	@media screen and (max-width: 600px) {
+		animation-duration: 0s;
+	}
 	animation-timing-function: ease-in;
 	z-index: 900;
 	height: 100%;
@@ -3169,11 +3171,9 @@ fieldset input[type="radio"] {
 }
 @keyframes fadeOldSettings {
 	0% {
-		transform: translateX(0px);
 		opacity: 1;
 	}
 	100% {
-		transform: translateX(30px);
 		opacity: 0;
 	}
 }
