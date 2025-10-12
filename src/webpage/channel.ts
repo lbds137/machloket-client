@@ -1996,6 +1996,8 @@ class Channel extends SnowFlake {
 				tempy = this.idToPrev.get(tempy);
 			}
 			if (!tempy) {
+				const res2 = this.beforeProms.get(id);
+				res2?.();
 				res();
 				return;
 			}
@@ -2012,7 +2014,6 @@ class Channel extends SnowFlake {
 				const response = await messageProm.getWhole();
 				let messager: Message;
 				if (this.messages.has(response.id)) {
-					console.log("flaky");
 					messager = this.messages.get(response.id) as Message;
 				} else {
 					messager = new Message(response, this);
@@ -2285,6 +2286,9 @@ class Channel extends SnowFlake {
 			},
 			this,
 		);
+		if (!this.lastmessageid) {
+			this.topid = m.id;
+		}
 		this.nonceMap.set(nonce, m.id);
 		const prev = this.lastmessage;
 		const makeRecent = () => {
@@ -2526,6 +2530,9 @@ class Channel extends SnowFlake {
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return;
+		}
+		if (!this.lastmessageid) {
+			this.topid = messagep.d.id;
 		}
 		const messagez = new Message(messagep.d, this);
 		this.lastmessage = messagez;

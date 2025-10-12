@@ -8,7 +8,7 @@ import {Permissions} from "./permissions.js";
 import {SnowFlake} from "./snowflake.js";
 import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
-import {Float, FormError} from "./settings.js";
+import {Dialog, Float, FormError} from "./settings.js";
 
 class Direct extends Guild {
 	channels: Group[];
@@ -69,14 +69,84 @@ class Direct extends Guild {
 		freindDiv.append(icon);
 		this.freindDiv = freindDiv;
 
-		freindDiv.append(I18n.getTranslation("friends.friends"));
-		ddiv.append(freindDiv);
+		freindDiv.append(I18n.friends.friends());
 		freindDiv.onclick = () => {
 			this.loadChannel(null);
 		};
 
-		ddiv.append(build);
+		const newDm = document.createElement("div");
+		newDm.classList.add("flexltr", "dmline");
+		newDm.onclick = () => this.makeGroup();
+
+		const span = document.createElement("span");
+		span.classList.add("svg-plus", "svgicon", "addchannel");
+
+		newDm.append(I18n.dms(), span);
+
+		ddiv.append(freindDiv, newDm, build);
 		return ddiv;
+	}
+	makeGroup() {
+		const dio = new Dialog(I18n.group.select());
+		const opt = dio.options;
+
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "friendGroupSelect");
+		const friends = [...this.localuser.inrelation].filter((_) => _.relationshipType === 1);
+
+		const invited = new Set<User>();
+
+		const makeList = (search: string) => {
+			const list = friends
+				.map((friend) => [friend, friend.compare(search)] as const)
+				.filter((_) => _[1] !== 0)
+				.sort((a, b) => a[1] - b[1])
+				.map((_) => _[0]);
+			div.innerHTML = "";
+			div.append(
+				...list.map((friend) => {
+					const div = document.createElement("div");
+					div.classList.add("flexltr");
+					const check = document.createElement("input");
+					check.type = "checkbox";
+					check.onchange = () => {
+						if (check.checked) {
+							invited.add(friend);
+						} else {
+							invited.delete(friend);
+						}
+					};
+					//TODO implement status stuff here once spacebar really supports it
+					div.append(friend.buildpfp(), friend.name, check);
+					return div;
+				}),
+			);
+		};
+		opt.addTextInput("", () => {}).onchange = makeList;
+		opt.addHTMLArea(div);
+		const buttons = opt.addOptions("", {ltr: true});
+		buttons.addButtonInput("", I18n.cancel(), () => {
+			dio.hide();
+		});
+		buttons.addButtonInput("", I18n.group.createdm(), async () => {
+			if (invited.size !== 0) {
+				const {id}: {id: string} = await (
+					await fetch(this.info.api + "/users/@me/channels", {
+						method: "POST",
+						headers: this.headers,
+						body: JSON.stringify({
+							recipients: [...invited].map((_) => _.id),
+						}),
+					})
+				).json();
+				this.localuser.goToChannel(id);
+				dio.hide();
+			}
+		});
+
+		makeList("");
+		dio.show();
+		buttons.container.deref()?.classList.add("expandButtons");
 	}
 	noChannel(addstate: boolean) {
 		if (addstate) {
@@ -350,7 +420,7 @@ dmPermissions.setPermission("USE_VAD", 1);
 //@ts-ignore No clue how to fix this dumb bug lol
 class Group extends Channel {
 	//TODO remove user
-	user: User;
+
 	users: User[];
 	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
 	static setupcontextmenu() {
@@ -362,6 +432,18 @@ class Group extends Channel {
 		);
 
 		this.contextmenu.addSeperator();
+
+		this.contextmenu.addButton(
+			() => I18n.group.edit(),
+			function () {
+				this.edit();
+			},
+			{
+				visable: function () {
+					return this.users.length !== 1;
+				},
+			},
+		);
 
 		this.contextmenu.addButton(
 			() => I18n.getTranslation("DMs.close"),
@@ -376,11 +458,17 @@ class Group extends Channel {
 		this.contextmenu.addSeperator();
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.copyId"),
+			() => I18n.user.copyId(),
 			function () {
-				navigator.clipboard.writeText(this.user.id);
+				navigator.clipboard.writeText(this.users[0].id);
+			},
+			{
+				visable: function () {
+					return this.users.length === 1;
+				},
 			},
 		);
+
 		this.contextmenu.addButton(
 			() => I18n.getTranslation("DMs.copyId"),
 			function (this: Group) {
@@ -388,16 +476,39 @@ class Group extends Channel {
 			},
 		);
 	}
+	iconUrl() {
+		return `${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png`;
+	}
+	icon?: string;
+	edit() {
+		const dio = new Dialog(I18n.group.edit());
+		const form = dio.options.addForm("", () => {}, {
+			fetchURL: this.info.api + "/channels/" + this.id,
+			headers: this.headers,
+			method: "PATCH",
+		});
+		form.addTextInput(I18n.channel["name:"](), "name", {
+			initText: this.name === this.defaultName() ? "" : this.name,
+		});
+		form.addImageInput(I18n.channel.icon(), "icon", {
+			initImg: this.icon ? this.iconUrl() : undefined,
+		});
+		dio.show();
+	}
+	defaultName() {
+		return this.users.map((_) => _.name).join(", ");
+	}
 	constructor(json: dirrectjson, owner: Direct) {
 		super(-1, owner, json.id);
 
-		this.name = json.recipients[0]?.username;
+		this.icon = json.icon;
 
 		const userSet = new Set(json.recipients.map((user) => new User(user, this.localuser)));
-		userSet.add(this.localuser.user);
-		this.users = [...userSet];
 
-		this.user = this.users[0];
+		this.users = [...userSet];
+		this.name = json.name || this.defaultName();
+
+		userSet.add(this.localuser.user);
 
 		this.name ??= this.localuser.user.username;
 		this.parent_id!;
@@ -432,7 +543,9 @@ class Group extends Channel {
 		const myhtml = document.createElement("span");
 		myhtml.classList.add("ellipsis");
 		myhtml.textContent = this.name;
-		div.appendChild(this.user.buildpfp(undefined, div));
+
+		div.appendChild(this.makeIcon());
+
 		div.appendChild(myhtml);
 		(div as any).myinfo = this;
 		div.onclick = (_) => {
@@ -443,8 +556,15 @@ class Group extends Channel {
 
 		return div;
 	}
+	getname() {
+		return this.name;
+	}
 	notititle(message: Message) {
-		return message.author.username;
+		if (this.users.length === 1) {
+			return message.author.username;
+		} else {
+			return this.getname() + " > " + message.author.username;
+		}
 	}
 	readStateInfo(json: readyjson["d"]["read_state"]["entries"][0]): void {
 		super.readStateInfo(json);
@@ -467,6 +587,18 @@ class Group extends Channel {
 			this.myhtml.remove();
 		}
 	}
+	makeIcon(): HTMLElement {
+		if (this.users.length === 1) {
+			return this.users[0].buildpfp(undefined);
+		} else {
+			const div = document.createElement("div");
+			div.classList.add("groupDmDiv");
+			for (const user of this.users.slice(0, 5)) {
+				div.append(user.buildpfp(undefined));
+			}
+			return div;
+		}
+	}
 	unreads() {
 		const sentdms = document.getElementById("sentdms") as HTMLDivElement; //Need to change sometime
 		const current = this.all.deref();
@@ -485,7 +617,7 @@ class Group extends Channel {
 			noti.textContent = "" + this.mentions;
 			this.noti = new WeakRef(noti);
 			div.append(noti);
-			const buildpfp = this.user.buildpfp();
+			const buildpfp = this.makeIcon();
 			this.all = new WeakRef(div);
 			buildpfp.classList.add("mentioned");
 			div.append(buildpfp);

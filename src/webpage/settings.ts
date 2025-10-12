@@ -1309,7 +1309,6 @@ class Options implements OptionsElement<void> {
 		container.classList.add(this.ltr ? "flexltr" : "flexttb", "flexspace");
 		this.generateContainter();
 		div.append(container);
-		console.log(div);
 		return div;
 	}
 	generateName(): (HTMLElement | string)[] {

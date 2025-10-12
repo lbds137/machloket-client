@@ -273,14 +273,15 @@ class InfiniteScroller {
 		}
 
 		this.changePromise = new Promise<boolean>(async (res) => {
-			//debugger;
 			try {
+				console.log("start");
 				if (!this.div) {
 					res(false);
 				}
 				const out = (await Promise.allSettled([this.watchForTop(), this.watchForBottom()])) as {
 					value: boolean;
 				}[];
+				console.log("stop");
 				const changed = out[0].value || out[1].value;
 				if (this.timeout === null && changed) {
 					this.timeout = setTimeout(this.updatestuff.bind(this), 300);
@@ -342,18 +343,21 @@ class InfiniteScroller {
 			this.HTMLElements = [];
 			await this.firstElement(id);
 			this.changePromise = new Promise<boolean>(async (resolve) => {
-				await this.updatestuff();
-				this.remove = false;
-				await Promise.all([this.watchForBottom(), this.watchForTop()]);
+				try {
+					await this.updatestuff();
+					this.remove = false;
+					await Promise.all([this.watchForBottom(), this.watchForTop()]);
 
-				await new Promise<void>((res) => queueMicrotask(res));
-				await this.focus(id, !element && flash, true);
-				this.remove = true;
-				//TODO figure out why this fixes it and fix it for real :P
-				await new Promise(requestAnimationFrame);
-				await new Promise(requestAnimationFrame);
-				this.changePromise = undefined;
-				resolve(true);
+					await new Promise<void>((res) => queueMicrotask(res));
+					await this.focus(id, !element && flash, true);
+					this.remove = true;
+					//TODO figure out why this fixes it and fix it for real :P
+					await new Promise(requestAnimationFrame);
+					await new Promise(requestAnimationFrame);
+					this.changePromise = undefined;
+				} finally {
+					resolve(true);
+				}
 			});
 			await this.changePromise;
 		} else {

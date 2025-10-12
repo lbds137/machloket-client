@@ -123,6 +123,12 @@ body {
 		}
 	}
 }
+.dmline {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 4px 14px;
+}
 .flexltr {
 	min-height: 0;
 	display: flex;
@@ -380,6 +386,7 @@ body {
 	flex-grow: 1;
 	min-height: 0;
 }
+
 .channelSTitle {
 	margin-top: 0.2in;
 	margin-bottom: 0;
@@ -1327,7 +1334,7 @@ span.instanceStatus {
 	/* border: 4px solid var(--servers-bg); */
 	/* border-radius: 50%; */
 	pointer-events: none;
-	z-index: 0;
+	z-index: 1;
 }
 
 /* Channel Panel */
@@ -3966,4 +3973,80 @@ img.error::after {
 .guildEmojiText {
 	display: flex;
 	justify-content: center;
+}
+
+.optionElement:has(.friendGroupSelect) {
+	flex-shrink: 1;
+	overflow-y: scroll;
+}
+.friendGroupSelect {
+	> div {
+		padding: 6px;
+		display: flex;
+		align-items: center;
+		img {
+			margin-right: 12px;
+			width: 40px;
+			height: 40px;
+		}
+		input {
+			margin-left: auto;
+			height: 20px;
+			width: 20px;
+		}
+	}
+}
+.expandButtons {
+	.optionElement {
+		flex-grow: 1;
+		button {
+			width: 100%;
+			text-align: center;
+		}
+	}
+}
+.groupDmDiv {
+	position: relative;
+	width: 32px;
+	height: 32px;
+	img {
+		background: var(--channels-bg);
+		position: absolute;
+		width: 16px;
+		height: 16px;
+		&:nth-child(1) {
+			width: 32px;
+			height: 32px;
+		}
+		&:nth-child(2) {
+			right: 0px;
+			bottom: 0px;
+		}
+		&:nth-child(3) {
+			left: 0px;
+			bottom: 0px;
+		}
+		&:nth-child(4) {
+			right: 0px;
+			top: 0px;
+		}
+		&:nth-child(5) {
+			left: 0px;
+			top: 0px;
+		}
+	}
+}
+#sentdms .groupDmDiv {
+	background: transparent;
+	width: 48px;
+	height: 48px;
+	img {
+		width: 24px;
+		height: 24px;
+		&:nth-child(1) {
+			width: 48px;
+			height: 48px;
+		}
+		margin-bottom: 0px;
+	}
 }

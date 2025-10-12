@@ -45,6 +45,7 @@
 			"cont": "Continue Anyways"
 		}
 	},
+	"cancel":"Cancel",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Allows the user to create invites for the guild",
@@ -209,6 +210,7 @@
 		"unmute":"Unmute Channel",
 		"announcement": "Announcements",
 		"name:": "Name:",
+		"icon":"Icon:",
 		"topic:": "Topic:",
 		"nsfw:": "NSFW:",
 		"selectType": "Select channel type",
@@ -680,6 +682,12 @@
 		"application_guild_subscription": "Has premium",
 		"legacy_username": "Has legacy username",
 		"quest_completed": "did a quest"
+	},
+	"dms":"Dirrect Messages",
+	"group":{
+		"select":"Select Friends",
+		"createdm":"Create DM!",
+		"edit":"Edit Group chat"
 	},
 	"emoji": {
 		"title": "Emojis",

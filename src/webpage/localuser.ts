@@ -1094,6 +1094,7 @@ class Localuser {
 		if (guild.id === "@me" && (channel as Group).users.length === 1) {
 			return;
 		}
+
 		if (list) {
 			const counts = new Map<string, number>();
 			for (const thing of list.d.ops[0].items) {
@@ -1105,7 +1106,7 @@ class Localuser {
 			}
 		}
 
-		const elms: Map<Role | "offline" | "online", Member[]> = new Map([]);
+		const elms: Map<Role | "offline" | "online", (Member | User)[]> = new Map([]);
 		for (const role of guild.roles) {
 			if (role.hoist) {
 				elms.set(role, []);
@@ -1113,8 +1114,14 @@ class Localuser {
 		}
 		elms.set("online", []);
 		elms.set("offline", []);
-		const members = new Set(guild.members);
+		const members = new Set<User | Member>(guild.members);
+		if (channel instanceof Group) {
+			channel.users.forEach((user) => members.add(user));
+		}
 		members.forEach((member) => {
+			if (member instanceof User) {
+				return;
+			}
 			if (!channel.hasPermission("VIEW_CHANNEL", member)) {
 				members.delete(member);
 				console.log(member, "can't see");
@@ -1123,19 +1130,22 @@ class Localuser {
 		});
 		for (const [role, list] of elms) {
 			members.forEach((member) => {
+				const user = member instanceof Member ? member.user : member;
 				if (role === "offline") {
-					if (member.user.getStatus() === "offline" || member.user.getStatus() === "invisible") {
+					if (user.getStatus() === "offline" || user.getStatus() === "invisible") {
 						list.push(member);
 						members.delete(member);
 					}
 					return;
 				}
-				if (member.user.getStatus() === "offline" || member.user.getStatus() === "invisible") {
+				if (user.getStatus() === "offline" || user.getStatus() === "invisible") {
 					return;
 				}
-				if (role !== "online" && member.hasRole(role.id)) {
-					list.push(member);
-					members.delete(member);
+				if (member instanceof Member) {
+					if (role !== "online" && member.hasRole(role.id)) {
+						list.push(member);
+						members.delete(member);
+					}
 				}
 			});
 			if (!list.length) continue;
@@ -1166,13 +1176,15 @@ class Localuser {
 			membershtml.classList.add("flexttb");
 
 			for (const member of list) {
+				const user = member instanceof Member ? member.user : member;
+
 				const memberdiv = document.createElement("div");
-				const pfp = await member.user.buildstatuspfp(member);
+				const pfp = user.buildstatuspfp(member instanceof Member ? member : undefined);
 				const username = document.createElement("span");
 				username.classList.add("ellipsis");
 				username.textContent = member.name;
 				member.bind(username);
-				member.user.bind(memberdiv, member.guild, false);
+				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
 				memberdiv.append(pfp, username);
 				memberdiv.classList.add("flexltr", "liststyle", "memberListStyle");
 				membershtml.append(memberdiv);

@@ -494,6 +494,8 @@ type rolesjson = {
 type dirrectjson = {
 	id: string;
 	flags: number;
+	name?: string | null;
+	icon?: string;
 	last_message_id: string;
 	type: number;
 	recipients: userjson[];
