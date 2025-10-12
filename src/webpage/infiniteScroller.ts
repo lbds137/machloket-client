@@ -148,9 +148,12 @@ class InfiniteScroller {
 			}
 		};
 	}
-
+	whenFrag: (() => number)[] = [];
 	private async watchForTop(already = false, fragment = new DocumentFragment()): Promise<boolean> {
+		const supports = CSS.supports("overflow-anchor", "auto");
+		console.warn("supports2:" + supports);
 		if (!this.div) return false;
+		const div = this.div;
 		try {
 			let again = false;
 			if (this.scrollTop < (already ? this.fillDist : this.minDist)) {
@@ -168,6 +171,13 @@ class InfiniteScroller {
 						this.destroyFromID(nextid);
 						return false;
 					}
+					if (!supports) {
+						this.whenFrag.push(() => {
+							const box = html.getBoundingClientRect();
+							console.log(box.height);
+							return box.height;
+						});
+					}
 					again = true;
 					fragment.prepend(html);
 					this.HTMLElements.unshift([html, nextid]);
@@ -177,9 +187,15 @@ class InfiniteScroller {
 			if (this.scrollTop > this.maxDist && this.remove) {
 				const html = this.HTMLElements.shift();
 				if (html) {
+					let dec = 0;
+					if (!supports) {
+						const box = html[0].getBoundingClientRect();
+						dec = box.height;
+					}
 					again = true;
 					await this.destroyFromID(html[1]);
 
+					div.scrollTop -= dec;
 					this.scrollTop -= this.averageheight;
 				}
 			}
@@ -193,7 +209,13 @@ class InfiniteScroller {
 					this.scrollTop = 1;
 					this.div.scrollTop = 10;
 				}
-				this.div.prepend(fragment, fragment);
+				let height = 0;
+
+				this.div.prepend(fragment);
+				this.whenFrag.forEach((_) => (height += _()));
+				this.div.scrollTop += height;
+
+				this.whenFrag = [];
 			}
 		}
 	}
