@@ -2457,9 +2457,35 @@ img.bigembedimg {
 	box-shadow: 0 0 8px var(--shadow);
 	z-index: 102;
 
+	animation-duration: 0.2s;
+	animation-name: context-fade-in;
+	animation-timing-function: ease-out;
+
 	hr {
 		width: 90%;
 		height: 1px;
+	}
+}
+.removeElm {
+	pointer-events: none;
+}
+.contextmenu.removeElm {
+	animation-name: context-fade-out;
+}
+@keyframes context-fade-out {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
+@keyframes context-fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
 	}
 }
 .contextbutton {
@@ -2662,6 +2688,17 @@ ul {
 		top: 2px;
 		transition: width 0.2s;
 		background: var(--card-bg);
+	}
+}
+.emojiPicker,
+.gifmenu,
+.stickerPicker {
+	animation-duration: 0.2s;
+	animation-name: fade-in-back;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease-out;
+	&.removeElm {
+		animation-name: fade-in-back-out;
 	}
 }
 .stickerSelect {
