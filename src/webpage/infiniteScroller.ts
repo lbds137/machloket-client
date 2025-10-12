@@ -151,7 +151,6 @@ class InfiniteScroller {
 	whenFrag: (() => number)[] = [];
 	private async watchForTop(already = false, fragment = new DocumentFragment()): Promise<boolean> {
 		const supports = CSS.supports("overflow-anchor", "auto");
-		console.warn("supports2:" + supports);
 		if (!this.div) return false;
 		const div = this.div;
 		try {
@@ -174,7 +173,6 @@ class InfiniteScroller {
 					if (!supports) {
 						this.whenFrag.push(() => {
 							const box = html.getBoundingClientRect();
-							console.log(box.height);
 							return box.height;
 						});
 					}
