@@ -306,6 +306,9 @@ class Guild extends SnowFlake {
 		);
 		//TODO mute guild button
 	}
+	resolveMember(user: User) {
+		return Member.resolveMember(user, this);
+	}
 	getChannel(id: string) {
 		return this.channels.find((_) => _.id === id);
 	}

@@ -45,6 +45,8 @@ const wsCodesRetry = new Set([4000, 4001, 4002, 4003, 4005, 4007, 4008, 4009]);
 interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
 }
+
+MarkDown.emoji = Emoji;
 class Localuser {
 	badges = new Map<
 		string,
@@ -1194,6 +1196,9 @@ class Localuser {
 		}
 
 		console.log(elms);
+	}
+	emojiPicker(x: number, y: number) {
+		return Emoji.emojiPicker(x, y, this);
 	}
 	async getSidePannel() {
 		if (this.ws && this.channelfocus) {

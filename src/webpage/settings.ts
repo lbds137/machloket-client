@@ -584,13 +584,13 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	readonly onSubmit: (str: Emoji | undefined | null) => void;
 	input!: WeakRef<HTMLInputElement>;
 	value!: Emoji | undefined | null;
-	localuser?: Localuser;
+	localuser: Localuser;
 	clear: boolean;
 	constructor(
 		label: string,
 		onSubmit: (str: Emoji | undefined | null) => void,
 		owner: Options,
-		localuser?: Localuser,
+		localuser: Localuser,
 		{initEmoji = undefined, clear = false}: {initEmoji?: undefined | Emoji; clear?: boolean} = {},
 	) {
 		this.label = label;
@@ -619,7 +619,7 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			(async () => {
-				const emj = await Emoji.emojiPicker(e.x, e.y, this.localuser);
+				const emj = await this.localuser.emojiPicker(e.x, e.y);
 				if (emj) {
 					this.value = emj;
 					emoji.remove();

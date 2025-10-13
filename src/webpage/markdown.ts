@@ -4,10 +4,10 @@ import {Channel} from "./channel.js";
 import {Emoji} from "./emoji.js";
 import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
-import {Member} from "./member.js";
 import {Dialog} from "./settings.js";
 
 class MarkDown {
+	static emoji?: typeof Emoji;
 	txt: string[];
 	keep: boolean;
 	stdsize: boolean;
@@ -33,8 +33,18 @@ class MarkDown {
 		this.owner = owner;
 		this.stdsize = stdsize;
 	}
+	get channel() {
+		if (!this.owner) return;
+		if ("user" in this.owner) {
+			return;
+		} else if (this.owner) {
+			return this.owner;
+		}
+		return null;
+	}
 	get localuser() {
-		if (this.owner instanceof Localuser) {
+		if (!this.owner) return;
+		if ("user" in this.owner) {
 			return this.owner;
 		} else if (this.owner) {
 			return this.owner.localuser;
@@ -585,8 +595,8 @@ class MarkDown {
 						switch (char) {
 							case "@":
 								if (role) {
-									if (this.owner instanceof Channel) {
-										const role = this.owner.guild.roleids.get(id);
+									if (this.channel) {
+										const role = this.channel.guild.roleids.get(id);
 										if (role) {
 											mention.textContent = `@${role.name}`;
 											mention.style.color = `var(--role-${role.id})`;
@@ -599,14 +609,14 @@ class MarkDown {
 									if (user) {
 										mention.textContent = `@${user.name}`;
 										let guild: null | Guild = null;
-										if (this.owner instanceof Channel) {
-											guild = this.owner.guild;
+										if (this.channel) {
+											guild = this.channel.guild;
 										}
 										if (!keep) {
 											user.bind(mention, guild);
 										}
 										if (guild) {
-											Member.resolveMember(user, guild).then((member) => {
+											guild.resolveMember(user).then((member) => {
 												if (member) {
 													mention.textContent = `@${member.name}`;
 												}
@@ -762,6 +772,7 @@ class MarkDown {
 				txt[i] === "<" &&
 				(txt[i + 1] === ":" || (txt[i + 1] === "a" && txt[i + 2] === ":" && this.owner))
 			) {
+				const Emoji = MarkDown.emoji;
 				let found = false;
 				const build = txt[i + 1] === "a" ? ["<", "a", ":"] : ["<", ":"];
 				let j = i + build.length;
@@ -774,14 +785,14 @@ class MarkDown {
 					}
 				}
 
-				if (found) {
+				if (found && Emoji) {
 					const buildjoin = build.join("");
 					const parts = buildjoin.match(/^<(a)?:\w+:(\d{10,30})>$/);
 					if (parts && parts[2]) {
 						appendcurrent();
 						i = j;
 						const isEmojiOnly = txt.join("").trim() === buildjoin.trim() && !stdsize;
-						const owner = this.owner instanceof Channel ? this.owner.guild : this.owner;
+						const owner = this.channel ? this.channel.guild : this.localuser;
 						if (!owner) continue;
 						const emoji = new Emoji(
 							{name: buildjoin, id: parts[2], animated: Boolean(parts[1])},
