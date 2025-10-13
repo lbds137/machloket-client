@@ -31,11 +31,6 @@
 		"composer": "Composer: $1",
 		"length": "Length: $1 minutes and $2 seconds"
 	},
-	"blogpage": {
-		"blog": "Blog",
-		"fermi": "Fermi Blog",
-		"desc": "Read or subscribe to the blog for updates on Fermi!"
-	},
 	"logout": {
 		"logout": "Logout",
 		"error": {
@@ -425,7 +420,9 @@
 		"blog":"Blog",
 		"wantUpdates":"Would you like to get weekly blog updates on the state of Fermi?",
 		"blogUpdates":"Blog updates:",
-		"gotoPost":"Go to post"
+		"gotoPost":"Go to post",
+		"fermi": "Fermi Blog",
+		"desc": "Read or subscribe to the blog for updates on Fermi!"
 	},
 	"localuser": {
 		"trace": "Traces",
