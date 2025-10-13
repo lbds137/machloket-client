@@ -940,6 +940,10 @@ textarea {
 	height: 100%;
 	background: #00000070;
 	top: 0px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 99;
 }
 /* Animations */
 @keyframes fade {

@@ -25,7 +25,7 @@ if (!(sessionStorage.getItem("currentuser") || Localuser.users.currentuser)) {
 		loadingText.textContent = I18n.getTranslation("htmlPages.loadingText");
 		loaddesc.textContent = I18n.getTranslation("htmlPages.loaddesc");
 		switchaccounts.textContent = I18n.getTranslation("htmlPages.switchaccounts");
-		filedroptext.textContent = I18n.getTranslation("uploadFilesText");
+		filedroptext.textContent = I18n.uploadFilesText();
 	}
 }
 
