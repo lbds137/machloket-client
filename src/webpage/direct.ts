@@ -418,10 +418,7 @@ dmPermissions.setPermission("CONNECT", 1);
 dmPermissions.setPermission("SPEAK", 1);
 dmPermissions.setPermission("STREAM", 1);
 dmPermissions.setPermission("USE_VAD", 1);
-//@ts-ignore No clue how to fix this dumb bug lol
 class Group extends Channel {
-	//TODO remove user
-
 	users: User[];
 	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
 	static setupcontextmenu() {
