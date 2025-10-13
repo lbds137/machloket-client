@@ -86,7 +86,7 @@ class File {
 			if (this.width && !fullScreen) {
 				div.style.width = this.width + "px";
 				div.style.height = this.height + "px";
-			} else {
+			} else if (!fullScreen) {
 				div.style.maxWidth = 96 * 3 + "px";
 				div.style.maxHeight = 96 * 3 + "px";
 			}
