@@ -944,6 +944,9 @@ textarea {
 	justify-content: center;
 	align-items: center;
 	z-index: 99;
+	&[hidden] {
+		display: none;
+	}
 }
 /* Animations */
 @keyframes fade {
