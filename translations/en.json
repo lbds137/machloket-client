@@ -31,7 +31,7 @@
 		"composer": "Composer: $1",
 		"length": "Length: $1 minutes and $2 seconds"
 	},
-	"blog": {
+	"blogpage": {
 		"blog": "Blog",
 		"fermi": "Fermi Blog",
 		"desc": "Read or subscribe to the blog for updates on Fermi!"

@@ -36,9 +36,9 @@ const serverbox = document.getElementById("instancebox") as HTMLDivElement;
 		box5description &&
 		blog
 	) {
-		blog.textContent = I18n.blog.blog();
-		box5title.textContent = I18n.blog.fermi();
-		box5description.textContent = I18n.blog.desc();
+		blog.textContent = I18n.blogpage.blog();
+		box5title.textContent = I18n.blogpage.fermi();
+		box5description.textContent = I18n.blogpage.desc();
 
 		openClient.textContent = I18n.getTranslation("htmlPages.openClient");
 		welcomeJank.textContent = I18n.getTranslation("htmlPages.welcomeJank");
