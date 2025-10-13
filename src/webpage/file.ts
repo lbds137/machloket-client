@@ -86,6 +86,9 @@ class File {
 			if (this.width && !fullScreen) {
 				div.style.width = this.width + "px";
 				div.style.height = this.height + "px";
+			} else {
+				div.style.maxWidth = 96 * 3 + "px";
+				div.style.maxHeight = 96 * 3 + "px";
 			}
 			img.isAnimated().then((animated) => {
 				if (!animated || !this.owner || fullScreen) return;
