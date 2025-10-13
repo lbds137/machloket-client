@@ -4107,14 +4107,14 @@ class Localuser {
 		return url;
 	}
 
-	refrshTimeOut?: NodeJS.Timeout;
+	refreshTimeOut?: NodeJS.Timeout;
 	urlsToRefresh: [string, (arg: string) => void][] = [];
 	refreshURL(url: string): Promise<string> {
-		if (!this.refrshTimeOut) {
-			this.refrshTimeOut = setTimeout(async () => {
+		if (!this.refreshTimeOut) {
+			this.refreshTimeOut = setTimeout(async () => {
 				const refreshes = this.urlsToRefresh;
 				this.urlsToRefresh = [];
-				delete this.refrshTimeOut;
+				delete this.refreshTimeOut;
 				const res = await fetch(this.info.api + "/attachments/refresh-urls", {
 					method: "POST",
 					body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
