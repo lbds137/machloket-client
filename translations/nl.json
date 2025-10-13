@@ -31,12 +31,6 @@
 		"composer": "Componist: $1",
 		"length": "Lengte: $1 minuten en $2 seconden"
 	},
-	"blog": {
-		"blog": "Blog",
-		"wantUpdates": "Wil je wekelijks actualiteiten ontvangen over de ontwikkeling van Fermi?",
-		"blogUpdates": "Actualiteiten:",
-		"gotoPost": "Naar het artikel"
-	},
 	"logout": {
 		"logout": "Afmelden",
 		"error": {
@@ -46,6 +40,7 @@
 			"cont": "Toch doorgaan"
 		}
 	},
+	"cancel": "Annuleren",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Hiermee kan de gebruiker uitnodigingen voor het gilde maken",
@@ -210,6 +205,7 @@
 		"unmute": "Kanaal ontdempen",
 		"announcement": "Aankondigingen",
 		"name:": "Naam:",
+		"icon": "Pictogram:",
 		"topic:": "Onderwerp:",
 		"nsfw:": "Niet geschikt voor werk:",
 		"selectType": "Selecteer kanaaltype",
@@ -219,6 +215,7 @@
 		"createCatagory": "Categorie aanmaken",
 		"permissions": "Machtigingen"
 	},
+	"notiClump": "Je hebt $1 meldingen van $2 gekregen",
 	"Voice": {
 		"status": {
 			"done": "Verbonden",
@@ -420,6 +417,14 @@
 		"traces": "$1 ($2ms) $3"
 	},
 	"notiVolume": "Meldingsvolume:",
+	"blog": {
+		"blog": "Blog",
+		"wantUpdates": "Wil je wekelijks actualiteiten ontvangen over de ontwikkeling van Fermi?",
+		"blogUpdates": "Actualiteiten:",
+		"gotoPost": "Naar het artikel",
+		"fermi": "Blog van Fermi",
+		"desc": "Lees de blog of abonneer je erop voor nieuwtjes over Fermi!"
+	},
 	"localuser": {
 		"trace": "Sporen",
 		"install": "Installeren",
@@ -677,12 +682,27 @@
 		"legacy_username": "Heeft oude gebruikersnaam",
 		"quest_completed": "heeft een zoektocht gedaan"
 	},
+	"dms": "Directe berichten",
+	"group": {
+		"select": "Kies vrienden",
+		"createdm": "Maak direct bericht!",
+		"edit": "Groepschat bewerken"
+	},
 	"emoji": {
 		"title": "Emoji's",
 		"upload": "Emoji's uploaden",
 		"image:": "Afbeelding:",
 		"name:": "Naam:",
-		"confirmDel": "Weet je zeker dat je deze emoji wilt verwijderen?"
+		"confirmDel": "Weet je zeker dat je deze emoji wilt verwijderen?",
+		"from": "Deze emoji is van",
+		"privateGuild": "Dit gilde is privé",
+		"join": "Bij gilde aansluiten",
+		"found": {
+			"this": "Deze emoji komt uit dit gilde.",
+			"other": "Deze emoji komt uit een van je andere gilden.",
+			"not": "Deze emoji komt niet uit een van je gilden. Je moet je bij het gilde aanslutiten om deze emoji te kunnen gebruiken.",
+			"private": "Het gilde voor deze emoji kan niet worden gevonden"
+		}
 	},
 	"sticker": {
 		"title": "Stickers",

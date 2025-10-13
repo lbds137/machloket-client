@@ -32,12 +32,6 @@
 		"composer": "Compositor: $1",
 		"length": "Duração: $1 minutos e $2 segundos"
 	},
-	"blog": {
-		"blog": "Blogue",
-		"wantUpdates": "Você gostaria de receber atualizações semanais do blog sobre o estado do Fermi?",
-		"blogUpdates": "Atualizações do blog:",
-		"gotoPost": "Ir ao post"
-	},
 	"logout": {
 		"logout": "Encerrar a sessão",
 		"error": {
@@ -421,6 +415,14 @@
 		"traces": "$1 ($2ms) $3"
 	},
 	"notiVolume": "Volume da notificação:",
+	"blog": {
+		"blog": "Blogue",
+		"wantUpdates": "Você gostaria de receber atualizações semanais do blog sobre o estado do Fermi?",
+		"blogUpdates": "Atualizações do blog:",
+		"gotoPost": "Ir ao post",
+		"fermi": "Blog do Fermi",
+		"desc": "Leia ou se inscreva no blogue para receber atualizações sobre o Fermi!"
+	},
 	"localuser": {
 		"trace": "Trilhas",
 		"install": "Instalar",

@@ -39,9 +39,6 @@
 		"composer": "Compositeur : $1",
 		"length": "Durée : $1 minute(s) et $2 seconde(s)"
 	},
-	"blog": {
-		"blog": "Blogue"
-	},
 	"logout": {
 		"logout": "Se déconnecter",
 		"error": {
@@ -394,6 +391,11 @@
 		"traces": "$1 ($2ms) $3"
 	},
 	"notiVolume": "Volume de notification :",
+	"blog": {
+		"blog": "Blogue",
+		"fermi": "Blogue de Fermi",
+		"desc": "Lisez ou abonnez-vous au blogue pour des actualités sur Fermi !"
+	},
 	"localuser": {
 		"trace": "Traces",
 		"install": "Installer",

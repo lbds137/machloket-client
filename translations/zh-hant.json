@@ -31,12 +31,6 @@
 		"composer": "作曲家：$1",
 		"length": "時長：$1 分 $2 秒"
 	},
-	"blog": {
-		"blog": "部落格",
-		"wantUpdates": "您想取得有關 Fermi 狀態的每週部落格更新嗎？",
-		"blogUpdates": "部落格更新：",
-		"gotoPost": "前往文章"
-	},
 	"logout": {
 		"logout": "登出",
 		"error": {
@@ -420,6 +414,14 @@
 		"traces": "$1（$2 毫秒）$3"
 	},
 	"notiVolume": "通知音量：",
+	"blog": {
+		"blog": "部落格",
+		"wantUpdates": "您想取得有關 Fermi 狀態的每週部落格更新嗎？",
+		"blogUpdates": "部落格更新：",
+		"gotoPost": "前往文章",
+		"fermi": "Fermi 部落格",
+		"desc": "閱讀或訂閱部落格來獲得 Fermi 的最新資訊！"
+	},
 	"localuser": {
 		"trace": "軌跡",
 		"install": "安裝",

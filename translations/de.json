@@ -6,6 +6,7 @@
 			"Byte",
 			"McDutchie",
 			"Mrmaffen",
+			"Mukeber",
 			"Russianbabe1978",
 			"SergeCroise",
 			"Simon04",
@@ -601,6 +602,9 @@
 		"application_guild_subscription": "Hat Premium",
 		"legacy_username": "Hat alten Benutzernamen",
 		"quest_completed": "hat eine Quest abgeschlossen"
+	},
+	"group": {
+		"select": "Freunde auswählen"
 	},
 	"emoji": {
 		"title": "Emojis",

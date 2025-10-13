@@ -16,9 +16,6 @@
 		"composer": "Komponist: $1",
 		"length": "Längt: $1 Minutten a(n) $2 Sekonnen"
 	},
-	"blog": {
-		"blog": "Blog"
-	},
 	"logout": {
 		"logout": "Ausloggen",
 		"error": {
@@ -27,6 +24,7 @@
 			"cont": "Trotzdeem virufueren"
 		}
 	},
+	"cancel": "Ofbriechen",
 	"permissions": {
 		"readableNames": {
 			"ADMINISTRATOR": "Administrateur",
@@ -78,6 +76,7 @@
 		"text": "Text",
 		"announcement": "Ukënnegungen",
 		"name:": "Numm:",
+		"icon": "Symbol:",
 		"topic:": "Theema:",
 		"nsfw:": "NSFW:",
 		"selectType": "Kanaltyp auswielen",
@@ -175,6 +174,10 @@
 	"trace": {
 		"totalTime": "$2: $1&nbsp;ms",
 		"traces": "$1 ($2:&nbsp;ms) $3"
+	},
+	"blog": {
+		"blog": "Blog",
+		"fermi": "Fermi-Blog"
 	},
 	"localuser": {
 		"trace": "Spueren",
@@ -293,6 +296,9 @@
 	},
 	"badge": {
 		"certified_moderator": "Moderateur"
+	},
+	"group": {
+		"edit": "Gruppenchat änneren"
 	},
 	"emoji": {
 		"title": "Emojien",
