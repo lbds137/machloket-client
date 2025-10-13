@@ -220,6 +220,7 @@
 		"createCatagory": "Create category",
 		"permissions": "Permissions"
 	},
+	"notiClump":"You've gotten $1 notifications from $2",
 	"Voice":{
 		"status":{
 			"done":"Connected",

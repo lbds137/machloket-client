@@ -31,12 +31,8 @@ import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
 import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
+import {NotificationHandler} from "./notificationHandler.js";
 
-declare global {
-	interface NotificationOptions {
-		image?: string | null | undefined;
-	}
-}
 class Channel extends SnowFlake {
 	editing!: Message | null;
 	type!: number;
@@ -2137,7 +2133,7 @@ class Channel extends SnowFlake {
 	}
 	private findClosest(id: string | undefined) {
 		const mTime = (id: string) => {
-			return this.messages.get(id)?.timestamp || -1;
+			return this.messages.get(id)?.getTimeStamp() || -1;
 		};
 		if (!this.lastmessageid || !id) return;
 		let flake: string | undefined = this.lastmessageid;
@@ -2572,6 +2568,9 @@ class Channel extends SnowFlake {
 			return;
 		}
 		if (!this.muted) {
+			if (this.localuser.user.status === "dnd") {
+				return;
+			}
 			if (
 				!this.guild.mute_config ||
 				new Date(this.guild.mute_config.end_time).getTime() < Date.now()
@@ -2597,31 +2596,7 @@ class Channel extends SnowFlake {
 			if (message.author.relationshipType == 2) {
 				return;
 			}
-			let noticontent: string | undefined | null = message.content.textContent;
-			if (message.embeds[0]) {
-				noticontent ||= message.embeds[0]?.json.title;
-				noticontent ||= message.content.textContent;
-			}
-			noticontent ||= I18n.getTranslation("blankMessage");
-			let imgurl: null | string = null;
-			const images = message.getimages();
-			if (images.length) {
-				const image = images[0];
-				if (image.proxy_url) {
-					imgurl ||= image.proxy_url;
-				}
-				imgurl ||= image.url;
-			}
-			const notification = new Notification(this.notititle(message), {
-				body: noticontent,
-				icon: message.author.getpfpsrc(this.guild),
-				image: imgurl,
-			});
-			notification.addEventListener("click", (_) => {
-				window.focus();
-
-				this.getHTML(true, true);
-			});
+			NotificationHandler.sendMessageNotification(message);
 		} else if (Notification.permission !== "denied") {
 			Notification.requestPermission().then(() => {
 				if (deep === 3) {
