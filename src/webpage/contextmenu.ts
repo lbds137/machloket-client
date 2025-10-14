@@ -15,7 +15,7 @@ interface menuPart<x, y> {
 }
 
 class ContextButton<x, y> implements menuPart<x, y> {
-	private text: string | (() => string);
+	private text: string | ((this: x) => string);
 	private onClick: (this: x, arg: y, e: MouseEvent) => void;
 	private icon?: iconJson;
 	private visable?: (this: x, arg: y) => boolean;
@@ -50,7 +50,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 
 		const intext = document.createElement("button");
 		intext.classList.add("contextbutton");
-		intext.append(this.textContent);
+		intext.append(this.textContent(obj1));
 
 		intext.disabled = !!this.enabled && !this.enabled.call(obj1, obj2);
 
@@ -95,9 +95,9 @@ class ContextButton<x, y> implements menuPart<x, y> {
 
 		menu.append(intext);
 	}
-	get textContent() {
+	textContent(x: x) {
 		if (this.text instanceof Function) {
-			return this.text();
+			return this.text.call(x);
 		}
 		return this.text;
 	}

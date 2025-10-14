@@ -111,7 +111,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visable: function () {
-					return !this.muted;
+					return !this.muted && this.type !== 4;
 				},
 			},
 		);
@@ -143,7 +143,12 @@ class Channel extends SnowFlake {
 		);
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("channel.delete"),
+			function () {
+				if (this.type === 4) {
+					return I18n.channel.deleteCat();
+				}
+				return I18n.channel.delete();
+			},
 			function (this: Channel) {
 				this.deleteChannel();
 			},
@@ -162,7 +167,12 @@ class Channel extends SnowFlake {
 		this.contextmenu.addSeperator();
 		//TODO copy ID icon
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("channel.copyId"),
+			function () {
+				if (this.type == 4) {
+					return I18n.channel.copyIdCat();
+				}
+				return I18n.channel.copyId();
+			},
 			function (this: Channel) {
 				navigator.clipboard.writeText(this.id);
 			},
