@@ -86,12 +86,12 @@ class Permissions {
 		"USE_EXTERNAL_APPS",
 	] as const;
 	getPermission(name: string): number {
-		if (undefined === Permissions.permisions.indexOf(name)) {
+		if (undefined === Permissions.permisions.indexOf(name as any)) {
 			console.error(name + " is not found in map", Permissions.permisions);
 		}
-		if (this.getPermissionbit(Permissions.permisions.indexOf(name), this.allow)) {
+		if (this.getPermissionbit(Permissions.permisions.indexOf(name as any), this.allow)) {
 			return 1;
-		} else if (this.getPermissionbit(Permissions.permisions.indexOf(name), this.deny)) {
+		} else if (this.getPermissionbit(Permissions.permisions.indexOf(name as any), this.deny)) {
 			return -1;
 		} else {
 			return 0;
@@ -103,12 +103,12 @@ class Permissions {
 				"This function may of been used in error, think about using getPermision instead",
 			);
 		}
-		if (this.getPermissionbit(Permissions.permisions.indexOf(name), this.allow)) return true;
+		if (this.getPermissionbit(Permissions.permisions.indexOf(name as any), this.allow)) return true;
 		if (name !== "ADMINISTRATOR" && adminOverride) return this.hasPermission("ADMINISTRATOR");
 		return false;
 	}
 	setPermission(name: string, setto: number): void {
-		const bit = Permissions.permisions.indexOf(name);
+		const bit = Permissions.permisions.indexOf(name as any);
 		if (bit === undefined) {
 			return console.error(
 				"Tried to set permission to " + setto + " for " + name + " but it doesn't exist",

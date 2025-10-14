@@ -2,7 +2,6 @@ import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {webhookType} from "./jsontypes.js";
 import {MarkDown} from "./markdown.js";
-import {Member} from "./member.js";
 import {Dialog, Options} from "./settings.js";
 import {SnowFlake} from "./snowflake.js";
 import {User} from "./user.js";

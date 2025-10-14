@@ -171,7 +171,7 @@ class TextInput implements OptionsElement<string> {
 		div.append(input);
 		return div;
 	}
-	private onChange() {
+	onChange() {
 		this.owner.changed();
 		const input = this.input.deref();
 		if (input) {
@@ -586,15 +586,21 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	value!: Emoji | undefined | null;
 	localuser: Localuser;
 	clear: boolean;
+	guild: boolean;
 	constructor(
 		label: string,
 		onSubmit: (str: Emoji | undefined | null) => void,
 		owner: Options,
 		localuser: Localuser,
-		{initEmoji = undefined, clear = false}: {initEmoji?: undefined | Emoji; clear?: boolean} = {},
+		{
+			initEmoji = undefined,
+			clear = false,
+			guild = true,
+		}: {initEmoji?: undefined | Emoji; clear?: boolean; guild?: boolean} = {},
 	) {
 		this.label = label;
 		this.owner = owner;
+		this.guild = guild;
 		this.onSubmit = onSubmit;
 		this.value = initEmoji;
 		this.localuser = localuser;
@@ -619,7 +625,7 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			e.preventDefault();
 			e.stopImmediatePropagation();
 			(async () => {
-				const emj = await this.localuser.emojiPicker(e.x, e.y);
+				const emj = await this.localuser.emojiPicker(e.x, e.y, this.guild);
 				if (emj) {
 					this.value = emj;
 					emoji.remove();
@@ -1123,12 +1129,17 @@ class Options implements OptionsElement<void> {
 	addEmojiInput(
 		label: string,
 		onSubmit: (str: Emoji | null | undefined) => void,
-		localuser?: Localuser,
-		{initEmoji = undefined, clear = false} = {} as {initEmoji?: Emoji; clear?: boolean},
+		localuser: Localuser,
+		{initEmoji = undefined, clear = false, guild = true} = {} as {
+			initEmoji?: Emoji;
+			clear?: boolean;
+			guild?: boolean;
+		},
 	) {
 		const emoji = new EmojiInput(label, onSubmit, this, localuser, {
 			initEmoji: initEmoji,
 			clear,
+			guild,
 		});
 		this.options.push(emoji);
 		this.generate(emoji);
@@ -1728,16 +1739,18 @@ class Form implements OptionsElement<object> {
 	addEmojiInput(
 		label: string,
 		formName: string,
-		localuser?: Localuser,
-		{initEmoji = undefined, required = false, clear = false} = {} as {
+		localuser: Localuser,
+		{initEmoji = undefined, required = false, clear = false, guild = true} = {} as {
 			initEmoji?: Emoji;
 			required: boolean;
 			clear?: boolean;
+			guild?: boolean;
 		},
 	) {
 		const emoji = this.options.addEmojiInput(label, () => {}, localuser, {
 			initEmoji: initEmoji,
 			clear,
+			guild,
 		});
 		if (required) {
 			this.required.add(emoji);

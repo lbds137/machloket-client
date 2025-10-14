@@ -129,18 +129,19 @@ function makePlayBox(
 			);
 			player.addListener(thing.src, followUpdates, div);
 			let int = setInterval((_) => {}, 1000);
-			if (mor instanceof Object) {
-				const audioo = new Audio(mor.src);
+			if (typeof mor !== "string") {
+				const cmor = mor;
+				const audioo = new Audio(cmor.src);
 				audioo.load();
 				audioo.autoplay = true;
 				audioo.currentTime = ctime / 1000;
 				int = setInterval(() => {
 					if (button.classList.contains("svg-pause")) {
-						player.addUpdate(mor.src, {type: "playing", time: audioo.currentTime * 1000});
+						player.addUpdate(cmor.src, {type: "playing", time: audioo.currentTime * 1000});
 					}
 				}, 100) as unknown as number;
 				audioo.onplay = () => {
-					player.addUpdate(mor.src, {type: "play"});
+					player.addUpdate(cmor.src, {type: "play"});
 				};
 				audioo.onpause = () => {
 					player.addUpdate(thing.src, {type: "pause"});
@@ -149,7 +150,7 @@ function makePlayBox(
 					audio = audioo;
 				};
 				audioo.onended = () => {
-					player.addUpdate(mor.src, {type: "end"});
+					player.addUpdate(cmor.src, {type: "end"});
 				};
 			}
 			button.onclick = () => {
@@ -338,7 +339,7 @@ class MediaPlayer {
 					//debugger;
 					const sizes = await prog.get8BitArray(4);
 					prog.sizeLeft = (sizes[0] << 21) + (sizes[1] << 14) + (sizes[2] << 7) + sizes[3];
-					const mappy = new Map<string, Uint8Array>();
+					const mappy = new Map<string, Uint8Array<ArrayBuffer>>();
 					while (prog.sizeLeft > 0) {
 						const Identify = String.fromCharCode(
 							await prog.next(),
@@ -405,7 +406,7 @@ class MediaPlayer {
 					}
 					const tye = mappy.get("TYE");
 					if (tye) {
-						output.year = +decodeText(tye);
+						output.year = +decodeText(tye.buffer);
 					}
 					//TODO more thoroughly check if these two are the same format
 				} else if (version === 3 || version === 4) {
@@ -416,7 +417,7 @@ class MediaPlayer {
 					//debugger;
 					const sizes = await prog.get8BitArray(4);
 					prog.sizeLeft = (sizes[0] << 21) + (sizes[1] << 14) + (sizes[2] << 7) + sizes[3];
-					const mappy = new Map<string, Uint8Array>();
+					const mappy = new Map<string, Uint8Array<ArrayBuffer>>();
 					while (prog.sizeLeft > 0) {
 						const Identify = String.fromCharCode(
 							await prog.next(),
@@ -458,7 +459,7 @@ class MediaPlayer {
 					}
 					const pic = mappy.get("APIC");
 					if (pic) {
-						const encoding = pic[0];
+						//const encoding = pic[0];
 						let i = 1; //skipping info I don't need right now
 						for (; pic[i]; i++) {}
 						i += 2;
@@ -500,11 +501,11 @@ class MediaPlayer {
 					}
 					const TYER = mappy.get("TYER");
 					if (TYER) {
-						output.year = +decodeText(TYER);
+						output.year = +decodeText(TYER.buffer);
 					}
 					const TLEN = mappy.get("TLEN");
 					if (TLEN) {
-						output.length = +decodeText(TLEN);
+						output.length = +decodeText(TLEN.buffer);
 					}
 				}
 			} //TODO implement more metadata types

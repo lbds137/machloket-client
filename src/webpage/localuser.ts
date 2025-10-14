@@ -1195,8 +1195,8 @@ class Localuser {
 
 		console.log(elms);
 	}
-	emojiPicker(x: number, y: number) {
-		return Emoji.emojiPicker(x, y, this);
+	emojiPicker(x: number, y: number, guildEmojis = true) {
+		return Emoji.emojiPicker(x, y, guildEmojis ? this : undefined);
 	}
 	async getSidePannel() {
 		if (this.ws && this.channelfocus) {

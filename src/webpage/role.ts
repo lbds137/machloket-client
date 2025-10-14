@@ -281,7 +281,7 @@ class RoleList extends Buttons {
 			const colorI = form.addColorInput(I18n.role.color(), "color", {
 				initColor: color,
 			});
-			form.addEmojiInput(I18n.role.roleEmoji(), "unicode_emoji", undefined, {
+			form.addEmojiInput(I18n.role.roleEmoji(), "unicode_emoji", this.guild.localuser, {
 				initEmoji: role.unicode_emoji
 					? new Emoji(
 							{
@@ -293,6 +293,7 @@ class RoleList extends Buttons {
 					: undefined,
 				required: false,
 				clear: true,
+				guild: false,
 			});
 			form.addImageInput(I18n.role.roleFileIcon(), "icon", {
 				initImg: role.icon

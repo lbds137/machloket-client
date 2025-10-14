@@ -1,3 +1,4 @@
+//@ts-expect-error
 import {I18n} from "./i18n.js";
 
 class Rights {
@@ -24,6 +25,7 @@ class Rights {
 	}
 	static *info(): Generator<{name: string; readableName: string; description: string}> {
 		throw new Error("not implemented yet");
+		/*
 		for (const thing of this.permisions) {
 			yield {
 				name: thing,
@@ -31,6 +33,7 @@ class Rights {
 				description: I18n.rights.descriptions[thing](),
 			};
 		}
+		*/
 	}
 	static readonly permisions = [
 		"OPERATOR",
@@ -86,18 +89,18 @@ class Rights {
 		"CREATE_REGISTRATION_TOKENS",
 	] as const;
 	getPermission(name: string): boolean {
-		if (undefined === Rights.permisions.indexOf(name)) {
+		if (undefined === Rights.permisions.indexOf(name as any)) {
 			console.error(name + " is not found in map", Rights.permisions);
 		}
-		return this.getPermissionbit(Rights.permisions.indexOf(name), this.allow);
+		return this.getPermissionbit(Rights.permisions.indexOf(name as any), this.allow);
 	}
 	hasPermission(name: string, adminOverride = true): boolean {
-		if (this.getPermissionbit(Rights.permisions.indexOf(name), this.allow)) return true;
+		if (this.getPermissionbit(Rights.permisions.indexOf(name as any), this.allow)) return true;
 		if (name !== "OPERATOR" && adminOverride) return this.hasPermission("OPERATOR");
 		return false;
 	}
 	setPermission(name: string, setto: number): void {
-		const bit = Rights.permisions.indexOf(name);
+		const bit = Rights.permisions.indexOf(name as any);
 		if (bit === undefined) {
 			return console.error(
 				"Tried to set permission to " + setto + " for " + name + " but it doesn't exist",

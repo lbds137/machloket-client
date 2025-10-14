@@ -1789,7 +1789,7 @@ class Channel extends SnowFlake {
 	setnotifcation() {
 		const optionsArr = ["all", "onlyMentions", "none", "default"] as const;
 		const defualt = I18n.guild[optionsArr[this.guild.message_notifications]]();
-		const options = optionsArr.map((e) => I18n.guild[e]());
+		const options = optionsArr.map((e) => I18n.guild[e](defualt));
 		const notiselect = new Dialog("");
 		const form = notiselect.options.addForm(
 			"",
