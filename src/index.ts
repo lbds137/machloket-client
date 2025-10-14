@@ -27,7 +27,7 @@ async function getDirectories(path: string): Promise<dirtype> {
 }
 
 let dirs: dirtype | undefined = undefined;
-async function combinePath(path: string, tryAgain = true): Promise<string> {
+async function combinePath(path: string, tryAgain = true, reqpath: string): Promise<string> {
 	if (!dirs) {
 		dirs = await getDirectories(__dirname);
 	}
@@ -48,18 +48,20 @@ async function combinePath(path: string, tryAgain = true): Promise<string> {
 	}
 	if (find(pathDir, dirs)) {
 		return __dirname + path;
+	} else if (reqpath.startsWith("/channels")) {
+		return __dirname + "/webpage/app.html";
 	} else {
 		if (!path.includes(".")) {
-			const str = await combinePath(path + ".html", false);
-			if (str !== __dirname + "/webpage/app.html") {
+			const str = await combinePath(path + ".html", false, reqpath);
+			if (str !== __dirname + "/webpage/404.html") {
 				return str;
 			}
 		}
 		if (devmode && tryAgain) {
 			dirs = await getDirectories(__dirname);
-			return combinePath(path, false);
+			return combinePath(path, false, reqpath);
 		}
-		return __dirname + "/webpage/app.html";
+		return __dirname + "/webpage/404.html";
 	}
 }
 interface Instance {
@@ -184,7 +186,7 @@ app.use("/", async (req: Request, res: Response) => {
 		res.sendFile(path.join(__dirname, "webpage", "app.html"));
 		return;
 	}
-	const filePath = await combinePath("/webpage/" + req.path);
+	const filePath = await combinePath("/webpage/" + req.path, true, req.path);
 	res.sendFile(filePath);
 });
 
