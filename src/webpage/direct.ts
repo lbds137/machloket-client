@@ -24,7 +24,7 @@ class Direct extends Guild {
 		this.roles = [];
 		this.roleids = new Map();
 		this.prevchannel = undefined;
-		this.properties.name = I18n.getTranslation("DMs.name");
+		this.properties.name = I18n.DMs.name();
 		for (const thing of json) {
 			const temp = new Group(thing, this);
 			this.channels.push(temp);
@@ -156,7 +156,7 @@ class Direct extends Guild {
 		if (this.freindDiv) {
 			this.freindDiv.classList.add("viewChannel");
 		}
-		this.localuser.pageTitle(I18n.getTranslation("friends.friendlist"));
+		this.localuser.pageTitle(I18n.friends.friendlist());
 		const channelTopic = document.getElementById("channelTopic") as HTMLSpanElement;
 		channelTopic.removeAttribute("hidden");
 		channelTopic.textContent = "";
@@ -200,13 +200,13 @@ class Direct extends Guild {
 		{
 			//TODO update on users coming online
 			const online = document.createElement("button");
-			online.textContent = I18n.getTranslation("friends.online");
+			online.textContent = I18n.friends.online();
 			channelTopic.append(online);
 			const genOnline = () => {
 				this.localuser.relationshipsUpdate = genOnline;
 				checkVoid();
 				container.innerHTML = "";
-				container.append(I18n.getTranslation("friends.online:"));
+				container.append(I18n.friends["online:"]());
 				for (const user of this.localuser.inrelation) {
 					if (user.relationshipType === 1 && user.online) {
 						const buttonc = document.createElement("div");
@@ -227,12 +227,12 @@ class Direct extends Guild {
 		}
 		{
 			const all = document.createElement("button");
-			all.textContent = I18n.getTranslation("friends.all");
+			all.textContent = I18n.friends.all();
 			const genAll = () => {
 				this.localuser.relationshipsUpdate = genAll;
 				checkVoid();
 				container.innerHTML = "";
-				container.append(I18n.getTranslation("friends.all:"));
+				container.append(I18n.friends["all:"]());
 				for (const user of this.localuser.inrelation) {
 					if (user.relationshipType === 1) {
 						const buttonc = document.createElement("div");
@@ -253,12 +253,12 @@ class Direct extends Guild {
 		}
 		{
 			const pending = document.createElement("button");
-			pending.textContent = I18n.getTranslation("friends.pending");
+			pending.textContent = I18n.friends.pending();
 			const genPending = () => {
 				this.localuser.relationshipsUpdate = genPending;
 				checkVoid();
 				container.innerHTML = "";
-				container.append(I18n.getTranslation("friends.pending:"));
+				container.append(I18n.friends["pending:"]());
 				for (const user of this.localuser.inrelation) {
 					if (user.relationshipType === 3 || user.relationshipType === 4) {
 						const buttons = document.createElement("div");
@@ -299,13 +299,13 @@ class Direct extends Guild {
 		}
 		{
 			const blocked = document.createElement("button");
-			blocked.textContent = I18n.getTranslation("friends.blocked");
+			blocked.textContent = I18n.friends.blocked();
 
 			const genBlocked = () => {
 				this.localuser.relationshipsUpdate = genBlocked;
 				checkVoid();
 				container.innerHTML = "";
-				container.append(I18n.getTranslation("friends.blockedusers"));
+				container.append(I18n.friends.blockedusers());
 				for (const user of this.localuser.inrelation) {
 					if (user.relationshipType === 2) {
 						const buttonc = document.createElement("div");
@@ -328,7 +328,7 @@ class Direct extends Guild {
 		}
 		{
 			const add = document.createElement("button");
-			add.textContent = I18n.getTranslation("friends.addfriend");
+			add.textContent = I18n.friends.addfriend();
 			add.onclick = () => {
 				this.localuser.relationshipsUpdate = () => {};
 				container.innerHTML = "";
@@ -339,7 +339,7 @@ class Direct extends Guild {
 					(e: any) => {
 						console.log(e);
 						if (e.code === 404) {
-							throw new FormError(text, I18n.getTranslation("friends.notfound"));
+							throw new FormError(text, I18n.friends.notfound());
 						} else if (e.code === 400) {
 							throw new FormError(text, e.message.split("Error: ")[1]);
 						} else {
@@ -354,13 +354,13 @@ class Direct extends Guild {
 						headers: this.headers,
 					},
 				);
-				const text = form.addTextInput(I18n.getTranslation("friends.addfriendpromt"), "username");
+				const text = form.addTextInput(I18n.friends.addfriendpromt(), "username");
 				form.addPreprocessor((obj: any) => {
 					const [username, discriminator] = obj.username.split("#");
 					obj.username = username;
 					obj.discriminator = discriminator;
 					if (!discriminator) {
-						throw new FormError(text, I18n.getTranslation("friends.discnotfound"));
+						throw new FormError(text, I18n.friends.discnotfound());
 					}
 				});
 				container.append(float.generateHTML());
@@ -423,7 +423,7 @@ class Group extends Channel {
 	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
 	static setupcontextmenu() {
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("DMs.markRead"),
+			() => I18n.DMs.markRead(),
 			function (this: Group) {
 				this.readbottom();
 			},
@@ -444,7 +444,7 @@ class Group extends Channel {
 		);
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("DMs.close"),
+			() => I18n.DMs.close(),
 			function (this: Group) {
 				this.deleteChannel();
 			},
@@ -468,7 +468,7 @@ class Group extends Channel {
 		);
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("DMs.copyId"),
+			() => I18n.DMs.copyId(),
 			function (this: Group) {
 				navigator.clipboard.writeText(this.id);
 			},

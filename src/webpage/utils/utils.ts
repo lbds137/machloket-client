@@ -747,13 +747,13 @@ const checkInstance = Object.assign(
 		await instancefetch;
 		try {
 			loginButton.disabled = true;
-			verify!.textContent = I18n.getTranslation("login.checking");
+			verify!.textContent = I18n.login.checking();
 			const instanceValue = instance;
 			const instanceinfo = (await getapiurls(instanceValue)) as instanceinfo;
 			if (instanceinfo) {
 				instanceinfo.value = instanceValue;
 				localStorage.setItem("instanceinfo", JSON.stringify(instanceinfo));
-				verify!.textContent = I18n.getTranslation("login.allGood");
+				verify!.textContent = I18n.login.allGood();
 				loginButton.disabled = false;
 				if (checkInstance.alt) {
 					checkInstance.alt(instanceinfo);
@@ -764,13 +764,13 @@ const checkInstance = Object.assign(
 				}, 3000);
 				return instanceinfo;
 			} else {
-				verify!.textContent = I18n.getTranslation("login.invalid");
+				verify!.textContent = I18n.login.invalid();
 				loginButton.disabled = true;
 				return;
 			}
 		} catch {
 			console.log("catch");
-			verify!.textContent = I18n.getTranslation("login.invalid");
+			verify!.textContent = I18n.login.invalid();
 			loginButton.disabled = true;
 			return;
 		}

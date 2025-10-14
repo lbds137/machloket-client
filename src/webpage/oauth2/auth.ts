@@ -230,7 +230,7 @@ if (user) {
 			const perms = document.getElementById("permissions") as HTMLDivElement;
 
 			if (perms && permstr) {
-				perms.children[0].textContent = I18n.getTranslation("htmlPages.idpermissions");
+				perms.children[0].textContent = I18n.htmlPages.idpermissions();
 				const permisions = new Permissions(permstr);
 				for (const perm of Permissions.info()) {
 					if (permisions.hasPermission(perm.name, false)) {
@@ -248,5 +248,5 @@ if (user) {
 const AcceptInvite = document.getElementById("AcceptInvite");
 if (AcceptInvite) {
 	AcceptInvite.addEventListener("click", showAccounts);
-	AcceptInvite.textContent = I18n.getTranslation("htmlPages.addBot");
+	AcceptInvite.textContent = I18n.htmlPages.addBot();
 }

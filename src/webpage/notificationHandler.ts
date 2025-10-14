@@ -18,7 +18,7 @@ export class NotificationHandler {
 			noticontent ||= message.embeds[0]?.json.title;
 			noticontent ||= message.content.textContent;
 		}
-		noticontent ||= I18n.getTranslation("blankMessage");
+		noticontent ||= I18n.blankMessage();
 
 		const image = message.getimages()[0];
 		const imgurl = image?.proxy_url || image?.url || undefined;

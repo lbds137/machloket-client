@@ -36,9 +36,9 @@
 		<div id="loading" class="loading">
 			<div class="centeritem">
 				<img src="/logo.svg" style="width: 3in; height: 3in" />
-				<h1 id="loadingText">Fermi is loading</h1>
-				<h2 id="load-desc">This shouldn't take long</h2>
-				<h1 id="switchaccounts">Switch Accounts</h1>
+				<h1 id="loadingText" i18n="htmlPages.loadingText">Fermi is loading</h1>
+				<h2 id="load-desc" i18n="htmlPages.loaddesc">This shouldn't take long</h2>
+				<h1 id="switchaccounts" i18n="htmlPages.switchaccounts">Switch Accounts</h1>
 			</div>
 		</div>
 		<div class="flexltr" id="page">
@@ -136,7 +136,9 @@
 			</div>
 		</div>
 		<div hidden id="gimmefile">
-			<div id="filedroptext" class="centeritem nonimagecenter">Upload your files here!</div>
+			<div id="filedroptext" class="centeritem nonimagecenter" i18n="uploadFilesText">
+				Upload your files here!
+			</div>
 		</div>
 	</body>
 	<script src="/index.js" type="module"></script>

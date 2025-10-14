@@ -77,7 +77,7 @@ class Channel extends SnowFlake {
 	}
 	static setupcontextmenu() {
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("channel.markRead"),
+			() => I18n.channel.markRead(),
 			function (this: Channel) {
 				this.readbottom();
 			},
@@ -85,7 +85,7 @@ class Channel extends SnowFlake {
 
 		//TODO invite icon
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("channel.makeInvite"),
+			() => I18n.channel.makeInvite(),
 			function (this: Channel) {
 				this.createInvite();
 			},
@@ -128,7 +128,7 @@ class Channel extends SnowFlake {
 		);
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("channel.settings"),
+			() => I18n.channel.settings(),
 			function (this: Channel) {
 				this.generateSettings();
 			},
@@ -209,8 +209,8 @@ class Channel extends SnowFlake {
 		opt.addSelect(
 			I18n.muteDuration(),
 			() => {},
-			["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"].map((e) =>
-				I18n.getTranslation("inviteOptions." + e),
+			(["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"] as const).map((e) =>
+				I18n.inviteOptions[e](),
 			),
 		).onchange = (e) => {
 			time = [1800, 3600, 21600, 43200, 86400, 604800, 2592000, 1 << 30][e];
@@ -287,31 +287,27 @@ class Channel extends SnowFlake {
 		};
 		update();
 		const inviteOptions = new Dialog("", {noSubmit: true});
-		inviteOptions.options.addTitle(I18n.getTranslation("inviteOptions.title"));
-		inviteOptions.options.addText(
-			I18n.getTranslation("invite.subtext", this.name, this.guild.properties.name),
-		);
+		inviteOptions.options.addTitle(I18n.inviteOptions.title());
+		inviteOptions.options.addText(I18n.invite.subtext(this.name, this.guild.properties.name));
 
 		inviteOptions.options.addSelect(
-			I18n.getTranslation("invite.expireAfter"),
+			I18n.invite.expireAfter(),
 			() => {},
-			["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"].map((e) =>
-				I18n.getTranslation("inviteOptions." + e),
+			(["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"] as const).map((e) =>
+				I18n.inviteOptions[e](),
 			),
 		).onchange = (e) => {
 			expires = [1800, 3600, 21600, 43200, 86400, 604800, 2592000, 0][e];
 			update();
 		};
 
-		const timeOptions = ["1", "5", "10", "25", "50", "100"].map((e) =>
-			I18n.getTranslation("inviteOptions.limit", e),
+		const timeOptions = (["1", "5", "10", "25", "50", "100"] as const).map((e) =>
+			I18n.inviteOptions.limit(e),
 		);
-		timeOptions.unshift(I18n.getTranslation("inviteOptions.noLimit"));
-		inviteOptions.options.addSelect(
-			I18n.getTranslation("invite.expireAfter"),
-			() => {},
-			timeOptions,
-		).onchange = (e) => {
+		timeOptions.unshift(I18n.inviteOptions.noLimit());
+		inviteOptions.options.addSelect(I18n.invite.expireAfter(), () => {}, timeOptions).onchange = (
+			e,
+		) => {
 			uses = [0, 1, 5, 10, 25, 50, 100][e];
 			update();
 		};
@@ -321,7 +317,7 @@ class Channel extends SnowFlake {
 	}
 	generateSettings() {
 		this.sortPerms();
-		const settings = new Settings(I18n.getTranslation("channel.settingsFor", this.name));
+		const settings = new Settings(I18n.channel.settingsFor(this.name));
 		{
 			const gensettings = settings.addButton(I18n.channel.settings());
 			const form = gensettings.addForm("", () => {}, {
@@ -330,24 +326,27 @@ class Channel extends SnowFlake {
 				headers: this.headers,
 				traditionalSubmit: true,
 			});
-			form.addTextInput(I18n.getTranslation("channel.name:"), "name", {
+			form.addTextInput(I18n.channel["name:"](), "name", {
 				initText: this.name,
 			});
-			form.addMDInput(I18n.getTranslation("channel.topic:"), "topic", {
+			form.addMDInput(I18n.channel["topic:"](), "topic", {
 				initText: this.topic,
 			});
-			form.addCheckboxInput(I18n.getTranslation("channel.nsfw:"), "nsfw", {
+			form.addCheckboxInput(I18n.channel["nsfw:"](), "nsfw", {
 				initState: this.nsfw,
 			});
 			if (this.type !== 4) {
-				const options = ["voice", "text", "announcement"];
+				const options = ["voice", "text", "announcement"] as const;
 				form.addSelect(
 					"Type:",
 					"type",
-					options.map((e) => I18n.getTranslation("channel." + e)),
+					options.map((e) => I18n.channel[e]()),
 					{
 						defaultIndex: options.indexOf(
-							{0: "text", 2: "voice", 5: "announcement", 4: "category"}[this.type] as string,
+							{0: "text", 2: "voice", 5: "announcement", 4: "category"}[this.type] as
+								| "text"
+								| "voice"
+								| "announcement",
 						),
 					},
 					options,
@@ -1113,7 +1112,7 @@ class Channel extends SnowFlake {
 		if (this.replyingto) {
 			replybox.innerHTML = "";
 			const span = document.createElement("span");
-			span.textContent = I18n.getTranslation("replyingTo", this.replyingto.author.username);
+			span.textContent = I18n.replyingTo(this.replyingto.author.username);
 			const X = document.createElement("button");
 			X.onclick = (_) => {
 				if (this.replyingto?.div) {
@@ -1753,7 +1752,7 @@ class Channel extends SnowFlake {
 				this.typingmap.delete(thing);
 			}
 		}
-		build = I18n.getTranslation("typing", i + "", build);
+		build = I18n.typing(i + "", build);
 		if (this.localuser.channelfocus === this) {
 			if (showing) {
 				typingtext.classList.remove("hidden");
@@ -1788,12 +1787,9 @@ class Channel extends SnowFlake {
 	}
 	lastmessage: Message | undefined;
 	setnotifcation() {
-		const defualt = I18n.getTranslation(
-			"guild." + ["all", "onlyMentions", "none", "default"][this.guild.message_notifications],
-		);
-		const options = ["all", "onlyMentions", "none", "default"].map((e) =>
-			I18n.getTranslation("guild." + e, defualt),
-		);
+		const optionsArr = ["all", "onlyMentions", "none", "default"] as const;
+		const defualt = I18n.guild[optionsArr[this.guild.message_notifications]]();
+		const options = optionsArr.map((e) => I18n.guild[e]());
 		const notiselect = new Dialog("");
 		const form = notiselect.options.addForm(
 			"",
@@ -1809,7 +1805,7 @@ class Channel extends SnowFlake {
 			},
 		);
 		form.addSelect(
-			I18n.getTranslation("guild.selectnoti"),
+			I18n.guild.selectnoti(),
 			"message_notifications",
 			options,
 			{
@@ -1831,49 +1827,6 @@ class Channel extends SnowFlake {
 				},
 			};
 		});
-		/*
-		let noti = this.message_notifications;
-		const defualt=I18n.getTranslation("guild."+["all", "onlyMentions", "none","default"][this.guild.message_notifications])
-		const options=["all", "onlyMentions", "none","default"].map(e=>I18n.getTranslation("guild."+e,defualt))
-		const notiselect = new Dialog([
-			"vdiv",
-			[
-				"radio",
-				I18n.getTranslation("guild.selectnoti"),
-				options,
-				function(e: string){
-					noti = options.indexOf(e);
-				},
-				noti,
-			],
-			[
-				"button",
-				"",
-				"submit",
-				(_: any)=>{
-					//
-					fetch(this.info.api + `/users/@me/guilds/${this.guild.id}/settings/`, {
-						method: "PATCH",
-						headers: this.headers,
-						body: JSON.stringify({
-							channel_overrides:{
-								[this.id]:{
-									message_notifications: noti,
-									muted:false,
-									mute_config:{
-										selected_time_window:0,
-										end_time:0
-									},
-									channel_id:this.id
-								}
-							}
-						}),
-					}).then(()=>notiselect.hide());
-					this.message_notifications = noti;
-				},
-			],
-		]);
-		*/
 		notiselect.show();
 	}
 	async putmessages() {
@@ -2094,7 +2047,7 @@ class Channel extends SnowFlake {
 			if (!removetitle) {
 				const title = document.createElement("h2");
 				title.id = "removetitle";
-				title.textContent = I18n.getTranslation("noMessages");
+				title.textContent = I18n.noMessages();
 				title.classList.add("titlespace", "messagecontainer");
 				messages.append(title);
 			}

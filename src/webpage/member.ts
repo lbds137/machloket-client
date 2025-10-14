@@ -149,9 +149,7 @@ class Member extends SnowFlake {
 	}
 	showEditProfile() {
 		const settings = new Settings("");
-		this.editProfile(
-			settings.addButton(I18n.getTranslation("user.editServerProfile"), {ltr: true}),
-		);
+		this.editProfile(settings.addButton(I18n.user.editServerProfile(), {ltr: true}));
 		settings.show();
 	}
 	editProfile(options: Options) {
@@ -175,7 +173,7 @@ class Member extends SnowFlake {
 			const settingsRight = options.addOptions("");
 			settingsRight.addHTMLArea(hypotheticalProfile);
 
-			const nicky = settingsLeft.addTextInput(I18n.getTranslation("member.nick:"), () => {}, {
+			const nicky = settingsLeft.addTextInput(I18n.member["nick:"](), () => {}, {
 				initText: this.nick || "",
 			});
 			nicky.watchForChange((_) => {
@@ -185,7 +183,7 @@ class Member extends SnowFlake {
 			});
 
 			const finput = settingsLeft.addFileInput(
-				I18n.getTranslation("uploadPfp"),
+				I18n.uploadPfp(),
 				(_) => {
 					if (file) {
 						this.updatepfp(file);
@@ -211,7 +209,7 @@ class Member extends SnowFlake {
 			});
 			let bfile: undefined | File | null;
 			const binput = settingsLeft.addFileInput(
-				I18n.getTranslation("uploadBanner"),
+				I18n.uploadBanner(),
 				(_) => {
 					if (bfile !== undefined) {
 						this.updatebanner(bfile);
@@ -237,7 +235,7 @@ class Member extends SnowFlake {
 			});
 			let changed = false;
 			const pronounbox = settingsLeft.addTextInput(
-				I18n.getTranslation("pronouns"),
+				I18n.pronouns(),
 				(_) => {
 					if (newpronouns !== undefined || newbio !== undefined || changed !== undefined) {
 						this.updateProfile({
@@ -255,7 +253,7 @@ class Member extends SnowFlake {
 				newpronouns = _;
 				regen();
 			});
-			const bioBox = settingsLeft.addMDInput(I18n.getTranslation("bio"), (_) => {}, {
+			const bioBox = settingsLeft.addMDInput(I18n.bio(), (_) => {}, {
 				initText: this.bio,
 			});
 			bioBox.watchForChange((_) => {
@@ -265,11 +263,9 @@ class Member extends SnowFlake {
 			});
 			color = (this.accent_color ? "#" + this.accent_color.toString(16) : "transparent") as string;
 
-			const colorPicker = settingsLeft.addColorInput(
-				I18n.getTranslation("profileColor"),
-				(_) => {},
-				{initColor: color},
-			);
+			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
+				initColor: color,
+			});
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;
@@ -514,8 +510,8 @@ class Member extends SnowFlake {
 			this.kickAPI(e.reason);
 			menu.hide();
 		});
-		form.addTitle(I18n.getTranslation("member.kick", this.name, this.guild.properties.name));
-		form.addTextInput(I18n.getTranslation("member.reason:"), "reason");
+		form.addTitle(I18n.member.kick(this.name, this.guild.properties.name));
+		form.addTextInput(I18n.member["reason:"](), "reason");
 		menu.show();
 	}
 	kickAPI(reason: string) {
@@ -532,8 +528,8 @@ class Member extends SnowFlake {
 			this.banAPI(e.reason);
 			menu.hide();
 		});
-		form.addTitle(I18n.getTranslation("member.ban", this.name, this.guild.properties.name));
-		form.addTextInput(I18n.getTranslation("member.reason:"), "reason");
+		form.addTitle(I18n.member.ban(this.name, this.guild.properties.name));
+		form.addTextInput(I18n.member["reason:"](), "reason");
 		menu.show();
 	}
 	addRole(role: Role) {

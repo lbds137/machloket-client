@@ -41,8 +41,7 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 	}
 	await I18n.done;
 	if (!joinable.length) {
-		document.getElementById("AcceptInvite")!.textContent =
-			I18n.getTranslation("htmlPages.noAccount");
+		document.getElementById("AcceptInvite")!.textContent = I18n.htmlPages.noAccount();
 	}
 
 	const code = window.location.pathname.split("/")[2];
@@ -56,8 +55,7 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 			const guildjson = json.guild;
 			guildinfo = guildjson;
 			document.getElementById("invitename")!.textContent = guildjson.name;
-			document.getElementById("invitedescription")!.textContent = I18n.getTranslation(
-				"invite.longInvitedBy",
+			document.getElementById("invitedescription")!.textContent = I18n.invite.longInvitedBy(
 				json.inviter.username,
 				guildjson.name,
 			);

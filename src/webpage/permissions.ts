@@ -29,8 +29,8 @@ class Permissions {
 		for (const thing of this.permisions) {
 			yield {
 				name: thing,
-				readableName: I18n.getTranslation("permissions.readableNames." + thing),
-				description: I18n.getTranslation("permissions.descriptions." + thing),
+				readableName: I18n.permissions.readableNames[thing](),
+				description: I18n.permissions.descriptions[thing](thing),
 			};
 		}
 	}
@@ -84,7 +84,7 @@ class Permissions {
 		"SEND_VOICE_MESSAGES",
 		"SEND_POLLS",
 		"USE_EXTERNAL_APPS",
-	];
+	] as const;
 	getPermission(name: string): number {
 		if (undefined === Permissions.permisions.indexOf(name)) {
 			console.error(name + " is not found in map", Permissions.permisions);

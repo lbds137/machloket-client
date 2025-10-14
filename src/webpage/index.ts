@@ -16,18 +16,7 @@ if (!(sessionStorage.getItem("currentuser") || Localuser.users.currentuser)) {
 	window.location.href = "/login";
 	throw 0;
 }
-{
-	const loadingText = document.getElementById("loadingText");
-	const loaddesc = document.getElementById("load-desc");
-	const switchaccounts = document.getElementById("switchaccounts");
-	const filedroptext = document.getElementById("filedroptext");
-	if (loadingText && loaddesc && switchaccounts && filedroptext) {
-		loadingText.textContent = I18n.getTranslation("htmlPages.loadingText");
-		loaddesc.textContent = I18n.getTranslation("htmlPages.loaddesc");
-		switchaccounts.textContent = I18n.getTranslation("htmlPages.switchaccounts");
-		filedroptext.textContent = I18n.uploadFilesText();
-	}
-}
+I18n.translatePage();
 
 const userInfoElement = document.getElementById("userinfo") as HTMLDivElement;
 userInfoElement.addEventListener("click", (event) => {
@@ -92,14 +81,13 @@ try {
 	});
 } catch (e) {
 	console.error(e);
-	(document.getElementById("load-desc") as HTMLSpanElement).textContent =
-		I18n.getTranslation("accountNotStart");
+	(document.getElementById("load-desc") as HTMLSpanElement).textContent = I18n.accountNotStart();
 	thisUser = new Localuser(-1);
 }
-
+//TODO move this to the channel/guild class, this is a weird spot
 const menu = new Contextmenu<void, void>("create rightclick");
 menu.addButton(
-	I18n.getTranslation("channel.createChannel"),
+	I18n.channel.createChannel(),
 	() => {
 		if (thisUser.lookingguild) {
 			thisUser.lookingguild.createchannels();
@@ -109,7 +97,7 @@ menu.addButton(
 );
 
 menu.addButton(
-	I18n.getTranslation("channel.createCatagory"),
+	I18n.channel.createCatagory(),
 	() => {
 		if (thisUser.lookingguild) {
 			thisUser.lookingguild.createcategory();

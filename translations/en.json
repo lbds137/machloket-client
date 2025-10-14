@@ -142,7 +142,7 @@
 			"USE_EXTERNAL_SOUNDS": "Use external sounds",
 			"SEND_VOICE_MESSAGES": "Send voice messages",
 			"SEND_POLLS": "Create polls",
-			"USE_EXTERNAL_APPS": "Use external apps"
+			"USE_EXTERNAL_APPS": "Use external apps","OPERATOR":"All Rights"
 		}
 	},
 	"hideBlockedMessages": "You have this user blocked, click to hide these messages.",

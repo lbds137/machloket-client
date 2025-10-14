@@ -1049,15 +1049,15 @@ class MarkDown {
 					open();
 				} else {
 					const full = new Dialog("");
-					full.options.addTitle(I18n.getTranslation("leaving"));
-					full.options.addText(I18n.getTranslation("goingToURL", Url.host));
+					full.options.addTitle(I18n.leaving());
+					full.options.addText(I18n.goingToURL(Url.host));
 					const options = full.options.addOptions("", {ltr: true});
-					options.addButtonInput("", I18n.getTranslation("nevermind"), () => full.hide());
-					options.addButtonInput("", I18n.getTranslation("goThere"), () => {
+					options.addButtonInput("", I18n.nevermind(), () => full.hide());
+					options.addButtonInput("", I18n.goThere(), () => {
 						open();
 						full.hide();
 					});
-					options.addButtonInput("", I18n.getTranslation("goThereTrust"), () => {
+					options.addButtonInput("", I18n.goThereTrust(), () => {
 						open();
 						full.hide();
 						this.trustedDomains.add(Url.host);

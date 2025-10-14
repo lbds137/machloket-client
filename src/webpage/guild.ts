@@ -185,7 +185,7 @@ class Guild extends SnowFlake {
 	static contextmenu = new Contextmenu<Guild, undefined>("guild menu");
 	static setupcontextmenu() {
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.makeInvite"),
+			() => I18n.guild.makeInvite(),
 			function (this: Guild) {
 				const d = new Dialog("");
 				this.makeInviteMenu(d.options);
@@ -201,21 +201,21 @@ class Guild extends SnowFlake {
 		Guild.contextmenu.addSeperator();
 
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.markRead"),
+			() => I18n.guild.markRead(),
 			function (this: Guild) {
 				this.markAsRead();
 			},
 		);
 
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.notifications"),
+			() => I18n.guild.notifications(),
 			function (this: Guild) {
 				this.setnotifcation();
 			},
 		);
 		Guild.contextmenu.addSeperator();
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.editServerProfile"),
+			() => I18n.user.editServerProfile(),
 			function () {
 				this.member.showEditProfile();
 			},
@@ -223,7 +223,7 @@ class Guild extends SnowFlake {
 		Guild.contextmenu.addSeperator();
 
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.leave"),
+			() => I18n.guild.leave(),
 			function (this: Guild) {
 				this.confirmleave();
 			},
@@ -236,7 +236,7 @@ class Guild extends SnowFlake {
 		);
 
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.delete"),
+			() => I18n.guild.delete(),
 			function (this: Guild) {
 				this.confirmDelete();
 			},
@@ -252,7 +252,7 @@ class Guild extends SnowFlake {
 		);
 
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.settings"),
+			() => I18n.guild.settings(),
 			function (this: Guild) {
 				this.generateSettings();
 			},
@@ -299,7 +299,7 @@ class Guild extends SnowFlake {
 
 		Guild.contextmenu.addSeperator();
 		Guild.contextmenu.addButton(
-			() => I18n.getTranslation("guild.copyId"),
+			() => I18n.guild.copyId(),
 			function (this: Guild) {
 				navigator.clipboard.writeText(this.id);
 			},
@@ -487,24 +487,24 @@ class Guild extends SnowFlake {
 		loadResults();
 	}
 	generateSettings() {
-		const settings = new Settings(I18n.getTranslation("guild.settingsFor", this.properties.name));
+		const settings = new Settings(I18n.guild.settingsFor(this.properties.name));
 		const textChannels = this.channels.filter((e) => {
 			//TODO there are almost certainly more types. is Voice valid?
 			return new Set([0, 5]).has(e.type);
 		});
 		{
-			const overview = settings.addButton(I18n.getTranslation("guild.overview"));
+			const overview = settings.addButton(I18n.guild.overview());
 			const form = overview.addForm("", (_) => {}, {
 				headers: this.headers,
 				traditionalSubmit: true,
 				fetchURL: this.info.api + "/guilds/" + this.id,
 				method: "PATCH",
 			});
-			form.addTextInput(I18n.getTranslation("guild.name:"), "name", {
+			form.addTextInput(I18n.guild["name:"](), "name", {
 				initText: this.properties.name,
 			});
 
-			form.addImageInput(I18n.getTranslation("guild.banner:"), "banner", {
+			form.addImageInput(I18n.guild["banner:"](), "banner", {
 				clear: true,
 				width: 96 * 3,
 				initImg: this.banner
@@ -512,7 +512,7 @@ class Guild extends SnowFlake {
 					: "",
 				objectFit: "cover",
 			});
-			form.addImageInput(I18n.getTranslation("guild.icon:"), "icon", {
+			form.addImageInput(I18n.guild["icon:"](), "icon", {
 				clear: true,
 				initImg: this.properties.icon
 					? this.info.cdn + "/icons/" + this.id + "/" + this.properties.icon + ".png"
@@ -534,16 +534,16 @@ class Guild extends SnowFlake {
 				options,
 			);
 
-			form.addCheckboxInput(I18n.getTranslation("guild.sendrandomwelcome?"), "s1", {
+			form.addCheckboxInput(I18n.guild["sendrandomwelcome?"](), "s1", {
 				initState: !(this.properties.system_channel_flags & 1),
 			});
-			form.addCheckboxInput(I18n.getTranslation("guild.stickWelcomeReact?"), "s4", {
+			form.addCheckboxInput(I18n.guild["stickWelcomeReact?"](), "s4", {
 				initState: !(this.properties.system_channel_flags & 8),
 			});
-			form.addCheckboxInput(I18n.getTranslation("guild.boostMessage?"), "s2", {
+			form.addCheckboxInput(I18n.guild["boostMessage?"](), "s2", {
 				initState: !(this.properties.system_channel_flags & 2),
 			});
-			form.addCheckboxInput(I18n.getTranslation("guild.helpTips?"), "s3", {
+			form.addCheckboxInput(I18n.guild["helpTips?"](), "s3", {
 				initState: !(this.properties.system_channel_flags & 4),
 			});
 			form.addPreprocessor((e: any) => {
@@ -576,9 +576,9 @@ class Guild extends SnowFlake {
 
 			form.addHR();
 			form.addSelect(
-				I18n.getTranslation("guild.defaultNoti"),
+				I18n.guild.defaultNoti(),
 				"default_message_notifications",
-				[I18n.getTranslation("guild.onlyMentions"), I18n.getTranslation("guild.all")],
+				[I18n.guild.onlyMentions(), I18n.guild.all()],
 				{
 					defaultIndex: [1, 0].indexOf(this.properties.default_message_notifications),
 					radio: true,
@@ -590,22 +590,19 @@ class Guild extends SnowFlake {
 			if (!region) {
 				region = "";
 			}
-			form.addTextInput(I18n.getTranslation("guild.region:"), "region", {initText: region});
+			form.addTextInput(I18n.guild["region:"](), "region", {initText: region});
 		}
-		this.makeInviteMenu(
-			settings.addButton(I18n.getTranslation("invite.inviteMaker")),
-			textChannels,
-		);
-		const s1 = settings.addButton(I18n.getTranslation("guild.roles"));
+		this.makeInviteMenu(settings.addButton(I18n.invite.inviteMaker()), textChannels);
+		const s1 = settings.addButton(I18n.guild.roles());
 		const permlist: [Role, Permissions][] = [];
 		for (const thing of this.roles) {
 			permlist.push([thing, thing.permissions]);
 		}
 		s1.options.push(new RoleList(permlist, this, this.updateRolePermissions.bind(this), false));
 		{
-			const emoji = settings.addButton(I18n.getTranslation("emoji.title"));
-			emoji.addButtonInput("", I18n.getTranslation("emoji.upload"), () => {
-				const popup = new Dialog(I18n.getTranslation("emoji.upload"));
+			const emoji = settings.addButton(I18n.emoji.title());
+			emoji.addButtonInput("", I18n.emoji.upload(), () => {
+				const popup = new Dialog(I18n.emoji.upload());
 				const form = popup.options.addForm(
 					"",
 					() => {
@@ -617,8 +614,8 @@ class Guild extends SnowFlake {
 						headers: this.headers,
 					},
 				);
-				form.addFileInput(I18n.getTranslation("emoji.image:"), "image", {required: true});
-				form.addTextInput(I18n.getTranslation("emoji.name:"), "name", {required: true});
+				form.addFileInput(I18n.emoji["image:"](), "image", {required: true});
+				form.addTextInput(I18n.emoji["name:"](), "name", {required: true});
 				popup.show();
 			});
 			const containdiv = document.createElement("div");
@@ -646,16 +643,16 @@ class Guild extends SnowFlake {
 					del.classList.add("svgicon", "svg-x", "deleteEmoji");
 					del.onclick = () => {
 						const diaolog = new Dialog("");
-						diaolog.options.addTitle(I18n.getTranslation("emoji.confirmDel"));
+						diaolog.options.addTitle(I18n.emoji.confirmDel());
 						const options = diaolog.options.addOptions("", {ltr: true});
-						options.addButtonInput("", I18n.getTranslation("yes"), () => {
+						options.addButtonInput("", I18n.yes(), () => {
 							fetch(`${this.info.api}/guilds/${this.id}/emojis/${emoji.id}`, {
 								method: "DELETE",
 								headers: this.headers,
 							});
 							diaolog.hide();
 						});
-						options.addButtonInput("", I18n.getTranslation("no"), () => {
+						options.addButtonInput("", I18n.no(), () => {
 							diaolog.hide();
 						});
 						diaolog.show();
@@ -1046,7 +1043,7 @@ class Guild extends SnowFlake {
 			traditionalSubmit: true,
 		});
 		{
-			com.addMDInput(I18n.getTranslation("guild.description:"), "description", {
+			com.addMDInput(I18n.guild["description:"](), "description", {
 				initText: this.properties.description,
 			});
 		}
@@ -1068,7 +1065,7 @@ class Guild extends SnowFlake {
 		{
 			const sysmap = [null, ...textChannels.map((e) => e.id)];
 			com.addSelect(
-				I18n.getTranslation("guild.systemSelect:"),
+				I18n.guild["systemSelect:"](),
 				"system_channel_id",
 				["No system messages", ...textChannels.map((e) => e.name)],
 				{defaultIndex: sysmap.indexOf(this.properties.system_channel_id)},
@@ -1124,40 +1121,36 @@ class Guild extends SnowFlake {
 				});
 		};
 
-		options.addTitle(I18n.getTranslation("inviteOptions.title"));
+		options.addTitle(I18n.inviteOptions.title());
 		const text2 = options.addText("");
 		options
 			.addSelect(
-				I18n.getTranslation("invite.channel:"),
+				I18n.invite["channel:"](),
 				() => {},
 				valid.map((e) => e.name),
 			)
 			.watchForChange((e) => {
 				channel = valid[e];
-				text2.setText(I18n.getTranslation("invite.subtext", channel.name, this.properties.name));
+				text2.setText(I18n.invite.subtext(channel.name, this.properties.name));
 			});
 
 		options.addSelect(
-			I18n.getTranslation("invite.expireAfter"),
+			I18n.invite.expireAfter(),
 			() => {},
-			["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"].map((e) =>
-				I18n.getTranslation("inviteOptions." + e),
+			(["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"] as const).map((e) =>
+				I18n.inviteOptions[e](),
 			),
 		).onchange = (e) => {
 			expires = [1800, 3600, 21600, 43200, 86400, 604800, 2592000, 0][e];
 		};
 
-		const timeOptions = ["1", "5", "10", "25", "50", "100"].map((e) =>
-			I18n.getTranslation("inviteOptions.limit", e),
-		);
-		timeOptions.unshift(I18n.getTranslation("inviteOptions.noLimit"));
-		options.addSelect(I18n.getTranslation("invite.expireAfter"), () => {}, timeOptions).onchange = (
-			e,
-		) => {
+		const timeOptions = ["1", "5", "10", "25", "50", "100"].map((e) => I18n.inviteOptions.limit(e));
+		timeOptions.unshift(I18n.inviteOptions.noLimit());
+		options.addSelect(I18n.invite.expireAfter(), () => {}, timeOptions).onchange = (e) => {
 			uses = [0, 1, 5, 10, 25, 50, 100][e];
 		};
 
-		options.addButtonInput("", I18n.getTranslation("invite.createInvite"), () => {
+		options.addButtonInput("", I18n.invite.createInvite(), () => {
 			update();
 		});
 
@@ -1314,7 +1307,7 @@ class Guild extends SnowFlake {
 		}
 	}
 	setnotifcation() {
-		const options = ["all", "onlyMentions", "none"].map((e) => I18n.getTranslation("guild." + e));
+		const options = (["all", "onlyMentions", "none"] as const).map((e) => I18n.guild[e](e));
 		const notiselect = new Dialog("");
 		const form = notiselect.options.addForm(
 			"",
@@ -1329,7 +1322,7 @@ class Guild extends SnowFlake {
 			},
 		);
 		form.addSelect(
-			I18n.getTranslation("guild.selectnoti"),
+			I18n.guild.selectnoti(),
 			"message_notifications",
 			options,
 			{
@@ -1342,14 +1335,14 @@ class Guild extends SnowFlake {
 	}
 	confirmleave() {
 		const full = new Dialog("");
-		full.options.addTitle(I18n.getTranslation("guild.confirmLeave"));
+		full.options.addTitle(I18n.guild.confirmLeave());
 		const options = full.options.addOptions("", {ltr: true});
-		options.addButtonInput("", I18n.getTranslation("guild.yesLeave"), () => {
+		options.addButtonInput("", I18n.guild.yesLeave(), () => {
 			this.leave().then((_) => {
 				full.hide();
 			});
 		});
-		options.addButtonInput("", I18n.getTranslation("guild.noLeave"), () => {
+		options.addButtonInput("", I18n.guild.noLeave(), () => {
 			full.hide();
 		});
 		full.show();
@@ -1518,12 +1511,12 @@ class Guild extends SnowFlake {
 		let confirmname = "";
 
 		const full = new Dialog("");
-		full.options.addTitle(I18n.getTranslation("guild.confirmDelete", this.properties.name));
-		full.options.addTextInput(I18n.getTranslation("guild.serverName"), () => {}).onchange = (e) =>
+		full.options.addTitle(I18n.guild.confirmDelete(this.properties.name));
+		full.options.addTextInput(I18n.guild.serverName(), () => {}).onchange = (e) =>
 			(confirmname = e);
 
 		const options = full.options.addOptions("", {ltr: true});
-		options.addButtonInput("", I18n.getTranslation("guild.yesDelete"), () => {
+		options.addButtonInput("", I18n.guild.yesDelete(), () => {
 			if (confirmname !== this.properties.name) {
 				//TODO maybe some sort of form error? idk
 				alert("names don't match");
@@ -1534,7 +1527,7 @@ class Guild extends SnowFlake {
 			});
 		});
 
-		options.addButtonInput("", I18n.getTranslation("guild.noDelete"), () => {
+		options.addButtonInput("", I18n.guild.noDelete(), () => {
 			full.hide();
 		});
 		full.show();
@@ -1694,7 +1687,7 @@ class Guild extends SnowFlake {
 		if (addstate) {
 			history.pushState([this.id, undefined], "", "/channels/" + this.id);
 		}
-		this.localuser.pageTitle(I18n.getTranslation("guild.emptytitle"));
+		this.localuser.pageTitle(I18n.guild.emptytitle());
 		const channelTopic = document.getElementById("channelTopic") as HTMLSpanElement;
 		channelTopic.setAttribute("hidden", "");
 
@@ -1708,7 +1701,7 @@ class Guild extends SnowFlake {
 		}
 		const h1 = document.createElement("h1");
 		h1.classList.add("messagecontainer");
-		h1.textContent = I18n.getTranslation("guild.emptytext");
+		h1.textContent = I18n.guild.emptytext();
 		messages.append(h1);
 	}
 	loadGuild() {
@@ -1757,9 +1750,7 @@ class Guild extends SnowFlake {
 		}
 	}
 	createchannels(func = this.createChannel.bind(this)) {
-		const options = ["text", "announcement", "voice"].map((e) =>
-			I18n.getTranslation("channel." + e),
-		);
+		const options = (["text", "announcement", "voice"] as const).map((e) => I18n.channel[e]());
 
 		const channelselect = new Dialog("");
 		const form = channelselect.options.addForm("", (e: any) => {
@@ -1767,14 +1758,8 @@ class Guild extends SnowFlake {
 			channelselect.hide();
 		});
 
-		form.addSelect(
-			I18n.getTranslation("channel.selectType"),
-			"type",
-			options,
-			{radio: true},
-			[0, 5, 2],
-		);
-		form.addTextInput(I18n.getTranslation("channel.selectName"), "name");
+		form.addSelect(I18n.channel.selectType(), "type", options, {radio: true}, [0, 5, 2]);
+		form.addTextInput(I18n.channel.selectName(), "name");
 		channelselect.show();
 	}
 	createcategory() {
@@ -1785,7 +1770,7 @@ class Guild extends SnowFlake {
 			this.createChannel(e.name, category);
 			channelselect.hide();
 		});
-		form.addTextInput(I18n.getTranslation("channel.selectCatName"), "name");
+		form.addTextInput(I18n.channel.selectCatName(), "name");
 		channelselect.show();
 	}
 	delChannel(json: channeljson) {

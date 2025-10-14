@@ -28,7 +28,7 @@ class Bot {
 		};
 	}
 	settings() {
-		const settings = new Settings(I18n.getTranslation("botSettings"));
+		const settings = new Settings(I18n.botSettings());
 		const botOptions = settings.addButton("Profile", {ltr: true});
 		const bot = new User(this.json, this.localuser);
 		{
@@ -51,7 +51,7 @@ class Bot {
 			settingsRight.addHTMLArea(hypotheticalProfile);
 
 			const finput = settingsLeft.addFileInput(
-				I18n.getTranslation("uploadPfp"),
+				I18n.uploadPfp(),
 				(_) => {
 					if (file) {
 						this.updatepfp(file);
@@ -77,7 +77,7 @@ class Bot {
 			});
 			let bfile: undefined | File | null;
 			const binput = settingsLeft.addFileInput(
-				I18n.getTranslation("uploadBanner"),
+				I18n.uploadBanner(),
 				(_) => {
 					if (bfile !== undefined) {
 						this.updatebanner(bfile);
@@ -103,7 +103,7 @@ class Bot {
 			});
 			let changed = false;
 			const pronounbox = settingsLeft.addTextInput(
-				I18n.getTranslation("pronouns"),
+				I18n.pronouns(),
 				(_) => {
 					if (newpronouns || newbio || changed) {
 						this.updateProfile({
@@ -120,7 +120,7 @@ class Bot {
 				newpronouns = _;
 				regen();
 			});
-			const bioBox = settingsLeft.addMDInput(I18n.getTranslation("bio"), (_) => {}, {
+			const bioBox = settingsLeft.addMDInput(I18n.bio(), (_) => {}, {
 				initText: bot.bio.rawString,
 			});
 			bioBox.watchForChange((_) => {
@@ -134,11 +134,9 @@ class Bot {
 			} else {
 				color = "transparent";
 			}
-			const colorPicker = settingsLeft.addColorInput(
-				I18n.getTranslation("profileColor"),
-				(_) => {},
-				{initColor: color},
-			);
+			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
+				initColor: color,
+			});
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;
@@ -149,7 +147,7 @@ class Bot {
 		}
 		{
 			const guildsettings = settings.addButton("Guilds");
-			guildsettings.addTitle(I18n.getTranslation("botGuilds"));
+			guildsettings.addTitle(I18n.botGuilds());
 			fetch(this.info.api + "/users/@me/guilds/", {
 				headers: this.headers,
 			})
@@ -194,8 +192,8 @@ class Bot {
 						content.onclick = () => {
 							const guildsetting = guildsettings.addSubOptions(guild.name);
 							guildsetting.addHTMLArea(content);
-							guildsetting.addButtonInput("", I18n.getTranslation("leaveGuild"), () => {
-								if (confirm(I18n.getTranslation("confirmGuildLeave", guild.name))) {
+							guildsetting.addButtonInput("", I18n.leaveGuild(), () => {
+								if (confirm(I18n.confirmGuildLeave(guild.name))) {
 									fetch(this.info.api + "/users/@me/guilds/" + guild.id, {
 										method: "DELETE",
 										headers: this.headers,
@@ -253,7 +251,7 @@ class Bot {
 		});
 	}
 	static InviteMaker(id: string, container: Form, info: Localuser["info"]) {
-		const gen = container.addSubOptions(I18n.getTranslation("UrlGen"), {
+		const gen = container.addSubOptions(I18n.UrlGen(), {
 			noSubmit: true,
 		});
 		const params = new URLSearchParams("");

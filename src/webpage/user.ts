@@ -192,7 +192,7 @@ class User extends SnowFlake {
 	}
 	static setUpContextMenu(): void {
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.message"),
+			() => I18n.user.message(),
 			function (this: User) {
 				this.opendm();
 			},
@@ -206,7 +206,7 @@ class User extends SnowFlake {
 		this.contextmenu.addSeperator();
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.block"),
+			() => I18n.user.block(),
 			function (this: User) {
 				this.block();
 			},
@@ -218,7 +218,7 @@ class User extends SnowFlake {
 		);
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.unblock"),
+			() => I18n.user.unblock(),
 			function (this: User) {
 				this.unblock();
 			},
@@ -229,7 +229,7 @@ class User extends SnowFlake {
 			},
 		);
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.friendReq"),
+			() => I18n.user.friendReq(),
 			function (this: User) {
 				this.changeRelationship(1);
 			},
@@ -247,7 +247,7 @@ class User extends SnowFlake {
 			},
 		);
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("friends.removeFriend"),
+			() => I18n.friends.removeFriend(),
 			function (this: User) {
 				this.changeRelationship(0);
 			},
@@ -261,7 +261,7 @@ class User extends SnowFlake {
 		this.contextmenu.addSeperator();
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.editServerProfile"),
+			() => I18n.user.editServerProfile(),
 			function (this: User, member: Member | undefined) {
 				if (!member) return;
 				member.showEditProfile();
@@ -275,7 +275,7 @@ class User extends SnowFlake {
 
 		//TODO kick icon
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.kick"),
+			() => I18n.user.kick(),
 			function (this: User, member: Member | undefined) {
 				member?.kick();
 			},
@@ -297,7 +297,7 @@ class User extends SnowFlake {
 
 		//TODO ban icon
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.ban"),
+			() => I18n.user.ban(),
 			function (this: User, member: Member | undefined) {
 				member?.ban();
 			},
@@ -320,7 +320,7 @@ class User extends SnowFlake {
 		this.contextmenu.addSeperator();
 
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.addRole"),
+			() => I18n.user.addRole(),
 			async function (this: User, member: Member | undefined, e) {
 				if (member) {
 					e.stopPropagation();
@@ -347,7 +347,7 @@ class User extends SnowFlake {
 			},
 		);
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.removeRole"),
+			() => I18n.user.removeRole(),
 			async function (this: User, member: Member | undefined, e) {
 				if (member) {
 					e.stopPropagation();
@@ -376,7 +376,7 @@ class User extends SnowFlake {
 
 		this.contextmenu.addSeperator();
 		this.contextmenu.addButton(
-			() => I18n.getTranslation("user.copyId"),
+			() => I18n.user.copyId(),
 			function (this: User) {
 				navigator.clipboard.writeText(this.id);
 			},
@@ -790,7 +790,8 @@ class User extends SnowFlake {
 				badge.append(img);
 				let hovertxt: string;
 				if (badgejson.translate) {
-					hovertxt = I18n.getTranslation("badge." + badgejson.description);
+					//@ts-ignore
+					hovertxt = I18n.badge[badgejson.description]();
 				} else {
 					hovertxt = badgejson.description;
 				}
@@ -1026,7 +1027,8 @@ class User extends SnowFlake {
 				badge.append(img);
 				let hovertxt: string;
 				if (badgejson.translate) {
-					hovertxt = I18n.getTranslation("badge." + badgejson.description);
+					//@ts-ignore
+					hovertxt = I18n.badge[badgejson.description]();
 				} else {
 					hovertxt = badgejson.description;
 				}

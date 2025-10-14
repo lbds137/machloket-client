@@ -553,7 +553,7 @@ class Localuser {
 				loaddesc.innerHTML = "";
 				loaddesc.append(
 					new MarkDown(
-						I18n.getTranslation("errorReconnect", Math.round(0.2 + this.errorBackoff * 2.8) + ""),
+						I18n.errorReconnect(Math.round(0.2 + this.errorBackoff * 2.8) + ""),
 					).makeHTML(),
 				);
 				switch (
@@ -594,8 +594,7 @@ class Localuser {
 				setTimeout(
 					() => {
 						if (this.swapped) return;
-						(document.getElementById("load-desc") as HTMLElement).textContent =
-							I18n.getTranslation("retrying");
+						(document.getElementById("load-desc") as HTMLElement).textContent = I18n.retrying();
 						this.initwebsocket().then(() => {
 							this.loaduser();
 							this.init();
@@ -608,8 +607,7 @@ class Localuser {
 					200 + this.errorBackoff * 2800,
 				);
 			} else
-				(document.getElementById("load-desc") as HTMLElement).textContent =
-					I18n.getTranslation("unableToConnect");
+				(document.getElementById("load-desc") as HTMLElement).textContent = I18n.unableToConnect();
 		});
 		await promise;
 	}
@@ -1166,10 +1164,10 @@ class Localuser {
 			category.classList.add("memberList");
 			let title = document.createElement("h3");
 			if (role === "offline") {
-				title.textContent = I18n.getTranslation("user.offline");
+				title.textContent = I18n.user.offline();
 				category.classList.add("offline");
 			} else if (role === "online") {
-				title.textContent = I18n.getTranslation("user.online");
+				title.textContent = I18n.user.online();
 			} else {
 				title.textContent = role.name;
 			}
@@ -1749,7 +1747,7 @@ class Localuser {
 	createGuild(templateID?: string) {
 		const full = new Dialog("");
 		const buttons = full.options.addButtons("", {top: true});
-		const viacode = buttons.add(I18n.getTranslation("invite.joinUsing"));
+		const viacode = buttons.add(I18n.invite.joinUsing());
 		{
 			const form = viacode.addForm("", async (e: any) => {
 				let parsed = "";
@@ -1769,9 +1767,9 @@ class Localuser {
 				}
 				full.hide();
 			});
-			const text = form.addTextInput(I18n.getTranslation("invite.inviteLinkCode"), "code");
+			const text = form.addTextInput(I18n.invite.inviteLinkCode(), "code");
 		}
-		const guildcreate = buttons.add(I18n.getTranslation("guild.create"));
+		const guildcreate = buttons.add(I18n.guild.create());
 		{
 			const form = guildcreate.addForm("", (fields: any) => {
 				this.makeGuild(fields).then((_) => {
@@ -1785,10 +1783,10 @@ class Localuser {
 					}
 				});
 			});
-			form.addImageInput(I18n.getTranslation("guild.icon:"), "icon", {
+			form.addImageInput(I18n.guild["icon:"](), "icon", {
 				clear: true,
 			});
-			form.addTextInput(I18n.getTranslation("guild.name:"), "name", {required: true});
+			form.addTextInput(I18n.guild["name:"](), "name", {required: true});
 			const loading = new Dialog("");
 			loading.float.options.addTitle(I18n.guild.creating());
 			form.onFormError = () => {
@@ -1824,8 +1822,8 @@ class Localuser {
 			const template = form.addTextInput(I18n.guild.template(), "template", {
 				initText: templateID || "",
 			});
-			form.addImageInput(I18n.getTranslation("guild.icon:"), "icon", {files: "one", clear: true});
-			form.addTextInput(I18n.getTranslation("guild.name:"), "name", {required: true});
+			form.addImageInput(I18n.guild["icon:"](), "icon", {files: "one", clear: true});
+			form.addTextInput(I18n.guild["name:"](), "name", {required: true});
 
 			const loading = new Dialog("");
 			loading.float.options.addTitle(I18n.guild.creating());
@@ -1868,7 +1866,7 @@ class Localuser {
 	async guildDiscovery() {
 		const content = document.createElement("div");
 		content.classList.add("flexttb", "guildy");
-		content.textContent = I18n.getTranslation("guild.loadingDiscovery");
+		content.textContent = I18n.guild.loadingDiscovery();
 		const full = new Dialog("");
 		full.options.addHTMLArea(content);
 		full.show();
@@ -1884,7 +1882,7 @@ class Localuser {
 		});
 		content.innerHTML = "";
 		const title = document.createElement("h2");
-		title.textContent = I18n.getTranslation("guild.disoveryTitle", json.guilds.length + "");
+		title.textContent = I18n.guild.disoveryTitle(json.guilds.length + "");
 		content.appendChild(title);
 
 		const guilds = document.createElement("div");
@@ -2075,9 +2073,9 @@ class Localuser {
 		};
 	}
 	async showusersettings() {
-		const settings = new Settings(I18n.getTranslation("localuser.settings"));
+		const settings = new Settings(I18n.localuser.settings());
 		{
-			const userOptions = settings.addButton(I18n.getTranslation("localuser.userSettings"), {
+			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
 				ltr: true,
 			});
 			const hypotheticalProfile = document.createElement("div");
@@ -2098,7 +2096,7 @@ class Localuser {
 			settingsRight.addHTMLArea(hypotheticalProfile);
 
 			const finput = settingsLeft.addImageInput(
-				I18n.getTranslation("uploadPfp"),
+				I18n.uploadPfp(),
 				(_) => {
 					if (file) {
 						this.updatepfp(file);
@@ -2124,7 +2122,7 @@ class Localuser {
 			});
 			let bfile: undefined | File | null;
 			const binput = settingsLeft.addImageInput(
-				I18n.getTranslation("uploadBanner"),
+				I18n.uploadBanner(),
 				(_) => {
 					if (bfile !== undefined) {
 						this.updatebanner(bfile);
@@ -2155,7 +2153,7 @@ class Localuser {
 			});
 			let changed = false;
 			const pronounbox = settingsLeft.addTextInput(
-				I18n.getTranslation("pronouns"),
+				I18n.pronouns(),
 				(_) => {
 					if (newpronouns !== undefined || newbio !== undefined || changed !== undefined) {
 						this.updateProfile({
@@ -2172,7 +2170,7 @@ class Localuser {
 				newpronouns = _;
 				regen();
 			});
-			const bioBox = settingsLeft.addMDInput(I18n.getTranslation("bio"), (_) => {}, {
+			const bioBox = settingsLeft.addMDInput(I18n.bio(), (_) => {}, {
 				initText: this.user.bio.rawString,
 			});
 			bioBox.watchForChange((_) => {
@@ -2186,11 +2184,9 @@ class Localuser {
 			} else {
 				color = "transparent";
 			}
-			const colorPicker = settingsLeft.addColorInput(
-				I18n.getTranslation("profileColor"),
-				(_) => {},
-				{initColor: color},
-			);
+			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
+				initColor: color,
+			});
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;
@@ -2200,11 +2196,11 @@ class Localuser {
 			});
 		}
 		{
-			const tas = settings.addButton(I18n.getTranslation("localuser.themesAndSounds"));
+			const tas = settings.addButton(I18n.localuser.themesAndSounds());
 			{
 				const themes = ["Dark", "WHITE", "Light", "Dark-Accent"];
 				tas.addSelect(
-					I18n.getTranslation("localuser.theme:"),
+					I18n.localuser["theme:"](),
 					(_) => {
 						localStorage.setItem("theme", themes[_]);
 						setTheme();
@@ -2281,7 +2277,7 @@ class Localuser {
 			{
 				let userinfos = getBulkInfo();
 				tas.addColorInput(
-					I18n.getTranslation("localuser.accentColor"),
+					I18n.localuser.accentColor(),
 					(_) => {
 						userinfos = getBulkInfo();
 						userinfos.accent_color = _;
@@ -2314,24 +2310,28 @@ class Localuser {
 			}
 		}
 		{
-			const update = settings.addButton(I18n.getTranslation("localuser.updateSettings"));
+			const update = settings.addButton(I18n.localuser.updateSettings());
+			let index = ["false", "offlineOnly", "true"].indexOf(
+				localStorage.getItem("SWMode") as string,
+			);
+			if (index === -1) {
+				index = 2;
+			}
 			const sw = update.addSelect(
-				I18n.getTranslation("localuser.swSettings"),
+				I18n.localuser.swSettings(),
 				() => {},
-				["SWOff", "SWOffline", "SWOn"].map((e) => I18n.getTranslation("localuser." + e)),
+				(["SWOff", "SWOffline", "SWOn"] as const).map((e) => I18n.localuser[e]()),
 				{
-					defaultIndex: ["false", "offlineOnly", "true"].indexOf(
-						localStorage.getItem("SWMode") as string,
-					),
+					defaultIndex: index,
 				},
 			);
 			sw.onchange = (e) => {
 				SW.setMode(["false", "offlineOnly", "true"][e] as "false" | "offlineOnly" | "true");
 			};
-			update.addButtonInput("", I18n.getTranslation("localuser.CheckUpdate"), () => {
+			update.addButtonInput("", I18n.localuser.CheckUpdate(), () => {
 				SW.checkUpdate();
 			});
-			update.addButtonInput("", I18n.getTranslation("localuser.clearCache"), () => {
+			update.addButtonInput("", I18n.localuser.clearCache(), () => {
 				SW.forceClear();
 			});
 		}
@@ -2340,14 +2340,14 @@ class Localuser {
 			const genSecurity = () => {
 				security.removeAll();
 				if (this.mfa_enabled) {
-					security.addButtonInput("", I18n.getTranslation("localuser.2faDisable"), () => {
+					security.addButtonInput("", I18n.localuser["2faDisable"](), () => {
 						const form = security.addSubForm(
-							I18n.getTranslation("localuser.2faDisable"),
+							I18n.localuser["2faDisable"](),
 							(_: any) => {
 								if (_.message) {
 									switch (_.code) {
 										case 60008:
-											form.error("code", I18n.getTranslation("badCode"));
+											form.error("code", I18n.localuser.badCode());
 											break;
 									}
 								} else {
@@ -2364,21 +2364,21 @@ class Localuser {
 						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
 					});
 				} else {
-					security.addButtonInput("", I18n.getTranslation("localuser.2faEnable"), async () => {
+					security.addButtonInput("", I18n.localuser["2faEnable"](), async () => {
 						let secret = "";
 						for (let i = 0; i < 18; i++) {
 							secret += "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[Math.floor(Math.random() * 32)];
 						}
 						const form = security.addSubForm(
-							I18n.getTranslation("localuser.setUp2fa"),
+							I18n.localuser.setUp2fa(),
 							(_: any) => {
 								if (_.message) {
 									switch (_.code) {
 										case 60008:
-											form.error("code", I18n.getTranslation("localuser.badCode"));
+											form.error("code", I18n.localuser.badCode());
 											break;
 										case 400:
-											form.error("password", I18n.getTranslation("localuser.badPassword"));
+											form.error("password", I18n.localuser.badPassword());
 											break;
 									}
 								} else {
@@ -2392,9 +2392,9 @@ class Localuser {
 								headers: this.headers,
 							},
 						);
-						form.addTitle(I18n.getTranslation("localuser.setUp2faInstruction"));
-						form.addText(I18n.getTranslation("localuser.2faCodeGive", secret));
-						form.addTextInput(I18n.getTranslation("localuser.password:"), "password", {
+						form.addTitle(I18n.localuser.setUp2faInstruction());
+						form.addText(I18n.localuser["2faCodeGive"](secret));
+						form.addTextInput(I18n.localuser["password:"](), "password", {
 							required: true,
 							password: true,
 						});
@@ -2402,9 +2402,9 @@ class Localuser {
 						form.setValue("secret", secret);
 					});
 				}
-				security.addButtonInput("", I18n.getTranslation("localuser.changeDiscriminator"), () => {
+				security.addButtonInput("", I18n.localuser.changeDiscriminator(), () => {
 					const form = security.addSubForm(
-						I18n.getTranslation("localuser.changeDiscriminator"),
+						I18n.localuser.changeDiscriminator(),
 						(_) => {
 							security.returnFromSub();
 						},
@@ -2414,11 +2414,11 @@ class Localuser {
 							method: "PATCH",
 						},
 					);
-					form.addTextInput(I18n.getTranslation("localuser.newDiscriminator"), "discriminator");
+					form.addTextInput(I18n.localuser.newDiscriminator(), "discriminator");
 				});
-				security.addButtonInput("", I18n.getTranslation("localuser.changeEmail"), () => {
+				security.addButtonInput("", I18n.localuser.changeEmail(), () => {
 					const form = security.addSubForm(
-						I18n.getTranslation("localuser.changeEmail"),
+						I18n.localuser.changeEmail(),
 						(_) => {
 							security.returnFromSub();
 						},
@@ -2428,17 +2428,17 @@ class Localuser {
 							method: "PATCH",
 						},
 					);
-					form.addTextInput(I18n.getTranslation("localuser.password:"), "password", {
+					form.addTextInput(I18n.localuser["password:"](), "password", {
 						password: true,
 					});
 					if (this.mfa_enabled) {
-						form.addTextInput(I18n.getTranslation("localuser.2faCode"), "code");
+						form.addTextInput(I18n.localuser["2faCode:"](), "code");
 					}
-					form.addTextInput(I18n.getTranslation("localuser.newEmail:"), "email");
+					form.addTextInput(I18n.localuser["newEmail:"](), "email");
 				});
-				security.addButtonInput("", I18n.getTranslation("localuser.changeUsername"), () => {
+				security.addButtonInput("", I18n.localuser.changeUsername(), () => {
 					const form = security.addSubForm(
-						I18n.getTranslation("localuser.changeUsername"),
+						I18n.localuser.changeUsername(),
 						(_) => {
 							security.returnFromSub();
 						},
@@ -2448,17 +2448,17 @@ class Localuser {
 							method: "PATCH",
 						},
 					);
-					form.addTextInput(I18n.getTranslation("localuser.password:"), "password", {
+					form.addTextInput(I18n.localuser["password:"](), "password", {
 						password: true,
 					});
 					if (this.mfa_enabled) {
-						form.addTextInput(I18n.getTranslation("localuser.2faCode"), "code");
+						form.addTextInput(I18n.localuser["2faCode:"](), "code");
 					}
-					form.addTextInput(I18n.getTranslation("localuser.newUsername"), "username");
+					form.addTextInput(I18n.localuser.newUsername(), "username");
 				});
-				security.addButtonInput("", I18n.getTranslation("localuser.changePassword"), () => {
+				security.addButtonInput("", I18n.localuser.changePassword(), () => {
 					const form = security.addSubForm(
-						I18n.getTranslation("localuser.changePassword"),
+						I18n.localuser.changePassword(),
 						(_) => {
 							security.returnFromSub();
 						},
@@ -2468,19 +2468,17 @@ class Localuser {
 							method: "PATCH",
 						},
 					);
-					form.addTextInput(I18n.getTranslation("localuser.oldPassword:"), "password", {
+					form.addTextInput(I18n.localuser["oldPassword:"](), "password", {
 						password: true,
 					});
 					if (this.mfa_enabled) {
-						form.addTextInput(I18n.getTranslation("localuser.2faCode"), "code");
+						form.addTextInput(I18n.localuser["2faCode:"](), "code");
 					}
 					let in1 = "";
 					let in2 = "";
-					form
-						.addTextInput(I18n.getTranslation("localuser.newPassword:"), "")
-						.watchForChange((text) => {
-							in1 = text;
-						});
+					form.addTextInput(I18n.localuser["newPassword:"](), "").watchForChange((text) => {
+						in1 = text;
+					});
 					const copy = form.addTextInput("New password again:", "");
 					copy.watchForChange((text) => {
 						in2 = text;
@@ -2489,13 +2487,13 @@ class Localuser {
 						if (in1 === in2) {
 							return in1;
 						} else {
-							throw new FormError(copy, I18n.getTranslation("localuser.PasswordsNoMatch"));
+							throw new FormError(copy, I18n.localuser.PasswordsNoMatch());
 						}
 					});
 				});
 
 				security.addSelect(
-					I18n.getTranslation("localuser.language"),
+					I18n.localuser.language(),
 					(e) => {
 						I18n.setLanguage(I18n.options()[e]);
 						this.updateTranslations();
@@ -2506,14 +2504,13 @@ class Localuser {
 					},
 				);
 				{
-					const box = security.addCheckboxInput(
-						I18n.getTranslation("localuser.enableEVoice"),
-						() => {},
-						{initState: Boolean(localStorage.getItem("Voice enabled"))},
-					);
+					//TODO maybe remove this setting, its no longer really used
+					const box = security.addCheckboxInput(I18n.localuser.enableEVoice(), () => {}, {
+						initState: Boolean(localStorage.getItem("Voice enabled")),
+					});
 					box.onchange = (e) => {
 						if (e) {
-							if (confirm(I18n.getTranslation("localuser.VoiceWarning"))) {
+							if (confirm(I18n.localuser.VoiceWarning())) {
 								localStorage.setItem("Voice enabled", "true");
 							} else {
 								box.value = false;
@@ -2583,7 +2580,7 @@ class Localuser {
 			);
 		}
 		{
-			const connections = settings.addButton(I18n.getTranslation("localuser.connections"));
+			const connections = settings.addButton(I18n.localuser.connections());
 			const connectionContainer = document.createElement("div");
 			connectionContainer.id = "connection-container";
 
@@ -2613,7 +2610,7 @@ class Localuser {
 								});
 							} else {
 								container.classList.add("disabled");
-								container.title = I18n.getTranslation("localuser.PasswordsNoMatch");
+								container.title = I18n.localuser.PasswordsNoMatch();
 							}
 
 							connectionContainer.appendChild(container);
@@ -2622,16 +2619,16 @@ class Localuser {
 			connections.addHTMLArea(connectionContainer);
 		}
 		{
-			const devPortal = settings.addButton(I18n.getTranslation("localuser.devPortal"));
+			const devPortal = settings.addButton(I18n.localuser.devPortal());
 
 			fetch(this.info.api + "/teams", {
 				headers: this.headers,
 			}).then(async (teamsRes) => {
 				const teams = await teamsRes.json();
 
-				devPortal.addButtonInput("", I18n.getTranslation("localuser.createApp"), () => {
+				devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 					const form = devPortal.addSubForm(
-						I18n.getTranslation("localuser.createApp"),
+						I18n.localuser.createApp(),
 						(json: any) => {
 							if (json.message) form.error("name", json.message);
 							else {
@@ -2648,7 +2645,7 @@ class Localuser {
 
 					form.addTextInput("Name:", "name", {required: true});
 					form.addSelect(
-						I18n.getTranslation("localuser.team:"),
+						I18n.localuser["team:"](),
 						"team_id",
 						["Personal", ...teams.map((team: {name: string}) => team.name)],
 						{
@@ -3044,44 +3041,40 @@ class Localuser {
 			headers: this.headers,
 			traditionalSubmit: true,
 		});
-		form.addTextInput(I18n.getTranslation("localuser.appName"), "name", {initText: json.name});
-		form.addMDInput(I18n.getTranslation("localuser.description"), "description", {
+		form.addTextInput(I18n.localuser.appName(), "name", {initText: json.name});
+		form.addMDInput(I18n.localuser.description(), "description", {
 			initText: json.description,
 		});
 		form.addImageInput("Icon:", "icon", {
 			clear: true,
 			initImg: json.icon ? this.info.cdn + "/app-icons/" + appId + "/" + json.icon : "",
 		});
-		form.addTextInput(I18n.getTranslation("localuser.privacyPolcyURL"), "privacy_policy_url", {
+		form.addTextInput(I18n.localuser.privacyPolcyURL(), "privacy_policy_url", {
 			initText: json.privacy_policy_url,
 		});
-		form.addTextInput(I18n.getTranslation("localuser.TOSURL"), "terms_of_service_url", {
+		form.addTextInput(I18n.localuser.TOSURL(), "terms_of_service_url", {
 			initText: json.terms_of_service_url,
 		});
-		form.addCheckboxInput(I18n.getTranslation("localuser.publicAvaliable"), "bot_public", {
+		form.addCheckboxInput(I18n.localuser.publicAvaliable(), "bot_public", {
 			initState: json.bot_public,
 		});
-		form.addCheckboxInput(I18n.getTranslation("localuser.requireCode"), "bot_require_code_grant", {
+		form.addCheckboxInput(I18n.localuser.requireCode(), "bot_require_code_grant", {
 			initState: json.bot_require_code_grant,
 		});
-		form.addButtonInput(
-			"",
-			I18n.getTranslation("localuser." + (json.bot ? "manageBot" : "addBot")),
-			async () => {
-				if (!json.bot) {
-					if (!confirm(I18n.getTranslation("localuser.confirmAddBot"))) {
-						return;
-					}
-					const updateRes = await fetch(this.info.api + "/applications/" + appId + "/bot", {
-						method: "POST",
-						headers: this.headers,
-					});
-					const updateJSON = await updateRes.json();
-					this.botTokens.set(appId, updateJSON.token);
+		form.addButtonInput("", I18n.localuser[json.bot ? "manageBot" : "addBot"](), async () => {
+			if (!json.bot) {
+				if (!confirm(I18n.localuser.confirmAddBot())) {
+					return;
 				}
-				this.manageBot(appId, form);
-			},
-		);
+				const updateRes = await fetch(this.info.api + "/applications/" + appId + "/bot", {
+					method: "POST",
+					headers: this.headers,
+				});
+				const updateJSON = await updateRes.json();
+				this.botTokens.set(appId, updateJSON.token);
+			}
+			this.manageBot(appId, form);
+		});
 	}
 	async manageBot(appId = "", container: Form) {
 		const res = await fetch(this.info.api + "/applications/" + appId, {
@@ -3089,11 +3082,11 @@ class Localuser {
 		});
 		const json = await res.json();
 		if (!json.bot) {
-			return alert(I18n.getTranslation("localuser.confuseNoBot"));
+			return alert(I18n.localuser.confuseNoBot());
 		}
 		const bot: User = new User(json.bot, this);
 		const form = container.addSubForm(
-			I18n.getTranslation("localuser.editingBot", bot.username),
+			I18n.localuser.editingBot(bot.username),
 			(out) => {
 				console.log(out);
 			},
@@ -3104,15 +3097,15 @@ class Localuser {
 				traditionalSubmit: true,
 			},
 		);
-		form.addTextInput(I18n.getTranslation("localuser.botUsername"), "username", {
+		form.addTextInput(I18n.localuser.botUsername(), "username", {
 			initText: bot.username,
 		});
-		form.addImageInput(I18n.getTranslation("localuser.botAvatar"), "avatar", {
+		form.addImageInput(I18n.localuser.botAvatar(), "avatar", {
 			initImg: bot.getpfpsrc(),
 			clear: true,
 		});
-		form.addButtonInput("", I18n.getTranslation("localuser.resetToken"), async () => {
-			if (!confirm(I18n.getTranslation("localuser.confirmReset"))) {
+		form.addButtonInput("", I18n.localuser.resetToken(), async () => {
+			if (!confirm(I18n.localuser.confirmReset())) {
 				return;
 			}
 			const updateRes = await fetch(this.info.api + "/applications/" + appId + "/bot/reset", {
@@ -3120,15 +3113,14 @@ class Localuser {
 				headers: this.headers,
 			});
 			const updateJSON = await updateRes.json();
-			text.setText(I18n.getTranslation("localuser.tokenDisplay", updateJSON.token));
+			text.setText(I18n.localuser.tokenDisplay(updateJSON.token));
 			this.botTokens.set(appId, updateJSON.token);
 			if (this.perminfo.applications[appId]) {
 				this.perminfo.applications[appId] = updateJSON.token;
 			}
 		});
 		const text = form.addText(
-			I18n.getTranslation(
-				"localuser.tokenDisplay",
+			I18n.localuser.tokenDisplay(
 				this.botTokens.has(appId) ? (this.botTokens.get(appId) as string) : "*****************",
 			),
 		);
@@ -3136,7 +3128,7 @@ class Localuser {
 		if (!this.perminfo.applications) {
 			this.perminfo.applications = {};
 		}
-		const checkbox = check.addCheckboxInput(I18n.getTranslation("localuser.saveToken"), () => {}, {
+		const checkbox = check.addCheckboxInput(I18n.localuser.saveToken(), () => {}, {
 			initState: !!this.perminfo.applications[appId],
 		});
 		checkbox.watchForChange((_) => {
@@ -3144,14 +3136,14 @@ class Localuser {
 				if (this.botTokens.has(appId)) {
 					this.perminfo.applications[appId] = this.botTokens.get(appId);
 				} else {
-					alert(I18n.getTranslation("localuser.noToken"));
+					alert(I18n.localuser.noToken());
 					checkbox.setState(false);
 				}
 			} else {
 				delete this.perminfo.applications[appId];
 			}
 		});
-		form.addButtonInput("", I18n.getTranslation("localuser.advancedBot"), () => {
+		form.addButtonInput("", I18n.localuser.advancedBot(), () => {
 			const token = this.botTokens.get(appId);
 			if (token) {
 				//TODO check if this is actually valid or not
@@ -3159,7 +3151,7 @@ class Localuser {
 				botc.settings();
 			}
 		});
-		form.addButtonInput("", I18n.getTranslation("localuser.botInviteCreate"), () => {
+		form.addButtonInput("", I18n.localuser.botInviteCreate(), () => {
 			Bot.InviteMaker(appId, form, this.info);
 		});
 	}
@@ -4080,16 +4072,16 @@ class Localuser {
 	}
 	async instanceStats() {
 		const dialog = new Dialog("");
-		dialog.options.addTitle(I18n.getTranslation("instanceStats.name", this.instancePing.name));
+		dialog.options.addTitle(I18n.instanceStats.name(this.instancePing.name));
 		dialog.show();
 		const res = await fetch(this.info.api + "/policies/stats", {
 			headers: this.headers,
 		});
 		const json = await res.json();
-		dialog.options.addText(I18n.getTranslation("instanceStats.users", json.counts.user));
-		dialog.options.addText(I18n.getTranslation("instanceStats.servers", json.counts.guild));
-		dialog.options.addText(I18n.getTranslation("instanceStats.messages", json.counts.message));
-		dialog.options.addText(I18n.getTranslation("instanceStats.members", json.counts.members));
+		dialog.options.addText(I18n.instanceStats.users(json.counts.user));
+		dialog.options.addText(I18n.instanceStats.servers(json.counts.guild));
+		dialog.options.addText(I18n.instanceStats.messages(json.counts.message));
+		dialog.options.addText(I18n.instanceStats.members(json.counts.members));
 	}
 
 	async refreshIfNeeded(url: string) {

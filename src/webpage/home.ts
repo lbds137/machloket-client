@@ -6,69 +6,17 @@ const serverbox = document.getElementById("instancebox") as HTMLDivElement;
 
 (async () => {
 	await I18n.done;
-	const openClient = document.getElementById("openClient");
-	const welcomeJank = document.getElementById("welcomeJank");
-	const box1title = document.getElementById("box1title");
 	const box1Items = document.getElementById("box1Items");
-	const compatableInstances = document.getElementById("compatableInstances");
-	const box3title = document.getElementById("box3title");
-	const box3description = document.getElementById("box3description");
+	I18n.translatePage();
 
-	const box4title = document.getElementById("box4title");
-	const box4description = document.getElementById("box4description");
-	const translate = document.getElementById("translate");
-
-	const box5title = document.getElementById("box5title");
-	const box5description = document.getElementById("box5description");
-	const blog = document.getElementById("blog");
-	if (
-		openClient &&
-		welcomeJank &&
-		compatableInstances &&
-		box3title &&
-		box3description &&
-		box1title &&
-		box1Items &&
-		box4title &&
-		box4description &&
-		translate &&
-		box5title &&
-		box5description &&
-		blog
-	) {
-		blog.textContent = I18n.blog.blog();
-		box5title.textContent = I18n.blog.fermi();
-		box5description.textContent = I18n.blog.desc();
-
-		openClient.textContent = I18n.getTranslation("htmlPages.openClient");
-		welcomeJank.textContent = I18n.getTranslation("htmlPages.welcomeJank");
-		box1title.textContent = I18n.getTranslation("htmlPages.box1title");
-
-		compatableInstances.textContent = I18n.getTranslation("htmlPages.compatableInstances");
-		box3title.textContent = I18n.getTranslation("htmlPages.box3title");
-		box3description.textContent = I18n.getTranslation("htmlPages.box3description");
-
-		box4title.textContent = I18n.htmlPages.transTitle();
-		box4title.textContent = I18n.htmlPages.transDesc();
-		box4title.textContent = I18n.htmlPages.trans();
-
-		const items = I18n.getTranslation("htmlPages.box1Items").split("|");
+	if (box1Items) {
+		const items = I18n.htmlPages.box1Items().split("|");
 		let i = 0;
 		//@ts-ignore ts is being dumb here
 		for (const item of box1Items.children) {
 			(item as HTMLElement).textContent = items[i];
 			i++;
 		}
-	} else {
-		console.error(
-			openClient,
-			welcomeJank,
-			compatableInstances,
-			box3title,
-			box3description,
-			box1title,
-			box1Items,
-		);
 	}
 })();
 const recent = document.getElementById("recentBlog");
@@ -158,8 +106,7 @@ fetch("/instances.json")
 					const stats = document.createElement("div");
 					stats.classList.add("flexltr");
 					const span = document.createElement("span");
-					span.innerText = I18n.getTranslation(
-						"home.uptimeStats",
+					span.innerText = I18n.home.uptimeStats(
 						Math.round(instance.uptime.alltime * 100) + "",
 						Math.round(instance.uptime.weektime * 100) + "",
 						Math.round(instance.uptime.daytime * 100) + "",
@@ -172,7 +119,7 @@ fetch("/instances.json")
 					if (instance.online !== false) {
 						makeRegister(true, instance.name);
 					} else {
-						alert(I18n.getTranslation("home.warnOffiline"));
+						alert(I18n.home.warnOffiline());
 					}
 				};
 				serverbox.append(div);

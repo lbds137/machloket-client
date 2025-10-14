@@ -23,12 +23,12 @@ class Rights {
 		return (big & ~bit) | (BigInt(state) << BigInt(b)); //thanks to geotale for this code :3
 	}
 	static *info(): Generator<{name: string; readableName: string; description: string}> {
-		throw new Error("Isn't implemented");
+		throw new Error("not implemented yet");
 		for (const thing of this.permisions) {
 			yield {
 				name: thing,
-				readableName: I18n.getTranslation("permissions.readableNames." + thing),
-				description: I18n.getTranslation("permissions.descriptions." + thing),
+				readableName: I18n.rights.readableNames[thing](),
+				description: I18n.rights.descriptions[thing](),
 			};
 		}
 	}
@@ -84,7 +84,7 @@ class Rights {
 		"VIEW_SERVER_STATS",
 		"RESEND_VERIFICATION_EMAIL",
 		"CREATE_REGISTRATION_TOKENS",
-	];
+	] as const;
 	getPermission(name: string): boolean {
 		if (undefined === Rights.permisions.indexOf(name)) {
 			console.error(name + " is not found in map", Rights.permisions);

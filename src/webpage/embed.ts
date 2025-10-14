@@ -343,12 +343,12 @@ class Embed {
 
 			div.append(iconrow);
 			const h2 = document.createElement("h2");
-			h2.textContent = I18n.getTranslation("invite.invitedBy", json.inviter.username);
+			h2.textContent = I18n.invite.invitedBy(json.inviter.username);
 			div.append(h2);
 			const button = document.createElement("button");
-			button.textContent = I18n.getTranslation("invite.accept");
+			button.textContent = I18n.invite.accept();
 			if (this.localuser.info.api.startsWith(info.api) && this.localuser.guildids.has(guild.id)) {
-				button.textContent = I18n.getTranslation("invite.alreadyJoined");
+				button.textContent = I18n.invite.alreadyJoined();
 				button.disabled = true;
 			}
 			button.classList.add("acceptinvbutton");

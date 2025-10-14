@@ -64,7 +64,7 @@ class Message extends SnowFlake {
 	}
 	static setupcmenu() {
 		Message.contextmenu.addButton(
-			() => I18n.getTranslation("reply"),
+			() => I18n.reply(),
 			function (this: Message) {
 				this.channel.setReplying(this);
 			},
@@ -76,7 +76,7 @@ class Message extends SnowFlake {
 		);
 		const editTypes = new Set([0, 19]);
 		Message.contextmenu.addButton(
-			() => I18n.getTranslation("message.edit"),
+			() => I18n.message.edit(),
 			function (this: Message) {
 				this.setEdit();
 			},
@@ -185,7 +185,7 @@ class Message extends SnowFlake {
 		);
 
 		Message.contextmenu.addButton(
-			() => I18n.getTranslation("copymessageid"),
+			() => I18n.copymessageid(),
 			function (this: Message) {
 				navigator.clipboard.writeText(this.id);
 			},
@@ -193,7 +193,7 @@ class Message extends SnowFlake {
 
 		Message.contextmenu.addSeperator();
 		Message.contextmenu.addButton(
-			() => I18n.getTranslation("message.delete"),
+			() => I18n.message.delete(),
 			function (this: Message) {
 				this.confirmDelete();
 			},
@@ -599,7 +599,7 @@ class Message extends SnowFlake {
 			if (ignoredblock) {
 				if (premessage?.author !== this.author) {
 					const span = document.createElement("span");
-					span.textContent = I18n.getTranslation("hideBlockedMessages");
+					span.textContent = I18n.hideBlockedMessages();
 					div.append(span);
 					span.classList.add("blocked");
 					span.onclick = (_) => {
@@ -630,7 +630,7 @@ class Message extends SnowFlake {
 						count++;
 						next = this.channel.messages.get(this.channel.idToNext.get(next.id) as string);
 					}
-					span.textContent = I18n.getTranslation("showBlockedMessages", count + "");
+					span.textContent = I18n.showBlockedMessages(count + "");
 					build.append(span);
 					span.onclick = (_) => {
 						const scroll = this.channel.infinite.scrollTop;
@@ -674,7 +674,7 @@ class Message extends SnowFlake {
 			this.channel.getmessage(this.message_reference.message_id).then((message) => {
 				if (!message) {
 					minipfp.remove();
-					username.textContent = I18n.getTranslation("message.deleted");
+					username.textContent = I18n.message.deleted();
 					username.classList.remove("username");
 					return;
 				}
@@ -684,7 +684,7 @@ class Message extends SnowFlake {
 				}
 				if (message.attachments?.length || message.embeds?.length || message.stickers.length) {
 					const b = document.createElement("b");
-					b.innerText = I18n.getTranslation("message.attached");
+					b.innerText = I18n.message.attached();
 					b.style.paddingRight = "4px";
 					reply.append(b);
 				}
@@ -761,7 +761,7 @@ class Message extends SnowFlake {
 				if (this.edited_timestamp) {
 					const edit = document.createElement("span");
 					edit.classList.add("timestamp");
-					edit.textContent = I18n.getTranslation("message.edited");
+					edit.textContent = I18n.message.edited();
 					const hover = new Hover(new Date(this.edited_timestamp).toString());
 					hover.addEvent(edit);
 					userwrap.append(edit);
@@ -1023,13 +1023,13 @@ class Message extends SnowFlake {
 	}
 	confirmDelete() {
 		const diaolog = new Dialog("");
-		diaolog.options.addTitle(I18n.getTranslation("deleteConfirm"));
+		diaolog.options.addTitle(I18n.deleteConfirm());
 		const options = diaolog.options.addOptions("", {ltr: true});
-		options.addButtonInput("", I18n.getTranslation("yes"), () => {
+		options.addButtonInput("", I18n.yes(), () => {
 			this.delete();
 			diaolog.hide();
 		});
-		options.addButtonInput("", I18n.getTranslation("no"), () => {
+		options.addButtonInput("", I18n.no(), () => {
 			diaolog.hide();
 		});
 		diaolog.show();
@@ -1189,11 +1189,11 @@ function formatTime(date: Date) {
 		date.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
 
 	if (datestring === now) {
-		return I18n.getTranslation("todayAt", formatTime(date));
+		return I18n.todayAt(formatTime(date));
 	} else if (datestring === yesterdayStr) {
-		return I18n.getTranslation("yesterdayAt", formatTime(date));
+		return I18n.yesterdayAt(formatTime(date));
 	} else {
-		return I18n.getTranslation("otherAt", date.toLocaleDateString(), formatTime(date));
+		return I18n.otherAt(date.toLocaleDateString(), formatTime(date));
 	}
 }
 let tomorrow = 0;

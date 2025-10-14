@@ -89,9 +89,9 @@ async function tosLogic(box: HTMLElement) {
 	if (!box) return;
 	if (tosPage) {
 		box.innerHTML = "";
-		box.append(new MarkDown(I18n.getTranslation("register.agreeTOS", tosPage)).makeHTML());
+		box.append(new MarkDown(I18n.register.agreeTOS(tosPage)).makeHTML());
 	} else {
-		box.textContent = I18n.getTranslation("register.noTOS");
+		box.textContent = I18n.register.noTOS();
 	}
 	console.log(tosPage);
 }

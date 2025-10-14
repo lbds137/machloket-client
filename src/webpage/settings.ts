@@ -1257,7 +1257,7 @@ class Options implements OptionsElement<void> {
 		onSubmit: (arg1: object, sent: object) => void,
 		{
 			ltr = false,
-			submitText = I18n.getTranslation("submit"),
+			submitText = I18n.submit(),
 			fetchURL = "",
 			headers = {},
 			method = "POST",
@@ -1423,9 +1423,9 @@ class Options implements OptionsElement<void> {
 			div.classList.add("flexltr", "savediv");
 			const span = document.createElement("span");
 			div.append(span);
-			span.textContent = I18n.getTranslation("settings.unsaved");
+			span.textContent = I18n.settings.unsaved();
 			const button = document.createElement("button");
-			button.textContent = I18n.getTranslation("settings.save");
+			button.textContent = I18n.settings.save();
 			div.append(button);
 			this.haschanged = true;
 			this.owner.changed(div);
@@ -1559,7 +1559,7 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 					},
 				},
 			);
-			form.addTitle(I18n.getTranslation("2faCode"));
+			form.addTitle(I18n["2faCode"]());
 			form.addPreprocessor((e) => {
 				//@ts-ignore
 				e.ticket = json.ticket;
@@ -1605,7 +1605,7 @@ class Form implements OptionsElement<object> {
 		onSubmit: (arg1: object, sent: object) => void,
 		{
 			ltr = false,
-			submitText = I18n.getTranslation("submit"),
+			submitText = I18n.submit(),
 			fetchURL = "",
 			headers = {},
 			method = "POST",
@@ -1651,7 +1651,7 @@ class Form implements OptionsElement<object> {
 		onSubmit: (arg1: object, sent: object) => void,
 		{
 			ltr = false,
-			submitText = I18n.getTranslation("submit"),
+			submitText = I18n.submit(),
 			fetchURL = "",
 			headers = {},
 			method = "POST",

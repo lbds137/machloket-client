@@ -79,7 +79,7 @@ export class AccountSwitcher {
 			if (this.canCreate) {
 				const switchAccountDiv = document.createElement("div");
 				switchAccountDiv.classList.add("switchtable");
-				switchAccountDiv.textContent = I18n.getTranslation("switchAccounts");
+				switchAccountDiv.textContent = I18n.switchAccounts();
 				switchAccountDiv.addEventListener("click", () => {
 					window.location.href = "/login";
 				});

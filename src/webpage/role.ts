@@ -313,7 +313,7 @@ class RoleList extends Buttons {
 	private static ChannelRoleMenu() {
 		const menu = new Contextmenu<RoleList, Role>("role settings");
 		menu.addButton(
-			() => I18n.getTranslation("role.remove"),
+			() => I18n.role.remove(),
 			function (role) {
 				if (!this.channel) return;
 				console.log(role);
@@ -354,7 +354,7 @@ class RoleList extends Buttons {
 	private static GuildRoleMenu() {
 		const menu = new Contextmenu<RoleList, Role>("role settings");
 		menu.addButton(
-			() => I18n.getTranslation("role.delete"),
+			() => I18n.role.delete(),
 			function (role) {
 				this.deleteRole(role);
 			},
