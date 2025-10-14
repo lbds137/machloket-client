@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>It seems you're lost</title>
+		<meta content="It seems you're lost" property="og:title" />
+		<meta
+			content="Maybe you meant for a different URL, this is not a part of Fermi"
+			property="og:description"
+		/>
+		<meta
+			name="description"
+			content="Maybe you meant for a different URL, this is not a part of Fermi"
+		/>
+		<meta content="/logo.webp" property="og:image" />
+		<meta content="#4b458c" name="theme-color" />
+		<link href="/style.css" rel="stylesheet" />
+		<link href="/themes.css" rel="stylesheet" id="lightcss" />
+		<style>
+			body.no-theme {
+				background: #16191b;
+			}
+			@media (prefers-color-scheme: light) {
+				body.no-theme {
+					background: #9397bd;
+				}
+			}
+		</style>
+	</head>
+	<body class="no-theme">
+		<div class="errorHTML">
+			<img src="./logo.svg" with="128" height="128" />
+			<div>
+				<h1 i18n="404.title">It seems you're lost</h1>
+				<h3 i18n="404.404">404 Page Not Found</h3>
+				<b i18n="404.listtitle">Maybe you meant to go to one of these places</b>
+				<ul>
+					<li><a href="/" i18n="404.home">Home Page</a></li>
+					<li><a href="/app" i18n="404.app">To the app</a></li>
+					<li><a href="/login" i18n="404.login">Login</a></li>
+					<li><a href="/reset" i18n="404.reset">Password reset page</a></li>
+					<li><a href="https://blog.fermi.chat" i18n="404.blog">The Fermi blog</a></li>
+					<li><a i18n="404.whereever" id="whereever">Wherever this is</a></li>
+				</ul>
+				<div>
+					<h3 i18n="404.report">If you found this page within the client please report it:</h3>
+					<a href="https://github.com/MathMan05/Fermi/issues">Github</a>
+				</div>
+			</div>
+		</div>
+		<script src="/404.js" type="module"></script>
+	</body>
+</html>

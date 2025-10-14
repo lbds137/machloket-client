@@ -27,6 +27,17 @@ class I18n {
 
 		res();
 	}
+	static translatePage() {
+		const elms = document.querySelectorAll("[i18n]");
+		for (const elm of Array.from(elms)) {
+			const t = elm.getAttribute("i18n") as string;
+			try {
+				elm.textContent = this.getTranslation(t);
+			} catch {
+				console.error("Couldn't get " + t + "'s translation");
+			}
+		}
+	}
 	static getTranslation(msg: string, ...params: string[]): string {
 		let str: string | undefined;
 		const path = msg.split(".");
