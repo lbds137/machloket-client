@@ -3272,6 +3272,12 @@ fieldset input[type="radio"] {
 	animation-timing-function: ease-in;
 }
 .titlediv {
+	display: flex;
+	flex: 1;
+
+	> flexspace {
+		flex: 1;
+	}
 }
 .flexspace {
 	padding-bottom: 32px;
@@ -3746,6 +3752,8 @@ fieldset input[type="radio"] {
 }
 .settingsHTMLArea {
 	position: relative;
+	display: flex;
+	flex-direction: row;
 }
 .friendcontainer {
 	display: flex;
