@@ -4,7 +4,8 @@ await I18n.done;
 const info = JSON.parse(localStorage.getItem("instanceinfo") as string);
 
 function makeMenu2(email: string | void) {
-	const d2 = new Dialog(I18n.login.recovery());
+	const d2 = new Dialog("");
+	d2.options.addTitle(I18n.login.recovery());
 	const headers = {
 		"Content-Type": "application/json",
 	};
@@ -41,7 +42,8 @@ function makeMenu2(email: string | void) {
 	d2.show(false);
 }
 function makeMenu1() {
-	const d = new Dialog(I18n.login.recovery());
+	const d = new Dialog("");
+	d.options.addTitle(I18n.login.recovery());
 	let area: HTMLElement | undefined = undefined;
 	const opt = d.float.options.addForm(
 		"",

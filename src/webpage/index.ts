@@ -118,7 +118,6 @@ if (channelw)
 			owner = owner.parentElement as HTMLElement;
 		}
 		typebox.markdown.boxupdate(Infinity);
-		console.log("allowed");
 	});
 menu.bindContextmenu(document.getElementById("channels") as HTMLDivElement);
 
