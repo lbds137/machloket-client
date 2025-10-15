@@ -488,6 +488,21 @@ export async function getapiurls(str: string): Promise<
 			split.pop();
 			urls.api = split.join("/");
 		}
+		if (urls.cdn.endsWith("/")) {
+			const split = urls.cdn.split("/");
+			split.pop();
+			urls.cdn = split.join("/");
+		}
+		if (urls.gateway.endsWith("/")) {
+			const split = urls.gateway.split("/");
+			split.pop();
+			urls.gateway = split.join("/");
+		}
+		if (urls.login.endsWith("/")) {
+			const split = urls.login.split("/");
+			split.pop();
+			urls.login = split.join("/");
+		}
 	}
 	try {
 		const info = await fetch(
