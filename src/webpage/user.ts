@@ -564,7 +564,7 @@ class User extends SnowFlake {
 		html: HTMLElement,
 		guild: Guild | null = null,
 		error = true,
-		button: "right" | "left" = "right",
+		button: "right" | "left" | "none" = "right",
 	): void {
 		if (guild && guild.id !== "@me") {
 			Member.resolveMember(this, guild)
@@ -581,20 +581,23 @@ class User extends SnowFlake {
 					if (member) {
 						member.bind(html);
 					} else {
-						User.contextmenu.bindContextmenu(html, this, undefined, undefined, undefined, button);
+						if (button !== "none")
+							User.contextmenu.bindContextmenu(html, this, undefined, undefined, undefined, button);
 					}
 				})
 				.catch((err) => {
 					console.log(err);
 				});
 		} else {
-			User.contextmenu.bindContextmenu(html, this, undefined, undefined, undefined, button);
+			if (button !== "none")
+				User.contextmenu.bindContextmenu(html, this, undefined, undefined, undefined, button);
 		}
-		if (guild) {
-			this.profileclick(html, guild);
-		} else {
-			this.profileclick(html);
-		}
+		if (button !== "none")
+			if (guild) {
+				this.profileclick(html, guild);
+			} else {
+				this.profileclick(html);
+			}
 	}
 
 	static async resolve(id: string, localuser: Localuser): Promise<User> {

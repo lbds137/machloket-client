@@ -530,12 +530,14 @@ class MarkDown {
 					//a.href=build;
 
 					a.textContent = build;
-					const replace = MarkDown.safeLink(a, build, this.localuser);
-					if (replace) {
-						a.textContent = replace;
-						a.classList.add("mentionMD");
+					if (!stdsize) {
+						const replace = MarkDown.safeLink(a, build, this.localuser);
+						if (replace) {
+							a.textContent = replace;
+							a.classList.add("mentionMD");
+						}
+						a.target = "_blank";
 					}
-					a.target = "_blank";
 
 					i = j - 1;
 					span.appendChild(a);
@@ -601,6 +603,7 @@ class MarkDown {
 											mention.textContent = `@${role.name}`;
 											mention.style.color = `var(--role-${role.id})`;
 										} else {
+											//TODO tranlation
 											mention.textContent = "@unknown-role";
 										}
 									}
@@ -613,7 +616,7 @@ class MarkDown {
 											guild = this.channel.guild;
 										}
 										if (!keep) {
-											user.bind(mention, guild);
+											user.bind(mention, guild, true, stdsize ? "none" : "left");
 										}
 										if (guild) {
 											guild.resolveMember(user).then((member) => {
@@ -623,6 +626,7 @@ class MarkDown {
 											});
 										}
 									} else {
+										//TODO tranlation
 										mention.textContent = "@unknown";
 									}
 								}
@@ -631,7 +635,7 @@ class MarkDown {
 								const channel = this.localuser.channelids.get(id);
 								if (channel) {
 									mention.textContent = `#${channel.name}`;
-									if (!keep) {
+									if (!keep && !stdsize) {
 										mention.onclick = (_) => {
 											if (!this.localuser) return;
 											this.localuser.goToChannel(id);
@@ -668,14 +672,16 @@ class MarkDown {
 							} else {
 								appendcurrent();
 								const a = document.createElement("a");
-								const text = MarkDown.safeLink(a, build, this.localuser);
-								if (text) {
-									a.textContent = text;
-									a.classList.add("mentionMD");
-								} else {
-									a.textContent = build;
+								if (!stdsize) {
+									const text = MarkDown.safeLink(a, build, this.localuser);
+									if (text) {
+										a.textContent = text;
+										a.classList.add("mentionMD");
+									} else {
+										a.textContent = build;
+									}
+									a.target = "_blank";
 								}
-								a.target = "_blank";
 								span.appendChild(a);
 							}
 							continue;
@@ -755,6 +761,7 @@ class MarkDown {
 								second: "2-digit",
 							});
 						else if (parts[3] === "R")
+							//TODO make this a little less bad
 							time =
 								Math.round((Date.now() - Number.parseInt(parts[1]) * 1000) / 1000 / 60) +
 								" minutes ago";
@@ -847,10 +854,12 @@ class MarkDown {
 
 						if (URL.canParse(parts[2])) {
 							i = j;
-							MarkDown.safeLink(linkElem, parts[2]);
-							linkElem.textContent = parts[1];
-							linkElem.target = "_blank";
-							linkElem.rel = "noopener noreferrer";
+							if (!stdsize) {
+								MarkDown.safeLink(linkElem, parts[2]);
+								linkElem.textContent = parts[1];
+								linkElem.target = "_blank";
+								linkElem.rel = "noopener noreferrer";
+							}
 							linkElem.title =
 								(parts[3] ? parts[3].substring(2, parts[3].length - 1) + "\n\n" : "") + parts[2];
 							span.appendChild(linkElem);
