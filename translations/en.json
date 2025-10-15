@@ -191,6 +191,7 @@
 	"searchGifs": "Search Tenor",
 	"muteDuration":"Unmute in:",
 	"channel": {
+	"typebox":"Message in $1",
 		"creating": "Creating channel",
 		"name": "Channel",
 		"copyId": "Copy channel id",
@@ -314,7 +315,11 @@
 	"nevermind": "Nevermind",
 	"submit": "submit",
 	"edit": "Edit",
+	"discovery":"Discovery",
 	"guild": {
+		"memberCount":"$1 {{PLURAL:$1|member|members}}",
+		"joinConfirm":"Join $1?",
+		"guilds":"Guilds",
 		"template": "Template:",
 		"admins":"Find Admins",
 		"adminMenu":{

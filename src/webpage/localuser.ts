@@ -698,6 +698,10 @@ class Localuser {
 						this.guildids.delete(temp.d.id);
 						this.guilds.splice(this.guilds.indexOf(guildy), 1);
 						guildy.html.remove();
+						if (guildy === this.lookingguild) {
+							this.guildids.get("@me")?.loadGuild();
+							this.guildids.get("@me")?.loadChannel();
+						}
 					}
 					break;
 				}
@@ -1229,6 +1233,7 @@ class Localuser {
 		}
 		this.goToChannel(channelid, false, messageid);
 	}
+
 	gotoid: string | undefined;
 	async goToChannel(channelid: string, addstate = true, messageid: undefined | string = undefined) {
 		const channel = this.channelids.get(channelid);
@@ -1864,76 +1869,7 @@ class Localuser {
 		).json();
 	}
 	async guildDiscovery() {
-		const content = document.createElement("div");
-		content.classList.add("flexttb", "guildy");
-		content.textContent = I18n.guild.loadingDiscovery();
-		const full = new Dialog("");
-		full.options.addHTMLArea(content);
-		full.show();
-
-		const res = await fetch(this.info.api + "/discoverable-guilds?limit=50", {
-			headers: this.headers,
-		});
-		const json = await res.json();
-		console.log([...json.guilds], json.guilds);
-		//@ts-ignore
-		json.guilds = json.guilds.sort((a, b) => {
-			return b.member_count - a.member_count;
-		});
-		content.innerHTML = "";
-		const title = document.createElement("h2");
-		title.textContent = I18n.guild.disoveryTitle(json.guilds.length + "");
-		content.appendChild(title);
-
-		const guilds = document.createElement("div");
-		guilds.id = "discovery-guild-content";
-
-		json.guilds.forEach((guild: guildjson["properties"]) => {
-			const content = document.createElement("div");
-			content.classList.add("discovery-guild");
-
-			if (guild.banner) {
-				const banner = createImg(
-					this.info.cdn + "/icons/" + guild.id + "/" + guild.banner + ".png?size=256",
-				);
-				banner.classList.add("banner");
-				banner.crossOrigin = "anonymous";
-				banner.alt = "";
-				content.appendChild(banner);
-			}
-
-			const nameContainer = document.createElement("div");
-			nameContainer.classList.add("flex");
-			const img = createImg(
-				this.info.cdn +
-					(guild.icon
-						? "/icons/" + guild.id + "/" + guild.icon + ".png?size=48"
-						: "/embed/avatars/3.png"),
-			);
-			img.classList.add("icon");
-			img.crossOrigin = "anonymous";
-
-			img.alt = "";
-			nameContainer.appendChild(img);
-
-			const name = document.createElement("h3");
-			name.textContent = guild.name;
-			nameContainer.appendChild(name);
-			content.appendChild(nameContainer);
-			const desc = document.createElement("p");
-			desc.textContent = guild.description;
-			content.appendChild(desc);
-
-			content.addEventListener("click", async () => {
-				const joinRes = await fetch(this.info.api + "/guilds/" + guild.id + "/members/@me", {
-					method: "PUT",
-					headers: this.headers,
-				});
-				if (joinRes.ok) full.hide();
-			});
-			guilds.appendChild(content);
-		});
-		content.appendChild(guilds);
+		this.guildids.get("@me")?.loadChannel("discover");
 	}
 	messageCreate(messagep: messageCreateJson): void {
 		messagep.d.guild_id ??= "@me";

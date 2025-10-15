@@ -477,6 +477,17 @@ audio::-webkit-media-controls-panel {
 .joinb:hover {
 	background: color-mix(in srgb, var(--green) 80%, transparent);
 }
+.discoverButton {
+	width: calc(100% - 10px);
+	text-align: center;
+	margin: 5px;
+	box-sizing: border-box;
+	background: #00000029;
+	padding: 10px;
+	&.selected {
+		background: #00000050;
+	}
+}
 button,
 input::file-selector-button,
 select {
@@ -1820,6 +1831,12 @@ span.instanceStatus {
 	margin-right: 0.03in;
 	padding: 10px 0;
 }
+#typebox:empty:before,
+#typebox:has(span:empty):before {
+	content: var(--channel-text);
+	opacity: 0.5;
+	position: absolute;
+}
 .outerTypeBox {
 	max-height: 50svh;
 	padding: 10px 10px;
@@ -3067,10 +3084,14 @@ fieldset input[type="radio"] {
 	max-height: unset;
 	width: auto;
 }
+#typediv[style*="hidden"] {
+	height: 0px;
+}
 .guildy {
-	height: 80svh;
-	width: 80svw;
 	gap: 6px;
+	height: 100%;
+	padding: 10px;
+	box-sizing: border-box;
 }
 #discovery-guild-content {
 	flex: 1;
@@ -3189,6 +3210,11 @@ fieldset input[type="radio"] {
 	align-self: center;
 	cursor: pointer;
 }
+.centeritem {
+	.fadeHTMLArea {
+		animation-duration: 0s;
+	}
+}
 .fadeHTMLArea {
 	position: absolute;
 	width: 100%;
@@ -3196,12 +3222,12 @@ fieldset input[type="radio"] {
 	background: var(--settings-bg);
 	animation-duration: 0.2s;
 	animation-name: fadeOldSettings;
+
 	@media screen and (max-width: 600px) {
 		animation-duration: 0s;
 	}
 	animation-timing-function: ease-in;
 	z-index: 900;
-	height: 100%;
 	&:empty {
 		display: none;
 	}
@@ -3246,7 +3272,6 @@ fieldset input[type="radio"] {
 	animation-timing-function: ease-in;
 }
 .titlediv {
-	height: 100%;
 }
 .flexspace {
 	padding-bottom: 32px;
@@ -3378,7 +3403,7 @@ fieldset input[type="radio"] {
 .optionElement input[type="text"],
 .optionElement textarea,
 .optionElement .fileinputdiv {
-	width: 500px;
+	max-width: 500px;
 }
 #app-list-container div,
 #connection-container div {
@@ -4131,5 +4156,15 @@ img.error::after {
 			height: 48px;
 		}
 		margin-bottom: 0px;
+	}
+}
+.guildPreview {
+	.banner {
+		position: relative !important;
+		margin-left: 10px;
+		border-radius: 10px;
+	}
+	.icon {
+		flex-shrink: 0;
 	}
 }

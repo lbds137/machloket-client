@@ -1473,7 +1473,6 @@ class Guild extends SnowFlake {
 			divy.appendChild(img);
 			if (guild instanceof Guild && autoLink) {
 				img.onclick = () => {
-					console.log(guild.loadGuild);
 					guild.loadGuild();
 					guild.loadChannel();
 				};

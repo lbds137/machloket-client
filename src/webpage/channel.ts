@@ -1587,6 +1587,7 @@ class Channel extends SnowFlake {
 			this.localuser.channelfocus.collectBox();
 		}
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		typebox.style.setProperty("--channel-text", JSON.stringify(I18n.channel.typebox(this.name)));
 		const md = typebox.markdown;
 		md.owner = this;
 		typebox.textContent = this.textSave;

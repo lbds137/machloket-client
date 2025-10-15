@@ -9,12 +9,14 @@ import {SnowFlake} from "./snowflake.js";
 import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Float, FormError} from "./settings.js";
+import {Discovery} from "./discovery.js";
 
 class Direct extends Guild {
 	channels: Group[];
 	getUnixTime(): number {
 		throw new Error("Do not call this for Direct, it does not make sense");
 	}
+	discovery: Discovery;
 	constructor(json: dirrectjson[], owner: Localuser) {
 		super(-1, owner, null);
 		this.message_notifications = 0;
@@ -31,6 +33,7 @@ class Direct extends Guild {
 			this.localuser.channelids.set(temp.id, temp);
 		}
 		this.headchannels = this.channels;
+		this.discovery = new Discovery(this);
 	}
 	createChannelpac(json: any) {
 		const thischannel = new Group(json, this);
@@ -85,6 +88,14 @@ class Direct extends Guild {
 
 		ddiv.append(freindDiv, newDm, build);
 		return ddiv;
+	}
+	loadChannel(id?: string | null | undefined, addstate = true, message?: string) {
+		if (id === "discover") {
+			this.removePrevChannel();
+			this.discovery.makeMenu();
+			return;
+		}
+		super.loadChannel(id, addstate, message);
 	}
 	makeGroup() {
 		const dio = new Dialog(I18n.group.select());
@@ -501,7 +512,11 @@ class Group extends Channel {
 
 		this.icon = json.icon;
 
+		json.recipients = json.recipients.filter((_) => _.id !== this.localuser.user.id);
 		const userSet = new Set(json.recipients.map((user) => new User(user, this.localuser)));
+		if (userSet.size === 0) {
+			userSet.add(this.localuser.user);
+		}
 
 		this.users = [...userSet];
 		this.name = json.name || this.defaultName();
