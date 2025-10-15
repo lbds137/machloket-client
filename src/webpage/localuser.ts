@@ -3092,7 +3092,7 @@ class Localuser {
 		});
 	}
 	//TODO make this an option
-	readonly autofillregex = Object.freeze(/[@#:]([a-zA-Z0-9]*)$/i);
+	readonly autofillregex = Object.freeze(/(^|\s|\n)[@#:]([a-zA-Z0-9]*)$/i);
 	mdBox() {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const typeMd = typebox.markdown;
@@ -3615,7 +3615,8 @@ class Localuser {
 			const match = str.match(this.autofillregex);
 
 			if (match) {
-				const [type, search] = [match[0][0], match[0].split(/@|#|:/)[1]];
+				const trim = match[0].trim();
+				const [type, search] = [trim[0], trim.split(/@|#|:/)[1]];
 				switch (type) {
 					case "#":
 						this.MDFindChannel(search, str, box, md);
