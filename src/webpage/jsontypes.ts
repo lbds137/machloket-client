@@ -318,6 +318,7 @@ type userjson = {
 };
 type memberjson = {
 	index?: number;
+	bio?: string;
 	id: string;
 	user: userjson | null;
 	guild_id: string;

@@ -23,7 +23,7 @@ class Message extends SnowFlake {
 	headers: Localuser["headers"];
 	embeds: Embed[] = [];
 	author!: User;
-	mentions: User[] = [];
+	mentions: userjson[] = [];
 	mention_roles!: Role[];
 	attachments: File[] = []; //probably should be its own class tbh, should be Attachments[]
 	message_reference!: {
@@ -354,9 +354,7 @@ class Message extends SnowFlake {
 		if (messagejson.author.id) {
 			this.author = new User(messagejson.author, this.localuser, false);
 		}
-		for (const thing in messagejson.mentions) {
-			this.mentions[thing] = new User(messagejson.mentions[thing], this.localuser);
-		}
+		this.mentions = messagejson.mentions;
 
 		this.mention_roles = messagejson.mention_roles
 			.map((role: string | {id: string}) => {
@@ -437,9 +435,9 @@ class Message extends SnowFlake {
 	mentionsuser(userd: User | Member) {
 		if (this.mention_everyone) return true;
 		if (userd instanceof User) {
-			return this.mentions.includes(userd);
+			return !!this.mentions.find(({id}) => id == userd.id);
 		} else if (userd instanceof Member) {
-			if (this.mentions.includes(userd.user)) {
+			if (!!this.mentions.find(({id}) => id == userd.id)) {
 				return true;
 			} else {
 				return !new Set(this.mention_roles).isDisjointFrom(new Set(userd.roles)); //if the message mentions a role the user has
