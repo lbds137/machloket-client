@@ -156,7 +156,7 @@ class User extends SnowFlake {
 	static contextmenu = new Contextmenu<User, Member | undefined>("User Menu");
 	async opendm() {
 		for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
-			if (dm.users.length === 1 && dm.users[0].id === this.id) {
+			if (dm.type === 1 && dm.users[0].id === this.id) {
 				this.localuser.goToChannel(dm.id);
 				return;
 			}
