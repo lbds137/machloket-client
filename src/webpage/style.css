@@ -1832,7 +1832,7 @@ span.instanceStatus {
 	padding: 10px 0;
 }
 #typebox:empty:before,
-#typebox:has(span:empty):before {
+#typebox:has(span:only-child:empty):before {
 	content: var(--channel-text);
 	opacity: 0.5;
 	position: absolute;
