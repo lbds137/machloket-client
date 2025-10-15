@@ -105,7 +105,21 @@ menu.addButton(
 	},
 	{visable: () => thisUser.isAdmin()},
 );
-
+const channelw = document.getElementById("channelw");
+console.log(channelw);
+if (channelw)
+	channelw.addEventListener("keypress", (e) => {
+		if (e.ctrlKey || e.altKey || e.metaKey || e.metaKey) return;
+		let owner = e.target as HTMLElement;
+		while (owner !== channelw) {
+			if (owner.tagName === "input" || owner.contentEditable !== "false") {
+				return;
+			}
+			owner = owner.parentElement as HTMLElement;
+		}
+		typebox.markdown.boxupdate(Infinity);
+		console.log("allowed");
+	});
 menu.bindContextmenu(document.getElementById("channels") as HTMLDivElement);
 
 const pasteImageElement = document.getElementById("pasteimage") as HTMLDivElement;
