@@ -481,6 +481,14 @@ export async function getapiurls(str: string): Promise<
 				wellknown: string;
 				login: string;
 		  };
+	function fixApi() {
+		if (!urls) return;
+		if (urls.api.endsWith("/")) {
+			const split = urls.api.split("/");
+			split.pop();
+			urls.api = split.join("/");
+		}
+	}
 	try {
 		const info = await fetch(
 			`${api}${url.pathname.includes("api") ? "" : "api"}/policies/instance/domains`,
@@ -493,6 +501,7 @@ export async function getapiurls(str: string): Promise<
 			wellknown: str,
 			login: info.apiEndpoint + appendApi(apiurl.pathname),
 		};
+		fixApi();
 	} catch {
 		const val = stringURLsMap.get(str);
 		if (val) {
@@ -506,6 +515,7 @@ export async function getapiurls(str: string): Promise<
 						gateway: string;
 						login: string;
 					};
+					fixApi();
 				} else {
 					val.login = val.api;
 					urls = val as {
@@ -515,6 +525,7 @@ export async function getapiurls(str: string): Promise<
 						gateway: string;
 						login: string;
 					};
+					fixApi();
 				}
 			}
 		}
@@ -597,7 +608,7 @@ export async function getapiurls(str: string): Promise<
 					try {
 						//TODO make this a promise race for when the server just never responds
 						//TODO maybe try to strip ports as another way to fix it
-						if (!(await fetch(urls.api + "/ping")).ok) {
+						if (!(await fetch(urls.api + "ping")).ok) {
 							res(false);
 							menu.hide();
 							return;
