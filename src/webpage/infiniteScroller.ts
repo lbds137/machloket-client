@@ -294,14 +294,12 @@ class InfiniteScroller {
 
 		this.changePromise = new Promise<boolean>(async (res) => {
 			try {
-				console.log("start");
 				if (!this.div) {
 					res(false);
 				}
 				const out = (await Promise.allSettled([this.watchForTop(), this.watchForBottom()])) as {
 					value: boolean;
 				}[];
-				console.log("stop");
 				const changed = out[0].value || out[1].value;
 				if (this.timeout === null && changed) {
 					this.timeout = setTimeout(this.updatestuff.bind(this), 300);
