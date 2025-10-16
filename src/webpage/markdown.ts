@@ -275,8 +275,11 @@ class MarkDown {
 						span.append(document.createElement("span"));
 					}
 					appendcurrent();
-
-					span.append(new Text("\n"));
+					if (keep) {
+						span.append(new Text("\n"));
+					} else {
+						span.append(document.createElement("br"));
+					}
 				}
 				continue;
 			}
