@@ -3831,6 +3831,9 @@ fieldset input[type="radio"] {
 	object-fit: contain;
 	height: 0.6in;
 }
+.bigemojiUni {
+	font-size: 47px;
+}
 .friendlyButton {
 	padding: 0.07in;
 	background: #00000045;

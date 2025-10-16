@@ -64,6 +64,49 @@ class MarkDown {
 		return this.markdown(this.txt, {keep, stdsize});
 	}
 	markdown(text: string | string[], {keep = false, stdsize = false} = {}) {
+		if (!keep && !stdsize) {
+			let str: string;
+			if (text instanceof Array) {
+				str = text.join("");
+			} else {
+				str = text;
+			}
+			const span = document.createElement("span");
+			span.classList.add("md-emoji", "bigemojiUni");
+
+			const matched = str.match(/^((<a?:[A-Za-z\d_]*:\d*>|([^\da-zA-Z <>]+)) *){1,3}$/u);
+			if (matched) {
+				const map = [...str.matchAll(/<a?:[A-Za-z\d_]*:\d*>|[^\da-zA-Z <>]+/gu).map(([_]) => _)];
+				const seg = new Intl.Segmenter("en-US", {granularity: "grapheme"});
+				const invalid = map.find((str) => {
+					if (str.length > 10) return false;
+					if (Array.from(seg.segment(str)).length !== 1) return true;
+					return false;
+				});
+				console.warn(invalid, map, seg);
+				if (!invalid) {
+					for (const match of map) {
+						if (match.length > 10) {
+							const parts = match.match(/^<(a)?:\w+:(\d{10,30})>$/);
+							if (parts && parts[2]) {
+								const owner = this.channel ? this.channel.guild : this.localuser;
+								if (!owner) continue;
+								const emoji = new Emoji(
+									{name: match, id: parts[2], animated: Boolean(parts[1])},
+									owner,
+								);
+								span.appendChild(emoji.getHTML(true, !keep));
+
+								continue;
+							}
+						} else {
+							span.append(match);
+						}
+					}
+					return span;
+				}
+			}
+		}
 		let txt: string[];
 		if (typeof text === typeof "") {
 			txt = (text as string).split("");
