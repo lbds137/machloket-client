@@ -71,6 +71,7 @@
 		"markRead": "Als gelies markéieren",
 		"settings": "Astellungen",
 		"delete": "Kanal läschen",
+		"deleteCat": "Kategorie läschen",
 		"makeInvite": "Invitatioun maachen",
 		"settingsFor": "Astellunge fir $1",
 		"text": "Text",
@@ -316,6 +317,9 @@
 		"confirmDel": "Sidd Dir sécher, datt Dir dëse Sticker läsche wëllt?",
 		"del": "Sticker läschen",
 		"tags": "Associéierten Emoji:"
+	},
+	"404": {
+		"404": "404 Säit net fonnt"
 	},
 	"uploadFilesText": "Lued Är Fichieren hei erop!",
 	"bot": "BOT"

@@ -40,6 +40,7 @@
 			"cont": "仍要繼續"
 		}
 	},
+	"cancel": "取消",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "允許使用者為公會建立邀請",
@@ -190,12 +191,15 @@
 	"searchGifs": "搜尋 Tenor",
 	"muteDuration": "取消噤聲：",
 	"channel": {
+		"typebox": "在$1的訊息",
 		"creating": "建立頻道",
 		"name": "頻道",
 		"copyId": "複製頻道 ID",
+		"copyIdCat": "複製分類 ID",
 		"markRead": "標記為已讀",
 		"settings": "設定",
 		"delete": "刪除頻道",
+		"deleteCat": "刪除分類",
 		"makeInvite": "做出邀請",
 		"settingsFor": "$1的設定",
 		"voice": "語音",
@@ -204,6 +208,7 @@
 		"unmute": "取消噤聲頻道",
 		"announcement": "公告",
 		"name:": "名稱：",
+		"icon": "圖示：",
 		"topic:": "主題：",
 		"nsfw:": "工作場所不宜：",
 		"selectType": "選擇頻道類型",
@@ -213,6 +218,7 @@
 		"createCatagory": "建立分類",
 		"permissions": "權限"
 	},
+	"notiClump": "您已收到來自$2的$1通知",
 	"Voice": {
 		"status": {
 			"done": "已連接",
@@ -309,7 +315,11 @@
 	"nevermind": "沒事",
 	"submit": "提交",
 	"edit": "編輯",
+	"discovery": "探索",
 	"guild": {
+		"memberCount": "$1 個{{PLURAL:$1|成員}}",
+		"joinConfirm": "加入$1？",
+		"guilds": "公會",
 		"template": "模板：",
 		"admins": "尋找管理員",
 		"adminMenu": {
@@ -679,12 +689,27 @@
 		"legacy_username": "擁有舊使用者名稱",
 		"quest_completed": "做出一個任務"
 	},
+	"dms": "直接訊息",
+	"group": {
+		"select": "選擇好友",
+		"createdm": "建立 DM！",
+		"edit": "編輯群組聊天"
+	},
 	"emoji": {
 		"title": "表情符號",
 		"upload": "上傳表情符號",
 		"image:": "圖片：",
 		"name:": "名稱：",
-		"confirmDel": "您確定要刪除這個表情符號？"
+		"confirmDel": "您確定要刪除這個表情符號？",
+		"from": "這個表情符號來自",
+		"privateGuild": "此為私人公會",
+		"join": "加入公會",
+		"found": {
+			"this": "這個表情符號來自此公會。",
+			"other": "這個表情符號來自您的另一個公會。",
+			"not": "此表情符號不屬於您的公會，您必須加入該公會才能使用",
+			"private": "找不到此表情符號的公會"
+		}
 	},
 	"sticker": {
 		"title": "貼圖",
@@ -697,6 +722,19 @@
 		"errFileMust": "必須包含用於您的貼圖的圖片",
 		"errEmjMust": "必須包含帶有您的貼圖的表情符號",
 		"tags": "相關表情符號："
+	},
+	"404": {
+		"home": "首頁",
+		"title": "看來您迷路了",
+		"404": "404 找不到頁面",
+		"listtitle": "也許您是想去這些地方",
+		"app": "前往應用程式",
+		"login": "登入",
+		"reset": "重設密碼頁面",
+		"blog": "Fermi 部落格",
+		"whereever": "無論這在哪裡",
+		"report": "如果您在客戶端發現此頁面，請回報：",
+		"whatelse": "您認為應該還會發生什麼事？"
 	},
 	"widget": "公會小工具",
 	"widgetEnabled": "已啟用小工具",
