@@ -1130,7 +1130,7 @@ class User extends SnowFlake {
 		});
 
 		const send = document.createElement("input");
-		div.append(send);
+		if (!this.id.includes("#clone")) div.append(send);
 		send.placeholder = I18n.user.sendMessage(this.name);
 		send.onkeyup = (e) => {
 			if (e.key === "Enter") {
