@@ -8,7 +8,6 @@ import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
 import {
 	channeljson,
 	guildFolder,
-	guildjson,
 	mainuserjson,
 	memberjson,
 	memberlistupdatejson,
@@ -2129,6 +2128,7 @@ class Localuser {
 			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
 				initColor: color,
 			});
+
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;

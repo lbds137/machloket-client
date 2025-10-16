@@ -2509,7 +2509,10 @@ class Channel extends SnowFlake {
 		} else {
 			console.error("something bad happened");
 		}
-		if (messagez.mentionsuser(this.localuser.user) && messagez.author !== this.localuser.user) {
+		if (
+			(messagez.mentionsuser(this.localuser.user) || this.guild.id === "@me") &&
+			messagez.author !== this.localuser.user
+		) {
 			this.mentions++;
 		}
 		this.lastmessageid = messagez.id;
@@ -2542,6 +2545,7 @@ class Channel extends SnowFlake {
 			if (this.localuser.user.status === "dnd") {
 				return;
 			}
+
 			if (
 				!this.guild.mute_config ||
 				new Date(this.guild.mute_config.end_time).getTime() < Date.now()

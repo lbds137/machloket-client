@@ -310,7 +310,7 @@ type userjson = {
 	bot: boolean;
 	premium_since: string;
 	premium_type: number;
-	theme_colors: string;
+	theme_colors: [number, number] | null;
 	pronouns?: string;
 	badge_ids: string[];
 	webhook?: webhookInfo;
