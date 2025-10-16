@@ -2493,10 +2493,15 @@ class Channel extends SnowFlake {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return;
 		}
+
 		if (!this.lastmessageid) {
 			this.topid = messagep.d.id;
 		}
 		const messagez = new Message(messagep.d, this);
+		Member.resolveMember(messagez.author, this.guild).then((_) => {
+			this.typingmap.delete(_ as Member);
+			this.rendertyping();
+		});
 		this.lastmessage = messagez;
 		if (this.lastmessageid) {
 			this.idToNext.set(this.lastmessageid, messagez.id);
