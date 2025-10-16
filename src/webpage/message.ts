@@ -459,6 +459,9 @@ class Message extends SnowFlake {
 		return new Date(this.timestamp).getTime();
 	}
 	async edit(content: string) {
+		if (content === this.content.textContent) {
+			return;
+		}
 		return await fetch(this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id, {
 			method: "PATCH",
 			headers: this.headers,
