@@ -177,7 +177,6 @@ class MarkDown {
 						}
 						if (keep) {
 							element.append(keepys);
-							//span.appendChild(document.createElement("br"));
 						}
 						element.appendChild(this.markdown(build, {keep, stdsize}));
 						span.append(element);
@@ -277,7 +276,8 @@ class MarkDown {
 						span.append(document.createElement("span"));
 					}
 					appendcurrent();
-					span.append(document.createElement("br"));
+
+					span.append(new Text("\n"));
 				}
 				continue;
 			}
@@ -1033,7 +1033,9 @@ class MarkDown {
 			formatted = false;
 		}
 		let build = "";
-		for (const thing of Array.from(element.childNodes)) {
+		const arr = Array.from(element.childNodes);
+		//debugger;
+		for (const thing of arr) {
 			if (thing instanceof Text) {
 				const text = thing.textContent;
 				build += text;
