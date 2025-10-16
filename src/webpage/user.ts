@@ -912,7 +912,8 @@ class User extends SnowFlake {
 						roleDiv.classList.add("rolediv");
 						const color = document.createElement("div");
 						roleDiv.append(color);
-						color.style.setProperty("--role-color", `#${role.color.toString(16).padStart(6, "0")}`);
+
+						color.style.setProperty("--role-color", role.getColorStyle(true));
 						color.classList.add("colorrolediv");
 						const span = document.createElement("span");
 						roleDiv.append(span);
@@ -1158,7 +1159,7 @@ class User extends SnowFlake {
 					roleDiv.classList.add("rolediv");
 					const color = document.createElement("div");
 					roleDiv.append(color);
-					color.style.setProperty("--role-color", `#${role.color.toString(16).padStart(6, "0")}`);
+					color.style.setProperty("--role-color", role.getColorStyle(true));
 					color.classList.add("colorrolediv");
 					const span = document.createElement("span");
 					roleDiv.append(span);

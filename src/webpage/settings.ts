@@ -364,7 +364,7 @@ class ButtonInput implements OptionsElement<void> {
 	submit() {}
 }
 
-class ColorInput implements OptionsElement<string> {
+export class ColorInput implements OptionsElement<string> {
 	readonly label: string;
 	readonly owner: Options;
 	readonly onSubmit: (str: string) => void;

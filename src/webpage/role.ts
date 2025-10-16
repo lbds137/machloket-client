@@ -4,7 +4,7 @@ import {Guild} from "./guild.js";
 import {SnowFlake} from "./snowflake.js";
 import {rolesjson} from "./jsontypes.js";
 import {Search} from "./search.js";
-import {OptionsElement, Buttons, Dialog} from "./settings.js";
+import {OptionsElement, Buttons, Dialog, ColorInput} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Channel} from "./channel.js";
 import {I18n} from "./i18n.js";
@@ -21,6 +21,11 @@ class Role extends SnowFlake {
 	unicode_emoji!: string;
 	position!: number;
 	headers: Guild["headers"];
+	colors?: {
+		primary_color: number;
+		secondary_color?: number | null;
+		tertiary_color?: number | null;
+	};
 	constructor(json: rolesjson, owner: Guild) {
 		super(json.id);
 		this.headers = owner.headers;
@@ -31,7 +36,7 @@ class Role extends SnowFlake {
 			}
 			(this as any)[thing] = (json as any)[thing];
 		}
-		document.body.style.setProperty(`--role-${this.id}`, this.getColor());
+		this.roleLoad();
 		this.permissions = new Permissions(json.permissions);
 		this.owner = owner;
 	}
@@ -51,6 +56,27 @@ class Role extends SnowFlake {
 			return span;
 		}
 	}
+	getColorStyle(short = false) {
+		const [len1, len2, len3] = short
+			? (["", "", ""] as const)
+			: (["30px", "60px", "90px"] as const);
+		if (this.colors) {
+			const prim = this.getColor();
+			if (this.colors.secondary_color) {
+				const second = Role.numberToColor(this.colors.secondary_color);
+				if (this.colors.tertiary_color) {
+					const third = Role.numberToColor(this.colors.tertiary_color);
+					return `repeating-linear-gradient(90deg, ${prim}, ${second} ${len1}, ${third} ${len2}, ${prim} ${len3})`;
+				}
+				return `repeating-linear-gradient(90deg, ${prim} , ${second} ${len1}, ${prim} ${len2})`;
+			}
+		}
+		return `linear-gradient(90deg, ${this.getColor()})`;
+	}
+	roleLoad() {
+		const style = this.getColorStyle();
+		document.documentElement.style.setProperty(`--role-${this.id}`, style);
+	}
 	newJson(json: rolesjson) {
 		for (const thing of Object.keys(json)) {
 			if (thing === "id" || thing === "permissions") {
@@ -58,7 +84,7 @@ class Role extends SnowFlake {
 			}
 			(this as any)[thing] = (json as any)[thing];
 		}
-		document.body.style.setProperty(`--role-${this.id}`, this.getColor());
+		this.roleLoad();
 		this.permissions.allow = BigInt(json.permissions);
 	}
 	compare(str: string) {
@@ -80,11 +106,14 @@ class Role extends SnowFlake {
 	get localuser(): Localuser {
 		return this.guild.localuser;
 	}
+	static numberToColor(numb: number) {
+		return `#${numb.toString(16).padStart(6, "0")}`;
+	}
 	getColor(): string | null {
 		if (this.color === 0) {
 			return null;
 		}
-		return `#${this.color.toString(16).padStart(6, "0")}`;
+		return Role.numberToColor(this.color);
 	}
 	canManage() {
 		if (this.guild.member.hasPermission("MANAGE_ROLES")) {
@@ -250,8 +279,9 @@ class RoleList extends Buttons {
 	}
 	makeguildmenus(option: Options) {
 		option.addButtonInput("", I18n.role.displaySettings(), () => {
-			const role = this.guild.roleids.get(this.curid as string);
-			if (!role) return;
+			const r = this.guild.roleids.get(this.curid as string);
+			if (!r) return;
+			const role = r;
 			const form = option.addSubForm(
 				I18n.role.displaySettings(),
 				(e) => {
@@ -277,10 +307,70 @@ class RoleList extends Buttons {
 			form.addCheckboxInput(I18n.role.mentionable(), "mentionable", {
 				initState: role.mentionable,
 			});
+			let count: number;
+			if (role.colors) {
+				count = role.colors.secondary_color ? (role.colors.tertiary_color ? 3 : 2) : 1;
+			} else {
+				count = 1;
+			}
+
+			form.options
+				.addSelect(
+					I18n.role.colors.name(),
+					() => {},
+					(["one", "two", "three"] as const).map((_) => I18n.role.colors[_]()),
+					{
+						defaultIndex: count - 1,
+					},
+				)
+				.watchForChange((_) => {
+					count = _ + 1;
+					colorOptGen();
+				});
+
 			const color = "#" + role.color.toString(16).padStart(6, "0");
 			const colorI = form.addColorInput(I18n.role.color(), "color", {
 				initColor: color,
 			});
+
+			const opt = form.addOptions("");
+
+			const c2 =
+				role.colors?.secondary_color !== undefined && role.colors?.secondary_color !== null
+					? Role.numberToColor(role.colors.secondary_color)
+					: color;
+			const c3 =
+				role.colors?.tertiary_color !== undefined && role.colors?.tertiary_color !== null
+					? Role.numberToColor(role.colors.tertiary_color)
+					: color;
+
+			const colors = [color, c2, c3];
+
+			let colorInputs: ColorInput[] = [colorI];
+			function colorOptGen() {
+				colorInputs = [colorInputs[0]];
+				opt.removeAll();
+
+				if (count >= 2) {
+					colorInputs[1] = opt.addColorInput(I18n.role.colors.secondColor(), () => {}, {
+						initColor: colors[1],
+					});
+					colorInputs[1].watchForChange((_) => {
+						colors[1] = _;
+					});
+				}
+				if (count === 3) {
+					colorInputs[2] = opt.addColorInput(I18n.role.colors.thirdColor(), () => {}, {
+						initColor: colors[2],
+					});
+
+					colorInputs[2].watchForChange((_) => {
+						colors[2] = _;
+					});
+				}
+			}
+			colorOptGen();
+
 			form.addEmojiInput(I18n.role.roleEmoji(), "unicode_emoji", this.guild.localuser, {
 				initEmoji: role.unicode_emoji
 					? new Emoji(
@@ -304,6 +394,11 @@ class RoleList extends Buttons {
 			form.addPreprocessor((obj: any) => {
 				obj.color = Number("0x" + colorI.colorContent.substring(1));
 				obj.permissions = this.permission.allow.toString();
+				obj.colors = {
+					primary_color: obj.color,
+					secondary_color: colorInputs[1] ? Number("0x" + colors[1].substring(1)) : undefined,
+					tertiary_color: colorInputs[2] ? Number("0x" + colors[2].substring(1)) : undefined,
+				};
 
 				console.log(obj.color);
 			});

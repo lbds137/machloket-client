@@ -404,7 +404,15 @@
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"roleEmoji": "Role emoji:",
 		"roleFileIcon": "Role Icon:",
-		"deleting":"Deleting role..."
+		"deleting":"Deleting role...",
+		"colors":{
+			"name":"Color count:",
+			"one":"One",
+			"two":"Two",
+			"three":"Three",
+			"secondColor":"Second Color:",
+			"thirdColor":"Third Color:"
+		}
 	},
 	"folder":{
 		"name":"Folder name:",

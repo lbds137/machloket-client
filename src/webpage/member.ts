@@ -493,7 +493,8 @@ class Member extends SnowFlake {
 
 				}
 				*/
-			html.style.color = `var(--role-${this.getTopColor()})`;
+			const id = this.getTopColor();
+			if (id) html.style.setProperty("--userbg", `var(--role-${id})`);
 		}
 
 		//this.profileclick(html);

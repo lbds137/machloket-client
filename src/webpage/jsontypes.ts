@@ -491,6 +491,11 @@ type rolesjson = {
 	icon: string;
 	unicode_emoji: string;
 	flags: number;
+	colors?: {
+		primary_color: number;
+		secondary_color?: number | null;
+		tertiary_color?: number | null;
+	};
 };
 type dirrectjson = {
 	id: string;
