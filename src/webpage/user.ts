@@ -812,9 +812,18 @@ class User extends SnowFlake {
 		const userbody = document.createElement("div");
 		userbody.classList.add("flexttb", "infosection");
 		div.appendChild(userbody);
+
 		const usernamehtml = document.createElement("h2");
-		usernamehtml.textContent = this.username;
+		usernamehtml.textContent = this.name;
 		userbody.appendChild(usernamehtml);
+
+		if (this.bot) {
+			const username = document.createElement("span");
+			username.classList.add("bot");
+			username.textContent = this.webhook ? I18n.webhook() : I18n.bot();
+			usernamehtml.appendChild(username);
+		}
+
 		userbody.appendChild(badgediv);
 		const discrimatorhtml = document.createElement("h3");
 		discrimatorhtml.classList.add("tag");
@@ -871,6 +880,12 @@ class User extends SnowFlake {
 					joined.append(p);
 
 					usernamehtml.textContent = member.name;
+					if (this.bot) {
+						const username = document.createElement("span");
+						username.classList.add("bot");
+						username.textContent = this.webhook ? I18n.webhook() : I18n.bot();
+						usernamehtml.appendChild(username);
+					}
 
 					roles.classList.add("flexltr", "rolesbox");
 					for (const role of member.roles) {
@@ -1056,7 +1071,14 @@ class User extends SnowFlake {
 		div.appendChild(userbody);
 		const usernamehtml = document.createElement("h2");
 		usernamehtml.textContent = this.username;
+
 		userbody.appendChild(usernamehtml);
+		if (this.bot) {
+			const username = document.createElement("span");
+			username.classList.add("bot");
+			username.textContent = this.webhook ? I18n.webhook() : I18n.bot();
+			usernamehtml.appendChild(username);
+		}
 		userbody.appendChild(badgediv);
 		const discrimatorhtml = document.createElement("h3");
 		discrimatorhtml.classList.add("tag");
@@ -1093,6 +1115,12 @@ class User extends SnowFlake {
 			membres.then((member) => {
 				if (!member) return;
 				usernamehtml.textContent = member.name;
+				if (this.bot) {
+					const username = document.createElement("span");
+					username.classList.add("bot");
+					username.textContent = this.webhook ? I18n.webhook() : I18n.bot();
+					usernamehtml.appendChild(username);
+				}
 				const roles = document.createElement("div");
 				roles.classList.add("flexltr", "rolesbox");
 				for (const role of member.roles) {

@@ -2120,6 +2120,8 @@ span.instanceStatus {
 	font-weight: bold;
 	color: var(--primary-text-prominent);
 	border-radius: 4px;
+	flex-grow: 0;
+	width: fit-content;
 }
 .membererror {
 	display: inline-block;

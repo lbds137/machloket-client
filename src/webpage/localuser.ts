@@ -1187,6 +1187,12 @@ class Localuser {
 				const username = document.createElement("span");
 				username.classList.add("ellipsis");
 				username.textContent = member.name;
+				if (user.bot) {
+					const bot = document.createElement("span");
+					bot.classList.add("bot");
+					bot.textContent = I18n.bot();
+					username.appendChild(bot);
+				}
 				member.bind(username);
 				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
 				memberdiv.append(pfp, username);
