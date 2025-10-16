@@ -83,7 +83,6 @@ class MarkDown {
 					if (Array.from(seg.segment(str)).length !== 1) return true;
 					return false;
 				});
-				console.warn(invalid, map, seg);
 				if (!invalid) {
 					for (const match of map) {
 						if (match.length > 10) {
