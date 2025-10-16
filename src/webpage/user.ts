@@ -154,10 +154,12 @@ class User extends SnowFlake {
 	}
 
 	static contextmenu = new Contextmenu<User, Member | undefined>("User Menu");
-	async opendm() {
+	async opendm(message?: string) {
 		for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
-			if (dm.type === 1 && dm.users[0].id === this.id) {
+			if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
 				this.localuser.goToChannel(dm.id);
+				if (message)
+					dm.sendMessage(message, {attachments: [], embeds: [], replyingto: null, sticker_ids: []});
 				return;
 			}
 		}
@@ -171,6 +173,22 @@ class User extends SnowFlake {
 			.then((json) => {
 				this.localuser.goToChannel(json.id);
 			});
+		if (message) {
+			while (true) {
+				for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
+					if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
+						dm.sendMessage(message, {
+							attachments: [],
+							embeds: [],
+							replyingto: null,
+							sticker_ids: [],
+						});
+						return;
+					}
+				}
+				await new Promise((res) => setTimeout(res, 100));
+			}
+		}
 		return;
 	}
 	async changeRelationship(type: 0 | 1 | 2 | 3 | 4 | 5) {
@@ -1111,9 +1129,20 @@ class User extends SnowFlake {
 			}
 		});
 
+		const send = document.createElement("input");
+		div.append(send);
+		send.placeholder = I18n.user.sendMessage(this.name);
+		send.onkeyup = (e) => {
+			if (e.key === "Enter") {
+				this.opendm(send.value);
+				div.remove();
+			}
+		};
+
 		if (guild) {
 			membres.then((member) => {
 				if (!member) return;
+				send.placeholder = I18n.user.sendMessage(member.name);
 				usernamehtml.textContent = member.name;
 				if (this.bot) {
 					const username = document.createElement("span");
@@ -1139,6 +1168,7 @@ class User extends SnowFlake {
 				userbody.append(roles);
 			});
 		}
+
 		if (x !== -1) {
 			Contextmenu.declareMenu(div);
 			document.body.appendChild(div);

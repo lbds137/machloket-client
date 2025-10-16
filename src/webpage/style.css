@@ -2598,6 +2598,17 @@ img.bigembedimg {
 		animation-fill-mode: forwards;
 		animation-timing-function: cubic-bezier(0.28, 0.48, 0.24, 1.27);
 	}
+	input {
+		width: calc(100% - 20px);
+		margin: 0px 10px;
+		margin-bottom: 10px;
+		box-sizing: border-box;
+		padding: 10px;
+		background: var(--secondary-bg);
+		border: none;
+		border-radius: 5px;
+		font-size: 14px;
+	}
 }
 @keyframes fade-in {
 	0% {

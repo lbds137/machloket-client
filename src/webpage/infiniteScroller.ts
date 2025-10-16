@@ -49,7 +49,7 @@ class InfiniteScroller {
 
 	async getDiv(initialId: string): Promise<HTMLDivElement> {
 		if (this.div) {
-			throw new Error("Div already exists, exiting.");
+			return this.div;
 		}
 		this.resetVars();
 		const scroll = document.createElement("div");

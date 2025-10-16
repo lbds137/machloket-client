@@ -191,7 +191,7 @@
 	"searchGifs": "Search Tenor",
 	"muteDuration":"Unmute in:",
 	"channel": {
-	"typebox":"Message in $1",
+		"typebox":"Message in $1",
 		"creating": "Creating channel",
 		"name": "Channel",
 		"copyId": "Copy channel id",
@@ -622,6 +622,7 @@
 		"name": "Direct Messages"
 	},
 	"user": {
+		"sendMessage":"Message @$1",
 		"copyId": "Copy user ID",
 		"online": "Online",
 		"offline": "Offline",
