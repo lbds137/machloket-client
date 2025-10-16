@@ -581,7 +581,7 @@ class Group extends Channel {
 	}
 	readStateInfo(json: readyjson["d"]["read_state"]["entries"][0]): void {
 		super.readStateInfo(json);
-		if (this.lastmessageid !== this.lastreadmessageid && this.mentions === 0) {
+		if (this.hasunreads && this.mentions === 0) {
 			this.mentions++;
 		}
 	}
@@ -615,7 +615,7 @@ class Group extends Channel {
 	unreads() {
 		const sentdms = document.getElementById("sentdms") as HTMLDivElement; //Need to change sometime
 		const current = this.all.deref();
-		if (this.hasunreads) {
+		if (this.mentions) {
 			{
 				const noti = this.noti?.deref();
 				if (noti) {
