@@ -7,7 +7,6 @@ import child_process from "child_process";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 let urlMaybe = process.env.URL;
-console.log(JSON.stringify(urlMaybe));
 if (urlMaybe && URL.canParse(urlMaybe)) {
 	if (urlMaybe.endsWith("/")) {
 		const temp = urlMaybe.split("/");
@@ -81,6 +80,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 						let map = (await fs.readFile(path.join(curPath, file))).toString();
 						//@ts-expect-error I don't know TS just doesn't seem to know I'm on modern JS
 						map = map.replaceAll("$$$", urlMaybe);
+						console.log(map);
 						await fs.writeFile(path.join(newPath, file), map);
 					}
 				} else if (file.includes("robots.txt") && urlMaybe) {
