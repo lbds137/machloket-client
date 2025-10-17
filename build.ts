@@ -7,7 +7,7 @@ import child_process from "child_process";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 let urlMaybe = process.env.URL;
-console.log(urlMaybe);
+console.log(JSON.stringify(urlMaybe));
 if (urlMaybe && URL.canParse(urlMaybe)) {
 	if (urlMaybe.endsWith("/")) {
 		const temp = urlMaybe.split("/");
