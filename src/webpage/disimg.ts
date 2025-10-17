@@ -16,7 +16,6 @@ class ImagesDisplay {
 		this.weakbg = new WeakRef(e);
 	}
 	makeHTML(): HTMLElement {
-		//TODO this should be able to display more than one image at a time lol
 		const image = this.files[this.index].getHTML(false, true);
 		image.classList.add("imgfit", "centeritem");
 		return image;

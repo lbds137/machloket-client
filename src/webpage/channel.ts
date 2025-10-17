@@ -154,8 +154,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visable: function () {
-					//TODO there is no way that this is correct
-					return this.isAdmin();
+					return this.hasPermission("MANAGE_CHANNELS");
 				},
 				icon: {
 					css: "svg-delete",
