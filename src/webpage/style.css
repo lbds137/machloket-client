@@ -1840,6 +1840,7 @@ span.instanceStatus {
 	content: var(--channel-text);
 	opacity: 0.5;
 	position: absolute;
+	cursor: text;
 }
 .outerTypeBox {
 	max-height: 50svh;
