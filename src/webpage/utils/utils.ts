@@ -859,7 +859,9 @@ if ("serviceWorker" in navigator) {
 				console.log("active");
 			}
 			SW.worker = serviceWorker;
-			SW.setMode(localStorage.getItem("SWMode") as "false" | "offlineOnly" | "true");
+			SW.setMode(
+				(localStorage.getItem("SWMode") as "false" | "offlineOnly" | "true" | undefined) || "true",
+			);
 			if (serviceWorker) {
 				console.log(serviceWorker.state);
 				serviceWorker.addEventListener("statechange", (_) => {

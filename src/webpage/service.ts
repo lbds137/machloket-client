@@ -55,8 +55,7 @@ function samedomain(url: string | URL) {
 
 let enabled = "false";
 let offline = false;
-
-function toPath(url: string): string {
+function toPathNoDefault(url: string) {
 	const Url = new URL(url);
 	let html: string | undefined = undefined;
 	if (!html) {
@@ -71,7 +70,11 @@ function toPath(url: string): string {
 			html = "./home";
 		}
 	}
-	return html || Url.pathname;
+	return html;
+}
+function toPath(url: string): string {
+	const Url = new URL(url);
+	return toPathNoDefault(url) || Url.pathname;
 }
 let fails = 0;
 async function getfile(event: FetchEvent): Promise<Response> {
@@ -145,6 +148,11 @@ self.addEventListener("message", (message) => {
 			break;
 		case "ForceClear":
 			deleteoldcache();
+			break;
+		case "isValid":
+			const port = data.port as MessagePort;
+			console.error("Hey!");
+			port.postMessage({code: "isValid", res: toPathNoDefault(data.url)});
 			break;
 	}
 });

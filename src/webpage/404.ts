@@ -1,5 +1,5 @@
 import {I18n} from "./i18n";
-import {setTheme} from "./utils/utils";
+import {setTheme, SW} from "./utils/utils";
 
 setTheme();
 await I18n.done;
@@ -23,4 +23,21 @@ if (where) {
 		const event = easterEvents[Math.floor(Math.random() * easterEvents.length)];
 		event();
 	};
+}
+while (true) {
+	await new Promise((res) => setTimeout(res, 100));
+	if (SW.worker) {
+		const channel = new MessageChannel();
+		channel.port2.onmessage = (message) => {
+			if (message.data.res) {
+				window.location.reload();
+			}
+		};
+		SW.worker.postMessage({code: "isValid", url: window.location.href, port: channel.port1}, [
+			channel.port1,
+		]);
+		channel.port1.postMessage("");
+		console.log(channel.port2);
+		break;
+	}
 }
