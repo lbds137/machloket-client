@@ -76,11 +76,15 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 					}
 				}
 				if (file.includes("sitemap")) {
+					console.log("map");
 					if (urlMaybe) {
+						console.log("map");
 						let map = (await fs.readFile(path.join(curPath, file))).toString();
+						console.log("map");
 						//@ts-expect-error I don't know TS just doesn't seem to know I'm on modern JS
 						map = map.replaceAll("$$$", urlMaybe);
-						console.log(map);
+						console.log("map");
+
 						await fs.writeFile(path.join(newPath, file), map);
 					}
 				} else if (file.includes("robots.txt") && urlMaybe) {
