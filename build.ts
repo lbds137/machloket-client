@@ -6,6 +6,17 @@ import child_process from "child_process";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+let urlMaybe = process.env.URL;
+console.log(urlMaybe);
+if (urlMaybe && URL.canParse(urlMaybe)) {
+	if (urlMaybe.endsWith("/")) {
+		const temp = urlMaybe.split("/");
+		temp.pop();
+		urlMaybe = temp.join("/");
+	}
+} else {
+	urlMaybe = undefined;
+}
 async function moveFiles(curPath: string, newPath: string, first = true) {
 	async function processFile(file: string) {
 		const Prom: Promise<unknown>[] = [];
@@ -65,7 +76,20 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 						]);
 					}
 				}
-				await fs.copyFile(path.join(curPath, file), path.join(newPath, file));
+				if (file.includes("sitemap")) {
+					if (urlMaybe) {
+						let map = (await fs.readFile(path.join(curPath, file))).toString();
+						//@ts-expect-error I don't know TS just doesn't seem to know I'm on modern JS
+						map = map.replaceAll("$$$", urlMaybe);
+						await fs.writeFile(path.join(newPath, file), map);
+					}
+				} else if (file.includes("robots.txt") && urlMaybe) {
+					let robots = (await fs.readFile(path.join(curPath, file))).toString();
+					robots += "\n\nSitemap: " + urlMaybe + "/sitemap.xml";
+					await fs.writeFile(path.join(newPath, file), robots);
+				} else {
+					await fs.copyFile(path.join(curPath, file), path.join(newPath, file));
+				}
 			} else {
 				const plainname = file.split(".ts")[0];
 				const newfileDir = path.join(newPath, plainname);
