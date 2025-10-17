@@ -1840,7 +1840,6 @@ span.instanceStatus {
 	content: var(--channel-text);
 	opacity: 0.5;
 	position: absolute;
-	cursor: text;
 }
 .outerTypeBox {
 	max-height: 50svh;
@@ -2288,6 +2287,7 @@ span .quote:last-of-type .quoteline {
 	cursor: pointer;
 	background-image: var(--userbg, linear-gradient(var(--primary-text)));
 	position: relative;
+	z-index: 1;
 }
 .mentionMD::before {
 	background: color-mix(in srgb, var(--mention), transparent);
@@ -2296,6 +2296,7 @@ span .quote:last-of-type .quoteline {
 	width: 100%;
 	height: 100%;
 	left: 0px;
+	z-index: -1;
 }
 .mentionMD:hover::before {
 	background: var(--mention);
