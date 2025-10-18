@@ -2,11 +2,12 @@ This is for in the future when I want to compress more images or anyone else for
 # Lossless
 
 ### https://squoosh.app/
-good at reducing the pallet, a first step for images that have a limited number of colors, bad at actually compressing things though, for all formats except webp.
+good at reducing the pallet, a first step for images that have a limited number of colors, bad at actually compressing things though, for all formats except webp and png.
 
 ## PNGs:
 good ratios, though not as good as other options, though better compatibility
 ### oxipng
+(you can also use through squoosh with the same results)
 Seems to be the best of all of the options, not sure if it's all you would need, but it did shrink pngs further than the other two tools afterwards.
 ```bash
 oxipng -o max --strip all --alpha <filename here>
