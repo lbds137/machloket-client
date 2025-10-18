@@ -8,6 +8,7 @@ good at reducing the pallet, a first step for images that have a limited number 
 good ratios, though not as good as other options, though better compatibility
 ### oxipng
 (you can also use through squoosh with the same results)
+
 Seems to be the best of all of the options, not sure if it's all you would need, but it did shrink pngs further than the other two tools afterwards.
 ```bash
 oxipng -o max --strip all --alpha <filename here>
