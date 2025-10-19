@@ -153,10 +153,17 @@ async function build() {
 	);
 	console.timeEnd("Moving translations");
 
-	console.time("Adding git commit hash");
-	const revision = child_process.execSync("git rev-parse HEAD").toString().trim();
+	let revision = process.env.VER;
+	if (!revision) {
+		console.time("Getting git commit hash");
+		revision = child_process.execSync("git rev-parse HEAD").toString().trim();
+		await fs.writeFile(path.join(__dirname, "dist", "webpage", "getupdates"), revision);
+		console.timeEnd("Getting git commit hash");
+	}
+
+	console.time("Writing version");
 	await fs.writeFile(path.join(__dirname, "dist", "webpage", "getupdates"), revision);
-	console.timeEnd("Adding git commit hash");
+	console.timeEnd("Writing version");
 
 	console.timeEnd("build");
 	console.log("");
