@@ -125,7 +125,9 @@
 		"DOBError": "Gebuertsdatum: $1"
 	},
 	"edit": "Änneren",
+	"discovery": "Entdeckung",
 	"guild": {
+		"memberCount": "$1 {{PLURAL:$1|Member|Memberen}}",
 		"template": "Schabloun:",
 		"admins": "Administrateure fannen",
 		"adminMenu": {
@@ -160,7 +162,15 @@
 	"role": {
 		"color": "Faarf",
 		"delete": "Roll läschen",
-		"deleting": "Roll gëtt geläscht …"
+		"deleting": "Roll gëtt geläscht …",
+		"colors": {
+			"name": "Zuel vu Faarwen:",
+			"one": "Eng",
+			"two": "Zwou",
+			"three": "Dräi",
+			"secondColor": "Zweet Faarf:",
+			"thirdColor": "Drëtt Faarf:"
+		}
 	},
 	"folder": {
 		"name": "Numm vum Dossier:",
@@ -319,7 +329,8 @@
 		"tags": "Associéierten Emoji:"
 	},
 	"404": {
-		"404": "404 Säit net fonnt"
+		"404": "404 Säit net fonnt",
+		"blog": "De Fermi-Blog"
 	},
 	"uploadFilesText": "Lued Är Fichieren hei erop!",
 	"bot": "BOT"
