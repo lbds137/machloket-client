@@ -610,6 +610,10 @@ class Localuser {
 		});
 		await promise;
 	}
+	interNonceMap = new Map<string, Message>();
+	registerInterNonce(nonce: string, thing: Message) {
+		this.interNonceMap.set(nonce, thing);
+	}
 	relationshipsUpdate = () => {};
 	rights: Rights;
 	updateRights(rights: string | number) {
@@ -626,6 +630,15 @@ class Localuser {
 		}
 		if (temp.op == 0) {
 			switch (temp.t) {
+				case "INTERACTION_FAILURE":
+				case "INTERACTION_CREATE":
+				case "INTERACTION_SUCCESS":
+					const m = this.interNonceMap.get(temp.d.nonce);
+					if (m) {
+						//Punt the events off to the message class
+						m.interactionEvents(temp);
+					}
+					break;
 				case "MESSAGE_CREATE":
 					if (this.initialized) {
 						this.messageCreate(temp);

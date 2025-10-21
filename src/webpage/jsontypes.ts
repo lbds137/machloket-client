@@ -532,6 +532,42 @@ type webhookInfo = {
 	source_channel_id: string;
 };
 
+export interface actionRow {
+	type: 1;
+	components: component[];
+}
+export interface button {
+	type: 2;
+	id?: number;
+	custom_id: string;
+	label?: string;
+	sku_id?: string;
+	url?: string;
+	disabled?: boolean;
+	emoji?: emojijson;
+	style: 1 | 2 | 3 | 4 | 5 | 6;
+}
+
+export interface select {
+	type: 3;
+	id?: number;
+	custom_id: string;
+	options: {
+		label: string;
+		value: string;
+		description?: string;
+		emoji?: emojijson;
+		default?: boolean;
+	}[];
+	placeholder?: string;
+	min_values?: number;
+	max_values?: number;
+	required?: boolean;
+	disabled?: boolean;
+}
+
+export type component = actionRow | button | select;
+
 type messagejson = {
 	id: string;
 	channel_id: string;
@@ -544,14 +580,29 @@ type messagejson = {
 	tts: boolean;
 	mention_everyone: boolean;
 	mentions: []; //need examples to fix
-	mention_roles: []; //need examples to fix
+	mention_roles?: []; //need examples to fix
 	attachments: filejson[];
 	embeds: embedjson[];
-	reactions: {
+	components?: component[] | null; //TODO remove this once spacebar fixes the null bug
+	reactions?: {
 		count: number;
 		emoji: emojijson; //very likely needs expanding
 		me: boolean;
 	}[];
+	interaction?: {
+		id: string;
+		type: 2 | 3;
+		user: userjson;
+	};
+	interaction_metadata?: {
+		authorizing_integration_owners: {
+			//User ids
+			[key: string]: string;
+		};
+		id: string;
+		type: 2 | 3;
+		user: userjson;
+	};
 	nonce: string;
 	pinned: boolean;
 	type: number;
@@ -559,6 +610,7 @@ type messagejson = {
 	sticker_items: stickerJson[];
 	message_reference?: string;
 };
+
 type filejson = {
 	id: string;
 	filename: string;
@@ -842,11 +894,41 @@ type wsjson =
 				guild_id: string;
 				stickers: stickerJson[];
 			};
-			s: 3;
+			s: number;
 	  }
 	| streamServerUpdate
-	| streamCreate;
+	| streamCreate
+	| interactionEvents;
 
+export interface interactionCreate {
+	op: 0;
+	t: "INTERACTION_CREATE";
+	d: {
+		id: string;
+		nonce: string;
+	};
+	s: number;
+}
+export interface interactionSuccess {
+	op: 0;
+	t: "INTERACTION_SUCCESS";
+	d: {
+		id: string;
+		nonce: string;
+	};
+	s: number;
+}
+export interface interactionFailure {
+	op: 0;
+	t: "INTERACTION_FAILURE";
+	d: {
+		id: string;
+		nonce: string;
+		reason_code: number;
+	};
+	s: number;
+}
+export type interactionEvents = interactionCreate | interactionSuccess | interactionFailure;
 type memberChunk = {
 	guild_id: string;
 	nonce: string;

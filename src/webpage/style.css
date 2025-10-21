@@ -123,6 +123,40 @@ body {
 		}
 	}
 }
+.buttonDanger {
+	--interColor: var(--red);
+}
+.buttonSuccess {
+	--interColor: var(--green);
+}
+.buttonLink {
+	--interColor: var(--button-bg);
+}
+.buttonPrimary {
+	--interColor: var(--primary-button-bg);
+}
+.buttonPremium {
+	--interColor: purple;
+}
+.buttonSecondary {
+	--interColor: var(--button-bg);
+}
+.interButton {
+	background: var(--interColor);
+	margin-right: 4px;
+}
+.interButton:hover {
+	background: color-mix(in srgb, var(--interColor), black 30%);
+}
+
+.compAppStatus {
+	padding-left: 50px;
+	opacity: 0.6;
+	font-size: 12px;
+	&.failed {
+		color: var(--red);
+	}
+}
 .dmline {
 	display: flex;
 	align-items: center;
@@ -132,6 +166,14 @@ body {
 .flexltr {
 	min-height: 0;
 	display: flex;
+}
+.ephemeralDiv {
+	padding-left: 50px;
+	opacity: 0.6;
+	span {
+		padding-right: 6px;
+	}
+	font-size: 13px;
 }
 .traceBars {
 	height: 30px;
@@ -148,6 +190,14 @@ body {
 	min-width: 0;
 	display: flex;
 	flex-direction: column;
+}
+.messageComps {
+	padding: 6px;
+	padding-left: 48px;
+	> .flexltr {
+		display: flex;
+		flex-wrap: wrap;
+	}
 }
 .reactionList {
 	div {
@@ -257,8 +307,10 @@ body {
 	span:hover {
 		background: var(--button-bg);
 	}
+
 	margin: 16px;
 	border: solid 0.025in var(--black);
+	z-index: 1;
 }
 .searchOptions:empty {
 	padding: 0;
@@ -553,6 +605,81 @@ input[type="checkbox"] {
 textarea {
 	height: 144px;
 	resize: none;
+}
+.fancySelect {
+	position: relative;
+	padding: 6px;
+	background: var(--text-input-bg);
+	border-radius: 6px;
+	flex-shrink: 1;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	width: fit-content;
+	flex-grow: 1;
+
+	> input {
+		padding: 0px !important;
+		width: fit-content !important;
+		min-width: 96px;
+		flex-grow: 1;
+	}
+	.selected {
+		padding: 2px;
+		background: var(--blue);
+		border-radius: 4px;
+		cursor: default;
+		user-select: all;
+		display: flex;
+		align-items: center;
+		margin-right: 5px;
+
+		span {
+			width: 16px;
+			height: 16px;
+			flex-shrink: 0;
+			display: block;
+			background: var(--primary-text);
+			margin: 0 3px;
+			cursor: pointer;
+		}
+	}
+}
+.fancyOptions {
+	position: absolute;
+	bottom: calc(100% + 5px);
+	background: var(--secondary-bg);
+	padding: 5px;
+	width: 100%;
+	box-sizing: border-box;
+	border-radius: 6px;
+	> div {
+		padding: 5px;
+		&:hover {
+			background-color: #00000061;
+		}
+		margin-top: 5px;
+		cursor: pointer;
+		transition: background-color 0.2s;
+		border-radius: 6px;
+		p {
+			font-size: 14px;
+			opacity: 0.6;
+		}
+	}
+	input {
+		margin-left: auto;
+		width: 18px;
+		height: 18px;
+	}
+	z-index: 1;
+	animation-duration: 0.2s;
+	animation-name: fade-in-back;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease-out;
+	&.removeElm {
+		animation-name: fade-in-back-out;
+	}
 }
 input[type="text"],
 input[type="password"],

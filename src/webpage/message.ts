@@ -8,13 +8,14 @@ import {Localuser} from "./localuser.js";
 import {Role} from "./role.js";
 import {File} from "./file.js";
 import {SnowFlake} from "./snowflake.js";
-import {memberjson, messagejson, userjson} from "./jsontypes.js";
+import {emojijson, interactionEvents, memberjson, messagejson, userjson} from "./jsontypes.js";
 import {Emoji} from "./emoji.js";
 import {mobile} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
 import {Hover} from "./hover.js";
 import {Dialog} from "./settings.js";
 import {Sticker} from "./sticker.js";
+import {Components} from "./compontents.js";
 
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
@@ -26,7 +27,7 @@ class Message extends SnowFlake {
 	mentions: userjson[] = [];
 	mention_roles!: Role[];
 	attachments: File[] = []; //probably should be its own class tbh, should be Attachments[]
-	message_reference!: {
+	message_reference?: {
 		guild_id: string;
 		channel_id: string;
 		message_id: string;
@@ -51,8 +52,13 @@ class Message extends SnowFlake {
 			*/
 	div: HTMLDivElement | undefined;
 	member: Member | undefined;
-	reactions!: messagejson["reactions"];
+	reactions: {
+		count: number;
+		emoji: emojijson;
+		me: boolean;
+	}[] = [];
 	pinned!: boolean;
+	flags: number = 0;
 	getTimeStamp() {
 		return new Date(this.timestamp).getTime();
 	}
@@ -71,6 +77,9 @@ class Message extends SnowFlake {
 			{
 				icon: {
 					css: "svg-reply",
+				},
+				visable: function () {
+					return !this.ephemeral && this.channel.hasPermission("SEND_MESSAGES");
 				},
 			},
 		);
@@ -308,6 +317,7 @@ class Message extends SnowFlake {
 			},
 		);
 	}
+	components?: Components;
 	edited_timestamp: string | null = null;
 	giveData(messagejson: messagejson) {
 		const func = this.channel.infinite.snapBottom();
@@ -341,6 +351,9 @@ class Message extends SnowFlake {
 					const guild = this.localuser.guildids.get(_.guild_id as string);
 					return new Sticker(_, guild || this.localuser);
 				});
+			} else if (thing === "components" && messagejson.components) {
+				this.components = new Components(messagejson.components, this);
+				continue;
 			}
 			(this as any)[thing] = (messagejson as any)[thing];
 		}
@@ -356,7 +369,7 @@ class Message extends SnowFlake {
 		}
 		this.mentions = messagejson.mentions;
 
-		this.mention_roles = messagejson.mention_roles
+		this.mention_roles = (messagejson.mention_roles || [])
 			.map((role: string | {id: string}) => {
 				return this.guild.roleids.get(role instanceof Object ? role.id : role);
 			})
@@ -392,6 +405,33 @@ class Message extends SnowFlake {
 	}
 	get info() {
 		return this.owner.info;
+	}
+	interactionDiv?: HTMLDivElement;
+	interactionEvents(event: interactionEvents) {
+		if (!this.interactionDiv) return;
+		this.interactionDiv.classList.remove("failed");
+		switch (event.t) {
+			case "INTERACTION_CREATE":
+				this.interactionDiv.textContent = I18n.interactions.started();
+				break;
+			case "INTERACTION_SUCCESS":
+				this.interactionDiv.textContent = I18n.interactions.worked();
+				setTimeout(() => {
+					if (this.interactionDiv?.textContent === I18n.interactions.worked()) {
+						this.interactionDiv.textContent = "";
+					}
+				}, 1000);
+				break;
+			case "INTERACTION_FAILURE":
+				this.interactionDiv.textContent = I18n.interactions.failed();
+				this.interactionDiv.classList.add("failed");
+				setTimeout(() => {
+					if (this.interactionDiv?.textContent === I18n.interactions.failed()) {
+						this.interactionDiv.textContent = "";
+					}
+				}, 5000);
+				break;
+		}
 	}
 	messageevents(obj: HTMLDivElement) {
 		let drag = false;
@@ -539,6 +579,10 @@ class Message extends SnowFlake {
 			this.generateMessage();
 		}
 	}
+	interaction: messagejson["interaction"];
+	get ephemeral() {
+		return !!(this.flags & (1 << 6));
+	}
 	generateMessage(
 		premessage?: Message | undefined,
 		ignoredblock = false,
@@ -551,7 +595,11 @@ class Message extends SnowFlake {
 		if (!premessage && !dupe) {
 			premessage = this.channel.messages.get(this.channel.idToPrev.get(this.id) as string);
 		}
-		if (this.mentionsuser(this.guild.member)) {
+		if (
+			this.mentionsuser(this.guild.member) ||
+			this.ephemeral ||
+			this.interaction?.user.id === this.localuser.user.id
+		) {
 			div.classList.add("mentioned");
 		}
 
@@ -595,6 +643,38 @@ class Message extends SnowFlake {
 				div.append(dateline);
 			}
 		}
+
+		if (this.interaction) {
+			const replyline = document.createElement("div");
+
+			const minipfp = document.createElement("img");
+			minipfp.classList.add("replypfp");
+			replyline.appendChild(minipfp);
+
+			const username = document.createElement("span");
+			username.classList.add("username");
+			replyline.appendChild(username);
+
+			const reply = document.createElement("div");
+			reply.classList.add("replytext", "ellipsis");
+			reply.textContent = I18n.interactions.replyline();
+			replyline.appendChild(reply);
+
+			const user = new User(this.interaction.user, this.localuser);
+
+			minipfp.src = user.getpfpsrc();
+			user.bind(minipfp, this.guild);
+			username.textContent = user.username;
+			user.bind(username, this.guild);
+
+			const line2 = document.createElement("hr");
+			replyline.appendChild(line2);
+			line2.classList.add("reply");
+			replyline.classList.add("flexltr", "replyflex");
+
+			div.appendChild(replyline);
+		}
+
 		div.classList.remove("zeroheight");
 		if (this.author.relationshipType === 2) {
 			if (ignoredblock) {
@@ -702,13 +782,14 @@ class Message extends SnowFlake {
 				});
 			});
 			reply.onclick = (_) => {
+				if (!this.message_reference) return;
 				// TODO: FIX this
 				this.channel.infinite.focus(this.message_reference.message_id);
 			};
 			div.appendChild(replyline);
 		}
 		div.appendChild(build);
-		const messageTypes = new Set([0, 19]);
+		const messageTypes = new Set([0, 19, 20]);
 		if (messageTypes.has(this.type) || this.attachments.length !== 0) {
 			const pfpRow = document.createElement("div");
 			let current = true;
@@ -721,7 +802,8 @@ class Message extends SnowFlake {
 				premessage?.author != this.author ||
 				current ||
 				this.message_reference ||
-				!messageTypes.has(premessage.type);
+				!messageTypes.has(premessage.type) ||
+				this.interaction;
 			if (combine) {
 				const pfp = this.author.buildpfp(undefined, div);
 				this.author.bind(pfp, this.guild, false);
@@ -893,6 +975,7 @@ class Message extends SnowFlake {
 			const afterText = document.createElement("span");
 			afterText.textContent = m[0];
 			afterText.onclick = (_) => {
+				if (!this.message_reference) return;
 				this.channel.infinite.focus(this.message_reference.message_id);
 			};
 			afterText.classList.add("pinText");
@@ -911,12 +994,36 @@ class Message extends SnowFlake {
 		}
 		div.append(stickerArea);
 		if (!dupe) {
+			if (this.components && this.components.components.length) {
+				const cdiv = this.components.getHTML();
+				cdiv.classList.add("messageComps");
+				div.append(cdiv);
+
+				const ndiv = document.createElement("div");
+				ndiv.classList.add("compAppStatus");
+				this.interactionDiv = ndiv;
+				div.append(ndiv);
+			}
 			const reactions = document.createElement("div");
 			reactions.classList.add("flexltr", "reactiondiv");
 			this.reactdiv = new WeakRef(reactions);
 			this.updateReactions();
 			div.append(reactions);
 			this.bindButtonEvent();
+		}
+		if (this.ephemeral) {
+			const ephemeral = document.createElement("div");
+			ephemeral.classList.add("flexltr", "ephemeralDiv");
+			const span = document.createElement("span");
+			span.textContent = I18n.interactions.onlyYou();
+
+			const a = document.createElement("a");
+			a.onclick = () => {
+				this.deleteEvent();
+			};
+			a.textContent = I18n.interactions.ephemeralDismiss();
+			ephemeral.append(span, a);
+			div.append(ephemeral);
 		}
 		return div;
 	}
@@ -961,7 +1068,7 @@ class Message extends SnowFlake {
 					if (addedRec) {
 						Array.from(buttons.children).at(-1)?.classList.add("vr-message");
 					}
-					if (this.channel.hasPermission("SEND_MESSAGES")) {
+					if (this.channel.hasPermission("SEND_MESSAGES") && !this.ephemeral) {
 						const container = document.createElement("button");
 						const reply = document.createElement("span");
 						reply.classList.add("svg-reply", "svgicon");

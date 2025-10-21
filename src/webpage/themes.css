@@ -16,6 +16,7 @@
 /* Themes. See themes.txt */
 .Dark-theme {
 	color-scheme: dark;
+	--primary-button-bg: color-mix(in srgb, #777777 10%, var(--accent-color));
 	--primary-bg: #303339;
 	--primary-hover: #272b31;
 	--primary-text: #dfdfdf;
@@ -38,6 +39,7 @@
 .WHITE-theme {
 	color-scheme: light;
 
+	--primary-button-bg: color-mix(in srgb, #000000 10%, var(--accent-color));
 	--primary-bg: #fefefe;
 	--primary-hover: #f6f6f9;
 	--primary-text: #4b4b59;
@@ -67,7 +69,7 @@
 
 .Light-theme {
 	color-scheme: light;
-
+	--primary-button-bg: white;
 	--primary-bg: #aaafce;
 	--primary-hover: #b1b6d4;
 	--primary-text: #060415;
@@ -95,7 +97,7 @@
 
 .Dark-Accent-theme {
 	color-scheme: dark;
-
+	--primary-button-bg: color-mix(in srgb, #777777 10%, var(--accent-color));
 	--primary-bg: color-mix(in srgb, #3f3f3f 65%, var(--accent-color));
 	--primary-hover: color-mix(in srgb, #373737 68%, var(--accent-color));
 	--primary-text: #ebebeb;
