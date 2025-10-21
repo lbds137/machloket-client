@@ -405,7 +405,15 @@
 		"confirmDelete": "您確定要刪除$1嗎？",
 		"roleEmoji": "角色表情符號：",
 		"roleFileIcon": "角色圖示：",
-		"deleting": "正在刪除角色…"
+		"deleting": "正在刪除角色…",
+		"colors": {
+			"name": "顏色數量：",
+			"one": "一",
+			"two": "二",
+			"three": "三",
+			"secondColor": "第二種顏色：",
+			"thirdColor": "第三種顏色："
+		}
 	},
 	"folder": {
 		"name": "資料夾名稱：",
@@ -623,6 +631,7 @@
 		"name": "直接訊息"
 	},
 	"user": {
+		"sendMessage": "發送訊息@$1",
 		"copyId": "複製使用者 ID",
 		"online": "線上",
 		"offline": "離線",

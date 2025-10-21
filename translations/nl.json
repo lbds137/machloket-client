@@ -191,6 +191,7 @@
 	"searchGifs": "Tenor doorzoeken",
 	"muteDuration": "Ontdempen in:",
 	"channel": {
+		"typebox": "Bericht in $1",
 		"creating": "Kanaal wordt aangemaakt",
 		"name": "Kanaal",
 		"copyId": "Kanaal-ID kopiëren",
@@ -314,7 +315,11 @@
 	"nevermind": "Laat maar",
 	"submit": "indienen",
 	"edit": "Bewerken",
+	"discovery": "Ontdekking",
 	"guild": {
+		"memberCount": "$1 {{PLURAL:$1|lid|leden}}",
+		"joinConfirm": "Bij $1 aansluiten?",
+		"guilds": "Gilden",
 		"template": "Sjabloon:",
 		"admins": "Zoek beheerders op",
 		"adminMenu": {
@@ -400,7 +405,15 @@
 		"confirmDelete": "Weet je zeker dat je $1 wilt verwijderen?",
 		"roleEmoji": "Rol-emoji:",
 		"roleFileIcon": "Rolpictogram:",
-		"deleting": "Rol wordt verwijderd…"
+		"deleting": "Rol wordt verwijderd…",
+		"colors": {
+			"name": "Aantal kleuren:",
+			"one": "Eén",
+			"two": "Twee",
+			"three": "Drie",
+			"secondColor": "Tweede kleur:",
+			"thirdColor": "Derde kleur:"
+		}
 	},
 	"folder": {
 		"name": "Mapnaam:",
@@ -618,6 +631,7 @@
 		"name": "Directe berichten"
 	},
 	"user": {
+		"sendMessage": "Bericht sturen aan @$1",
 		"copyId": "Gebruikers-ID kopiëren",
 		"online": "Online",
 		"offline": "Offline",
