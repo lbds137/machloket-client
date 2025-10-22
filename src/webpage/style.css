@@ -672,11 +672,16 @@ textarea {
 		width: 18px;
 		height: 18px;
 	}
+
 	z-index: 1;
 	animation-duration: 0.2s;
 	animation-name: fade-in-back;
 	animation-fill-mode: forwards;
 	animation-timing-function: ease-out;
+	max-height: 50vh;
+	overflow-y: auto;
+	left: 0;
+
 	&.removeElm {
 		animation-name: fade-in-back-out;
 	}
