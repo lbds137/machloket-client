@@ -653,27 +653,29 @@ class MarkDown {
 										}
 									}
 								} else {
-									const user = this.localuser.userMap.get(id);
-									if (user) {
-										mention.textContent = `@${user.name}`;
-										let guild: null | Guild = null;
-										if (this.channel) {
-											guild = this.channel.guild;
+									(async () => {
+										mention.textContent = I18n.userping.resolving();
+										const user = await this.localuser?.getUser(id);
+										if (user) {
+											mention.textContent = `@${user.name}`;
+											let guild: null | Guild = null;
+											if (this.channel) {
+												guild = this.channel.guild;
+											}
+											if (!keep) {
+												user.bind(mention, guild, true, stdsize ? "none" : "left");
+											}
+											if (guild) {
+												guild.resolveMember(user).then((member) => {
+													if (member) {
+														mention.textContent = `@${member.name}`;
+													}
+												});
+											}
+										} else {
+											mention.textContent = I18n.userping.unknown();
 										}
-										if (!keep) {
-											user.bind(mention, guild, true, stdsize ? "none" : "left");
-										}
-										if (guild) {
-											guild.resolveMember(user).then((member) => {
-												if (member) {
-													mention.textContent = `@${member.name}`;
-												}
-											});
-										}
-									} else {
-										//TODO tranlation
-										mention.textContent = "@unknown";
-									}
+									})();
 								}
 								break;
 							case "#":

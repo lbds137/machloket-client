@@ -1289,6 +1289,7 @@ class Guild extends SnowFlake {
 		}
 		this.prevchannel = this.localuser.channelids.get(this.perminfo.prevchannel);
 		this.stickers = json.stickers.map((_) => new Sticker(_, this)) || [];
+		this.getCommands();
 	}
 	get perminfo() {
 		return this.localuser.perminfo.guilds[this.id];
@@ -1847,6 +1848,15 @@ class Guild extends SnowFlake {
 				unicode_emoji: role.unicode_emoji,
 			}),
 		});
+	}
+
+	async getCommands() {
+		const json = await (
+			await fetch(this.info.api + `/guilds/${this.id}/application-command-index`, {
+				headers: this.headers,
+			})
+		).json();
+		if (this.id === "1006649183970562092") console.warn(json.application_commands);
 	}
 }
 Guild.setupcontextmenu();

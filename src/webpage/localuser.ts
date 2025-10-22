@@ -115,6 +115,11 @@ class Localuser {
 		onswap?.(thisUser);
 	}
 	static userMenu = this.generateUserMenu();
+	async getUser(id: string) {
+		let user = this.userMap.get(id);
+		if (user) return user;
+		return User.resolve(id, this);
+	}
 	static generateUserMenu() {
 		const menu = new Contextmenu<Localuser, void>("");
 		menu.addButton(

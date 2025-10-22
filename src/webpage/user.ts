@@ -635,7 +635,7 @@ class User extends SnowFlake {
 					premium_type: 0,
 					premium_since: "",
 					accent_color: 0,
-					theme_colors: "",
+					theme_colors: null,
 					badge_ids: [],
 				},
 				localuser,

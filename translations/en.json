@@ -145,6 +145,10 @@
 			"USE_EXTERNAL_APPS": "Use external apps"
 		}
 	},
+	"userping":{
+		"unknown":"@unknown",
+		"resolving":"resolving user"
+	},
 	"hideBlockedMessages": "You have this user blocked, click to hide these messages.",
 	"showBlockedMessages": "You have this user blocked, click to see the $1 blocked {{PLURAL:$1|message|messages}}.",
 	"deleteConfirm": "Are you sure you want to delete this?",
