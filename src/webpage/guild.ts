@@ -1289,7 +1289,7 @@ class Guild extends SnowFlake {
 		}
 		this.prevchannel = this.localuser.channelids.get(this.perminfo.prevchannel);
 		this.stickers = json.stickers.map((_) => new Sticker(_, this)) || [];
-		this.getCommands();
+		//this.getCommands();
 	}
 	get perminfo() {
 		return this.localuser.perminfo.guilds[this.id];
