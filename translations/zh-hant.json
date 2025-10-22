@@ -190,6 +190,16 @@
 	"messageLink": "在 # $1 的訊息",
 	"searchGifs": "搜尋 Tenor",
 	"muteDuration": "取消噤聲：",
+	"interactions": {
+		"replyline": "開始互動",
+		"ephemeralDismiss": "忽略訊息",
+		"onlyYou": "僅有您才能查看此訊息",
+		"started": "處理互動…",
+		"worked": "互動成功",
+		"failed": "互動失敗",
+		"notImpl": "Fermi 尚不可執行類型成分「$1」",
+		"nonsence": "伺服器傳送的類型成分「$1」不存在"
+	},
 	"channel": {
 		"typebox": "在$1的訊息",
 		"creating": "建立頻道",
