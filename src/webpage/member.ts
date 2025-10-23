@@ -38,7 +38,7 @@ class Member extends SnowFlake {
 			return this.avatar;
 		}
 		if (this.avatar !== undefined && this.avatar !== null) {
-			return `${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/avatars${
+			return `${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/avatars/${
 				this.avatar
 			}.${this.avatar.startsWith("a_") ? "gif" : "png"}`;
 		}

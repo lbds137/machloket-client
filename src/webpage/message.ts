@@ -663,6 +663,12 @@ class Message extends SnowFlake {
 			const user = new User(this.interaction.user, this.localuser);
 
 			minipfp.src = user.getpfpsrc();
+			Member.resolveMember(user, this.guild).then((member) => {
+				if (member) {
+					minipfp.src = member.getpfpsrc();
+					username.textContent = member.name;
+				}
+			});
 			user.bind(minipfp, this.guild);
 			username.textContent = user.username;
 			user.bind(username, this.guild);
@@ -772,12 +778,14 @@ class Message extends SnowFlake {
 				const author = message.author;
 				reply.appendChild(message.content.makeHTML({stdsize: true}));
 				minipfp.src = author.getpfpsrc();
+
 				author.bind(minipfp, this.guild);
 				username.textContent = author.username;
 				author.bind(username, this.guild);
 				Member.resolveMember(author, this.guild).then((member) => {
 					if (member) {
 						username.textContent = member.name;
+						minipfp.src = member.getpfpsrc();
 					}
 				});
 			});
@@ -805,7 +813,7 @@ class Message extends SnowFlake {
 				!messageTypes.has(premessage.type) ||
 				this.interaction;
 			if (combine) {
-				const pfp = this.author.buildpfp(undefined, div);
+				const pfp = this.author.buildpfp(this.guild, div);
 				this.author.bind(pfp, this.guild, false);
 				pfpRow.appendChild(pfp);
 			}
