@@ -15,8 +15,7 @@ import {I18n} from "./i18n.js";
 import {Hover} from "./hover.js";
 import {Dialog} from "./settings.js";
 import {Sticker} from "./sticker.js";
-import {Components} from "./compontents.js";
-
+import {Components} from "./interactions/compontents.js";
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];

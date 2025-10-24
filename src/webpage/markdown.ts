@@ -973,7 +973,9 @@ class MarkDown {
 	) {
 		this.customBox = [stringToHTML, HTMLToString];
 	}
+	boxEnabled = true;
 	boxupdate(offset = 0, allowLazy = true, computedLength: void | number = undefined) {
+		if (!this.boxEnabled) return;
 		const box = this.box.deref();
 		if (!box) return;
 		let restore: undefined | (() => void);

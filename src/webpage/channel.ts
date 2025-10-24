@@ -32,6 +32,7 @@ import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
 import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {NotificationHandler} from "./notificationHandler.js";
+import {Command} from "./interactions/commands.js";
 
 class Channel extends SnowFlake {
 	editing!: Message | null;
@@ -1578,6 +1579,38 @@ class Channel extends SnowFlake {
 		this.textSave = MarkDown.gatherBoxText(typebox);
 		typebox.textContent = "";
 	}
+	curCommand?: Command;
+	curWatch = () => {};
+	async submitCommand() {
+		if (!this.curCommand) return;
+		if (await this.curCommand.submit(this)) {
+			this.curCommand = undefined;
+			const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+			typebox.markdown.boxEnabled = true;
+			typebox.innerHTML = "";
+			typebox.markdown.boxupdate();
+			typebox.removeEventListener("keyup", this.curWatch);
+		}
+	}
+	startCommand(command: Command) {
+		this.curCommand = command;
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		typebox.markdown.boxEnabled = false;
+		const func = () => {
+			const node = window.getSelection()?.focusNode;
+			if (this.localuser.channelfocus === this) {
+				const out = command.collect(typebox, this, node || undefined);
+				if (!out) {
+					typebox.markdown.boxEnabled = true;
+					typebox.markdown.boxupdate();
+					typebox.removeEventListener("keyup", func);
+				}
+			}
+		};
+		this.curWatch = func;
+		typebox.addEventListener("keyup", func);
+		command.render(typebox, this);
+	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
 		if (this.owner instanceof Direct) {
 			this.owner.freindDiv?.classList.remove("viewChannel");
@@ -1586,11 +1619,17 @@ class Channel extends SnowFlake {
 			this.localuser.channelfocus.collectBox();
 		}
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		typebox.markdown.boxEnabled = !this.curCommand;
+		if (this.curCommand) {
+			this.curCommand.render(typebox, this);
+		}
 		typebox.style.setProperty("--channel-text", JSON.stringify(I18n.channel.typebox(this.name)));
-		const md = typebox.markdown;
-		md.owner = this;
-		typebox.textContent = this.textSave;
-		md.boxupdate(Infinity);
+		if (!this.curCommand) {
+			const md = typebox.markdown;
+			md.owner = this;
+			typebox.textContent = this.textSave;
+			md.boxupdate(Infinity);
+		}
 		this.localuser.fileExtange(this.files, this.htmls);
 
 		if (getMessages === undefined) {
@@ -1843,7 +1882,7 @@ class Channel extends SnowFlake {
 			headers: this.headers,
 		});
 
-		const response = await j.json();
+		const response = (await j.json()) as messagejson[];
 		if (response.length !== 100) {
 			this.allthewayup = true;
 		}
@@ -1859,6 +1898,10 @@ class Channel extends SnowFlake {
 			}
 			prev = message;
 		}
+		if (!response.length) {
+			this.lastmessageid = undefined;
+			this.lastreadmessageid = undefined;
+		}
 	}
 	delChannel(json: channeljson) {
 		const build: Channel[] = [];
@@ -1872,13 +1915,16 @@ class Channel extends SnowFlake {
 	afterProm?: Promise<void>;
 	afterProms = new Map<string, () => void>();
 	async grabAfter(id: string) {
+		if (this.idToNext.has(id)) {
+			return;
+		}
 		if (id === this.lastmessage?.id) {
 			return;
 		}
-		if (this.afterProm) return this.afterProm;
+		if (this.afterProm) return new Promise<void>((res) => this.afterProms.set(id, res));
 		let tempy: string | undefined = id;
 		while (tempy && tempy.includes("fake")) {
-			tempy = this.idToNext.get(tempy);
+			tempy = this.idToPrev.get(tempy);
 		}
 		if (!tempy) return;
 		id = tempy;

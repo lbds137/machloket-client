@@ -206,6 +206,64 @@ export interface favandfreq {
 		};
 	};
 }
+export interface applicationJson {
+	description: string;
+	flags: number;
+	icon: null | string;
+	id: string;
+	name: string;
+}
+export interface commandOptionJson {
+	type: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
+	name: string;
+	name_localized?: string;
+	name_localizations?: null | Record<string, string>;
+	description: string;
+	description_localizations?: null | Record<string, string>;
+	description_localized?: string;
+	choices?:
+		| {
+				name: string;
+				name_localizations?: null | Record<string, string>;
+				name_localized?: string | null;
+				value: string | number;
+		  }[]
+		| null;
+	options?: commandJson[];
+	channel_types?: number[];
+	min_value?: number;
+	max_value?: number;
+	min_length?: number;
+	max_length?: number;
+	autocomplete?: boolean;
+	required?: boolean;
+}
+export interface commandJson {
+	id: string;
+	type: 1 | 2 | 3 | 4;
+	application_id: string;
+	guild_id?: null | string;
+	name: string;
+	name_localized?: string;
+	name_localizations?: null | {[key: string]: string};
+	description: string;
+	description_localizations?: null | {[key: string]: string};
+	options?: commandOptionJson[];
+	default_member_permissions?: null | string;
+	dm_permission: boolean;
+	permissions?: null | {
+		user?: boolean;
+		roles?: {[key: string]: boolean};
+		channels?: {[key: string]: boolean};
+	};
+	nsfw: boolean;
+	integration_types?: null | number[];
+	global_popularity_rank: number;
+	contexts?: null | number[];
+	version: string;
+	handler: 0 | 1 | 2 | 3; //0 really shouldn't be here, but it's a bug and should be treated like 1.
+}
+
 interface readySuplemental {
 	op: 0;
 	t: "READY_SUPPLEMENTAL";

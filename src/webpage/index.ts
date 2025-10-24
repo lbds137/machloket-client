@@ -154,6 +154,10 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 	channel.typingstart();
 
 	if (event.key === "Enter" && !event.shiftKey) {
+		if (channel.curCommand) {
+			channel.submitCommand();
+			return;
+		}
 		event.preventDefault();
 		replyingTo = thisUser.channelfocus ? thisUser.channelfocus.replyingto : null;
 		if (replyingTo?.div) {

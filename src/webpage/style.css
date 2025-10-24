@@ -163,6 +163,22 @@ body {
 	justify-content: space-between;
 	padding: 4px 14px;
 }
+.commandinput {
+	display: inline-flex !important;
+	width: fit-content;
+	margin-left: 6px;
+	align-items: center;
+	background: var(--primary-bg);
+	padding-left: 4px;
+	border-radius: 4px;
+	input {
+		padding: 5px !important;
+		margin: 0px !important;
+		margin-left: 5px !important;
+		height: 100%;
+		field-sizing: content;
+	}
+}
 .flexltr {
 	min-height: 0;
 	display: flex;
@@ -1954,6 +1970,12 @@ span.instanceStatus {
 }
 #realbox {
 	padding: 0 16px 28px 16px;
+}
+.commandFront {
+	user-select: none !important;
+	padding: 4px;
+	background: var(--secondary-bg);
+	border-radius: 4px;
 }
 #typebox {
 	margin: -10px 0px;

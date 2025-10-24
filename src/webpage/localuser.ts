@@ -3389,50 +3389,53 @@ class Localuser {
 	MDSearchOptions(
 		options: (
 			| [string, string, void | HTMLElement]
-			| [string, string, void | HTMLElement, () => void]
+			| [string, string, void | HTMLElement, () => void | boolean]
 		)[],
 		original: string,
 		div: HTMLDivElement,
-		typebox: MarkDown,
+		typebox?: MarkDown,
 	) {
 		if (!div) return;
 		div.innerHTML = "";
 		let i = 0;
 		const htmloptions: HTMLSpanElement[] = [];
-		for (const thing of options) {
+		for (const [name, replace, elm, func] of options) {
 			if (i == 8) {
 				break;
 			}
 			i++;
 			const span = document.createElement("span");
 			htmloptions.push(span);
-			if (thing[2]) {
-				span.append(thing[2]);
+			if (elm) {
+				span.append(elm);
 			}
 
-			span.append(thing[0]);
+			span.append(name);
 			span.onclick = (e) => {
 				if (e) {
-					const selection = window.getSelection() as Selection;
-					const box = typebox.box.deref();
-					if (!box) return;
-					if (selection) {
-						const pos = getTextNodeAtPosition(
-							box,
-							original.length -
-								(original.match(this.autofillregex) as RegExpMatchArray)[0].length +
-								thing[1].length,
-						);
-						selection.removeAllRanges();
-						const range = new Range();
-						range.setStart(pos.node, pos.position);
-						selection.addRange(range);
+					if (replace) {
+						const selection = window.getSelection() as Selection;
+						const box = typebox?.box.deref();
+						if (!box) return;
+						if (selection) {
+							const pos = getTextNodeAtPosition(
+								box,
+								original.length -
+									(original.match(this.autofillregex) as RegExpMatchArray)[0].length +
+									replace.length,
+							);
+							selection.removeAllRanges();
+							const range = new Range();
+							range.setStart(pos.node, pos.position);
+							selection.addRange(range);
+						}
+						box.focus();
 					}
 					e.preventDefault();
-					box.focus();
 				}
-				this.MDReplace(thing[1], original, typebox);
-				thing[3]?.();
+				if (!func?.() && typebox) {
+					this.MDReplace(replace, original, typebox);
+				}
 				div.innerHTML = "";
 				remove();
 			};
@@ -3506,15 +3509,6 @@ class Localuser {
 			orginal,
 			box,
 			typebox,
-		);
-	}
-	async getUser(id: string) {
-		if (this.userMap.has(id)) {
-			return this.userMap.get(id) as User;
-		}
-		return new User(
-			await (await fetch(this.info.api + "/users/" + id, {headers: this.headers})).json(),
-			this,
 		);
 	}
 	MDFineMentionGen(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
@@ -3634,6 +3628,34 @@ class Localuser {
 		});
 		this.MDSearchOptions(map, orginal, box, typebox);
 	}
+	async findCommands(search: string, box: HTMLDivElement, md: MarkDown) {
+		const guild = this.lookingguild;
+		if (!guild) return;
+		const commands = await guild.getCommands();
+		const sorted = commands
+			.map((_) => [_, _.similar(search)] as const)
+			.filter((_) => _[1] !== 0)
+			.sort((a, b) => b[1] - a[1])
+			.slice(0, 10);
+
+		this.MDSearchOptions(
+			sorted.map(([elm]) => {
+				return [
+					`/${elm.localizedName}`,
+					"",
+					undefined,
+					() => {
+						this.channelfocus?.startCommand(elm);
+						return true;
+					},
+				] as const;
+			}),
+			"",
+			box,
+			md,
+		);
+		console.log(sorted, search);
+	}
 	search(box: HTMLDivElement, md: MarkDown, str: string, pre: boolean) {
 		if (!pre) {
 			const match = str.match(this.autofillregex);
@@ -3659,6 +3681,11 @@ class Localuser {
 						return;
 				}
 				return;
+			}
+			const command = str.match(/^\/((\s*[\w\d]+)*)$/);
+			if (command) {
+				const search = command[1];
+				this.findCommands(search, box, md);
 			}
 		}
 		box.innerHTML = "";

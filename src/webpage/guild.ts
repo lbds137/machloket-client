@@ -18,6 +18,8 @@ import {
 	templateSkim,
 	mute_config,
 	GuildOverrides,
+	commandJson,
+	applicationJson,
 } from "./jsontypes.js";
 import {User} from "./user.js";
 import {I18n} from "./i18n.js";
@@ -27,6 +29,7 @@ import {createImg} from "./utils/utils.js";
 import {Sticker} from "./sticker.js";
 import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {MarkDown} from "./markdown.js";
+import {Command} from "./interactions/commands.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
@@ -1289,7 +1292,7 @@ class Guild extends SnowFlake {
 		}
 		this.prevchannel = this.localuser.channelids.get(this.perminfo.prevchannel);
 		this.stickers = json.stickers.map((_) => new Sticker(_, this)) || [];
-		//this.getCommands();
+		this.getCommands();
 	}
 	get perminfo() {
 		return this.localuser.perminfo.guilds[this.id];
@@ -1849,14 +1852,56 @@ class Guild extends SnowFlake {
 			}),
 		});
 	}
-
+	commands?: Command[];
+	commandProm?: Promise<unknown>;
+	apps?: applicationJson[];
+	async getApps() {
+		if (this.commandProm) {
+			await this.commandProm;
+		}
+		if (this.apps) {
+			return this.commands;
+		} else {
+			const prom = this.getCommandsFetch();
+			this.commandProm = prom;
+			const {apps, commands} = await prom;
+			this.commands = commands;
+			this.apps = apps;
+			return apps;
+		}
+	}
 	async getCommands() {
-		const json = await (
+		if (this.commandProm) {
+			await this.commandProm;
+		}
+		if (this.commands) {
+			return this.commands;
+		} else {
+			const prom = this.getCommandsFetch();
+			this.commandProm = prom;
+			const {apps, commands} = await prom;
+			this.commands = commands;
+			this.apps = apps;
+			return commands;
+		}
+	}
+
+	async getCommandsFetch() {
+		const json = (await (
 			await fetch(this.info.api + `/guilds/${this.id}/application-command-index`, {
 				headers: this.headers,
 			})
-		).json();
-		if (this.id === "1006649183970562092") console.warn(json.application_commands);
+		).json()) as {application_commands: commandJson[]; applications: applicationJson[]};
+		//TODO remove this fix once the server fixes this
+		json.applications.forEach((_) => {
+			if (_.icon && _.icon.startsWith("data")) {
+				_.icon = null;
+			}
+		});
+		return {
+			apps: json.applications,
+			commands: json.application_commands.map((_) => new Command(_, this.localuser)),
+		};
 	}
 }
 Guild.setupcontextmenu();

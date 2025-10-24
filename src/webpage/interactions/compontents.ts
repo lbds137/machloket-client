@@ -1,9 +1,9 @@
-import {Channel} from "./channel.js";
-import {I18n} from "./i18n.js";
-import {actionRow, button, component, select} from "./jsontypes.js";
-import {MarkDown} from "./markdown";
-import {Message} from "./message.js";
-import {FancySelect} from "./utils/fancySelect.js";
+import {Channel} from "../channel.js";
+import {I18n} from "../i18n.js";
+import {actionRow, button, component, select} from "../jsontypes.js";
+import {MarkDown} from "../markdown";
+import {Message} from "../message.js";
+import {FancySelect} from "../utils/fancySelect.js";
 abstract class compObj {
 	abstract owner: Components;
 	abstract getHTML(): HTMLElement;
