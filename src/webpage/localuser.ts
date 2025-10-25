@@ -3882,6 +3882,7 @@ class Localuser {
 			["NotoColorEmoji-Regular.ttf", "Noto Color Emoji"],
 			["OpenMoji-color-glyf_colr_0.woff2", "OpenMoji"],
 			["Twemoji-16.0.1.ttf", "Twemoji"],
+			["BlobmojiCompat.ttf", "Blobmoji"]
 		] as const;
 	}
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
