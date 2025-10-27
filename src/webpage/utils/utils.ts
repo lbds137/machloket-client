@@ -665,12 +665,12 @@ async function isAnimated(src: string) {
 	return src.endsWith(".apng") || src.endsWith(".gif");
 }
 const staticImgMap = new Map<string, string | Promise<string>>();
-export async function removeAni(elm: HTMLElement) {
+export async function removeAni(elm: HTMLElement, time = 500) {
 	elm.classList.add("removeElm");
 	const ani = elm.getAnimations();
 	await Promise.race([
 		Promise.all(ani.map((_) => _.finished)),
-		new Promise<void>((res) => setTimeout(res, 500)),
+		new Promise<void>((res) => setTimeout(res, time)),
 	]);
 	elm.remove();
 }

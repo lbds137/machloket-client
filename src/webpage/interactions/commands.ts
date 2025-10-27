@@ -4,6 +4,7 @@ import {I18n} from "../i18n.js";
 import {commandJson, commandOptionJson} from "../jsontypes.js";
 import {Localuser} from "../localuser.js";
 import {SnowFlake} from "../snowflake.js";
+import {removeAni} from "../utils/utils.js";
 function focusInput(html: HTMLElement) {
 	const input = html.getElementsByTagName("input")[0];
 	if (input) input.focus();
@@ -250,38 +251,50 @@ export class Command extends SnowFlake {
 		return this.owner.headers;
 	}
 
-	async submit(channel: Channel) {
-		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-		const states = this.state.get(channel);
-		if (!states) {
-			return true;
-		}
-		const opts = states.filter((_) => typeof _ !== "string");
+	async submit(html: HTMLElement, channel: Channel) {
+		try {
+			const nonce = Math.floor(Math.random() * 10 ** 9) + "";
+			const states = this.state.get(channel);
+			if (!states) {
+				return true;
+			}
+			const opts = states.filter((_) => typeof _ !== "string");
 
-		await fetch(this.info.api + "/interactions", {
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify({
-				type: 2,
-				nonce: nonce,
-				guild_id: channel.owner.id,
-				channel_id: channel.id,
-				application_id: this.applicationId,
-				session_id: this.localuser.session_id,
-				data: {
-					application_command: this.rawJson,
-					attachments: [],
-					id: this.id,
-					name: this.name,
-					options: opts.map(({option, state}) => {
-						return option.toJson(state);
-					}),
-					type: 1,
-					version: this.version,
-				},
-			}),
-		});
-		this.state.delete(channel);
+			await fetch(this.info.api + "/interactions", {
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({
+					type: 2,
+					nonce: nonce,
+					guild_id: channel.owner.id,
+					channel_id: channel.id,
+					application_id: this.applicationId,
+					session_id: this.localuser.session_id,
+					data: {
+						application_command: this.rawJson,
+						attachments: [],
+						id: this.id,
+						name: this.name,
+						options: opts.map(({option, state}) => {
+							return option.toJson(state);
+						}),
+						type: 1,
+						version: this.version,
+					},
+				}),
+			});
+			this.state.delete(channel);
+		} catch (e) {
+			if (e instanceof OptionError) {
+				const message = e.message;
+				const error = document.createElement("span");
+				error.classList.add("commandError");
+				error.textContent = message;
+				html.parentElement?.append(error);
+				removeAni(error, 25000);
+			}
+			return false;
+		}
 		return true;
 	}
 }
@@ -362,6 +375,11 @@ class ErrorOption extends Option {
 		this.imprintName(span);
 		span.textContent = "Fermi doesn't impl this yet";
 		return span;
+	}
+}
+class OptionError extends Error {
+	constructor(reason: string) {
+		super(reason);
 	}
 }
 class StringOption extends Option {
@@ -471,7 +489,7 @@ class StringOption extends Option {
 			if (choice) {
 				return choice.value;
 			}
-			throw new Error(I18n.commands.errorNotValid(state, this.localizedName));
+			throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 		}
 		return state;
 	}

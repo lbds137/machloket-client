@@ -1583,7 +1583,8 @@ class Channel extends SnowFlake {
 	curWatch = () => {};
 	async submitCommand() {
 		if (!this.curCommand) return;
-		if (await this.curCommand.submit(this)) {
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		if (await this.curCommand.submit(typebox, this)) {
 			this.curCommand = undefined;
 			const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 			typebox.markdown.boxEnabled = true;

@@ -67,7 +67,7 @@ class I18n {
 		//thanks to geotale for the regex
 		msg = msg.replace(/\$\d+/g, (match) => {
 			const number = Number(match.slice(1));
-			if (params[number - 1]) {
+			if (params[number - 1] !== undefined) {
 				return params[number - 1];
 			} else {
 				return match;
