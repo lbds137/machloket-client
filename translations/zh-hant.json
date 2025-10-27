@@ -145,6 +145,10 @@
 			"USE_EXTERNAL_APPS": "使用外部應用程式"
 		}
 	},
+	"userping": {
+		"unknown": "@不明",
+		"resolving": "解析使用者"
+	},
 	"hideBlockedMessages": "您已封鎖該名使用者，點擊即可隱藏這些訊息。",
 	"showBlockedMessages": "您已封鎖該名使用者，點擊查看已封鎖的 $1 件{{PLURAL:$1|訊息}}。",
 	"deleteConfirm": "您確定要刪除這個嗎？",
