@@ -2479,6 +2479,7 @@ span .quote:last-of-type .quoteline {
 	height: 100%;
 	left: 0px;
 	z-index: -1;
+	border-radius: 4px;
 }
 .mentionMD:hover::before {
 	background: var(--mention);
