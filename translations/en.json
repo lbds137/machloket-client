@@ -683,7 +683,8 @@
 		"nick:": "Nickname:"
 	},
 	"commands":{
-		"errorNotValid":"$1 is not a valid choice for $2"
+		"errorNotValid":"$1 is not a valid choice for $2",
+		"required":"$1 is a required part of this command"
 	},
 	"badge": {
 		"staff": "Instance staff",

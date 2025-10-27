@@ -259,6 +259,15 @@ export class Command extends SnowFlake {
 				return true;
 			}
 			const opts = states.filter((_) => typeof _ !== "string");
+			const options = opts.map(({option, state}) => {
+				return option.toJson(state);
+			});
+			const madeit = new Set(opts.map((_) => _.option));
+			for (const thing of this.options) {
+				if (thing.required && !madeit.has(thing)) {
+					throw new OptionError(I18n.commands.required(thing.localizedName));
+				}
+			}
 
 			await fetch(this.info.api + "/interactions", {
 				method: "POST",
@@ -275,9 +284,7 @@ export class Command extends SnowFlake {
 						attachments: [],
 						id: this.id,
 						name: this.name,
-						options: opts.map(({option, state}) => {
-							return option.toJson(state);
-						}),
+						options,
 						type: 1,
 						version: this.version,
 					},
