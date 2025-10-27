@@ -192,6 +192,7 @@ export class Command extends SnowFlake {
 		);
 	}
 	render(html: HTMLElement, channel: Channel) {
+		console.warn(this.rawJson);
 		html.innerHTML = "";
 		let state = this.state.get(channel);
 		if (!state) {
@@ -231,6 +232,15 @@ export class Command extends SnowFlake {
 		if (stateObj && stateObj instanceof Object) {
 			stateObj.state = state;
 		}
+	}
+	getState(option: Option, channel: Channel) {
+		const states = this.state.get(channel);
+		if (!states) return;
+		const stateObj = states.find((_) => _ instanceof Object && _.option === option);
+		if (stateObj && stateObj instanceof Object) {
+			return stateObj.state;
+		}
+		return;
 	}
 	get info() {
 		return this.owner.info;
@@ -333,10 +343,13 @@ abstract class Option {
 	}
 	toJson(state: string) {
 		return {
-			value: state,
+			value: this.getValue(state),
 			type: this.type,
 			name: this.name,
 		};
+	}
+	getValue(state: string): string | number {
+		return state;
 	}
 }
 class ErrorOption extends Option {
@@ -392,10 +405,74 @@ class StringOption extends Option {
 			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
 				focusElm(div, false);
 			}
+			const last = this.owner.getState(this, channel);
 			this.owner.stateChange(this, channel, input.value);
+			if (this.choices?.length && last !== input.value) {
+				this.displayChoices(input, channel);
+			}
 		};
 
 		div.append(label, input);
 		return div;
+	}
+	displayChoices(input: HTMLInputElement, channel: Channel) {
+		const value = input.value;
+		if (!this.choices) return;
+		const similar = (str?: string | null) => {
+			if (str === null || str === undefined) return 0;
+			if (str.includes(value)) {
+				return value.length / str.length;
+			} else if (str.toLowerCase().includes(value.toLowerCase())) {
+				return str.length / str.length / 1.4;
+			} else {
+				return 0;
+			}
+		};
+
+		const options = (
+			value
+				? this.choices
+						.map(
+							(_) =>
+								[_, Math.max(similar(_.name), similar(_.name_localizations?.[I18n.lang]))] as const,
+						)
+						.filter((_) => _[1] !== 0)
+						.sort((a, b) => a[1] - b[1])
+						.map((_) => _[0])
+				: this.choices
+		).slice(0, 10);
+
+		this.owner.localuser.MDSearchOptions(
+			options.map((elm) => {
+				return [
+					`${elm.name_localizations?.[I18n.lang] || elm.name}`,
+					"",
+					undefined,
+					() => {
+						input.value = elm.name_localizations?.[I18n.lang] || elm.name;
+						this.owner.stateChange(this, channel, input.value);
+						return true;
+					},
+				] as const;
+			}),
+			"",
+		);
+	}
+	getValue(state: string) {
+		if (this.choices?.length) {
+			const choice = this.choices.find((choice) => {
+				if (choice.name === state) {
+					return true;
+				} else if (choice.name_localizations?.[I18n.lang] === state) {
+					return true;
+				}
+				return false;
+			});
+			if (choice) {
+				return choice.value;
+			}
+			throw new Error(I18n.commands.errorNotValid(state, this.localizedName));
+		}
+		return state;
 	}
 }

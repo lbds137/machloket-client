@@ -682,6 +682,9 @@
 		"ban": "Ban $1 from $2",
 		"nick:": "Nickname:"
 	},
+	"commands":{
+		"errorNotValid":"$1 is not a valid choice for $2"
+	},
 	"badge": {
 		"staff": "Instance staff",
 		"partner": "Instance partner",

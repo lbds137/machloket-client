@@ -3392,7 +3392,7 @@ class Localuser {
 			| [string, string, void | HTMLElement, () => void | boolean]
 		)[],
 		original: string,
-		div: HTMLDivElement,
+		div: HTMLDivElement = document.getElementById("searchOptions") as HTMLDivElement,
 		typebox?: MarkDown,
 	) {
 		if (!div) return;
@@ -3456,6 +3456,7 @@ class Localuser {
 			const cancel = new Set(["ArrowUp", "ArrowDown", "Enter", "Tab"]);
 			this.keyup = (event) => {
 				if (remove()) return false;
+
 				if (cancel.has(event.key)) {
 					switch (event.key) {
 						case "ArrowUp":
@@ -3882,7 +3883,7 @@ class Localuser {
 			["NotoColorEmoji-Regular.ttf", "Noto Color Emoji"],
 			["OpenMoji-color-glyf_colr_0.woff2", "OpenMoji"],
 			["Twemoji-16.0.1.ttf", "Twemoji"],
-			["BlobmojiCompat.ttf", "Blobmoji"]
+			["BlobmojiCompat.ttf", "Blobmoji"],
 		] as const;
 	}
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
