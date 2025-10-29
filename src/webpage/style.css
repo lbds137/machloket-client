@@ -3418,7 +3418,7 @@ fieldset input[type="radio"] {
 	gap: 0 6px;
 	align-items: center;
 	user-select: none;
-	pointer-events: nonde;
+	pointer-events: none;
 	width: 100%;
 	box-sizing: border-box;
 }
