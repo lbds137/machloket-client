@@ -6,6 +6,9 @@ Fermi due to its service worker, will technically work without any of this, but 
 * stuff like `/app` will just use the html file at `/app.html`
 
 Here's the other thing you need to do:
+
+Firstly you'll need to build Fermi like normal and host out the ./dist/webpage directory.
+
 You need to make some rewrites, not redirects from these addresses:
 * `/channels/*` -> `/app.html`
 * `/invite/*` -> `invite.html`
