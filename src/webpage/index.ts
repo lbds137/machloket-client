@@ -6,6 +6,7 @@ import {MarkDown} from "./markdown.js";
 import {Message} from "./message.js";
 import {File} from "./file.js";
 import {I18n} from "./i18n.js";
+import "./utils/pollyfills.js";
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
 }
