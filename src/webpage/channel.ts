@@ -1729,9 +1729,15 @@ class Channel extends SnowFlake {
 		if (this.voice && this.localuser.voiceAllowed) {
 			//this.localuser.joinVoice(this);
 		}
-		(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
-			? "plaintext-only"
-			: "false";
+		try {
+			(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
+				? "plaintext-only"
+				: "false";
+		} catch {
+			(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
+				? "true"
+				: "false";
+		}
 		(document.getElementById("upload") as HTMLElement).style.visibility = this.canMessage
 			? "visible"
 			: "hidden";

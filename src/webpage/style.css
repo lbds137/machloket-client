@@ -2277,7 +2277,7 @@ span.instanceStatus {
 	color: transparent;
 	background-clip: text, border-box;
 	position: relative;
-	background-image: var(--userbg, linear-gradient(var(--primary-text)));
+	background-image: var(--userbg, linear-gradient(var(--primary-text), var(--primary-text)));
 }
 .roleIcon {
 	display: inline-block;

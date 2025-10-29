@@ -871,7 +871,11 @@ class Message extends SnowFlake {
 				const search = document.createElement("div");
 				search.classList.add("searchOptions", "flexttb");
 				area.classList.add("editMessage");
-				area.contentEditable = "plaintext-only";
+				try {
+					area.contentEditable = "plaintext-only";
+				} catch {
+					area.contentEditable = "true";
+				}
 				const md = new MarkDown(this.content.rawString, this.owner, {keep: true});
 				area.append(md.makeHTML());
 				area.addEventListener("keyup", (event) => {
