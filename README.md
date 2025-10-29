@@ -14,6 +14,8 @@ To access Fermi after starting, simply go to http://localhost:8080/login and eit
 If there are any issues please report them either here, or to me dirrectly on spacebar
 ## Adding instances to the dropdown
 Please see [this](https://github.com/MathMan05/Fermi/blob/main/InstanceInfo.md) for how to add an instance to the dropdown picker
+## How to statically host Fermi
+[Click here](./howToStaticallyHost.md)
 ## RoadMap
 You can view the current roadmap on https://github.com/users/MathMan05/projects/1.
 ## AI Code
