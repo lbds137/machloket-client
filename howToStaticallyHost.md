@@ -15,4 +15,5 @@ You need to make some rewrites, not redirects from these addresses:
 * `/template/*` -> `template.html`
 
 Other than these three rewrites, everything else should work as expected!
+
 (the reason why the service worker can fix this is due to it doing the rewrites on the client side)
