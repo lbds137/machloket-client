@@ -31,7 +31,7 @@ Set.prototype.symmetricDifference ||= function <T>(set: Set<T>) {
 	return newSet;
 };
 Set.prototype.isDisjointFrom ||= function <T>(set: Set<T>) {
-	return this.symmetricDifference(set).size === 0;
+	return this.intersection(set).size === 0;
 };
 Set.prototype.union ||= function <T>(set: Set<T>) {
 	return new Set([...this, ...set]);
