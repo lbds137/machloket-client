@@ -596,7 +596,7 @@ class Guild extends SnowFlake {
 			form.addTextInput(I18n.guild["region:"](), "region", {initText: region});
 		}
 		this.makeInviteMenu(settings.addButton(I18n.invite.inviteMaker()), textChannels);
-		const s1 = settings.addButton(I18n.guild.roles());
+		const s1 = settings.addButton(I18n.guild.roles(), {optName: ""});
 		const permlist: [Role, Permissions][] = [];
 		for (const thing of this.roles) {
 			permlist.push([thing, thing.permissions]);

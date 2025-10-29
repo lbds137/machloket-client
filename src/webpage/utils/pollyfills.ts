@@ -1,3 +1,4 @@
+//So... there are polyfills for letting some older browsers to run Fermi, but it's not going to be anywhere near perfect with the CSS
 Set.prototype.intersection ||= function <T>(set: Set<T>) {
 	const newSet = new Set();
 	for (const elm of this) {

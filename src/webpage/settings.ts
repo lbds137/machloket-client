@@ -2104,8 +2104,8 @@ class Settings extends Buttons {
 	constructor(name: string) {
 		super(name);
 	}
-	addButton(name: string, {ltr = false} = {}): Options {
-		const options = new Options(name, this, {ltr});
+	addButton(name: string, {ltr = false, optName = name} = {}): Options {
+		const options = new Options(optName, this, {ltr});
 		this.add(name, options);
 		return options;
 	}

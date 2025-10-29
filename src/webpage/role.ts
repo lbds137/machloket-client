@@ -534,7 +534,7 @@ class RoleList extends Buttons {
 
 		const roleRow = document.createElement("div");
 		roleRow.classList.add("flexltr", "rolesheader");
-		roleRow.append("Roles");
+		roleRow.append(I18n.role.roles());
 		const add = document.createElement("span");
 		add.classList.add("svg-plus", "svgicon", "addrole");
 		add.onclick = async (e) => {

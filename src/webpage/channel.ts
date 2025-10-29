@@ -356,7 +356,7 @@ class Channel extends SnowFlake {
 				});
 			}
 		}
-		const s1 = settings.addButton(I18n.channel.permissions());
+		const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
 		s1.options.push(
 			new RoleList(
 				this.permission_overwritesar,
