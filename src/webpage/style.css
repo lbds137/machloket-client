@@ -2512,7 +2512,7 @@ span .quote:last-of-type .quoteline {
 	padding: 1px 2px;
 	border-radius: 4px;
 	cursor: pointer;
-	background-image: var(--userbg, linear-gradient(var(--primary-text)));
+	background-image: var(--userbg, linear-gradient(var(--primary-text), var(--primary-text)));
 	position: relative;
 	z-index: 1;
 }
