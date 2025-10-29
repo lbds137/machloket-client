@@ -159,13 +159,14 @@ class PermissionToggle implements OptionsElement<number> {
 		return div;
 	}
 	generateCheckbox(): HTMLElement {
+		const rand = Math.random() + "";
 		const div = document.createElement("div");
 		div.classList.add("tritoggle");
 		const state = this.permissions.getPermission(this.rolejson.name);
 
 		const on = document.createElement("input");
 		on.type = "radio";
-		on.name = this.rolejson.name;
+		on.name = this.rolejson.name + rand;
 		div.append(on);
 		if (state === 1) {
 			on.checked = true;
@@ -177,7 +178,7 @@ class PermissionToggle implements OptionsElement<number> {
 
 		const no = document.createElement("input");
 		no.type = "radio";
-		no.name = this.rolejson.name;
+		no.name = this.rolejson.name + rand;
 		div.append(no);
 		if (state === 0) {
 			no.checked = true;
@@ -189,7 +190,7 @@ class PermissionToggle implements OptionsElement<number> {
 		if (this.permissions.hasDeny) {
 			const off = document.createElement("input");
 			off.type = "radio";
-			off.name = this.rolejson.name;
+			off.name = this.rolejson.name + rand;
 			div.append(off);
 			if (state === -1) {
 				off.checked = true;
