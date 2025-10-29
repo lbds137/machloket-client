@@ -760,7 +760,7 @@ textarea {
 	display: block;
 	background: var(--primary-text-soft);
 	position: absolute;
-	top: calc(50vh - 42px);
+	top: calc(50% - 42px);
 	left: 4px;
 	cursor: pointer;
 }
@@ -771,7 +771,7 @@ textarea {
 	display: block;
 	background: var(--primary-text-soft);
 	position: absolute;
-	top: calc(50vh - 42px);
+	top: calc(50% - 42px);
 	right: 4px;
 	cursor: pointer;
 }
@@ -2460,6 +2460,51 @@ span .quote:last-of-type .quoteline {
 }
 .mentioned:hover {
 	background: color-mix(in srgb, var(--mention-highlight) 10%, var(--primary-hover));
+}
+#slideCount {
+	position: absolute;
+	bottom: 0px;
+	display: flex;
+	flex-direction: row;
+	padding: 10px;
+	width: calc(100% - 30px);
+	justify-content: center;
+	box-sizing: border-box;
+	div {
+		padding: 3px;
+		margin: 2px;
+		cursor: pointer;
+		&.selected {
+			span {
+				opacity: 1;
+			}
+		}
+	}
+	span {
+		width: 10px;
+		height: 10px;
+		background: white;
+		display: block;
+		opacity: 0.5;
+		border-radius: 100%;
+	}
+}
+.screenshots {
+	width: calc(100% - 10px);
+	margin: 5px;
+	box-sizing: border-box;
+	border-radius: 8px;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	transition: opacity 0.4s;
+	&.hidden {
+		opacity: 0;
+	}
+}
+#ScreenshotSlides {
+	position: relative;
+	aspect-ratio: 1.9;
 }
 .mentionMD {
 	color: transparent;

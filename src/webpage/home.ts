@@ -126,3 +126,71 @@ fetch("/instances.json")
 			}
 		},
 	);
+
+const slides = document.getElementById("ScreenshotSlides");
+if (slides) {
+	const images = Array.from(slides.getElementsByTagName("img"));
+	const left = slides.getElementsByClassName("leftArrow").item(0) as HTMLElement;
+	const right = slides.getElementsByClassName("rightArrow").item(0) as HTMLElement;
+	let index = 0;
+	let timeout: NodeJS.Timeout | undefined = setTimeout(() => {});
+	function slideShow() {
+		let cleared = false;
+		if (timeout !== undefined) {
+			cleared = true;
+			clearTimeout(timeout);
+		}
+		let i = 0;
+		for (const img of images) {
+			if (i !== index) {
+				img.classList.add("hidden");
+			} else {
+				img.classList.remove("hidden");
+			}
+			i++;
+		}
+		const count = document.getElementById("slideCount");
+		if (count) {
+			if (count.children.length !== images.length) {
+				count.innerHTML = "";
+				for (let i = 0; i < images.length; i++) {
+					const dot = document.createElement("span");
+					const outer = document.createElement("div");
+					outer.onclick = () => {
+						index = i;
+						slideShow();
+					};
+					outer.append(dot);
+					count.append(outer);
+				}
+			}
+			let i = 0;
+			for (const child of Array.from(count.children)) {
+				if (i === index) {
+					child.classList.add("selected");
+				} else {
+					child.classList.remove("selected");
+				}
+				i++;
+			}
+		}
+
+		timeout = setTimeout(
+			() => {
+				index = (index + 1) % images.length;
+				timeout = undefined;
+				slideShow();
+			},
+			cleared ? 15000 : 30000,
+		);
+	}
+	slideShow();
+	left.onclick = () => {
+		index = (index - 1 + images.length) % images.length;
+		slideShow();
+	};
+	right.onclick = () => {
+		index = (index + 1) % images.length;
+		slideShow();
+	};
+}
