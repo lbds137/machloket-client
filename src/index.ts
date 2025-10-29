@@ -165,7 +165,7 @@ app.use("/", async (req: Request, res: Response) => {
 	}
 
 	if (req.path === "/") {
-		res.sendFile(path.join(__dirname, "webpage", "home.html"));
+		res.sendFile(path.join(__dirname, "webpage", "index.html"));
 		return;
 	}
 
