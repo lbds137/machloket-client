@@ -41,6 +41,7 @@
 			"cont": "Continuar mesmo assim"
 		}
 	},
+	"cancel": "Cancelar",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Permite que o usuário crie convites para a guilda",
@@ -145,6 +146,10 @@
 			"USE_EXTERNAL_APPS": "Usar aplicativos externos"
 		}
 	},
+	"userping": {
+		"unknown": "@Desconhecido",
+		"resolving": "Resolvendo usuário"
+	},
 	"hideBlockedMessages": "Você bloqueou este usuário, clique para esconder essas mensagens.",
 	"showBlockedMessages": "Você bloqueou este usuário, clique para ver $1 {{PLURAL:$1|mensagem|mensagens}} bloqueadas.",
 	"deleteConfirm": "Tem certeza de que quer apagar isso?",
@@ -190,13 +195,26 @@
 	"messageLink": "Mensageie # $1",
 	"searchGifs": "Pesquisar no Tenor",
 	"muteDuration": "Dessilenciar em:",
+	"interactions": {
+		"replyline": "Iniciou interação",
+		"ephemeralDismiss": "Ocultar Mensagem",
+		"onlyYou": "Só você pode ver essa mensagem",
+		"started": "Processando interação...",
+		"worked": "Interação sucedida",
+		"failed": "Interação falhou",
+		"notImpl": "Fermi ainda não implementou componente de tipo $1 ainda",
+		"nonsence": "O servidor enviou um componente de tipo $1 que não existe"
+	},
 	"channel": {
+		"typebox": "Converse em $1",
 		"creating": "Criando canal",
 		"name": "Canal",
 		"copyId": "Copiar id do canal",
+		"copyIdCat": "Copiar id da categoria",
 		"markRead": "Marcar como lido",
 		"settings": "Configurações",
 		"delete": "Apagar canal",
+		"deleteCat": "Apagar categoria",
 		"makeInvite": "Criar convite",
 		"settingsFor": "Configurações para $1",
 		"voice": "Voz",
@@ -205,6 +223,7 @@
 		"unmute": "Dessilenciar Canal",
 		"announcement": "Anúncios",
 		"name:": "Nome:",
+		"icon": "Ícone:",
 		"topic:": "Tópico:",
 		"nsfw:": "NSFW:",
 		"selectType": "Selecionar tipo do canal",
@@ -214,6 +233,7 @@
 		"createCatagory": "Criar categoria",
 		"permissions": "Permissões"
 	},
+	"notiClump": "Você recebeu $1 notificações de $2",
 	"Voice": {
 		"status": {
 			"done": "Conectado",
@@ -310,7 +330,11 @@
 	"nevermind": "Deixa pra lá",
 	"submit": "enviar",
 	"edit": "Editar",
+	"discovery": "Descobrir",
 	"guild": {
+		"memberCount": "$1 {{PLURAL:$1|membro|membros}}",
+		"joinConfirm": "Entrar em $1?",
+		"guilds": "Guildas",
 		"template": "Modelo:",
 		"admins": "Encontrar Administradores",
 		"adminMenu": {
@@ -396,7 +420,15 @@
 		"confirmDelete": "Tem certeza de que quer apagar $1?",
 		"roleEmoji": "Emoji do cargo:",
 		"roleFileIcon": "Ícone do cargo:",
-		"deleting": "Apagando cargo..."
+		"deleting": "Apagando cargo...",
+		"colors": {
+			"name": "Número de cores:",
+			"one": "Um",
+			"two": "Duas",
+			"three": "Três",
+			"secondColor": "Segunda cor:",
+			"thirdColor": "Terceira cor:"
+		}
 	},
 	"folder": {
 		"name": "Nome da pasta:",
@@ -614,6 +646,7 @@
 		"name": "Mensagens Privadas"
 	},
 	"user": {
+		"sendMessage": "Conversar com @$1",
 		"copyId": "Copiar ID do usuário",
 		"online": "Online",
 		"offline": "Offline",
@@ -651,6 +684,10 @@
 		"ban": "Banir $1 de $2",
 		"nick:": "Apelido:"
 	},
+	"commands": {
+		"errorNotValid": "$1 não é uma escolha válida para $2",
+		"required": "$1 é uma parte necessária desse comando"
+	},
 	"badge": {
 		"staff": "Staff da instância",
 		"partner": "Parceiro da instância",
@@ -680,12 +717,27 @@
 		"legacy_username": "Tem nome de usuário legacy",
 		"quest_completed": "Completou uma missão"
 	},
+	"dms": "Mensagens Privadas",
+	"group": {
+		"select": "Selecionar amigos",
+		"createdm": "Criar grupo!",
+		"edit": "Editar Grupo"
+	},
 	"emoji": {
 		"title": "Emojis",
 		"upload": "Enviar Emojis",
 		"image:": "Imagem:",
 		"name:": "Nome:",
-		"confirmDel": "Tem certeza de que deseja excluir este emoji?"
+		"confirmDel": "Tem certeza de que deseja excluir este emoji?",
+		"from": "Esse emoji é de",
+		"privateGuild": "Essa guilda é privada",
+		"join": "Entrar na Guilda",
+		"found": {
+			"this": "Esse emoji é dessa guilda.",
+			"other": "Esse emoji é de uma de suas outras guildas.",
+			"not": "Esse emoji não é de uma das suas guildas, você deve entrar para poder usá-lo",
+			"private": "A guilda para esse emoji não pôde ser encontrada"
+		}
 	},
 	"sticker": {
 		"title": "Adesivos",
@@ -698,6 +750,19 @@
 		"errFileMust": "Deve incluir uma imagem para seu adesivo",
 		"errEmjMust": "Deve incluir um emoji com seu adesivo",
 		"tags": "Emoji Associado:"
+	},
+	"404": {
+		"home": "Início",
+		"title": "Parece que você tá perdido",
+		"404": "404 Página Não Encontrada",
+		"listtitle": "Talvez você quis ir em um desses lugares",
+		"app": "Ao aplicativo",
+		"login": "Login",
+		"reset": "Página de redefinição de senha",
+		"blog": "O Blogue Fermi",
+		"whereever": "O que quer que isso seja",
+		"report": "Se você encontrou essa página dentro do app, por favor, denuncie:",
+		"whatelse": "O que mais você acha que deveria acontecer?"
 	},
 	"widget": "Widget da Guilda",
 	"widgetEnabled": "Widget habilitado",
