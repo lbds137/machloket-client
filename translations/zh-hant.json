@@ -683,6 +683,10 @@
 		"ban": "從$2禁止$1",
 		"nick:": "暱稱："
 	},
+	"commands": {
+		"errorNotValid": "$1不是$2的有效選擇",
+		"required": "$1是此指令的必需部分"
+	},
 	"badge": {
 		"staff": "實例人員",
 		"partner": "實例合作夥伴",

@@ -305,6 +305,9 @@
 		"reason:": "Grond:",
 		"nick:": "Spëtznumm:"
 	},
+	"commands": {
+		"errorNotValid": "$1 ass kee gültege Choix fir $2"
+	},
 	"badge": {
 		"certified_moderator": "Moderateur"
 	},
