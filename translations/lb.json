@@ -160,6 +160,7 @@
 		"description:": "Beschreiwung:"
 	},
 	"role": {
+		"roles": "Rollen",
 		"color": "Faarf",
 		"delete": "Roll läschen",
 		"deleting": "Roll gëtt geläscht …",
