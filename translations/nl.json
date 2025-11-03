@@ -2,7 +2,8 @@
 	"@metadata": {
 		"authors": [
 			"ABPMAB",
-			"McDutchie"
+			"McDutchie",
+			"Siebrand"
 		]
 	},
 	"vc": {
@@ -145,6 +146,10 @@
 			"USE_EXTERNAL_APPS": "Externe apps gebruiken"
 		}
 	},
+	"userping": {
+		"unknown": "@onbekend",
+		"resolving": "gebruiken aan het opzoeken"
+	},
 	"hideBlockedMessages": "Je hebt deze gebruiker geblokkeerd. Klik om deze berichten te verbergen.",
 	"showBlockedMessages": "Je hebt deze gebruiker geblokkeerd. Klik om {{PLURAL:$1|het geblokkeerde bericht|de $1 geblokkeerde berichten}} te bekijken.",
 	"deleteConfirm": "Weet je zeker dat je dit wilt verwijderen?",
@@ -190,6 +195,16 @@
 	"messageLink": "Bericht in # $1",
 	"searchGifs": "Tenor doorzoeken",
 	"muteDuration": "Ontdempen in:",
+	"interactions": {
+		"replyline": "Interactie gestart",
+		"ephemeralDismiss": "Bericht verwijderen",
+		"onlyYou": "Alleen jij kunt dit bericht zien",
+		"started": "Interactie verwerken...",
+		"worked": "Interactie geslaagd",
+		"failed": "Interactie mislukt",
+		"notImpl": "Fermi ondersteunt componenttype $1 nog niet",
+		"nonsence": "De server heeft een component van het type $1 verzonden dat niet bestaat"
+	},
 	"channel": {
 		"typebox": "Bericht in $1",
 		"creating": "Kanaal wordt aangemaakt",
@@ -397,6 +412,7 @@
 	"role": {
 		"displaySettings": "Weergave-instellingen",
 		"name": "Rolnaam:",
+		"roles": "Rollen",
 		"hoisted": "Opgehesen:",
 		"mentionable": "Iedereen toestaan deze rol te pingen:",
 		"color": "Kleur",
@@ -668,6 +684,10 @@
 		"reason:": "Reden:",
 		"ban": "$1 uit $2 verbannen",
 		"nick:": "Bijnaam:"
+	},
+	"commands": {
+		"errorNotValid": "$1 is geen geldige keuze voor $2",
+		"required": "$1 is een vereist onderdeel van deze opdracht"
 	},
 	"badge": {
 		"staff": "Serverpersoneel",

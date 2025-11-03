@@ -411,6 +411,7 @@
 	"role": {
 		"displaySettings": "顯示設定",
 		"name": "角色名稱：",
+		"roles": "角色",
 		"hoisted": "已提升：",
 		"mentionable": "允許任何人 ping 該角色：",
 		"color": "色彩",
