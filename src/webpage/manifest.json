@@ -6,10 +6,11 @@
 			"sizes": "512x512"
 		}
 	],
-	"start_url": "/channels/@me",
+	"start_url": "/app",
 	"display": "standalone",
 	"scope": "/",
 	"theme_color": "#05050a",
+	"categories":["social"],
 	"description": "A lightweight chat app for all of your spacebar needs!",
 	"background_color": "#05050a",
 	"offline_enabled": true
