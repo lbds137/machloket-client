@@ -32,11 +32,19 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 							root: path.join(__dirname, "src", "webpage"),
 							base: match,
 						});
+						const newPath = path.join(
+							path.format({
+								root: path.join(__dirname, "dist", "webpage"),
+								base: match,
+							}),
+							"../",
+						);
 						const temp2 = path.parse(sPathTemp);
 						//@ts-ignore
 						delete temp2.base;
 						temp2.ext = ".ts";
 						const sPath = path.format(temp2);
+
 						let mod = await swc.bundle({
 							entry: sPath,
 							target: "browser",
@@ -64,8 +72,10 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 								},
 							},
 						});
+
 						const code = mod[path.parse(sPath).base] || mod;
 						const newfileDir = path.join(newPath, path.parse(sPath).name);
+
 						await Promise.all([
 							fs.writeFile(
 								newfileDir + ".js",

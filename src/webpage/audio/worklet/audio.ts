@@ -1,4 +1,4 @@
-import {BinRead} from "../utils/binaryUtils.js";
+import {BinRead} from "../../utils/binaryUtils.js";
 import {Track} from "./track.js";
 
 export class Audio {
@@ -9,7 +9,7 @@ export class Audio {
 		this.name = name;
 	}
 	static parse(read: BinRead, trackarr: Track[]): Audio {
-		const name = read.readString8();
+		const name = read.readAsciiString8();
 		const length = read.read16();
 		const tracks: (Track | number)[] = [];
 		for (let i = 0; i < length; i++) {
@@ -22,13 +22,32 @@ export class Audio {
 		}
 		return new Audio(name, tracks);
 	}
-	async play(volume: number) {
+	isdone(time: number) {
+		let cur = 0;
 		for (const thing of this.tracks) {
 			if (thing instanceof Track) {
-				thing.play(volume);
+				if (!thing.isdone(time - cur)) {
+					return false;
+				}
 			} else {
-				await new Promise((res) => setTimeout(res, thing));
+				cur += thing;
 			}
 		}
+		return true;
+	}
+	getNumber(time: number) {
+		let cur = 0;
+		let av = 0;
+		for (const thing of this.tracks) {
+			if (thing instanceof Track) {
+				const vol = thing.getNumber(time - cur);
+				if (vol !== 0) {
+					av += Math.log(10 ** av + 10 ** vol);
+				}
+			} else {
+				cur += thing;
+			}
+		}
+		return av;
 	}
 }

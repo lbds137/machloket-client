@@ -1,48 +1,48 @@
-import {BinRead} from "../utils/binaryUtils.js";
-import {Track} from "./track.js";
-import {AVoice} from "./voice.js";
-import {Audio} from "./audio.js";
 export class Play {
-	voices: [AVoice, string][];
-	tracks: Track[];
-	audios: Map<string, Audio>;
-	constructor(voices: [AVoice, string][], tracks: Track[], audios: Map<string, Audio>) {
-		this.voices = voices;
-		this.tracks = tracks;
-		this.audios = audios;
+	buffer: ArrayBuffer;
+	worklet!: AudioWorkletNode;
+	audioContext: AudioContext;
+	tracks: string[] = [];
+	onload = () => {};
+	constructor(buffer: ArrayBuffer) {
+		this.buffer = buffer;
+		this.audioContext = new AudioContext();
+		this.audioContext.audioWorklet.addModule("/audio/worklet/worklet.js").then((_) => {
+			this.worklet = new AudioWorkletNode(this.audioContext, "audio");
+			this.worklet.connect(this.audioContext.destination);
+
+			const events = ["click", "keydown", "touchstart"] as const;
+			const func = () => {
+				this.sendMessage({name: "clear"});
+				this.audioContext.resume();
+				events.forEach((event) => document.removeEventListener(event, func));
+			};
+			events.forEach((event) => document.addEventListener(event, func));
+
+			this.sendMessage({name: "bin", bin: buffer});
+
+			this.sendMessage({name: "getTracks"});
+			this.worklet.port.onmessage = (message) => {
+				const data = message.data as recvMessage;
+				switch (data.name) {
+					case "tracks":
+						this.tracks = data.tracks;
+						this.onload();
+						console.log(this.tracks);
+				}
+			};
+		});
 	}
-	static parseBin(buffer: ArrayBuffer) {
-		const read = new BinRead(buffer);
-		if (read.readStringNo(4) !== "jasf") throw new Error("this is not a jasf file");
-		let voices = read.read8();
-		let six = false;
-		if (voices === 255) {
-			voices = read.read16();
-			six = true;
-		}
-		const voiceArr: [AVoice, string][] = [];
-		for (let i = 0; i < voices; i++) {
-			voiceArr.push(AVoice.getVoice(read));
-		}
-
-		const tracks = read.read16();
-		const trackArr: Track[] = [];
-		for (let i = 0; i < tracks; i++) {
-			trackArr.push(Track.parse(read, voiceArr, six));
-		}
-
-		const audios = read.read16();
-		const audioArr = new Map<string, Audio>();
-		for (let i = 0; i < audios; i++) {
-			const a = Audio.parse(read, trackArr);
-			audioArr.set(a.name, a);
-		}
-
-		return new Play(voiceArr, trackArr, audioArr);
+	private sendMessage(message: sendMessage) {
+		this.worklet.port.postMessage(message);
+	}
+	play(soundName: string, volume: number) {
+		volume /= 200;
+		this.sendMessage({name: "start", data: {name: soundName, volume}});
 	}
 	static async playURL(url: string) {
 		const res = await fetch(url);
 		const arr = await res.arrayBuffer();
-		return this.parseBin(arr);
+		return new Play(arr);
 	}
 }

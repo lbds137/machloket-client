@@ -44,12 +44,12 @@ w.write8(5); //times
 	w.write8(2); //freq
 }
 
-w.write16(4); //3 tracks
+w.write16(5); //5 tracks
 
 w.write16(1); //zip
 w.write8(4);
 w.write32Float(1);
-w.write32Float(700);
+w.write32Float(640);
 
 w.write16(3); //beep
 {
@@ -114,7 +114,31 @@ w.write16(5); //square
 	w.write32Float(1000);
 	w.write32Float(50);
 }
-w.write16(4); //2 audio
+w.write16(5); //three
+{
+	w.write8(1);
+	w.write32Float(1);
+	w.write32Float(600);
+	w.write32Float(75);
+
+	w.write8(0);
+	w.write32Float(75);
+
+	w.write8(1);
+	w.write32Float(1);
+	w.write32Float(800);
+	w.write32Float(75);
+
+	w.write8(0);
+	w.write32Float(75);
+
+	w.write8(1);
+	w.write32Float(1);
+	w.write32Float(1000);
+	w.write32Float(50);
+}
+
+w.write16(5); //5 audio
 
 w.writeString8("zip");
 w.write16(1);
@@ -131,8 +155,12 @@ w.write16(3);
 w.writeString8("square");
 w.write16(1);
 w.write16(4);
+
+w.writeString8("join");
+w.write16(1);
+w.write16(5);
 const buff = w.getBuffer();
-const play = Play.parseBin(buff);
+const play = new Play(buff);
 /*
 const zip=play.audios.get("square");
 if(zip){
@@ -144,6 +172,9 @@ if(zip){
 };
 */
 console.log(play, buff);
+document.onclick = () => {
+	play.play("join", 15);
+};
 
 const download = document.getElementById("download");
 if (download) {

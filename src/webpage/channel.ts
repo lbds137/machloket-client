@@ -1,6 +1,5 @@
 "use strict";
 import {Message} from "./message.js";
-import {AVoice} from "./audio/voice.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Guild, makeInviteMenu} from "./guild.js";
 import {Localuser} from "./localuser.js";
@@ -870,7 +869,7 @@ class Channel extends SnowFlake {
 
 			this.updateVoiceUsers();
 			if (this.voice === this.localuser.currentVoice) {
-				AVoice.noises("join");
+				this.localuser.play?.play("join", this.localuser.getNotiVolume());
 			}
 		};
 		this.voice.onUserChange = (user, change) => {

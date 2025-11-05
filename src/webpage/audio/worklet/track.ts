@@ -1,4 +1,5 @@
-import {BinRead} from "../utils/binaryUtils.js";
+import {BinRead} from "../../utils/binaryUtils.js";
+import {mixAudio} from "./mixAudio.js";
 import {AVoice} from "./voice.js";
 
 export class Track {
@@ -33,13 +34,32 @@ export class Track {
 		}
 		return new Track(play2);
 	}
-	async play(volume: number) {
+	isdone(time: number) {
+		let cur = 0;
 		for (const thing of this.seq) {
 			if (thing instanceof AVoice) {
-				thing.playL(volume);
+				if (!thing.isdone(time - cur)) {
+					return false;
+				}
 			} else {
-				await new Promise((res) => setTimeout(res, thing));
+				cur += thing;
 			}
 		}
+		return true;
+	}
+	getNumber(time: number) {
+		let cur = 0;
+		let av = 0;
+		for (const thing of this.seq) {
+			if (thing instanceof AVoice) {
+				const vol = thing.getNumber(time - cur);
+				if (vol !== 0) {
+					av += mixAudio(av, vol);
+				}
+			} else {
+				cur += thing;
+			}
+		}
+		return av;
 	}
 }

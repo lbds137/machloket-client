@@ -1,58 +1,58 @@
-import {BinRead} from "../utils/binaryUtils.js";
+import {BinRead} from "../../utils/binaryUtils.js";
 
 class AVoice {
-	audioCtx: AudioContext;
-	info: {wave: string | Function; freq: number};
+	info: {wave: string | ((t: number, freq: number) => number); freq: number};
 	playing: boolean;
-	myArrayBuffer: AudioBuffer;
-	gainNode: GainNode;
-	buffer: Float32Array;
-	source: AudioBufferSourceNode;
 	length = 1;
-	constructor(wave: string | Function, freq: number, volume = 1, length = 1000) {
+	volume: number;
+	constructor(
+		wave: string | ((t: number, freq: number) => number),
+		freq: number,
+		volume = 1,
+		length = 1000,
+	) {
 		this.length = length;
-		this.audioCtx = new window.AudioContext();
 		this.info = {wave, freq};
 		this.playing = false;
-		this.myArrayBuffer = this.audioCtx.createBuffer(
-			1,
-			(this.audioCtx.sampleRate * length) / 1000,
-			this.audioCtx.sampleRate,
-		);
-		this.gainNode = this.audioCtx.createGain();
-		this.gainNode.gain.value = volume;
-		this.gainNode.connect(this.audioCtx.destination);
-		this.buffer = this.myArrayBuffer.getChannelData(0);
-		this.source = this.audioCtx.createBufferSource();
-		this.source.buffer = this.myArrayBuffer;
-		this.source.loop = true;
-		this.source.start();
-		this.updateWave();
+		this.volume = volume;
 	}
 	clone(volume: number, freq: number, length = this.length) {
 		return new AVoice(this.wave, freq, volume, length);
 	}
-	get wave(): string | Function {
+	get wave(): string | ((t: number, freq: number) => number) {
 		return this.info.wave;
 	}
 	get freq(): number {
 		return this.info.freq;
 	}
-	set wave(wave: string | Function) {
+	set wave(wave: string | ((t: number, freq: number) => number)) {
 		this.info.wave = wave;
-		this.updateWave();
 	}
 	set freq(freq: number) {
 		this.info.freq = freq;
-		this.updateWave();
 	}
-	updateWave(): void {
-		const func = this.waveFunction();
-		for (let i = 0; i < this.buffer.length; i++) {
-			this.buffer[i] = func(i / this.audioCtx.sampleRate, this.freq);
+	getNumber(time: number) {
+		if (time < 0 || time > this.length) {
+			return 0;
 		}
+		function smoothening(num: number) {
+			return 1 / (1 + Math.E ** (-10 * (num - 0.5)));
+		}
+		let fade = 1;
+		const range = 10;
+		if (time < range) {
+			fade = smoothening(time / range);
+		}
+		if (this.length - time < range) {
+			fade = smoothening((this.length - time) / range);
+		}
+		const func = this.waveFunction();
+		return func(time / 1000, this.freq) * fade;
 	}
-	waveFunction(): Function {
+	isdone(time: number) {
+		return time > this.length;
+	}
+	waveFunction(): (t: number, freq: number) => number {
 		if (typeof this.wave === "function") {
 			return this.wave;
 		}
@@ -78,84 +78,11 @@ class AVoice {
 					return Math.random() * 2 - 1;
 				};
 		}
-		return new Function();
+		return () => 0;
 	}
-	play(): void {
-		if (this.playing) {
-			console.warn("playing?");
-			return;
-		}
-		this.source.connect(this.gainNode);
-		this.playing = true;
-	}
-	playL(volume: number) {
-		this.gainNode.gain.value *= volume;
-		this.play();
-		setTimeout(() => {
-			this.gainNode.gain.value /= volume;
-			this.stop();
-		}, this.length);
-	}
-	stop(): void {
-		if (this.playing) {
-			this.source.disconnect();
-			this.playing = false;
-		}
-	}
+	/*
 	static noises(noise: string): void {
 		switch (noise) {
-			case "three": {
-				const voicy = new AVoice("sin", 800);
-				voicy.play();
-				setTimeout((_) => {
-					voicy.freq = 1000;
-				}, 50);
-				setTimeout((_) => {
-					voicy.freq = 1300;
-				}, 100);
-				setTimeout((_) => {
-					voicy.stop();
-				}, 150);
-				break;
-			}
-			case "zip": {
-				const voicy = new AVoice((t: number, freq: number) => {
-					return Math.sin((t + 2) ** Math.cos(t * 4) * Math.PI * 2 * freq);
-				}, 700);
-				voicy.play();
-				setTimeout((_) => {
-					voicy.stop();
-				}, 150);
-				break;
-			}
-			case "square": {
-				const voicy = new AVoice("square", 600, 0.4);
-				voicy.play();
-				setTimeout((_) => {
-					voicy.freq = 800;
-				}, 50);
-				setTimeout((_) => {
-					voicy.freq = 1000;
-				}, 100);
-				setTimeout((_) => {
-					voicy.stop();
-				}, 150);
-				break;
-			}
-			case "beep": {
-				const voicy = new AVoice("sin", 800);
-				voicy.play();
-				setTimeout((_) => {
-					voicy.stop();
-				}, 50);
-				setTimeout((_) => {
-					voicy.play();
-				}, 100);
-				setTimeout((_) => {
-					voicy.stop();
-				}, 150);
-				break;
-			}
 			case "join": {
 				const voicy = new AVoice("triangle", 600, 0.1);
 				voicy.play();
@@ -190,13 +117,11 @@ class AVoice {
 			}
 		}
 	}
-	static get sounds() {
-		return ["three", "zip", "square", "beep"];
-	}
+	*/
 	static getVoice(read: BinRead): [AVoice, string] {
-		const name = read.readString8();
+		const name = read.readAsciiString8();
 		let length = read.readFloat32();
-		let special: Function | string;
+		let special: ((t: number, freq: number) => number) | string;
 		if (length !== 0) {
 			special = this.parseExpression(read);
 		} else {
@@ -205,8 +130,11 @@ class AVoice {
 		}
 		return [new AVoice(special, 0, 0, length), name];
 	}
-	static parseExpression(read: BinRead): Function {
-		return new Function("t", "f", `return ${this.PEHelper(read)};`);
+	static parseExpression(read: BinRead): (t: number, freq: number) => number {
+		return new Function("t", "f", `return ${this.PEHelper(read)};`) as (
+			t: number,
+			freq: number,
+		) => number;
 	}
 	static PEHelper(read: BinRead): string {
 		let state = read.read8();

@@ -33,6 +33,20 @@ class BinRead {
 		//console.log(array);
 		return new TextDecoder("utf8").decode(array.buffer as ArrayBuffer);
 	}
+	readAsciiString8() {
+		return this.readAsciiStringNo(this.read8());
+	}
+	readAsciiString16() {
+		return this.readAsciiStringNo(this.read16());
+	}
+	readAsciiStringNo(length: number) {
+		let build = "";
+		for (let i = 0; i < length; i++) {
+			build += String.fromCharCode(this.read8());
+		}
+		//console.log(array);
+		return build;
+	}
 }
 
 class BinWrite {

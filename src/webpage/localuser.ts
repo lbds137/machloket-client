@@ -1,7 +1,6 @@
 import {Guild} from "./guild.js";
 import {Channel} from "./channel.js";
 import {Direct, Group} from "./direct.js";
-import {AVoice} from "./audio/voice.js";
 import {User} from "./user.js";
 import {createImg, getapiurls, getBulkUsers, installPGet, SW} from "./utils/utils.js";
 import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
@@ -193,14 +192,10 @@ class Localuser {
 	}
 	onswap?: (l: Localuser) => void;
 	constructor(userinfo: Specialuser | -1) {
-		const events = ["click", "keydown", "touchstart"] as const;
-		const func = () => {
-			Play.playURL("/audio/sounds.jasf").then((_) => {
-				this.play = _;
-			});
-			events.forEach((event) => document.removeEventListener(event, func));
-		};
-		events.forEach((event) => document.addEventListener(event, func));
+		Play.playURL("/audio/sounds.jasf").then((_) => {
+			this.play = _;
+		});
+
 		//TODO get rid of this garbage
 		if (userinfo === -1) {
 			this.rights = new Rights("");
@@ -2173,7 +2168,6 @@ class Localuser {
 			}
 			{
 				const initArea = (index: number) => {
-					console.log(index === sounds.length - 1);
 					if (index === sounds.length - 1) {
 						const input = document.createElement("input");
 						input.type = "file";
@@ -2203,7 +2197,7 @@ class Localuser {
 						area.innerHTML = "";
 					}
 				};
-				const sounds = [...AVoice.sounds, I18n.localuser.customSound()];
+				const sounds = [...(this.play?.tracks || []), I18n.localuser.customSound()];
 				const initIndex = sounds.indexOf(this.getNotificationSound());
 				const select = tas.addSelect(
 					I18n.localuser.notisound(),
@@ -4118,7 +4112,7 @@ class Localuser {
 	}
 	getNotiVolume(): number {
 		const userinfos = getBulkInfo();
-		return userinfos.preferences.volume || 100;
+		return userinfos.preferences.volume ?? 20;
 	}
 	setNotificationVolume(volume: number) {
 		const userinfos = getBulkInfo();
@@ -4133,9 +4127,9 @@ class Localuser {
 	playSound(name = this.getNotificationSound()) {
 		const volume = this.getNotiVolume();
 		if (this.play) {
-			const voice = this.play.audios.get(name);
+			const voice = this.play.tracks.includes(name);
 			if (voice) {
-				voice.play(volume / 100);
+				this.play.play(name, volume);
 			} else if (this.perminfo.sound && this.perminfo.sound.cSound) {
 				const audio = document.createElement("audio");
 				audio.volume = volume / 100;
