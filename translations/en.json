@@ -280,6 +280,13 @@
 		"warnOffiline": "Instance is offline, can't connect",
 		"icon": "$1's instance icon"
 	},
+	"devSettings":{
+		"name":"Developer Settings",
+		"description":"These are for developers of Spacebar/Fermi, if you don't know what you're doing, please don't mess with these settings.",
+		"badUser":"Enabled logging of bad user objects that send too much information:",
+		"logGateway":"Log received gateway events (log level info):",
+		"traces":"Expose traces:"
+	},
 	"htmlPages": {
 		"idpermissions": "This will allow the bot to:",
 		"addBot": "Add to guild",

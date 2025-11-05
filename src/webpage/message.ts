@@ -379,9 +379,6 @@ class Message extends SnowFlake {
 				this.member = _;
 			});
 		}
-		if (this.mentionsuser(this.localuser.user)) {
-			console.log(this);
-		}
 		if (this.div) {
 			this.generateMessage();
 			return;
@@ -621,7 +618,6 @@ class Message extends SnowFlake {
 					thisTime.getMonth() !== prevTime.getMonth() ||
 					thisTime.getFullYear() !== prevTime.getFullYear();
 			} else {
-				console.warn(div);
 				datelineNeeded = true;
 			}
 			if (datelineNeeded) {
@@ -926,7 +922,6 @@ class Message extends SnowFlake {
 			text.appendChild(messagedwrap);
 			build.appendChild(text);
 			if (this.attachments.length) {
-				console.log(this.attachments);
 				const attach = document.createElement("div");
 				attach.classList.add("flexltr", "attachments");
 				for (const thing of this.attachments) {
@@ -1202,7 +1197,6 @@ class Message extends SnowFlake {
 				} else {
 				}
 				build += "\nReacted with " + thing.emoji.name;
-				console.log(build);
 				return build;
 			});
 			h.addEvent(reaction);

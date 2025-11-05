@@ -195,7 +195,6 @@ class Contextmenu<x, y> {
 		div.style.left = x + "px";
 		document.body.appendChild(div);
 		Contextmenu.keepOnScreen(div);
-		console.log(div);
 
 		return this.div;
 	}

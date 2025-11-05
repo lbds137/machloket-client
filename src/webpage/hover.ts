@@ -42,12 +42,10 @@ class Hover {
 		elm.addEventListener("mouseover", () => {
 			clearTimeout(timeOut);
 			timeOut = setTimeout(async () => {
-				console.log(this.elm2);
 				RM();
 				this.elm2 = await this.makeHover(elm);
 				Hover.bound = elm;
 				Hover.watchForGone();
-				console.error(this.elm2, tempy, document.contains(elm), elm);
 			}, 300);
 		});
 		elm.addEventListener("mouseout", () => {
@@ -56,7 +54,6 @@ class Hover {
 		});
 		new MutationObserver((e) => {
 			if (e[0].removedNodes.length) {
-				console.error("Hi :3", this.elm2, tempy, document.contains(elm), e[0]);
 				clearTimeout(timeOut);
 				RM();
 			}

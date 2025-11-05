@@ -926,7 +926,6 @@ class MarkDown {
 			(last.contentEditable === "false" || last instanceof HTMLBRElement)
 		) {
 			span.append(current);
-			console.log(current);
 		}
 		return span;
 	}

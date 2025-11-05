@@ -622,7 +622,7 @@ class Localuser {
 	}
 	async handleEvent(temp: wsjson) {
 		if (temp.d._trace) this.handleTrace(temp.d._trace);
-		console.debug(temp);
+		if (localStorage.getItem("logGateway")) console.debug(temp);
 		if (temp.s) this.lastSequence = temp.s;
 		if (temp.op === 9 && this.ws) {
 			this.errorBackoff = 0;
@@ -1214,8 +1214,6 @@ class Localuser {
 			category.append(membershtml);
 			div.append(category);
 		}
-
-		console.log(elms);
 	}
 	emojiPicker(x: number, y: number, guildEmojis = true) {
 		return Emoji.emojiPicker(x, y, guildEmojis ? this : undefined);
@@ -2477,25 +2475,8 @@ class Localuser {
 							localStorage.removeItem("Voice enabled");
 						}
 					};
-					const box2 = security.addCheckboxInput("Enable logging of bad stuff", () => {}, {
-						initState: Boolean(localStorage.getItem("logbad")),
-					});
-					box2.onchange = (e) => {
-						if (e) {
-							if (confirm("this is meant for spacebar devs")) {
-								localStorage.setItem("logbad", "true");
-							} else {
-								box2.value = false;
-								const checkbox = box2.input.deref();
-								if (checkbox) {
-									checkbox.checked = false;
-								}
-							}
-						} else {
-							localStorage.removeItem("logbad");
-						}
-					};
 				}
+
 				{
 					security.addButtonInput("", I18n.logout.logout(), async () => {
 						if (await this.userinfo.logout()) {
@@ -2883,7 +2864,43 @@ class Localuser {
 				}
 			})();
 		}
-		if (this.trace.length) {
+		{
+			const devSettings = settings.addButton(I18n.devSettings.name());
+			devSettings.addText(I18n.devSettings.description());
+			devSettings.addHR();
+			const box1 = devSettings.addCheckboxInput(I18n.devSettings.logGateway(), () => {}, {
+				initState: Boolean(localStorage.getItem("logGateway")),
+			});
+			box1.onchange = (e) => {
+				if (e) {
+					localStorage.setItem("logGateway", "true");
+				} else {
+					localStorage.removeItem("logGateway");
+				}
+			};
+			const box2 = devSettings.addCheckboxInput(I18n.devSettings.badUser(), () => {}, {
+				initState: Boolean(localStorage.getItem("logbad")),
+			});
+			box2.onchange = (e) => {
+				if (e) {
+					localStorage.setItem("logbad", "true");
+				} else {
+					localStorage.removeItem("logbad");
+				}
+			};
+
+			const box3 = devSettings.addCheckboxInput(I18n.devSettings.traces(), () => {}, {
+				initState: Boolean(localStorage.getItem("traces")),
+			});
+			box3.onchange = (e) => {
+				if (e) {
+					localStorage.setItem("traces", "true");
+				} else {
+					localStorage.removeItem("traces");
+				}
+			};
+		}
+		if (this.trace.length && localStorage.getItem("traces")) {
 			const traces = settings.addButton(I18n.localuser.trace());
 			const traceArr = this.trace;
 
