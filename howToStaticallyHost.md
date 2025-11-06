@@ -16,4 +16,4 @@ You need to make some rewrites, not redirects from these addresses:
 
 Other than these three rewrites, everything else should work as expected!
 
-<sub><sup>*(the reason why the service worker can fix this is due to it doing the rewrites on the client side)*</sup></sub>
+*(the reason why the service worker can fix this is due to it doing the rewrites on the client side)*
