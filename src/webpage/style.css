@@ -3774,7 +3774,7 @@ fieldset input[type="radio"] {
 	background: var(--primary-text-prominent);
 }
 
-/* Jank Mobile  */
+/* Fermi Mobile  */
 #maintoggle,
 #maintoggleicon {
 	display: none;
