@@ -3,9 +3,9 @@ Inside of `webpage` you'll see a file called `instances.json` in that file you'l
 ```
 {
     "name":<name>,
-    "description"?:<short description>,
+    "description"?:<A short description>,
     "descriptionLong"?:<A description for the instance that can be longer>,
-    "image"?:<URL to image repersenting your instance>,
+    "image"?:<URL to image representing your instance>,
     "url"?:<The URL that can be used to get your wellknown>,
     "language":<What language your server is in>,
     "country":<What country your server is in>,
