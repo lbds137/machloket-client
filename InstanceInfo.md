@@ -38,7 +38,7 @@ You can also add yourself to [this](https://github.com/spacebarchat/spacebarchat
 ## Do I have to do this to let Fermi Client connect to my server?
 No, you may choose to not do this, this just makes it easier for people using Fermi Client to find and use your instance as it's in the dropdown menu for instances, though the user may enter any instance they please.
 ## If my instance isn't Spacebar is that allowed to be entered?
-If it's Spacebar compatible then yes, it may be entered. Though if there are **too many incompatablities** however, it may not be included, or may need a warning of sorts.
+If it's Spacebar compatible then yes, it may be entered. Though if there are **too many incompatibilities** however, it may not be included, or may need a warning of sorts.
 ## I'm hosting my own instance of Spacebar and would like to change the default instance on my instance of Fermi Client to my own instance.
 Just change the first entry in the list to your own, and it should connect without issue.
 ## Why would I put my instance in this list over the official Spacebar list?
