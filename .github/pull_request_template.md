@@ -1,5 +1,5 @@
 # Description
-A description of the pull request
+A description of the pull request.
 
 # Related issues
-Any related issues, delete if there are none
+Any related issues, delete if there are none.
