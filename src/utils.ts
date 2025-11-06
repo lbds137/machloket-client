@@ -119,9 +119,9 @@ export async function inviteResponse(
 		res.json({
 			type: "link",
 			version: "1.0",
-			title: "Jank Client",
+			title: "Fermi Client",
 			thumbnail: "/logo.webp",
-			description: "A spacebar client that has DMs, replying and more",
+			description: "A Spacebar client that has DMs, replying and more.",
 			url: url.toString(),
 		});
 	}
