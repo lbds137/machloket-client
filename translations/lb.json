@@ -102,6 +102,9 @@
 		"areYouSureDelete": "Sidd Dir sécher, datt Dir $1 läsche wëllt?"
 	},
 	"switchAccounts": "Konto wiesselen ⇌",
+	"devSettings": {
+		"name": "Entwécklerastellungen"
+	},
 	"htmlPages": {
 		"instanceField": "Instanz:",
 		"emailField": "E-Mail:",

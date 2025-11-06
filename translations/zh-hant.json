@@ -280,6 +280,13 @@
 		"warnOffiline": "實例為離線狀態，無法連接",
 		"icon": "$1的實例圖示"
 	},
+	"devSettings": {
+		"name": "開發人員設定",
+		"description": "這些是給 Spacebar/Fermi 的開發人員使用，若您不清楚用途，請不要變動這些設定。",
+		"badUser": "啟用記錄發送過多資訊的惡意使用者對象：",
+		"logGateway": "記錄接收到的閘道器事件（日誌等級資訊）：",
+		"traces": "暴露痕跡："
+	},
 	"htmlPages": {
 		"idpermissions": "這將允許機器人：",
 		"addBot": "新增到公會",
