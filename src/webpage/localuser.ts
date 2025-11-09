@@ -401,13 +401,12 @@ class Localuser {
 		this.ws = ws;
 		let ds: DecompressionStream;
 		let w: WritableStreamDefaultWriter;
-		let r: ReadableStreamDefaultReader;
 		let arr: Uint8Array;
-		let build = "";
+
 		if (DecompressionStream) {
 			ds = new DecompressionStream("deflate");
 			w = ds.writable.getWriter();
-			r = ds.readable.getReader();
+
 			arr = new Uint8Array();
 		}
 		const promise = new Promise<void>((res) => {
@@ -452,12 +451,11 @@ class Localuser {
 					);
 				}
 			});
-			const textdecode = new TextDecoder();
+
 			if (DecompressionStream) {
 				(async () => {
-					while (true) {
-						const read = await r.read();
-						const data = textdecode.decode(read.value, {stream: true});
+					let build = "";
+					for await (const data of ds.readable.tee()[0].pipeThrough(new TextDecoderStream())) {
 						build += data;
 						try {
 							const temp = JSON.parse(build);
