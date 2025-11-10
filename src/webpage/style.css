@@ -2015,8 +2015,8 @@ span.instanceStatus {
 	margin-right: 0.03in;
 	padding: 10px 0;
 }
-#typebox:empty:before,
-#typebox:has(span:only-child:empty):before {
+#typebox:not([contenteditable="false"]):empty:before,
+#typebox:not([contenteditable="false"]):has(span:only-child:empty):before {
 	content: var(--channel-text);
 	opacity: 0.5;
 	position: absolute;
