@@ -7,6 +7,7 @@
 			"Erkin Alp Güney",
 			"Erkinalp",
 			"Mory",
+			"Sakblue",
 			"SaldırganSincap",
 			"Slickdaddy"
 		]
@@ -185,6 +186,11 @@
 		"uptimeStats": "Çalışma Süresi: \n Tüm zamanlar: $1%\nBu hafta: $2%\nBugün: $3%",
 		"warnOffiline": "Örnek çevrimdışı, bağlanılamıyor"
 	},
+	"devSettings": {
+		"name": "Geliştirici Ayarları",
+		"description": "Bunlar Spacebar/Fermi geliştiricileri içindir. Eğer ne yaptığınızı bilmiyorsanız lütfen bu ayarlarla oynamayın.",
+		"traces": "İzleri ortaya çıkar:"
+	},
 	"htmlPages": {
 		"idpermissions": "Bu bot şunlara izin verecek:",
 		"addBot": "Kulübe ekle",
@@ -257,6 +263,7 @@
 	"role": {
 		"displaySettings": "Görüntü Ayarları",
 		"name": "Rol adı:",
+		"roles": "Roller",
 		"hoisted": "Listede göster:",
 		"mentionable": "Herkes bu rolü etiketleyebilir:",
 		"color": "Renk",
@@ -390,6 +397,10 @@
 		"kick": "$1'ı $2'dan at",
 		"reason:": "Sebep:",
 		"ban": "$1'ı $2'dan yasakla"
+	},
+	"commands": {
+		"errorNotValid": "$1 $2 için geçerli bir seçenek değildir.",
+		"required": "$1 bu komutun gerekli bir parçasıdır."
 	},
 	"errorReconnect": "Sunucuya bağlanılamadı, **$1** saniye içinde yeniden denenecek...",
 	"retrying": "Yeniden deneniyor...",
