@@ -7,6 +7,8 @@
 			"Erkin Alp Güney",
 			"Erkinalp",
 			"Mory",
+			"Sakblue",
+			"SaldırganSincap",
 			"Slickdaddy"
 		]
 	},
@@ -77,10 +79,10 @@
 			"USE_SOUNDBOARD": "Ses panosunu bir ses kanalında kullanmaya izin verir",
 			"CREATE_GUILD_EXPRESSIONS": "Emoji, çıkartma ve ses panosu sesleri oluşturmaya ve kullanıcının oluşturduklarını düzenlemeye ve silmeye izin verir",
 			"CREATE_EVENTS": "Zamanlanmış etkinlikler oluşturmaya ve kullanıcının oluşturduklarını düzenlemeye ve silmeye izin verir",
-			"USE_EXTERNAL_SOUNDS": "Diğer sunuculardan özel ses panosu seslerini kullanmaya izin verir",
+			"USE_EXTERNAL_SOUNDS": "Diğer kulüplerden özel ses panosu seslerini kullanmaya izin verir",
 			"SEND_VOICE_MESSAGES": "Sesli mesajlar göndermeye izin verir",
 			"SEND_POLLS": "Anketler göndermeye izin verir",
-			"USE_EXTERNAL_APPS": "Kullanıcı tarafından yüklenen uygulamaların herkese açık yanıtlar göndermesine izin verir. Devre dışı bırakıldığında, kullanıcılar yine de uygulamalarını kullanabilir ancak yanıtlar geçici olacaktır. Bu, sunucuya yüklenmemiş uygulamalar için geçerlidir."
+			"USE_EXTERNAL_APPS": "Kullanıcı tarafından yüklenen uygulamaların herkese açık yanıtlar göndermesine izin verir. Devre dışı bırakıldığında, kullanıcılar yine de uygulamalarını kullanabilir ancak yanıtlar geçici olacaktır. Bu, kulübe yüklenmemiş uygulamalar için geçerlidir."
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "Davet oluştur",
@@ -184,9 +186,14 @@
 		"uptimeStats": "Çalışma Süresi: \n Tüm zamanlar: $1%\nBu hafta: $2%\nBugün: $3%",
 		"warnOffiline": "Örnek çevrimdışı, bağlanılamıyor"
 	},
+	"devSettings": {
+		"name": "Geliştirici Ayarları",
+		"description": "Bunlar Spacebar/Fermi geliştiricileri içindir. Eğer ne yaptığınızı bilmiyorsanız lütfen bu ayarlarla oynamayın.",
+		"traces": "İzleri ortaya çıkar:"
+	},
 	"htmlPages": {
 		"idpermissions": "Bu bot şunlara izin verecek:",
-		"addBot": "Sunucuya ekle",
+		"addBot": "Kulübe ekle",
 		"loadingText": "Jank Client yükleniyor",
 		"loaddesc": "Bu uzun sürmemeli",
 		"switchaccounts": "Hesapları Değiştir",
@@ -246,16 +253,17 @@
 		"yesLeave": "Evet, eminim",
 		"noLeave": "Boşver",
 		"confirmDelete": "$1 sunucusunu silmek istediğinizden emin misiniz?",
-		"serverName": "Sunucu adı:",
+		"serverName": "Kulüp adı:",
 		"yesDelete": "Evet, eminim",
 		"noDelete": "Boşver",
 		"create": "Sunucu oluştur",
 		"loadingDiscovery": "Yükleniyor...",
-		"disoveryTitle": "Sunucu keşfi ($1) girdi"
+		"disoveryTitle": "Sunucu keşfi ($1 {{PLURAL:$1|girdi}})"
 	},
 	"role": {
 		"displaySettings": "Görüntü Ayarları",
 		"name": "Rol adı:",
+		"roles": "Roller",
 		"hoisted": "Listede göster:",
 		"mentionable": "Herkes bu rolü etiketleyebilir:",
 		"color": "Renk",
@@ -332,7 +340,7 @@
 	"instanceStats": {
 		"name": "Örnek istatistikleri: $1",
 		"users": "Kayıtlı kullanıcılar: $1",
-		"servers": "Sunucular: $1",
+		"servers": "Kulüpler: $1",
 		"messages": "Mesajlar: $1",
 		"members": "Üyeler: $1"
 	},
@@ -346,7 +354,7 @@
 		"7d": "7 Gün",
 		"30d": "30 Gün",
 		"never": "Asla",
-		"limit": "$1 kullanım",
+		"limit": "$1 {{PLURAL:$1|kullanım}}",
 		"noLimit": "Sınırsız"
 	},
 	"2faCode": "2FA kodu:",
@@ -389,6 +397,10 @@
 		"kick": "$1'ı $2'dan at",
 		"reason:": "Sebep:",
 		"ban": "$1'ı $2'dan yasakla"
+	},
+	"commands": {
+		"errorNotValid": "$1 $2 için geçerli bir seçenek değildir.",
+		"required": "$1 bu komutun gerekli bir parçasıdır."
 	},
 	"errorReconnect": "Sunucuya bağlanılamadı, **$1** saniye içinde yeniden denenecek...",
 	"retrying": "Yeniden deneniyor...",
