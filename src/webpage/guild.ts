@@ -20,6 +20,7 @@ import {
 	GuildOverrides,
 	commandJson,
 	applicationJson,
+	presencejson,
 } from "./jsontypes.js";
 import {User} from "./user.js";
 import {I18n} from "./i18n.js";
@@ -488,6 +489,60 @@ class Guild extends SnowFlake {
 			console.log(members);
 		};
 		loadResults();
+	}
+	async searchMembers(limit: number, query: string): Promise<Member[]> {
+		if (this.id !== "@me") {
+			return new Promise<Member[]>((res) => {
+				const nonce = Math.floor(Math.random() * 10 ** 8) + "";
+				this.localuser.ws!.send(
+					JSON.stringify({
+						op: 8,
+						d: {
+							guild_id: [this.id],
+							query,
+							limit,
+							presences: true,
+							nonce,
+						},
+					}),
+				);
+				this.localuser.searchMap.set(
+					nonce,
+					async (e: {
+						chunk_index: number;
+						chunk_count: number;
+						nonce: string;
+						not_found?: string[];
+						members?: memberjson[];
+						presences: presencejson[];
+					}) => {
+						console.log(e);
+						if (e.members && e.members[0]) {
+							if (e.members[0].user) {
+								res(
+									(await Promise.all(e.members.map(async (_) => await Member.new(_, this)))).filter(
+										(_) => _ !== undefined,
+									),
+								);
+							} else {
+								const prom1: Promise<User>[] = [];
+								for (const thing of e.members) {
+									prom1.push(this.localuser.getUser(thing.id));
+								}
+								await Promise.all(prom1);
+								res(
+									(await Promise.all(e.members.map(async (_) => await Member.new(_, this)))).filter(
+										(_) => _ !== undefined,
+									),
+								);
+							}
+						}
+						return [];
+					},
+				);
+			});
+		}
+		return [];
 	}
 	generateSettings() {
 		const settings = new Settings(I18n.guild.settingsFor(this.properties.name));

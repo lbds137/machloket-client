@@ -11,7 +11,7 @@ import {I18n} from "./i18n.js";
 import {Direct} from "./direct.js";
 import {Hover} from "./hover.js";
 import {Dialog, Float} from "./settings.js";
-import {createImg, removeAni} from "./utils/utils.js";
+import {createImg, removeAni, safeImg} from "./utils/utils.js";
 import {Permissions} from "./permissions.js";
 class User extends SnowFlake {
 	owner: Localuser;
@@ -32,7 +32,7 @@ class User extends SnowFlake {
 	hypotheticalbanner!: boolean;
 	premium_since!: string;
 	premium_type!: number;
-	theme_colors!: string;
+	theme_colors: [number, number] | null = null;
 	badge_ids!: string[];
 	members: WeakMap<Guild, Member | undefined | Promise<Member | undefined>> = new WeakMap();
 	status!: string;
@@ -558,6 +558,16 @@ class User extends SnowFlake {
 	}
 
 	userupdate(json: userjson): void {
+		if (json.avatar !== this.avatar) {
+			Array.from(document.getElementsByClassName("userid:" + this.id)).forEach((element) => {
+				const img = element as safeImg;
+				if ("setSrcs" in element) {
+					img.setSrcs(this.getpfpsrc());
+				} else {
+					console.warn("element didn't have setSrcs property");
+				}
+			});
+		}
 		for (const key of Object.keys(json)) {
 			if (key === "bio") {
 				this.bio = new MarkDown(json[key], this.localuser);
@@ -647,11 +657,6 @@ class User extends SnowFlake {
 	changepfp(update: string | null): void {
 		this.avatar = update;
 		this.hypotheticalpfp = false;
-		//const src = this.getpfpsrc();
-		Array.from(document.getElementsByClassName("userid:" + this.id)).forEach((_element) => {
-			//(element as HTMLImageElement).src = src;
-			//FIXME
-		});
 	}
 
 	async block() {

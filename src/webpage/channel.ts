@@ -44,7 +44,7 @@ class Channel extends SnowFlake {
 	children!: Channel[];
 	guild_id!: string;
 	permission_overwrites!: Map<string, Permissions>;
-	permission_overwritesar: [Role, Permissions][] = [];
+	permission_overwritesar: [Role | Promise<User>, Permissions][] = [];
 	topic!: string;
 	nsfw!: boolean;
 	position: number = 0;
@@ -356,14 +356,16 @@ class Channel extends SnowFlake {
 			}
 		}
 		const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
-		s1.options.push(
-			new RoleList(
-				this.permission_overwritesar,
-				this.guild,
-				this.updateRolePermissions.bind(this),
-				this,
-			),
-		);
+
+		(async () => {
+			const list = await Promise.all(
+				this.permission_overwritesar.map(async (_) => {
+					return [await _[0], _[1]] as [Role | User, Permissions];
+				}),
+			);
+
+			s1.options.push(new RoleList(list, this.guild, this.updateRolePermissions.bind(this), this));
+		})();
 
 		const inviteMenu = settings.addButton(I18n.guild.invites());
 		makeInviteMenu(inviteMenu, this.owner, this.info.api + `/channels/${this.id}/invites`);
@@ -374,9 +376,13 @@ class Channel extends SnowFlake {
 		settings.show();
 	}
 	sortPerms() {
+		console.log(this.permission_overwritesar + "");
 		this.permission_overwritesar.sort((a, b) => {
+			if (a[0] instanceof Promise) return -1;
+			if (b[0] instanceof Promise) return 1;
 			return this.guild.roles.indexOf(a[0]) - this.guild.roles.indexOf(b[0]);
 		});
+		console.log(this.permission_overwritesar + "");
 	}
 	setUpInfiniteScroller() {
 		this.infinite = new InfiniteScroller(
@@ -469,6 +475,8 @@ class Channel extends SnowFlake {
 					const role = this.guild.roleids.get(thing.id);
 					if (role) {
 						this.permission_overwritesar.push([role, permission]);
+					} else {
+						this.permission_overwritesar.push([this.localuser.getUser(thing.id), permission]);
 					}
 				}
 			}
@@ -608,6 +616,15 @@ class Channel extends SnowFlake {
 		if (!member.user.bot || true) {
 			roles.add(everyone);
 		}
+
+		const premission = this.permission_overwrites.get(member.id);
+		if (premission) {
+			const perm = premission.getPermission(name);
+			if (perm) {
+				return perm === 1;
+			}
+		}
+
 		for (const thing of roles) {
 			const premission = this.permission_overwrites.get(thing.id);
 			if (premission) {
@@ -2184,15 +2201,14 @@ class Channel extends SnowFlake {
 		this.permission_overwrites = new Map();
 		this.permission_overwritesar = [];
 		for (const thing of json.permission_overwrites) {
-			if (thing.id === "1182819038095799904" || thing.id === "1182820803700625444") {
-				continue;
-			}
 			this.permission_overwrites.set(thing.id, new Permissions(thing.allow, thing.deny));
 			const permisions = this.permission_overwrites.get(thing.id);
 			if (permisions) {
 				const role = this.guild.roleids.get(thing.id);
 				if (role) {
 					this.permission_overwritesar.push([role, permisions]);
+				} else {
+					this.permission_overwritesar.push([this.localuser.getUser(thing.id), permisions]);
 				}
 			}
 		}
@@ -2202,6 +2218,11 @@ class Channel extends SnowFlake {
 			const role = this.guild.roleids.get(thing);
 			if (role) {
 				this.croleUpdate(role, new Permissions("0"), false);
+			} else {
+				const user = this.localuser.getUser(thing);
+				user.then((_) => {
+					if (_) this.croleUpdate(_, new Permissions("0"), false);
+				});
 			}
 		}
 		for (const thing of pchange) {
@@ -2209,13 +2230,18 @@ class Channel extends SnowFlake {
 			const perms = this.permission_overwrites.get(thing);
 			if (role && perms) {
 				this.croleUpdate(role, perms, true);
+			} else if (perms) {
+				const user = this.localuser.getUser(thing);
+				user.then((_) => {
+					if (_) this.croleUpdate(_, perms, true);
+				});
 			}
 		}
 		console.log(pchange, nchange);
 		this.topic = json.topic;
 		this.nsfw = json.nsfw;
 	}
-	croleUpdate: (role: Role, perm: Permissions, added: boolean) => unknown = () => {};
+	croleUpdate: (role: Role | User, perm: Permissions, added: boolean) => unknown = () => {};
 	typingstart() {
 		if (this.typing > Date.now()) {
 			return;
@@ -2633,7 +2659,7 @@ class Channel extends SnowFlake {
 		}
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
-	async addRoleToPerms(role: Role) {
+	async addRoleToPerms(role: Role | User) {
 		await fetch(this.info.api + "/channels/" + this.id + "/permissions/" + role.id, {
 			method: "PUT",
 			headers: this.headers,
@@ -2641,12 +2667,15 @@ class Channel extends SnowFlake {
 				allow: "0",
 				deny: "0",
 				id: role.id,
-				type: 0,
+				type: role instanceof User ? 1 : 0,
 			}),
 		});
 		const perm = new Permissions("0", "0");
 		this.permission_overwrites.set(role.id, perm);
-		this.permission_overwritesar.push([role, perm]);
+		this.permission_overwritesar.push([
+			role instanceof User ? new Promise<User>((res) => res(role)) : role,
+			perm,
+		]);
 	}
 	async updateRolePermissions(id: string, perms: Permissions) {
 		const permission = this.permission_overwrites.get(id);
@@ -2663,7 +2692,7 @@ class Channel extends SnowFlake {
 				allow: perms.allow.toString(),
 				deny: perms.deny.toString(),
 				id,
-				type: 0,
+				type: this.localuser.userMap.get(id) ? 1 : 0,
 			}),
 		});
 	}

@@ -129,6 +129,7 @@ import {Options} from "./settings.js";
 import {createImg} from "./utils/utils.js";
 import {Hover} from "./hover.js";
 import {Emoji} from "./emoji.js";
+import {User} from "./user.js";
 class PermissionToggle implements OptionsElement<number> {
 	readonly rolejson: {
 		name: string;
@@ -206,13 +207,13 @@ class PermissionToggle implements OptionsElement<number> {
 }
 
 class RoleList extends Buttons {
-	permissions: [Role, Permissions][];
+	permissions: [Role | User, Permissions][];
 	permission: Permissions;
 	readonly guild: Guild;
 	readonly channel: false | Channel;
 	declare buttons: [string, string][];
 	readonly options: Options;
-	onchange: Function;
+	onchange: (id: string, perms: Permissions) => void;
 	curid?: string;
 	get info() {
 		return this.guild.info;
@@ -221,9 +222,9 @@ class RoleList extends Buttons {
 		return this.guild.headers;
 	}
 	constructor(
-		permissions: [Role, Permissions][],
+		permissions: [Role | User, Permissions][],
 		guild: Guild,
-		onchange: Function,
+		onchange: (id: string, perms: Permissions) => void,
 		channel: false | Channel,
 	) {
 		super("");
@@ -270,7 +271,7 @@ class RoleList extends Buttons {
 		}
 		this.redoButtons();
 	}
-	private croleUpdate(role: Role, perm: Permissions, added: boolean) {
+	private croleUpdate(role: Role | User, perm: Permissions, added: boolean) {
 		if (added) {
 			this.permissions.push([role, perm]);
 		} else {
@@ -400,17 +401,20 @@ class RoleList extends Buttons {
 					secondary_color: colorInputs[1] ? Number("0x" + colors[1].substring(1)) : undefined,
 					tertiary_color: colorInputs[2] ? Number("0x" + colors[2].substring(1)) : undefined,
 				};
-
-				console.log(obj.color);
 			});
 		});
 	}
 	static channelrolemenu = this.ChannelRoleMenu();
 	static guildrolemenu = this.GuildRoleMenu();
 	private static ChannelRoleMenu() {
-		const menu = new Contextmenu<RoleList, Role>("role settings");
+		const menu = new Contextmenu<RoleList, Role | User>("role settings");
 		menu.addButton(
-			() => I18n.role.remove(),
+			function (user) {
+				if (user instanceof User) {
+					return I18n.user.remove();
+				}
+				return I18n.role.remove();
+			},
 			function (role) {
 				if (!this.channel) return;
 				console.log(role);
@@ -420,21 +424,24 @@ class RoleList extends Buttons {
 				});
 			},
 			{
-				visable: (role) => role.id !== role.guild.id,
+				visable: function (role) {
+					//TODO, maybe this needs a check if the user is above/bellow the other user, hard to say
+					return role.id !== this.guild.id;
+				},
 			},
 		);
 		return menu;
 	}
 
-	deleteRole(role: Role) {
+	deleteRole(role: Role | User) {
 		const dio = new Dialog(I18n.role.confirmDelete(role.name));
 		const opt = dio.options.addOptions("", {ltr: true});
 		opt.addButtonInput("", I18n.yes(), async () => {
 			opt.removeAll();
 			opt.addText(I18n.role.deleting());
-			await fetch(role.info.api + "/guilds/" + role.guild.id + "/roles/" + role.id, {
+			await fetch(role.info.api + "/guilds/" + this.guild.id + "/roles/" + role.id, {
 				method: "DELETE",
-				headers: role.headers,
+				headers: this.guild.headers,
 			});
 			if (this.curid === role.id) {
 				const id = this.permissions.filter((_) => _[0].id !== role.id)[0][0].id;
@@ -463,13 +470,15 @@ class RoleList extends Buttons {
 	}
 	redoButtons() {
 		this.buttons = [];
-		this.permissions.sort(([a], [b]) => b.position - a.position);
+		this.permissions.sort(([a], [b]) => {
+			if (b instanceof User) return 1;
+			if (a instanceof User) return -1;
+			return b.position - a.position;
+		});
 		for (const i of this.permissions) {
 			this.buttons.push([i[0].name, i[0].id]);
 		}
-		console.log("in here :P");
 		if (!this.buttonList) return;
-		console.log("in here :P");
 		const elms = Array.from(this.buttonList.children);
 		const div = elms[0] as HTMLDivElement;
 		const div2 = elms[1] as HTMLDivElement;
@@ -548,7 +557,13 @@ class RoleList extends Buttons {
 					}
 					roles.push([role, [role.name]]);
 				}
-				const search = new Search(roles);
+				const search = new Search<Role | User>(roles, async (str) => {
+					const users = (await this.guild.searchMembers(3, str))
+						.map((_) => _.user)
+						.map((_) => [_.name, _] as [string, User]);
+					console.log(users);
+					return users;
+				});
 
 				const found = await search.find(box.left, box.top);
 
@@ -590,16 +605,16 @@ class RoleList extends Buttons {
 			this.buttonMap.set(thing[0], button);
 			button.classList.add("SettingsButton");
 			button.textContent = thing[0];
-			const role = this.guild.roleids.get(thing[1]);
+			const role = this.guild.roleids.get(thing[1]) || this.guild.localuser.userMap.get(thing[1]);
 			if (role) {
 				if (!this.channel) {
-					if (role.canManage()) {
+					if (role instanceof Role && role.canManage()) {
 						this.buttonDragEvents(button, role);
 						button.draggable = true;
 						RoleList.guildrolemenu.bindContextmenu(button, this, role);
 					}
 				} else {
-					if (role.canManage()) {
+					if (role instanceof User || role.canManage()) {
 						RoleList.channelrolemenu.bindContextmenu(button, this, role);
 					}
 				}
@@ -639,7 +654,7 @@ class RoleList extends Buttons {
 		return this.options.generateHTML();
 	}
 	save() {
-		if (this.options.subOptions) return;
+		if (this.options.subOptions || !this.curid) return;
 		this.onchange(this.curid, this.permission);
 	}
 }

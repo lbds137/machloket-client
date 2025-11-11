@@ -15,7 +15,7 @@ interface menuPart<x, y> {
 }
 
 class ContextButton<x, y> implements menuPart<x, y> {
-	private text: string | ((this: x) => string);
+	private text: string | ((this: x, arg: y) => string);
 	private onClick: (this: x, arg: y, e: MouseEvent) => void;
 	private icon?: iconJson;
 	private visable?: (this: x, arg: y) => boolean;
@@ -50,7 +50,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 
 		const intext = document.createElement("button");
 		intext.classList.add("contextbutton");
-		intext.append(this.textContent(obj1));
+		intext.append(this.textContent(obj1, obj2));
 
 		intext.disabled = !!this.enabled && !this.enabled.call(obj1, obj2);
 
@@ -95,9 +95,9 @@ class ContextButton<x, y> implements menuPart<x, y> {
 
 		menu.append(intext);
 	}
-	textContent(x: x) {
+	textContent(x: x, y: y) {
 		if (this.text instanceof Function) {
-			return this.text.call(x);
+			return this.text.call(x, y);
 		}
 		return this.text;
 	}
@@ -179,7 +179,7 @@ class Contextmenu<x, y> {
 		for (const button of this.buttons) {
 			button.makeContextHTML(addinfo, other, div);
 		}
-		if (div.children[div.children.length - 1].tagName === "HR") {
+		if (div.children[div.children.length - 1]?.tagName === "HR") {
 			div.children[div.children.length - 1].remove();
 		}
 		//NOTE I don't know if this'll ever actually happen in reality

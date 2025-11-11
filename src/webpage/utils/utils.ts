@@ -674,11 +674,15 @@ export async function removeAni(elm: HTMLElement, time = 500) {
 	]);
 	elm.remove();
 }
+export type safeImg = HTMLImageElement & {
+	setSrcs: (nsrc: string, nstaticsrc: string | void) => void;
+	isAnimated: () => Promise<boolean>;
+};
 export function createImg(
 	src: string | undefined,
 	staticsrc: string | void,
 	elm: HTMLElement | void,
-) {
+): safeImg {
 	const settings =
 		localStorage.getItem("gifSetting") || ("hover" as "hover") || "always" || "never";
 	const img = document.createElement("img");

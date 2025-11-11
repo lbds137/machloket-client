@@ -148,7 +148,8 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 
 	const channel = thisUser.channelfocus;
 	if (!channel) return;
-	if (markdown.rawString === "" && event.key === "ArrowUp") {
+	const content = MarkDown.gatherBoxText(typebox);
+	if (content === "" && event.key === "ArrowUp") {
 		channel.editLast();
 		return;
 	}
@@ -168,7 +169,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 			thisUser.channelfocus.replyingto = null;
 		}
 
-		channel.sendMessage(markdown.rawString, {
+		channel.sendMessage(content, {
 			attachments: images.filter((_) => document.contains(imagesHtml.get(_) || null)),
 			embeds: [], // Add an empty array for the embeds property
 			replyingto: replyingTo,

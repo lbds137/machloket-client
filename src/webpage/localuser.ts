@@ -114,10 +114,17 @@ class Localuser {
 		onswap?.(thisUser);
 	}
 	static userMenu = this.generateUserMenu();
+	userResMap = new Map<string, Promise<User>>();
 	async getUser(id: string) {
 		let user = this.userMap.get(id);
 		if (user) return user;
-		return User.resolve(id, this);
+		const cache = this.userResMap.get(id);
+		if (cache) return cache;
+		const prom = User.resolve(id, this);
+		this.userResMap.set(id, prom);
+		await prom;
+		this.userResMap.delete(id);
+		return prom;
 	}
 	static generateUserMenu() {
 		const menu = new Contextmenu<Localuser, void>("");
@@ -3579,45 +3586,11 @@ class Localuser {
 	MDFindMention(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
 		if (this.ws && this.lookingguild) {
 			this.MDFineMentionGen(name, original, box, typebox);
-			const nonce = Math.floor(Math.random() * 10 ** 8) + "";
 			if (this.lookingguild.member_count <= this.lookingguild.members.size) return;
 			if (this.lookingguild.id !== "@me") {
-				this.ws.send(
-					JSON.stringify({
-						op: 8,
-						d: {
-							guild_id: [this.lookingguild.id],
-							query: name,
-							limit: 8,
-							presences: true,
-							nonce,
-						},
-					}),
-				);
-				this.searchMap.set(nonce, async (e) => {
-					console.log(e);
-					if (e.members && e.members[0]) {
-						if (e.members[0].user) {
-							for (const thing of e.members) {
-								await Member.new(thing, this.lookingguild as Guild);
-							}
-						} else {
-							const prom1: Promise<User>[] = [];
-							for (const thing of e.members) {
-								prom1.push(this.getUser(thing.id));
-							}
-							Promise.all(prom1);
-							for (const thing of e.members) {
-								if (!this.userMap.has(thing.id)) {
-									console.warn("Dumb server bug for this member", thing);
-									continue;
-								}
-								await Member.new(thing, this.lookingguild as Guild);
-							}
-						}
-						if (!typebox.rawString.startsWith(original)) return;
-						this.MDFineMentionGen(name, original, box, typebox);
-					}
+				this.lookingguild.searchMembers(8, name).then(async () => {
+					if (!typebox.rawString.startsWith(original)) return;
+					this.MDFineMentionGen(name, original, box, typebox);
 				});
 			}
 		}
