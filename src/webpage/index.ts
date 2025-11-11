@@ -252,6 +252,7 @@ let images: Blob[] = [];
 let imagesHtml = new WeakMap<Blob, HTMLElement>();
 
 document.addEventListener("paste", async (e: ClipboardEvent) => {
+	if (!thisUser.channelfocus) return;
 	if (!e.clipboardData) return;
 
 	for (const file of Array.from(e.clipboardData.files)) {
@@ -320,6 +321,10 @@ document.addEventListener("drop", (e) => {
 	const data = e.dataTransfer;
 	const bg = document.getElementById("gimmefile") as HTMLDivElement;
 	bg.hidden = true;
+	if (!thisUser.channelfocus) {
+		e.preventDefault();
+		return;
+	}
 	if (data) {
 		const isfile = data.types.includes("Files") || data.types.includes("application/x-moz-file");
 		if (isfile) {
@@ -347,6 +352,7 @@ pinnedM.onclick = (e) => {
 	input.click();
 	input.multiple = true;
 	console.log("clicked");
+	if (!thisUser.channelfocus) return;
 	input.onchange = () => {
 		if (input.files) {
 			for (const file of Array.from(input.files)) {
