@@ -48,8 +48,9 @@ class Channel extends SnowFlake {
 	topic!: string;
 	nsfw!: boolean;
 	position: number = 0;
-	lastreadmessageid: string | undefined;
-	lastmessageid: string | undefined;
+	lastreadmessageid?: string;
+	lastmessageid?: string;
+	trueLastMessageid?: string;
 	mentions = 0;
 	lastpin!: string;
 	move_id?: string;
@@ -66,6 +67,12 @@ class Channel extends SnowFlake {
 	bitrate: number = 128000;
 
 	mute_config: mute_config | null = {selected_time_window: -1, end_time: 0};
+	setLastMessageId(id: string) {
+		this.lastmessageid = id;
+		if (BigInt(id) > BigInt(this.trueLastMessageid || "0")) {
+			this.trueLastMessageid = id;
+		}
+	}
 	handleUserOverrides(settings: {
 		message_notifications: number;
 		muted: boolean;
@@ -487,7 +494,7 @@ class Channel extends SnowFlake {
 		this.position = json.position;
 		this.lastreadmessageid = undefined;
 		if (json.last_message_id) {
-			this.lastmessageid = json.last_message_id;
+			this.setLastMessageId(json.last_message_id);
 		} else {
 			this.lastmessageid = undefined;
 		}
@@ -602,8 +609,8 @@ class Channel extends SnowFlake {
 			}
 		}
 		let lastmessage = this.lastmessage?.getTimeStamp();
-		if (lastmessage === undefined && this.lastmessageid && !isNaN(+this.lastmessageid)) {
-			lastmessage = SnowFlake.stringToUnixTime(this.lastmessageid);
+		if (lastmessage === undefined && this.trueLastMessageid && !isNaN(+this.trueLastMessageid)) {
+			lastmessage = SnowFlake.stringToUnixTime(this.trueLastMessageid);
 		}
 		return !!lastmessage && (!lastreadmessage || lastmessage > lastreadmessage) && this.type !== 4;
 	}
@@ -970,13 +977,13 @@ class Channel extends SnowFlake {
 			this.guild.unreads();
 			return;
 		}
-		fetch(this.info.api + "/channels/" + this.id + "/messages/" + this.lastmessageid + "/ack", {
+		fetch(this.info.api + "/channels/" + this.id + "/messages/" + this.trueLastMessageid + "/ack", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify({}),
 		});
 		const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
-		this.lastreadmessageid = this.lastmessageid;
+		this.lastreadmessageid = this.trueLastMessageid;
 		this.guild.unreads();
 		this.unreads();
 		if (next) {
@@ -1917,7 +1924,7 @@ class Channel extends SnowFlake {
 				this.idToPrev.set(prev.id, message.id);
 			} else {
 				this.lastmessage = message;
-				this.lastmessageid = message.id;
+				this.setLastMessageId(message.id);
 			}
 			prev = message;
 		}
@@ -2336,7 +2343,7 @@ class Channel extends SnowFlake {
 				this.idToPrev.set(m.id, this.lastmessageid);
 			}
 			this.lastmessage = m;
-			this.lastmessageid = m.id;
+			this.setLastMessageId(m.id);
 		};
 		makeRecent();
 
@@ -2592,7 +2599,7 @@ class Channel extends SnowFlake {
 		) {
 			this.mentions++;
 		}
-		this.lastmessageid = messagez.id;
+		this.setLastMessageId(messagez.id);
 
 		if (messagez.author === this.localuser.user) {
 			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
