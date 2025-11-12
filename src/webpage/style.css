@@ -3129,10 +3129,12 @@ ul {
 	height: 100%;
 	width: 100%;
 	background: color-mix(in srgb, var(--black) 75%, transparent);
+	backdrop-filter: blur(1px);
 	z-index: 102;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+
 	&:not(.menu) {
 		animation-name: bg-fade;
 	}
@@ -3159,17 +3161,21 @@ ul {
 @keyframes bg-fade-out {
 	0% {
 		background: color-mix(in srgb, var(--black) 75%, transparent);
+		backdrop-filter: blur(1px);
 	}
 	100% {
 		background: transparent;
+		backdrop-filter: blur(0px);
 	}
 }
 @keyframes bg-fade {
 	0% {
 		background: transparent;
+		backdrop-filter: blur(0px);
 	}
 	100% {
 		background: color-mix(in srgb, var(--black) 75%, transparent);
+		backdrop-filter: blur(1px);
 	}
 }
 @keyframes fade-in-back-settings {
@@ -3202,6 +3208,7 @@ ul {
 	}
 	100% {
 		opacity: 0;
+		backdrop-filter: blur(0px);
 		transform: scale(0.9);
 	}
 }
