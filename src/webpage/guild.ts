@@ -1668,10 +1668,10 @@ class Guild extends SnowFlake {
 			if (thing.hasunreads) {
 				build.read_states.push({
 					channel_id: thing.id,
-					message_id: thing.lastmessageid,
+					message_id: thing.trueLastMessageid,
 					read_state_type: 0,
 				});
-				thing.lastreadmessageid = thing.lastmessageid;
+				thing.lastreadmessageid = thing.trueLastMessageid;
 				if (!thing.myhtml) continue;
 				thing.myhtml.classList.remove("cunread");
 			}
