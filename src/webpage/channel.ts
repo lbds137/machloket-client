@@ -69,9 +69,11 @@ class Channel extends SnowFlake {
 	mute_config: mute_config | null = {selected_time_window: -1, end_time: 0};
 	setLastMessageId(id: string) {
 		this.lastmessageid = id;
-		if (BigInt(id) > BigInt(this.trueLastMessageid || "0")) {
-			this.trueLastMessageid = id;
-		}
+		try {
+			if (BigInt(id) > BigInt(this.trueLastMessageid || "0")) {
+				this.trueLastMessageid = id;
+			}
+		} catch {}
 	}
 	handleUserOverrides(settings: {
 		message_notifications: number;
