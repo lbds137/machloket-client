@@ -1,4 +1,4 @@
-# Fermi Audio format
+# Jank Audio format (Fermi does use this format, but it's still called Jank)
 This is a markdown file that will try to describe the Fermi client audio format in sufficient detail so people will know how this weird custom format works into the future.
 This is a byte-aligned format, which uses the sequence jasf in ASCI as a magic number at the start.
 
