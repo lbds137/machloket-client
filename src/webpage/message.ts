@@ -586,7 +586,6 @@ class Message extends SnowFlake {
 	) {
 		const div = dupe || this.div;
 		if (!div) return;
-		if (div === this.div) this.div.classList.add("messagediv");
 
 		const editmode = this.channel.editing === this;
 		if (!premessage && !dupe) {
@@ -1035,6 +1034,9 @@ class Message extends SnowFlake {
 				}
 				return meta;
 			}
+		}
+		if (div === this.div) {
+			this.div.classList.add("messagediv");
 		}
 		return div;
 	}
