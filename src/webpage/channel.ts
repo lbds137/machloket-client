@@ -582,7 +582,7 @@ class Channel extends SnowFlake {
 	}
 	readStateInfo(json: readyjson["d"]["read_state"]["entries"][0]) {
 		const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
-		this.lastreadmessageid = json.last_message_id;
+		this.lastreadmessageid = isNaN(+json.last_message_id) ? "0" : json.last_message_id;
 		this.mentions = json.mention_count;
 		this.mentions ??= 0;
 		this.lastpin = json.last_pin_timestamp;
@@ -596,21 +596,14 @@ class Channel extends SnowFlake {
 			return false;
 		}
 		if (this.mentions) return true;
-		let lastreadmessage = this.messages.get(this.lastreadmessageid as string)?.getTimeStamp();
-		if (
-			lastreadmessage === undefined &&
-			this.lastreadmessageid &&
-			!isNaN(+this.lastreadmessageid)
-		) {
-			lastreadmessage = SnowFlake.stringToUnixTime(this.lastreadmessageid);
-		}
+		let lastreadmessage = SnowFlake.stringToUnixTime(this.lastreadmessageid || "0");
 		if (this.guild.member) {
 			const joinedAt = new Date(this.guild.member.joined_at).getTime();
 			if (!lastreadmessage || lastreadmessage < joinedAt) {
 				lastreadmessage = joinedAt;
 			}
 		}
-		let lastmessage = SnowFlake.stringToUnixTime(this.trueLastMessageid || "0");
+		const lastmessage = SnowFlake.stringToUnixTime(this.trueLastMessageid || "0");
 		return !!lastmessage && (!lastreadmessage || lastmessage > lastreadmessage) && this.type !== 4;
 	}
 	hasPermission(name: string, member = this.guild.member): boolean {
@@ -972,7 +965,6 @@ class Channel extends SnowFlake {
 	}
 	readbottom() {
 		this.mentions = 0;
-		console.log("in here?", this.hasunreads);
 		if (!this.hasunreads) {
 			this.guild.unreads();
 			return;
