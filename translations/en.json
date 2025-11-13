@@ -418,6 +418,7 @@
 		"displaySettings": "Display settings",
 		"name": "Role name:",
 		"roles":"Roles",
+		"perms":"Permissions",
 		"hoisted": "Hoisted:",
 		"mentionable": "Allow anyone to ping this role:",
 		"color": "Color",
