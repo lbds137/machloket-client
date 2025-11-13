@@ -673,6 +673,7 @@
 		"unban": "Unban $1",
 		"remove":"Remove user"
 	},
+	"loaded":"Loaded",
 	"login": {
 		"checking": "Checking Instance",
 		"allGood": "All good",

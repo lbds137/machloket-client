@@ -62,6 +62,7 @@ function regSwap(l: Localuser) {
 		return [blobArr, htmlArr];
 	};
 }
+const loaddesc = document.getElementById("load-desc") as HTMLSpanElement;
 try {
 	const current = sessionStorage.getItem("currentuser") || Localuser.users.currentuser;
 	if (!Localuser.users.users[current]) {
@@ -75,6 +76,7 @@ try {
 		const loading = document.getElementById("loading") as HTMLDivElement;
 		loading.classList.add("doneloading");
 		loading.classList.remove("loading");
+		loaddesc.textContent = I18n.loaded();
 		console.log("done loading");
 		if (templateID) {
 			thisUser.passTemplateID(templateID);
@@ -82,7 +84,7 @@ try {
 	});
 } catch (e) {
 	console.error(e);
-	(document.getElementById("load-desc") as HTMLSpanElement).textContent = I18n.accountNotStart();
+	loaddesc.textContent = I18n.accountNotStart();
 	thisUser = new Localuser(-1);
 }
 //TODO move this to the channel/guild class, this is a weird spot

@@ -104,9 +104,11 @@ class Localuser {
 		localStorage.setItem("userinfos", JSON.stringify(Localuser.users));
 
 		thisUser.initwebsocket().then(() => {
+			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			thisUser.loaduser();
 			thisUser.init();
 			loading.classList.add("doneloading");
+			loaddesc.textContent = I18n.loaded();
 			loading.classList.remove("loading");
 			console.log("done loading");
 		});
@@ -543,6 +545,7 @@ class Localuser {
 			this.fetchingmembers = new Map();
 			this.noncemap = new Map();
 			this.noncebuild = new Map();
+			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			if (
 				(event.code > 1000 && event.code < 1016) ||
 				wsCodesRetry.has(event.code) ||
@@ -552,7 +555,6 @@ class Localuser {
 					this.errorBackoff = 0;
 				} else this.errorBackoff++;
 				this.connectionSucceed = 0;
-				const loaddesc = document.getElementById("load-desc") as HTMLElement;
 
 				loaddesc.innerHTML = "";
 				loaddesc.append(
@@ -598,20 +600,20 @@ class Localuser {
 				setTimeout(
 					() => {
 						if (this.swapped) return;
-						(document.getElementById("load-desc") as HTMLElement).textContent = I18n.retrying();
+						loaddesc.textContent = I18n.retrying();
 						this.initwebsocket().then(() => {
 							this.loaduser();
 							this.init();
 							const loading = document.getElementById("loading") as HTMLElement;
 							loading.classList.add("doneloading");
 							loading.classList.remove("loading");
+							loaddesc.textContent = I18n.loaded();
 							console.log("done loading");
 						});
 					},
 					200 + this.errorBackoff * 2800,
 				);
-			} else
-				(document.getElementById("load-desc") as HTMLElement).textContent = I18n.unableToConnect();
+			} else loaddesc.textContent = I18n.unableToConnect();
 		});
 		await promise;
 	}
