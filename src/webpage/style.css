@@ -3452,7 +3452,14 @@ fieldset input[type="radio"] {
 	box-sizing: border-box;
 	overflow-y: auto;
 }
-
+.roleButtonStyle {
+	color: transparent;
+	background-image: var(
+		--user-bg,
+		linear-gradient(var(--primary-text-soft), var(--primary-text-soft))
+	);
+	background-clip: text;
+}
 .SettingsButton {
 	width: 100%;
 	padding: 8px 12px;

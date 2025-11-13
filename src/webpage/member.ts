@@ -475,6 +475,18 @@ class Member extends SnowFlake {
 		}
 		return "";
 	}
+	getColorStyle() {
+		if (!this.localuser.perminfo.user.disableColors) {
+			return undefined;
+		}
+		for (const thing of this.roles) {
+			const color = thing.getColor();
+			if (color) {
+				return `var(--role-${thing.id})`;
+			}
+		}
+		return undefined;
+	}
 	isAdmin() {
 		for (const role of this.roles) {
 			if (role.permissions.getPermission("ADMINISTRATOR")) {

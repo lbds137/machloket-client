@@ -674,7 +674,7 @@ export async function removeAni(elm: HTMLElement, time = 500) {
 		Promise.all(ani.map((_) => _.finished)),
 		new Promise<void>((res) => setTimeout(res, time)),
 	]);
-	elm.remove();
+	if (document.contains(elm)) elm.remove();
 }
 export type safeImg = HTMLImageElement & {
 	setSrcs: (nsrc: string, nstaticsrc: string | void) => void;

@@ -130,6 +130,7 @@ import {createImg} from "./utils/utils.js";
 import {Hover} from "./hover.js";
 import {Emoji} from "./emoji.js";
 import {User} from "./user.js";
+import {Member} from "./member.js";
 class PermissionToggle implements OptionsElement<number> {
 	readonly rolejson: {
 		name: string;
@@ -546,6 +547,7 @@ class RoleList extends Buttons {
 		roleRow.append(this.channel ? I18n.role.perms() : I18n.role.roles());
 		const add = document.createElement("span");
 		add.classList.add("svg-plus", "svgicon", "addrole");
+
 		add.onclick = async (e) => {
 			const box = add.getBoundingClientRect();
 			e.stopPropagation();
@@ -602,11 +604,24 @@ class RoleList extends Buttons {
 		buttonTable.append(roleRow);
 		for (const thing of this.buttons) {
 			const button = document.createElement("button");
+
 			this.buttonMap.set(thing[0], button);
 			button.classList.add("SettingsButton");
-			button.textContent = thing[0];
+			const span = document.createElement("span");
+			span.textContent = thing[0];
+			button.append(span);
+			span.classList.add("roleButtonStyle");
 			const role = this.guild.roleids.get(thing[1]) || this.guild.localuser.userMap.get(thing[1]);
 			if (role) {
+				if (role instanceof Role) {
+					if (role.getColor()) button.style.setProperty("--user-bg", `var(--role-${role.id})`);
+				} else {
+					Member.resolveMember(role, this.guild).then((_) => {
+						if (!_) return;
+						const style = _.getColorStyle();
+						if (style) button.style.setProperty("--user-bg", style);
+					});
+				}
 				if (!this.channel) {
 					if (role instanceof Role && role.canManage()) {
 						this.buttonDragEvents(button, role);
