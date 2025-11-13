@@ -607,38 +607,6 @@ class Message extends SnowFlake {
 
 		build.classList.add("flexltr", "message");
 
-		const unreadLine = premessage && premessage.id === this.channel.lastreadmessageid;
-		let datelineNeeded = false;
-		if ((premessage || unreadLine) && !dupe) {
-			const thisTime = new Date(this.getUnixTime());
-			if (premessage && !unreadLine) {
-				const prevTime = new Date(premessage.getUnixTime());
-				datelineNeeded =
-					thisTime.getDay() !== prevTime.getDay() ||
-					thisTime.getMonth() !== prevTime.getMonth() ||
-					thisTime.getFullYear() !== prevTime.getFullYear();
-			} else {
-				datelineNeeded = true;
-			}
-			if (datelineNeeded) {
-				const dateline = document.createElement("div");
-				if (unreadLine) {
-					dateline.classList.add("unreadDateline");
-				}
-				dateline.classList.add("flexltr", "dateline");
-				dateline.append(document.createElement("hr"));
-				const span = document.createElement("span");
-				span.innerText = Intl.DateTimeFormat(I18n.lang, {
-					year: "numeric",
-					month: "long",
-					day: "2-digit",
-				}).format(thisTime);
-				dateline.append(span);
-				dateline.append(document.createElement("hr"));
-				div.append(dateline);
-			}
-		}
-
 		if (this.interaction) {
 			const replyline = document.createElement("div");
 
@@ -1031,18 +999,55 @@ class Message extends SnowFlake {
 			ephemeral.append(span, a);
 			div.append(ephemeral);
 		}
+		const unreadLine = premessage && premessage.id === this.channel.lastreadmessageid;
+		let datelineNeeded = false;
+		if ((premessage || unreadLine) && !dupe) {
+			const thisTime = new Date(this.getUnixTime());
+			if (premessage && !unreadLine) {
+				const prevTime = new Date(premessage.getUnixTime());
+				datelineNeeded =
+					thisTime.getDay() !== prevTime.getDay() ||
+					thisTime.getMonth() !== prevTime.getMonth() ||
+					thisTime.getFullYear() !== prevTime.getFullYear();
+			} else {
+				datelineNeeded = true;
+			}
+			if (datelineNeeded) {
+				const dateline = document.createElement("div");
+				if (unreadLine) {
+					dateline.classList.add("unreadDateline");
+				}
+				dateline.classList.add("flexltr", "dateline");
+				dateline.append(document.createElement("hr"));
+				const span = document.createElement("span");
+				span.innerText = Intl.DateTimeFormat(I18n.lang, {
+					year: "numeric",
+					month: "long",
+					day: "2-digit",
+				}).format(thisTime);
+				dateline.append(span);
+				dateline.append(document.createElement("hr"));
+				const meta = document.createElement("div");
+				meta.append(dateline, div);
+				if (this.div === div) {
+					this.div = meta;
+				}
+				return meta;
+			}
+		}
 		return div;
 	}
 	bindButtonEvent() {
-		if (this.div) {
+		const div = this.div;
+		if (div) {
 			let buttons: HTMLDivElement | undefined;
-			this.div.onmouseenter = (_) => {
+			div.onmouseenter = (_) => {
 				if (mobile) return;
 				if (buttons) {
 					buttons.remove();
 					buttons = undefined;
 				}
-				if (this.div) {
+				if (div) {
 					buttons = document.createElement("div");
 					buttons.classList.add("messageButtons", "flexltr");
 					let addedRec = false;
@@ -1123,11 +1128,11 @@ class Message extends SnowFlake {
 						};
 					}
 					if (buttons.childNodes.length !== 0) {
-						this.div.append(buttons);
+						div.append(buttons);
 					}
 				}
 			};
-			this.div.onmouseleave = (_) => {
+			div.onmouseleave = (_) => {
 				if (buttons) {
 					buttons.remove();
 					buttons = undefined;
