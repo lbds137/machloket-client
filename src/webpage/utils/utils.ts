@@ -1,6 +1,8 @@
 import {I18n} from "../i18n.js";
 import {MarkDown} from "../markdown.js";
 import {Dialog} from "../settings.js";
+import {fix} from "./cssMagic.js";
+fix();
 let instances:
 	| {
 			name: string;
