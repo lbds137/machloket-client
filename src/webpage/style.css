@@ -3781,7 +3781,7 @@ fieldset input[type="radio"] {
 	background: var(--primary-text-prominent);
 }
 
-/* Fermi Mobile  */
+/* Jank Mobile  */
 #maintoggle,
 #maintoggleicon {
 	display: none;
@@ -4047,15 +4047,14 @@ fieldset input[type="radio"] {
 	background: var(--primary-bg);
 	min-height: 0.2in;
 	padding: 0.05in;
-	border: solid 0.03in var(--black);
+	border: solid 1px var(--black);
 	border-radius: 0.05in;
 	z-index: 104;
-
 	span {
-		margin-top: 0.1in;
+		background: #00000042;
 		width: 100%;
-		padding: 0.03in;
-		border: solid 0.03in var(--black);
+		margin-top: 4px;
+		padding: 6px;
 		box-sizing: border-box;
 		border-radius: 0.05in;
 		cursor: pointer;
