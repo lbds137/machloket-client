@@ -610,10 +610,7 @@ class Channel extends SnowFlake {
 				lastreadmessage = joinedAt;
 			}
 		}
-		let lastmessage = this.lastmessage?.getTimeStamp();
-		if (lastmessage === undefined && this.trueLastMessageid && !isNaN(+this.trueLastMessageid)) {
-			lastmessage = SnowFlake.stringToUnixTime(this.trueLastMessageid);
-		}
+		let lastmessage = SnowFlake.stringToUnixTime(this.trueLastMessageid || "0");
 		return !!lastmessage && (!lastreadmessage || lastmessage > lastreadmessage) && this.type !== 4;
 	}
 	hasPermission(name: string, member = this.guild.member): boolean {
@@ -975,10 +972,12 @@ class Channel extends SnowFlake {
 	}
 	readbottom() {
 		this.mentions = 0;
+		console.log("in here?", this.hasunreads);
 		if (!this.hasunreads) {
 			this.guild.unreads();
 			return;
 		}
+		console.log(this.trueLastMessageid);
 		fetch(this.info.api + "/channels/" + this.id + "/messages/" + this.trueLastMessageid + "/ack", {
 			method: "POST",
 			headers: this.headers,
