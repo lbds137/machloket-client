@@ -586,6 +586,9 @@ class Message extends SnowFlake {
 	) {
 		const div = dupe || this.div;
 		if (!div) return;
+		if (div === this.div) {
+			this.div.classList.add("messagediv");
+		}
 
 		const editmode = this.channel.editing === this;
 		if (!premessage && !dupe) {
@@ -1027,17 +1030,14 @@ class Message extends SnowFlake {
 				}).format(thisTime);
 				dateline.append(span);
 				dateline.append(document.createElement("hr"));
-				const meta = document.createElement("div");
-				meta.append(dateline, div);
-				if (this.div === div) {
-					this.div = meta;
-				}
-				return meta;
+				const messageDiv = document.createElement("div");
+				messageDiv.append(...Array.from(div.children));
+				messageDiv.classList = div.classList + "";
+				div.classList = "";
+				div.append(dateline, messageDiv);
 			}
 		}
-		if (div === this.div) {
-			this.div.classList.add("messagediv");
-		}
+
 		return div;
 	}
 	bindButtonEvent() {
