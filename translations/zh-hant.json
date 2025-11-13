@@ -671,7 +671,8 @@
 		"editServerProfile": "編輯公會設定檔",
 		"instanceBan": "禁止實例",
 		"confirmInstBan": "您確定要禁止實例$1嗎？",
-		"unban": "解禁$1"
+		"unban": "解禁$1",
+		"remove": "移除使用者"
 	},
 	"login": {
 		"checking": "檢查實例",

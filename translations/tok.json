@@ -1,0 +1,250 @@
+{
+	"@metadata": {
+		"authors": [
+			"Illyria"
+		]
+	},
+	"vc": {
+		"joinstream": "sitelen mute lukin",
+		"leavestream": "sitelen mute lukin weka",
+		"joinForStream": "poki toki kama la tawa sitelen lukin",
+		"stopstream": "sitelen mute pini",
+		"joiningStream": "sitelen musi insa kama..."
+	},
+	"favoriteGifs": "sitelen mute pona tawa sina",
+	"recentEmoji": "tenpo ante lili la pilin sitelen",
+	"noStickers": "sina lon nasa, sitelen li weka!",
+	"readableName": "toki pona",
+	"pinMessage": "toki li awen",
+	"unableToPin": "toki li awen la ken ala",
+	"reply": "toki sin",
+	"copyrawtext": "pali sin lipu",
+	"copyLink": "pali sin nasin lipu",
+	"copymessageid": "pali sin nanpa lipu",
+	"media": {
+		"notFound": "ijo li weka",
+		"loading": "kama ilo",
+		"download": "pali sin ijo",
+		"moreInfo": "sona mute",
+		"artist": "jan pali pi ijo: $1",
+		"composer": "jan pali pi kalama: $1",
+		"length": "suli pi ni: tenpo $1:$2"
+	},
+	"logout": {
+		"logout": "o weka tan sijelo",
+		"error": {
+			"title": "o weka tan sijelo la pakala tan alasa",
+			"desc": "o weka tan sijelo la Femi kan ala, o wile sina weka sijelo?",
+			"cancel": "o weka",
+			"cont": "o awen"
+		}
+	},
+	"cancel": "o weka",
+	"permissions": {
+		"readableNames": {
+			"CREATE_INSTANT_INVITE": "o pali nimi kama sin",
+			"ADMINISTRATOR": "jan lawa",
+			"VIEW_CHANNEL": "poki lukin",
+			"SEND_MESSAGES": "o pana e toki",
+			"SPEAK": "toki",
+			"MUTE_MEMBERS": "toki jan ken ala",
+			"CHANGE_NICKNAME": "ante nimi",
+			"SEND_VOICE_MESSAGES": "o pana toki kalama"
+		}
+	},
+	"userping": {
+		"unknown": "@nasa"
+	},
+	"yes": "pona",
+	"no": "ala",
+	"todayAt": "tenpo suno lon kama $1",
+	"uploadPfp": "o pana sitelen e sijelo",
+	"uploadBanner": "o pana sitelen suli:",
+	"pronouns": "toki nimi:",
+	"bio": "sona:",
+	"profileColor": "kule e sijelo",
+	"leaveGuild": "o kama ma",
+	"blankMessage": "weka lipu",
+	"accessibility": {
+		"gifSettings": {
+			"always": "lon tenpo ale",
+			"never": "lon tenpo ala"
+		}
+	},
+	"profile": {
+		"userInfo": "e sijelo sona",
+		"bio": "sona mi:",
+		"permInfo": "ken ilo"
+	},
+	"messageLink": "o pana toki insa poki toki # $1",
+	"channel": {
+		"typebox": "o toki insa poki toki # $1",
+		"name": "poki",
+		"settings": "ante",
+		"delete": "o weka poki toki",
+		"deleteCat": "o weka poki toki",
+		"makeInvite": "o pali nimi kama",
+		"settingsFor": "ante pi $1",
+		"voice": "kalama",
+		"text": "nimi",
+		"announcement": "suli toki",
+		"name:": "nimi:",
+		"icon": "sitelen lili:",
+		"createChannel": "o pali poki toki",
+		"createCatagory": "o pali poki",
+		"permissions": "ken ilo"
+	},
+	"delete": "o weka",
+	"webhooks": {
+		"name": "nimi:",
+		"avatar": "e sijelo sitelen",
+		"channel": "poki",
+		"type3": "ilo"
+	},
+	"switchAccounts": "o ante sijelo",
+	"htmlPages": {
+		"addBot": "o kama poki toki",
+		"loadingText": "Femi li kama",
+		"emailField": "nimi Email:",
+		"pwField": "nimi open:",
+		"loginButton": "o kama lon sijelo",
+		"userField": "nimi ilo:",
+		"createAccount": "o pali e sijelo",
+		"openClient": "ilo open",
+		"welcomeJank": "kama pona Femi"
+	},
+	"register": {
+		"register": "o pali e sijelo",
+		"passwordError:": "nimi open: $1",
+		"usernameError": "nimi ilo: $1",
+		"emailError": "nimi Email: $1"
+	},
+	"submit": "o pana",
+	"edit": "o ante",
+	"discovery": "sin alasa",
+	"guild": {
+		"joinConfirm": "kama $1?",
+		"guilds": "poki toki mute",
+		"adminMenu": {
+			"owner": "jan lawa alasa",
+			"ownName": "jan lawa"
+		},
+		"leave": "o kama ma",
+		"settings": "poki ante",
+		"delete": "o weka",
+		"name:": "nimi:",
+		"icon:": "sitelen lili:",
+		"all": "ale",
+		"create": "o pali poki toki sin",
+		"loadingDiscovery": "ijo li kama..."
+	},
+	"role": {
+		"color": "kule",
+		"colors": {
+			"one": "wan",
+			"two": "tu",
+			"secondColor": "kule nanpa tu"
+		}
+	},
+	"folder": {
+		"name": "nimi poki:",
+		"color": "kule poki:",
+		"create": "o pali poki sin",
+		"edit": "o ante poki"
+	},
+	"settings": {
+		"save": "o pana e ante",
+		"img": "o pana sitelen",
+		"clear": "o weka"
+	},
+	"localuser": {
+		"settings": "ante",
+		"userSettings": "e sijelo ante",
+		"SWOff": "weka",
+		"SWOn": "lon",
+		"changeEmail": "o ante e nimi Email",
+		"password:": "nimi open",
+		"newEmail:": "nimi Email sin",
+		"team:": "kulupu:",
+		"appName": "nimi ilo:",
+		"description": "sona lipu:",
+		"addBot": "o pana jan ilo",
+		"botUsername": "jan ilo nimi ilo:",
+		"botAvatar": "jan ilo sitelen sijelo:",
+		"resetToken": "o sin e nimi ken",
+		"tokenDisplay": "nimi ken: $1",
+		"deleteAccount": "mi pini e sijelo",
+		"deleteAccountButton": "o weka e sijelo"
+	},
+	"search": {
+		"back": "pini",
+		"next": "kama",
+		"new": "sin",
+		"search": "o alasa"
+	},
+	"manageInstance": {
+		"create": "o pali",
+		"copy": "o pali sin tan ni"
+	},
+	"emojiSelect": "sitelen pilin:",
+	"message": {
+		"delete": "o weka lipu",
+		"edit": "o ante lipu",
+		"edited": "(ni ante)",
+		"viewrest": "ale lukin",
+		"fullMessage": "lipu ale:"
+	},
+	"invite": {
+		"channel:": "poki:"
+	},
+	"friends": {
+		"addfriend": "o kama jan pona",
+		"removeFriend": "o weka jan pona",
+		"addfriendpromt": "o kama jan pona kepeken nimi ilo:",
+		"notfound": "sijelo weka",
+		"all": "ale",
+		"all:": "jan pona ale:",
+		"online": "lon",
+		"online:": "jan pona lon:",
+		"friendlist": "poki jan pona",
+		"friends": "jan pona"
+	},
+	"user": {
+		"online": "lon",
+		"offline": "weka",
+		"invisible": "lukin ala",
+		"idle": "awen",
+		"message": "o pana toki"
+	},
+	"login": {
+		"allGood": "ale pona",
+		"newPassword": "nimi open sin:",
+		"enterPAgain": "o pana sin e nimi open sama",
+		"login": "o kama lon sijelo"
+	},
+	"member": {
+		"reason:": "tan:"
+	},
+	"emoji": {
+		"image:": "sitelen:",
+		"name:": "nimi:",
+		"confirmDel": "o weka sitelen pilin li wile sina?",
+		"from": "ni sitelen pilin li tan",
+		"privateGuild": "ni poki toki li ken ala",
+		"join": "kama poki toki",
+		"found": {
+			"this": "ni sitelen pilin li tan ni poki toki",
+			"other": "ni sitelen pilin li tan ante poki toki pi sina"
+		}
+	},
+	"sticker": {
+		"image": "sitelen:",
+		"name": "nimi:",
+		"desc": "sona"
+	},
+	"404": {
+		"login": "o kama lon sijelo"
+	},
+	"retrying": "sin alasa...",
+	"bot": "jan ilo"
+}

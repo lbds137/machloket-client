@@ -281,6 +281,13 @@
 		"warnOffiline": "Server is offline, kan geen verbinding maken",
 		"icon": "Serverpictogram van $1"
 	},
+	"devSettings": {
+		"name": "Ontwikkelaarsinstellingen",
+		"description": "Deze instellingen zijn bedoeld voor ontwikkelaars van Spacebar/Fermi. Als u niet weet wat u doet, kunt u deze instellingen beter niet wijzigen.",
+		"badUser": "Logging is ingeschakeld voor slechte gebruikersobjecten die te veel gegevens verzenden:",
+		"logGateway": "Ontvangen gatewaygebeurtenissen loggen (logniveau info):",
+		"traces": "Traces zichtbaar maken:"
+	},
 	"htmlPages": {
 		"idpermissions": "Hiermee kan de robot:",
 		"addBot": "Toevoegen aan gilde",
@@ -665,7 +672,8 @@
 		"editServerProfile": "Gildeprofiel bewerken",
 		"instanceBan": "Serverban",
 		"confirmInstBan": "Weet je zeker dat je de server $1 wilt verbannen?",
-		"unban": "$1 ontbannen"
+		"unban": "$1 ontbannen",
+		"remove": "Gebruiker verwijderen"
 	},
 	"login": {
 		"checking": "Server wordt gecontroleerd",

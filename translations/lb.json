@@ -298,7 +298,8 @@
 		"invisible": "Onsiichtbar",
 		"block": "Benotzer spären",
 		"unblock": "Benotzer entspären",
-		"editServerProfile": "Serverprofil änneren"
+		"editServerProfile": "Serverprofil änneren",
+		"remove": "Benotzer ewechhuelen"
 	},
 	"login": {
 		"recover": "Passwuert vergiess?",
