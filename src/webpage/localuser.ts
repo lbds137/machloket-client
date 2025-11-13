@@ -2868,6 +2868,7 @@ class Localuser {
 					titleStuff.append(h2, p);
 					div.append(titleStuff);
 					blog.addHTMLArea(div);
+					MarkDown.safeLink(div, post.url);
 				}
 			})();
 		}
