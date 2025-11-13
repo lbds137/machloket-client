@@ -1054,7 +1054,22 @@ class MarkDown {
 		}
 		return build;
 	}
-	static readonly trustedDomains = new Set([location.host]);
+	static trustedDomains = this.getTrusted();
+	static getTrusted() {
+		const domains = localStorage.getItem("trustedDomains");
+		if (domains) {
+			return new Set(JSON.parse(domains) as string[]);
+		}
+		return new Set([location.host, "fermi.chat", "blog.fermi.chat"]);
+	}
+	static saveTrusted(remove = false) {
+		if (!remove) {
+			this.trustedDomains = this.trustedDomains.union(this.getTrusted());
+		}
+		const domains = JSON.stringify([...this.trustedDomains]);
+
+		localStorage.setItem("trustedDomains", domains);
+	}
 	static safeLink(
 		elm: HTMLElement,
 		url: string,
@@ -1120,6 +1135,7 @@ class MarkDown {
 						open();
 						full.hide();
 						this.trustedDomains.add(Url.host);
+						this.saveTrusted();
 					});
 					full.show();
 				}

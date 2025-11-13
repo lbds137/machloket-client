@@ -183,6 +183,14 @@ body {
 	min-height: 0;
 	display: flex;
 }
+.trustedDomain {
+	display: flex;
+	align-items: center;
+	background: #00000026;
+	padding: 8px;
+	border-radius: 4px;
+	justify-content: space-between;
+}
 .ephemeralDiv {
 	padding-left: 50px;
 	opacity: 0.6;

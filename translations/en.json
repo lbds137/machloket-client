@@ -417,6 +417,7 @@
 	"role": {
 		"displaySettings": "Display settings",
 		"name": "Role name:",
+		"copyId":"Copy role ID",
 		"roles":"Roles",
 		"perms":"Permissions",
 		"hoisted": "Hoisted:",
@@ -462,7 +463,10 @@
 		"fermi": "Fermi Blog",
 		"desc": "Read or subscribe to the blog for updates on Fermi!"
 	},
+	"remove":"Remove",
 	"localuser": {
+		"trusted":"Trusted Domains",
+		"trustedDesc":"These domains when you click on links from them will ***not*** prompt you for permission to open like other links, only give this to URLs you trust",
 		"trace": "Traces",
 		"install": "Install",
 		"installJank": "Install Fermi",

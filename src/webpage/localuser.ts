@@ -2837,6 +2837,29 @@ class Localuser {
 			});
 		}
 		{
+			const trusted = settings.addButton(I18n.localuser.trusted());
+			trusted.addMDText(new MarkDown(I18n.localuser.trustedDesc()));
+			for (const thing of MarkDown.trustedDomains) {
+				const div = document.createElement("div");
+				div.classList.add("flexltr", "trustedDomain");
+
+				const name = document.createElement("span");
+				name.textContent = thing;
+
+				const remove = document.createElement("button");
+				remove.textContent = I18n.remove();
+				remove.onclick = () => {
+					MarkDown.saveTrusted();
+					MarkDown.trustedDomains.delete(thing);
+					MarkDown.saveTrusted(true);
+					div.remove();
+				};
+
+				div.append(name, remove);
+				trusted.addHTMLArea(div);
+			}
+		}
+		{
 			const blog = settings.addButton(I18n.blog.blog());
 			blog.addCheckboxInput(
 				I18n.blog.blogUpdates(),

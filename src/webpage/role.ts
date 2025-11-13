@@ -431,6 +431,17 @@ class RoleList extends Buttons {
 				},
 			},
 		);
+		menu.addButton(
+			function (user) {
+				if (user instanceof User) {
+					return I18n.user.copyId();
+				}
+				return I18n.role.copyId();
+			},
+			function (role) {
+				navigator.clipboard.writeText(role.id);
+			},
+		);
 		return menu;
 	}
 
@@ -465,6 +476,17 @@ class RoleList extends Buttons {
 			},
 			{
 				visable: (role) => role.id !== role.guild.id,
+			},
+		);
+		menu.addButton(
+			function (user) {
+				if (user instanceof User) {
+					return I18n.user.copyId();
+				}
+				return I18n.role.copyId();
+			},
+			function (role) {
+				navigator.clipboard.writeText(role.id);
 			},
 		);
 		return menu;
