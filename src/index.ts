@@ -160,7 +160,7 @@ app.use("/", async (req: Request, res: Response) => {
 		const link = `${host}/services/oembed?url=${encodeURIComponent(ref)}`;
 		res.set(
 			"Link",
-			`<${link}>; rel="alternate"; type="application/json+oembed"; title="Jank Client oEmbed format"`,
+			`<${link}>; rel="alternate"; type="application/json+oembed"; title="Fermi Client oEmbed format"`,
 		);
 	}
 
