@@ -986,7 +986,6 @@ class Message extends SnowFlake {
 			this.reactdiv = new WeakRef(reactions);
 			this.updateReactions();
 			div.append(reactions);
-			this.bindButtonEvent();
 		}
 		if (this.ephemeral) {
 			const ephemeral = document.createElement("div");
@@ -1037,111 +1036,114 @@ class Message extends SnowFlake {
 				div.append(dateline, messageDiv);
 			}
 		}
+		this.bindButtonEvent();
 
 		return div;
 	}
 	bindButtonEvent() {
-		const div = this.div;
-		if (div) {
-			let buttons: HTMLDivElement | undefined;
-			div.onmouseenter = (_) => {
-				if (mobile) return;
-				if (buttons) {
-					buttons.remove();
-					buttons = undefined;
-				}
-				if (div) {
-					buttons = document.createElement("div");
-					buttons.classList.add("messageButtons", "flexltr");
-					let addedRec = false;
-					if (this.channel.hasPermission("ADD_REACTIONS")) {
-						const favs = this.localuser.favorites
-							.emojiReactFreq()
-							.slice(0, 6)
-							.filter(([emoji]) => {
-								return !this.reactions.find(
-									(_) => _.emoji.id === emoji || _.emoji.emoji === emoji || _.emoji.name === emoji,
-								)?.me;
-							})
-							.slice(0, 3);
-						for (const [emoji] of favs) {
-							addedRec = true;
-							const container = document.createElement("button");
-							if (isNaN(+emoji)) {
-								container.append(emoji);
-							} else {
-								const emj = Emoji.getEmojiFromIDOrString(emoji, this.localuser);
-								container.append(emj.getHTML(false));
-							}
-							container.onclick = () => {
-								this.reactionToggle(emoji);
-							};
-							buttons.append(container);
+		if (!this.div) return;
+		const div = this.div.classList.contains("messagediv")
+			? this.div
+			: (this.div.getElementsByClassName("messagediv")[0] as HTMLDivElement);
+		if (!div) return;
+		let buttons: HTMLDivElement | undefined;
+		div.onmouseenter = (_) => {
+			if (mobile) return;
+			if (buttons) {
+				buttons.remove();
+				buttons = undefined;
+			}
+			if (div) {
+				buttons = document.createElement("div");
+				buttons.classList.add("messageButtons", "flexltr");
+				let addedRec = false;
+				if (this.channel.hasPermission("ADD_REACTIONS")) {
+					const favs = this.localuser.favorites
+						.emojiReactFreq()
+						.slice(0, 6)
+						.filter(([emoji]) => {
+							return !this.reactions.find(
+								(_) => _.emoji.id === emoji || _.emoji.emoji === emoji || _.emoji.name === emoji,
+							)?.me;
+						})
+						.slice(0, 3);
+					for (const [emoji] of favs) {
+						addedRec = true;
+						const container = document.createElement("button");
+						if (isNaN(+emoji)) {
+							container.append(emoji);
+						} else {
+							const emj = Emoji.getEmojiFromIDOrString(emoji, this.localuser);
+							container.append(emj.getHTML(false));
 						}
-					}
-					if (addedRec) {
-						Array.from(buttons.children).at(-1)?.classList.add("vr-message");
-					}
-					if (this.channel.hasPermission("SEND_MESSAGES") && !this.ephemeral) {
-						const container = document.createElement("button");
-						const reply = document.createElement("span");
-						reply.classList.add("svg-reply", "svgicon");
-						container.append(reply);
-						buttons.append(container);
-						container.onclick = (_) => {
-							this.channel.setReplying(this);
+						container.onclick = () => {
+							this.reactionToggle(emoji);
 						};
-					}
-					if (this.channel.hasPermission("ADD_REACTIONS")) {
-						const container = document.createElement("button");
-						const reply = document.createElement("span");
-						reply.classList.add("svg-emoji", "svgicon");
-						container.append(reply);
 						buttons.append(container);
-						container.onclick = (e) => {
-							e.stopImmediatePropagation();
-							e.preventDefault();
-							Emoji.emojiPicker(e.x, e.y, this.localuser).then((_) => {
-								this.reactionToggle(_);
-							});
-						};
-					}
-					if (this.author === this.localuser.user) {
-						const container = document.createElement("button");
-						const edit = document.createElement("span");
-						edit.classList.add("svg-edit", "svgicon");
-						container.append(edit);
-						buttons.append(container);
-						container.onclick = (_) => {
-							this.setEdit();
-						};
-					}
-					if (this.canDelete()) {
-						const container = document.createElement("button");
-						const reply = document.createElement("span");
-						reply.classList.add("svg-delete", "svgicon");
-						container.append(reply);
-						buttons.append(container);
-						container.onclick = (_) => {
-							if (_.shiftKey) {
-								this.delete();
-								return;
-							}
-							this.confirmDelete();
-						};
-					}
-					if (buttons.childNodes.length !== 0) {
-						div.append(buttons);
 					}
 				}
-			};
-			div.onmouseleave = (_) => {
-				if (buttons) {
-					buttons.remove();
-					buttons = undefined;
+				if (addedRec) {
+					Array.from(buttons.children).at(-1)?.classList.add("vr-message");
 				}
-			};
-		}
+				if (this.channel.hasPermission("SEND_MESSAGES") && !this.ephemeral) {
+					const container = document.createElement("button");
+					const reply = document.createElement("span");
+					reply.classList.add("svg-reply", "svgicon");
+					container.append(reply);
+					buttons.append(container);
+					container.onclick = (_) => {
+						this.channel.setReplying(this);
+					};
+				}
+				if (this.channel.hasPermission("ADD_REACTIONS")) {
+					const container = document.createElement("button");
+					const reply = document.createElement("span");
+					reply.classList.add("svg-emoji", "svgicon");
+					container.append(reply);
+					buttons.append(container);
+					container.onclick = (e) => {
+						e.stopImmediatePropagation();
+						e.preventDefault();
+						Emoji.emojiPicker(e.x, e.y, this.localuser).then((_) => {
+							this.reactionToggle(_);
+						});
+					};
+				}
+				if (this.author === this.localuser.user) {
+					const container = document.createElement("button");
+					const edit = document.createElement("span");
+					edit.classList.add("svg-edit", "svgicon");
+					container.append(edit);
+					buttons.append(container);
+					container.onclick = (_) => {
+						this.setEdit();
+					};
+				}
+				if (this.canDelete()) {
+					const container = document.createElement("button");
+					const reply = document.createElement("span");
+					reply.classList.add("svg-delete", "svgicon");
+					container.append(reply);
+					buttons.append(container);
+					container.onclick = (_) => {
+						if (_.shiftKey) {
+							this.delete();
+							return;
+						}
+						this.confirmDelete();
+					};
+				}
+				if (buttons.childNodes.length !== 0) {
+					div.append(buttons);
+				}
+			}
+		};
+		div.onmouseleave = (_) => {
+			if (buttons) {
+				buttons.remove();
+				buttons = undefined;
+			}
+		};
 	}
 	confirmDelete() {
 		const diaolog = new Dialog("");
