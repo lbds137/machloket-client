@@ -198,7 +198,7 @@ class Channel extends SnowFlake {
 				channel_overrides: {
 					[this.id]: {
 						message_notifications: this.mentions,
-						muted: true,
+						muted: false,
 						mute_config,
 						channel_id: this.id,
 					},
@@ -235,7 +235,7 @@ class Channel extends SnowFlake {
 					channel_overrides: {
 						[this.id]: {
 							message_notifications: this.mentions,
-							muted: false,
+							muted: true,
 							mute_config,
 							channel_id: this.id,
 						},
