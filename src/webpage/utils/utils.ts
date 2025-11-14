@@ -454,6 +454,8 @@ export async function getapiurls(str: string): Promise<
 						};
 					}
 				}
+			} else {
+				str = "https://" + str;
 			}
 		}
 	}
