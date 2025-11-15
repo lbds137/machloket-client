@@ -78,9 +78,17 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 
 	async function showAccounts() {
 		console.log("showing!");
-		const user = await new AccountSwitcher((user) => {
-			return !!(well && user.serverurls.wellknown.includes(well));
-		}).show();
+		const user = await new AccountSwitcher(
+			(user) => {
+				return !!(well && user.serverurls.wellknown.includes(well));
+			},
+			{
+				loginText: () => I18n.login.login(),
+				createOpt: true,
+				loginurl: "/login?" + new URLSearchParams([["goback", window.location.href]]),
+				registerurl: "/register?" + new URLSearchParams([["goback", window.location.href]]),
+			},
+		).show();
 		fetch(`${urls!.api}/invites/${code}`, {
 			method: "POST",
 			headers: {

@@ -16,14 +16,30 @@ export class AccountSwitcher {
 	canCreate: boolean;
 	canLogOut: boolean;
 	canHide: boolean;
+	createOpt: boolean;
+	loginText: () => string;
+	loginurl: string;
+	registerurl: string;
 	constructor(
 		filter: AccountSwitcher["filter"] = () => true,
-		{canCreate = true, canLogOut = true, canHide = true} = {},
+		{
+			canCreate = true,
+			createOpt = false,
+			canLogOut = true,
+			canHide = true,
+			loginurl = "/login",
+			registerurl = "/register",
+			loginText = () => I18n.switchAccounts(),
+		} = {},
 	) {
 		this.filter = filter;
 		this.canCreate = canCreate;
 		this.canLogOut = canLogOut;
 		this.canHide = canHide;
+		this.loginText = loginText;
+		this.createOpt = createOpt;
+		this.loginurl = loginurl;
+		this.registerurl = registerurl;
 	}
 	async show(): Promise<Specialuser> {
 		const table = document.createElement("div");
@@ -79,9 +95,18 @@ export class AccountSwitcher {
 			if (this.canCreate) {
 				const switchAccountDiv = document.createElement("div");
 				switchAccountDiv.classList.add("switchtable");
-				switchAccountDiv.textContent = I18n.switchAccounts();
+				switchAccountDiv.textContent = this.loginText();
 				switchAccountDiv.addEventListener("click", () => {
-					window.location.href = "/login";
+					window.location.href = this.loginurl;
+				});
+				table.append(switchAccountDiv);
+			}
+			if (this.createOpt) {
+				const switchAccountDiv = document.createElement("div");
+				switchAccountDiv.classList.add("switchtable");
+				switchAccountDiv.textContent = I18n.createAccount();
+				switchAccountDiv.addEventListener("click", () => {
+					window.location.href = this.registerurl;
 				});
 				table.append(switchAccountDiv);
 			}

@@ -414,6 +414,7 @@
 		"DISCOVERABLE": "Discovery"
 	},
 	"welcomeMessages": "Welcome $1! Nice to see ya!\nHello, nice to meet you $1!\nWelcome, hope you brought pizza $1!",
+	"createAccount":"Create Account",
 	"role": {
 		"displaySettings": "Display settings",
 		"name": "Role name:",
