@@ -157,7 +157,8 @@ class Emoji {
 					guildName.textContent = lookup.guild.name;
 
 					const guildDesc = document.createElement("span");
-					if (lookup.guild.features.find((_) => _ === "DISCOVERABLE")) {
+					const discoverable = lookup.guild.features.find((_) => _ === "DISCOVERABLE");
+					if (discoverable) {
 						if (lookup.guild.description) {
 							guildDesc.textContent = lookup.guild.description;
 						}
@@ -166,7 +167,7 @@ class Emoji {
 					}
 
 					guildText.append(guildName, guildDesc);
-					if (!guild) {
+					if (!guild && discoverable) {
 						const button = document.createElement("button");
 						button.textContent = I18n.emoji.join();
 						button.classList.add("emojiJoin");
