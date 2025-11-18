@@ -2296,6 +2296,7 @@ class Channel extends SnowFlake {
 		reply = undefined,
 		sticker_ids: string[],
 		nonce: string,
+		embeds: embedjson[] = [],
 	) {
 		const m = new Message(
 			{
@@ -2311,7 +2312,7 @@ class Channel extends SnowFlake {
 				mention_everyone: false,
 				attachments: files,
 				tts: false,
-				embeds: [],
+				embeds,
 				reactions: [],
 				nonce,
 				type: 0,
@@ -2464,6 +2465,7 @@ class Channel extends SnowFlake {
 				nonce: Math.floor(Math.random() * 1000000000) + "",
 				message_reference: undefined,
 				sticker_ids,
+				embeds,
 			};
 			if (replyjson) {
 				body.message_reference = replyjson;
@@ -2482,6 +2484,7 @@ class Channel extends SnowFlake {
 				body.message_reference,
 				sticker_ids,
 				body.nonce,
+				embeds,
 			);
 			try {
 				res.send((rbody = JSON.stringify(body)));
@@ -2502,6 +2505,7 @@ class Channel extends SnowFlake {
 				nonce: Math.floor(Math.random() * 1000000000) + "",
 				message_reference: undefined,
 				sticker_ids,
+				embeds,
 			};
 			if (replyjson) {
 				body.message_reference = replyjson;
