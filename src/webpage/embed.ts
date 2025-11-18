@@ -101,12 +101,13 @@ class Embed {
 				img.src = this.json.author.icon_url;
 				authorline.append(img);
 			}
-			const a = document.createElement("a");
+			const a = this.json.author.url ? document.createElement("a") : document.createElement("span");
 			a.textContent = this.json.author.name as string;
 			if (this.json.author.url) {
 				MarkDown.safeLink(a, this.json.author.url);
+				a.classList.add("username");
 			}
-			a.classList.add("username");
+
 			authorline.append(a);
 			embed.append(authorline);
 		}
