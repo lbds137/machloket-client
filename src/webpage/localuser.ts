@@ -1233,6 +1233,7 @@ class Localuser {
 			if (this.channelfocus.guild.id === "@me") {
 				return;
 			}
+			if (this.channelfocus.visable) return;
 			this.ws.send(
 				JSON.stringify({
 					d: {
