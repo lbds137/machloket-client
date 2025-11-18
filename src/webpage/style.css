@@ -2624,7 +2624,7 @@ img.embedimg {
 }
 img.authorEmbedImg {
 	max-width: 20px;
-	padding-right: 4px;
+	margin-right: 4px;
 	border-radius: 1in;
 }
 img.bigembedimg {
