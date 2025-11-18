@@ -74,7 +74,7 @@ class MarkDown {
 			const span = document.createElement("span");
 			span.classList.add("md-emoji", "bigemojiUni");
 
-			const matched = str.match(/^((<a?:[A-Za-z\d_]*:\d*>|([^\da-zA-Z <>]+)) *){1,3}$/u);
+			const matched = str.match(/^((<a?:[A-Za-z\d_]*:\d*>|([^\da-zA-Z <>])) *){1,3}$/u);
 			if (matched) {
 				const map = [...str.matchAll(/<a?:[A-Za-z\d_]*:\d*>|[^\da-zA-Z <>]+/gu).map(([_]) => _)];
 				const seg = new Intl.Segmenter("en-US", {granularity: "grapheme"});
