@@ -1705,7 +1705,7 @@ class Guild extends SnowFlake {
 		}
 		if (this.id !== "@me") {
 			for (const thing of this.channels) {
-				if (thing.type !== 4) {
+				if (thing.type !== 4 && thing.visable) {
 					thing.getHTML(addstate, undefined, message);
 					return;
 				}

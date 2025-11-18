@@ -1629,6 +1629,10 @@ class Channel extends SnowFlake {
 		command.render(typebox, this);
 	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
+		if (!this.visable) {
+			this.guild.loadChannel();
+			return;
+		}
 		if (this.owner instanceof Direct) {
 			this.owner.freindDiv?.classList.remove("viewChannel");
 		}
