@@ -366,7 +366,7 @@ class Message extends SnowFlake {
 		if (messagejson.author.id) {
 			this.author = new User(messagejson.author, this.localuser, false);
 		}
-		this.mentions = messagejson.mentions;
+		if (messagejson.mentions) this.mentions = messagejson.mentions;
 
 		this.mention_roles = (messagejson.mention_roles || [])
 			.map((role: string | {id: string}) => {
