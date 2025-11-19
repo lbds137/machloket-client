@@ -4350,10 +4350,10 @@ img.error::after {
 	padding: 6px;
 	border-radius: 6px;
 	width: 350px;
-
 	animation-duration: 0.2s;
 	animation-name: fade-grow-in;
 	animation-timing-function: ease-out;
+	z-index: 1;
 }
 .GuildEmojiTop {
 	background: var(--primary-bg);
