@@ -1110,6 +1110,7 @@ class Localuser {
 		div.classList.remove("hideSearchDiv");
 		const guild = this.lookingguild;
 		if (!guild) return;
+
 		const channel = this.channelfocus;
 		if (!channel) return;
 		if (channel.voice && this.voiceAllowed) {
@@ -1120,6 +1121,9 @@ class Localuser {
 		}
 
 		if (list) {
+			if (list.d.guild_id !== guild.id) {
+				return;
+			}
 			const counts = new Map<string, number>();
 			for (const thing of list.d.ops[0].items) {
 				if ("member" in thing) {
