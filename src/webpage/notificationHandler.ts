@@ -12,8 +12,10 @@ export class NotificationHandler {
 		return message.author.getpfpsrc(message.guild);
 	}
 	static channelMap = new Map<Channel, Set<Notification>>();
-	static sendMessageNotification(message: Message) {
-		let noticontent: string | undefined | null = message.content.textContent;
+	static async sendMessageNotification(message: Message) {
+		const html = message.content.makeHTML();
+		await new Promise<void>((res) => res());
+		let noticontent: string | undefined | null = html.textContent;
 		if (message.embeds[0]) {
 			noticontent ||= message.embeds[0]?.json.title;
 			noticontent ||= message.content.textContent;
