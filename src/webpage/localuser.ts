@@ -1224,6 +1224,14 @@ class Localuser {
 				member.bind(username);
 				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
 				memberdiv.append(pfp, username);
+				if (channel instanceof Group) {
+					console.log(channel.owner_id);
+					if (channel.owner_id === user.id) {
+						const crown = document.createElement("span");
+						crown.classList.add("svg-crown");
+						memberdiv.append(crown);
+					}
+				}
 				memberdiv.classList.add("flexltr", "liststyle", "memberListStyle");
 				membershtml.append(memberdiv);
 			}

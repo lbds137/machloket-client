@@ -499,6 +499,7 @@ type startTypingjson = {
 };
 type channeljson = {
 	id: string;
+	owner_id?: string;
 	created_at: string;
 	name: string;
 	icon: string;
@@ -564,6 +565,7 @@ type dirrectjson = {
 	type: number;
 	recipients: userjson[];
 	is_spam: boolean;
+	owner_id?: string;
 };
 type webhookType = {
 	application_id: null | string;

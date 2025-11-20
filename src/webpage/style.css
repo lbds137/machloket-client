@@ -799,6 +799,16 @@ textarea {
 	display: block;
 	mask-size: cover !important;
 }
+.svg-crown {
+	width: 16px;
+	height: 16px;
+	background: var(--yellow) !important;
+	mask: url(/icons/crown.svg);
+	mask-size: cover !important;
+	flex-shrink: 0;
+	cursor: pointer;
+	margin-left: -2px !important;
+}
 .svg-history {
 	width: 36px;
 	height: 36px;

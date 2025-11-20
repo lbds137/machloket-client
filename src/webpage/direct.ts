@@ -432,6 +432,7 @@ dmPermissions.setPermission("STREAM", 1);
 dmPermissions.setPermission("USE_VAD", 1);
 class Group extends Channel {
 	users: User[];
+	owner_id?: string;
 	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
 	static setupcontextmenu() {
 		this.contextmenu.addButton(
@@ -510,7 +511,7 @@ class Group extends Channel {
 	}
 	updateChannel(json: channeljson): void {
 		super.updateChannel(json);
-
+		this.owner_id = json.owner_id;
 		this.icon = json.icon;
 		this.makeIcon();
 	}
@@ -522,6 +523,7 @@ class Group extends Channel {
 
 		this.icon = json.icon;
 		this.type = json.type;
+		this.owner_id = json.owner_id;
 
 		json.recipients = json.recipients.filter((_) => _.id !== this.localuser.user.id);
 		const userSet = new Set(json.recipients.map((user) => new User(user, this.localuser)));
