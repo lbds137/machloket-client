@@ -502,6 +502,9 @@ class Group extends Channel {
 		form.addImageInput(I18n.channel.icon(), "icon", {
 			initImg: this.icon ? this.iconUrl() : undefined,
 		});
+		form.onSubmit = () => {
+			dio.hide();
+		};
 		dio.show();
 	}
 	defaultName() {
