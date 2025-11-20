@@ -741,6 +741,7 @@ class Channel extends SnowFlake {
 			const myhtml = document.createElement("p2");
 			myhtml.classList.add("ellipsis");
 			myhtml.textContent = this.name;
+			this.nameSpan = new WeakRef(myhtml);
 			decdiv.appendChild(myhtml);
 			caps.appendChild(decdiv);
 			const childrendiv = document.createElement("div");
@@ -810,6 +811,7 @@ class Channel extends SnowFlake {
 			const myhtml = document.createElement("span");
 			myhtml.classList.add("ellipsis");
 			myhtml.textContent = this.name;
+			this.nameSpan = new WeakRef(myhtml);
 			if (this.type === 0) {
 				const decoration = document.createElement("span");
 				button.appendChild(decoration);
@@ -2187,9 +2189,14 @@ class Channel extends SnowFlake {
 		}
 		return flake;
 	}
+	nameSpan = new WeakRef(document.createElement("span") as HTMLElement);
 	updateChannel(json: channeljson) {
+		console.trace("trace me");
 		this.type = json.type;
 		this.name = json.name;
+
+		const span = this.nameSpan.deref();
+		if (span) span.textContent = this.name;
 		const parent = this.localuser.channelids.get(json.parent_id);
 		if (parent) {
 			this.parent = parent;
@@ -2204,7 +2211,7 @@ class Channel extends SnowFlake {
 		const oldover = this.permission_overwrites;
 		this.permission_overwrites = new Map();
 		this.permission_overwritesar = [];
-		for (const thing of json.permission_overwrites) {
+		for (const thing of json.permission_overwrites || []) {
 			this.permission_overwrites.set(thing.id, new Permissions(thing.allow, thing.deny));
 			const permisions = this.permission_overwrites.get(thing.id);
 			if (permisions) {

@@ -1079,7 +1079,7 @@ class Localuser {
 
 	heartbeat_interval: number = 0;
 	updateChannel(json: channeljson): void {
-		const guild = this.guildids.get(json.guild_id);
+		const guild = this.guildids.get(json.guild_id || "@me");
 		if (guild) {
 			guild.updateChannel(json);
 			if (json.guild_id === this.lookingguild?.id) {

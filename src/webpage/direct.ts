@@ -10,6 +10,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Float, FormError} from "./settings.js";
 import {Discovery} from "./discovery.js";
+import {createImg} from "./utils/utils.js";
 
 class Direct extends Guild {
 	channels: Group[];
@@ -507,6 +508,12 @@ class Group extends Channel {
 		};
 		dio.show();
 	}
+	updateChannel(json: channeljson): void {
+		super.updateChannel(json);
+
+		this.icon = json.icon;
+		this.makeIcon();
+	}
 	defaultName() {
 		return this.users.map((_) => _.name).join(", ");
 	}
@@ -571,6 +578,7 @@ class Group extends Channel {
 		const myhtml = document.createElement("span");
 		myhtml.classList.add("ellipsis");
 		myhtml.textContent = this.name;
+		this.nameSpan = new WeakRef(myhtml);
 
 		div.appendChild(this.makeIcon());
 
@@ -615,14 +623,24 @@ class Group extends Channel {
 			this.myhtml.remove();
 		}
 	}
+	groupDmDiv = new WeakRef(document.createElement("div"));
 	makeIcon(): HTMLElement {
 		if (this.users.length === 1) {
 			return this.users[0].buildpfp(undefined);
 		} else {
-			const div = document.createElement("div");
+			const div = this.groupDmDiv.deref() || document.createElement("div");
+			div.innerHTML = "";
 			div.classList.add("groupDmDiv");
-			for (const user of this.users.slice(0, 5)) {
-				div.append(user.buildpfp(undefined));
+			if (this.icon) {
+				const img = createImg(
+					this.info.cdn + "/channel-icons/" + this.id + "/" + this.icon + ".png?size=32",
+				);
+				img.classList.add("pfp");
+				div.append(img);
+			} else {
+				for (const user of this.users.slice(0, 5)) {
+					div.append(user.buildpfp(undefined));
+				}
 			}
 			return div;
 		}
