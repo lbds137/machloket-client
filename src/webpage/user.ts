@@ -157,9 +157,16 @@ class User extends SnowFlake {
 	async opendm(message?: string) {
 		for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
 			if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
-				this.localuser.goToChannel(dm.id);
-				if (message)
-					dm.sendMessage(message, {attachments: [], embeds: [], replyingto: null, sticker_ids: []});
+				await this.localuser.goToChannel(dm.id);
+				if (message) {
+					await dm.sendMessage(message, {
+						attachments: [],
+						embeds: [],
+						replyingto: null,
+						sticker_ids: [],
+					});
+				}
+
 				return;
 			}
 		}
@@ -171,22 +178,19 @@ class User extends SnowFlake {
 		})
 			.then((res) => res.json())
 			.then((json) => {
-				this.localuser.goToChannel(json.id);
+				return this.localuser.goToChannel(json.id);
 			});
 		if (message) {
-			while (true) {
-				for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
-					if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
-						dm.sendMessage(message, {
-							attachments: [],
-							embeds: [],
-							replyingto: null,
-							sticker_ids: [],
-						});
-						return;
-					}
+			for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
+				if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
+					dm.sendMessage(message, {
+						attachments: [],
+						embeds: [],
+						replyingto: null,
+						sticker_ids: [],
+					});
+					return;
 				}
-				await new Promise((res) => setTimeout(res, 100));
 			}
 		}
 		return;

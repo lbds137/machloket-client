@@ -1097,8 +1097,11 @@ class Localuser {
 		}
 		if (channel.id === this.gotoid) {
 			guild.loadGuild();
-			guild.loadChannel(channel.id);
-			this.gotoid = undefined;
+			guild.loadChannel(channel.id).then(() => {
+				this.gotoRes();
+				this.gotoRes = () => {};
+				this.gotoid = undefined;
+			});
 		}
 		return channel; // Add this line to return the 'channel' variable
 	}
@@ -1264,14 +1267,16 @@ class Localuser {
 	}
 
 	gotoid: string | undefined;
+	gotoRes = () => {};
 	async goToChannel(channelid: string, addstate = true, messageid: undefined | string = undefined) {
 		const channel = this.channelids.get(channelid);
 		if (channel) {
 			const guild = channel.guild;
 			guild.loadGuild();
-			guild.loadChannel(channelid, addstate, messageid);
+			await guild.loadChannel(channelid, addstate, messageid);
 		} else {
 			this.gotoid = channelid;
+			return new Promise<void>((res) => (this.gotoRes = res));
 		}
 	}
 	delChannel(json: channeljson): void {

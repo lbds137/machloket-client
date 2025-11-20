@@ -1690,23 +1690,23 @@ class Guild extends SnowFlake {
 		}
 		return this.member.hasRole(r);
 	}
-	loadChannel(ID?: string | undefined | null, addstate = true, message?: string) {
+	async loadChannel(ID?: string | undefined | null, addstate = true, message?: string) {
 		if (ID) {
 			const channel = this.localuser.channelids.get(ID);
 			if (channel) {
-				channel.getHTML(addstate, undefined, message);
+				await channel.getHTML(addstate, undefined, message);
 				return;
 			}
 		}
 		if (this.prevchannel && ID !== null && this.prevchannel.visable) {
 			console.log(this.prevchannel);
-			this.prevchannel.getHTML(addstate, undefined, message);
+			await this.prevchannel.getHTML(addstate, undefined, message);
 			return;
 		}
 		if (this.id !== "@me") {
 			for (const thing of this.channels) {
 				if (thing.type !== 4 && thing.visable) {
-					thing.getHTML(addstate, undefined, message);
+					await thing.getHTML(addstate, undefined, message);
 					return;
 				}
 			}

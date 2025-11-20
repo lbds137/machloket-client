@@ -3,7 +3,7 @@ import {Channel} from "./channel.js";
 import {Message} from "./message.js";
 import {Localuser} from "./localuser.js";
 import {User} from "./user.js";
-import {channeljson, dirrectjson, memberjson, readyjson} from "./jsontypes.js";
+import {channeljson, dirrectjson, memberjson, messageCreateJson, readyjson} from "./jsontypes.js";
 import {Permissions} from "./permissions.js";
 import {SnowFlake} from "./snowflake.js";
 import {Contextmenu} from "./contextmenu.js";
@@ -89,13 +89,13 @@ class Direct extends Guild {
 		ddiv.append(freindDiv, newDm, build);
 		return ddiv;
 	}
-	loadChannel(id?: string | null | undefined, addstate = true, message?: string) {
+	async loadChannel(id?: string | null | undefined, addstate = true, message?: string) {
 		if (id === "discover") {
 			this.removePrevChannel();
 			this.discovery.makeMenu();
 			return;
 		}
-		super.loadChannel(id, addstate, message);
+		await super.loadChannel(id, addstate, message);
 	}
 	makeGroup() {
 		const dio = new Dialog(I18n.group.select());
@@ -511,6 +511,7 @@ class Group extends Channel {
 		super(-1, owner, json.id);
 
 		this.icon = json.icon;
+		this.type = json.type;
 
 		json.recipients = json.recipients.filter((_) => _.id !== this.localuser.user.id);
 		const userSet = new Set(json.recipients.map((user) => new User(user, this.localuser)));
@@ -539,14 +540,25 @@ class Group extends Channel {
 		this.setUpInfiniteScroller();
 		this.updatePosition();
 	}
-	updatePosition() {
+	updatePosition(time?: number) {
 		//TODO see if fake messages break this
-		if (this.lastmessageid) {
+		if (time) {
+			this.position = time;
+		} else if (this.lastmessage) {
+			this.position = this.lastmessage.getTimeStamp();
+		} else if (this.lastmessageid) {
+			console.log(this.lastmessageid);
 			this.position = SnowFlake.stringToUnixTime(this.lastmessageid);
 		} else {
 			this.position = 0;
 		}
 		this.position = -Math.max(this.position, this.getUnixTime());
+
+		const html = this.html?.deref();
+		if (!html) return;
+		const parent = html.parentElement;
+		if (!parent) return;
+		parent.prepend(html);
 	}
 	createguildHTML() {
 		const div = document.createElement("div");
@@ -648,6 +660,11 @@ class Group extends Channel {
 
 	hasPermission(name: string): boolean {
 		return dmPermissions.hasPermission(name);
+	}
+	async messageCreate(messagep: messageCreateJson): Promise<void> {
+		await super.messageCreate(messagep);
+		this.updatePosition();
+		console.log(this);
 	}
 }
 export {Direct, Group};

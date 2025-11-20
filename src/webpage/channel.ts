@@ -2463,6 +2463,13 @@ class Channel extends SnowFlake {
 
 		let rbody: string | FormData;
 		let ctype: string | undefined;
+		const maybeUpdate = () => {
+			if ("updatePosition" in this && this.updatePosition instanceof Function) {
+				console.log("here?");
+				this.updatePosition(Date.now());
+			}
+		};
+		maybeUpdate();
 		if (attachments.length === 0) {
 			const body = {
 				content,
@@ -2490,6 +2497,7 @@ class Channel extends SnowFlake {
 				body.nonce,
 				embeds,
 			);
+
 			try {
 				res.send((rbody = JSON.stringify(body)));
 			} catch {
@@ -2588,7 +2596,7 @@ class Channel extends SnowFlake {
 			this.rendertyping();
 		});
 		this.lastmessage = messagez;
-		if (this.lastmessageid) {
+		if (this.lastmessageid && this.lastmessageid !== messagez.id) {
 			this.idToNext.set(this.lastmessageid, messagez.id);
 			this.idToPrev.set(messagez.id, this.lastmessageid);
 		} else {
