@@ -4,6 +4,7 @@
 		"locale": "tr",
 		"comment": "Sizli bizli",
 		"authors": [
+			"Botorfj",
 			"Erkin Alp Güney",
 			"Erkinalp",
 			"Mory",
@@ -19,19 +20,33 @@
 		"stopstream": "Yayını Durdur",
 		"joiningStream": "Yayına katılınılıyor..."
 	},
+	"favoriteGifs": "Favori Gifler",
+	"recentEmoji": "En Son Emoji",
 	"readableName": "Türkçe",
 	"pinMessage": "Mesajı Sabitle",
 	"unableToPin": "Mesaj sabitlenemiyor",
 	"reply": "Yanıtla",
 	"copyrawtext": "Ham metni kopyala",
+	"copyLink": "Mesaj bağlantısını kopyala",
 	"copymessageid": "Mesaj kimliğini kopyala",
 	"media": {
 		"notFound": "Medya bulunamadı",
 		"loading": "Yükleniyor",
 		"download": "Medyayı indir",
+		"moreInfo": "Daha fazla bilgi",
 		"artist": "Sanatçı: $1",
 		"length": "Süre: $1 dakika ve $2 saniye"
 	},
+	"logout": {
+		"logout": "Oturumu kapat",
+		"error": {
+			"title": "Oturumunuzu kapatmaya çalışırken bir hata oluştu",
+			"desc": "Fermi sizi çıkış yaptıramadı,\n hesabı yine de kaldırmak istiyor musunuz?",
+			"cancel": "İptal",
+			"cont": "Yine de devam et"
+		}
+	},
+	"cancel": "İptal",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Kullanıcının sunucu için davet oluşturmasına izin verir",
@@ -159,26 +174,69 @@
 	"blankMessage": "Boş Mesaj",
 	"spoiler": "Spoiler",
 	"accessibility": {
-		"name": "Erişilebilirlik"
+		"name": "Erişilebilirlik",
+		"roleColors": "Rol renklerini devre dışı et",
+		"playGif": "Gifleri oynat:",
+		"gifSettings": {
+			"hover": "Üzerindeyken",
+			"always": "Her zaman",
+			"never": "Asla"
+		}
+	},
+	"profile": {
+		"userInfo": "Kullanıcı Bilgisi",
+		"bio": "Hakkımda:",
+		"permInfo": "İzinler",
+		"mut": "Ortak Guildler",
+		"mutFriends": "Ortak Arkadaşlar"
+	},
+	"searchGifs": "Tenor'da Arayın",
+	"interactions": {
+		"onlyYou": "Bu mesajı yalnızca siz görebilirsiniz"
 	},
 	"channel": {
+		"name": "Kanal",
 		"copyId": "Kanal kimliğini kopyala",
+		"copyIdCat": "Kategori kimliğini kopyala",
 		"markRead": "Okundu olarak işaretle",
 		"settings": "Ayarlar",
 		"delete": "Kanalı sil",
+		"deleteCat": "Kategoriyi sil",
 		"makeInvite": "Davet oluştur",
 		"settingsFor": "$1 için ayarlar",
 		"voice": "Ses",
 		"text": "Metin",
+		"mute": "Kanalı Sessize Al",
+		"unmute": "Kanalın Sesini Aç",
 		"announcement": "Duyurular",
 		"name:": "Ad:",
+		"icon": "Simge:",
 		"topic:": "Konu:",
 		"nsfw:": "NSFW:",
 		"selectType": "Kanal türünü seç",
 		"selectName": "Kanal adı",
 		"selectCatName": "Kategori adı",
 		"createChannel": "Kanal oluştur",
-		"createCatagory": "Kategori oluştur"
+		"createCatagory": "Kategori oluştur",
+		"permissions": "İzinler"
+	},
+	"notiClump": "$2'den $1 bildiriminiz var",
+	"Voice": {
+		"status": {
+			"done": "Bağlandı",
+			"notconnected": "Bağlı değil",
+			"conectionFailed": "Bağlantı kurulamadı",
+			"left": "Sesli sohbetten ayrıldı"
+		}
+	},
+	"delete": "Sil",
+	"webhooks": {
+		"createdAt": "$1 tarihinde oluşturuldu",
+		"name": "Ad:",
+		"channel": "Kanal",
+		"copyURL": "Webhook URL'sini kopyala",
+		"newWebHook": "Yeni Webhook",
+		"base": "Webhook'lar"
 	},
 	"switchAccounts": "Hesapları Değiştir ⇌",
 	"accountNotStart": "Hesap başlatılamadı",
@@ -213,15 +271,23 @@
 		"box1Items": "Doğrudan Mesajlaşma|Tepkiler desteği|Davetler|Hesap değiştirme|Kullanıcı ayarları|Geliştirici portalı|Bot davetleri|Çeviri desteği",
 		"compatableInstances": "Spacebar Uyumlu Örnekler:",
 		"box3title": "Jank Client'a Katkıda Bulunun",
-		"box3description": "Her zaman yardımı takdir ederiz, ister hata raporları, ister kod şeklinde olsun, hatta sadece bazı yazım hatalarını işaret etseniz bile."
+		"box3description": "Her zaman yardımı takdir ederiz, ister hata raporları, ister kod şeklinde olsun, hatta sadece bazı yazım hatalarını işaret etseniz bile.",
+		"trans": "Çevir",
+		"transTitle": "Fermi'yi Çevir",
+		"transDesc": "Fermi'yi kendi dilinize çevirmeye yardım edebilirsiniz!"
+	},
+	"form": {
+		"captcha": "Bir saniye, siz insan mısınız?"
 	},
 	"register": {
+		"register": "Kaydol",
 		"passwordError:": "Parola: $1",
 		"usernameError": "Kullanıcı adı: $1",
 		"emailError": "E-posta: $1",
 		"DOBError": "Doğum Tarihi: $1",
 		"agreeTOS": "[Hizmet Şartlarını]($1) kabul ediyorum:",
-		"noTOS": "Bu örneğin Hizmet Şartları yok, yine de TOS'u kabul et:"
+		"noTOS": "Bu örneğin Hizmet Şartları yok, yine de TOS'u kabul et:",
+		"tos": "Kullanım şartlarını kabul etmeniz gerekiyor"
 	},
 	"leaving": "Spacebar'dan ayrılıyorsunuz",
 	"goingToURL": "$1 adresine gidiyorsunuz. Oraya gitmek istediğinizden emin misiniz?",
@@ -229,10 +295,26 @@
 	"goThereTrust": "Oraya git ve gelecekte güven",
 	"nevermind": "Boşver",
 	"submit": "Gönder",
+	"edit": "Düzenle",
+	"discovery": "Keşfet",
 	"guild": {
+		"joinConfirm": "$1'e katıl?",
+		"guilds": "Guildler",
+		"template": "Şablon:",
+		"adminMenu": {
+			"permission": "İzinler:",
+			"ownName": "Sahip"
+		},
+		"viewTemplate": "Şablonu Görüntüle",
+		"invites": "Davetler",
+		"templateNameShort": "Şablon adı en az 2 karakter uzunluğunda olmalıdır",
+		"bannedBy": "Tarafından yasaklanıldı:",
+		"banReason": "Yasaklanma nedeni: $1",
+		"community": "Topluluk",
 		"copyId": "Sunucu kimliğini kopyala",
 		"markRead": "Okundu olarak işaretle",
 		"notifications": "Bildirimler",
+		"mute": "Guild'i Sessize Al",
 		"leave": "Sunucudan ayrıl",
 		"settings": "Ayarlar",
 		"delete": "Sunucuyu sil",
@@ -258,29 +340,54 @@
 		"noDelete": "Boşver",
 		"create": "Sunucu oluştur",
 		"loadingDiscovery": "Yükleniyor...",
-		"disoveryTitle": "Sunucu keşfi ($1 {{PLURAL:$1|girdi}})"
+		"disoveryTitle": "Sunucu keşfi ($1 {{PLURAL:$1|girdi}})",
+		"emptytitle": "Garip durum",
+		"emptytext": "Garip bir durumdasınız, bu guild'de hiç kanal yok",
+		"description:": "Açıklama:",
+		"systemSelect:": "Sistem mesajları kanalı:",
+		"sendrandomwelcome?": "Birisi guild'e katılınca rastgele cümle gönder",
+		"DISCOVERABLE": "Keşfet"
 	},
+	"createAccount": "Hesap Oluştur",
 	"role": {
 		"displaySettings": "Görüntü Ayarları",
 		"name": "Rol adı:",
+		"copyId": "Rol kimliğini kopyala",
 		"roles": "Roller",
+		"perms": "İzinler",
 		"hoisted": "Listede göster:",
 		"mentionable": "Herkes bu rolü etiketleyebilir:",
 		"color": "Renk",
 		"remove": "Rolü kaldır",
 		"delete": "Rolü Sil",
-		"confirmDelete": "$1 silmek istediğinizden emin misiniz?"
+		"confirmDelete": "$1 silmek istediğinizden emin misiniz?",
+		"roleEmoji": "Rol emojisi:",
+		"roleFileIcon": "Rol Simgesi:",
+		"deleting": "Rol siliniyor..."
 	},
 	"settings": {
 		"unsaved": "Dikkatli olun, kaydedilmemiş değişiklikleriniz var",
-		"save": "Değişiklikleri kaydet"
+		"save": "Değişiklikleri kaydet",
+		"img": "Resim yükle",
+		"clear": "Temizle"
+	},
+	"notiVolume": "Bildirim sesi:",
+	"blog": {
+		"blog": "Blog"
 	},
 	"localuser": {
+		"install": "Yükle",
+		"installJank": "Fermi'yi yükle",
+		"installDesc": "Fermi'yi yüklemek onu farklı bir uygulama gibi açmanıza sağlayacaktır! Ayrıca Fermi'yi web tarayıcınızda kullanmaya devam edebilirsiniz ve aynı şekilde çalışacaktır.",
+		"addStatus": "Durum ekle",
+		"status": "Durum",
 		"settings": "Ayarlar",
 		"userSettings": "Kullanıcı Ayarları",
 		"themesAndSounds": "Temalar & Sesler",
 		"theme:": "Tema",
 		"notisound": "Bildirim sesi:",
+		"customSound": "Özel Ses",
+		"soundTooLarge": "Yüklemeye çalıştığınız ses çok büyük, tekrar deneyin",
 		"accentColor": "Vurgu rengi:",
 		"enableEVoice": "Deneysel Ses desteğini etkinleştir",
 		"VoiceWarning": "Bunu etkinleştirmek istediğinizden emin misiniz, bu çok deneysel ve sorunlara neden olabilir. (bu özellik geliştiriciler içindir, ne yaptığınızı bilmiyorsanız lütfen etkinleştirmeyin)",
@@ -335,7 +442,15 @@
 		"noToken": "Token'i bilmiyorum, bu yüzden localStorage'a kaydedemem, üzgünüm",
 		"advancedBot": "Gelişmiş Bot Ayarları",
 		"botInviteCreate": "Bot Davet Oluşturucu",
-		"language": "Dil:"
+		"language": "Dil:",
+		"connections": "Bağlantılar"
+	},
+	"message": {
+		"delete": "Mesajı Sil",
+		"edit": "Mesajı Düzenle",
+		"edited": "(düzenlendi)",
+		"deleted": "Silinmiş mesaj",
+		"reactionsTitle": "Tepkiler"
 	},
 	"instanceStats": {
 		"name": "Örnek istatistikleri: $1",
@@ -366,7 +481,8 @@
 		"longInvitedBy": "$1 sizi $2'ya katılmaya davet etti",
 		"loginOrCreateAccount": "Giriş yapın veya hesap oluşturun ⇌",
 		"joinUsing": "Daveti kullanarak katıl",
-		"inviteLinkCode": "Davet Bağlantısı/Kodu"
+		"inviteLinkCode": "Davet Bağlantısı/Kodu",
+		"never": "Asla"
 	},
 	"replyingTo": "$1 yanıtlıyor",
 	"DMs": {

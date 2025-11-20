@@ -7,15 +7,15 @@
 		]
 	},
 	"vc": {
-		"joinstream": "Uitzending kijken",
+		"joinstream": "Uitzending bekijken",
 		"leavestream": "Uitzending verlaten",
 		"joinForStream": "Kom binnen om te kijken",
 		"stopstream": "Uitzending stoppen",
-		"joiningStream": "Verbindt met uitzending…"
+		"joiningStream": "Verbinden met uitzending…"
 	},
-	"favoriteGifs": "Favoriete GIFs",
+	"favoriteGifs": "Favoriete GIF's",
 	"recentEmoji": "Recente emoji",
-	"noStickers": "Je lijkt in een vreemde situatie te zitten, er zijn namelijk geen stickers die je kunt gebruiken!",
+	"noStickers": "U lijkt in een vreemde situatie te zitten, er zijn namelijk geen stickers die u kunt gebruiken!",
 	"readableName": "Nederlands",
 	"pinMessage": "Bericht vastzetten",
 	"unableToPin": "Bericht kan niet worden vastgezet",
@@ -36,7 +36,7 @@
 		"logout": "Afmelden",
 		"error": {
 			"title": "Er is een fout opgetreden bij het afmelden",
-			"desc": "Fermi heeft je niet kunnen afmelden,\n wil je het account toch verwijderen?",
+			"desc": "Fermi heeft u niet kunnen afmelden,\n wilt u het account toch verwijderen?",
 			"cancel": "Annuleren",
 			"cont": "Toch doorgaan"
 		}
@@ -73,8 +73,8 @@
 			"CHANGE_NICKNAME": "Hiermee kan de gebruiker de eigen bijnaam wijzigen",
 			"MANAGE_NICKNAMES": "Hiermee kan de gebruiker de bijnamen van andere leden wijzigen",
 			"MANAGE_ROLES": "Hiermee kan de gebruiker rollen bewerken en beheren",
-			"MANAGE_WEBHOOKS": "Maakt beheer en bewerking van webhooks mogelijk",
-			"MANAGE_GUILD_EXPRESSIONS": "Maakt het mogelijk emoji’s, stickers en het geluidenpaneel te beheren",
+			"MANAGE_WEBHOOKS": "Maakt beheren en bewerken van webhooks mogelijk",
+			"MANAGE_GUILD_EXPRESSIONS": "Maakt beheren van emoji’s, stickers en het geluidenpaneel mogelijk",
 			"USE_APPLICATION_COMMANDS": "Hiermee kan de gebruiker toepassingsopdrachten gebruiken",
 			"REQUEST_TO_SPEAK": "Hiermee kan de gebruiker vragen om in het podiumkanaal te spreken",
 			"MANAGE_EVENTS": "Hiermee kan de gebruiker gebeurtenissen bewerken en beheren",
@@ -416,10 +416,13 @@
 		"DISCOVERABLE": "Ontdekking"
 	},
 	"welcomeMessages": "Welkom $1! Leuk dat je er bent!\nHoi $1, leuk je te ontmoeten!\nDag $1, schuif ook gezellig aan!\nKom erbij $1, heb je pizza bij je?",
+	"createAccount": "Account aanmaken",
 	"role": {
 		"displaySettings": "Weergave-instellingen",
 		"name": "Rolnaam:",
+		"copyId": "Rol-ID kopiëren",
 		"roles": "Rollen",
+		"perms": "Rechten",
 		"hoisted": "Opgehesen:",
 		"mentionable": "Iedereen toestaan deze rol te pingen:",
 		"color": "Kleur",
@@ -463,7 +466,10 @@
 		"fermi": "Blog van Fermi",
 		"desc": "Lees de blog of abonneer je erop voor nieuwtjes over Fermi!"
 	},
+	"remove": "Verwijderen",
 	"localuser": {
+		"trusted": "Vertrouwde domeinen",
+		"trustedDesc": "Wanneer u op koppelingen van deze domeinen klikt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan URL's die u vertrouwt.",
 		"trace": "Sporen",
 		"install": "Installeren",
 		"installJank": "Fermi installeren",
@@ -675,6 +681,7 @@
 		"unban": "$1 ontbannen",
 		"remove": "Gebruiker verwijderen"
 	},
+	"loaded": "Geladen",
 	"login": {
 		"checking": "Server wordt gecontroleerd",
 		"allGood": "Alles goed",
