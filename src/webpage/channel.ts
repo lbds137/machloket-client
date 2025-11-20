@@ -2620,6 +2620,9 @@ class Channel extends SnowFlake {
 		if (messagez.author === this.localuser.user) {
 			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
 			this.lastreadmessageid = messagez.id;
+			this.mentions = 0;
+			this.unreads();
+			this.guild.unreads();
 			if (next) {
 				next.generateMessage();
 			}
