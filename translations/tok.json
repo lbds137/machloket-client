@@ -11,7 +11,7 @@
 		"stopstream": "sitelen mute pini",
 		"joiningStream": "sitelen musi insa kama..."
 	},
-	"favoriteGifs": "sitelen mute pona tawa sina",
+	"favoriteGifs": "sitelen pona mute tawa sina",
 	"recentEmoji": "tenpo ante lili la pilin sitelen",
 	"noStickers": "sina lon nasa, sitelen li weka!",
 	"readableName": "toki pona",
@@ -31,7 +31,7 @@
 		"length": "suli pi ni: tenpo $1:$2"
 	},
 	"logout": {
-		"logout": "o weka tan sijelo",
+		"logout": "o weka sijelo",
 		"error": {
 			"title": "o weka tan sijelo la pakala tan alasa",
 			"desc": "o weka tan sijelo la Femi kan ala, o wile sina weka sijelo?",
@@ -46,9 +46,16 @@
 			"ADMINISTRATOR": "jan lawa",
 			"VIEW_CHANNEL": "poki lukin",
 			"SEND_MESSAGES": "o pana e toki",
+			"EMBED_LINKS": "o ken lukin linja",
+			"ATTACH_FILES": "o pana ijo",
+			"READ_MESSAGE_HISTORY": "o ken lukin toki ale",
+			"CONNECT": "o pali linluwi",
 			"SPEAK": "toki",
 			"MUTE_MEMBERS": "toki jan ken ala",
+			"DEAFEN_MEMBERS": "kute la ken ala",
+			"MOVE_MEMBERS": "o tawa jan",
 			"CHANGE_NICKNAME": "ante nimi",
+			"MANAGE_NICKNAMES": "ante nimi",
 			"SEND_VOICE_MESSAGES": "o pana toki kalama"
 		}
 	},
@@ -135,6 +142,7 @@
 		"name:": "nimi:",
 		"icon:": "sitelen lili:",
 		"all": "ale",
+		"none": "ala",
 		"create": "o pali poki toki sin",
 		"loadingDiscovery": "ijo li kama..."
 	},
@@ -162,9 +170,17 @@
 		"userSettings": "e sijelo ante",
 		"SWOff": "weka",
 		"SWOn": "lon",
+		"2faCode:": "nimi ken",
+		"badPassword": "nimi open li lon ala",
 		"changeEmail": "o ante e nimi Email",
 		"password:": "nimi open",
 		"newEmail:": "nimi Email sin",
+		"changeUsername": "o ante nimi ilo",
+		"newUsername": "nimi ilo sin:",
+		"changePassword": "o ante e nimi open",
+		"oldPassword:": "nimi open tan tenpo pini:",
+		"newPassword:": "nimi open sin:",
+		"PasswordsNoMatch": "nimi open li sama ala",
 		"team:": "kulupu:",
 		"appName": "nimi ilo:",
 		"description": "sona lipu:",
@@ -173,6 +189,7 @@
 		"botAvatar": "jan ilo sitelen sijelo:",
 		"resetToken": "o sin e nimi ken",
 		"tokenDisplay": "nimi ken: $1",
+		"language": "toki:",
 		"deleteAccount": "mi pini e sijelo",
 		"deleteAccountButton": "o weka e sijelo"
 	},
@@ -180,6 +197,7 @@
 		"back": "pini",
 		"next": "kama",
 		"new": "sin",
+		"old": "pini",
 		"search": "o alasa"
 	},
 	"manageInstance": {
@@ -193,6 +211,9 @@
 		"edited": "(ni ante)",
 		"viewrest": "ale lukin",
 		"fullMessage": "lipu ale:"
+	},
+	"inviteOptions": {
+		"never": "lon tenpo ala"
 	},
 	"invite": {
 		"channel:": "poki:"

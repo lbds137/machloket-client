@@ -415,10 +415,13 @@
 		"DISCOVERABLE": "發現"
 	},
 	"welcomeMessages": "歡迎，$1！很高興看到您！\n您好，很高興見到您，$1！\n歡迎，希望您有帶了些披薩，$1！",
+	"createAccount": "建立帳號",
 	"role": {
 		"displaySettings": "顯示設定",
 		"name": "角色名稱：",
+		"copyId": "複製角色 ID",
 		"roles": "角色",
+		"perms": "權限",
 		"hoisted": "已提升：",
 		"mentionable": "允許任何人 ping 該角色：",
 		"color": "色彩",
@@ -462,7 +465,10 @@
 		"fermi": "Fermi 部落格",
 		"desc": "閱讀或訂閱部落格來獲得 Fermi 的最新資訊！"
 	},
+	"remove": "移除",
 	"localuser": {
+		"trusted": "信任網域",
+		"trustedDesc": "當您點擊來自這些網域的連結時，他們***不會***像其他連結那樣提示您允許開啟，這僅在您信任的 URL 出現提示",
 		"trace": "軌跡",
 		"install": "安裝",
 		"installJank": "安裝 Fermi",
@@ -674,6 +680,7 @@
 		"unban": "解禁$1",
 		"remove": "移除使用者"
 	},
+	"loaded": "已載入",
 	"login": {
 		"checking": "檢查實例",
 		"allGood": "一切都好",

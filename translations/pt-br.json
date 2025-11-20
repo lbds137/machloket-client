@@ -281,6 +281,13 @@
 		"warnOffiline": "Instância está offline, impossível se conectar",
 		"icon": "Ícone da instância $1"
 	},
+	"devSettings": {
+		"name": "Configurações de desenvolvedor",
+		"description": "Essas são para desenvolvedores do Spacebar/Fermi, se você não sabe o que está fazendo, por favor não mexa com elas.",
+		"badUser": "Habilitar o registro no console de objetos de usuário ruins que enviam informação demais:",
+		"logGateway": "Registrar no console eventos de gateway:",
+		"traces": "Expôr traços:"
+	},
 	"htmlPages": {
 		"idpermissions": "Permite que o bot:",
 		"addBot": "Adicionar à guilda",
@@ -409,9 +416,13 @@
 		"DISCOVERABLE": "Descoberta"
 	},
 	"welcomeMessages": "Bem-vindo(a) $1! Bom te ver!\nOlá, prazer em te conhecer $1!\nBem-vindo(a), espero que tenha trago pizza $1!",
+	"createAccount": "Criar Conta",
 	"role": {
 		"displaySettings": "Configurações de exibição",
 		"name": "Nome do cargo:",
+		"copyId": "Copiar ID do cargo",
+		"roles": "Cargos",
+		"perms": "Permissões",
 		"hoisted": "Levantado:",
 		"mentionable": "Permitir que qualquer um possa marcar este cargo:",
 		"color": "Cor",
@@ -455,7 +466,10 @@
 		"fermi": "Blog do Fermi",
 		"desc": "Leia ou se inscreva no blogue para receber atualizações sobre o Fermi!"
 	},
+	"remove": "Remover",
 	"localuser": {
+		"trusted": "Domínios Confiados",
+		"trustedDesc": "Esses domínios não vão te perguntar por permissão ao clicá-los como outros links, só permita links que você confia.",
 		"trace": "Trilhas",
 		"install": "Instalar",
 		"installJank": "Instalar Fermi",
@@ -664,8 +678,10 @@
 		"editServerProfile": "Editar perfil da guilda",
 		"instanceBan": "Banir da instância",
 		"confirmInstBan": "Tem certeza de que quer banir $1 da instância?",
-		"unban": "Desbanir $1"
+		"unban": "Desbanir $1",
+		"remove": "Remover usuário"
 	},
+	"loaded": "Carregado",
 	"login": {
 		"checking": "Checando instância",
 		"allGood": "Tudo certo",

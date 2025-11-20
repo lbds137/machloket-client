@@ -162,6 +162,7 @@
 		"default": "Standard ($1)",
 		"description:": "Beschreiwung:"
 	},
+	"createAccount": "Kont uleeën",
 	"role": {
 		"roles": "Rollen",
 		"color": "Faarf",
