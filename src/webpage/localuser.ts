@@ -1148,6 +1148,7 @@ class Localuser {
 		const members = new Set<User | Member>(guild.members);
 		if (channel instanceof Group) {
 			channel.users.forEach((user) => members.add(user));
+			members.add(this.user);
 		}
 		members.forEach((member) => {
 			if (member instanceof User) {
