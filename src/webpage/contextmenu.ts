@@ -11,7 +11,14 @@ type iconJson =
 	  };
 
 interface menuPart<x, y> {
-	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement): void;
+	group?: string;
+	makeContextHTML(
+		obj1: x,
+		obj2: y,
+		menu: HTMLDivElement,
+		layered: contextCluster<unknown, unknown>[],
+		processed: WeakSet<menuPart<unknown, unknown>>,
+	): void;
 }
 
 class ContextButton<x, y> implements menuPart<x, y> {
@@ -22,6 +29,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 	private enabled?: (this: x, arg: y) => boolean;
 	//TODO there *will* be more colors
 	private color?: "red" | "blue";
+	group?: string;
 	constructor(
 		text: ContextButton<x, y>["text"],
 		onClick: ContextButton<x, y>["onClick"],
@@ -30,6 +38,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 			visable?: (this: x, arg: y) => boolean;
 			enabled?: (this: x, arg: y) => boolean;
 			color?: "red" | "blue";
+			group?: string;
 		} = {},
 	) {
 		this.text = text;
@@ -38,6 +47,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		this.visable = addProps.visable;
 		this.enabled = addProps.enabled;
 		this.color = addProps.color;
+		this.group = addProps.group;
 	}
 	isVisable(obj1: x, obj2: y): boolean {
 		if (!this.visable) return true;
@@ -102,10 +112,50 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		return this.text;
 	}
 }
+class ContextGroup<x, y> implements menuPart<x, y> {
+	private visable?: (this: x, arg: y) => boolean;
+	groupSel: string;
+	group = undefined;
+	constructor(
+		group: string,
+		addProps: {
+			visable?: (this: x, arg: y) => boolean;
+		} = {},
+	) {
+		this.visable = addProps.visable;
+
+		this.groupSel = group;
+	}
+	isVisable(obj1: x, obj2: y): boolean {
+		if (!this.visable) return true;
+		return this.visable.call(obj1, obj2);
+	}
+	makeContextHTML(
+		x: x,
+		y: y,
+		menuHtml: HTMLDivElement,
+		layered: contextCluster<unknown, unknown>[],
+		processed: WeakSet<menuPart<unknown, unknown>>,
+	) {
+		if (!this.isVisable(x, y)) {
+			return;
+		}
+		for (const [menu, x, y] of layered) {
+			for (const part of menu.buttons) {
+				if (part.group === this.groupSel && !processed.has(part)) {
+					processed.add(part);
+					part.makeContextHTML(x, y, menuHtml, [], processed);
+				}
+			}
+		}
+	}
+}
 class Seperator<x, y> implements menuPart<x, y> {
 	private visable?: (obj1: x, obj2: y) => boolean;
-	constructor(visable?: (obj1: x, obj2: y) => boolean) {
+	group?: string;
+	constructor(visable?: (obj1: x, obj2: y) => boolean, group?: string) {
 		this.visable = visable;
+		this.group = group;
 	}
 	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement): void {
 		if (!this.visable || this.visable(obj1, obj2)) {
@@ -116,6 +166,28 @@ class Seperator<x, y> implements menuPart<x, y> {
 		}
 	}
 }
+declare global {
+	interface HTMLElementEventMap {
+		layered: LayeredEvent;
+	}
+}
+type contextCluster<X, Y> = [Contextmenu<X, Y>, X, Y];
+class LayeredEvent extends CustomEvent<unknown> {
+	menus: contextCluster<unknown, unknown>[];
+	primary?: contextCluster<unknown, unknown>;
+	constructor(mouse: MouseEvent, menus: LayeredEvent["menus"]) {
+		super("layered", {bubbles: true});
+		this.menus = menus;
+		queueMicrotask(() => {
+			console.log(this);
+			const pop = this.primary || menus.pop();
+			if (!pop) return;
+			const [menu, addinfo, other] = pop;
+			menu.makemenu(mouse.clientX, mouse.clientY, addinfo, other, undefined, menus);
+		});
+	}
+}
+
 class Contextmenu<x, y> {
 	static currentmenu: HTMLElement | "" = "";
 	static prevmenus: HTMLElement[] = [];
@@ -152,8 +224,10 @@ class Contextmenu<x, y> {
 			}
 		});
 	}
-	constructor(name: string) {
+	private layered = false;
+	constructor(name: string, layered = false) {
 		this.name = name;
+		this.layered = layered;
 		this.buttons = [];
 	}
 
@@ -165,24 +239,45 @@ class Contextmenu<x, y> {
 			visable?: (this: x, arg: y) => boolean;
 			enabled?: (this: x, arg: y) => boolean;
 			color?: "red" | "blue";
+			group?: string;
 		} = {},
 	) {
 		this.buttons.push(new ContextButton(text, onClick, addProps));
 	}
-	addSeperator(visable?: (obj1: x, obj2: y) => boolean) {
-		this.buttons.push(new Seperator(visable));
+	addSeperator(visable?: (obj1: x, obj2: y) => boolean, group?: string) {
+		this.buttons.push(new Seperator(visable, group));
 	}
-	makemenu(x: number, y: number, addinfo: x, other: y, keep: boolean | HTMLElement = false) {
+	addGroup(
+		group: string,
+		addprops?: {
+			visable?: (this: x, arg: y) => boolean;
+		},
+	) {
+		this.buttons.push(new ContextGroup<x, y>(group, addprops));
+	}
+	makemenu(
+		x: number,
+		y: number,
+		addinfo: x,
+		other: y,
+		keep: boolean | HTMLElement = false,
+		layered: LayeredEvent["menus"] = [],
+	) {
 		const div = document.createElement("div");
 		div.classList.add("contextmenu", "flexttb");
+		const processed = new WeakSet<menuPart<unknown, unknown>>();
 
 		for (const button of this.buttons) {
-			button.makeContextHTML(addinfo, other, div);
+			button.makeContextHTML(addinfo, other, div, layered, processed);
 		}
-		if (div.children[div.children.length - 1]?.tagName === "HR") {
+		if (div.children[div.children.length - 1]?.tagName !== "HR") {
+			div.append(document.createElement("hr"));
+		}
+		new ContextGroup<x, y>("default").makeContextHTML(addinfo, other, div, layered, processed);
+
+		while (div.children[div.children.length - 1]?.tagName === "HR") {
 			div.children[div.children.length - 1].remove();
 		}
-		//NOTE I don't know if this'll ever actually happen in reality
 		if (div.childNodes.length === 0) return;
 
 		Contextmenu.declareMenu(div, keep);
@@ -223,10 +318,19 @@ class Contextmenu<x, y> {
 					}
 				}
 			}
-			event.preventDefault();
 			event.stopImmediatePropagation();
-			this.makemenu(event.clientX, event.clientY, addinfo, other);
+			event.preventDefault();
+			const layered = new LayeredEvent(event, []);
+			obj.dispatchEvent(layered);
 		};
+		obj.addEventListener("layered", (layered) => {
+			if (this.layered) {
+				layered.menus.push([this, addinfo, other]);
+			} else if (!layered.primary) {
+				layered.primary = [this, addinfo, other];
+			}
+			return;
+		});
 		if (click === "right") {
 			obj.addEventListener("contextmenu", func);
 		} else {

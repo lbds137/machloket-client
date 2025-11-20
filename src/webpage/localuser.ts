@@ -1119,7 +1119,7 @@ class Localuser {
 		if (channel.voice && this.voiceAllowed) {
 			return;
 		}
-		if (guild.id === "@me" && (channel as Group).users.length === 1) {
+		if (guild.id === "@me" && (channel as Group).type === 1) {
 			return;
 		}
 
@@ -1221,17 +1221,19 @@ class Localuser {
 					bot.textContent = I18n.bot();
 					username.appendChild(bot);
 				}
-				member.bind(username);
-				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
+
 				memberdiv.append(pfp, username);
 				if (channel instanceof Group) {
-					console.log(channel.owner_id);
+					Group.groupMenu.bindContextmenu(memberdiv, channel, user);
 					if (channel.owner_id === user.id) {
 						const crown = document.createElement("span");
 						crown.classList.add("svg-crown");
 						memberdiv.append(crown);
 					}
 				}
+				member.bind(username);
+				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
+
 				memberdiv.classList.add("flexltr", "liststyle", "memberListStyle");
 				membershtml.append(memberdiv);
 			}

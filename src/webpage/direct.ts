@@ -434,6 +434,30 @@ class Group extends Channel {
 	users: User[];
 	owner_id?: string;
 	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
+	static groupMenu = this.makeGroupMenu();
+	static makeGroupMenu() {
+		const menu = new Contextmenu<Group, User>("group menu", true);
+		menu.addButton(
+			function (user) {
+				return I18n.member.kick(user.name, this.name);
+			},
+			function (user) {
+				fetch(this.info.api + `/channels/${this.id}/recipients/${user.id}`, {
+					method: "DELETE",
+					headers: this.headers,
+				});
+			},
+			{
+				group: "default",
+				visable: function (user) {
+					return this.localuser.user.id !== user.id && this.owner_id === this.localuser.user.id;
+				},
+				color: "red",
+			},
+		);
+		return menu;
+	}
+
 	static setupcontextmenu() {
 		this.contextmenu.addButton(
 			() => I18n.DMs.markRead(),
@@ -451,7 +475,7 @@ class Group extends Channel {
 			},
 			{
 				visable: function () {
-					return this.users.length !== 1;
+					return this.type !== 1;
 				},
 			},
 		);
