@@ -395,7 +395,7 @@ class Embed {
 		const a = document.createElement("a");
 		if (this.json.url && this.json.url) {
 			MarkDown.safeLink(a, this.json.url);
-			a.textContent = this.json.url;
+			a.textContent = this.json.title || this.json.url;
 			div.append(a);
 		}
 		if (this.json.description) {
