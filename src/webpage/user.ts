@@ -4,7 +4,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {Localuser} from "./localuser.js";
 import {Guild} from "./guild.js";
 import {SnowFlake} from "./snowflake.js";
-import {presencejson, userjson, webhookInfo} from "./jsontypes.js";
+import {highMemberJSON, presencejson, userjson, webhookInfo} from "./jsontypes.js";
 import {Role} from "./role.js";
 import {Search} from "./search.js";
 import {I18n} from "./i18n.js";
@@ -761,6 +761,17 @@ class User extends SnowFlake {
 
 		return badges;
 	}
+	async highInfo() {
+		return (await (
+			await fetch(
+				this.info.api +
+					"/users/" +
+					this.id +
+					"/profile?with_mutual_guilds=true&with_mutual_friends=true",
+				{headers: this.localuser.headers},
+			)
+		).json()) as highMemberJSON;
+	}
 	async fullProfile(guild: Guild | null | Member = null) {
 		console.log(guild);
 		const membres = (async () => {
@@ -948,10 +959,19 @@ class User extends SnowFlake {
 				permDiv.append(span);
 			}
 			perms.addHTMLArea(permDiv);
+		})();
 
+		const fhtml = float.generateHTML();
+		fhtml.style.overflow = "auto";
+		userbody.append(fhtml);
+
+		document.body.append(background);
+		background.append(div);
+		console.log(background);
+		(async () => {
+			const high = await this.highInfo();
 			const mut = buttons.add(I18n.profile.mut());
 			const mutDiv = document.createElement("div");
-			const high = await memb.highInfo();
 
 			mutDiv.append(
 				...high.mutual_guilds
@@ -997,13 +1017,6 @@ class User extends SnowFlake {
 				friends.addHTMLArea(div);
 			}
 		})();
-		const fhtml = float.generateHTML();
-		fhtml.style.overflow = "auto";
-		userbody.append(fhtml);
-
-		document.body.append(background);
-		background.append(div);
-		console.log(background);
 		return background;
 	}
 
