@@ -266,14 +266,14 @@ export function trimswitcher() {
 	localStorage.setItem("userinfos", JSON.stringify(json));
 	console.log(json);
 }
-export function adduser(user: typeof Specialuser.prototype.json) {
-	user = new Specialuser(user);
+export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
+	const suser = new Specialuser(user);
 	const info = getBulkInfo();
-	info.users[user.uid] = user;
-	info.currentuser = user.uid;
-	sessionStorage.setItem("currentuser", user.uid);
+	info.users[suser.uid] = suser;
+	info.currentuser = suser.uid;
+	sessionStorage.setItem("currentuser", suser.uid);
 	localStorage.setItem("userinfos", JSON.stringify(info));
-	return user;
+	return suser;
 }
 class Directory {
 	static home = this.createHome();

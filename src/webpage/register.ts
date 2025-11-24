@@ -1,9 +1,13 @@
 import {I18n} from "./i18n.js";
-import {adduser} from "./utils/utils.js";
+import {adduser, Specialuser} from "./utils/utils.js";
 import {makeLogin} from "./login.js";
 import {MarkDown} from "./markdown.js";
 import {Dialog, FormError} from "./settings.js";
-export async function makeRegister(trasparentBg = false, instance = "") {
+export async function makeRegister(
+	trasparentBg = false,
+	instance = "",
+	handle?: (user: Specialuser) => void,
+) {
 	const dialog = new Dialog("");
 	const opt = dialog.options;
 	opt.addTitle(I18n.htmlPages.createAccount());
@@ -21,11 +25,16 @@ export async function makeRegister(trasparentBg = false, instance = "") {
 		"",
 		(res) => {
 			if ("token" in res && typeof res.token == "string") {
-				adduser({
+				const u = adduser({
 					serverurls: JSON.parse(localStorage.getItem("instanceinfo") as string),
 					email: email.value,
 					token: res.token,
-				}).username = user.value;
+				});
+				u.username = user.value;
+				if (handle) {
+					handle(u);
+					return;
+				}
 				const redir = new URLSearchParams(window.location.search).get("goback");
 				if (redir) {
 					window.location.href = redir;

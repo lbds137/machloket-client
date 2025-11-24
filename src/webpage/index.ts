@@ -1,22 +1,20 @@
 import {Localuser} from "./localuser.js";
 import {Contextmenu} from "./contextmenu.js";
-import {mobile} from "./utils/utils.js";
+import {mobile, Specialuser} from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
 import {MarkDown} from "./markdown.js";
 import {Message} from "./message.js";
 import {File} from "./file.js";
 import {I18n} from "./i18n.js";
 import "./utils/pollyfills.js";
+import {makeLogin} from "./login.js";
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
 }
 let templateID = new URLSearchParams(window.location.search).get("templateID");
 await I18n.done;
 Localuser.loadFont();
-if (!(sessionStorage.getItem("currentuser") || Localuser.users.currentuser)) {
-	window.location.href = "/login";
-	throw 0;
-}
+
 I18n.translatePage();
 
 const userInfoElement = document.getElementById("userinfo") as HTMLDivElement;
@@ -66,9 +64,11 @@ const loaddesc = document.getElementById("load-desc") as HTMLSpanElement;
 try {
 	const current = sessionStorage.getItem("currentuser") || Localuser.users.currentuser;
 	if (!Localuser.users.users[current]) {
-		window.location.href = "/login";
+		thisUser = new Localuser(await new Promise<Specialuser>((res) => makeLogin(true, "", res)));
+	} else {
+		thisUser = new Localuser(Localuser.users.users[current]);
 	}
-	thisUser = new Localuser(Localuser.users.users[current]);
+
 	regSwap(thisUser);
 	thisUser.initwebsocket().then(() => {
 		thisUser.loaduser();

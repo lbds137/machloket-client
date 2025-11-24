@@ -1,4 +1,4 @@
-import {instanceinfo, adduser} from "./utils/utils.js";
+import {instanceinfo, adduser, Specialuser} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {makeRegister} from "./register.js";
@@ -45,7 +45,11 @@ async function recover(e: instanceinfo, recover = document.getElementById("recov
 	});
 }
 
-export async function makeLogin(trasparentBg = false, instance = "") {
+export async function makeLogin(
+	trasparentBg = false,
+	instance = "",
+	handle?: (user: Specialuser) => void,
+) {
 	const dialog = new Dialog("");
 	const opt = dialog.options;
 	opt.addTitle(I18n.login.login());
@@ -65,11 +69,16 @@ export async function makeLogin(trasparentBg = false, instance = "") {
 		"",
 		(res) => {
 			if ("token" in res && typeof res.token == "string") {
-				adduser({
+				const u = adduser({
 					serverurls: JSON.parse(localStorage.getItem("instanceinfo") as string),
 					email: email.value,
 					token: res.token,
-				}).username = email.value;
+				});
+				u.username = email.value;
+				if (handle) {
+					handle(u);
+					return;
+				}
 				const redir = new URLSearchParams(window.location.search).get("goback");
 				if (redir) {
 					window.location.href = redir;
@@ -97,7 +106,7 @@ export async function makeLogin(trasparentBg = false, instance = "") {
 	const a = document.createElement("a");
 	a.onclick = () => {
 		dialog.hide();
-		makeRegister(trasparentBg);
+		makeRegister(trasparentBg, "", handle);
 	};
 	a.textContent = I18n.htmlPages.noAccount();
 	const rec = document.createElement("div");
