@@ -119,7 +119,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 					await Promise.all([
 						fs.writeFile(
 							newfileDir + ".js",
-							mod.code + "\n" + `//# sourceMappingURL= ${plainname}.js.map`,
+							mod.code + "\n" + `//# sourceMappingURL=${plainname}.js.map`,
 						),
 						mod.map ? fs.writeFile(newfileDir + ".js.map", mod.map as string) : null,
 					]);
