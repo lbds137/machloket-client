@@ -1112,6 +1112,7 @@ class Options implements OptionsElement<void> {
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
+			tfaCheck=true
 		} = {},
 	) {
 		const options = new Form(name, this, onSubmit, {
@@ -1121,6 +1122,7 @@ class Options implements OptionsElement<void> {
 			headers,
 			method,
 			traditionalSubmit,
+			tfaCheck
 		});
 		this.subOptions = options;
 		this.genTop();
@@ -1557,34 +1559,71 @@ class FormError extends Error {
 }
 async function handle2fa(json: any, api: string): Promise<false | any> {
 	if (json.ticket) {
-		return new Promise<boolean>((resolution) => {
-			const better = new Dialog("");
-			const form = better.options.addForm(
-				"",
-				(res: any) => {
-					if (res.message) {
-						throw new FormError(ti, res.message);
-					} else {
-						resolution(res);
-						better.hide();
-					}
+		if(json.webauthn){
+			const challenge = JSON.parse(json.webauthn).publicKey as PublicKeyCredentialRequestOptionsJSON;
+			challenge.challenge=challenge.challenge.split("=")[0].replaceAll("+","-").replaceAll("/","_");
+			challenge.allowCredentials?.forEach(_=>_.id=_.id.split("=")[0].replaceAll("+","-").replaceAll("/","_"))
+			console.log(challenge);
+			const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
+			const credential = await navigator.credentials.get({publicKey: options}) as unknown as {
+				rawId:ArrayBuffer,
+				response:{
+					[key:string]:ArrayBuffer,
+				}
+			};
+			if(!credential) return false;
+			function toBase64(buf:ArrayBuffer){
+				return btoa(String.fromCharCode(...new Uint8Array(buf)))
+			}
+			const keys = ["authenticatorData","clientDataJSON","signature"];
+			const response = {} as any;
+			for(const key of keys){
+				response[key]=toBase64(credential.response[key] as ArrayBuffer);
+			}
+			const res = {
+				rawId:toBase64(credential.rawId),
+				response
+			};
+			const resObj = await fetch(api + "/auth/mfa/webauthn",{
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
 				},
-				{
-					fetchURL: api + "/auth/mfa/totp",
-					method: "POST",
-					headers: {
-						"Content-Type": "application/json",
-					},
-				},
-			);
-			form.addTitle(I18n["2faCode"]());
-			form.addPreprocessor((e) => {
-				//@ts-ignore
-				e.ticket = json.ticket;
+				body:JSON.stringify({code:JSON.stringify(res),ticket:json.ticket})
 			});
-			const ti = form.addTextInput("", "code");
-			better.show();
-		});
+			if(!resObj.ok) return false;
+			const jsonRes = await resObj.json();
+			return jsonRes;
+		}else{
+			return new Promise<boolean>((resolution) => {
+				const better = new Dialog("");
+				const form = better.options.addForm(
+					"",
+					(res: any) => {
+						if (res.message) {
+							throw new FormError(ti, res.message);
+						} else {
+							resolution(res);
+							better.hide();
+						}
+					},
+					{
+						fetchURL: api + "/auth/mfa/totp",
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+						},
+					},
+				);
+				form.addTitle(I18n["2faCode"]());
+				form.addPreprocessor((e) => {
+					//@ts-ignore
+					e.ticket = json.ticket;
+				});
+				const ti = form.addTextInput("", "code");
+				better.show();
+			});
+		}
 	} else {
 		return false;
 	}
@@ -1617,6 +1656,7 @@ class Form implements OptionsElement<object> {
 	value!: object;
 	traditionalSubmit: boolean;
 	values: {[key: string]: any} = {};
+	tfaCheck:boolean;
 	constructor(
 		name: string,
 		owner: Options,
@@ -1629,10 +1669,12 @@ class Form implements OptionsElement<object> {
 			method = "POST",
 			traditionalSubmit = false,
 			vsmaller = false,
+			tfaCheck=true
 		} = {},
 	) {
 		this.traditionalSubmit = traditionalSubmit;
 		this.name = name;
+		this.tfaCheck=tfaCheck;
 		this.method = method;
 		this.submitText = submitText;
 		this.options = new Options(name, this, {ltr, vsmaller});
@@ -2005,7 +2047,7 @@ class Form implements OptionsElement<object> {
 							return await doFetch();
 						}
 						const match = this.fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
-						if (match) {
+						if (match && this.tfaCheck) {
 							const tried = await handle2fa(json, match[0]);
 							if (tried) {
 								return await onSubmit(tried);

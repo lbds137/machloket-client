@@ -2383,6 +2383,84 @@ class Localuser {
 						form.setValue("secret", secret);
 					});
 				}
+				{
+					security.addButtonInput("","Manage Security Keys",()=>{
+						const keyMenu = security.addSubOptions("Manage Keys");
+						const addKey=(key:{name:string,id:string})=>{
+							keyMenu.addButtonInput("",key.name,()=>{
+								const opt = keyMenu.addSubOptions(key.name);
+								const button = opt.addButtonInput("",I18n.delete(),async ()=>{
+									await fetch(this.info.api+"/users/@me/mfa/webauthn/credentials/"+key.id,
+									{
+										headers:this.headers,
+										method:"DELETE"
+									});
+									keyMenu.returnFromSub();
+									keyMenu.deleteElm(button);
+								})
+							});
+						}
+						keyMenu.addButtonInput("","Security Key :3",()=>{
+
+							const form = keyMenu.addSubForm("Keys",async (obj)=>{
+								const body = obj as {ticket:string,challenge:string};
+								const challenge = JSON.parse(body.challenge).publicKey as PublicKeyCredentialCreationOptionsJSON;
+								console.log(challenge.challenge);
+								challenge.challenge=challenge.challenge.split("=")[0].replaceAll("+","-").replaceAll("/","_");
+								console.log(challenge.challenge);
+								const options = PublicKeyCredential.parseCreationOptionsFromJSON(challenge);
+								const credential = await navigator.credentials.create({publicKey: options}) as unknown as {
+									rawId:ArrayBuffer,
+									response:{
+										attestationObject:ArrayBuffer,
+										clientDataJSON:ArrayBuffer,
+									}
+								};
+								if(!credential) return;
+								function toBase64(buf:ArrayBuffer){
+									return btoa(String.fromCharCode(...new Uint8Array(buf)))
+								}
+								const res = {
+									rawId:toBase64(credential.rawId),
+									response:{
+										clientDataJSON:toBase64(credential.response.clientDataJSON),
+										attestationObject:toBase64(credential.response.attestationObject)
+									}
+								};
+								const key = await (await fetch(this.info.api +"/users/@me/mfa/webauthn/credentials",{
+									headers:this.headers,
+									method:"POST",
+									body:JSON.stringify({
+										ticket:body.ticket,
+										credential:JSON.stringify(res),
+										name:name.value
+									})
+								})).json();
+								addKey(key);
+								keyMenu.returnFromSub();
+							},{
+								fetchURL:this.info.api +"/users/@me/mfa/webauthn/credentials",
+								method:"POST",
+								headers:this.headers,
+								tfaCheck:false
+							});
+							form.addTextInput("Password","password",{
+								password:true
+							});
+							const name = form.options.addTextInput("Key Name",()=>{},{
+								initText:"Key"
+							})
+						});
+						fetch(this.info.api +"/users/@me/mfa/webauthn/credentials",{
+							headers:this.headers
+						}).then(_=>_.json()).then((keys:{"id":string,"name":string}[])=>{
+							for(const key of keys){
+								addKey(key);
+							}
+						})
+					})
+
+				}
 				security.addButtonInput("", I18n.localuser.changeDiscriminator(), () => {
 					const form = security.addSubForm(
 						I18n.localuser.changeDiscriminator(),
