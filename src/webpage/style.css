@@ -803,7 +803,7 @@ textarea {
 	width: 16px;
 	height: 16px;
 	background: var(--yellow) !important;
-	mask: url(/icons/crown.svg);
+	mask: url(./icons/crown.svg);
 	mask-size: cover !important;
 	flex-shrink: 0;
 	cursor: pointer;
@@ -813,7 +813,7 @@ textarea {
 	width: 36px;
 	height: 36px;
 	background: var(--primary-text-soft);
-	mask: url(/icons/history.svg);
+	mask: url(./icons/history.svg);
 	mask-size: cover !important;
 	flex-shrink: 0;
 	cursor: pointer;
@@ -823,7 +823,7 @@ textarea {
 	}
 }
 .svg-folder {
-	mask: url(/icons/folder.svg);
+	mask: url(./icons/folder.svg);
 	background-color: var(--folder-color, var(--accent-color));
 	mask-size: contain !important;
 	width: 36px;
@@ -835,7 +835,7 @@ textarea {
 	}
 }
 .svg-gifstar {
-	mask: url(/icons/gifstar.svg);
+	mask: url(./icons/gifstar.svg);
 	mask-size: contain !important;
 	width: 24px;
 	height: 24px;
@@ -851,146 +851,146 @@ textarea {
 	}
 }
 .svg-stream {
-	mask: url(/icons/stream.svg);
+	mask: url(./icons/stream.svg);
 	mask-size: contain !important;
 	background: var(--primary-text);
 }
 .svg-stopstream {
-	mask: url(/icons/stopstream.svg);
+	mask: url(./icons/stopstream.svg);
 	mask-size: contain !important;
 	background-color: var(--red);
 }
 .svg-video {
-	mask: url(/icons/video.svg);
+	mask: url(./icons/video.svg);
 	mask-size: contain !important;
 	background: var(--primary-text);
 }
 .svg-novideo {
-	mask: url(/icons/novideo.svg);
+	mask: url(./icons/novideo.svg);
 	mask-size: contain !important;
 	background: var(--red);
 }
 .svg-call {
-	mask: url(/icons/call.svg);
+	mask: url(./icons/call.svg);
 	mask-size: contain !important;
 }
 .svg-hangup {
-	mask: url(/icons/hangup.svg);
+	mask: url(./icons/hangup.svg);
 	mask-size: contain !important;
 	background: var(--red);
 }
 .svg-plainx {
-	mask: url(/icons/plainx.svg);
+	mask: url(./icons/plainx.svg);
 	mask-size: contain !important;
 }
 .svg-sticker {
-	mask: url(/icons/sticker.svg);
+	mask: url(./icons/sticker.svg);
 	mask-size: contain !important;
 }
 .svg-search {
-	mask: url(/icons/search.svg);
+	mask: url(./icons/search.svg);
 	mask-size: contain !important;
 }
 .svg-spoiler {
-	mask: url(/icons/spoiler.svg);
+	mask: url(./icons/spoiler.svg);
 }
 .svg-pin {
-	mask: url(/icons/pin.svg);
+	mask: url(./icons/pin.svg);
 	mask-size: cover;
 }
 .svg-rules {
-	mask: url(/icons/rules.svg);
+	mask: url(./icons/rules.svg);
 	mask-size: cover;
 }
 .svg-unspoiler {
-	mask: url(/icons/unspoiler.svg);
+	mask: url(./icons/unspoiler.svg);
 }
 .svg-soundMore {
-	mask: url(/icons/soundMore.svg);
+	mask: url(./icons/soundMore.svg);
 }
 .svg-play {
-	mask: url(/icons/play.svg);
+	mask: url(./icons/play.svg);
 }
 .svg-pause {
-	mask: url(/icons/pause.svg);
+	mask: url(./icons/pause.svg);
 }
 .svg-announce {
-	mask: url(/icons/announce.svg);
+	mask: url(./icons/announce.svg);
 }
 .svg-emoji {
-	mask: url(/icons/emoji.svg);
+	mask: url(./icons/emoji.svg);
 }
 .svg-gif {
-	mask: url(/icons/gif.svg);
+	mask: url(./icons/gif.svg);
 }
 .svg-edit {
-	mask: url(/icons/edit.svg);
+	mask: url(./icons/edit.svg);
 }
 .svg-reply {
-	mask: url(/icons/reply.svg);
+	mask: url(./icons/reply.svg);
 }
 .svg-delete {
-	mask: url(/icons/delete.svg);
+	mask: url(./icons/delete.svg);
 }
 .svg-category {
-	mask: url(/icons/category.svg);
+	mask: url(./icons/category.svg);
 }
 .svg-intoMenu {
-	mask: url(/icons/intoMenu.svg);
+	mask: url(./icons/intoMenu.svg);
 }
 .svg-leftArrow {
-	mask: url(/icons/leftArrow.svg);
+	mask: url(./icons/leftArrow.svg);
 }
 .svg-channel {
-	mask: url(/icons/channel.svg);
+	mask: url(./icons/channel.svg);
 }
 .svg-copy {
-	mask: url(/icons/copy.svg);
+	mask: url(./icons/copy.svg);
 }
 .svg-explore {
-	mask: url(/icons/explore.svg);
+	mask: url(./icons/explore.svg);
 }
 .svg-home {
-	mask: url(/icons/home.svg);
+	mask: url(./icons/home.svg);
 }
 .svg-settings {
-	mask: url(/icons/settings.svg);
+	mask: url(./icons/settings.svg);
 }
 .svg-voice {
-	mask: url(/icons/voice.svg);
+	mask: url(./icons/voice.svg);
 }
 .svg-plus {
-	mask: url(/icons/plus.svg);
+	mask: url(./icons/plus.svg);
 }
 .svg-upload {
-	mask: url(/icons/upload.svg);
+	mask: url(./icons/upload.svg);
 	width: 0.2in !important;
 	cursor: pointer;
 }
 .svg-x {
-	mask: url(/icons/x.svg);
+	mask: url(./icons/x.svg);
 }
 .svg-friends {
-	mask: url(/icons/friends.svg);
+	mask: url(./icons/friends.svg);
 	width: 24px !important;
 	height: 24px !important;
 	margin-right: 0 !important;
 }
 .svg-frmessage {
-	mask: url(/icons/frmessage.svg);
+	mask: url(./icons/frmessage.svg);
 }
 .svg-addfriend {
-	mask: url(/icons/addfriend.svg);
+	mask: url(./icons/addfriend.svg);
 }
 
 .svg-channelnsfw {
-	mask: url(/icons/channelnsfw.svg);
+	mask: url(./icons/channelnsfw.svg);
 }
 .svg-announcensfw {
-	mask: url(/icons/announcensfw.svg);
+	mask: url(./icons/announcensfw.svg);
 }
 .svg-voicensfw {
-	mask: url(/icons/voicensfw.svg);
+	mask: url(./icons/voicensfw.svg);
 }
 
 .svgicon {
@@ -1006,14 +1006,14 @@ textarea {
 	height: 22px;
 	width: 22px;
 	margin: 6px;
-	mask: url(/icons/mic.svg);
+	mask: url(./icons/mic.svg);
 	mask-size: contain !important;
 }
 .svg-micmute {
 	height: 22px;
 	width: 22px;
 	margin: 6px;
-	mask: url(/icons/micmute.svg);
+	mask: url(./icons/micmute.svg);
 	background-color: var(--red);
 	mask-size: contain !important;
 }
@@ -4256,7 +4256,7 @@ img.error {
 	position: relative;
 }
 img.error::after {
-	background: var(--secondary-bg) url("/icons/sad.svg");
+	background: var(--secondary-bg) url("./icons/sad.svg");
 	background-size: contain;
 	content: "";
 	width: 100%;
