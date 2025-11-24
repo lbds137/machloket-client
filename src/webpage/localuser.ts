@@ -2590,14 +2590,16 @@ class Localuser {
 			}).then(async (teamsRes) => {
 				const teams = await teamsRes.json();
 
-				devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
+				const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 					const form = devPortal.addSubForm(
 						I18n.localuser.createApp(),
 						(json: any) => {
 							if (json.message) form.error("name", json.message);
 							else {
 								devPortal.returnFromSub();
-								this.manageApplication(json.id, devPortal);
+								this.manageApplication(json.id, devPortal,()=>{
+									form.options.deleteElm(button);
+								});
 							}
 						},
 						{
@@ -2654,7 +2656,9 @@ class Localuser {
 								container.appendChild(name);
 
 								container.addEventListener("click", async () => {
-									this.manageApplication(application.id, devPortal);
+									this.manageApplication(application.id, devPortal,()=>{
+										appListContainer.remove();
+									});
 								});
 								appListContainer.appendChild(container);
 							},
@@ -3048,7 +3052,7 @@ class Localuser {
 		settings.show();
 	}
 	readonly botTokens: Map<string, string> = new Map();
-	async manageApplication(appId = "", container: Options) {
+	async manageApplication(appId = "", container: Options,deleteButton:()=>void) {
 		if (this.perminfo.applications) {
 			for (const item of Object.keys(this.perminfo.applications)) {
 				this.botTokens.set(item, this.perminfo.applications[item]);
@@ -3099,6 +3103,18 @@ class Localuser {
 			}
 			this.manageBot(appId, form);
 		});
+		form.addButtonInput("",I18n.applications.delete(),()=>{
+			const sub=form.addSubForm(I18n.applications.delete(),()=>{
+				deleteButton();
+				container.returnFromSub();
+			},{
+				fetchURL:this.info.api+"/applications/" + appId + "/delete",
+				method:"POST",
+				headers:this.headers,
+				submitText:I18n.delete()
+			});
+			sub.addText(I18n.applications.sure(json.name));
+		})
 	}
 	async manageBot(appId = "", container: Form) {
 		const res = await fetch(this.info.api + "/applications/" + appId, {

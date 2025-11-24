@@ -1038,7 +1038,7 @@ export {Dialog};
 class Options implements OptionsElement<void> {
 	name: string;
 	haschanged = false;
-	readonly options: OptionsElement<any>[];
+	options: OptionsElement<any>[];
 	readonly owner: Buttons | Options | Form | Float;
 	readonly ltr: boolean;
 	value!: void;
@@ -1301,6 +1301,13 @@ class Options implements OptionsElement<void> {
 			this.html.set(elm, new WeakRef(div));
 			container.append(div);
 		}
+	}
+	deleteElm(opt:OptionsElement<any>){
+		const html = this.html.get(opt)?.deref();
+		this.options=this.options.filter(_=>_!==opt);
+		if(!html) return;
+		html.remove();
+		this.html.delete(opt);
 	}
 	title: WeakRef<HTMLElement> = new WeakRef(document.createElement("h2"));
 	generateHTML(): HTMLElement {
