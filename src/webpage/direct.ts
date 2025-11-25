@@ -630,13 +630,13 @@ class Group extends Channel {
 	}
 	readStateInfo(json: readyjson["d"]["read_state"]["entries"][0]): void {
 		super.readStateInfo(json);
-		if (this.hasunreads && this.mentions === 0) {
-			this.mentions++;
-		}
 	}
 	readbottom() {
 		super.readbottom();
 		this.unreads();
+	}
+	get hasunreads() {
+		return this.mentions !== 0;
 	}
 	all: WeakRef<HTMLElement> = new WeakRef(document.createElement("div"));
 	noti?: WeakRef<HTMLElement>;
