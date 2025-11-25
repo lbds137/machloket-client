@@ -84,6 +84,8 @@ class Permissions {
 		"SEND_VOICE_MESSAGES",
 		"SEND_POLLS",
 		"USE_EXTERNAL_APPS",
+		"PIN_MESSAGES",
+		"BYPASS_SLOWMODE",
 	] as const;
 	getPermission(name: string): number {
 		if (undefined === Permissions.permisions.indexOf(name as any)) {

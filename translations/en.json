@@ -91,7 +91,9 @@
 			"USE_EXTERNAL_SOUNDS": "Allows the usage of custom soundboard sounds from other guilds",
 			"SEND_VOICE_MESSAGES": "Allows sending voice messages",
 			"SEND_POLLS": "Allows sending polls",
-			"USE_EXTERNAL_APPS": "Allows user-installed apps to send public responses. When disabled, users will still be allowed to use their apps but the responses will be ephemeral. This only applies to apps not also installed to the guild."
+			"USE_EXTERNAL_APPS": "Allows user-installed apps to send public responses. When disabled, users will still be allowed to use their apps but the responses will be ephemeral. This only applies to apps not also installed to the guild.",
+			"PIN_MESSAGES":"Allows the user to pin messages",
+			"BYPASS_SLOWMODE":"Slowmode no longer effects this user"
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "Create invite",
@@ -142,7 +144,9 @@
 			"USE_EXTERNAL_SOUNDS": "Use external sounds",
 			"SEND_VOICE_MESSAGES": "Send voice messages",
 			"SEND_POLLS": "Create polls",
-			"USE_EXTERNAL_APPS": "Use external apps"
+			"USE_EXTERNAL_APPS": "Use external apps",
+			"PIN_MESSAGES":"Pin messages",
+			"BYPASS_SLOWMODE":"Bypass slowmode"
 		}
 	},
 	"userping":{
