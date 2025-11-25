@@ -303,6 +303,7 @@ class User extends SnowFlake {
 			{
 				visable: function (member) {
 					if (!member) return false;
+					if (member.hasPermission("MODERATE_MEMBERS")) return false;
 
 					return (
 						!member.commuicationDisabledLeft() &&
