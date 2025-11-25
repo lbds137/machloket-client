@@ -51,7 +51,7 @@ class Channel extends SnowFlake {
 	lastreadmessageid?: string;
 	lastmessageid?: string;
 	trueLastMessageid?: string;
-	rate_limit_per_user: number;
+	rate_limit_per_user: number = 0;
 	mentions = 0;
 	lastpin!: string;
 	move_id?: string;
