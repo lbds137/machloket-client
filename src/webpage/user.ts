@@ -295,6 +295,44 @@ class User extends SnowFlake {
 			},
 		);
 
+		this.contextmenu.addButton(
+			() => I18n.user.timeout(),
+			function (this: User, member: Member | undefined) {
+				member?.timeout();
+			},
+			{
+				visable: function (member) {
+					if (!member) return false;
+
+					return (
+						!member.commuicationDisabledLeft() &&
+						member.guild.member.hasPermission("MODERATE_MEMBERS")
+					);
+				},
+				color: "red",
+				icon: {
+					css: "svg-timeout",
+				},
+			},
+		);
+		this.contextmenu.addButton(
+			() => I18n.user.unTimeout(),
+			function (memb) {
+				memb?.removeTimeout();
+			},
+			{
+				visable: function (member) {
+					if (!member) return false;
+
+					return (
+						!!member.commuicationDisabledLeft() &&
+						member.guild.member.hasPermission("MODERATE_MEMBERS")
+					);
+				},
+				color: "red",
+			},
+		);
+
 		//TODO kick icon
 		this.contextmenu.addButton(
 			() => I18n.user.kick(),

@@ -542,6 +542,45 @@ class Member extends SnowFlake {
 		form.addTextInput(I18n.member["reason:"](), "reason");
 		menu.show();
 	}
+	timeout() {
+		const menu = new Dialog("");
+		const form = menu.options.addForm("", (e: any) => {
+			this.timeoutAPI(e.reason, e.time);
+			menu.hide();
+		});
+		form.addTitle(I18n.member.timeout(this.name));
+		form.addTextInput(I18n.member["reason:"](), "reason");
+		//TODO make this custom :3
+		form.addSelect(
+			I18n.member.timeoutTime(),
+			"time",
+			["60s", "5m", "10m", "1h", "1d", "1w"],
+			{},
+			[60, 300, 600, 60 * 60, 60 * 60 * 24, 60 * 60 * 24 * 7].map((_) => _ * 1000),
+		);
+		menu.show();
+	}
+	removeTimeout() {
+		const headers = structuredClone(this.guild.headers);
+		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+			method: "PATCH",
+			headers,
+			body: JSON.stringify({
+				communication_disabled_until: null,
+			}),
+		});
+	}
+	timeoutAPI(reason: string, length: number) {
+		const headers = structuredClone(this.guild.headers);
+		(headers as any)["x-audit-log-reason"] = reason;
+		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+			method: "PATCH",
+			headers,
+			body: JSON.stringify({
+				communication_disabled_until: new Date(length + Date.now()) + "",
+			}),
+		});
+	}
 	kickAPI(reason: string) {
 		const headers = structuredClone(this.guild.headers);
 		(headers as any)["x-audit-log-reason"] = reason;

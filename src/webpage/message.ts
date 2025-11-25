@@ -791,7 +791,8 @@ class Message extends SnowFlake {
 				const username = document.createElement("span");
 				username.classList.add("username");
 				this.author.bind(username, this.guild);
-				Member.resolveMember(this.author, this.guild).then((member) => {
+				const membProm = Member.resolveMember(this.author, this.guild);
+				membProm.then((member) => {
 					if (member) {
 						username.textContent = member.name;
 						const icon = member.getRoleIcon();
@@ -823,6 +824,17 @@ class Message extends SnowFlake {
 					hover.addEvent(edit);
 					userwrap.append(edit);
 				}
+				membProm.then((memb) => {
+					if (memb) {
+						if (memb.commuicationDisabledLeft()) {
+							const icon = document.createElement("span");
+							icon.classList.add("svg-timeout");
+							username.after(icon);
+							const date = memb.communication_disabled_until as Date;
+							new Hover(I18n.channel.timedOutUntil(date.toLocaleString())).addEvent(icon);
+						}
+					}
+				});
 				text.appendChild(userwrap);
 			} else {
 				div.classList.remove("topMessage");

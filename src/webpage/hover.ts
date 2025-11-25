@@ -33,7 +33,6 @@ class Hover {
 		Hover.elm = elm;
 	}
 	addEvent(elm: HTMLElement) {
-		const tempy = (Math.random() * 1000) ^ 0;
 		let timeOut = setTimeout(() => {}, 0);
 		const RM = () => {
 			this.elm2.remove();

@@ -209,6 +209,7 @@
 		"nonsence":"The server sent a component of type $1 which does not exist"
 	},
 	"channel": {
+		"timedOutUntil":"Timed out until: $1",
 		"SlowmodeCool":"Slowmode Cooldown: $1",
 		"TimeOutCool":"Timed out until: $1",
 		"slowmode":"Slowmode:",
@@ -681,6 +682,8 @@
 		"unblock": "Unblock user",
 		"friendReq": "Friend request",
 		"kick": "Kick member",
+		"timeout":"Timeout member",
+		"unTimeout":"Remove Timeout on member",
 		"ban": "Ban member",
 		"addRole": "Add roles",
 		"removeRole": "Remove roles",
@@ -705,7 +708,9 @@
 	},
 	"member": {
 		"kick": "Kick $1 from $2",
+		"timeout":"Timeout $1",
 		"reason:": "Reason:",
+		"timeoutTime":"Timeout Time:",
 		"ban": "Ban $1 from $2",
 		"nick:": "Nickname:"
 	},

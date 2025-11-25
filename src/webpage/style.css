@@ -822,6 +822,15 @@ textarea {
 		background: var(--black);
 	}
 }
+.svg-timeout {
+	mask: url(./icons/timeout.svg);
+	width: 16px;
+	height: 16px;
+	mask-size: cover !important;
+	background: var(--red);
+	margin-left: 6px;
+	margin-right: -2px;
+}
 .svg-folder {
 	mask: url(./icons/folder.svg);
 	background-color: var(--folder-color, var(--accent-color));
