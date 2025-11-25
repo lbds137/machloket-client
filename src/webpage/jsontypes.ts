@@ -499,6 +499,7 @@ type startTypingjson = {
 };
 type channeljson = {
 	id: string;
+	rate_limit_per_user?: number;
 	owner_id?: string;
 	created_at: string;
 	name: string;

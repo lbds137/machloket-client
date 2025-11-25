@@ -2013,6 +2013,7 @@ span.instanceStatus {
 }
 #realbox {
 	padding: 0 16px 28px 16px;
+	position: relative;
 }
 .commandFront {
 	user-select: none !important;
@@ -2621,6 +2622,11 @@ span .quote:last-of-type .quoteline {
 .embed .provider {
 	padding-bottom: 4px;
 	color: var(--secondary-text-soft);
+}
+.slowmodeTimer {
+	position: absolute;
+	right: 16px;
+	color: var(--primary-text-soft);
 }
 img.embedicon {
 	height: 16px;

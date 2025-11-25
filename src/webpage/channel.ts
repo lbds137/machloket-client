@@ -51,6 +51,7 @@ class Channel extends SnowFlake {
 	lastreadmessageid?: string;
 	lastmessageid?: string;
 	trueLastMessageid?: string;
+	rate_limit_per_user: number;
 	mentions = 0;
 	lastpin!: string;
 	move_id?: string;
@@ -343,6 +344,31 @@ class Channel extends SnowFlake {
 			form.addCheckboxInput(I18n.channel["nsfw:"](), "nsfw", {
 				initState: this.nsfw,
 			});
+			const times = [
+				0,
+				5,
+				10,
+				15,
+				30,
+				60,
+				120,
+				300,
+				600,
+				900,
+				1800,
+				60 * 60,
+				60 * 60 * 2,
+				60 * 60 * 6,
+			];
+			form.addSelect(
+				I18n.channel.slowmode(),
+				"rate_limit_per_user",
+				["0s", "5s", "10s", "15s", "30s", "1m", "2m", "5m", "10m", "15m", "30m", "1h", "2h", "6h"],
+				{
+					defaultIndex: (times.findIndex((_) => _ === this.rate_limit_per_user) + 1 || 1) - 1,
+				},
+				times,
+			);
 			if (this.type !== 4) {
 				const options = ["voice", "text", "announcement"] as const;
 				form.addSelect(
@@ -463,6 +489,7 @@ class Channel extends SnowFlake {
 		if (json === -1) {
 			return;
 		}
+		this.rate_limit_per_user = json.rate_limit_per_user || 0;
 		this.editing;
 		this.type = json.type;
 
@@ -1739,6 +1766,7 @@ class Channel extends SnowFlake {
 			this.nsfwPannel();
 			return;
 		}
+		this.slowmode();
 
 		const prom = this.infinite.delete();
 		if (getMessages) {
@@ -1931,6 +1959,7 @@ class Channel extends SnowFlake {
 			this.lastmessageid = undefined;
 			this.lastreadmessageid = undefined;
 		}
+		this.slowmode();
 	}
 	delChannel(json: channeljson) {
 		const build: Channel[] = [];
@@ -2194,6 +2223,8 @@ class Channel extends SnowFlake {
 		console.trace("trace me");
 		this.type = json.type;
 		this.name = json.name;
+		this.rate_limit_per_user = json.rate_limit_per_user || 0;
+		this.slowmode();
 
 		const span = this.nameSpan.deref();
 		if (span) span.textContent = this.name;
@@ -2309,6 +2340,7 @@ class Channel extends SnowFlake {
 		nonce: string,
 		embeds: embedjson[] = [],
 	) {
+		if (this.nonces.has(nonce)) return;
 		const m = new Message(
 			{
 				author: this.localuser.user.tojson(),
@@ -2405,6 +2437,91 @@ class Channel extends SnowFlake {
 			},
 		};
 	}
+	nonces = new Set<string>();
+	lastSentMessage?: Message;
+	canMessageRightNow() {
+		const t = this.lastSentMessage?.getTimeStamp();
+		if (!t) return true;
+		if (
+			this.hasPermission("BYPASS_SLOWMODE") ||
+			this.hasPermission("MANAGE_MESSAGES") ||
+			this.hasPermission("MANAGE_CHANNELS")
+		)
+			return true;
+		let canMessage = t + this.rate_limit_per_user * 1000;
+		return canMessage <= Date.now();
+	}
+	async slowmode(bad = false) {
+		if (!this.rate_limit_per_user) return;
+		if (
+			this.hasPermission("BYPASS_SLOWMODE") ||
+			this.hasPermission("MANAGE_MESSAGES") ||
+			this.hasPermission("MANAGE_CHANNELS")
+		)
+			return;
+		let m: Message | undefined = this.lastSentMessage || this.lastmessage;
+		if (!this.lastSentMessage) {
+			while (m) {
+				if (m.author.id === this.localuser.user.id) {
+					this.lastSentMessage = m;
+					break;
+				}
+				m = this.messages.get(this.idToNext.get(m.id) as string);
+			}
+		}
+
+		if (!m && bad) {
+			const q = new URLSearchParams([
+				["author_id", this.localuser.user.id],
+				["limit", "1"],
+			]);
+			const {
+				messages: [message],
+			} = (await (
+				await fetch(this.info.api + "/guilds/" + this.guild.id + "/messages/search/?" + q, {
+					headers: this.headers,
+				})
+			).json()) as {messages: messagejson[]};
+			m = new Message(message, this);
+			this.lastSentMessage = m;
+		}
+		if (!m) return;
+		const t = m.getTimeStamp();
+		let canMessage = t + this.rate_limit_per_user * 1000;
+		const realbox = document.getElementById("realbox") as HTMLDivElement;
+		Array.from(realbox.getElementsByClassName("slowmodeTimer")).forEach((_) => _.remove());
+		if (canMessage <= Date.now()) {
+			realbox.classList.remove("cantSendMessage");
+			return;
+		} else {
+			realbox.classList.add("cantSendMessage");
+			const span = document.createElement("span");
+			span.classList.add("slowmodeTimer");
+			realbox.append(span);
+			const tick = () => {
+				const timeTill = canMessage - Date.now();
+				if (timeTill <= 0 || !document.contains(span)) {
+					if (document.contains(span)) span.remove();
+					clearInterval(int);
+					return;
+				}
+				let seconds = Math.round(timeTill / 1000);
+				let minutes = Math.floor(seconds / 60);
+				seconds -= minutes * 60;
+				let hours = Math.floor(minutes / 60);
+				minutes -= hours * 60;
+				span.textContent = seconds + "";
+				if (minutes || hours) {
+					span.textContent = minutes + ":" + span.textContent.padStart(2, "0");
+				}
+				if (hours) {
+					span.textContent = hours + ":" + span.textContent.padStart(5, "0");
+				}
+			};
+			tick();
+			const int = setInterval(tick, 1000);
+		}
+	}
 	async sendMessage(
 		content: string,
 		{
@@ -2418,7 +2535,10 @@ class Channel extends SnowFlake {
 			replyingto: Message | null;
 			sticker_ids: string[];
 		},
+		onRes = (_e: "Ok" | "NotOk") => {},
 	) {
+		let ressy = (_e: "Ok" | "NotOk") => {};
+		let resOnce = false;
 		if (
 			content.trim() === "" &&
 			attachments.length === 0 &&
@@ -2438,17 +2558,35 @@ class Channel extends SnowFlake {
 
 		let prom: Promise<void>;
 		let res: XMLHttpRequest;
-		let funcs: {
-			progress: (total: number, sofar: number) => void;
-			failed: (restart: () => void) => void;
-		};
+		let funcs:
+			| undefined
+			| {
+					progress: (total: number, sofar: number) => void;
+					failed: (restart: () => void) => void;
+			  };
 		const progress = (e: ProgressEvent<EventTarget>) => {
-			funcs.progress(e.total, e.loaded);
+			if (!resOnce && res?.status) {
+				if (res?.status >= 200 && res?.status <= 220) {
+					ressy("Ok");
+					onRes("Ok");
+				} else {
+					ressy("NotOk");
+					onRes("NotOk");
+				}
+				resOnce = true;
+			}
+
+			funcs?.progress(e.total, e.loaded);
 		};
 
 		const fail = () => {
+			if (!resOnce) {
+				onRes("NotOk");
+				ressy("NotOk");
+			}
+			resOnce = true;
 			console.warn("failed");
-			funcs.failed(() => {
+			funcs?.failed(() => {
 				res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
 				res.setRequestHeader("Authorization", this.headers.Authorization);
 				if (ctype) {
@@ -2459,10 +2597,21 @@ class Channel extends SnowFlake {
 		};
 
 		const promiseHandler = (resolve: () => void) => {
+			res.responseType = "json";
 			res.onload = () => {
 				if (res.status !== 200) {
 					fail();
+					const body = res.response as {code: number};
+					if (body.code === 20016) {
+						this.slowmode(true);
+					}
 					return;
+				} else {
+					if (!resOnce && res?.status) {
+						ressy("Ok");
+						onRes("Ok");
+						resOnce = true;
+					}
 				}
 				resolve();
 			};
@@ -2496,14 +2645,19 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
 			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
 			res.setRequestHeader("Authorization", this.headers.Authorization);
-			funcs = await this.makeFakeMessage(
-				content,
-				[],
-				body.message_reference,
-				sticker_ids,
-				body.nonce,
-				embeds,
-			);
+			ressy = async (e) => {
+				if (e == "NotOk") {
+					return;
+				}
+				funcs = await this.makeFakeMessage(
+					content,
+					[],
+					body.message_reference,
+					sticker_ids,
+					body.nonce,
+					embeds,
+				);
+			};
 
 			try {
 				res.send((rbody = JSON.stringify(body)));
@@ -2542,19 +2696,24 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages", true);
 
 			res.setRequestHeader("Authorization", this.headers.Authorization);
-			funcs = await this.makeFakeMessage(
-				content,
-				attachments.map((_) => ({
-					id: "string",
-					filename: "",
-					content_type: _.type,
-					size: _.size,
-					url: URL.createObjectURL(_),
-				})),
-				body.message_reference,
-				sticker_ids,
-				body.nonce,
-			);
+			ressy = async (e) => {
+				if (e == "NotOk") {
+					return;
+				}
+				funcs = await this.makeFakeMessage(
+					content,
+					attachments.map((_) => ({
+						id: "string",
+						filename: "",
+						content_type: _.type,
+						size: _.size,
+						url: URL.createObjectURL(_),
+					})),
+					body.message_reference,
+					sticker_ids,
+					body.nonce,
+				);
+			};
 			try {
 				res.send((rbody = formData));
 			} catch {
@@ -2593,6 +2752,13 @@ class Channel extends SnowFlake {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return;
 		}
+		this.nonces.add(messagep.d.nonce);
+		setTimeout(
+			() => {
+				this.nonces.delete(messagep.d.nonce);
+			},
+			1000 * 60 * 5,
+		);
 
 		if (!this.lastmessageid) {
 			this.topid = messagep.d.id;
@@ -2619,6 +2785,8 @@ class Channel extends SnowFlake {
 
 		if (messagez.author === this.localuser.user) {
 			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
+			this.lastSentMessage = messagez;
+			this.slowmode();
 			this.lastreadmessageid = messagez.id;
 			this.mentions = 0;
 			this.unreads();

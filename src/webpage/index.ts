@@ -158,6 +158,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 	channel.typingstart();
 
 	if (event.key === "Enter" && !event.shiftKey) {
+		if (!channel.canMessageRightNow()) return;
 		if (channel.curCommand) {
 			channel.submitCommand();
 			return;
@@ -171,12 +172,24 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 			thisUser.channelfocus.replyingto = null;
 		}
 
-		channel.sendMessage(content, {
-			attachments: images.filter((_) => document.contains(imagesHtml.get(_) || null)),
-			embeds: [], // Add an empty array for the embeds property
-			replyingto: replyingTo,
-			sticker_ids: [],
-		});
+		await new Promise<void>((mres, rej) =>
+			channel.sendMessage(
+				content,
+				{
+					attachments: images.filter((_) => document.contains(imagesHtml.get(_) || null)),
+					embeds: [], // Add an empty array for the embeds property
+					replyingto: replyingTo,
+					sticker_ids: [],
+				},
+				(res) => {
+					if (res === "Ok") {
+						mres();
+					} else {
+						rej();
+					}
+				},
+			),
+		);
 		if (thisUser.channelfocus) {
 			thisUser.channelfocus.makereplybox();
 		}
