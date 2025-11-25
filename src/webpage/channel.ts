@@ -637,6 +637,12 @@ class Channel extends SnowFlake {
 		if (member.isAdmin()) {
 			return true;
 		}
+		if (this.guild.member.commuicationDisabledLeft()) {
+			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
+			if (!allowSet.has(name)) {
+				return false;
+			}
+		}
 		const roles = new Set(member.roles);
 		const everyone = this.guild.roles[this.guild.roles.length - 1];
 		if (!member.user.bot || true) {
@@ -2440,6 +2446,10 @@ class Channel extends SnowFlake {
 	nonces = new Set<string>();
 	lastSentMessage?: Message;
 	canMessageRightNow() {
+		if (this.guild.member) {
+			const member = this.guild.member;
+			if (member.commuicationDisabledLeft()) return false;
+		}
 		const t = this.lastSentMessage?.getTimeStamp();
 		if (!t) return true;
 		if (
@@ -2452,6 +2462,45 @@ class Channel extends SnowFlake {
 		return canMessage <= Date.now();
 	}
 	async slowmode(bad = false) {
+		const realbox = document.getElementById("realbox") as HTMLDivElement;
+		Array.from(realbox.getElementsByClassName("slowmodeTimer")).forEach((_) => _.remove());
+		if (this.guild.member) {
+			const member = this.guild.member;
+			const left = member.commuicationDisabledLeft();
+			if (left) {
+				const span = document.createElement("span");
+				span.classList.add("slowmodeTimer");
+				realbox.append(span);
+				const canMessage = +(member.communication_disabled_until as Date);
+				const tick = () => {
+					const timeTill = canMessage - Date.now();
+					if (timeTill <= 0 || !document.contains(span)) {
+						if (document.contains(span)) span.remove();
+						clearInterval(int);
+						return;
+					}
+					span.textContent = I18n.channel.TimeOutCool(formatTime(timeTill));
+				};
+				tick();
+				const int = setInterval(tick, 1000);
+			}
+		}
+		function formatTime(timeTill: number) {
+			let seconds = Math.round(timeTill / 1000);
+			let minutes = Math.floor(seconds / 60);
+			seconds -= minutes * 60;
+			let hours = Math.floor(minutes / 60);
+			minutes -= hours * 60;
+			let build = "";
+			build = seconds + "";
+			if (minutes || hours) {
+				build = minutes + ":" + build.padStart(2, "0");
+			}
+			if (hours) {
+				build = hours + ":" + build.padStart(5, "0");
+			}
+			return build;
+		}
 		if (!this.rate_limit_per_user) return;
 		if (
 			this.hasPermission("BYPASS_SLOWMODE") ||
@@ -2488,8 +2537,7 @@ class Channel extends SnowFlake {
 		if (!m) return;
 		const t = m.getTimeStamp();
 		let canMessage = t + this.rate_limit_per_user * 1000;
-		const realbox = document.getElementById("realbox") as HTMLDivElement;
-		Array.from(realbox.getElementsByClassName("slowmodeTimer")).forEach((_) => _.remove());
+
 		if (canMessage <= Date.now()) {
 			realbox.classList.remove("cantSendMessage");
 			return;
@@ -2505,18 +2553,7 @@ class Channel extends SnowFlake {
 					clearInterval(int);
 					return;
 				}
-				let seconds = Math.round(timeTill / 1000);
-				let minutes = Math.floor(seconds / 60);
-				seconds -= minutes * 60;
-				let hours = Math.floor(minutes / 60);
-				minutes -= hours * 60;
-				span.textContent = seconds + "";
-				if (minutes || hours) {
-					span.textContent = minutes + ":" + span.textContent.padStart(2, "0");
-				}
-				if (hours) {
-					span.textContent = hours + ":" + span.textContent.padStart(5, "0");
-				}
+				span.textContent = I18n.channel.SlowmodeCool(formatTime(timeTill));
 			};
 			tick();
 			const int = setInterval(tick, 1000);

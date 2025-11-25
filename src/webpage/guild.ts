@@ -104,6 +104,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 	};
 	let invsArr: invitejson[] = [];
 	let onpage = 0;
+
 	async function loadArr() {
 		let invsArr2: invitejson[] = [];
 		let waiting = false;
@@ -127,6 +128,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 			}
 		}
 	}
+
 	let currentPage = 0;
 	function loadPage(page = 0) {
 		invDiv.innerHTML = "";
@@ -315,6 +317,10 @@ class Guild extends SnowFlake {
 	}
 	getChannel(id: string) {
 		return this.channels.find((_) => _.id === id);
+	}
+	recalcPrivate() {
+		if (this !== this.localuser.lookingguild) return;
+		this.localuser.channelfocus?.slowmode();
 	}
 	async findAdmin() {
 		const menu = new Dialog(I18n.guild.admins());

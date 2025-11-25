@@ -209,6 +209,8 @@
 		"nonsence":"The server sent a component of type $1 which does not exist"
 	},
 	"channel": {
+		"SlowmodeCool":"Slowmode Cooldown: $1",
+		"TimeOutCool":"Timed out until: $1",
 		"slowmode":"Slowmode:",
 		"typebox":"Message in $1",
 		"creating": "Creating channel",

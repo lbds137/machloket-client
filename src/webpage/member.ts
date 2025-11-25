@@ -14,6 +14,7 @@ class Member extends SnowFlake {
 	nick!: string;
 	avatar: void | string = undefined;
 	banner: void | string = undefined;
+	communication_disabled_until?: Date;
 	private constructor(memberjson: memberjson, owner: Guild) {
 		super(memberjson.id);
 		this.owner = owner;
@@ -28,6 +29,11 @@ class Member extends SnowFlake {
 			this.user = this.localuser.userMap.get(this?.id) as User;
 		}
 		this.update(memberjson);
+	}
+	commuicationDisabledLeft() {
+		return this.communication_disabled_until
+			? Math.max(+this.communication_disabled_until - Date.now(), 0)
+			: 0;
 	}
 	remove() {
 		this.user.members.delete(this.guild);
@@ -278,6 +284,15 @@ class Member extends SnowFlake {
 	update(memberjson: memberjson) {
 		for (const key of Object.keys(memberjson)) {
 			if (key === "guild" || key === "owner" || key === "user") {
+				continue;
+			}
+			if (key === "communication_disabled_until") {
+				this.communication_disabled_until = new Date(
+					memberjson.communication_disabled_until as string,
+				);
+				if (this.id === this.localuser.user.id) {
+					this.guild.recalcPrivate();
+				}
 				continue;
 			}
 
@@ -574,6 +589,12 @@ class Member extends SnowFlake {
 	hasPermission(name: string, adminOver = true): boolean {
 		if (this.isAdmin() && adminOver) {
 			return true;
+		}
+		if (this.guild.member.commuicationDisabledLeft()) {
+			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
+			if (!allowSet.has(name)) {
+				return false;
+			}
 		}
 		for (const thing of this.roles) {
 			if (thing.permissions.getPermission(name)) {

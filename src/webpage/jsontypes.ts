@@ -393,6 +393,7 @@ type memberjson = {
 	deaf: boolean;
 	mute: boolean;
 	pending: boolean;
+	communication_disabled_until?: string;
 	last_message_id?: boolean; //What???
 };
 export type highMemberJSON = mainuserjson & {
