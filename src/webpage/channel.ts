@@ -2575,6 +2575,11 @@ class Channel extends SnowFlake {
 				}
 				resOnce = true;
 			}
+			if (!resOnce) {
+				ressy("Ok");
+				onRes("Ok");
+				resOnce = true;
+			}
 
 			funcs?.progress(e.total, e.loaded);
 		};
