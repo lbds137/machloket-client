@@ -51,7 +51,7 @@ for (const thing of emojilist) {
 	write16(thing.emojis.length);
 	for (const emoji of thing.emojis) {
 		writeString8(emoji.name);
-		write8(new TextEncoder().encode(emoji.emoji).length + 128 * emoji.skin_tone_support);
+		write8(new TextEncoder().encode(emoji.emoji).length + 128 * +emoji.skin_tone_support);
 		writeStringNo(emoji.emoji);
 	}
 }
