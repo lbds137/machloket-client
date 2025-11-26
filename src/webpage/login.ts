@@ -77,6 +77,7 @@ export async function makeLogin(
 				u.username = email.value;
 				if (handle) {
 					handle(u);
+					dialog.hide();
 					return;
 				}
 				const redir = new URLSearchParams(window.location.search).get("goback");

@@ -32,6 +32,7 @@ export async function makeRegister(
 				});
 				u.username = user.value;
 				if (handle) {
+					dialog.hide();
 					handle(u);
 					return;
 				}
