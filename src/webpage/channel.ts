@@ -618,6 +618,9 @@ class Channel extends SnowFlake {
 		}
 	}
 	get hasunreads(): boolean {
+		return this.unreadState();
+	}
+	private unreadState(): boolean {
 		if (this.muted) return false;
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return false;
@@ -633,6 +636,7 @@ class Channel extends SnowFlake {
 		const lastmessage = SnowFlake.stringToUnixTime(this.trueLastMessageid || "0");
 		return !!lastmessage && (!lastreadmessage || lastmessage > lastreadmessage) && this.type !== 4;
 	}
+
 	hasPermission(name: string, member = this.guild.member): boolean {
 		if (member.isAdmin()) {
 			return true;
@@ -999,11 +1003,11 @@ class Channel extends SnowFlake {
 		}
 	}
 	readbottom() {
-		this.mentions = 0;
-		if (!this.hasunreads) {
+		if (!this.unreadState()) {
 			this.guild.unreads();
 			return;
 		}
+		this.mentions = 0;
 		console.log(this.trueLastMessageid);
 		fetch(this.info.api + "/channels/" + this.id + "/messages/" + this.trueLastMessageid + "/ack", {
 			method: "POST",
