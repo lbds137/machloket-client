@@ -195,7 +195,7 @@ export class Favorites {
 		return this.old;
 	}
 	setOld(newold: favandfreqimp) {
-		this.old = newold;
+		this.old = structuredClone(newold);
 		this.saveLocal();
 		return;
 	}
