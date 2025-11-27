@@ -1,7 +1,8 @@
 {
 	"@metadata": {
 		"authors": [
-			"Illyria"
+			"Illyria",
+			"Ookap"
 		]
 	},
 	"vc": {
@@ -254,7 +255,7 @@
 		"privateGuild": "ni poki toki li ken ala",
 		"join": "kama poki toki",
 		"found": {
-			"this": "ni sitelen pilin li tan ni poki toki",
+			"this": "sitelen pilin ni li tan poki toki ni.",
 			"other": "ni sitelen pilin li tan ante poki toki pi sina"
 		}
 	},
