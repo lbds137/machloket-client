@@ -132,6 +132,12 @@ window.addEventListener("popstate", (e) => {
 	}
 	//console.log(e.state,"state:3")
 });
+let nonceMap = new Map<string, string>();
+function getNonce(id: string) {
+	const nonce = nonceMap.get(id) || Math.floor(Math.random() * 1000000000) + "";
+	nonceMap.set(id, nonce);
+	return nonce;
+}
 async function handleEnter(event: KeyboardEvent): Promise<void> {
 	if (event.key === "Escape") {
 		while (images.length) {
@@ -180,6 +186,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 					embeds: [], // Add an empty array for the embeds property
 					replyingto: replyingTo,
 					sticker_ids: [],
+					nonce: getNonce(channel.id),
 				},
 				(res) => {
 					if (res === "Ok") {
@@ -190,6 +197,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 				},
 			),
 		);
+		nonceMap.delete(channel.id);
 		if (thisUser.channelfocus) {
 			thisUser.channelfocus.makereplybox();
 		}

@@ -2570,11 +2570,13 @@ class Channel extends SnowFlake {
 			replyingto = null,
 			embeds = [],
 			sticker_ids = [],
+			nonce = undefined,
 		}: {
 			attachments: Blob[];
 			embeds: embedjson[];
 			replyingto: Message | null;
 			sticker_ids: string[];
+			nonce?: string;
 		},
 		onRes = (_e: "Ok" | "NotOk") => {},
 	) {
@@ -2675,7 +2677,7 @@ class Channel extends SnowFlake {
 		if (attachments.length === 0) {
 			const body = {
 				content,
-				nonce: Math.floor(Math.random() * 1000000000) + "",
+				nonce: nonce || Math.floor(Math.random() * 1000000000) + "",
 				message_reference: undefined,
 				sticker_ids,
 				embeds,
@@ -2721,7 +2723,7 @@ class Channel extends SnowFlake {
 			const formData = new FormData();
 			const body = {
 				content,
-				nonce: Math.floor(Math.random() * 1000000000) + "",
+				nonce: nonce || Math.floor(Math.random() * 1000000000) + "",
 				message_reference: undefined,
 				sticker_ids,
 				embeds,
