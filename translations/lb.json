@@ -165,6 +165,7 @@
 	"createAccount": "Kont uleeën",
 	"role": {
 		"roles": "Rollen",
+		"perms": "Berechtegungen",
 		"color": "Faarf",
 		"delete": "Roll läschen",
 		"deleting": "Roll gëtt geläscht …",
@@ -194,6 +195,11 @@
 	"blog": {
 		"blog": "Blog",
 		"fermi": "Fermi-Blog"
+	},
+	"remove": "Ewechhuelen",
+	"applications": {
+		"delete": "Applikatioun läschen",
+		"sure": "Sidd Dir sécher, datt Dir $1 läsche wëllt?"
 	},
 	"localuser": {
 		"trace": "Spueren",
@@ -302,6 +308,7 @@
 		"editServerProfile": "Serverprofil änneren",
 		"remove": "Benotzer ewechhuelen"
 	},
+	"loaded": "Gelueden",
 	"login": {
 		"recover": "Passwuert vergiess?",
 		"newPassword": "Neit Passwuert:",

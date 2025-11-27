@@ -3,6 +3,7 @@
 		"authors": [
 			"Illyria",
 			"S0rs immanis12",
+			"Sixaxis",
 			"YuriNikolai"
 		]
 	},
@@ -467,6 +468,10 @@
 		"desc": "Leia ou se inscreva no blogue para receber atualizações sobre o Fermi!"
 	},
 	"remove": "Remover",
+	"applications": {
+		"delete": "Apagar aplicativo",
+		"sure": "Tem certeza de que quer apagar $1?"
+	},
 	"localuser": {
 		"trusted": "Domínios Confiados",
 		"trustedDesc": "Esses domínios não vão te perguntar por permissão ao clicá-los como outros links, só permita links que você confia.",

@@ -91,7 +91,9 @@
 			"USE_EXTERNAL_SOUNDS": "允許使用來自其他公會的自訂音效面板音效",
 			"SEND_VOICE_MESSAGES": "允許發送語音訊息",
 			"SEND_POLLS": "允許發送投票調查",
-			"USE_EXTERNAL_APPS": "允許使用者安裝的應用程式發送公開回應。當停用後，使用者仍可使用該應用程式，但僅能短暫回應。此設定僅適用於未安裝到公會的應用程式。"
+			"USE_EXTERNAL_APPS": "允許使用者安裝的應用程式發送公開回應。當停用後，使用者仍可使用該應用程式，但僅能短暫回應。此設定僅適用於未安裝到公會的應用程式。",
+			"PIN_MESSAGES": "允許使用者置頂訊息",
+			"BYPASS_SLOWMODE": "延遲模式不再影響此名使用者"
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "建立邀請",
@@ -142,7 +144,9 @@
 			"USE_EXTERNAL_SOUNDS": "使用外部音效",
 			"SEND_VOICE_MESSAGES": "傳送語音訊息",
 			"SEND_POLLS": "建立投票",
-			"USE_EXTERNAL_APPS": "使用外部應用程式"
+			"USE_EXTERNAL_APPS": "使用外部應用程式",
+			"PIN_MESSAGES": "置頂訊息",
+			"BYPASS_SLOWMODE": "繞過延遲模式"
 		}
 	},
 	"userping": {
@@ -205,6 +209,10 @@
 		"nonsence": "伺服器傳送的類型成分「$1」不存在"
 	},
 	"channel": {
+		"timedOutUntil": "逾時至：$1",
+		"SlowmodeCool": "逾時模式緩和時間：$1",
+		"TimeOutCool": "逾時至：$1",
+		"slowmode": "延遲模式：",
 		"typebox": "在$1的訊息",
 		"creating": "建立頻道",
 		"name": "頻道",
@@ -466,6 +474,10 @@
 		"desc": "閱讀或訂閱部落格來獲得 Fermi 的最新資訊！"
 	},
 	"remove": "移除",
+	"applications": {
+		"delete": "刪除應用程式",
+		"sure": "您確定要刪除$1嗎？"
+	},
 	"localuser": {
 		"trusted": "信任網域",
 		"trustedDesc": "當您點擊來自這些網域的連結時，他們***不會***像其他連結那樣提示您允許開啟，這僅在您信任的 URL 出現提示",
@@ -671,6 +683,8 @@
 		"unblock": "解除封鎖使用者",
 		"friendReq": "好友請求",
 		"kick": "踢出成員",
+		"timeout": "逾時成員",
+		"unTimeout": "移除成員上的逾時",
 		"ban": "禁止成員",
 		"addRole": "新增角色",
 		"removeRole": "移除角色",
@@ -695,7 +709,9 @@
 	},
 	"member": {
 		"kick": "從$2踢出$1",
+		"timeout": "逾時 $1",
 		"reason:": "原因：",
+		"timeoutTime": "逾時時間：",
 		"ban": "從$2禁止$1",
 		"nick:": "暱稱："
 	},
@@ -732,7 +748,7 @@
 		"legacy_username": "擁有舊使用者名稱",
 		"quest_completed": "做出一個任務"
 	},
-	"dms": "直接訊息",
+	"dms": "私訊",
 	"group": {
 		"select": "選擇好友",
 		"createdm": "建立 DM！",
