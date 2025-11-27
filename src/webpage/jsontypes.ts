@@ -149,7 +149,7 @@ export interface favandfreq {
 	favoriteGifs: {
 		gifs: {
 			[key: string]: {
-				format: 1;
+				format: "GIF_TYPE_IMAGE";
 				src: string;
 				width: number;
 				height: number;

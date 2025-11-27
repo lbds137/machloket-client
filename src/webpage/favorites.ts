@@ -431,7 +431,9 @@ export class Favorites {
 	) {
 		this.gifs[name] = {
 			...gif,
-			format: 1,
+			width: Math.round(gif.width),
+			height: Math.round(gif.height),
+			format: "GIF_TYPE_IMAGE",
 			order: Object.keys(this.gifs).length + 1,
 		};
 		await this.save(saveImportance.high);
