@@ -4417,8 +4417,11 @@ img.error::after {
 			width: 40px;
 			height: 40px;
 		}
-		input {
+		input,
+		button {
 			margin-left: auto;
+		}
+		input {
 			height: 20px;
 			width: 20px;
 		}

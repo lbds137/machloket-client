@@ -98,68 +98,29 @@ class Direct extends Guild {
 		}
 		await super.loadChannel(id, addstate, message);
 	}
-	makeGroup() {
+	async makeGroup() {
 		const dio = new Dialog(I18n.group.select());
 		const opt = dio.options;
-
-		const div = document.createElement("div");
-		div.classList.add("flexttb", "friendGroupSelect");
-		const friends = [...this.localuser.inrelation].filter((_) => _.relationshipType === 1);
-
-		const invited = new Set<User>();
-
-		const makeList = (search: string) => {
-			const list = friends
-				.map((friend) => [friend, friend.compare(search)] as const)
-				.filter((_) => _[1] !== 0)
-				.sort((a, b) => a[1] - b[1])
-				.map((_) => _[0]);
-			div.innerHTML = "";
-			div.append(
-				...list.map((friend) => {
-					const div = document.createElement("div");
-					div.classList.add("flexltr");
-					const check = document.createElement("input");
-					check.type = "checkbox";
-					check.checked = invited.has(friend);
-					check.onchange = () => {
-						if (check.checked) {
-							invited.add(friend);
-						} else {
-							invited.delete(friend);
-						}
-					};
-					//TODO implement status stuff here once spacebar really supports it
-					div.append(friend.buildpfp(), friend.name, check);
-					return div;
-				}),
-			);
-		};
-		opt.addTextInput("", () => {}).onchange = makeList;
-		opt.addHTMLArea(div);
-		const buttons = opt.addOptions("", {ltr: true});
-		buttons.addButtonInput("", I18n.cancel(), () => {
-			dio.hide();
-		});
-		buttons.addButtonInput("", I18n.group.createdm(), async () => {
-			if (invited.size !== 0) {
-				const {id}: {id: string} = await (
-					await fetch(this.info.api + "/users/@me/channels", {
-						method: "POST",
-						headers: this.headers,
-						body: JSON.stringify({
-							recipients: [...invited].map((_) => _.id),
-						}),
-					})
-				).json();
-				this.localuser.goToChannel(id);
-				dio.hide();
-			}
-		});
-
-		makeList("");
 		dio.show();
-		buttons.container.deref()?.classList.add("expandButtons");
+		const invited = await User.makeSelector(
+			opt,
+			I18n.group.createdm(),
+			[...this.localuser.inrelation].filter((_) => _.relationshipType === 1),
+		);
+		dio.hide();
+		if (invited && invited.size !== 0) {
+			const {id}: {id: string} = await (
+				await fetch(this.localuser.info.api + "/users/@me/channels", {
+					method: "POST",
+					headers: this.headers,
+					body: JSON.stringify({
+						recipients: [...invited].map((_) => _.id),
+					}),
+				})
+			).json();
+			this.localuser.goToChannel(id);
+			dio.hide();
+		}
 	}
 	noChannel(addstate: boolean) {
 		if (addstate) {
@@ -490,6 +451,13 @@ class Group extends Channel {
 			},
 		);
 
+		this.contextmenu.addButton(
+			() => I18n.DMs.add(),
+			function (this: Group) {
+				this.addPerson();
+			},
+		);
+
 		this.contextmenu.addSeperator();
 
 		this.contextmenu.addButton(
@@ -499,7 +467,7 @@ class Group extends Channel {
 			},
 			{
 				visable: function () {
-					return this.users.length === 1;
+					return this.type === 1;
 				},
 			},
 		);
@@ -515,6 +483,22 @@ class Group extends Channel {
 		return `${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png`;
 	}
 	icon?: string;
+	async addPerson() {
+		const d = new Dialog(I18n.DMs.add());
+		const options = [...this.localuser.inrelation]
+			.filter((user) => user.relationshipType === 1)
+			.filter((user) => !this.users.includes(user));
+		d.show();
+		const users = await User.makeSelector(d.options, "Add person", options, {single: true});
+		d.hide();
+		if (!users) return;
+		const [user] = [...users];
+		if (!user) return;
+		await fetch(this.info.api + "/channels/" + this.id + "/recipients/" + user.id, {
+			headers: this.headers,
+			method: "PUT",
+		});
+	}
 	edit() {
 		const dio = new Dialog(I18n.group.edit());
 		const form = dio.options.addForm("", () => {}, {
@@ -532,6 +516,18 @@ class Group extends Channel {
 			dio.hide();
 		};
 		dio.show();
+	}
+	addRec(user: User) {
+		this.users.push(user);
+		if (this.localuser.channelfocus === this) {
+			this.localuser.memberListUpdate();
+		}
+	}
+	removeRec(user: User) {
+		this.users = this.users.filter((u) => u !== user);
+		if (this.localuser.channelfocus === this) {
+			this.localuser.memberListUpdate();
+		}
 	}
 	updateChannel(json: channeljson): void {
 		super.updateChannel(json);

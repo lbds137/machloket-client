@@ -960,7 +960,25 @@ type wsjson =
 	  }
 	| streamServerUpdate
 	| streamCreate
-	| interactionEvents;
+	| interactionEvents
+	| {
+			op: 0;
+			t: "CHANNEL_RECIPIENT_ADD";
+			d: {
+				channel_id: string;
+				user: userjson;
+			};
+			s: number;
+	  }
+	| {
+			op: 0;
+			t: "CHANNEL_RECIPIENT_REMOVE";
+			d: {
+				channel_id: string;
+				user: userjson;
+			};
+			s: number;
+	  };
 
 export interface interactionCreate {
 	op: 0;

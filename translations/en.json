@@ -667,7 +667,8 @@
 		"copyId": "Copy DM id",
 		"markRead": "Mark as read",
 		"close": "Close DM",
-		"name": "Direct Messages"
+		"name": "Direct Messages",
+		"add": "Add someone to this DM"
 	},
 	"user": {
 		"sendMessage":"Message @$1",
@@ -748,6 +749,7 @@
 		"quest_completed": "did a quest"
 	},
 	"dms":"Direct Messages",
+	"add":"Add",
 	"group":{
 		"select":"Select Friends",
 		"createdm":"Create DM!",

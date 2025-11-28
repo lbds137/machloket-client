@@ -921,6 +921,20 @@ class Localuser {
 					guild.onStickerUpdate(guild.stickers);
 					break;
 				}
+				case "CHANNEL_RECIPIENT_REMOVE": {
+					const guild = this.guildids.get("@me") as Direct;
+					const channel = guild.channels.find(({id}) => id == temp.d.channel_id) as Group;
+					if (!channel) break;
+					channel.removeRec(new User(temp.d.user, this));
+					break;
+				}
+				case "CHANNEL_RECIPIENT_ADD": {
+					const guild = this.guildids.get("@me") as Direct;
+					const channel = guild.channels.find(({id}) => id == temp.d.channel_id) as Group;
+					if (!channel) break;
+					channel.addRec(new User(temp.d.user, this));
+					break;
+				}
 
 				default: {
 					//@ts-expect-error
@@ -2384,82 +2398,93 @@ class Localuser {
 					});
 				}
 				{
-					security.addButtonInput("","Manage Security Keys",()=>{
+					security.addButtonInput("", "Manage Security Keys", () => {
 						const keyMenu = security.addSubOptions("Manage Keys");
-						const addKey=(key:{name:string,id:string})=>{
-							keyMenu.addButtonInput("",key.name,()=>{
+						const addKey = (key: {name: string; id: string}) => {
+							keyMenu.addButtonInput("", key.name, () => {
 								const opt = keyMenu.addSubOptions(key.name);
-								const button = opt.addButtonInput("",I18n.delete(),async ()=>{
-									await fetch(this.info.api+"/users/@me/mfa/webauthn/credentials/"+key.id,
-									{
-										headers:this.headers,
-										method:"DELETE"
+								const button = opt.addButtonInput("", I18n.delete(), async () => {
+									await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
+										headers: this.headers,
+										method: "DELETE",
 									});
 									keyMenu.returnFromSub();
 									keyMenu.deleteElm(button);
-								})
+								});
 							});
-						}
-						keyMenu.addButtonInput("","Security Key :3",()=>{
-
-							const form = keyMenu.addSubForm("Keys",async (obj)=>{
-								const body = obj as {ticket:string,challenge:string};
-								const challenge = JSON.parse(body.challenge).publicKey as PublicKeyCredentialCreationOptionsJSON;
-								console.log(challenge.challenge);
-								challenge.challenge=challenge.challenge.split("=")[0].replaceAll("+","-").replaceAll("/","_");
-								console.log(challenge.challenge);
-								const options = PublicKeyCredential.parseCreationOptionsFromJSON(challenge);
-								const credential = await navigator.credentials.create({publicKey: options}) as unknown as {
-									rawId:ArrayBuffer,
-									response:{
-										attestationObject:ArrayBuffer,
-										clientDataJSON:ArrayBuffer,
+						};
+						keyMenu.addButtonInput("", "Security Key :3", () => {
+							const form = keyMenu.addSubForm(
+								"Keys",
+								async (obj) => {
+									const body = obj as {ticket: string; challenge: string};
+									const challenge = JSON.parse(body.challenge)
+										.publicKey as PublicKeyCredentialCreationOptionsJSON;
+									console.log(challenge.challenge);
+									challenge.challenge = challenge.challenge
+										.split("=")[0]
+										.replaceAll("+", "-")
+										.replaceAll("/", "_");
+									console.log(challenge.challenge);
+									const options = PublicKeyCredential.parseCreationOptionsFromJSON(challenge);
+									const credential = (await navigator.credentials.create({
+										publicKey: options,
+									})) as unknown as {
+										rawId: ArrayBuffer;
+										response: {
+											attestationObject: ArrayBuffer;
+											clientDataJSON: ArrayBuffer;
+										};
+									};
+									if (!credential) return;
+									function toBase64(buf: ArrayBuffer) {
+										return btoa(String.fromCharCode(...new Uint8Array(buf)));
 									}
-								};
-								if(!credential) return;
-								function toBase64(buf:ArrayBuffer){
-									return btoa(String.fromCharCode(...new Uint8Array(buf)))
-								}
-								const res = {
-									rawId:toBase64(credential.rawId),
-									response:{
-										clientDataJSON:toBase64(credential.response.clientDataJSON),
-										attestationObject:toBase64(credential.response.attestationObject)
-									}
-								};
-								const key = await (await fetch(this.info.api +"/users/@me/mfa/webauthn/credentials",{
-									headers:this.headers,
-									method:"POST",
-									body:JSON.stringify({
-										ticket:body.ticket,
-										credential:JSON.stringify(res),
-										name:name.value
-									})
-								})).json();
-								addKey(key);
-								keyMenu.returnFromSub();
-							},{
-								fetchURL:this.info.api +"/users/@me/mfa/webauthn/credentials",
-								method:"POST",
-								headers:this.headers,
-								tfaCheck:false
+									const res = {
+										rawId: toBase64(credential.rawId),
+										response: {
+											clientDataJSON: toBase64(credential.response.clientDataJSON),
+											attestationObject: toBase64(credential.response.attestationObject),
+										},
+									};
+									const key = await (
+										await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+											headers: this.headers,
+											method: "POST",
+											body: JSON.stringify({
+												ticket: body.ticket,
+												credential: JSON.stringify(res),
+												name: name.value,
+											}),
+										})
+									).json();
+									addKey(key);
+									keyMenu.returnFromSub();
+								},
+								{
+									fetchURL: this.info.api + "/users/@me/mfa/webauthn/credentials",
+									method: "POST",
+									headers: this.headers,
+									tfaCheck: false,
+								},
+							);
+							form.addTextInput("Password", "password", {
+								password: true,
 							});
-							form.addTextInput("Password","password",{
-								password:true
+							const name = form.options.addTextInput("Key Name", () => {}, {
+								initText: "Key",
 							});
-							const name = form.options.addTextInput("Key Name",()=>{},{
-								initText:"Key"
-							})
 						});
-						fetch(this.info.api +"/users/@me/mfa/webauthn/credentials",{
-							headers:this.headers
-						}).then(_=>_.json()).then((keys:{"id":string,"name":string}[])=>{
-							for(const key of keys){
-								addKey(key);
-							}
+						fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+							headers: this.headers,
 						})
-					})
-
+							.then((_) => _.json())
+							.then((keys: {id: string; name: string}[]) => {
+								for (const key of keys) {
+									addKey(key);
+								}
+							});
+					});
 				}
 				security.addButtonInput("", I18n.localuser.changeDiscriminator(), () => {
 					const form = security.addSubForm(
@@ -2675,7 +2700,7 @@ class Localuser {
 							if (json.message) form.error("name", json.message);
 							else {
 								devPortal.returnFromSub();
-								this.manageApplication(json.id, devPortal,()=>{
+								this.manageApplication(json.id, devPortal, () => {
 									form.options.deleteElm(button);
 								});
 							}
@@ -2734,7 +2759,7 @@ class Localuser {
 								container.appendChild(name);
 
 								container.addEventListener("click", async () => {
-									this.manageApplication(application.id, devPortal,()=>{
+									this.manageApplication(application.id, devPortal, () => {
 										appListContainer.remove();
 									});
 								});
@@ -3130,7 +3155,7 @@ class Localuser {
 		settings.show();
 	}
 	readonly botTokens: Map<string, string> = new Map();
-	async manageApplication(appId = "", container: Options,deleteButton:()=>void) {
+	async manageApplication(appId = "", container: Options, deleteButton: () => void) {
 		if (this.perminfo.applications) {
 			for (const item of Object.keys(this.perminfo.applications)) {
 				this.botTokens.set(item, this.perminfo.applications[item]);
@@ -3181,18 +3206,22 @@ class Localuser {
 			}
 			this.manageBot(appId, form);
 		});
-		form.addButtonInput("",I18n.applications.delete(),()=>{
-			const sub=form.addSubForm(I18n.applications.delete(),()=>{
-				deleteButton();
-				container.returnFromSub();
-			},{
-				fetchURL:this.info.api+"/applications/" + appId + "/delete",
-				method:"POST",
-				headers:this.headers,
-				submitText:I18n.delete()
-			});
+		form.addButtonInput("", I18n.applications.delete(), () => {
+			const sub = form.addSubForm(
+				I18n.applications.delete(),
+				() => {
+					deleteButton();
+					container.returnFromSub();
+				},
+				{
+					fetchURL: this.info.api + "/applications/" + appId + "/delete",
+					method: "POST",
+					headers: this.headers,
+					submitText: I18n.delete(),
+				},
+			);
 			sub.addText(I18n.applications.sure(json.name));
-		})
+		});
 	}
 	async manageBot(appId = "", container: Form) {
 		const res = await fetch(this.info.api + "/applications/" + appId, {

@@ -8,10 +8,10 @@ import {highMemberJSON, presencejson, userjson, webhookInfo} from "./jsontypes.j
 import {Role} from "./role.js";
 import {Search} from "./search.js";
 import {I18n} from "./i18n.js";
-import {Direct} from "./direct.js";
 import {Hover} from "./hover.js";
-import {Dialog, Float} from "./settings.js";
+import {Dialog, Float, Options} from "./settings.js";
 import {createImg, removeAni, safeImg} from "./utils/utils.js";
+import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
 class User extends SnowFlake {
 	owner: Localuser;
@@ -59,6 +59,68 @@ class User extends SnowFlake {
 		} else {
 			return User.checkuser(userjson, owner);
 		}
+	}
+	static makeSelector(
+		opt: Options,
+		doneText: string,
+		options: User[],
+		{single = false, addText = I18n.add()} = {},
+	): Promise<Set<User> | void> {
+		return new Promise<Set<User> | void>((res) => {
+			const div = document.createElement("div");
+			div.classList.add("flexttb", "friendGroupSelect");
+
+			const invited = new Set<User>();
+
+			const makeList = (search: string) => {
+				const list = options
+					.map((user) => [user, user.compare(search)] as const)
+					.filter((_) => _[1] !== 0)
+					.sort((a, b) => a[1] - b[1])
+					.map((_) => _[0]);
+				div.innerHTML = "";
+				div.append(
+					...list.map((user) => {
+						const div = document.createElement("div");
+						div.classList.add("flexltr");
+
+						//TODO implement status stuff here once spacebar really supports it
+						div.append(user.buildpfp(), user.name);
+						if (single) {
+							const button = document.createElement("button");
+							button.textContent = addText;
+							div.append(button);
+							button.onclick = () => res(new Set([user]));
+						} else {
+							const check = document.createElement("input");
+							check.type = "checkbox";
+							check.checked = invited.has(user);
+							check.onchange = () => {
+								if (check.checked) {
+									invited.add(user);
+								} else {
+									invited.delete(user);
+								}
+							};
+							div.append(check);
+						}
+						return div;
+					}),
+				);
+			};
+			opt.addTextInput("", () => {}).onchange = makeList;
+			opt.addHTMLArea(div);
+			const buttons = opt.addOptions("", {ltr: true});
+			buttons.addButtonInput("", I18n.cancel(), () => {
+				res();
+			});
+			buttons.addButtonInput("", doneText, async () => {
+				res(invited);
+			});
+
+			makeList("");
+			buttons.container.deref()?.classList.add("expandButtons");
+		});
 	}
 	compare(str: string) {
 		function similar(str2: string | null | undefined) {
