@@ -1105,6 +1105,7 @@ class Localuser {
 		json.guild_id ??= "@me";
 		const guild = this.guildids.get(json.guild_id);
 		if (!guild) return;
+		if (guild.channels.find((_) => _.id === json.id)) return;
 		const channel = guild.createChannelpac(json);
 		if (json.guild_id === this.lookingguild?.id) {
 			this.loadGuild(json.guild_id, true);
