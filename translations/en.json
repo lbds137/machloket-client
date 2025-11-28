@@ -648,6 +648,7 @@
 	"friends": {
 		"blocked": "Blocked",
 		"blockedusers": "Blocked Users:",
+		"bu":"Blocked User",
 		"addfriend": "Add Friend",
 		"removeFriend": "Remove Friend",
 		"addfriendpromt": "Add friends by username:",

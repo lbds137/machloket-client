@@ -559,7 +559,7 @@ class User extends SnowFlake {
 	}
 
 	get name() {
-		return this.username;
+		return this.relationshipType === 2 ? I18n.friends.bu() : this.username;
 	}
 
 	async resolvemember(guild: Guild): Promise<Member | undefined> {
