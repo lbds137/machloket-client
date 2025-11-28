@@ -2444,6 +2444,10 @@ class Channel extends SnowFlake {
 				};
 				html.classList.add("erroredMessage");
 			},
+			void: () => {
+				m.deleteEvent();
+				html.remove();
+			},
 		};
 	}
 	nonces = new Set<string>();
@@ -2605,33 +2609,13 @@ class Channel extends SnowFlake {
 			| {
 					progress: (total: number, sofar: number) => void;
 					failed: (restart: () => void) => void;
+					void: () => void;
 			  };
 		const progress = (e: ProgressEvent<EventTarget>) => {
-			if (!resOnce && res?.status) {
-				if (res?.status >= 200 && res?.status <= 220) {
-					ressy("Ok");
-					onRes("Ok");
-				} else {
-					ressy("NotOk");
-					onRes("NotOk");
-				}
-				resOnce = true;
-			}
-			if (!resOnce) {
-				ressy("Ok");
-				onRes("Ok");
-				resOnce = true;
-			}
-
 			funcs?.progress(e.total, e.loaded);
 		};
 
 		const fail = () => {
-			if (!resOnce) {
-				onRes("NotOk");
-				ressy("NotOk");
-			}
-			resOnce = true;
 			console.warn("failed");
 			funcs?.failed(() => {
 				res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
@@ -2647,6 +2631,8 @@ class Channel extends SnowFlake {
 			res.responseType = "json";
 			res.onload = () => {
 				if (res.status !== 200) {
+					ressy("NotOk");
+					onRes("NotOk");
 					fail();
 					const body = res.response as {code: number};
 					if (body.code === 20016) {
@@ -2654,9 +2640,9 @@ class Channel extends SnowFlake {
 					}
 					return;
 				} else {
+					ressy("Ok");
+					onRes("Ok");
 					if (!resOnce && res?.status) {
-						ressy("Ok");
-						onRes("Ok");
 						resOnce = true;
 					}
 				}
@@ -2673,6 +2659,12 @@ class Channel extends SnowFlake {
 			}
 		};
 		maybeUpdate();
+		ressy = async (e) => {
+			if (e == "NotOk") {
+				funcs?.void();
+				return;
+			}
+		};
 		if (attachments.length === 0) {
 			const body = {
 				content,
@@ -2692,19 +2684,14 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
 			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
 			res.setRequestHeader("Authorization", this.headers.Authorization);
-			ressy = async (e) => {
-				if (e == "NotOk") {
-					return;
-				}
-				funcs = await this.makeFakeMessage(
-					content,
-					[],
-					body.message_reference,
-					sticker_ids,
-					body.nonce,
-					embeds,
-				);
-			};
+			funcs = await this.makeFakeMessage(
+				content,
+				[],
+				body.message_reference,
+				sticker_ids,
+				body.nonce,
+				embeds,
+			);
 
 			try {
 				res.send((rbody = JSON.stringify(body)));
@@ -2743,24 +2730,20 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages", true);
 
 			res.setRequestHeader("Authorization", this.headers.Authorization);
-			ressy = async (e) => {
-				if (e == "NotOk") {
-					return;
-				}
-				funcs = await this.makeFakeMessage(
-					content,
-					attachments.map((_) => ({
-						id: "string",
-						filename: "",
-						content_type: _.type,
-						size: _.size,
-						url: URL.createObjectURL(_),
-					})),
-					body.message_reference,
-					sticker_ids,
-					body.nonce,
-				);
-			};
+
+			funcs = await this.makeFakeMessage(
+				content,
+				attachments.map((_) => ({
+					id: "string",
+					filename: "",
+					content_type: _.type,
+					size: _.size,
+					url: URL.createObjectURL(_),
+				})),
+				body.message_reference,
+				sticker_ids,
+				body.nonce,
+			);
 			try {
 				res.send((rbody = formData));
 			} catch {

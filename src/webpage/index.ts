@@ -176,38 +176,49 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 		}
 		if (thisUser.channelfocus) {
 			thisUser.channelfocus.replyingto = null;
-		}
-
-		await new Promise<void>((mres, rej) =>
-			channel.sendMessage(
-				content,
-				{
-					attachments: images.filter((_) => document.contains(imagesHtml.get(_) || null)),
-					embeds: [], // Add an empty array for the embeds property
-					replyingto: replyingTo,
-					sticker_ids: [],
-					nonce: getNonce(channel.id),
-				},
-				(res) => {
-					if (res === "Ok") {
-						mres();
-					} else {
-						rej();
-					}
-				},
-			),
-		);
-		nonceMap.delete(channel.id);
-		if (thisUser.channelfocus) {
 			thisUser.channelfocus.makereplybox();
 		}
+		const attachments = images.filter((_) => document.contains(imagesHtml.get(_) || null));
 		while (images.length) {
 			const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
 			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
 		}
-
 		typebox.innerHTML = "";
 		typebox.markdown.txt = [];
+		try {
+			await new Promise<void>((mres, rej) =>
+				channel.sendMessage(
+					content,
+					{
+						attachments,
+						embeds: [], // Add an empty array for the embeds property
+						replyingto: replyingTo,
+						sticker_ids: [],
+						nonce: getNonce(channel.id),
+					},
+					(res) => {
+						if (res === "Ok") {
+							mres();
+						} else {
+							rej();
+						}
+					},
+				),
+			);
+		} catch {
+			images = attachments;
+			for (const file of images) {
+				const img = imagesHtml.get(file);
+				if (!img) continue;
+				pasteImageElement.append(img);
+			}
+			channel.replyingto = replyingTo;
+			channel.makereplybox();
+			typebox.textContent = content;
+			typebox.markdown.txt = content.split("");
+			typebox.markdown.boxupdate(Infinity);
+		}
+		nonceMap.delete(channel.id);
 	}
 }
 
