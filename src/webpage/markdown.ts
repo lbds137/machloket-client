@@ -599,15 +599,26 @@ class MarkDown {
 					}
 					j++;
 				}
-				if (everyone) {
+				let here = false;
+				if (!everyone) {
+					here = true;
+					for (const char of "here") {
+						if (char !== txt[j]) {
+							here = false;
+							break;
+						}
+						j++;
+					}
+				}
+				if (everyone || here) {
 					i = j - 1;
 					const mention = document.createElement("span");
 					mention.classList.add("mentionMD");
 					mention.contentEditable = "false";
-					mention.textContent = "@everyone";
+					mention.textContent = everyone ? "@everyone" : "@here";
 					appendcurrent();
 					span.appendChild(mention);
-					mention.setAttribute("real", `@everyone`);
+					mention.setAttribute("real", everyone ? `@everyone` : "@here");
 					continue;
 				}
 			}

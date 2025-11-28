@@ -3700,8 +3700,8 @@ class Localuser {
 		);
 	}
 	MDFineMentionGen(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
-		let members: [Member | Role | User | "@everyone", number][] = [];
-		if (this.lookingguild && name !== "everyone") {
+		let members: [Member | Role | User | "@everyone" | "@here", number][] = [];
+		if (this.lookingguild && name !== "everyone" && name !== "here") {
 			if (this.lookingguild.id === "@me") {
 				const dirrect = this.channelfocus as Group;
 
@@ -3737,15 +3737,17 @@ class Localuser {
 			}
 			const everyoneScore = similar("everyone");
 			if (everyoneScore) members.push(["@everyone", everyoneScore]);
+			const hereScore = similar("here");
+			if (hereScore) members.push(["@here", hereScore]);
 		}
 		members.sort((a, b) => b[1] - a[1]);
 		this.MDSearchOptions(
 			members.map((a) => [
-				a[0] === "@everyone" ? "@everyone" : "@" + a[0].name,
+				typeof a[0] === "string" ? a[0] : "@" + a[0].name,
 				a[0] instanceof Role
 					? `<@&${a[0].id}> `
-					: a[0] === "@everyone"
-						? "@everyone "
+					: typeof a[0] === "string"
+						? a[0] + " "
 						: `<@${a[0].id}> `,
 				undefined,
 			]),
