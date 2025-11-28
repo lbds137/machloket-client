@@ -1,4 +1,3 @@
-"use strict";
 import {Message} from "./message.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Guild, makeInviteMenu} from "./guild.js";
