@@ -194,7 +194,7 @@ async function handleEnter(event: KeyboardEvent): Promise<void> {
 						embeds: [], // Add an empty array for the embeds property
 						replyingto: replyingTo,
 						sticker_ids: [],
-						nonce: getNonce(channel.id),
+						//nonce: getNonce(channel.id),
 					},
 					(res) => {
 						if (res === "Ok") {
