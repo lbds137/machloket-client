@@ -16,6 +16,57 @@ if (urlMaybe && URL.canParse(urlMaybe)) {
 } else {
 	urlMaybe = undefined;
 }
+let entryPoints: {sPath: string; newPath: string}[] = [];
+async function bundleFiles() {
+	let mod = await swc.bundle(
+		entryPoints.map(({sPath}) => {
+			return {
+				entry: sPath,
+				output: {
+					path: path.parse(sPath).dir,
+					name: path.parse(sPath).base,
+				},
+				env: {
+					targets: "Chrome > 120",
+				},
+				module: {
+					minify: true,
+					sourceMaps: true,
+					isModule: true,
+					jsc: {
+						minify: {
+							mangle: false,
+						},
+					},
+				},
+				externalModules: ["/translations/langs.js"],
+				options: {
+					minify: !process.argv.includes("watch"),
+					jsc: {
+						minify: {
+							mangle: false,
+						},
+					},
+				},
+			};
+		}),
+	);
+
+	await Promise.all(
+		entryPoints.map(async ({sPath, newPath}) => {
+			const code = mod[path.parse(sPath).base] || mod;
+			const newfileDir = path.join(newPath, path.parse(sPath).name);
+
+			await Promise.all([
+				fs.writeFile(
+					newfileDir + ".js",
+					code.code + "\n" + `//# sourceMappingURL=${path.parse(sPath).name}.js.map`,
+				),
+				code.map ? fs.writeFile(newfileDir + ".js.map", code.map as string) : null,
+			]);
+		}),
+	);
+}
 async function moveFiles(curPath: string, newPath: string, first = true) {
 	async function processFile(file: string) {
 		const Prom: Promise<unknown>[] = [];
@@ -44,45 +95,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 						delete temp2.base;
 						temp2.ext = ".ts";
 						const sPath = path.format(temp2);
-
-						let mod = await swc.bundle({
-							entry: sPath,
-							target: "browser",
-							output: {
-								path: path.parse(sPath).dir,
-								name: path.parse(sPath).base,
-							},
-							module: {
-								minify: true,
-								sourceMaps: true,
-								isModule: true,
-								jsc: {
-									minify: {
-										mangle: false,
-									},
-								},
-							},
-							externalModules: ["/translations/langs.js"],
-							options: {
-								minify: !process.argv.includes("watch"),
-								jsc: {
-									minify: {
-										mangle: false,
-									},
-								},
-							},
-						});
-
-						const code = mod[path.parse(sPath).base] || mod;
-						const newfileDir = path.join(newPath, path.parse(sPath).name);
-
-						await Promise.all([
-							fs.writeFile(
-								newfileDir + ".js",
-								code.code + "\n" + `//# sourceMappingURL=${path.parse(sPath).name}.js.map`,
-							),
-							code.map ? fs.writeFile(newfileDir + ".js.map", code.map as string) : null,
-						]);
+						entryPoints.push({sPath, newPath});
 					}
 				}
 				if (file.includes("sitemap")) {
@@ -140,9 +153,13 @@ async function build() {
 	await fs.mkdir(path.join(__dirname, "dist"));
 	console.timeEnd("Cleaning dir");
 
-	console.time("Moving and compiling files");
+	console.time("Moving files");
 	await moveFiles(path.join(__dirname, "src"), path.join(__dirname, "dist"));
-	console.timeEnd("Moving and compiling files");
+	console.timeEnd("Moving files");
+
+	console.time("Bundling TS");
+	await bundleFiles();
+	console.timeEnd("Bundling TS");
 
 	console.time("Moving translations");
 	try {
