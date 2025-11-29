@@ -144,6 +144,7 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 	await Promise.all((await fs.readdir(curPath)).map((_) => processFile(_)));
 }
 async function build() {
+	entryPoints = [];
 	console.time("build");
 
 	console.time("Cleaning dir");
