@@ -465,6 +465,11 @@ export async function getapiurls(str: string): Promise<
 	let api: string;
 	try {
 		const info = await fetch(`${str}.well-known/spacebar`).then((x) => x.json());
+		if (info.api.endsWith("/")) {
+			const temp = info.api.split("/");
+			temp.pop();
+			info.api = temp.join("/");
+		}
 		api = info.api;
 	} catch {
 		api = str;
