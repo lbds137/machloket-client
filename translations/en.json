@@ -478,6 +478,11 @@
 		"delete":"Delete Application",
 		"sure":"Are you sure you want to delete $1?"
 	},
+	"webauth":{
+		"manage":"Manage security keys",
+		"addKey":"Add key",
+		"keyname":"Key name:"
+	},
 	"localuser": {
 		"trusted":"Trusted Domains",
 		"trustedDesc":"These domains when you click on links from them will ***not*** prompt you for permission to open like other links, only give this to URLs you trust",

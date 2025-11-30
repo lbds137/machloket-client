@@ -2409,7 +2409,7 @@ class Localuser {
 					});
 				}
 				{
-					security.addButtonInput("", "Manage Security Keys", () => {
+					security.addButtonInput("", I18n.webauth.manage(), () => {
 						const keyMenu = security.addSubOptions("Manage Keys");
 						const addKey = (key: {name: string; id: string}) => {
 							keyMenu.addButtonInput("", key.name, () => {
@@ -2424,9 +2424,9 @@ class Localuser {
 								});
 							});
 						};
-						keyMenu.addButtonInput("", "Security Key :3", () => {
+						keyMenu.addButtonInput("", I18n.webauth.addKey(), () => {
 							const form = keyMenu.addSubForm(
-								"Keys",
+								I18n.webauth.addKey(),
 								async (obj) => {
 									const body = obj as {ticket: string; challenge: string};
 									const challenge = JSON.parse(body.challenge)
@@ -2479,10 +2479,10 @@ class Localuser {
 									tfaCheck: false,
 								},
 							);
-							form.addTextInput("Password", "password", {
+							form.addTextInput(I18n.htmlPages.pwField(), "password", {
 								password: true,
 							});
-							const name = form.options.addTextInput("Key Name", () => {}, {
+							const name = form.options.addTextInput(I18n.webauth.keyname(), () => {}, {
 								initText: "Key",
 							});
 						});
