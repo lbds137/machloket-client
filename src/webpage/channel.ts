@@ -2342,6 +2342,23 @@ class Channel extends SnowFlake {
 			headers: this.headers,
 		});
 	}
+	get trueNotiValue() {
+		const val = this.notification;
+		if (val === "default") {
+			switch (Number(this.guild.message_notifications)) {
+				case 0:
+					return "all";
+				case 1:
+					return "mentions";
+				case 2:
+					return "none";
+				default:
+					return "mentions";
+			}
+		}
+
+		return val;
+	}
 	get notification() {
 		let notinumber: number | null = this.message_notifications;
 		if (Number(notinumber) === 3) {
@@ -2881,36 +2898,35 @@ class Channel extends SnowFlake {
 		if (this.localuser.lookingguild?.prevchannel === this && document.hasFocus()) {
 			return;
 		}
-		if (!this.muted) {
-			if (this.localuser.user.status === "dnd") {
-				return;
-			}
 
-			if (
-				!this.guild.mute_config ||
-				new Date(this.guild.mute_config.end_time).getTime() < Date.now()
-			) {
-				if (this.notification === "all") {
-					this.notify(messagez);
-				} else if (this.notification === "mentions" && messagez.mentionsuser(this.localuser.user)) {
-					this.notify(messagez);
-				}
-			}
-		}
+		this.notify(messagez);
 	}
 	notititle(message: Message): string {
 		return message.author.username + " > " + this.guild.properties.name + " > " + this.name;
 	}
 	notify(message: Message, deep = 0) {
+		if (this.muted) return;
+
+		if (this.localuser.status === "dnd") return;
+
+		if (this.guild.muted) {
+			return;
+		}
+		if (this.trueNotiValue === "none") {
+			return;
+		} else if (this.notification === "mentions" && !message.mentionsuser(this.localuser.user)) {
+			return;
+		}
+		if (message.author.relationshipType == 2) {
+			return;
+		}
+
 		if (this.localuser.play) {
 			this.localuser.playSound();
 		} else {
 			console.warn("no play 3:");
 		}
 		if ("Notification" in window && Notification.permission === "granted") {
-			if (message.author.relationshipType == 2) {
-				return;
-			}
 			NotificationHandler.sendMessageNotification(message);
 		} else if (Notification.permission !== "denied") {
 			Notification.requestPermission().then(() => {

@@ -312,6 +312,9 @@ class Guild extends SnowFlake {
 		);
 		//TODO mute guild button
 	}
+	get muted() {
+		return this.mute_config && new Date(this.mute_config.end_time).getTime() < Date.now();
+	}
 	resolveMember(user: User) {
 		return Member.resolveMember(user, this);
 	}
