@@ -1847,7 +1847,7 @@ class Channel extends SnowFlake {
 		let showing = false;
 		let i = 0;
 		const curtime = Date.now() - 5000;
-		for (const thing of this.typingmap.keys()) {
+		for (const thing of this.typingmap.keys().filter((_) => _.id !== this.localuser.user.id)) {
 			if ((this.typingmap.get(thing) as number) > curtime) {
 				if (i !== 0) {
 					build += ", ";
