@@ -66,7 +66,12 @@ class Localuser {
 	guilds!: Guild[];
 	guildids: Map<string, Guild> = new Map();
 	user!: User;
-	status!: string;
+	get status() {
+		return this.user.status;
+	}
+	set status(status: string) {
+		this.user.setstatus(status);
+	}
 	channelfocus: Channel | undefined;
 	lookingguild: Guild | undefined;
 	guildhtml: Map<string, HTMLDivElement> = new Map();
@@ -888,7 +893,10 @@ class Localuser {
 				}
 				case "PRESENCE_UPDATE": {
 					if (temp.d.user) {
+						const user = new User(temp.d.user, this);
 						this.presences.set(temp.d.user.id, temp.d);
+						user.setstatus(temp.d.status);
+						if (user === this.user) this.loaduser();
 					}
 					break;
 				}
@@ -1224,9 +1232,12 @@ class Localuser {
 
 			for (const member of list) {
 				const user = member instanceof Member ? member.user : member;
+				user.localstatusUpdate = () => {
+					this.memberListUpdate();
+				};
 
 				const memberdiv = document.createElement("div");
-				const pfp = user.buildstatuspfp(member instanceof Member ? member : undefined);
+				const pfp = user.buildstatuspfp(channel);
 				const username = document.createElement("span");
 				username.classList.add("ellipsis");
 				username.textContent = member.name;

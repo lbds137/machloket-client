@@ -13,6 +13,7 @@ import {Dialog, Float, Options} from "./settings.js";
 import {createImg, removeAni, safeImg} from "./utils/utils.js";
 import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
+import {Channel} from "./channel.js";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -205,10 +206,9 @@ class User extends SnowFlake {
 		return this.status && this.status != "offline";
 	}
 	setstatus(status: string): void {
-		if (this.id === this.localuser.user.id) {
-			console.warn(status);
-		}
 		this.status = status;
+		const has = this.statusChange();
+		if (has) this.localstatusUpdate();
 	}
 
 	getStatus(): string {
@@ -641,23 +641,79 @@ class User extends SnowFlake {
 		this.bind(div, guild, undefined);
 		return div;
 	}
-	buildstatuspfp(guild: Guild | void | Member | null): HTMLDivElement {
-		const div = document.createElement("div");
-		div.classList.add("pfpDiv");
-		const pfp = this.buildpfp(guild, div);
-		div.append(pfp);
-		const status = document.createElement("div");
-		status.classList.add("statusDiv");
+	updateStatusSet = new Set<WeakRef<HTMLDivElement>>();
+	contextMap = new WeakMap<HTMLDivElement, Guild | Channel>();
+	localstatusUpdate = () => {};
+	registerStatus(status: HTMLDivElement, thing: Guild | void | Member | null | Channel) {
+		if (thing) {
+			if (thing instanceof Member) {
+				this.contextMap.set(status, thing.guild);
+			} else {
+				this.contextMap.set(status, thing);
+			}
+		}
+		this.updateStatusSet.add(new WeakRef(status));
+		this.updateStatus(status);
+	}
+	updateStatus(status: HTMLDivElement) {
+		status.classList.remove("offlinestatus", "dndstatus", "onlinestatus", "typingstatus");
 		switch (this.getStatus()) {
 			case "offline":
 			case "invisible":
 				status.classList.add("offlinestatus");
+				break;
+			case "dnd":
+				status.classList.add("dndstatus");
 				break;
 			case "online":
 			default:
 				status.classList.add("onlinestatus");
 				break;
 		}
+		const m = this.contextMap.get(status);
+		if (m) {
+			let guild: Guild;
+			let channel: Channel | void = undefined;
+			if ("guild" in m) {
+				channel = m;
+				guild = m.guild;
+			} else {
+				guild = m;
+			}
+			const memb = this.members.get(guild);
+			if (memb && !(memb instanceof Promise) && channel) {
+				const typing = channel.typingmap.get(memb);
+
+				if (typing) {
+					status.classList.add("typingstatus");
+				}
+			}
+		}
+	}
+	statusChange() {
+		let has = false;
+		for (const ref of this.updateStatusSet) {
+			const elm = ref.deref();
+			if (!elm || !document.body.contains(elm)) {
+				this.updateStatusSet.delete(ref);
+				continue;
+			}
+			has = true;
+			this.updateStatus(elm);
+		}
+		return has;
+	}
+	buildstatuspfp(guild: Guild | void | Member | null | Channel): HTMLDivElement {
+		const div = document.createElement("div");
+		div.classList.add("pfpDiv");
+		const isChannel = !!(guild && "guild" in guild);
+		const pfp = this.buildpfp(isChannel ? guild.guild : guild, div);
+		div.append(pfp);
+		const status = document.createElement("div");
+		this.registerStatus(status, guild);
+		status.classList.add("statusDiv");
+		status.append(document.createElement("div"));
+
 		div.append(status);
 		return div;
 	}

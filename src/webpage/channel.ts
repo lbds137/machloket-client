@@ -1818,13 +1818,17 @@ class Channel extends SnowFlake {
 	async typingStart(typing: startTypingjson): Promise<void> {
 		const memb = await Member.new(typing.d.member!, this.guild);
 		if (!memb) return;
+		this.typingmap.set(memb, Date.now());
+		memb.user.statusChange();
+		setTimeout(() => {
+			this.rendertyping();
+			memb.user.statusChange();
+		}, 10000);
 		if (memb.id === this.localuser.user.id) {
 			console.log("you is typing");
 			return;
 		}
 		console.log("user is typing and you should see it");
-		this.typingmap.set(memb, Date.now());
-		setTimeout(this.rendertyping.bind(this), 10000);
 		this.rendertyping();
 	}
 	similar(str: string) {

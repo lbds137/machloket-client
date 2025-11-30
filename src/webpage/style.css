@@ -2927,11 +2927,12 @@ img.bigembedimg {
 	position: absolute;
 	right: 2px;
 	bottom: 2px;
-	height: 7px;
-	width: 7px;
+	height: 8px;
+	width: 8px;
 	background: var(--black);
 	border: 2.5px solid var(--black);
-	border-radius: 50%;
+	border-radius: 8px;
+	transition: width 0.5s;
 }
 .profile .statusDiv {
 	width: 14px;
@@ -2939,6 +2940,46 @@ img.bigembedimg {
 }
 .onlinestatus {
 	background: var(--green);
+}
+.typingstatus {
+	width: 16px;
+	&::before {
+		content: " ";
+		background: white;
+		height: 4px;
+		width: 4px;
+		position: absolute;
+		top: 2px;
+		left: 1px;
+		border-radius: 100%;
+		animation: fade 1s infinite;
+	}
+	&::after {
+		content: " ";
+		background: white;
+		height: 4px;
+		width: 4px;
+		position: absolute;
+		top: 2px;
+		right: 1px;
+		border-radius: 100%;
+		animation: fade 1s infinite;
+		animation-delay: 0.33s;
+	}
+	div {
+		background: white;
+		height: 4px;
+		width: 4px;
+		position: absolute;
+		top: 2px;
+		right: 6px;
+		border-radius: 100%;
+		animation: fade 1s infinite;
+		animation-delay: 0.66s;
+	}
+}
+.dndstatus {
+	background: var(--red);
 }
 .offlinestatus {
 	background: var(--primary-bg);
