@@ -344,6 +344,10 @@ class Channel extends SnowFlake {
 			form.addMDInput(I18n.channel["topic:"](), "topic", {
 				initText: this.topic,
 			});
+			form.addImageInput(I18n.channel.icon(), "icon", {
+				initImg: this.icon ? this.iconUrl() : undefined,
+				clear: true,
+			});
 			form.addCheckboxInput(I18n.channel["nsfw:"](), "nsfw", {
 				initState: this.nsfw,
 			});
@@ -392,10 +396,6 @@ class Channel extends SnowFlake {
 					obj.type = {text: 0, voice: 2, announcement: 5, category: 4}[obj.type as string];
 				});
 			}
-			form.addImageInput(I18n.channel.icon(), "icon", {
-				initImg: this.icon ? this.iconUrl() : undefined,
-				clear: true,
-			});
 		}
 		const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
 
