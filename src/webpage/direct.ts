@@ -519,6 +519,7 @@ class Group extends Channel {
 	}
 	addRec(user: User) {
 		this.users.push(user);
+		this.users = [...new Set(this.users)];
 		if (this.localuser.channelfocus === this) {
 			this.localuser.memberListUpdate();
 		}

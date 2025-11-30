@@ -1167,9 +1167,9 @@ class Localuser {
 		}
 		elms.set("online", []);
 		elms.set("offline", []);
-		const members = new Set<User | Member>(guild.members);
+		let members = new Set<User | Member>(guild.members);
 		if (channel instanceof Group) {
-			channel.users.forEach((user) => members.add(user));
+			members = new Set(channel.users);
 			members.add(this.user);
 		}
 		members.forEach((member) => {
