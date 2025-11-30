@@ -133,6 +133,7 @@ window.addEventListener("popstate", (e) => {
 	//console.log(e.state,"state:3")
 });
 let nonceMap = new Map<string, string>();
+//@ts-expect-error unused right now, not needed
 function getNonce(id: string) {
 	const nonce = nonceMap.get(id) || Math.floor(Math.random() * 1000000000) + "";
 	nonceMap.set(id, nonce);
