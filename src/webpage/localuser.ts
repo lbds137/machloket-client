@@ -170,9 +170,7 @@ class Localuser {
 				const opt = d.float.options;
 				const selection = ["online", "invisible", "dnd", "idle"] as const;
 				const smap = selection.map((_) => I18n.user[_]());
-				let index = selection.indexOf(
-					sessionStorage.getItem("status") as "online" | "invisible" | "dnd" | "idle",
-				);
+				let index = selection.indexOf(this.status as "online" | "invisible" | "dnd" | "idle");
 				if (index === -1) {
 					index = 0;
 				}
