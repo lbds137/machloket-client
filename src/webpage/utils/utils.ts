@@ -691,9 +691,13 @@ export function createImg(
 	src: string | undefined,
 	staticsrc: string | void,
 	elm: HTMLElement | void,
+	type: "gif" | "icon" = "gif",
 ): safeImg {
 	const settings =
-		localStorage.getItem("gifSetting") || ("hover" as "hover") || "always" || "never";
+		localStorage.getItem(type === "gif" ? "gifSetting" : "iconSetting") ||
+		("hover" as "hover") ||
+		"always" ||
+		"never";
 	const img = document.createElement("img");
 	img.addEventListener("error", () => {
 		img.classList.add("error");

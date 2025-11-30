@@ -178,7 +178,8 @@
 	"accessibility": {
 		"name": "Accessibility",
 		"roleColors": "Disable role colors",
-		"playGif": "Play gifs:",
+		"playGif": "Play gifs on:",
+		"playIcon":"Play animated icons on:",
 		"gifSettings": {
 			"hover": "Hover",
 			"always": "Always",

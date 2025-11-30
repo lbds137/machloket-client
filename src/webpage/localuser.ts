@@ -2664,6 +2664,19 @@ class Localuser {
 						) + 1 || 1) - 1,
 				},
 			);
+			accessibility.addSelect(
+				I18n.accessibility.playIcon(),
+				(i) => {
+					localStorage.setItem("iconSetting", gifSettings[i]);
+				},
+				gifSettings.map((_) => I18n.accessibility.gifSettings[_]()),
+				{
+					defaultIndex:
+						((gifSettings as readonly string[]).indexOf(
+							localStorage.getItem("iconSetting") as string,
+						) + 1 || 1) - 1,
+				},
+			);
 		}
 		{
 			const connections = settings.addButton(I18n.localuser.connections());
