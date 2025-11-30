@@ -1847,18 +1847,21 @@ class Channel extends SnowFlake {
 		let showing = false;
 		let i = 0;
 		const curtime = Date.now() - 5000;
-		for (const thing of this.typingmap.keys().filter((_) => _.id !== this.localuser.user.id)) {
+		for (const thing of this.typingmap.keys()) {
+			const self = thing.id === this.localuser.user.id;
 			if ((this.typingmap.get(thing) as number) > curtime) {
-				if (i !== 0) {
-					build += ", ";
+				if (!self) {
+					if (i !== 0) {
+						build += ", ";
+					}
+					i++;
+					if (thing.nick) {
+						build += thing.nick;
+					} else {
+						build += thing.user.username;
+					}
+					showing = true;
 				}
-				i++;
-				if (thing.nick) {
-					build += thing.nick;
-				} else {
-					build += thing.user.username;
-				}
-				showing = true;
 			} else {
 				this.typingmap.delete(thing);
 			}
