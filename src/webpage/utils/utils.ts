@@ -671,7 +671,7 @@ async function isAnimated(src: string) {
 	try {
 		src = new URL(src).pathname;
 	} catch {}
-	return src.endsWith(".apng") || src.endsWith(".gif");
+	return src.endsWith(".apng") || src.endsWith(".gif") || src.split("/").at(-1)?.startsWith("a_");
 }
 const staticImgMap = new Map<string, string | Promise<string>>();
 export async function removeAni(elm: HTMLElement, time = 500) {
