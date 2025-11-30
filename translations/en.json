@@ -238,7 +238,8 @@
 		"selectCatName": "Name of category",
 		"createChannel": "Create channel",
 		"createCatagory": "Create category",
-		"permissions": "Permissions"
+		"permissions": "Permissions",
+		"allowIcons": "Allow custom channel icons"
 	},
 	"notiClump":"You've gotten $1 notifications from $2",
 	"Voice":{

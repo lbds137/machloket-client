@@ -479,10 +479,7 @@ class Group extends Channel {
 			},
 		);
 	}
-	iconUrl() {
-		return `${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png`;
-	}
-	icon?: string;
+
 	async addPerson() {
 		const d = new Dialog(I18n.DMs.add());
 		const options = [...this.localuser.inrelation]

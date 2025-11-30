@@ -2642,6 +2642,16 @@ class Localuser {
 					initState: !this.perminfo.user.disableColors,
 				},
 			);
+			accessibility.addCheckboxInput(
+				I18n.channel.allowIcons(),
+				(t) => {
+					console.log(t);
+					this.perminfo.user.disableIcons = !t;
+				},
+				{
+					initState: !this.perminfo.user.disableIcons,
+				},
+			);
 			const gifSettings = ["hover", "always", "never"] as const;
 			accessibility.addSelect(
 				I18n.accessibility.playGif(),

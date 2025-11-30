@@ -22,7 +22,7 @@ import {Member} from "./member.js";
 import {Voice} from "./voice.js";
 import {User} from "./user.js";
 import {I18n} from "./i18n.js";
-import {mobile} from "./utils/utils.js";
+import {mobile, createImg, safeImg} from "./utils/utils.js";
 import {webhookMenu} from "./webhooks.js";
 import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
@@ -253,6 +253,10 @@ class Channel extends SnowFlake {
 	get muted() {
 		return !!this.mute_config && new Date(this.mute_config.end_time).getTime() > Date.now();
 	}
+	icon?: string;
+	iconUrl() {
+		return `${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png`;
+	}
 	createInvite() {
 		const div = document.createElement("div");
 		div.classList.add("invitediv");
@@ -388,6 +392,10 @@ class Channel extends SnowFlake {
 					obj.type = {text: 0, voice: 2, announcement: 5, category: 4}[obj.type as string];
 				});
 			}
+			form.addImageInput(I18n.channel.icon(), "icon", {
+				initImg: this.icon ? this.iconUrl() : undefined,
+				clear: true,
+			});
 		}
 		const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
 
@@ -498,6 +506,7 @@ class Channel extends SnowFlake {
 		}
 		this.parent = undefined;
 		this.children = [];
+		this.icon = json.icon;
 		this.guild_id = json.guild_id;
 		this.permission_overwrites = new Map();
 		this.permission_overwritesar = [];
@@ -733,6 +742,54 @@ class Channel extends SnowFlake {
 		return this.hasPermission("VIEW_CHANNEL");
 	}
 	voiceUsers = new WeakRef(document.createElement("div"));
+	iconElm = new WeakRef(document.createElement("span") as HTMLSpanElement | safeImg);
+	renderIcon() {
+		let icon = this.iconElm.deref();
+		if (this.icon && !this.localuser.perminfo.user.disableIcons) {
+			if (icon instanceof HTMLImageElement) {
+				icon.setSrcs(this.iconUrl());
+			} else {
+				const old = icon;
+				icon = createImg(this.iconUrl());
+				this.iconElm = new WeakRef(icon);
+				if (old) {
+					try {
+						old.before(icon);
+						old.remove();
+					} catch {}
+				}
+			}
+			icon.classList.add("space");
+			return icon;
+		} else if (!(icon instanceof HTMLSpanElement)) {
+			const old = icon;
+			icon = document.createElement("span");
+			this.iconElm = new WeakRef(icon);
+			if (old) {
+				try {
+					old.before(icon);
+					old.remove();
+				} catch {}
+			}
+		}
+		icon.classList = "";
+		if (this.type === 0) {
+			if (this.guild.properties.rules_channel_id === this.id) {
+				icon.classList.add("space", "svgicon", "svg-rules");
+			} else {
+				icon.classList.add("space", "svgicon", this.nsfw ? "svg-channelnsfw" : "svg-channel");
+			}
+		} else if (this.type === 2) {
+			//
+			icon.classList.add("space", "svgicon", this.nsfw ? "svg-voicensfw" : "svg-voice");
+		} else if (this.type === 5) {
+			//
+			icon.classList.add("space", "svgicon", this.nsfw ? "svg-announcensfw" : "svg-announce");
+		} else {
+			console.log(this.type);
+		}
+		return icon;
+	}
 	createguildHTML(admin = false): HTMLDivElement {
 		const div = document.createElement("div");
 
@@ -848,35 +905,8 @@ class Channel extends SnowFlake {
 			myhtml.classList.add("ellipsis");
 			myhtml.textContent = this.name;
 			this.nameSpan = new WeakRef(myhtml);
-			if (this.type === 0) {
-				const decoration = document.createElement("span");
-				button.appendChild(decoration);
-				if (this.guild.properties.rules_channel_id === this.id) {
-					decoration.classList.add("space", "svgicon", "svg-rules");
-				} else {
-					decoration.classList.add(
-						"space",
-						"svgicon",
-						this.nsfw ? "svg-channelnsfw" : "svg-channel",
-					);
-				}
-			} else if (this.type === 2) {
-				//
-				const decoration = document.createElement("span");
-				button.appendChild(decoration);
-				decoration.classList.add("space", "svgicon", this.nsfw ? "svg-voicensfw" : "svg-voice");
-			} else if (this.type === 5) {
-				//
-				const decoration = document.createElement("span");
-				button.appendChild(decoration);
-				decoration.classList.add(
-					"space",
-					"svgicon",
-					this.nsfw ? "svg-announcensfw" : "svg-announce",
-				);
-			} else {
-				console.log(this.type);
-			}
+			const decoration = this.renderIcon();
+			button.appendChild(decoration);
 			button.appendChild(myhtml);
 			button.onclick = (_) => {
 				this.getHTML();
@@ -2239,6 +2269,8 @@ class Channel extends SnowFlake {
 		console.trace("trace me");
 		this.type = json.type;
 		this.name = json.name;
+		this.icon = json.icon;
+		this.renderIcon();
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
 		this.slowmode();
 
