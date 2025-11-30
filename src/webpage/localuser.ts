@@ -169,7 +169,6 @@ class Localuser {
 				const d = new Dialog(I18n.localuser.status());
 				const opt = d.float.options;
 				const selection = ["online", "invisible", "dnd", "idle"] as const;
-				opt.addText(I18n.localuser.statusWarn());
 				const smap = selection.map((_) => I18n.user[_]());
 				let index = selection.indexOf(
 					sessionStorage.getItem("status") as "online" | "invisible" | "dnd" | "idle",

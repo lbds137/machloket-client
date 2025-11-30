@@ -486,7 +486,6 @@
 		"installDesc": "Installing Fermi will allow you to open it in its own window and act like its own app! You can also just continue to use Fermi in the web browser like you have been and it'll work the same.",
 		"addStatus": "Add status",
 		"status": "Status",
-		"statusWarn": "Spacebar has bugs with this feature and will only update after a refresh, and will often not respect it",
 		"customStatusWarn": "Spacebar does not support custom status being displayed at this time so while it'll accept the status, it will not do anything with it",
 		"settings": "Settings",
 		"userSettings": "User Settings",
