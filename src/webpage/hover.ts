@@ -1,17 +1,21 @@
 import {Contextmenu} from "./contextmenu.js";
 import {MarkDown} from "./markdown.js";
-
+type sides = "right" | "bottom";
 class Hover {
 	str: string | MarkDown | (() => Promise<MarkDown | string> | MarkDown | string);
 	customHTML?: () => HTMLElement;
 	weak: boolean;
+	side: sides;
 	constructor(
 		txt: string | MarkDown | (() => Promise<MarkDown | string> | MarkDown | string),
-		{customHTML, weak}: {customHTML?: () => HTMLElement; weak: boolean} = {weak: true},
+		{customHTML, weak, side}: {customHTML?: () => HTMLElement; weak: boolean; side?: sides} = {
+			weak: true,
+		},
 	) {
 		this.customHTML = customHTML;
 		this.weak = weak;
 		this.str = txt;
+		this.side = side || "bottom";
 	}
 	static map = new WeakMap<HTMLElement, () => void>();
 	static elm: HTMLElement = document.createElement("div");
@@ -84,17 +88,25 @@ class Hover {
 				div.innerText = this.str;
 			}
 		}
+		document.body.append(div);
+		div.classList.add("hoverthing");
 
 		const box = elm.getBoundingClientRect();
-		div.style.top = box.bottom + 4 + "px";
-		div.style.left = Math.floor(box.left + box.width / 2) + "px";
-		div.classList.add("hoverthing");
+		if (this.side === "bottom") {
+			div.style.top = box.bottom + 4 + "px";
+			div.style.left = Math.floor(box.left + box.width / 2) + "px";
+		} else if (this.side === "right") {
+			const box2 = div.getBoundingClientRect();
+			div.style.left = box.right + 4 + Math.floor(box2.width / 2) + "px";
+			div.style.top = Math.floor(box.top + box.height / 4) + "px";
+		}
+
 		if (this.weak) {
 			div.addEventListener("mouseover", () => {
 				div.remove();
 			});
 		}
-		document.body.append(div);
+
 		Contextmenu.keepOnScreen(div);
 		return div;
 	}

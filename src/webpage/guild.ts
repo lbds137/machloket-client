@@ -31,6 +31,7 @@ import {Sticker} from "./sticker.js";
 import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {MarkDown} from "./markdown.js";
 import {Command} from "./interactions/commands.js";
+import {Hover} from "./hover.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
@@ -1535,16 +1536,25 @@ class Guild extends SnowFlake {
 		} else {
 			icon = guild.icon;
 		}
+		const onclick =
+			guild instanceof Guild
+				? () => {
+						guild.loadGuild();
+						guild.loadChannel();
+					}
+				: null;
+		const hover = new Hover(guild instanceof Guild ? guild.properties.name : "", {
+			side: "right",
+			weak: true,
+		});
 		if (icon !== null) {
 			const img = createImg(guild.info.cdn + "/icons/" + guild.id + "/" + icon + ".png");
 			img.classList.add("pfp", "servericon");
 			divy.appendChild(img);
 			if (guild instanceof Guild && autoLink) {
-				img.onclick = () => {
-					guild.loadGuild();
-					guild.loadChannel();
-				};
+				img.onclick = onclick;
 				Guild.contextmenu.bindContextmenu(img, guild, undefined);
+				hover.addEvent(img);
 			}
 		} else {
 			const div = document.createElement("div");
@@ -1562,11 +1572,9 @@ class Guild extends SnowFlake {
 			div.classList.add("blankserver", "servericon");
 			divy.appendChild(div);
 			if (guild instanceof Guild) {
-				div.onclick = () => {
-					guild.loadGuild();
-					guild.loadChannel();
-				};
+				div.onclick = onclick;
 				Guild.contextmenu.bindContextmenu(div, guild, undefined);
+				hover.addEvent(div);
 			}
 		}
 		return divy;
