@@ -176,7 +176,7 @@
 	"accessibility": {
 		"name": "Erişilebilirlik",
 		"roleColors": "Rol renklerini devre dışı et",
-		"playGif": "Gifleri oynat:",
+		"playGif": "GIF'leri şurada oynat:",
 		"gifSettings": {
 			"hover": "Üzerindeyken",
 			"always": "Her zaman",

@@ -358,7 +358,6 @@
 		"installDesc": "Zainstalowanie Fermi pozwoli ci na otworzenie go w jego własnym oknie oraz będzie on działać jak osobna aplikacja! Możesz też po prostu korzystać z Fermi w przeglądarce, tak jak dotychczas, i będzie działać tak samo.",
 		"addStatus": "Dodaj status",
 		"status": "Status",
-		"statusWarn": "Spacebar posiada błedy z tą funkcją - aktualizuje się dopiero po odświeżeniu i często jej nie respektuje",
 		"customStatusWarn": "W tej chwili Spacebar nie obsługuje wyświetlania niestandardowych statusów, więc choć go zaakceptuje, nic z nim nie zrobi",
 		"settings": "Ustawienia",
 		"userSettings": "Ustawienia użytkownika",

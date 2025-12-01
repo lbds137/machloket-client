@@ -476,7 +476,6 @@
 		"installDesc": "Na installeren kun je Fermi in een eigen venster openen en als aparte app gebruiken! Je kunt Fermi ook gewoon in je webbrowser blijven gebruiken en dan werkt het precies hetzelfde.",
 		"addStatus": "Status toevoegen",
 		"status": "Status",
-		"statusWarn": "Spacebar heeft bugs met deze functie en zal alleen worden bijgewerkt na een vernieuwing, en zal deze vaak niet respecteren",
 		"customStatusWarn": "Spacebar ondersteunt nog geen aangepaste statusweergave. Hoewel de status wordt geaccepteerd, wordt er verder niets mee gedaan.",
 		"settings": "Instellingen",
 		"userSettings": "Gebruikersinstellingen",

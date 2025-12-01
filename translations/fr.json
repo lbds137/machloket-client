@@ -405,7 +405,6 @@
 		"installDesc": "Installer le client Fermi vous permettra de l’ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Fermi dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
 		"addStatus": "Ajouter l’état",
 		"status": "État",
-		"statusWarn": "Spacebar présente des bogues avec cette fonctionnalité et ne sera mise à jour qu’après actualisation, et ne la respectera souvent pas",
 		"customStatusWarn": "Spacebar ne prend pas en charge l’affichage d’un état personnalisé pour le moment. Par conséquent, même si elle accepte l’état, elle n’en fera rien",
 		"settings": "Paramètres",
 		"userSettings": "Paramètres de l'utilisateur",

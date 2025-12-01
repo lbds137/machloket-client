@@ -178,7 +178,8 @@
 	"accessibility": {
 		"name": "無障礙",
 		"roleColors": "停用角色顏色",
-		"playGif": "播放動圖：",
+		"playGif": "播放動圖於：",
+		"playIcon": "播放動態圖示於：",
 		"gifSettings": {
 			"hover": "覆蓋",
 			"always": "總是",
@@ -238,7 +239,8 @@
 		"selectCatName": "分類名稱",
 		"createChannel": "建立頻道",
 		"createCatagory": "建立分類",
-		"permissions": "權限"
+		"permissions": "權限",
+		"allowIcons": "允許自訂頻道圖示"
 	},
 	"notiClump": "您已收到來自$2的$1通知",
 	"Voice": {
@@ -478,6 +480,11 @@
 		"delete": "刪除應用程式",
 		"sure": "您確定要刪除$1嗎？"
 	},
+	"webauth": {
+		"manage": "管理安全金鑰",
+		"addKey": "新增金鑰：",
+		"keyname": "金鑰名稱："
+	},
 	"localuser": {
 		"trusted": "信任網域",
 		"trustedDesc": "當您點擊來自這些網域的連結時，他們***不會***像其他連結那樣提示您允許開啟，這僅在您信任的 URL 出現提示",
@@ -487,7 +494,6 @@
 		"installDesc": "安裝 Fermi 後，您可以在其獨立的視窗中開啟，就像 Femi 自己的應用程式一樣！您也可以像以前那樣在網頁瀏覽器中使用 Fermi，功能是相同的。",
 		"addStatus": "新增狀態",
 		"status": "狀態",
-		"statusWarn": "Spacebar 的此功能存在程式錯誤，並且僅在重整後才會更新（這通常會被忽略）",
 		"customStatusWarn": "Spacebar 目前不支援顯示自訂狀態，因此雖然會接受狀態但不會對此做出任何行為",
 		"settings": "設定",
 		"userSettings": "使用者設定",
@@ -649,6 +655,7 @@
 	"friends": {
 		"blocked": "已封鎖",
 		"blockedusers": "已封鎖使用者：",
+		"bu": "已封禁使用者",
 		"addfriend": "新增好友",
 		"removeFriend": "移除好友",
 		"addfriendpromt": "透過使用者名稱新增好友：",
@@ -665,10 +672,11 @@
 	},
 	"replyingTo": "正在回覆給$1",
 	"DMs": {
-		"copyId": "複製 DM ID",
+		"copyId": "複製私訊 ID",
 		"markRead": "標記為已讀",
-		"close": "關閉 DM",
-		"name": "直接訊息"
+		"close": "關閉私訊",
+		"name": "直接訊息",
+		"add": "將某人添加到此私訊"
 	},
 	"user": {
 		"sendMessage": "發送訊息@$1",
@@ -749,9 +757,10 @@
 		"quest_completed": "做出一個任務"
 	},
 	"dms": "私訊",
+	"add": "添加",
 	"group": {
 		"select": "選擇好友",
-		"createdm": "建立 DM！",
+		"createdm": "建立私訊！",
 		"edit": "編輯群組聊天"
 	},
 	"emoji": {

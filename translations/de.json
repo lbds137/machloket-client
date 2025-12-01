@@ -358,7 +358,6 @@
 		"installDesc": "Die Installation ermöglicht, Fermi in einem eigenen Fenster zu öffnen und es wie eine eigene App zu nutzen! Fermi kann aber auch einfach wie bisher im Webbrowser verwendet werden, es funktioniert dort genauso.",
 		"addStatus": "Status hinzufügen",
 		"status": "Status",
-		"statusWarn": "Spacebar hat Bugs mit dieser Funktion, die erst nach einem Refresh aktualisiert wird, und wird sie oft ignorieren",
 		"customStatusWarn": "Spacebar unterstützt derzeit nicht die Anzeige von einem benutzerdefinierten Status. Der Status wird zwar akzeptiert, aber nicht weiter verarbeitet.",
 		"settings": "Einstellungen",
 		"userSettings": "Benutzereinstellungen",

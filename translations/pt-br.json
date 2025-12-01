@@ -481,7 +481,6 @@
 		"installDesc": "Instalar o Fermi te permite abrir ele em uma janela e que ele aja como um app próprio! Você também pode só continuar a usar o Fermi no navegador e irá funcionar do mesmo jeito.",
 		"addStatus": "Adicionar status",
 		"status": "Status",
-		"statusWarn": "Spacebar tem bugs com essa função e só vai atualizar depois de um recarregamento, e não vai respeitá-lo na maioria das vezes",
 		"customStatusWarn": "Spacebar não tem suporte a status customizados no momento, então enquanto será aceito, nada será feito com ele.",
 		"settings": "Configurações",
 		"userSettings": "Configurações do Usuário",
