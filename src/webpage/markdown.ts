@@ -914,7 +914,7 @@ class MarkDown {
 							i = j;
 							if (!stdsize) {
 								MarkDown.safeLink(linkElem, parts[2]);
-								linkElem.textContent = parts[1];
+								linkElem.append(this.markdown(parts[1], {keep, stdsize}));
 								linkElem.target = "_blank";
 								linkElem.rel = "noopener noreferrer";
 							}
