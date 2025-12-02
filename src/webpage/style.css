@@ -2618,6 +2618,12 @@ span .quote:last-of-type .quoteline {
 	font-size: 0.88em;
 	color: var(--secondary-text);
 	border-radius: 4px;
+	padding-bottom: 4px;
+
+	span {
+		display: inline-block;
+		margin-bottom: 3px;
+	}
 }
 .linkembed {
 	margin-top: 4px;
