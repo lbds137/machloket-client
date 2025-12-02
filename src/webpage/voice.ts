@@ -985,6 +985,7 @@ a=rtcp-mux\r`;
 		this.status = "makingOffer";
 		const pc = new RTCPeerConnection({
 			bundlePolicy: "max-bundle",
+			iceCandidatePoolSize: 16,
 		});
 		pc.ontrack = async (e) => {
 			this.status = "done";
