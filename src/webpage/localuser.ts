@@ -4078,7 +4078,7 @@ class Localuser {
 			return undefined;
 		}
 		const guild = this.guildids.get(guildid);
-		const borked = true;
+		const borked = false;
 		if (!guild || (borked && guild.member_count > 250)) {
 			try {
 				const req = await fetch(this.info.api + "/guilds/" + guildid + "/members/" + id, {
