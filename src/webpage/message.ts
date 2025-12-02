@@ -1086,7 +1086,7 @@ class Message extends SnowFlake {
 							container.append(emoji);
 						} else {
 							const emj = Emoji.getEmojiFromIDOrString(emoji, this.localuser);
-							container.append(emj.getHTML(false));
+							container.append(emj.getHTML(false, false));
 						}
 						container.onclick = () => {
 							this.reactionToggle(emoji);
@@ -1190,7 +1190,7 @@ class Message extends SnowFlake {
 					thing.emoji as {name: string; id: string; animated: boolean},
 					this.guild,
 				);
-				emoji = emo.getHTML(false);
+				emoji = emo.getHTML(false, false);
 			} else {
 				emoji = document.createElement("p");
 				emoji.textContent = thing.emoji.name;
