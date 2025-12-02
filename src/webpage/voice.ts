@@ -854,7 +854,6 @@ a=rtcp-mux\r`;
 	async makeOffer() {
 		if (this.off) {
 			if (this.pc?.localDescription?.sdp) return {sdp: this.pc?.localDescription?.sdp};
-
 			return this.off;
 		}
 		return (this.off = new Promise<RTCSessionDescriptionInit>(async (res) => {
@@ -988,6 +987,7 @@ a=rtcp-mux\r`;
 		this.status = "makingOffer";
 		const pc = new RTCPeerConnection({
 			bundlePolicy: "max-bundle",
+			rtcpMuxPolicy: "negotiate",
 		});
 		pc.ontrack = async (e) => {
 			this.status = "done";
