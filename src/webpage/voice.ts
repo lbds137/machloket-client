@@ -1308,7 +1308,7 @@ a=rtcp-mux\r`;
 			}
 		}
 
-		const ws = new WebSocket(("ws://" + this.urlobj.url) as string);
+		const ws = new WebSocket(("wss://" + this.urlobj.url) as string);
 		this.ws = ws;
 		ws.onclose = () => {
 			this.leave();
