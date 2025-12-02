@@ -852,8 +852,11 @@ a=rtcp-mux\r`;
 	reciverMap = new Map<number, RTCRtpReceiver>();
 	off?: Promise<RTCSessionDescriptionInit>;
 	async makeOffer() {
-		if (this.pc?.localDescription?.sdp) return {sdp: this.pc?.localDescription?.sdp};
-		if (this.off) return this.off;
+		if (this.off) {
+			if (this.pc?.localDescription?.sdp) return {sdp: this.pc?.localDescription?.sdp};
+
+			return this.off;
+		}
 		return (this.off = new Promise<RTCSessionDescriptionInit>(async (res) => {
 			if (!this.pc) throw new Error("stupid");
 			console.error("stupid!");
@@ -985,7 +988,6 @@ a=rtcp-mux\r`;
 		this.status = "makingOffer";
 		const pc = new RTCPeerConnection({
 			bundlePolicy: "max-bundle",
-			iceCandidatePoolSize: 16,
 		});
 		pc.ontrack = async (e) => {
 			this.status = "done";
