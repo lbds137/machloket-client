@@ -2619,10 +2619,8 @@ span .quote:last-of-type .quoteline {
 	color: var(--secondary-text);
 	border-radius: 4px;
 	padding-bottom: 4px;
-
-	span {
-		display: inline-block;
-		margin-bottom: 3px;
+	> p {
+		line-height: 20px;
 	}
 }
 .linkembed {
