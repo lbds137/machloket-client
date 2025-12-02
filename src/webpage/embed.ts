@@ -244,6 +244,7 @@ class Embed {
 			const a = document.createElement("a");
 			MarkDown.safeLink(a, this.json.url);
 			a.textContent = this.json.title;
+			a.classList.add("embedtitle");
 			td.append(a);
 			trtop.append(td);
 		}
@@ -396,6 +397,7 @@ class Embed {
 		if (this.json.url && this.json.url) {
 			MarkDown.safeLink(a, this.json.url);
 			a.textContent = this.json.title || this.json.url;
+			a.classList.add("embedtitle");
 			div.append(a);
 		}
 		if (this.json.description) {
