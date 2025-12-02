@@ -126,7 +126,6 @@ class Embed {
 			embed.append(p);
 		}
 
-		embed.append(document.createElement("br"));
 		if (this.json.fields) {
 			for (const thing of this.json.fields) {
 				const div = document.createElement("div");
