@@ -983,7 +983,9 @@ a=rtcp-mux\r`;
 	streams = new Set<MediaStreamTrack>();
 	async startWebRTC() {
 		this.status = "makingOffer";
-		const pc = new RTCPeerConnection();
+		const pc = new RTCPeerConnection({
+			iceServers: [{urls: "stun:stun.l.google.com:19302"}],
+		});
 		pc.ontrack = async (e) => {
 			this.status = "done";
 			this.onconnect();
