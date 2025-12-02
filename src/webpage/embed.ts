@@ -85,7 +85,7 @@ class Embed {
 	generateRich() {
 		const div = document.createElement("div");
 		if (this.json.color) {
-			div.style.backgroundColor = "#" + this.json.color.toString(16);
+			div.style.backgroundColor = "#" + this.json.color.toString(16).padStart(6, "0");
 		}
 		div.classList.add("embed-color");
 
