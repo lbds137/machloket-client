@@ -180,4 +180,5 @@ body {
 	--settings-panel-hover: color-mix(in srgb, var(--settings-panel-selected), transparent);
 	--loading-bg: var(--secondary-bg);
 	--loading-text: var(--secondary-text);
+	--embed-bg-side: color-mix(in srgb, var(--embed-bg), black);
 }
