@@ -984,7 +984,7 @@ a=rtcp-mux\r`;
 	async startWebRTC() {
 		this.status = "makingOffer";
 		const pc = new RTCPeerConnection({
-			iceServers: [{urls: "stun:stun.l.google.com:19302"}],
+			bundlePolicy: "max-bundle",
 		});
 		pc.ontrack = async (e) => {
 			this.status = "done";
