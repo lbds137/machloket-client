@@ -499,6 +499,10 @@ h2:empty {
 }
 a,
 .clickable {
+	samp {
+		color: var(--link);
+		background: color-mix(in srgb, var(--code-bg), black);
+	}
 	color: var(--link);
 	text-decoration: none;
 	word-break: break-word;
@@ -522,6 +526,8 @@ samp {
 	color: var(--code-text);
 	text-wrap: wrap;
 	word-break: break-word;
+	padding: 1px;
+	border-radius: 2px;
 }
 video {
 	max-height: 100%;
@@ -2625,7 +2631,7 @@ span .quote:last-of-type .quoteline {
 	margin-left: 4px;
 	border-radius: 0 4px 4px 0;
 }
-.embed a {
+.embed .embedtitle {
 	display: inline-block;
 	padding-bottom: 4px;
 	font-size: 1rem;
