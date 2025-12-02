@@ -750,7 +750,8 @@ class Channel extends SnowFlake {
 				icon.setSrcs(this.iconUrl());
 			} else {
 				const old = icon;
-				icon = createImg(this.iconUrl(), undefined, undefined, "icon");
+				const div = this.html?.deref();
+				icon = createImg(this.iconUrl(), undefined, div, "icon");
 				this.iconElm = new WeakRef(icon);
 				if (old) {
 					try {
