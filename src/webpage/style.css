@@ -2613,7 +2613,7 @@ span .quote:last-of-type .quoteline {
 	flex-wrap: wrap;
 }
 .embed {
-	max-width: 400px;
+	/* max-width: 400px; */
 	padding: 12px;
 	background: var(--embed-bg);
 	font-size: 0.88em;
@@ -2628,9 +2628,10 @@ span .quote:last-of-type .quoteline {
 	margin-top: 4px;
 }
 .embed-color {
-	max-width: 400px;
+	max-width: fit-content;
 	margin-top: 4px;
 	border-radius: 4px;
+	min-width: 350px;
 }
 .embed-color .embed {
 	margin-left: 4px;
