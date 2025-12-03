@@ -618,6 +618,13 @@
 		"messages": "Messages: $1",
 		"members": "Members: $1"
 	},
+	"instanceInfo":{
+		"name":"Instance Info",
+		"contact":"Email Instance Admins",
+		"tosPage":"[TOS Page]($1)",
+		"frontPage":"[Front Page]($1)",
+		"publicUrl":"[Public Url]($1)"
+	},
 	"inviteOptions": {
 		"title": "Invite People",
 		"30m": "30 Minutes",

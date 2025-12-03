@@ -3004,9 +3004,6 @@ class Localuser {
 					undefined,
 				),
 			);
-			jankInfo.addButtonInput("", I18n.instInfo(), () => {
-				this.instanceStats();
-			});
 		})();
 		const installP = installPGet();
 		if (installP) {
@@ -3203,6 +3200,43 @@ class Localuser {
 				updateInfo();
 			};
 			updateInfo();
+		}
+		{
+			const instanceInfo = settings.addButton(I18n.instanceInfo.name());
+			fetch(this.info.api + "/policies/instance/")
+				.then((_) => _.json())
+				.then((body) => {
+					const json = body as {
+						instanceName: string;
+						instanceDescription: string | null;
+						frontPage: string | null;
+						tosPage: string | null;
+						correspondenceEmail: string | null;
+						correspondenceUserID: string | null;
+						image: string | null;
+						instanceId: string;
+						autoCreateBotUsers: false;
+						publicUrl: string | null;
+					};
+					instanceInfo.addTitle(json.instanceName);
+					if (json.correspondenceEmail) {
+						const a = document.createElement("a");
+						a.target = "_blank";
+						a.rel = "noreferrer";
+						a.href = "mailto:" + json.correspondenceEmail;
+						a.textContent = I18n.instanceInfo.contact();
+						instanceInfo.addHTMLArea(a);
+					}
+					if (json.tosPage)
+						instanceInfo.addMDText(new MarkDown(I18n.instanceInfo.tosPage(json.tosPage)));
+					if (json.publicUrl)
+						instanceInfo.addMDText(new MarkDown(I18n.instanceInfo.publicUrl(json.publicUrl)));
+					if (json.frontPage)
+						instanceInfo.addMDText(new MarkDown(I18n.instanceInfo.frontPage(json.frontPage)));
+					instanceInfo.addButtonInput("", I18n.instInfo(), () => {
+						this.instanceStats();
+					});
+				});
 		}
 		settings.show();
 	}
