@@ -984,15 +984,23 @@ class MarkDown {
 				_.preventDefault();
 				return;
 			}
+			const selection = window.getSelection() as Selection;
+
 			if (types.includes("text/html")) {
 				const data = _.clipboardData.getData("text/html");
 				const html = new DOMParser().parseFromString(data, "text/html");
 				const txt = MarkDown.gatherBoxText(html.body);
 				console.log(txt);
+				const rstr = selection.toString();
 				saveCaretPosition(box)?.();
 				const content = this.textContent;
 				if (content) {
 					const [_first, end] = content.split(text);
+					if (rstr) {
+						const tw = text.split(rstr);
+						tw.pop();
+						text = tw.join("");
+					}
 					const boxText = text + txt + end;
 					box.textContent = boxText;
 					const len = text.length + txt.length;
