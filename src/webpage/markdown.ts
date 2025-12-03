@@ -123,8 +123,8 @@ class MarkDown {
 				current = document.createElement("span");
 			}
 		}
-		function getCurLast(): Element | undefined {
-			return span.children[span.children.length - 1];
+		function getCurLast(): Node | undefined {
+			return Array.from(span.childNodes).at(-1);
 		}
 		for (let i = 0; i < txt.length; i++) {
 			if (txt[i] === "\n" || i === 0) {
@@ -930,6 +930,9 @@ class MarkDown {
 		}
 		appendcurrent();
 		const last = getCurLast();
+		if (last && last instanceof Text && last.textContent === "\n" && Error.prototype.stack === "") {
+			span.append(current);
+		}
 		if (
 			last &&
 			last instanceof HTMLElement &&
@@ -948,9 +951,20 @@ class MarkDown {
 	giveBox(box: HTMLDivElement, onUpdate: (upto: string, pre: boolean) => unknown = () => {}) {
 		this.box = new WeakRef(box);
 		this.onUpdate = onUpdate;
-		box.onkeydown = (_) => {
-			//console.log(_);
-		};
+		box.addEventListener("keydown", (_) => {
+			if (Error.prototype.stack !== "") return;
+			if (_.key === "Enter") {
+				const selection = window.getSelection() as Selection;
+				if (!selection) return;
+				const range = selection.getRangeAt(0);
+				const node = new Text("\n");
+				range.insertNode(node);
+				const g = node.nextSibling;
+				if (g) range.setStart(g, 0);
+				_.preventDefault();
+				return;
+			}
+		});
 		let prevcontent = "";
 		box.onkeyup = (_) => {
 			let content = MarkDown.gatherBoxText(box);
@@ -958,7 +972,7 @@ class MarkDown {
 			if (content !== prevcontent) {
 				prevcontent = content;
 				this.txt = content.split("");
-				this.boxupdate();
+				this.boxupdate(undefined, undefined, undefined, _.key === "Backspace");
 				MarkDown.gatherBoxText(box);
 			}
 		};
@@ -1010,11 +1024,16 @@ class MarkDown {
 		this.customBox = [stringToHTML, HTMLToString];
 	}
 	boxEnabled = true;
-	boxupdate(offset = 0, allowLazy = true, computedLength: void | number = undefined) {
+	boxupdate(
+		offset = 0,
+		allowLazy = true,
+		computedLength: void | number = undefined,
+		backspace = false,
+	) {
 		if (!this.boxEnabled) return;
 		const box = this.box.deref();
 		if (!box) return;
-		let restore: undefined | (() => void);
+		let restore: undefined | ((backspace: boolean) => void);
 		if (this.customBox) {
 			restore = saveCaretPosition(box, offset, this.customBox[1], computedLength);
 		} else {
@@ -1055,7 +1074,7 @@ class MarkDown {
 			//console.timeEnd();
 		}
 		if (restore) {
-			restore();
+			restore(backspace);
 		}
 		this.onUpdate(text, formatted);
 	}
@@ -1076,7 +1095,6 @@ class MarkDown {
 		}
 		let build = "";
 		const arr = Array.from(element.childNodes);
-		//debugger;
 		for (const thing of arr) {
 			if (thing instanceof Text) {
 				const text = thing.textContent;
@@ -1290,9 +1308,25 @@ function saveCaretPosition(
 		}
 		len = Math.min(len, txtLengthFunc(context).length);
 		len += offset;
-		return function restore() {
+		console.log(text.split("\n"));
+		return function restore(backspace = false) {
 			if (!selection) return;
 			const pos = getTextNodeAtPosition(context, len, txtLengthFunc);
+			if (
+				pos.node instanceof Text &&
+				pos.node.textContent === "\n" &&
+				pos.node.nextSibling &&
+				Error.prototype.stack === "" &&
+				!backspace
+			) {
+				if (pos.node.nextSibling instanceof Text && pos.node.nextSibling.textContent === "\n") {
+					pos.position = 1;
+				} else {
+					pos.node = pos.node.nextSibling;
+					pos.position = 0;
+				}
+			}
+			console.log(pos, len);
 			selection.removeAllRanges();
 			const range = new Range();
 			range.setStart(pos.node, pos.position);

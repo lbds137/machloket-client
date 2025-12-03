@@ -233,7 +233,11 @@ typebox.markdown = markdown;
 typebox.addEventListener("keyup", handleEnter);
 typebox.addEventListener("keydown", (event) => {
 	thisUser.keydown(event);
-	if (event.key === "Enter" && !event.shiftKey) event.preventDefault();
+	console.log("ran?");
+	if (event.key === "Enter" && !event.shiftKey) {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+	}
 });
 markdown.giveBox(typebox);
 {

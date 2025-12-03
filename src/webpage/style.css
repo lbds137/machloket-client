@@ -1165,6 +1165,7 @@ textarea {
 	background: var(--typebox-bg);
 	padding: 0.05in;
 	border-radius: 0.04in;
+	white-space: preserve-breaks;
 }
 #gimmefile {
 	position: absolute;
@@ -2046,7 +2047,7 @@ span.instanceStatus {
 	flex-grow: 1;
 	width: 1px;
 	margin-left: 0.06in;
-	white-space: pre;
+	white-space: preserve-breaks;
 	flex-shrink: 1;
 	text-wrap: auto;
 	overflow-y: auto;
