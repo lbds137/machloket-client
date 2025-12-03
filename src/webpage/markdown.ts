@@ -906,7 +906,6 @@ class MarkDown {
 					appendcurrent();
 
 					const parts = build.join("").match(/^\[(.+)\]\(<?(https?:.+?)>?( ('|").+('|"))?\)$/);
-					console.warn(parts);
 					if (parts) {
 						const linkElem = document.createElement("a");
 
@@ -1121,7 +1120,6 @@ class MarkDown {
 					parent = parent.parentElement;
 				}
 				if (_.button === 2) return;
-				console.log(":3");
 				function open() {
 					const proxy = window.open(url, "_blank");
 					if (proxy && _.button === 1) {
@@ -1344,7 +1342,6 @@ function getTextNodeAtPosition(
 		} else {
 			const returny = getTextNodeAtPosition(node, index);
 			if (returny.position === -1) {
-				console.warn("in here");
 				index = 0;
 				continue;
 			}
