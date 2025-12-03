@@ -607,7 +607,9 @@
 		"pin": "$1 has pinned a message",
 		"viewrest": "View rest",
 		"fullMessage": "Full message:",
-		"reactionsTitle":"Reactions"
+		"reactionsTitle":"Reactions",
+		"andMore":"$1, and more!",
+		"reactedWith":"Reacted with $1"
 	},
 	"instanceStats": {
 		"name": "Instance stats: $1",

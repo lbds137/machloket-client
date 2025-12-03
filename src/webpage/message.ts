@@ -1215,10 +1215,10 @@ class Message extends SnowFlake {
 					first = false;
 				}
 				if (thing.count > 3) {
-					build += ", and more!";
+					build = I18n.message.andMore(build);
 				} else {
 				}
-				build += "\nReacted with " + thing.emoji.name;
+				build += "\n" + I18n.message.reactedWith(thing.emoji.name);
 				return build;
 			});
 			h.addEvent(reaction);
