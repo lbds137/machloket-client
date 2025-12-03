@@ -13,7 +13,6 @@ export class Play {
 
 			const events = ["click", "keydown", "touchstart"] as const;
 			const func = () => {
-				this.sendMessage({name: "clear"});
 				this.start();
 				events.forEach((event) => document.removeEventListener(event, func));
 			};
@@ -36,6 +35,7 @@ export class Play {
 	}
 	private async start() {
 		if (this.audioContext.state === "suspended") {
+			this.sendMessage({name: "clear"});
 			await this.audioContext.resume();
 		}
 	}
