@@ -978,6 +978,16 @@ type wsjson =
 				user: userjson;
 			};
 			s: number;
+	  }
+	| {
+			op: 0;
+			t: "MESSAGE_ACK";
+			d: {
+				channel_id: string;
+				message_id: string;
+				version: number; //I don't think this really matters lol
+			};
+			s: number;
 	  };
 
 export interface interactionCreate {

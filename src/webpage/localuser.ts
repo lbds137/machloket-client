@@ -249,6 +249,17 @@ class Localuser {
 			mic.classList.add("svg-mic");
 		}
 	}
+	channelByID(id: string): Channel | void {
+		let channel: Channel | void = undefined;
+		this.guilds.forEach((_) => {
+			_.channels.forEach((_) => {
+				if (_.id === id) {
+					channel = _;
+				}
+			});
+		});
+		return channel;
+	}
 	trace: {trace: trace; time: Date}[] = [];
 	handleTrace(str: string[]) {
 		const json = str.map((_) => JSON.parse(_)) as trace[];
@@ -938,6 +949,15 @@ class Localuser {
 					const channel = guild.channels.find(({id}) => id == temp.d.channel_id) as Group;
 					if (!channel) break;
 					channel.addRec(new User(temp.d.user, this));
+					break;
+				}
+				case "MESSAGE_ACK": {
+					const channel = this.channelByID(temp.d.channel_id);
+					if (!channel) break;
+					channel.lastreadmessageid = temp.d.message_id;
+					channel.mentions = 0;
+					channel.unreads();
+					channel.guild.unreads();
 					break;
 				}
 
