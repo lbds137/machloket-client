@@ -964,12 +964,39 @@ class MarkDown {
 		};
 		box.onpaste = (_) => {
 			if (!_.clipboardData) return;
-			const data = _.clipboardData.getData("text");
-
-			document.execCommand("insertHTML", false, data);
-			_.preventDefault();
-			if (!box.onkeyup) return;
-			box.onkeyup(new KeyboardEvent("_"));
+			const types = _.clipboardData.types;
+			console.log(types);
+			if (types.includes("Files")) {
+				_.preventDefault();
+				return;
+			}
+			if (types.includes("text/html")) {
+				const data = _.clipboardData.getData("text/html");
+				const html = new DOMParser().parseFromString(data, "text/html");
+				const txt = MarkDown.gatherBoxText(html.body);
+				console.log(txt);
+				saveCaretPosition(box)?.();
+				const content = this.textContent;
+				if (content) {
+					const [_first, end] = content.split(text);
+					const boxText = text + txt + end;
+					box.textContent = boxText;
+					const len = text.length + txt.length;
+					text = boxText;
+					this.txt = text.split("");
+					this.boxupdate(len, false, 0);
+				} else {
+					box.textContent = txt;
+					text = txt;
+					this.txt = text.split("");
+					this.boxupdate(txt.length, false, 0);
+				}
+				_.preventDefault();
+			} else if (types.includes("text/plain")) {
+				//Allow the paste like normal
+			} else {
+				_.preventDefault();
+			}
 		};
 	}
 	customBox?: [(arg1: string) => HTMLElement, (arg1: HTMLElement) => string];
