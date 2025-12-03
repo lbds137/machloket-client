@@ -14,10 +14,11 @@ export class Play {
 			const events = ["click", "keydown", "touchstart"] as const;
 			const func = () => {
 				this.sendMessage({name: "clear"});
-				this.audioContext.resume();
+				this.start();
 				events.forEach((event) => document.removeEventListener(event, func));
 			};
 			events.forEach((event) => document.addEventListener(event, func));
+			console.log(this.audioContext);
 
 			this.sendMessage({name: "bin", bin: buffer});
 
@@ -33,11 +34,17 @@ export class Play {
 			};
 		});
 	}
+	private async start() {
+		if (this.audioContext.state === "suspended") {
+			await this.audioContext.resume();
+		}
+	}
 	private sendMessage(message: sendMessage) {
 		this.worklet.port.postMessage(message);
 	}
-	play(soundName: string, volume: number) {
+	async play(soundName: string, volume: number) {
 		volume /= 200;
+		await this.start();
 		this.sendMessage({name: "start", data: {name: soundName, volume}});
 	}
 	static async playURL(url: string) {
