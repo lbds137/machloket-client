@@ -1790,7 +1790,7 @@ class Localuser {
 				return true;
 			})
 			.map((folder) => {
-				if (folder.id === 0 && folder.guilds.length === 1) {
+				if (folder.id === null && folder.guilds.length === 1) {
 					return folder.guilds[0];
 				}
 				return folder;
