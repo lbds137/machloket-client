@@ -1434,7 +1434,7 @@ class Localuser {
 		| Guild
 		| {
 				guilds: Guild[];
-				color: number;
+				color?: number | null;
 				name: string;
 				id: number;
 		  }
@@ -1446,7 +1446,7 @@ class Localuser {
 			| Guild
 			| {
 					guilds: Guild[];
-					color: number;
+					color?: number | null;
 					name: string;
 					id: number;
 			  },
@@ -1641,7 +1641,7 @@ class Localuser {
 		return divy;
 	}
 	makeFolder(
-		folder: {color: number; id: number; name: string; guilds: Guild[]},
+		folder: {color?: number | null; id: number; name: string; guilds: Guild[]},
 		icons = new Map<Guild, HTMLElement | undefined>(),
 	) {
 		const folderDiv = document.createElement("div");
@@ -1659,7 +1659,7 @@ class Localuser {
 				initText: folder.name,
 			});
 			const color = opt.addColorInput(I18n.folder.color(), () => {}, {
-				initColor: "#" + folder.color.toString(16),
+				initColor: "#" + (folder.color || 0).toString(16),
 			});
 			opt.addButtonInput("", I18n.submit(), async () => {
 				folder.name = name.value;
@@ -1673,7 +1673,7 @@ class Localuser {
 		});
 
 		menu.bindContextmenu(iconDiv);
-		if (folder.color !== null) {
+		if (folder.color !== null && folder.color !== undefined) {
 			icon.style.setProperty("--folder-color", "#" + folder.color.toString(16).padStart(6, "0"));
 			if (!folder.color) icon.style.removeProperty("--folder-color");
 		}
@@ -1719,7 +1719,7 @@ class Localuser {
 		| Guild
 		| {
 				guilds: Guild[];
-				color: number;
+				color?: number | null;
 				name: string;
 				id: number;
 		  }
@@ -1778,8 +1778,8 @@ class Localuser {
 						})
 						.filter((_) => _ !== undefined),
 					color: folder.color,
-					name: folder.name,
-					id: folder.id,
+					name: folder.name || "",
+					id: folder.id || 0,
 				};
 			})
 			.filter((_) => {
