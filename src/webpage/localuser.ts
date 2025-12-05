@@ -1613,10 +1613,10 @@ class Localuser {
 		const guild_folders: guildFolder[] = this.guildOrder.map((elm) => {
 			if (elm instanceof Guild) {
 				return {
-					id: 0,
-					name: "",
+					id: null,
+					name: null,
 					guild_ids: [elm.id],
-					color: 0,
+					color: null,
 				};
 			} else {
 				return {

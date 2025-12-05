@@ -128,10 +128,10 @@ export interface mute_config {
 	end_time: number;
 }
 export interface guildFolder {
-	color: number;
+	color?: number;
 	guild_ids: string[];
-	id: number;
-	name: string;
+	id?: number;
+	name?: string;
 }
 export interface freq {
 	totalUses: number;
