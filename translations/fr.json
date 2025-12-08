@@ -9,6 +9,7 @@
 			"Mahabarata",
 			"McDutchie",
 			"Pyschobbens",
+			"Rwobweats",
 			"Urhixidur",
 			"WillyM",
 			"Wladek92"
@@ -397,6 +398,9 @@
 		"blog": "Blogue",
 		"fermi": "Blogue de Fermi",
 		"desc": "Lisez ou abonnez-vous au blogue pour des actualités sur Fermi !"
+	},
+	"webauth": {
+		"manage": "Gérer les clés de sécurité"
 	},
 	"localuser": {
 		"trace": "Traces",
