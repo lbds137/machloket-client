@@ -2302,7 +2302,7 @@ class Localuser {
 						this.updateProfile({
 							pronouns: newpronouns,
 							bio: newbio,
-							accent_color: Number.parseInt("0x" + color.substr(1), 16),
+							accent_color: Number.parseInt("0x" + color.substring(1), 16),
 						});
 					}
 				},
@@ -2334,7 +2334,7 @@ class Localuser {
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;
-				hypouser.accent_color = Number.parseInt("0x" + _.substr(1), 16);
+				hypouser.accent_color = Number.parseInt("0x" + _.substring(1), 16);
 				changed = true;
 				regen();
 			});
