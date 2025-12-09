@@ -856,7 +856,13 @@ export class SW {
 			port.port1.close();
 		});
 		this.postMessage({code: "ping"});
+		const func = (update: boolean) => {
+			this.needsUpdate ||= update;
+			this.stopWatchForUpdates(func);
+		};
+		this.watchForUpdates(func);
 	}
+	static needsUpdate = false;
 	static postMessage(message: messageTo) {
 		this.port?.postMessage(message);
 	}
@@ -893,6 +899,7 @@ export class SW {
 		}
 	}
 	static async checkUpdates(): Promise<boolean> {
+		if (this.needsUpdate) return true;
 		return new Promise((res) => {
 			const func = (update: boolean) => {
 				this.stopWatchForUpdates(func);
