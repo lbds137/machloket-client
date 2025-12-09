@@ -201,6 +201,10 @@
 		"delete": "Applikatioun läschen",
 		"sure": "Sidd Dir sécher, datt Dir $1 läsche wëllt?"
 	},
+	"webauth": {
+		"manage": "Sécherheetsschlëssele geréieren",
+		"addKey": "Schlëssel derbäisetzen"
+	},
 	"localuser": {
 		"trace": "Spueren",
 		"install": "Installéieren",
@@ -292,6 +296,7 @@
 	"friends": {
 		"blocked": "Gespaart",
 		"blockedusers": "Gespaarte Benotzer:",
+		"bu": "Gespaarte Benotzer",
 		"notfound": "Benotzer net fonnt",
 		"online": "Online",
 		"friends": "Frënn"
@@ -324,6 +329,7 @@
 	"badge": {
 		"certified_moderator": "Moderateur"
 	},
+	"add": "Derbäisetzen",
 	"group": {
 		"edit": "Gruppenchat änneren"
 	},

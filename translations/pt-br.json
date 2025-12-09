@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Erol",
 			"Illyria",
 			"S0rs immanis12",
 			"Sixaxis",
@@ -176,7 +177,7 @@
 	"accessibility": {
 		"name": "Acessibilidade",
 		"roleColors": "Desabilitar cores de cargo",
-		"playGif": "Tocar gifs:",
+		"playGif": "Tocar gifs em:",
 		"gifSettings": {
 			"hover": "Passar o mouse",
 			"always": "Sempre",

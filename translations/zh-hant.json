@@ -608,7 +608,9 @@
 		"pin": "$1已置頂一則訊息",
 		"viewrest": "查看剩餘內容",
 		"fullMessage": "完整訊息：",
-		"reactionsTitle": "反應"
+		"reactionsTitle": "反應",
+		"andMore": "$1，還有更多！",
+		"reactedWith": "以$1反應"
 	},
 	"instanceStats": {
 		"name": "實例統計：$1",
@@ -616,6 +618,13 @@
 		"servers": "公會：$1",
 		"messages": "訊息：$1",
 		"members": "成員：$1"
+	},
+	"instanceInfo": {
+		"name": "實例資訊",
+		"contact": "電子郵件實例管理員",
+		"tosPage": "[服務條款頁面]（$1）",
+		"frontPage": "[前端頁面]（$1）",
+		"publicUrl": "[公共網址]（$1）"
 	},
 	"inviteOptions": {
 		"title": "邀請他人",
