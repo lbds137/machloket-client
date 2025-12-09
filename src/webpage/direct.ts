@@ -518,13 +518,13 @@ class Group extends Channel {
 		this.users.push(user);
 		this.users = [...new Set(this.users)];
 		if (this.localuser.channelfocus === this) {
-			this.localuser.memberListUpdate();
+			this.localuser.memberListQue();
 		}
 	}
 	removeRec(user: User) {
 		this.users = this.users.filter((u) => u !== user);
 		if (this.localuser.channelfocus === this) {
-			this.localuser.memberListUpdate();
+			this.localuser.memberListQue();
 		}
 	}
 	updateChannel(json: channeljson): void {
