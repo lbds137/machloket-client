@@ -1148,7 +1148,6 @@ class Localuser {
 	listque = false;
 	memberListQue() {
 		if (this.listque) {
-			console.log("avoided");
 			return;
 		}
 		this.listque = true;
