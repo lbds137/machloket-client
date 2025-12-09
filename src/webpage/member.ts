@@ -358,6 +358,7 @@ class Member extends SnowFlake {
 				memb = new Member(memberjson, owner);
 				user.members.set(owner, memb);
 				owner.members.add(memb);
+				user.localuser.memberListUpdate();
 				return memb;
 			} else if (memb instanceof Promise) {
 				const member = await memb; //I should do something else, though for now this is "good enough";
@@ -376,6 +377,7 @@ class Member extends SnowFlake {
 			const memb = new Member(memberjson, owner);
 			user.members.set(owner, memb);
 			owner.members.add(memb);
+			memb.localuser.memberListUpdate();
 			return memb;
 		}
 	}
@@ -414,6 +416,7 @@ class Member extends SnowFlake {
 					member.getPresence(map.get(member.id));
 					map.delete(member.id);
 					res(member);
+					guild.localuser.memberListQue();
 					return member;
 				}
 			});

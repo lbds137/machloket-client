@@ -1145,12 +1145,20 @@ class Localuser {
 		}
 		return channel; // Add this line to return the 'channel' variable
 	}
+	listque = false;
+	memberListQue() {
+		if (this.listque) {
+			console.log("avoided");
+			return;
+		}
+		this.listque = true;
+		setTimeout(async () => {
+			await this.memberListUpdate();
+			this.listque = false;
+		}, 100);
+	}
 	async memberListUpdate(list: memberlistupdatejson | void) {
 		if (this.searching) return;
-		const div = document.getElementById("sideDiv") as HTMLDivElement;
-		div.innerHTML = "";
-		div.classList.remove("searchDiv");
-		div.classList.remove("hideSearchDiv");
 		const guild = this.lookingguild;
 		if (!guild) return;
 
@@ -1200,6 +1208,7 @@ class Localuser {
 				return;
 			}
 		});
+
 		for (const [role, list] of elms) {
 			members.forEach((member) => {
 				const user = member instanceof Member ? member.user : member;
@@ -1230,30 +1239,111 @@ class Localuser {
 			return a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1;
 		});
 		elms.set("online", online);
+		this.generateListHTML(elms, channel);
+	}
+	roleListMap = new WeakMap<
+		HTMLDivElement,
+		{
+			role: Role | "offline" | "online";
+			memberListMap: Map<HTMLElement, User>;
+		}
+	>();
+	listGuild?: Guild;
+	generateListHTML(elms: Map<Role | "offline" | "online", (Member | User)[]>, channel: Channel) {
+		const div = document.getElementById("sideDiv") as HTMLDivElement;
+		let roleMap = new Map<
+			Role | "offline" | "online",
+			{elm: HTMLDivElement; memberListMap: Map<HTMLElement, User>}
+		>();
+		if (channel.guild !== this.listGuild) {
+			this.listGuild = channel.guild;
+			div.innerHTML = "";
+		}
+		Array.from(div.children)
+			.map((_) => [this.roleListMap.get(_ as HTMLDivElement), _ as HTMLDivElement] as const)
+			.forEach(([role, elm]) => {
+				if (role && elms.get(role.role)?.length) {
+					if (document.contains(elm))
+						roleMap.set(role.role, {elm, memberListMap: role.memberListMap});
+				} else if (elm) {
+					elm.remove();
+				}
+			});
+		div.classList.remove("searchDiv");
+		div.classList.remove("hideSearchDiv");
+		let lastDiv: HTMLDivElement | void = undefined;
 		for (const [role, list] of elms) {
 			if (!list.length) continue;
-			const category = document.createElement("div");
-			category.classList.add("memberList");
-			let title = document.createElement("h3");
-			if (role === "offline") {
-				title.textContent = I18n.user.offline();
-				category.classList.add("offline");
-			} else if (role === "online") {
-				title.textContent = I18n.user.online();
+
+			let category: HTMLDivElement;
+			let memberMap: Map<HTMLElement, User>;
+			const getF = roleMap.get(role);
+			roleMap.delete(role);
+			if (getF) {
+				category = getF.elm;
+				memberMap = getF.memberListMap;
+				if (lastDiv) {
+					const nextElm = lastDiv.nextElementSibling as HTMLElement | null;
+					if (nextElm !== category) {
+						lastDiv.after(category);
+					}
+				} else {
+					const first = div.firstElementChild;
+					if (first !== category) {
+						div.prepend(category);
+					}
+				}
 			} else {
-				title.textContent = role.name;
+				category = document.createElement("div");
+				category.classList.add("memberList");
+				let title = document.createElement("h3");
+				if (role === "offline") {
+					title.textContent = I18n.user.offline();
+					category.classList.add("offline");
+				} else if (role === "online") {
+					title.textContent = I18n.user.online();
+				} else {
+					title.textContent = role.name;
+				}
+				category.append(title);
+				const membershtml = document.createElement("div");
+				membershtml.classList.add("flexttb");
+				category.append(membershtml);
+				memberMap = new Map();
+				if (lastDiv) {
+					lastDiv.after(category);
+				} else {
+					div.prepend(category);
+				}
+				this.roleListMap.set(category, {
+					role,
+					memberListMap: memberMap,
+				});
 			}
-			category.append(title);
-			const membershtml = document.createElement("div");
-			membershtml.classList.add("flexttb");
-
-			for (const member of list) {
-				const user = member instanceof Member ? member.user : member;
+			lastDiv = category;
+			const membershtml = category.getElementsByTagName("div")[0];
+			const cur = new Set(
+				list.map((member) => {
+					return member instanceof Member ? member.user : member;
+				}),
+			);
+			const userToHTMLMap = new Map<User, HTMLElement>();
+			Array.from(membershtml.children)
+				.map((_) => [_ as HTMLElement, memberMap.get(_ as HTMLElement)] as const)
+				.forEach(([elm, memb]) => {
+					if (!memb || !cur.has(memb)) {
+						memberMap.delete(elm);
+						elm.remove();
+					} else {
+						userToHTMLMap.set(memb, elm);
+					}
+				});
+			const makeMemberDiv = (user: User, member: Member | User) => {
 				user.localstatusUpdate = () => {
-					this.memberListUpdate();
+					this.memberListQue();
 				};
-
 				const memberdiv = document.createElement("div");
+				memberMap.set(memberdiv, user);
 				const pfp = user.buildstatuspfp(channel);
 				const username = document.createElement("span");
 				username.classList.add("ellipsis");
@@ -1278,10 +1368,36 @@ class Localuser {
 				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
 
 				memberdiv.classList.add("flexltr", "liststyle", "memberListStyle");
-				membershtml.append(memberdiv);
+				return memberdiv;
+			};
+
+			let lastElm: void | HTMLElement = void 0;
+			for (const member of list) {
+				const user = member instanceof Member ? member.user : member;
+				let elm = userToHTMLMap.get(user);
+				if (!elm) {
+					elm = makeMemberDiv(user, member);
+					if (!lastElm) {
+						membershtml.append(elm);
+					} else {
+						lastElm.after(elm);
+					}
+				} else if (lastElm) {
+					//@ts-expect-error TS Bug, let me know when it's fixed :3
+					// https://github.com/microsoft/TypeScript/issues/62872
+					const nextElm = lastElm.nextElementSibling;
+					if (nextElm !== elm) {
+						lastElm.after(elm);
+					}
+				} else {
+					const first = membershtml.firstElementChild;
+					if (first !== elm) {
+						membershtml.prepend(elm);
+					}
+				}
+
+				lastElm = elm;
 			}
-			category.append(membershtml);
-			div.append(category);
 		}
 	}
 	emojiPicker(x: number, y: number, guildEmojis = true) {
@@ -1290,7 +1406,7 @@ class Localuser {
 	async getSidePannel() {
 		if (this.ws && this.channelfocus) {
 			console.log(this.channelfocus.guild.id);
-			this.memberListUpdate();
+			this.memberListQue();
 			if (this.channelfocus.guild.id === "@me") {
 				return;
 			}
