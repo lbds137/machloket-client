@@ -206,7 +206,6 @@ self.addEventListener("message", (message) => {
 		case "setMode":
 			enabled = data.data;
 			break;
-
 		case "ForceClear":
 			deleteoldcache();
 			break;
