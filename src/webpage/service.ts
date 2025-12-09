@@ -58,17 +58,15 @@ let offline = false;
 function toPathNoDefault(url: string) {
 	const Url = new URL(url);
 	let html: string | undefined = undefined;
-	if (!html) {
-		const path = Url.pathname;
-		if (path.startsWith("/channels")) {
-			html = "./app";
-		} else if (path.startsWith("/invite/") || path === "/invite") {
-			html = "./invite";
-		} else if (path.startsWith("/template/") || path === "/template") {
-			html = "./template";
-		} else if (path === "/") {
-			html = "./index";
-		}
+	const path = Url.pathname;
+	if (path.startsWith("/channels")) {
+		html = "./app";
+	} else if (path.startsWith("/invite/") || path === "/invite") {
+		html = "./invite";
+	} else if (path.startsWith("/template/") || path === "/template") {
+		html = "./template";
+	} else if (path === "/") {
+		html = "./index";
 	}
 	return html;
 }
