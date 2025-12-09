@@ -15,10 +15,13 @@ function forceVideo(video: HTMLVideoElement) {
 class VoiceFactory {
 	settings: {id: string};
 	handleGateway: (obj: Object) => void;
+	secure: boolean;
 	constructor(
 		usersettings: VoiceFactory["settings"],
 		handleGateway: VoiceFactory["handleGateway"],
+		secure: boolean,
 	) {
+		this.secure = secure;
 		this.settings = usersettings;
 		this.handleGateway = handleGateway;
 	}
@@ -1312,7 +1315,9 @@ a=rtcp-mux\r`;
 			}
 		}
 
-		const ws = new WebSocket(("wss://" + this.urlobj.url) as string);
+		const ws = new WebSocket(
+			((this.owner.secure ? "wss://" : "ws://") + this.urlobj.url) as string,
+		);
 		this.ws = ws;
 		ws.onclose = () => {
 			this.leave();

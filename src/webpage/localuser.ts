@@ -322,11 +322,15 @@ class Localuser {
 
 		this.mdBox();
 
-		this.voiceFactory = new VoiceFactory({id: this.user.id}, (g) => {
-			if (this.ws) {
-				this.ws.send(JSON.stringify(g));
-			}
-		});
+		this.voiceFactory = new VoiceFactory(
+			{id: this.user.id},
+			(g) => {
+				if (this.ws) {
+					this.ws.send(JSON.stringify(g));
+				}
+			},
+			this.info.api.startsWith("https://"),
+		);
 		this.handleVoice();
 		this.mfa_enabled = ready.d.user.mfa_enabled as boolean;
 		this.userinfo.username = this.user.username;
