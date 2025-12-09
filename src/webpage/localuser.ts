@@ -2471,8 +2471,17 @@ class Localuser {
 			sw.onchange = (e) => {
 				SW.setMode(["false", "offlineOnly", "true"][e] as "false" | "offlineOnly" | "true");
 			};
-			update.addButtonInput("", I18n.localuser.CheckUpdate(), () => {
-				SW.checkUpdate();
+			update.addButtonInput("", I18n.localuser.CheckUpdate(), async () => {
+				const update = await SW.checkUpdates();
+				const text = update ? I18n.localuser.updatesYay() : I18n.localuser.noUpdates();
+				const d = new Dialog("");
+				d.options.addTitle(text);
+				if (update) {
+					d.options.addButtonInput("", I18n.localuser.refreshPage(), () => {
+						window.location.reload();
+					});
+				}
+				d.show();
 			});
 			update.addButtonInput("", I18n.localuser.clearCache(), () => {
 				SW.forceClear();

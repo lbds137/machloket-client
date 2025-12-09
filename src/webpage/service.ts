@@ -1,3 +1,5 @@
+import {messageFrom, messageTo} from "./utils/serviceType";
+
 function deleteoldcache() {
 	caches.delete("cache");
 	console.log("this ran :P");
@@ -19,32 +21,54 @@ self.addEventListener("activate", async () => {
 	console.log("Service Worker activated");
 	checkCache();
 });
-
+async function tryToClose() {
+	const portArr = [...ports];
+	if (portArr.length) {
+		for (let i = 1; i < portArr.length; i++) {
+			portArr[i].postMessage({code: "closing"});
+		}
+		portArr[0].postMessage({code: "close"});
+	} else {
+		throw new Error("No Fermi clients connected?");
+	}
+}
+function sendAll(message: messageFrom) {
+	for (const port of ports) {
+		port.postMessage(message);
+	}
+}
 async function checkCache() {
 	if (checkedrecently) {
-		return;
+		return false;
 	}
 	const promise = await caches.match("/getupdates");
 	if (promise) {
 		lastcache = await promise.text();
 	}
 	console.log(lastcache);
-	fetch("/getupdates").then(async (data) => {
+	return fetch("/getupdates").then(async (data) => {
 		setTimeout(
 			(_: any) => {
 				checkedrecently = false;
 			},
 			1000 * 60 * 30,
 		);
-		if (!data.ok) return;
+		if (!data.ok) return false;
 		const text = await data.clone().text();
 		console.log(text, lastcache);
 		if (lastcache !== text) {
 			deleteoldcache();
 			putInCache("/getupdates", data);
-			self.close();
+			tryToClose();
+			checkedrecently = true;
+			sendAll({
+				code: "updates",
+				updates: true,
+			});
+			return true;
 		}
 		checkedrecently = true;
+		return false;
 	});
 }
 var checkedrecently = false;
@@ -133,17 +157,56 @@ self.addEventListener("fetch", (e) => {
 		console.error(e);
 	}
 });
+const ports = new Set<MessagePort>();
+function listenToPort(port: MessagePort) {
+	function sendMessage(message: messageFrom) {
+		port.postMessage(message);
+	}
+	port.onmessage = async (e) => {
+		const data = e.data as messageTo;
+		switch (data.code) {
+			case "ping": {
+				sendMessage({
+					code: "pong",
+					count: ports.size,
+				});
+				break;
+			}
+			case "close": {
+				ports.delete(port);
+				break;
+			}
+			case "replace": {
+				//@ts-ignore-error Just the type or wrong or something
+				self.skipWaiting();
+				break;
+			}
+			case "CheckUpdate": {
+				checkedrecently = false;
+				if (!(await checkCache())) {
+					sendMessage({
+						code: "updates",
+						updates: false,
+					});
+				}
 
+				break;
+			}
+		}
+	};
+	port.addEventListener("close", () => {
+		ports.delete(port);
+	});
+}
+console.log("heya");
+//
 self.addEventListener("message", (message) => {
 	const data = message.data;
 	switch (data.code) {
 		case "setMode":
 			enabled = data.data;
 			break;
-		case "CheckUpdate":
-			checkedrecently = false;
-			checkCache();
-			break;
+
 		case "ForceClear":
 			deleteoldcache();
 			break;
@@ -152,5 +215,10 @@ self.addEventListener("message", (message) => {
 			console.error("Hey!");
 			port.postMessage({code: "isValid", res: toPathNoDefault(data.url)});
 			break;
+		case "port": {
+			const port = data.port as MessagePort;
+			ports.add(port);
+			listenToPort(port);
+		}
 	}
 });

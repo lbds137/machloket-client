@@ -485,6 +485,9 @@
 		"keyname":"Key name:"
 	},
 	"localuser": {
+		"noUpdates":"No updates found",
+		"updatesYay":"Updates have been found!",
+		"refreshPage":"Refresh to apply",
 		"trusted":"Trusted Domains",
 		"trustedDesc":"These domains when you click on links from them will ***not*** prompt you for permission to open like other links, only give this to URLs you trust",
 		"trace": "Traces",

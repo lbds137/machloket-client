@@ -2,6 +2,7 @@ import {I18n} from "../i18n.js";
 import {MarkDown} from "../markdown.js";
 import {Dialog} from "../settings.js";
 import {fix} from "./cssMagic.js";
+import {messageFrom, messageTo} from "./serviceType.js";
 fix();
 let instances:
 	| {
@@ -833,23 +834,120 @@ export {checkInstance};
 
 export class SW {
 	static worker: undefined | ServiceWorker;
+	static port?: MessagePort;
+	static init() {
+		SW.setMode(
+			(localStorage.getItem("SWMode") as "false" | "offlineOnly" | "true" | undefined) || "true",
+		);
+		const port = new MessageChannel();
+		SW.worker?.postMessage(
+			{
+				code: "port",
+				port: port.port2,
+			},
+			[port.port2],
+		);
+		this.port = port.port1;
+		this.port.onmessage = (e) => {
+			this.handleMessage(e.data);
+		};
+		window.addEventListener("beforeunload", () => {
+			this.postMessage({code: "close"});
+			port.port1.close();
+		});
+		this.postMessage({code: "ping"});
+	}
+	static postMessage(message: messageTo) {
+		this.port?.postMessage(message);
+	}
+	private static updateWatchers = new Set<(updates: boolean) => void>();
+	static watchForUpdates(func: (updates: boolean) => void) {
+		this.updateWatchers.add(func);
+	}
+	static stopWatchForUpdates(func: (updates: boolean) => void) {
+		this.updateWatchers.delete(func);
+	}
+	static async handleMessage(message: messageFrom) {
+		switch (message.code) {
+			case "pong": {
+				console.log(message);
+				break;
+			}
+			case "close": {
+				for (const thing of await navigator.serviceWorker.getRegistrations()) {
+					await thing.unregister();
+				}
+				await this.start();
+				this.postMessage({code: "replace"});
+				break;
+			}
+			case "closing": {
+				await this.start();
+				break;
+			}
+			case "updates": {
+				for (const thing of this.updateWatchers) {
+					thing(message.updates);
+				}
+			}
+		}
+	}
+	static async checkUpdates(): Promise<boolean> {
+		return new Promise((res) => {
+			const func = (update: boolean) => {
+				this.stopWatchForUpdates(func);
+				res(update);
+			};
+			this.watchForUpdates(func);
+			this.postMessage({code: "CheckUpdate"});
+		});
+	}
+	static async start() {
+		if (!("serviceWorker" in navigator)) return;
+		return new Promise<void>((res) => {
+			navigator.serviceWorker
+				.register("/service.js", {
+					scope: "/",
+				})
+				.then((registration) => {
+					let serviceWorker: ServiceWorker | undefined;
+					if (registration.installing) {
+						serviceWorker = registration.installing;
+						console.log("installing");
+					} else if (registration.waiting) {
+						serviceWorker = registration.waiting;
+						console.log("waiting");
+					} else if (registration.active) {
+						serviceWorker = registration.active;
+						console.log("active");
+					}
+					SW.worker = serviceWorker;
+					SW.init();
+
+					if (serviceWorker) {
+						console.log(serviceWorker.state);
+						serviceWorker.addEventListener("statechange", (_) => {
+							console.log(serviceWorker.state);
+						});
+						res();
+					}
+				});
+		});
+	}
 	static setMode(mode: "false" | "offlineOnly" | "true") {
 		localStorage.setItem("SWMode", mode);
 		if (this.worker) {
 			this.worker.postMessage({data: mode, code: "setMode"});
 		}
 	}
-	static checkUpdate() {
-		if (this.worker) {
-			this.worker.postMessage({code: "CheckUpdate"});
-		}
-	}
+
 	static forceClear() {
 		if (this.worker) {
 			this.worker.postMessage({code: "ForceClear"});
 		}
 	}
 }
+SW.start();
 let installPrompt: Event | undefined = undefined;
 window.addEventListener("beforeinstallprompt", (event) => {
 	event.preventDefault();
@@ -858,35 +956,7 @@ window.addEventListener("beforeinstallprompt", (event) => {
 export function installPGet() {
 	return installPrompt;
 }
-if ("serviceWorker" in navigator) {
-	navigator.serviceWorker
-		.register("/service.js", {
-			scope: "/",
-		})
-		.then((registration) => {
-			let serviceWorker: ServiceWorker | undefined;
-			if (registration.installing) {
-				serviceWorker = registration.installing;
-				console.log("installing");
-			} else if (registration.waiting) {
-				serviceWorker = registration.waiting;
-				console.log("waiting");
-			} else if (registration.active) {
-				serviceWorker = registration.active;
-				console.log("active");
-			}
-			SW.worker = serviceWorker;
-			SW.setMode(
-				(localStorage.getItem("SWMode") as "false" | "offlineOnly" | "true" | undefined) || "true",
-			);
-			if (serviceWorker) {
-				console.log(serviceWorker.state);
-				serviceWorker.addEventListener("statechange", (_) => {
-					console.log(serviceWorker.state);
-				});
-			}
-		});
-}
+
 export function getInstances() {
 	return instances;
 }
