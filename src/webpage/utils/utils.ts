@@ -858,8 +858,8 @@ export class SW {
 		this.postMessage({code: "ping"});
 		const func = (update: boolean) => {
 			this.needsUpdate ||= update;
-			this.stopWatchForUpdates(func);
 			if (update) {
+				this.stopWatchForUpdates(func);
 				const updateIcon = document.getElementById("updateIcon");
 				if (updateIcon) {
 					updateIcon.hidden = false;
