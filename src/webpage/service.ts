@@ -198,8 +198,6 @@ function listenToPort(port: MessagePort) {
 		ports.delete(port);
 	});
 }
-console.log("heya");
-//
 self.addEventListener("message", (message) => {
 	const data = message.data;
 	switch (data.code) {
