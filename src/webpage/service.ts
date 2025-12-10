@@ -192,6 +192,9 @@ function listenToPort(port: MessagePort) {
 
 				break;
 			}
+			case "isValid": {
+				sendMessage({code: "isValid", url: data.url, valid: !!toPathNoDefault(data.url)});
+			}
 		}
 	};
 	port.addEventListener("close", () => {
@@ -206,11 +209,6 @@ self.addEventListener("message", (message) => {
 			break;
 		case "ForceClear":
 			deleteoldcache();
-			break;
-		case "isValid":
-			const port = data.port as MessagePort;
-			console.error("Hey!");
-			port.postMessage({code: "isValid", res: toPathNoDefault(data.url)});
 			break;
 		case "port": {
 			const port = data.port as MessagePort;

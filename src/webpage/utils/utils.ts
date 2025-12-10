@@ -856,30 +856,53 @@ export class SW {
 			port.port1.close();
 		});
 		this.postMessage({code: "ping"});
-		const func = (update: boolean) => {
-			this.needsUpdate ||= update;
+		this.captureEvent("updates", (update, stop) => {
+			this.needsUpdate ||= update.updates;
 			if (update) {
-				this.stopWatchForUpdates(func);
+				stop();
 				const updateIcon = document.getElementById("updateIcon");
 				if (updateIcon) {
 					updateIcon.hidden = false;
 				}
 			}
-		};
-		this.watchForUpdates(func);
+		});
 	}
 	static needsUpdate = false;
 	static postMessage(message: messageTo) {
 		this.port?.postMessage(message);
 	}
-	private static updateWatchers = new Set<(updates: boolean) => void>();
-	static watchForUpdates(func: (updates: boolean) => void) {
-		this.updateWatchers.add(func);
+	static eventListeners = new Map<
+		messageFrom["code"],
+		Set<(y: messageFrom, remove: () => void) => void>
+	>();
+	static captureEvent<X extends messageFrom["code"]>(
+		name: X,
+		fucny: (y: Extract<messageFrom, {code: X}>, remove: () => void) => void,
+	) {
+		let sett = this.eventListeners.get(name);
+		if (!sett) {
+			sett = new Set();
+			this.eventListeners.set(name, sett);
+		}
+		sett.add(fucny as () => void);
 	}
-	static stopWatchForUpdates(func: (updates: boolean) => void) {
-		this.updateWatchers.delete(func);
+	static uncaptureEvent<X extends messageFrom["code"]>(
+		name: X,
+		fucny: (y: Extract<messageFrom, {code: X}>, remove: () => void) => void,
+	) {
+		let sett = this.eventListeners.get(name);
+		if (!sett) return;
+		sett.delete(fucny as () => void);
 	}
 	static async handleMessage(message: messageFrom) {
+		const sett = this.eventListeners.get(message.code);
+		if (sett) {
+			for (const thing of sett) {
+				thing(message, () => {
+					this.uncaptureEvent(message.code, thing);
+				});
+			}
+		}
 		switch (message.code) {
 			case "pong": {
 				console.log(message);
@@ -898,20 +921,31 @@ export class SW {
 				break;
 			}
 			case "updates": {
-				for (const thing of this.updateWatchers) {
-					thing(message.updates);
-				}
+				break;
+			}
+			case "isValid": {
 			}
 		}
+	}
+
+	static async isValid(url: string): Promise<boolean> {
+		return new Promise((res) => {
+			this.captureEvent("isValid", (e, stop) => {
+				if (e.url === url) {
+					res(e.valid);
+					stop();
+				}
+			});
+			this.postMessage({code: "isValid", url});
+		});
 	}
 	static async checkUpdates(): Promise<boolean> {
 		if (this.needsUpdate) return true;
 		return new Promise((res) => {
-			const func = (update: boolean) => {
-				this.stopWatchForUpdates(func);
-				res(update);
-			};
-			this.watchForUpdates(func);
+			this.captureEvent("updates", (update, remove) => {
+				remove;
+				res(update.updates);
+			});
 			this.postMessage({code: "CheckUpdate"});
 		});
 	}

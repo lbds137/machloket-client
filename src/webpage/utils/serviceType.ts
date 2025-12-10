@@ -10,6 +10,10 @@ export type messageTo =
 	  }
 	| {
 			code: "CheckUpdate";
+	  }
+	| {
+			code: "isValid";
+			url: string;
 	  };
 export type messageFrom =
 	| {
@@ -25,4 +29,9 @@ export type messageFrom =
 	| {
 			code: "updates";
 			updates: boolean;
+	  }
+	| {
+			code: "isValid";
+			url: string;
+			valid: boolean;
 	  };
