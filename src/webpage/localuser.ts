@@ -2857,7 +2857,6 @@ class Localuser {
 								});
 							} else {
 								container.classList.add("disabled");
-								container.title = I18n.localuser.PasswordsNoMatch();
 							}
 
 							connectionContainer.appendChild(container);
