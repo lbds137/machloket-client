@@ -859,6 +859,13 @@ export class SW {
 		const func = (update: boolean) => {
 			this.needsUpdate ||= update;
 			this.stopWatchForUpdates(func);
+
+			if (update) {
+				const updateIcon = document.getElementById("updateIcon");
+				if (updateIcon) {
+					updateIcon.hidden = false;
+				}
+			}
 		};
 		this.watchForUpdates(func);
 	}

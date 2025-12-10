@@ -484,6 +484,7 @@
 		"addKey":"Add key",
 		"keyname":"Key name:"
 	},
+	"updateAv":"Updates Available",
 	"localuser": {
 		"noUpdates":"No updates found",
 		"updatesYay":"Updates have been found!",

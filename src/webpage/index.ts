@@ -8,6 +8,7 @@ import {File} from "./file.js";
 import {I18n} from "./i18n.js";
 import "./utils/pollyfills.js";
 import {makeLogin} from "./login.js";
+import {Hover} from "./hover.js";
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
 }
@@ -427,3 +428,10 @@ stickerTB.onclick = (e) => {
 	e.stopImmediatePropagation();
 	thisUser.makeStickerBox(stickerTB.getBoundingClientRect());
 };
+const updateIcon = document.getElementById("updateIcon");
+if (updateIcon) {
+	new Hover(() => updateIcon.textContent).addEvent(updateIcon);
+	updateIcon.onclick = () => {
+		window.location.reload();
+	};
+}

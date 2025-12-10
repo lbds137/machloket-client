@@ -92,12 +92,12 @@ class Hover {
 		div.classList.add("hoverthing");
 
 		const box = elm.getBoundingClientRect();
+		const box2 = div.getBoundingClientRect();
 		if (this.side === "bottom") {
 			div.style.top = box.bottom + 4 + "px";
-			div.style.left = Math.floor(box.left + box.width / 2) + "px";
+			div.style.left = Math.floor((box.left + box.right - box2.width) / 2) + "px";
 		} else if (this.side === "right") {
-			const box2 = div.getBoundingClientRect();
-			div.style.left = box.right + 4 + Math.floor(box2.width / 2) + "px";
+			div.style.left = box.right + 4 + "px";
 			div.style.top = Math.floor(box.top + box.height / 4) + "px";
 		}
 
