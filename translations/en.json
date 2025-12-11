@@ -295,7 +295,9 @@
 		"description":"These are for developers of Spacebar/Fermi, if you don't know what you're doing, please don't mess with these settings.",
 		"badUser":"Enabled logging of bad user objects that send too much information:",
 		"logGateway":"Log received gateway events (log level info):",
-		"traces":"Expose traces:"
+		"traces":"Expose traces:",
+		"cache":"Enable Service Worker Caching map files:",
+		"cacheDesc":"map files will still load either way, this'll just make sure they're in cache when a new update rolls out."
 	},
 	"htmlPages": {
 		"idpermissions": "This will allow the bot to:",

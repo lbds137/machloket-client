@@ -856,6 +856,7 @@ export class SW {
 			port.port1.close();
 		});
 		this.postMessage({code: "ping"});
+		this.postMessage({code: "isDev", dev: !!localStorage.getItem("isDev")});
 		this.captureEvent("updates", (update, stop) => {
 			this.needsUpdate ||= update.updates;
 			if (update) {

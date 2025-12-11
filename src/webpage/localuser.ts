@@ -3235,6 +3235,18 @@ class Localuser {
 					localStorage.removeItem("traces");
 				}
 			};
+			const box4 = devSettings.addCheckboxInput(I18n.devSettings.cache(), () => {}, {
+				initState: !!localStorage.getItem("isDev"),
+			});
+			box4.onchange = (e) => {
+				if (e) {
+					localStorage.setItem("isDev", "true");
+				} else {
+					localStorage.removeItem("isDev");
+				}
+				SW.postMessage({code: "isDev", dev: e});
+			};
+			devSettings.addText(I18n.devSettings.cacheDesc());
 		}
 		if (this.trace.length && localStorage.getItem("traces")) {
 			const traces = settings.addButton(I18n.localuser.trace());
