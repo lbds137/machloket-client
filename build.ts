@@ -211,12 +211,12 @@ async function build() {
 	console.timeEnd("Writing version");
 
 	console.time("Building Service File");
-
-	console.timeEnd("Building Service File");
 	const dir = await crawlDir(path.join(__dirname, "dist", "webpage"));
 	dir["files.json"] = "files.json";
 	await fs.writeFile(path.join(__dirname, "dist", "webpage", "files.json"), JSON.stringify(dir));
-	console.log(dir);
+
+	console.timeEnd("Building Service File");
+
 	console.timeEnd("build");
 	console.log("");
 }
