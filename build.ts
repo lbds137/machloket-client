@@ -143,6 +143,23 @@ async function moveFiles(curPath: string, newPath: string, first = true) {
 	}
 	await Promise.all((await fs.readdir(curPath)).map((_) => processFile(_)));
 }
+async function crawlDir(dir: string) {
+	const dirs = await fs.readdir(dir);
+	const m = await Promise.all(
+		dirs.map(async (file) => {
+			const idir = path.join(dir, file);
+			const stats = await fs.lstat(idir);
+			if (stats.isDirectory()) {
+				return [file, await crawlDir(idir)] as const;
+			} else {
+				return [file, file] as const;
+			}
+		}),
+	);
+	const obj = {};
+	m.forEach((_) => (obj[_[0]] = _[1]));
+	return obj;
+}
 async function build() {
 	entryPoints = [];
 	console.time("build");
@@ -193,6 +210,13 @@ async function build() {
 	await fs.writeFile(path.join(__dirname, "dist", "webpage", "getupdates"), revision);
 	console.timeEnd("Writing version");
 
+	console.time("Building Service File");
+
+	console.timeEnd("Building Service File");
+	const dir = await crawlDir(path.join(__dirname, "dist", "webpage"));
+	dir["files.json"] = "files.json";
+	await fs.writeFile(path.join(__dirname, "dist", "webpage", "files.json"), JSON.stringify(dir));
+	console.log(dir);
 	console.timeEnd("build");
 	console.log("");
 }
