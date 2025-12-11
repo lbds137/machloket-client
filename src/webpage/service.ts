@@ -4,6 +4,34 @@ function deleteoldcache() {
 	caches.delete("cache");
 	console.log("this ran :P");
 }
+type files = {[key: string]: string | files};
+async function getAllFiles() {
+	const files = await fetch("/files.json");
+	const json: files = await files.json();
+	return json;
+}
+async function downloadAllFiles() {
+	async function cachePath(path: string, json: files) {
+		await Promise.all(
+			Object.entries(json).map(async ([name, thing]) => {
+				if (typeof thing === "string") {
+					const lpath = path + "/" + name;
+					if (lpath.endsWith(".map") && !dev) {
+						return;
+					}
+					const res = await fetch(lpath);
+					putInCache(new URL(path, self.location.origin), res);
+				} else {
+					await cachePath(path + "/" + name, thing);
+				}
+			}),
+		);
+	}
+
+	const json = await getAllFiles();
+
+	cachePath("", json);
+}
 
 async function putInCache(request: URL | RequestInfo, response: Response) {
 	console.log(request, response);
@@ -59,6 +87,7 @@ async function checkCache() {
 		if (lastcache !== text) {
 			deleteoldcache();
 			putInCache("/getupdates", data);
+			await downloadAllFiles();
 			tryToClose();
 			checkedrecently = true;
 			sendAll({
@@ -158,6 +187,7 @@ self.addEventListener("fetch", (e) => {
 	}
 });
 const ports = new Set<MessagePort>();
+let dev = false;
 function listenToPort(port: MessagePort) {
 	function sendMessage(message: messageFrom) {
 		port.postMessage(message);
@@ -194,6 +224,15 @@ function listenToPort(port: MessagePort) {
 			}
 			case "isValid": {
 				sendMessage({code: "isValid", url: data.url, valid: !!toPathNoDefault(data.url)});
+				break;
+			}
+			case "isDev": {
+				const refetch = !dev && data.dev;
+				dev = data.dev;
+				if (refetch) {
+					getAllFiles();
+				}
+				break;
 			}
 		}
 	};

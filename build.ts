@@ -152,6 +152,10 @@ async function crawlDir(dir: string) {
 			if (stats.isDirectory()) {
 				return [file, await crawlDir(idir)] as const;
 			} else {
+				if (file.startsWith(".")) {
+					//Don't show hidden files lol
+					return [file, undefined] as const;
+				}
 				return [file, file] as const;
 			}
 		}),

@@ -14,6 +14,10 @@ export type messageTo =
 	| {
 			code: "isValid";
 			url: string;
+	  }
+	| {
+			code: "isDev";
+			dev: boolean;
 	  };
 export type messageFrom =
 	| {
