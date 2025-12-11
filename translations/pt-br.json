@@ -94,7 +94,9 @@
 			"USE_EXTERNAL_SOUNDS": "Permite a utilização de sons customizados da soundboard de outras guildas",
 			"SEND_VOICE_MESSAGES": "Permite que o usuário envie mensagens de voz",
 			"SEND_POLLS": "Permite que o usuário envie enquetes",
-			"USE_EXTERNAL_APPS": "Permite que aplicativos instalados pelo usuário enviem respostas públicas. Quando desabilitado, usuários ainda poderão usar seus aplicativos mas as respostas serão temporárias. Isso só se aplica a aplicativos não instalados na guilda."
+			"USE_EXTERNAL_APPS": "Permite que aplicativos instalados pelo usuário enviem respostas públicas. Quando desabilitado, usuários ainda poderão usar seus aplicativos mas as respostas serão temporárias. Isso só se aplica a aplicativos não instalados na guilda.",
+			"PIN_MESSAGES": "Permite o usuário fixar mensagens",
+			"BYPASS_SLOWMODE": "Modo lento não afetará mais este usuário"
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "Criar convite",
@@ -145,7 +147,9 @@
 			"USE_EXTERNAL_SOUNDS": "Usar sons externos",
 			"SEND_VOICE_MESSAGES": "Enviar mensagens de voz",
 			"SEND_POLLS": "Criar enquetes",
-			"USE_EXTERNAL_APPS": "Usar aplicativos externos"
+			"USE_EXTERNAL_APPS": "Usar aplicativos externos",
+			"PIN_MESSAGES": "Fixar mensagens",
+			"BYPASS_SLOWMODE": "Ignorar o modo lento"
 		}
 	},
 	"userping": {
@@ -178,6 +182,7 @@
 		"name": "Acessibilidade",
 		"roleColors": "Desabilitar cores de cargo",
 		"playGif": "Tocar gifs em:",
+		"playIcon": "Reproduzir ícones animados no:",
 		"gifSettings": {
 			"hover": "Passar o mouse",
 			"always": "Sempre",
@@ -208,6 +213,10 @@
 		"nonsence": "O servidor enviou um componente de tipo $1 que não existe"
 	},
 	"channel": {
+		"timedOutUntil": "Castigado até: $1",
+		"SlowmodeCool": "Espera do modo lento: $1",
+		"TimeOutCool": "Castigado até: $1",
+		"slowmode": "Modo lento:",
 		"typebox": "Converse em $1",
 		"creating": "Criando canal",
 		"name": "Canal",
@@ -233,7 +242,8 @@
 		"selectCatName": "Nome da categoria",
 		"createChannel": "Criar canal",
 		"createCatagory": "Criar categoria",
-		"permissions": "Permissões"
+		"permissions": "Permissões",
+		"allowIcons": "Permitir ícones de canal customizados"
 	},
 	"notiClump": "Você recebeu $1 notificações de $2",
 	"Voice": {
@@ -308,7 +318,7 @@
 		"alreadyHave": "Já tem uma conta?",
 		"openClient": "Abrir Cliente",
 		"welcomeJank": "Bem-vindo(a) ao Fermi",
-		"box1title": "Fermi é um cliente compatível com o Spacebar que busca ser o melhor possível com muitas features incluindo:",
+		"box1title": "Fermi é um cliente compatível com o Spacebar que busca ser o melhor possível com muitas funções, incluindo:",
 		"box1Items": "Mensagens diretas|Suporte a reações|Convites|Troca de contas|Configurações de usuário|Portal do Desenvolvedor|Convites de bot|Suporte a traduções",
 		"compatableInstances": "Instâncias compatíveis com o Spacebar:",
 		"box3title": "Contribua ao Fermi",
@@ -473,7 +483,16 @@
 		"delete": "Apagar aplicativo",
 		"sure": "Tem certeza de que quer apagar $1?"
 	},
+	"webauth": {
+		"manage": "Gerenciar chaves de segurança",
+		"addKey": "Adicionar chave",
+		"keyname": "Nome da chave:"
+	},
+	"updateAv": "Atualizações Disponíveis",
 	"localuser": {
+		"noUpdates": "Nenhuma atualização encontrada",
+		"updatesYay": "Atualizações foram encontradas!",
+		"refreshPage": "Recarregue para aplicar",
 		"trusted": "Domínios Confiados",
 		"trustedDesc": "Esses domínios não vão te perguntar por permissão ao clicá-los como outros links, só permita links que você confia.",
 		"trace": "Trilhas",
@@ -596,7 +615,9 @@
 		"pin": "$1 fixou uma mensagem",
 		"viewrest": "Ver o resto",
 		"fullMessage": "Mensagem completa:",
-		"reactionsTitle": "Reações"
+		"reactionsTitle": "Reações",
+		"andMore": "$1, e mais!",
+		"reactedWith": "Reagiu com $1"
 	},
 	"instanceStats": {
 		"name": "Informações da Instância: $1",
@@ -604,6 +625,13 @@
 		"servers": "Guildas: $1",
 		"messages": "Mensagens: $1",
 		"members": "Membros: $1"
+	},
+	"instanceInfo": {
+		"name": "Informações da Instância",
+		"contact": "Escrever um e-mail para os Administradores da Instância",
+		"tosPage": "[Termos de Serviço]($1)",
+		"frontPage": "[Página Inicial]($1)",
+		"publicUrl": "[URL Pública]($1)"
 	},
 	"inviteOptions": {
 		"title": "Convidar pessoas",
@@ -643,6 +671,7 @@
 	"friends": {
 		"blocked": "Bloqueado(a)",
 		"blockedusers": "Usuários bloqueados:",
+		"bu": "Usuário Bloqueado",
 		"addfriend": "Adicionar como amigo",
 		"removeFriend": "Remover amigo",
 		"addfriendpromt": "Adicionar como amigo por nome de usuário:",
@@ -662,7 +691,8 @@
 		"copyId": "Copiar ID do PV",
 		"markRead": "Marcar como lido",
 		"close": "Fechar PV",
-		"name": "Mensagens Privadas"
+		"name": "Mensagens Privadas",
+		"add": "Adicione alguém para este PV"
 	},
 	"user": {
 		"sendMessage": "Conversar com @$1",
@@ -677,6 +707,8 @@
 		"unblock": "Desbloquear usuário",
 		"friendReq": "Pedido de amizade",
 		"kick": "Expulsar membro",
+		"timeout": "Castigar membro",
+		"unTimeout": "Remover Castigo do membro",
 		"ban": "Banir membro",
 		"addRole": "Adicionar cargos",
 		"removeRole": "Remover cargos",
@@ -701,7 +733,9 @@
 	},
 	"member": {
 		"kick": "Expulsar $1 de $2",
+		"timeout": "Castigo $1",
 		"reason:": "Motivo:",
+		"timeoutTime": "Tempo de Castigo:",
 		"ban": "Banir $1 de $2",
 		"nick:": "Apelido:"
 	},
@@ -739,6 +773,7 @@
 		"quest_completed": "Completou uma missão"
 	},
 	"dms": "Mensagens Privadas",
+	"add": "Adicionar",
 	"group": {
 		"select": "Selecionar amigos",
 		"createdm": "Criar grupo!",

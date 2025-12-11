@@ -2,7 +2,8 @@
 	"@metadata": {
 		"authors": [
 			"Illyria",
-			"Ookap"
+			"Ookap",
+			"Sylvie"
 		]
 	},
 	"vc": {
@@ -35,7 +36,7 @@
 		"logout": "o weka sijelo",
 		"error": {
 			"title": "o weka tan sijelo la pakala tan alasa",
-			"desc": "o weka tan sijelo la Femi kan ala, o wile sina weka sijelo?",
+			"desc": "ilo Pemi li ken ala weka e sina tan sijelo ilo sina. taso, sina wile ala wile weka e sijelo ilo sina?",
 			"cancel": "o weka",
 			"cont": "o awen"
 		}
@@ -85,6 +86,9 @@
 		"permInfo": "ken ilo"
 	},
 	"messageLink": "o pana toki insa poki toki # $1",
+	"interactions": {
+		"onlyYou": "toki ni li lon tawa sina taso"
+	},
 	"channel": {
 		"typebox": "o toki insa poki toki # $1",
 		"name": "poki",
@@ -112,14 +116,15 @@
 	"switchAccounts": "o ante sijelo",
 	"htmlPages": {
 		"addBot": "o kama poki toki",
-		"loadingText": "Femi li kama",
+		"loadingText": "ilo Pemi li kama",
 		"emailField": "nimi Email:",
 		"pwField": "nimi open:",
 		"loginButton": "o kama lon sijelo",
 		"userField": "nimi ilo:",
 		"createAccount": "o pali e sijelo",
 		"openClient": "ilo open",
-		"welcomeJank": "kama pona Femi"
+		"welcomeJank": "o kama pona lon ilo Pemi",
+		"trans": "o ante toki"
 	},
 	"register": {
 		"register": "o pali e sijelo",
@@ -260,6 +265,8 @@
 		}
 	},
 	"sticker": {
+		"title": "sitelen suli",
+		"upload": "o pana e sitelen",
 		"image": "sitelen:",
 		"name": "nimi:",
 		"desc": "sona"
@@ -267,6 +274,9 @@
 	"404": {
 		"login": "o kama lon sijelo"
 	},
+	"jankInfo": "toki pi ilo lukin",
+	"instInfo": "toki pi ilo tan",
+	"uploadFilesText": "o pana e lipu lon ni",
 	"retrying": "sin alasa...",
 	"bot": "jan ilo"
 }

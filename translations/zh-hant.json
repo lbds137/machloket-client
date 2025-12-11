@@ -485,7 +485,11 @@
 		"addKey": "新增金鑰：",
 		"keyname": "金鑰名稱："
 	},
+	"updateAv": "有更新可用",
 	"localuser": {
+		"noUpdates": "無更新可用",
+		"updatesYay": "已找到更新！",
+		"refreshPage": "重整以套用",
 		"trusted": "信任網域",
 		"trustedDesc": "當您點擊來自這些網域的連結時，他們***不會***像其他連結那樣提示您允許開啟，這僅在您信任的 URL 出現提示",
 		"trace": "軌跡",

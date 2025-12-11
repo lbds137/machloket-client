@@ -7,6 +7,7 @@
 			"McDutchie",
 			"Mrmaffen",
 			"Mukeber",
+			"Plunoto",
 			"Russianbabe1978",
 			"SergeCroise",
 			"Simon04",
@@ -20,11 +21,15 @@
 		"stopstream": "Stream stoppen",
 		"joiningStream": "Trete Stream bei..."
 	},
-	"readableName": "Deutsch",
+	"favoriteGifs": "Lieblings-Gifs",
+	"recentEmoji": "Letzte Emoji",
+	"noStickers": "Du scheinst dich in einer misslichen Lage zu befinden, es gibt keine Sticker für dich!",
+	"readableName": "Englisch",
 	"pinMessage": "Nachricht anheften",
 	"unableToPin": "Nachricht kann nicht angeheftet werden",
 	"reply": "Antworten",
 	"copyrawtext": "Rohtext kopieren",
+	"copyLink": "Nachrichten-Id kopieren",
 	"copymessageid": "Nachrichten-Id kopieren",
 	"media": {
 		"notFound": "Medien konnten nicht gefunden werden",
@@ -35,6 +40,16 @@
 		"composer": "Komponist: $1",
 		"length": "Länge: $1 Minuten und $2 Sekunden"
 	},
+	"logout": {
+		"logout": "Abmelden",
+		"error": {
+			"title": "Es gab einen Fehler bei der Abmeldung.",
+			"desc": "Fermi konnte Sie nicht abmelden\n Möchten Sie das Konto trotzdem entfernen?",
+			"cancel": "Abbrechen",
+			"cont": "Trotzdem fortfahren"
+		}
+	},
+	"cancel": "Abbrechen",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Erlaubt dem Nutzer, Server-Einladungen zu erstellen",
@@ -82,7 +97,7 @@
 			"USE_SOUNDBOARD": "Erlaubt die Verwendung eines Soundboards in einem Sprachkanal",
 			"CREATE_GUILD_EXPRESSIONS": "Erlaubt die Erstellung von Emojis, Stickern und Soundboard-Sounds sowie die Bearbeitung und Löschung derer, die vom aktuellen Benutzer erstellt wurden.",
 			"CREATE_EVENTS": "Erlaubt die Erstellung von geplanten Ereignissen und die Bearbeitung und Löschung der von dem aktuellen Benutzer erstellten Ereignisse.",
-			"USE_EXTERNAL_SOUNDS": "Ermöglicht die Verwendung benutzerdefinierter Soundboard-Sounds von anderen Servern",
+			"USE_EXTERNAL_SOUNDS": "Ermöglicht die Verwendung benutzerdefinierter Soundboard-Sounds von anderen Gilden",
 			"SEND_VOICE_MESSAGES": "Ermöglicht Senden von Sprachnachrichten",
 			"SEND_POLLS": "Erlaubt die Absendung von Umfragen",
 			"USE_EXTERNAL_APPS": "Ermöglicht benutzerinstallierten Apps, öffentliche Antworten zu senden. Wenn diese Option deaktiviert ist, können Benutzer ihre Apps weiterhin verwenden, die Antworten sind jedoch flüchtig. Dies gilt nur für Apps, die nicht auch auf dem Server installiert sind."
@@ -139,6 +154,9 @@
 			"USE_EXTERNAL_APPS": "Externe Apps verwenden"
 		}
 	},
+	"userping": {
+		"unknown": "@unbekannt"
+	},
 	"hideBlockedMessages": "Dieser Benutzer ist blockiert, klicke, um die Nachrichten zu verbergen.",
 	"showBlockedMessages": "Dieser Benutzer ist blockiert, klicke, um die {{PLURAL:$1| blockierte Nachricht|$1 blockierten Nachrichten}} anzuzeigen.",
 	"deleteConfirm": "Bist du dir sicher, dass das gelöscht werden soll?",
@@ -164,7 +182,7 @@
 	"accessibility": {
 		"name": "Barrierefreiheit",
 		"roleColors": "Rollenfarben deaktivieren",
-		"playGif": "Gifs abspielen:",
+		"playGif": "GIFs abspielen auf:",
 		"gifSettings": {
 			"hover": "Hover",
 			"always": "Immer",

@@ -10,6 +10,7 @@
 			"McDutchie",
 			"Pyschobbens",
 			"Rwobweats",
+			"Sylvie",
 			"Urhixidur",
 			"WillyM",
 			"Wladek92"
@@ -30,6 +31,7 @@
 	"unableToPin": "Impossible d'épingler le message",
 	"reply": "Répondre",
 	"copyrawtext": "Copier le texte brut",
+	"copyLink": "Copier le lien du message",
 	"copymessageid": "Copier l'identifiant du message",
 	"media": {
 		"notFound": "Le support n’a pas pu être trouvé",
@@ -49,6 +51,7 @@
 			"cont": "Continuer malgré tout"
 		}
 	},
+	"cancel": "Annuler",
 	"permissions": {
 		"descriptions": {
 			"CREATE_INSTANT_INVITE": "Permet à l'utilisateur de créer des invitations pour la guilde",
@@ -99,7 +102,9 @@
 			"USE_EXTERNAL_SOUNDS": "Permet l'utilisation de sons personnalisés de cartes son provenant d'autres guildes",
 			"SEND_VOICE_MESSAGES": "Permet d'envoyer des messages vocaux",
 			"SEND_POLLS": "Permet d'envoyer des sondages",
-			"USE_EXTERNAL_APPS": "Permet aux applications installées par l'utilisateur d'envoyer des réponses publiques. Lorsque cette option est désactivée, les utilisateurs seront toujours autorisés à utiliser leurs applications mais les réponses seront éphémères. Cela s'applique uniquement aux applications qui ne sont pas également installées sur la guilde."
+			"USE_EXTERNAL_APPS": "Permet aux applications installées par l'utilisateur d'envoyer des réponses publiques. Lorsque cette option est désactivée, les utilisateurs seront toujours autorisés à utiliser leurs applications mais les réponses seront éphémères. Cela s'applique uniquement aux applications qui ne sont pas également installées sur la guilde.",
+			"PIN_MESSAGES": "Permet à l'utilisateur d'épingler des messages",
+			"BYPASS_SLOWMODE": "Le mode lent n'a plus d'effet sur cet utilisateur."
 		},
 		"readableNames": {
 			"CREATE_INSTANT_INVITE": "Créer une invitation",
@@ -218,6 +223,11 @@
 		"createChannel": "Créer un canal",
 		"createCatagory": "Créer une catégorie",
 		"permissions": "Droits"
+	},
+	"Voice": {
+		"status": {
+			"conectionFailed": "La connexion a échoué"
+		}
 	},
 	"delete": "Supprimer",
 	"webhooks": {
