@@ -2469,7 +2469,7 @@ class Localuser {
 				},
 			);
 			sw.onchange = (e) => {
-				SW.setMode(["false", "offlineOnly", "true"][e] as "false" | "offlineOnly" | "true");
+				SW.setMode((["false", "offlineOnly", "true"] as const)[e]);
 			};
 			update.addButtonInput("", I18n.localuser.CheckUpdate(), async () => {
 				const update = await SW.checkUpdates();
