@@ -2834,7 +2834,7 @@ class Localuser {
 			fetch(this.info.api + "/connections", {
 				headers: this.headers,
 			})
-				.then((r) => r.json())
+				.then((r) => r.json() as Promise<{[key: string]: {enabled: boolean}}>)
 				.then((json) => {
 					Object.keys(json)
 						.sort((key) => (json[key].enabled ? -1 : 1))
