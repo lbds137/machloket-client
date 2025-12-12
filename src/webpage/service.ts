@@ -1,8 +1,7 @@
 import {messageFrom, messageTo} from "./utils/serviceType";
 
-function deleteoldcache() {
-	caches.delete("cache");
-	console.log("this ran :P");
+async function deleteoldcache() {
+	await caches.delete("cache");
 }
 type files = {[key: string]: string | files};
 async function getAllFiles() {
@@ -34,9 +33,7 @@ async function downloadAllFiles() {
 }
 
 async function putInCache(request: URL | RequestInfo, response: Response) {
-	console.log(request, response);
 	const cache = await caches.open("cache");
-	console.log("Grabbed");
 	try {
 		console.log(await cache.put(request, response));
 	} catch (error) {
@@ -69,7 +66,8 @@ async function checkCache() {
 	if (checkedrecently) {
 		return false;
 	}
-	const promise = await caches.match("/getupdates");
+	const cache = await caches.open("cache");
+	const promise = await cache.match("/getupdates");
 	if (promise) {
 		lastcache = await promise.text();
 	}
