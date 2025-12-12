@@ -64,43 +64,42 @@ class I18n {
 		}
 	}
 	static fillInBlanks(msg: string, params: string[]): string {
-		//thanks to geotale for the regex
-		msg = msg.replace(/\$\d+/g, (match) => {
-			const number = Number(match.slice(1));
-			if (params[number - 1] !== undefined) {
-				return params[number - 1];
-			} else {
-				return match;
-			}
-		});
-		msg = msg.replace(/{{(.+?)}}/g, (str, match: string) => {
-			const [op, strsSplit] = this.fillInBlanks(match, params).split(":");
-			const [first, ...strs] = strsSplit.split("|");
-			switch (op.toUpperCase()) {
-				case "PLURAL": {
-					const numb = Number(first);
-					if (numb === 0) {
-						return strs[strs.length - 1];
-					}
-					return strs[Math.min(strs.length - 1, numb - 1)];
+		msg = msg.replace(/(\$\d+)|({{(.+?)}})/g, (_, dolar, str, match) => {
+			if (dolar) {
+				const number = Number(dolar.slice(1));
+				if (params[number - 1] !== undefined) {
+					return params[number - 1];
+				} else {
+					return dolar;
 				}
-				case "GENDER": {
-					if (first === "male") {
-						return strs[0];
-					} else if (first === "female") {
-						return strs[1];
-					} else if (first === "neutral") {
-						if (strs[2]) {
-							return strs[2];
-						} else {
+			} else {
+				const [op, strsSplit] = this.fillInBlanks(match, params).split(":");
+				const [first, ...strs] = strsSplit.split("|");
+				switch (op.toUpperCase()) {
+					case "PLURAL": {
+						const numb = Number(first);
+						if (numb === 0) {
+							return strs[strs.length - 1];
+						}
+						return strs[Math.min(strs.length - 1, numb - 1)];
+					}
+					case "GENDER": {
+						if (first === "male") {
 							return strs[0];
+						} else if (first === "female") {
+							return strs[1];
+						} else if (first === "neutral") {
+							if (strs[2]) {
+								return strs[2];
+							} else {
+								return strs[0];
+							}
 						}
 					}
 				}
+				return str;
 			}
-			return str;
 		});
-
 		return msg;
 	}
 	static options() {
