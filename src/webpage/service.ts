@@ -126,17 +126,13 @@ function toPath(url: string): string {
 	return toPathNoDefault(url) || Url.pathname;
 }
 let fails = 0;
-async function getfile(event: FetchEvent): Promise<Response> {
+async function getfile(req: Request): Promise<Response> {
 	checkCache();
-	if (
-		!samedomain(event.request.url) ||
-		enabled === "false" ||
-		(enabled === "offlineOnly" && !offline)
-	) {
-		const responce = await fetch(event.request.clone());
-		if (samedomain(event.request.url)) {
+	if (!samedomain(req.url) || enabled === "false" || (enabled === "offlineOnly" && !offline)) {
+		const responce = await fetch(req.clone());
+		if (samedomain(req.url)) {
 			if (enabled === "offlineOnly" && responce.ok) {
-				putInCache(toPath(event.request.url), responce.clone());
+				putInCache(toPath(req.url), responce.clone());
 			}
 			if (!responce.ok) {
 				fails++;
@@ -148,7 +144,7 @@ async function getfile(event: FetchEvent): Promise<Response> {
 		return responce;
 	}
 
-	let path = toPath(event.request.url);
+	let path = toPath(req.url);
 	if (path === "/instances.json") {
 		//TODO the client shouldn't really even fetch this, it should just ask the SW for it
 		return await fetch(path);
@@ -170,13 +166,45 @@ async function getfile(event: FetchEvent): Promise<Response> {
 		return new Response(null);
 	}
 }
-
+const promURLMap = new Map<string, (url: string) => void>();
+async function refreshUrl(url: URL, port: MessagePort): Promise<string> {
+	port.postMessage({
+		code: "refreshURL",
+		url: url.toString(),
+	});
+	return new Promise((res) => promURLMap.set(url.toString(), res));
+}
 self.addEventListener("fetch", async (e) => {
 	const event = e as FetchEvent;
+	const host = URL.canParse(event.request.url) && new URL(event.request.url).host;
+	let req = event.request;
 
-	if (URL.canParse(event.request.url) && apiHosts?.has(new URL(event.request.url).host)) {
+	const port = rMap.get(host || "");
+	if (port) {
+		const url = new URL(event.request.url);
+		const expired =
+			url.searchParams.get("ex") &&
+			Number.parseInt(url.searchParams.get("ex") || "", 16) < Date.now() - 5000;
+		if (expired) {
+			event.respondWith(
+				new Promise(async (res) => {
+					const old = url;
+					const p = Date.now();
+
+					req = await Promise.race<Request>([
+						new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
+						new Promise((res) => setTimeout(() => res(req), 5000)),
+					]);
+					res(fetch(req));
+					console.log(p - Date.now(), old === url);
+				}),
+			);
+		}
+	}
+
+	if (apiHosts?.has(host || "")) {
 		try {
-			const responce = await fetch(event.request.clone());
+			const responce = await fetch(req.clone());
 			try {
 				event.respondWith(responce.clone());
 			} catch {}
@@ -195,14 +223,14 @@ self.addEventListener("fetch", async (e) => {
 		return;
 	}
 
-	if (event.request.method === "POST") {
+	if (req.method === "POST") {
 		return;
 	}
-	if (new URL(event.request.url).pathname.startsWith("/api/")) {
+	if (new URL(req.url).pathname.startsWith("/api/")) {
 		return;
 	}
 	try {
-		event.respondWith(getfile(event));
+		event.respondWith(getfile(req));
 	} catch (e) {
 		console.error(e);
 	}
@@ -210,6 +238,7 @@ self.addEventListener("fetch", async (e) => {
 const ports = new Set<MessagePort>();
 let dev = false;
 let apiHosts: Set<string> | void;
+const rMap = new Map<string, MessagePort>();
 function listenToPort(port: MessagePort) {
 	function sendMessage(message: messageFrom) {
 		port.postMessage(message);
@@ -261,6 +290,18 @@ function listenToPort(port: MessagePort) {
 					apiHosts = new Set(data.hosts);
 				} else {
 					apiHosts = undefined;
+				}
+				break;
+			}
+			case "canRefresh": {
+				rMap.set(data.host, port);
+				break;
+			}
+			case "refreshedUrl": {
+				const res = promURLMap.get(data.oldurl);
+				if (res) {
+					res(data.url);
+					promURLMap.delete(data.oldurl);
 				}
 			}
 		}

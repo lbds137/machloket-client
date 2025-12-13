@@ -219,6 +219,17 @@ class Localuser {
 		this.serverurls = this.userinfo.serverurls;
 		this.initialized = false;
 		this.info = this.serverurls;
+		SW.postMessage({
+			code: "canRefresh",
+			host: new URL(this.info.cdn).host,
+		});
+		SW.captureEvent("refreshURL", async (e) => {
+			SW.postMessage({
+				code: "refreshedUrl",
+				url: await this.refreshURL(e.url),
+				oldurl: e.url,
+			});
+		});
 		this.headers = {
 			"Content-type": "application/json; charset=UTF-8",
 			Authorization: this.userinfo.token,

@@ -22,6 +22,15 @@ export type messageTo =
 	| {
 			code: "apiUrls";
 			hosts?: string[];
+	  }
+	| {
+			code: "canRefresh";
+			host: string;
+	  }
+	| {
+			code: "refreshedUrl";
+			oldurl: string;
+			url: string;
 	  };
 export type messageFrom =
 	| {
@@ -46,4 +55,8 @@ export type messageFrom =
 	| {
 			code: "trace";
 			trace: string[];
+	  }
+	| {
+			code: "refreshURL";
+			url: string;
 	  };
