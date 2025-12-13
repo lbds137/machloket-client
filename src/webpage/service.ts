@@ -31,9 +31,22 @@ async function downloadAllFiles() {
 
 	cachePath("", json);
 }
-
-async function putInCache(request: URL | RequestInfo, response: Response) {
+async function getFromCache(request: URL) {
+	request = new URL(request, self.location.href);
+	const port = rMap.get(request.host);
+	if (port) {
+		request.search = "";
+	}
 	const cache = await caches.open("cache");
+	return cache.match(request);
+}
+async function putInCache(request: URL | string, response: Response) {
+	const cache = await caches.open("cache");
+	request = new URL(request, self.location.href);
+	const port = rMap.get(request.host);
+	if (port) {
+		request.search = "";
+	}
 	try {
 		console.log(await cache.put(request, response));
 	} catch (error) {
@@ -185,21 +198,27 @@ self.addEventListener("fetch", async (e) => {
 		const expired =
 			url.searchParams.get("ex") &&
 			Number.parseInt(url.searchParams.get("ex") || "", 16) < Date.now() - 5000;
-		if (expired) {
-			event.respondWith(
-				new Promise(async (res) => {
+		event.respondWith(
+			new Promise(async (res) => {
+				const cached = await getFromCache(url);
+				if (cached) {
+					res(cached);
+					return;
+				}
+				if (expired) {
 					const old = url;
 					const p = Date.now();
-
 					req = await Promise.race<Request>([
 						new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
 						new Promise((res) => setTimeout(() => res(req), 5000)),
 					]);
-					res(fetch(req));
 					console.log(p - Date.now(), old === url);
-				}),
-			);
-		}
+				}
+				const f = await fetch(req);
+				res(f);
+				putInCache(url, f.clone());
+			}),
+		);
 	}
 
 	if (apiHosts?.has(host || "")) {
