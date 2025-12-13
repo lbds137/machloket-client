@@ -150,6 +150,7 @@ async function getfile(event: FetchEvent): Promise<Response> {
 
 	let path = toPath(event.request.url);
 	if (path === "/instances.json") {
+		//TODO the client shouldn't really even fetch this, it should just ask the SW for it
 		return await fetch(path);
 	}
 	console.log("Getting path: " + path);

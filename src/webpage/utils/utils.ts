@@ -4,6 +4,7 @@ import {Dialog} from "../settings.js";
 import {fix} from "./cssMagic.js";
 import {messageFrom, messageTo} from "./serviceType.js";
 fix();
+const apiDoms = new Set<string>();
 let instances:
 	| {
 			name: string;
@@ -35,7 +36,8 @@ export function setTheme() {
 export function getBulkUsers() {
 	const json = getBulkInfo();
 	for (const thing in json.users) {
-		json.users[thing] = new Specialuser(json.users[thing]);
+		const user = (json.users[thing] = new Specialuser(json.users[thing]));
+		apiDoms.add(new URL(user.serverurls.api).host);
 	}
 	return json;
 }
@@ -830,6 +832,19 @@ const checkInstance = Object.assign(
 		}) => void;
 	},
 );
+{
+	//TODO look at this and see if this can be made less hacky :P
+	const originalFetch = window.fetch;
+	window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
+		const url = new URL(input instanceof Request ? input.url : input, window.location.href);
+		if (apiDoms.has(url.host)) {
+			init = init || {};
+			init.credentials ??= "include";
+		}
+
+		return originalFetch(input, init);
+	};
+}
 export {checkInstance};
 
 export class SW {
