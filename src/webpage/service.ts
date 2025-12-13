@@ -37,16 +37,17 @@ async function getFromCache(request: URL) {
 	if (port) {
 		request.search = "";
 	}
-	const cache = await caches.open("cache");
+	const cache = await caches.open(port ? "cdn" : "cache");
 	return cache.match(request);
 }
 async function putInCache(request: URL | string, response: Response) {
-	const cache = await caches.open("cache");
 	request = new URL(request, self.location.href);
 	const port = rMap.get(request.host);
 	if (port) {
 		request.search = "";
 	}
+	const cache = await caches.open(port ? "cdn" : "cache");
+
 	try {
 		console.log(await cache.put(request, response));
 	} catch (error) {
