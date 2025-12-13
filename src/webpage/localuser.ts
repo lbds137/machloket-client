@@ -3206,7 +3206,7 @@ class Localuser {
 			})();
 		}
 		{
-			const devSettings = settings.addButton(I18n.devSettings.name());
+			const devSettings = settings.addButton(I18n.devSettings.name(), {noSubmit: true});
 			devSettings.addText(I18n.devSettings.description());
 			devSettings.addHR();
 			const box1 = devSettings.addCheckboxInput(I18n.devSettings.logGateway(), () => {}, {
