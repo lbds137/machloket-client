@@ -18,6 +18,10 @@ export type messageTo =
 	| {
 			code: "isDev";
 			dev: boolean;
+	  }
+	| {
+			code: "apiUrls";
+			hosts?: string[];
 	  };
 export type messageFrom =
 	| {
@@ -38,4 +42,8 @@ export type messageFrom =
 			code: "isValid";
 			url: string;
 			valid: boolean;
+	  }
+	| {
+			code: "trace";
+			trace: string[];
 	  };

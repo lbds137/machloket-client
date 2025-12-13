@@ -35,9 +35,21 @@ export function setTheme() {
 }
 export function getBulkUsers() {
 	const json = getBulkInfo();
+	apiDoms.clear();
 	for (const thing in json.users) {
 		const user = (json.users[thing] = new Specialuser(json.users[thing]));
 		apiDoms.add(new URL(user.serverurls.api).host);
+	}
+	if (localStorage.getItem("capTrace")) {
+		SW.postMessage({
+			code: "apiUrls",
+			hosts: [...apiDoms],
+		});
+	} else {
+		SW.postMessage({
+			code: "apiUrls",
+			hosts: undefined,
+		});
 	}
 	return json;
 }
@@ -883,9 +895,16 @@ export class SW {
 			}
 		});
 	}
+	static traceInit() {
+		getBulkUsers();
+	}
 	static needsUpdate = false;
-	static postMessage(message: messageTo) {
-		this.port?.postMessage(message);
+	static async postMessage(message: messageTo) {
+		if (!("serviceWorker" in navigator)) return;
+		while (!this.port) {
+			await new Promise((res) => setTimeout(res, 100));
+		}
+		this.port.postMessage(message);
 	}
 	static eventListeners = new Map<
 		messageFrom["code"],

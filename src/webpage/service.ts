@@ -171,8 +171,30 @@ async function getfile(event: FetchEvent): Promise<Response> {
 	}
 }
 
-self.addEventListener("fetch", (e) => {
+self.addEventListener("fetch", async (e) => {
 	const event = e as FetchEvent;
+
+	if (URL.canParse(event.request.url) && apiHosts?.has(new URL(event.request.url).host)) {
+		try {
+			const responce = await fetch(event.request.clone());
+			try {
+				event.respondWith(responce.clone());
+			} catch {}
+
+			const json = await responce.json();
+			if (json._trace) {
+				sendAll({
+					code: "trace",
+					trace: json._trace,
+				});
+			}
+		} catch (e) {
+			console.error(e);
+			//Wasn't meant to be ig lol
+		}
+		return;
+	}
+
 	if (event.request.method === "POST") {
 		return;
 	}
@@ -187,6 +209,7 @@ self.addEventListener("fetch", (e) => {
 });
 const ports = new Set<MessagePort>();
 let dev = false;
+let apiHosts: Set<string> | void;
 function listenToPort(port: MessagePort) {
 	function sendMessage(message: messageFrom) {
 		port.postMessage(message);
@@ -232,6 +255,13 @@ function listenToPort(port: MessagePort) {
 					getAllFiles();
 				}
 				break;
+			}
+			case "apiUrls": {
+				if (data.hosts) {
+					apiHosts = new Set(data.hosts);
+				} else {
+					apiHosts = undefined;
+				}
 			}
 		}
 	};

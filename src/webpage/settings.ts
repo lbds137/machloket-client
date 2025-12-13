@@ -1112,7 +1112,7 @@ class Options implements OptionsElement<void> {
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
-			tfaCheck=true
+			tfaCheck = true,
 		} = {},
 	) {
 		const options = new Form(name, this, onSubmit, {
@@ -1122,7 +1122,7 @@ class Options implements OptionsElement<void> {
 			headers,
 			method,
 			traditionalSubmit,
-			tfaCheck
+			tfaCheck,
 		});
 		this.subOptions = options;
 		this.genTop();
@@ -1304,10 +1304,10 @@ class Options implements OptionsElement<void> {
 			container.append(div);
 		}
 	}
-	deleteElm(opt:OptionsElement<any>){
+	deleteElm(opt: OptionsElement<any>) {
 		const html = this.html.get(opt)?.deref();
-		this.options=this.options.filter(_=>_!==opt);
-		if(!html) return;
+		this.options = this.options.filter((_) => _ !== opt);
+		if (!html) return;
 		html.remove();
 		this.html.delete(opt);
 	}
@@ -1559,42 +1559,48 @@ class FormError extends Error {
 }
 async function handle2fa(json: any, api: string): Promise<false | any> {
 	if (json.ticket) {
-		if(json.webauthn){
-			const challenge = JSON.parse(json.webauthn).publicKey as PublicKeyCredentialRequestOptionsJSON;
-			challenge.challenge=challenge.challenge.split("=")[0].replaceAll("+","-").replaceAll("/","_");
-			challenge.allowCredentials?.forEach(_=>_.id=_.id.split("=")[0].replaceAll("+","-").replaceAll("/","_"))
+		if (json.webauthn) {
+			const challenge = JSON.parse(json.webauthn)
+				.publicKey as PublicKeyCredentialRequestOptionsJSON;
+			challenge.challenge = challenge.challenge
+				.split("=")[0]
+				.replaceAll("+", "-")
+				.replaceAll("/", "_");
+			challenge.allowCredentials?.forEach(
+				(_) => (_.id = _.id.split("=")[0].replaceAll("+", "-").replaceAll("/", "_")),
+			);
 			console.log(challenge);
 			const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
-			const credential = await navigator.credentials.get({publicKey: options}) as unknown as {
-				rawId:ArrayBuffer,
-				response:{
-					[key:string]:ArrayBuffer,
-				}
+			const credential = (await navigator.credentials.get({publicKey: options})) as unknown as {
+				rawId: ArrayBuffer;
+				response: {
+					[key: string]: ArrayBuffer;
+				};
 			};
-			if(!credential) return false;
-			function toBase64(buf:ArrayBuffer){
-				return btoa(String.fromCharCode(...new Uint8Array(buf)))
+			if (!credential) return false;
+			function toBase64(buf: ArrayBuffer) {
+				return btoa(String.fromCharCode(...new Uint8Array(buf)));
 			}
-			const keys = ["authenticatorData","clientDataJSON","signature"];
+			const keys = ["authenticatorData", "clientDataJSON", "signature"];
 			const response = {} as any;
-			for(const key of keys){
-				response[key]=toBase64(credential.response[key] as ArrayBuffer);
+			for (const key of keys) {
+				response[key] = toBase64(credential.response[key] as ArrayBuffer);
 			}
 			const res = {
-				rawId:toBase64(credential.rawId),
-				response
+				rawId: toBase64(credential.rawId),
+				response,
 			};
-			const resObj = await fetch(api + "/auth/mfa/webauthn",{
+			const resObj = await fetch(api + "/auth/mfa/webauthn", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
-				body:JSON.stringify({code:JSON.stringify(res),ticket:json.ticket})
+				body: JSON.stringify({code: JSON.stringify(res), ticket: json.ticket}),
 			});
-			if(!resObj.ok) return false;
+			if (!resObj.ok) return false;
 			const jsonRes = await resObj.json();
 			return jsonRes;
-		}else{
+		} else {
 			return new Promise<boolean>((resolution) => {
 				const better = new Dialog("");
 				const form = better.options.addForm(
@@ -1656,7 +1662,7 @@ class Form implements OptionsElement<object> {
 	value!: object;
 	traditionalSubmit: boolean;
 	values: {[key: string]: any} = {};
-	tfaCheck:boolean;
+	tfaCheck: boolean;
 	constructor(
 		name: string,
 		owner: Options,
@@ -1669,12 +1675,12 @@ class Form implements OptionsElement<object> {
 			method = "POST",
 			traditionalSubmit = false,
 			vsmaller = false,
-			tfaCheck=true
+			tfaCheck = true,
 		} = {},
 	) {
 		this.traditionalSubmit = traditionalSubmit;
 		this.name = name;
-		this.tfaCheck=tfaCheck;
+		this.tfaCheck = tfaCheck;
 		this.method = method;
 		this.submitText = submitText;
 		this.options = new Options(name, this, {ltr, vsmaller});
@@ -2153,8 +2159,8 @@ class Settings extends Buttons {
 	constructor(name: string) {
 		super(name);
 	}
-	addButton(name: string, {ltr = false, optName = name} = {}): Options {
-		const options = new Options(optName, this, {ltr});
+	addButton(name: string, {ltr = false, optName = name, noSubmit = false} = {}): Options {
+		const options = new Options(optName, this, {ltr, noSubmit});
 		this.add(name, options);
 		return options;
 	}

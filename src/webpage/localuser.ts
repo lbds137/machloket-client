@@ -644,6 +644,11 @@ class Localuser {
 		this.rights.update(rights);
 		this.perminfo.user.rights = rights;
 	}
+	traceSub() {
+		SW.captureEvent("trace", (e) => {
+			this.handleTrace(e.trace);
+		});
+	}
 	async handleEvent(temp: wsjson) {
 		if (temp.d._trace) this.handleTrace(temp.d._trace);
 		if (localStorage.getItem("logGateway")) console.debug(temp);
@@ -3247,9 +3252,23 @@ class Localuser {
 				SW.postMessage({code: "isDev", dev: e});
 			};
 			devSettings.addText(I18n.devSettings.cacheDesc());
+
+			const box5 = devSettings.addCheckboxInput(I18n.devSettings.captureTrace(), () => {}, {
+				initState: !!localStorage.getItem("capTrace"),
+			});
+			box5.onchange = (e) => {
+				if (e) {
+					localStorage.setItem("capTrace", "true");
+				} else {
+					localStorage.removeItem("capTrace");
+				}
+				SW.traceInit();
+			};
 		}
 		if (this.trace.length && localStorage.getItem("traces")) {
-			const traces = settings.addButton(I18n.localuser.trace());
+			const traces = settings.addButton(I18n.localuser.trace(), {
+				noSubmit: true,
+			});
 			const traceArr = this.trace;
 
 			const sel = traces.addSelect(
