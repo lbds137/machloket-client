@@ -2,7 +2,7 @@ import express, {Request, Response} from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
 import {observe, uptime} from "./stats.js";
-import {getApiUrls, inviteResponse} from "./utils.js";
+import {getApiUrls} from "./utils.js";
 import {fileURLToPath} from "node:url";
 import {readFileSync} from "fs";
 import process from "node:process";
@@ -132,10 +132,6 @@ async function updateInstances(): Promise<void> {
 }
 
 updateInstances();
-
-app.use("/services/oembed", (req: Request, res: Response) => {
-	inviteResponse(req, res, instances);
-});
 
 app.use("/uptime", (req: Request, res: Response) => {
 	const instanceUptime = uptime.get(req.query.name as string);
