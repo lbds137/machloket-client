@@ -469,7 +469,7 @@ export async function getapiurls(str: string): Promise<
 						};
 					}
 				}
-			} else {
+			} else if (!str.match(/^https?:\/\//gm)) {
 				str = "https://" + str;
 			}
 		}

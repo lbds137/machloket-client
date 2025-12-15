@@ -614,7 +614,7 @@ class Localuser {
 						break;
 					}
 					case 5: {
-						const breakappart = new URL(this.info.wellknown).origin.split(".");
+						const breakappart = new URL(this.info.wellknown).host.split(".");
 						const url = "https://" + breakappart.at(-2) + "." + breakappart.at(-1);
 						const newurls = await getapiurls(url);
 						if (newurls) {
