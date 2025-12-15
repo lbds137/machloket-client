@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Asteralee",
 			"Bananax47",
 			"Derugon",
 			"EmDashUser002",
@@ -666,6 +667,7 @@
 		"legacy_username": "A un nom d'utilisateur hérité",
 		"quest_completed": "a fait une quête"
 	},
+	"add": "Ajouter",
 	"emoji": {
 		"title": "Émojis",
 		"upload": "Téléverser des émojis",

@@ -7,6 +7,7 @@
 			"Botorfj",
 			"Erkin Alp Güney",
 			"Erkinalp",
+			"Hedda",
 			"Mory",
 			"Sakblue",
 			"SaldırganSincap",
@@ -247,7 +248,8 @@
 	"devSettings": {
 		"name": "Geliştirici Ayarları",
 		"description": "Bunlar Spacebar/Fermi geliştiricileri içindir. Eğer ne yaptığınızı bilmiyorsanız lütfen bu ayarlarla oynamayın.",
-		"traces": "İzleri ortaya çıkar:"
+		"traces": "İzleri ortaya çıkar:",
+		"captureTrace": "Bu ayar, Fermi’ye sunucudan _trace özelliklerini yakalamasını söyler; bunu etkinleştirmek, aşamalı JSON çözümlemenin çalışmamasına neden olabilir ve yeniden yükleme gerektirebilir."
 	},
 	"htmlPages": {
 		"idpermissions": "Bu bot şunlara izin verecek:",
