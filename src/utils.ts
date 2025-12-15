@@ -1,22 +1,9 @@
-import {Request, Response} from "express";
 import {instace} from "./index.js";
 interface ApiUrls {
 	api: string;
 	gateway: string;
 	cdn: string;
 	wellknown: string;
-}
-
-interface Invite {
-	guild: {
-		name: string;
-		description?: string;
-		icon?: string;
-		id: string;
-	};
-	inviter?: {
-		username: string;
-	};
 }
 
 export async function getApiUrls(
