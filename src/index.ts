@@ -1,4 +1,3 @@
-import compression from "compression";
 import express, {Request, Response} from "express";
 import fs from "node:fs/promises";
 import path from "node:path";
@@ -105,8 +104,6 @@ const instanceNames = new Map<string, Instance>();
 for (const instance of instances) {
 	instanceNames.set(instance.name, instance);
 }
-
-app.use(compression());
 
 async function updateInstances(): Promise<void> {
 	try {

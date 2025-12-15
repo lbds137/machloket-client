@@ -13,7 +13,6 @@
 	"license": "GPL-3.0",
 	"dependencies": {
 		"@swc/core": "1.11.24",
-		"compression": "^1.8.0",
 		"express": "^4.21.2"
 	},
 	"devDependencies": {
