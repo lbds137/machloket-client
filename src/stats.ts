@@ -25,7 +25,6 @@ interface Instance {
 }
 
 const uptimeObject: Map<string, UptimeEntry[]> = loadUptimeObject();
-export {uptimeObject as uptime};
 
 function loadUptimeObject(): Map<string, UptimeEntry[]> {
 	const filePath = process.env.JANK_UPTIME_JSON_PATH || path.join(__dirname, "..", "uptime.json");

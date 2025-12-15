@@ -12,8 +12,7 @@
 	"author": "MathMan05",
 	"license": "GPL-3.0",
 	"dependencies": {
-		"@swc/core": "1.11.24",
-		"express": "^4.21.2"
+		"@swc/core": "1.11.24"
 	},
 	"devDependencies": {
 		"@types/audioworklet": "^0.0.90",

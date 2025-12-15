@@ -1,7 +1,7 @@
-import express, {Request, Response} from "express";
+import http from "http";
 import fs from "node:fs/promises";
 import path from "node:path";
-import {observe, uptime} from "./stats.js";
+import {observe} from "./stats.js";
 import {getApiUrls} from "./utils.js";
 import {fileURLToPath} from "node:url";
 import {readFileSync} from "fs";
@@ -67,8 +67,64 @@ interface Instance {
 	name: string;
 	[key: string]: any;
 }
+function guessMime(str: string) {
+	const ext = str.split(".").at(-1);
+	switch (ext) {
+		case "js":
+		case "cjs":
+			return "text/javascript";
+		case "html":
+			return "text/html";
+		case "css":
+			return "text/css";
+		case "svg":
+			return "image/svg+xml";
+		case "png":
+		case "jpeg":
+		case "webp":
+			return "image/" + ext;
+		default:
+			return "text/plain";
+	}
+}
+const app = http.createServer(async (req, res) => {
+	const url = new URL(req.url as string, "http://localhost");
+	const pathstr = url.pathname;
 
-const app = express();
+	async function sendFile(file: string) {
+		res.writeHead(200, {"Content-Type": guessMime(file)});
+		const f = await fs.readFile(file);
+		res.write(f);
+		res.end();
+	}
+
+	if (pathstr === "/") {
+		sendFile(path.join(__dirname, "webpage", "index.html"));
+		return;
+	}
+
+	if (pathstr.startsWith("/instances.json")) {
+		res.writeHead(200, {"Content-Type": "text/plain"});
+		res.write(JSON.stringify(instances));
+		res.end();
+		return;
+	}
+
+	if (pathstr.startsWith("/invite/")) {
+		sendFile(path.join(__dirname, "webpage", "invite.html"));
+		return;
+	}
+	if (pathstr.startsWith("/template/")) {
+		sendFile(path.join(__dirname, "webpage", "template.html"));
+		return;
+	}
+	if (pathstr === "index.html") {
+		sendFile(path.join(__dirname, "webpage", "app.html"));
+		return;
+	}
+	const filePath = await combinePath("/webpage/" + pathstr, true, pathstr);
+	sendFile(filePath);
+});
 
 export type instace = {
 	name: string;
@@ -132,62 +188,12 @@ async function updateInstances(): Promise<void> {
 }
 
 updateInstances();
-
-app.use("/uptime", (req: Request, res: Response) => {
-	const instanceUptime = uptime.get(req.query.name as string);
-	res.send(instanceUptime);
-});
-
-app.use("/", async (req: Request, res: Response) => {
-	const scheme = req.secure ? "https" : "http";
-	const host = `${scheme}://${req.get("Host")}`;
-	let ref = host + req.originalUrl;
-	if (Object.keys(req.query).length !== 0) {
-		const parms = new URLSearchParams();
-		for (const key of Object.keys(req.query)) {
-			parms.set(key, req.query[key] as string);
-		}
-		ref + `?${parms}`;
-	}
-	if (host && ref) {
-		const link = `${host}/services/oembed?url=${encodeURIComponent(ref)}`;
-		res.set(
-			"Link",
-			`<${link}>; rel="alternate"; type="application/json+oembed"; title="Fermi Client oEmbed format"`,
-		);
-	}
-
-	if (req.path === "/") {
-		res.sendFile(path.join(__dirname, "webpage", "index.html"));
-		return;
-	}
-
-	if (req.path.startsWith("/instances.json")) {
-		res.json(instances);
-		return;
-	}
-
-	if (req.path.startsWith("/invite/")) {
-		res.sendFile(path.join(__dirname, "webpage", "invite.html"));
-		return;
-	}
-	if (req.path.startsWith("/template/")) {
-		res.sendFile(path.join(__dirname, "webpage", "template.html"));
-		return;
-	}
-	if (req.path === "index.html") {
-		res.sendFile(path.join(__dirname, "webpage", "app.html"));
-		return;
-	}
-	const filePath = await combinePath("/webpage/" + req.path, true, req.path);
-	res.sendFile(filePath);
-});
-
+/*
 app.set("trust proxy", (ip: unknown) => {
 	if (typeof ip !== "string") return false;
 	return ip.startsWith("127.");
 });
-
+*/
 const PORT = process.env.PORT || Number(process.argv[2]) || 8080;
 app.listen(PORT, () => {
 	console.log(`Server running on port ${PORT}`);
