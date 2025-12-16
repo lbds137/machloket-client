@@ -92,10 +92,16 @@ const app = http.createServer(async (req, res) => {
 	const pathstr = url.pathname;
 
 	async function sendFile(file: string) {
-		res.writeHead(200, {"Content-Type": guessMime(file)});
-		const f = await fs.readFile(file);
-		res.write(f);
-		res.end();
+		try {
+			const f = await fs.readFile(file);
+			res.writeHead(200, {"Content-Type": guessMime(file)});
+			res.write(f);
+			res.end();
+		} catch {
+			res.writeHead(404, {"Content-Type": "text/html"});
+			res.write("Uh, this ain't supposed to happen");
+			res.end();
+		}
 	}
 
 	if (pathstr === "/") {
