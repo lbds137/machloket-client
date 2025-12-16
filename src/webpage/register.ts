@@ -37,7 +37,7 @@ export async function makeRegister(
 					return;
 				}
 				const redir = new URLSearchParams(window.location.search).get("goback");
-				if (redir) {
+				if (redir && (!URL.canParse(redir) || new URL(redir).host === window.location.host)) {
 					window.location.href = redir;
 				} else {
 					window.location.href = "/channels/@me";
