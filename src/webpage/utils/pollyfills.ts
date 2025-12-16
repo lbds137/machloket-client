@@ -58,8 +58,8 @@ if ("Iterator" in globalThis) {
 ReadableStream.prototype[Symbol.asyncIterator] ??= async function* () {
 	const reader = this.getReader();
 	while (true) {
-		const v = await reader.read();
-		yield v.value;
-		if (v.done) return undefined;
+		const {value, done} = await reader.read();
+		yield value;
+		if (done) return undefined;
 	}
 };
