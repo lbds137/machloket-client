@@ -1316,7 +1316,6 @@ function saveCaretPosition(
 		}
 		len = Math.min(len, txtLengthFunc(context).length);
 		len += offset;
-		console.log(text.split("\n"));
 		return function restore(backspace = false) {
 			if (!selection) return;
 			const pos = getTextNodeAtPosition(context, len, txtLengthFunc);
@@ -1334,7 +1333,6 @@ function saveCaretPosition(
 					pos.position = 0;
 				}
 			}
-			console.log(pos, len);
 			selection.removeAllRanges();
 			const range = new Range();
 			range.setStart(pos.node, pos.position);
