@@ -437,10 +437,11 @@ class Localuser {
 		if (!this.resume_gateway_url || !this.session_id) {
 			resume = false;
 		}
+		const doComp = DecompressionStream && !localStorage.getItem("gateWayComp");
 		const ws = new WebSocket(
 			(resume ? this.resume_gateway_url : this.serverurls.gateway.toString()) +
 				"?encoding=json&v=9" +
-				(DecompressionStream ? "&compress=zlib-stream" : ""),
+				(doComp ? "&compress=zlib-stream" : ""),
 		);
 		this.ws = ws;
 		let ds: DecompressionStream;
@@ -3279,6 +3280,18 @@ class Localuser {
 					localStorage.setItem("capTrace", "true");
 				} else {
 					localStorage.removeItem("capTrace");
+				}
+				SW.traceInit();
+			};
+
+			const box6 = devSettings.addCheckboxInput(I18n.devSettings.gatewayComp(), () => {}, {
+				initState: !!localStorage.getItem("gateWayComp"),
+			});
+			box6.onchange = (e) => {
+				if (e) {
+					localStorage.setItem("gateWayComp", "true");
+				} else {
+					localStorage.removeItem("gateWayComp");
 				}
 				SW.traceInit();
 			};

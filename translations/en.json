@@ -298,7 +298,8 @@
 		"traces":"Expose traces:",
 		"cache":"Enable Service Worker Caching map files:",
 		"cacheDesc":"map files will still load either way, this'll just make sure they're in cache when a new update rolls out.",
-		"captureTrace":"This setting tells Fermi to capture _trace properties from the server, enabling this may cause progressive JSON decoding to not work (might require a reload)"
+		"captureTrace":"This setting tells Fermi to capture _trace properties from the server, enabling this may cause progressive JSON decoding to not work (might require a reload)",
+		"gatewayComp":"Disable Gateway compression"
 	},
 	"htmlPages": {
 		"idpermissions": "This will allow the bot to:",
