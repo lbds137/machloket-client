@@ -124,10 +124,6 @@ const app = http.createServer(async (req, res) => {
 		sendFile(path.join(__dirname, "webpage", "template.html"));
 		return;
 	}
-	if (pathstr === "index.html") {
-		sendFile(path.join(__dirname, "webpage", "app.html"));
-		return;
-	}
 	const filePath = await combinePath("/webpage/" + pathstr, true, pathstr);
 	sendFile(filePath);
 });
