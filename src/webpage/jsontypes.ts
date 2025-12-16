@@ -44,6 +44,7 @@ interface readyjson {
 			timezone_offset: number;
 			view_nsfw_guilds: boolean;
 		};
+		auth_token?: string;
 		guilds: guildjson[];
 		relationships: {
 			id: string;

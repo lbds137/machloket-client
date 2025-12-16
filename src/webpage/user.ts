@@ -510,14 +510,27 @@ class User extends SnowFlake {
 		this.contextmenu.addButton(
 			() => I18n.user.instanceBan(),
 			function (this: User) {
+				const params = {
+					reason: "",
+					persistInstanceBan: true,
+				};
 				const menu = new Dialog("");
 				const options = menu.float.options;
 				options.addTitle(I18n.user.confirmInstBan(this.name));
+				options.addTextInput(I18n.member["reason:"](), () => {}, {}).onchange = (txt) => {
+					params.reason = txt;
+				};
+				options.addCheckboxInput(I18n.member.persist(), () => {}, {
+					initState: false,
+				}).onchange = (checked) => {
+					params.persistInstanceBan = !checked;
+				};
 				const opt = options.addOptions("", {ltr: true});
 				opt.addButtonInput("", I18n.yes(), () => {
 					fetch(this.info.api + "/users/" + this.id + "/delete", {
 						headers: this.localuser.headers,
 						method: "POST",
+						body: JSON.stringify(params),
 					});
 					menu.hide();
 				});

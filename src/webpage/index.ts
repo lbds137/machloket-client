@@ -429,7 +429,7 @@ stickerTB.onclick = (e) => {
 };
 const updateIcon = document.getElementById("updateIcon");
 if (updateIcon) {
-	new Hover(() => updateIcon.textContent).addEvent(updateIcon);
+	new Hover(() => updateIcon.textContent || "").addEvent(updateIcon);
 	updateIcon.onclick = () => {
 		window.location.reload();
 	};

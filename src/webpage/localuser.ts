@@ -56,7 +56,9 @@ class Localuser {
 		][],
 	);
 	lastSequence: number | null = null;
-	token!: string;
+	get token() {
+		return this.headers.Authorization;
+	}
 	userinfo!: Specialuser;
 	serverurls!: Specialuser["serverurls"];
 	initialized!: boolean;
@@ -212,7 +214,6 @@ class Localuser {
 			this.rights = new Rights("");
 			return;
 		}
-		this.token = userinfo.token;
 		this.userinfo = userinfo;
 		this.perminfo.guilds ??= {};
 		this.perminfo.user ??= {};
@@ -347,6 +348,12 @@ class Localuser {
 		this.userinfo.username = this.user.username;
 		this.userinfo.id = this.user.id;
 		this.userinfo.pfpsrc = this.user.getpfpsrc();
+
+		if (ready.d.auth_token) {
+			this.userinfo.token = ready.d.auth_token;
+			this.headers.Authorization = ready.d.auth_token;
+			this.userinfo.updateLocal();
+		}
 
 		this.status = this.ready.d.user_settings.status;
 		this.channelfocus = undefined;

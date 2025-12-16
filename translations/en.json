@@ -734,6 +734,7 @@
 		"kick": "Kick $1 from $2",
 		"timeout":"Timeout $1",
 		"reason:": "Reason:",
+		"persist":"Only delete user:",
 		"timeoutTime":"Timeout Time:",
 		"ban": "Ban $1 from $2",
 		"nick:": "Nickname:"
