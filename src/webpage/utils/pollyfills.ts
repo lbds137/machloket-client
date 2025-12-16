@@ -55,7 +55,7 @@ if ("Iterator" in globalThis) {
 	defineItter("".matchAll(/6/g).constructor as typeof Iterator);
 }
 
-ReadableStream.prototype[Symbol.asyncIterator] = async function* () {
+ReadableStream.prototype[Symbol.asyncIterator] ??= async function* () {
 	const reader = this.getReader();
 	while (true) {
 		const v = await reader.read();
