@@ -1,6 +1,6 @@
 import {instanceinfo, adduser, Specialuser} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
-import {Dialog} from "./settings.js";
+import {Dialog, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
 function generateRecArea(recover = document.getElementById("recover")) {
 	if (!recover) return;
@@ -86,6 +86,11 @@ export async function makeLogin(
 				} else {
 					window.location.href = "/channels/@me";
 				}
+			} else {
+				//@ts-ignore
+				//TODO just type this to get rid of the ignore :P
+				const message = res.errors.at(0)._errors[0].message;
+				throw new FormError(password, message);
 			}
 		},
 		{
@@ -102,7 +107,7 @@ export async function makeLogin(
 	button?.classList.add("createAccount");
 
 	const email = form.addTextInput(I18n.htmlPages.emailField(), "login");
-	form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});
+	const password = form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});
 	form.addCaptcha();
 	const a = document.createElement("a");
 	a.onclick = () => {
