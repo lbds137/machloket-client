@@ -220,6 +220,7 @@ self.addEventListener("fetch", async (e) => {
 				putInCache(url, f.clone());
 			}),
 		);
+		return;
 	}
 
 	if (apiHosts?.has(host || "")) {
