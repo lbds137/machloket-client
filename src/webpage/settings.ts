@@ -115,19 +115,10 @@ export class Buttons implements OptionsElement<unknown> {
 		} else {
 			html = this.handleString(buttonInfo);
 		}
-		const child = htmlarea.children[0];
 
-		Array.from(htmlarea.children).forEach((_) => _.remove());
+		htmlarea.innerHTML = "";
 		htmlarea.append(html);
-		if (child) {
-			child.classList.add("fadeHTMLArea");
-			htmlarea.append(child);
-			//@ts-ignore
-			child.addEventListener("animationend", (e: AnimationEvent) => {
-				if (e.animationName === "fadeOldSettings") child.remove();
-			});
-			console.log("child :3");
-		}
+
 		return html;
 	}
 	changed(html: HTMLElement) {
@@ -1384,24 +1375,6 @@ class Options implements OptionsElement<void> {
 			if (title) title.innerHTML = "";
 
 			console.log(container.children);
-			const old = document.createElement("div");
-			old.classList.add("fadeHTMLArea");
-			old.append(
-				...Array.from(container.children).filter((_) => {
-					if (_.classList.contains("fadeHTMLArea")) {
-						_.remove;
-						return false;
-					}
-					return true;
-				}),
-			);
-			container.append(old);
-			Array.from(old.getElementsByClassName("fadeHTMLArea")).forEach((_) => _.remove());
-			//@ts-ignore
-			old.addEventListener("animationend", (e: AnimationEvent) => {
-				if (e.animationName === "fadeOldSettings") old.remove();
-			});
-
 			if (this.isTop()) {
 				if (title) {
 					const elms = this.generateName();

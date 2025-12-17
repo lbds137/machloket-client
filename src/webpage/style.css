@@ -3054,9 +3054,6 @@ img.bigembedimg {
 	overflow-y: auto;
 	padding-top: 30px;
 	z-index: 1;
-	.fadeHTMLArea {
-		background: var(--secondary-bg) !important;
-	}
 }
 .infosection h2,
 .infosection h3 {
@@ -3603,41 +3600,7 @@ fieldset input[type="radio"] {
 	align-self: center;
 	cursor: pointer;
 }
-.centeritem {
-	.fadeHTMLArea {
-		animation-duration: 0s;
-	}
-}
-.fadeHTMLArea {
-	position: absolute;
-	width: 100%;
-	top: 0;
-	background: var(--settings-bg);
-	animation-duration: 0.2s;
-	animation-name: fadeOldSettings;
 
-	@media screen and (max-width: 600px) {
-		animation-duration: 0s;
-	}
-	animation-timing-function: ease-in;
-	z-index: 900;
-	&:empty {
-		display: none;
-	}
-	.FormSettings {
-		> div {
-			padding-bottom: 47px;
-		}
-	}
-}
-@keyframes fadeOldSettings {
-	0% {
-		opacity: 1;
-	}
-	100% {
-		opacity: 0;
-	}
-}
 @keyframes fade-shrink {
 	0% {
 		opacity: 1;
