@@ -2976,7 +2976,6 @@ class Localuser {
 				devPortal.addHTMLArea(appListContainer);
 			});
 		}
-		//TODO session
 
 		{
 			const manageSessions = settings.addButton(I18n.deviceManage.title());

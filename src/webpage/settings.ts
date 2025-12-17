@@ -1371,6 +1371,7 @@ class Options implements OptionsElement<void> {
 	generateContainter() {
 		const container = this.container.deref();
 		if (container) {
+			container.innerHTML = "";
 			const title = this.title.deref();
 			if (title) title.innerHTML = "";
 
