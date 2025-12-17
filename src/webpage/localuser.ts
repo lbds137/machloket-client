@@ -353,6 +353,7 @@ class Localuser {
 
 		if (ready.d.auth_token) {
 			this.userinfo.token = ready.d.auth_token;
+			this.userinfo.json.token = ready.d.auth_token;
 			this.headers.Authorization = ready.d.auth_token;
 			this.userinfo.updateLocal();
 		}
