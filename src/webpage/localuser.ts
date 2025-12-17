@@ -6,6 +6,7 @@ import {createImg, getapiurls, getBulkUsers, installPGet, SW} from "./utils/util
 import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
 import {
 	channeljson,
+	expSessionJson,
 	guildFolder,
 	mainuserjson,
 	memberjson,
@@ -14,6 +15,7 @@ import {
 	messagejson,
 	presencejson,
 	readyjson,
+	sessionJson,
 	startTypingjson,
 	wsjson,
 } from "./jsontypes.js";
@@ -2973,6 +2975,86 @@ class Localuser {
 				devPortal.addHTMLArea(appListContainer);
 			});
 		}
+		//TODO session
+
+		{
+			const manageSessions = settings.addButton(I18n.deviceManage.title());
+			(async () => {
+				const json = (await (
+					await fetch(this.info.api + "/auth/sessions?extended=true", {headers: this.headers})
+				).json()) as {user_sessions: expSessionJson[]};
+				for (const session of json.user_sessions.sort(
+					(a, b) => +new Date(a.last_seen) - +new Date(b.last_seen),
+				)) {
+					const div = document.createElement("div");
+					div.classList.add("flexltr", "sessionDiv");
+
+					const info = document.createElement("div");
+					info.classList.add("flexttb");
+					div.append(info);
+
+					let line2 = "";
+					const last = session.last_seen_location_info;
+					if (last) {
+						line2 += last.country_name;
+						if (last.region) line2 += ", " + last.region;
+						if (last.city) line2 += ", " + last.city;
+					}
+					if (line2) {
+						line2 += " • ";
+					}
+					const format = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
+					const time = (Date.now() - +new Date(session.last_seen)) / 1000;
+					if (time < 60) {
+						line2 += format.format(-Math.floor(time), "seconds");
+					} else if (time < 60 * 60) {
+						line2 += format.format(-Math.floor(time / 60), "minutes");
+					} else if (time < 60 * 60 * 24) {
+						line2 += format.format(-Math.floor(time / 60 / 60), "hours");
+					} else if (time < 60 * 60 * 24 * 7) {
+						line2 += format.format(-Math.floor(time / 60 / 60 / 24), "days");
+					} else if (time < 60 * 60 * 24 * 365) {
+						line2 += format.format(-Math.floor(time / 60 / 60 / 24 / 7), "weeks");
+					} else {
+						line2 += format.format(-Math.floor(time / 60 / 60 / 24 / 365), "years");
+					}
+					const loc = document.createElement("span");
+					loc.textContent = line2;
+					info.append(loc);
+					const r = manageSessions.addHTMLArea(div);
+					div.onclick = () => {
+						const sub = manageSessions.addSubOptions(I18n.deviceManage.manageDev());
+						sub.addText(I18n.deviceManage.ip(session.last_seen_ip));
+						sub.addText(I18n.deviceManage.last(session.approx_last_used_time));
+						if (last) {
+							sub.addText(I18n.deviceManage.estimateWarn());
+							sub.addText(I18n.deviceManage.continent(last.continent_name));
+							sub.addText(I18n.deviceManage.country(last.country_name));
+							if (last.region) sub.addText(I18n.deviceManage.region(last.region));
+							if (last.city) sub.addText(I18n.deviceManage.city(last.city));
+							if (last.postal) sub.addText(I18n.deviceManage.postal(last.postal));
+							sub.addText(I18n.deviceManage.longitude(last.longitude + ""));
+							sub.addText(I18n.deviceManage.latitude(last.latitude + ""));
+						}
+						if (session.id !== this.session_id) {
+							sub.addButtonInput("", I18n.deviceManage.logout(), () => {
+								div.remove();
+								r.html = document.createElement("div");
+								manageSessions.returnFromSub();
+								fetch(this.info.api + "/auth/sessions/logout", {
+									method: "POST",
+									headers: this.headers,
+									body: JSON.stringify({
+										session_id_hashes: [session.id_hash],
+									}),
+								});
+							});
+						} else sub.addText(I18n.deviceManage.curSes());
+					};
+				}
+			})();
+		}
+
 		{
 			const deleteAccount = settings.addButton(I18n.localuser.deleteAccount()).addForm(
 				"",

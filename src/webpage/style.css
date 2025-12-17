@@ -183,6 +183,12 @@ body {
 	min-height: 0;
 	display: flex;
 }
+.sessionDiv {
+	padding: 8px;
+	background: #00000040;
+	border-radius: 4px;
+	cursor: pointer;
+}
 .trustedDomain {
 	display: flex;
 	align-items: center;

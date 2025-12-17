@@ -821,6 +821,22 @@
 		"report":"If you found this page within the client please report it:",
 		"whatelse":"What else do you think should happen?"
 	},
+	"deviceManage":{
+		"title":"Manage Sessions",
+		"manageDev":"Manage Device",
+		"ip":"Last known IP: $1",
+		"estimateWarn":"Warning: All of this information is just a best guess, this could be incorrect.",
+		"country":"Country: $1",
+		"region":"Region: $1",
+		"city":"City: $1",
+		"postal":"Postal: $1",
+		"continent":"Continent: $1",
+		"latitude":"Latitude: $1",
+		"longitude":"Longitude: $1",
+		"last":"Approximately last used: $1",
+		"logout":"Logout",
+		"curSes":"This is the current session, you have to logout via the other menu"
+	},
 	"widget": "Guild Widget",
 	"widgetEnabled": "Widget enabled",
 	"incorrectURLS": "## This instance has likely sent the incorrect URLs.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Fermi to automatically try to fix this error to let you connect to the instance?",

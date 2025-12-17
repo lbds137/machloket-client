@@ -73,15 +73,7 @@ interface readyjson {
 		country_code: string;
 		users: userjson[];
 		merged_members: [memberjson][];
-		sessions: {
-			active: boolean;
-			activities: []; //will need to find example of this
-			client_info: {
-				version: number;
-			};
-			session_id: string;
-			status: string;
-		}[];
+		sessions: sessionJson[];
 		resume_gateway_url: string;
 		consents: {
 			personalization: {
@@ -103,6 +95,50 @@ interface readyjson {
 			flags: number;
 		};
 	};
+}
+export interface sessionJson {
+	active: boolean;
+	activities: []; //will need to find example of this
+	client_info: {
+		version: number;
+	};
+	session_id: string;
+	status: string;
+}
+export interface sesLocation {
+	is_eu: boolean;
+	city: string | null;
+	region: string | null;
+	region_code: string | null;
+	country_name: string;
+	country_code: string;
+	continent_name: string;
+	continent_code: string;
+	latitude: number;
+	longitude: number;
+	postal: string | null;
+	calling_code: string;
+	flag: string;
+	emoji_flag: string;
+	emoji_unicode: string;
+}
+export interface expSessionJson {
+	id: string;
+	id_hash: string;
+	status: string;
+	activities: [];
+	client_status: {};
+	approx_last_used_time: string;
+	client_info: {
+		platform?: string;
+		location?: string;
+		os?: string;
+		version?: number;
+	};
+	last_seen: string;
+	last_seen_ip: string;
+	last_seen_location: string | null;
+	last_seen_location_info: sesLocation | null;
 }
 export interface GuildOverrides {
 	channel_overrides: {
@@ -1187,6 +1223,7 @@ type opRTC12 = {
 		];
 	};
 };
+
 export {
 	readyjson,
 	dirrectjson,
