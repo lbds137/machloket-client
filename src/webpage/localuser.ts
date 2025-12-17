@@ -1198,6 +1198,8 @@ class Localuser {
 			return;
 		}
 		if (guild.id === "@me" && (channel as Group).type === 1) {
+			const div = document.getElementById("sideDiv") as HTMLDivElement;
+			div.textContent = "";
 			return;
 		}
 
