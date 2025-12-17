@@ -38,6 +38,9 @@ class User extends SnowFlake {
 	members: WeakMap<Guild, Member | undefined | Promise<Member | undefined>> = new WeakMap();
 	status!: string;
 	resolving: false | Promise<any> = false;
+	get headers() {
+		return this.localuser.headers;
+	}
 
 	constructor(userjson: userjson, owner: Localuser, dontclone: boolean = false) {
 		super(userjson.id);
@@ -341,6 +344,30 @@ class User extends SnowFlake {
 				},
 			},
 		);
+		this.contextmenu.addButton(
+			function () {
+				switch (this.relationshipType) {
+					case 1:
+						return I18n.user.nick.friend();
+					case 2:
+						return I18n.user.nick.foe();
+					case 3:
+						return I18n.user.nick.stalker();
+					case 4:
+						return I18n.user.nick.stalking();
+					default:
+						return "You shouldn't see this";
+				}
+			},
+			function (this: User) {
+				this.setFriendNick();
+			},
+			{
+				visable: function () {
+					return new Set([1, 2, 3, 4]).has(this.relationshipType);
+				},
+			},
+		);
 
 		this.contextmenu.addSeperator();
 
@@ -565,6 +592,24 @@ class User extends SnowFlake {
 		);
 		console.warn("this ran");
 	}
+	setFriendNick() {
+		const dio = new Dialog("");
+		const form = dio.options.addForm(
+			"",
+			() => {
+				dio.hide();
+			},
+			{
+				fetchURL: this.info.api + `/users/@me/relationships/${this.id}`,
+				method: "PATCH",
+				headers: this.headers,
+			},
+		);
+		form.addTextInput(I18n.member["nick:"](), "nickname", {
+			initText: this.nickname || "",
+		});
+		dio.show();
+	}
 	getMembersSync() {
 		return this.localuser.guilds
 			.map((guild) => {
@@ -616,7 +661,7 @@ class User extends SnowFlake {
 	}
 
 	get name() {
-		return this.relationshipType === 2 ? I18n.friends.bu() : this.username;
+		return this.nickname || (this.relationshipType === 2 ? I18n.friends.bu() : this.username);
 	}
 
 	async resolvemember(guild: Guild): Promise<Member | undefined> {
@@ -994,14 +1039,22 @@ class User extends SnowFlake {
 		).json()) as highMemberJSON;
 	}
 	handleRelationship(relation: relationJson) {
+		const nickChange = this.nickname !== relation.nickname;
 		this.nickname = relation.nickname;
 		this.relationshipType = relation.type;
 		this.localuser.inrelation.add(this);
+		if (nickChange) {
+			this.nameChange();
+		}
 	}
 	removeRelation() {
+		const nickChange = this.nickname;
 		this.nickname = null;
 		this.relationshipType = 0;
 		this.localuser.inrelation.delete(this);
+		if (nickChange) {
+			this.nameChange();
+		}
 	}
 	async fullProfile(guild: Guild | null | Member = null) {
 		console.log(guild);

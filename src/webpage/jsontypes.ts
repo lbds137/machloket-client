@@ -936,7 +936,7 @@ type wsjson =
 	  }
 	| {
 			op: 0;
-			t: "RELATIONSHIP_MODIFY";
+			t: "RELATIONSHIP_UPDATE";
 			d: relationJson;
 			s: number;
 	  }

@@ -908,14 +908,16 @@ class Localuser {
 					guild.memberupdate(temp.d);
 					break;
 				}
-				case "RELATIONSHIP_MODIFY":
+				case "RELATIONSHIP_UPDATE":
 				case "RELATIONSHIP_ADD": {
-					const user = new User(temp.d.user, this);
-					user.handleRelationship(temp.d);
-					this.relationshipsUpdate();
-					const me = this.guildids.get("@me");
-					if (!me) break;
-					me.unreads();
+					(async () => {
+						const user = temp.d.user ? new User(temp.d.user, this) : await this.getUser(temp.d.id);
+						user.handleRelationship(temp.d);
+						this.relationshipsUpdate();
+						const me = this.guildids.get("@me");
+						if (!me) return;
+						me.unreads();
+					})();
 					break;
 				}
 				case "RELATIONSHIP_REMOVE": {

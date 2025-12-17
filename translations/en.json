@@ -717,7 +717,13 @@
 		"instanceBan": "Instance ban",
 		"confirmInstBan": "Are you sure you want to instance ban $1?",
 		"unban": "Unban $1",
-		"remove":"Remove user"
+		"remove":"Remove user",
+		"nick":{
+			"friend":"Set friend nickname",
+			"foe":"Set foe nickname",
+			"stalker":"Set nickname of requester",
+			"stalking":"Set nickname of requested"
+		}
 	},
 	"loaded":"Loaded",
 	"login": {

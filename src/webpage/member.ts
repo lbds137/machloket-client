@@ -172,6 +172,7 @@ class Member extends SnowFlake {
 		this.editProfile(settings.addButton(I18n.user.editServerProfile(), {ltr: true}));
 		settings.show();
 	}
+
 	showEditNick() {
 		const dio = new Dialog("");
 		const form = dio.options.addForm(
