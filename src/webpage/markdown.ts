@@ -258,7 +258,7 @@ class MarkDown {
 				}
 			}
 			if (txt[i] === "\\") {
-				const chatset = new Set("\\`{}[]()<>*_#+-.!|".split(""));
+				const chatset = new Set("\\`{}[]()<>*_#+-.!|@".split(""));
 				if (chatset.has(txt[i + 1])) {
 					if (keep) {
 						current.textContent += txt[i];

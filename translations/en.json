@@ -696,6 +696,7 @@
 	},
 	"user": {
 		"sendMessage":"Message @$1",
+		"editNick":"Edit Nickname",
 		"copyId": "Copy user ID",
 		"online": "Online",
 		"offline": "Offline",

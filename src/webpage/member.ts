@@ -158,6 +158,24 @@ class Member extends SnowFlake {
 		this.editProfile(settings.addButton(I18n.user.editServerProfile(), {ltr: true}));
 		settings.show();
 	}
+	showEditNick() {
+		const dio = new Dialog("");
+		const form = dio.options.addForm(
+			"",
+			() => {
+				dio.hide();
+			},
+			{
+				fetchURL: this.info.api + `/guilds/${this.guild.id}/members/${this.id}`,
+				method: "PATCH",
+				headers: this.headers,
+			},
+		);
+		form.addTextInput(I18n.member["nick:"](), "nick", {
+			initText: this.nick,
+		});
+		dio.show();
+	}
 	editProfile(options: Options) {
 		if (this.hasPermission("CHANGE_NICKNAME")) {
 			const hypotheticalProfile = document.createElement("div");

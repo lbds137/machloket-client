@@ -358,6 +358,23 @@ class User extends SnowFlake {
 		);
 
 		this.contextmenu.addButton(
+			() => I18n.user.editNick(),
+			function (this: User, member: Member | undefined) {
+				if (!member) return;
+				member.showEditNick();
+			},
+			{
+				visable: function (member) {
+					return (
+						!!member &&
+						member?.id !== this.localuser.user.id &&
+						member.guild.member.hasPermission("MANAGE_NICKNAMES")
+					);
+				},
+			},
+		);
+
+		this.contextmenu.addButton(
 			() => I18n.user.timeout(),
 			function (this: User, member: Member | undefined) {
 				member?.timeout();
