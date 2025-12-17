@@ -79,6 +79,8 @@ function guessMime(str: string) {
 			return "text/css";
 		case "svg":
 			return "image/svg+xml";
+		case "ico":
+			return "image/x-icon";
 		case "png":
 		case "jpeg":
 		case "webp":
