@@ -46,12 +46,7 @@ interface readyjson {
 		};
 		auth_token?: string;
 		guilds: guildjson[];
-		relationships: {
-			id: string;
-			type: 0 | 1 | 2 | 3 | 4;
-			nickname: string | null;
-			user: userjson;
-		}[];
+		relationships: relationJson[];
 		read_state: {
 			entries: {
 				id: string;
@@ -798,6 +793,12 @@ type messageCreateJson = {
 	s: number;
 	t: "MESSAGE_CREATE";
 };
+export interface relationJson {
+	id: string;
+	type: 0 | 1 | 2 | 3 | 4;
+	nickname: string | null;
+	user: userjson;
+}
 type roleCreate = {
 	op: 0;
 	t: "GUILD_ROLE_CREATE";
@@ -924,21 +925,19 @@ type wsjson =
 	| {
 			op: 0;
 			t: "RELATIONSHIP_ADD";
-			d: {
-				id: string;
-				type: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-				user: userjson;
-			};
+			d: relationJson;
 			s: number;
 	  }
 	| {
 			op: 0;
 			t: "RELATIONSHIP_REMOVE";
-			d: {
-				id: string;
-				type: number;
-				nickname: null;
-			};
+			d: relationJson;
+			s: number;
+	  }
+	| {
+			op: 0;
+			t: "RELATIONSHIP_MODIFY";
+			d: relationJson;
 			s: number;
 	  }
 	| {

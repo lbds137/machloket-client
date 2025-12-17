@@ -400,11 +400,9 @@ class Localuser {
 				channel.readStateInfo(thing);
 			}
 		}
-		for (const thing of ready.d.relationships) {
-			const user = new User(thing.user, this);
-			user.nickname = thing.nickname;
-			user.relationshipType = thing.type;
-			this.inrelation.add(user);
+		for (const relationship of ready.d.relationships) {
+			const user = new User(relationship.user, this);
+			user.handleRelationship(relationship);
 		}
 
 		this.pingEndpoint();
@@ -910,11 +908,10 @@ class Localuser {
 					guild.memberupdate(temp.d);
 					break;
 				}
+				case "RELATIONSHIP_MODIFY":
 				case "RELATIONSHIP_ADD": {
 					const user = new User(temp.d.user, this);
-					user.nickname = null;
-					user.relationshipType = temp.d.type;
-					this.inrelation.add(user);
+					user.handleRelationship(temp.d);
 					this.relationshipsUpdate();
 					const me = this.guildids.get("@me");
 					if (!me) break;
@@ -924,9 +921,7 @@ class Localuser {
 				case "RELATIONSHIP_REMOVE": {
 					const user = this.userMap.get(temp.d.id);
 					if (!user) return;
-					user.nickname = null;
-					user.relationshipType = 0;
-					this.inrelation.delete(user);
+					user.removeRelation();
 					this.relationshipsUpdate();
 					break;
 				}

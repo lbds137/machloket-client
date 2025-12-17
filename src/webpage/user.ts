@@ -4,7 +4,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {Localuser} from "./localuser.js";
 import {Guild} from "./guild.js";
 import {SnowFlake} from "./snowflake.js";
-import {highMemberJSON, presencejson, userjson, webhookInfo} from "./jsontypes.js";
+import {highMemberJSON, presencejson, relationJson, userjson, webhookInfo} from "./jsontypes.js";
 import {Role} from "./role.js";
 import {Search} from "./search.js";
 import {I18n} from "./i18n.js";
@@ -992,6 +992,16 @@ class User extends SnowFlake {
 				{headers: this.localuser.headers},
 			)
 		).json()) as highMemberJSON;
+	}
+	handleRelationship(relation: relationJson) {
+		this.nickname = relation.nickname;
+		this.relationshipType = relation.type;
+		this.localuser.inrelation.add(this);
+	}
+	removeRelation() {
+		this.nickname = null;
+		this.relationshipType = 0;
+		this.localuser.inrelation.delete(this);
 	}
 	async fullProfile(guild: Guild | null | Member = null) {
 		console.log(guild);
