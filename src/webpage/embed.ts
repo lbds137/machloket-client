@@ -89,7 +89,7 @@ class Embed {
 				? "#" + this.json.color.toString(16).padStart(6, "0")
 				: "var(--embed-bg-side)";
 
-		div.classList.add("embed-color");
+		div.classList.add("embed-color", "rich-embed");
 
 		const embed = document.createElement("div");
 		embed.classList.add("embed");
