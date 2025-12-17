@@ -1010,6 +1010,7 @@ class Channel extends SnowFlake {
 			div.classList.add("voiceuser", "flexltr");
 			const span = document.createElement("span");
 			span.textContent = member.name;
+			member.subName(span);
 
 			const tray = document.createElement("div");
 			tray.classList.add("flexltr", "voiceTray");
@@ -1480,7 +1481,11 @@ class Channel extends SnowFlake {
 		const span = document.createElement("span");
 		span.textContent = user.name;
 		memb.then((_) => {
-			if (!_) return;
+			if (!_) {
+				user.subName(span);
+				return;
+			}
+			_.subName(span);
 			span.textContent = _.name;
 		});
 		span.classList.add("voiceUsername");

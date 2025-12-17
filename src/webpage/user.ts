@@ -565,6 +565,33 @@ class User extends SnowFlake {
 		);
 		console.warn("this ran");
 	}
+	getMembersSync() {
+		return this.localuser.guilds
+			.map((guild) => {
+				const m = this.members.get(guild);
+				return m instanceof Member ? m : undefined;
+			})
+			.filter((m) => m !== undefined);
+	}
+
+	elms = new Set<WeakRef<HTMLElement>>();
+	subName(elm: HTMLElement) {
+		this.elms.add(new WeakRef(elm));
+	}
+	nameChange() {
+		this.getMembersSync().forEach((memb) => {
+			memb.nameChange();
+		});
+
+		for (const ref of this.elms) {
+			const elm = ref.deref();
+			if (!elm || !document.contains(elm)) {
+				this.elms.delete(ref);
+				continue;
+			}
+			elm.textContent = this.name;
+		}
+	}
 
 	static checkuser(user: User | userjson, owner: Localuser): User {
 		const tempUser = owner.userMap.get(user.uid || user.id);
@@ -653,6 +680,7 @@ class User extends SnowFlake {
 		//TODO make sure this is something I can actually do here
 		const name = document.createElement("b");
 		name.textContent = this.name;
+
 		const nameBox = document.createElement("div");
 		nameBox.classList.add("flexttb");
 		nameBox.append(name);
@@ -660,9 +688,11 @@ class User extends SnowFlake {
 		div.append(pfp, nameBox);
 		Member.resolveMember(this, guild).then((_) => {
 			if (_) {
+				_.subName(name);
 				name.textContent = _.name;
 				pfp.src = _.getpfpsrc();
 			} else if (guild.id !== "@me") {
+				this.subName(name);
 				const notFound = document.createElement("span");
 				notFound.textContent = I18n.webhooks.notFound();
 				nameBox.append(notFound);
@@ -749,6 +779,7 @@ class User extends SnowFlake {
 	}
 
 	userupdate(json: userjson): void {
+		const up = json.username !== this.username;
 		if (json.avatar !== this.avatar) {
 			Array.from(document.getElementsByClassName("userid:" + this.id)).forEach((element) => {
 				const img = element as safeImg;
@@ -776,6 +807,9 @@ class User extends SnowFlake {
 			) {
 				this.localuser.updateRights(this.rights);
 			}
+		}
+		if (up) {
+			this.nameChange();
 		}
 	}
 
@@ -1040,6 +1074,7 @@ class User extends SnowFlake {
 
 		const usernamehtml = document.createElement("h2");
 		usernamehtml.textContent = this.name;
+
 		userbody.appendChild(usernamehtml);
 
 		if (this.bot) {
@@ -1096,7 +1131,10 @@ class User extends SnowFlake {
 
 			if (guild) {
 				membres.then((member) => {
-					if (!member) return;
+					if (!member) {
+						this.subName(usernamehtml);
+						return;
+					}
 					const p = document.createElement("p");
 					p.textContent = I18n.profile.joinedMember(
 						member.guild.properties.name,
@@ -1105,6 +1143,7 @@ class User extends SnowFlake {
 					joined.append(p);
 
 					usernamehtml.textContent = member.name;
+					member.subName(usernamehtml);
 					if (this.bot) {
 						const username = document.createElement("span");
 						username.classList.add("bot");

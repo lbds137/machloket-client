@@ -30,6 +30,20 @@ class Member extends SnowFlake {
 		}
 		this.update(memberjson);
 	}
+	elms = new Set<WeakRef<HTMLElement>>();
+	subName(elm: HTMLElement) {
+		this.elms.add(new WeakRef(elm));
+	}
+	nameChange() {
+		for (const ref of this.elms) {
+			const elm = ref.deref();
+			if (!elm || !document.contains(elm)) {
+				this.elms.delete(ref);
+				continue;
+			}
+			elm.textContent = this.name;
+		}
+	}
 	commuicationDisabledLeft() {
 		return this.communication_disabled_until
 			? Math.max(+this.communication_disabled_until - Date.now(), 0)
@@ -300,6 +314,7 @@ class Member extends SnowFlake {
 		}
 	}
 	update(memberjson: memberjson) {
+		const changeNick = this.nick !== memberjson.nick;
 		for (const key of Object.keys(memberjson)) {
 			if (key === "guild" || key === "owner" || key === "user") {
 				continue;
@@ -348,6 +363,9 @@ class Member extends SnowFlake {
 		this.roles.sort((a, b) => {
 			return this.guild.roles.indexOf(a) - this.guild.roles.indexOf(b);
 		});
+		if (changeNick) {
+			this.nameChange();
+		}
 	}
 	get guild() {
 		return this.owner;
@@ -551,7 +569,7 @@ class Member extends SnowFlake {
 		//to be implemented
 	}
 	get name() {
-		return this.nick || this.user.username;
+		return this.nick || this.user.name;
 	}
 	kick() {
 		const menu = new Dialog("");

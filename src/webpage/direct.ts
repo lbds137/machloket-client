@@ -162,6 +162,7 @@ class Direct extends Guild {
 			userinfos.classList.add("flexttb");
 			const username = document.createElement("span");
 			username.textContent = user.name;
+			user.subName(username);
 			userinfos.append(username, user.getStatus());
 			div.append(userinfos);
 			User.contextmenu.bindContextmenu(div, user, undefined);

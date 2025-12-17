@@ -633,6 +633,9 @@ class Message extends SnowFlake {
 				if (member) {
 					minipfp.src = member.getpfpsrc();
 					username.textContent = member.name;
+					member.subName(username);
+				} else {
+					user.subName(username);
 				}
 			});
 			user.bind(minipfp, this.guild);
@@ -752,6 +755,9 @@ class Message extends SnowFlake {
 					if (member) {
 						username.textContent = member.name;
 						minipfp.src = member.getpfpsrc();
+						member.subName(username);
+					} else {
+						author.subName(username);
 					}
 				});
 			});
@@ -795,8 +801,11 @@ class Message extends SnowFlake {
 				membProm.then((member) => {
 					if (member) {
 						username.textContent = member.name;
+						member.subName(username);
 						const icon = member.getRoleIcon();
 						if (icon) username.after(icon);
+					} else {
+						this.author.subName(username);
 					}
 				});
 				div.classList.add("topMessage");

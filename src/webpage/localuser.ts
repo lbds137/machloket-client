@@ -1378,6 +1378,7 @@ class Localuser {
 				const username = document.createElement("span");
 				username.classList.add("ellipsis");
 				username.textContent = member.name;
+				member.subName(username);
 				if (user.bot) {
 					const bot = document.createElement("span");
 					bot.classList.add("bot");
