@@ -598,7 +598,7 @@ class Group extends Channel {
 		div.classList.add("flexltr", "liststyle");
 		const myhtml = document.createElement("span");
 		myhtml.classList.add("ellipsis");
-		myhtml.textContent = this.name;
+		myhtml.textContent = this.type === 1 && this.users[0] ? this.users[0].name : this.name;
 		this.nameSpan = new WeakRef(myhtml);
 
 		div.appendChild(this.makeIcon());

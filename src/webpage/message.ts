@@ -639,7 +639,7 @@ class Message extends SnowFlake {
 				}
 			});
 			user.bind(minipfp, this.guild);
-			username.textContent = user.username;
+			username.textContent = user.name;
 			user.bind(username, this.guild);
 
 			const line2 = document.createElement("hr");
@@ -749,7 +749,7 @@ class Message extends SnowFlake {
 				minipfp.src = author.getpfpsrc();
 
 				author.bind(minipfp, this.guild);
-				username.textContent = author.username;
+				username.textContent = author.name;
 				author.bind(username, this.guild);
 				Member.resolveMember(author, this.guild).then((member) => {
 					if (member) {
@@ -809,7 +809,7 @@ class Message extends SnowFlake {
 					}
 				});
 				div.classList.add("topMessage");
-				username.textContent = this.author.username;
+				username.textContent = this.author.name;
 				const userwrap = document.createElement("div");
 				userwrap.classList.add("userwrap");
 				userwrap.appendChild(username);
@@ -941,7 +941,7 @@ class Message extends SnowFlake {
 			text.appendChild(firstspan);
 
 			const username = document.createElement("span");
-			username.textContent = this.author.username;
+			username.textContent = this.author.name;
 			//this.author.profileclick(username);
 			this.author.bind(username, this.guild);
 			text.appendChild(username);
@@ -964,7 +964,7 @@ class Message extends SnowFlake {
 			if (m.length === 2) text.append(m.shift() as string);
 
 			const username = document.createElement("span");
-			username.textContent = this.author.username;
+			username.textContent = this.author.name;
 			//this.author.profileclick(username);
 			this.author.bind(username, this.guild);
 			text.appendChild(username);
