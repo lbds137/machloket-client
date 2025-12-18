@@ -3374,7 +3374,7 @@ class Localuser {
 					),
 				),
 			);
-			function generateTraceHTML(trace: trace): HTMLElement {
+			function generateTraceHTML(trace: trace, indent: number): HTMLElement {
 				const div = document.createElement("div");
 				div.classList.add("traceDiv", "flexttb");
 
@@ -3383,6 +3383,10 @@ class Localuser {
 
 				const title = document.createElement("h3");
 				title.textContent = I18n.trace.totalTime(trace[1].micros / 1000 + "", trace[0]);
+				const indents = document.createElement("span");
+				indents.classList.add("visually-hidden");
+				indents.textContent = "  ".repeat(indent);
+				title.prepend(indents);
 				head.append(title);
 
 				if (!trace[1].calls) return div;
@@ -3429,7 +3433,7 @@ class Localuser {
 
 					let i = 0;
 					for (const obj of objs) {
-						body.append(generateTraceHTML([obj.name, obj.val]));
+						body.append(generateTraceHTML([obj.name, obj.val], indent + 1));
 						i++;
 					}
 					dropped = true;
@@ -3444,7 +3448,7 @@ class Localuser {
 			const updateInfo = () => {
 				const trace = traceArr[sel.index];
 				blank.innerHTML = "";
-				blank.append(generateTraceHTML(trace.trace));
+				blank.append(generateTraceHTML(trace.trace, 0));
 			};
 			sel.onchange = () => {
 				updateInfo();

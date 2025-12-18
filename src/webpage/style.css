@@ -872,6 +872,15 @@ textarea {
 		background: yellow;
 	}
 }
+.visually-hidden {
+	clip: rect(0 0 0 0);
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: pre-wrap;
+	width: 1px;
+}
 .svg-stream {
 	mask: url(./icons/stream.svg);
 	mask-size: contain !important;
@@ -4564,3 +4573,4 @@ img.error::after {
 		flex-shrink: 0;
 	}
 }
+
