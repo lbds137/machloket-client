@@ -247,7 +247,7 @@ class Localuser {
 	favorites!: Favorites;
 	readysup = false;
 	get voiceAllowed() {
-		return this.readysup || localStorage.getItem("Voice enabled");
+		return this.readysup;
 	}
 	mute = true;
 	deaf = false;
@@ -2771,27 +2771,6 @@ class Localuser {
 						defaultIndex: I18n.options().indexOf(I18n.lang),
 					},
 				);
-				{
-					//TODO maybe remove this setting, its no longer really used
-					const box = security.addCheckboxInput(I18n.localuser.enableEVoice(), () => {}, {
-						initState: Boolean(localStorage.getItem("Voice enabled")),
-					});
-					box.onchange = (e) => {
-						if (e) {
-							if (confirm(I18n.localuser.VoiceWarning())) {
-								localStorage.setItem("Voice enabled", "true");
-							} else {
-								box.value = false;
-								const checkbox = box.input.deref();
-								if (checkbox) {
-									checkbox.checked = false;
-								}
-							}
-						} else {
-							localStorage.removeItem("Voice enabled");
-						}
-					};
-				}
 
 				{
 					security.addButtonInput("", I18n.logout.logout(), async () => {
