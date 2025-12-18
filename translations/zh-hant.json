@@ -298,7 +298,8 @@
 		"traces": "暴露痕跡：",
 		"cache": "啟用 Service Worker 快取映射檔：",
 		"cacheDesc": "映射檔案在任何情況都會載入，這樣是為了確保在新版本發佈時能已快取。",
-		"captureTrace": "此設定會指示 Fermi 從伺服器擷取 _trace 屬性，啟用此可能會導致漸進式 JSON 解碼無法運作（可能需要重新載入）。"
+		"captureTrace": "此設定會指示 Fermi 從伺服器擷取 _trace 屬性，啟用此可能會導致漸進式 JSON 解碼無法運作（可能需要重新載入）。",
+		"gatewayComp": "停用閘道器壓縮"
 	},
 	"htmlPages": {
 		"idpermissions": "這將允許機器人：",
@@ -696,6 +697,7 @@
 	},
 	"user": {
 		"sendMessage": "發送訊息@$1",
+		"editNick": "編輯暱稱",
 		"copyId": "複製使用者 ID",
 		"online": "線上",
 		"offline": "離線",
@@ -716,7 +718,13 @@
 		"instanceBan": "禁止實例",
 		"confirmInstBan": "您確定要禁止實例$1嗎？",
 		"unban": "解禁$1",
-		"remove": "移除使用者"
+		"remove": "移除使用者",
+		"nick": {
+			"friend": "設定好友暱稱",
+			"foe": "設定仇家暱稱",
+			"stalker": "設定請求者的暱稱",
+			"stalking": "設定請求的暱稱"
+		}
 	},
 	"loaded": "已載入",
 	"login": {
@@ -735,6 +743,7 @@
 		"kick": "從$2踢出$1",
 		"timeout": "逾時 $1",
 		"reason:": "原因：",
+		"persist": "僅刪除使用者：",
 		"timeoutTime": "逾時時間：",
 		"ban": "從$2禁止$1",
 		"nick:": "暱稱："
@@ -819,6 +828,22 @@
 		"whereever": "無論這在哪裡",
 		"report": "如果您在客戶端發現此頁面，請回報：",
 		"whatelse": "您認為應該還會發生什麼事？"
+	},
+	"deviceManage": {
+		"title": "管理連線階段",
+		"manageDev": "管理裝置",
+		"ip": "最後已知 IP：$1",
+		"estimateWarn": "提醒：以上資訊僅為推測，可能有誤。",
+		"country": "國家：$1",
+		"region": "地區：$1",
+		"city": "城市：$1",
+		"postal": "郵遞區號：$1",
+		"continent": "大陸：$1",
+		"latitude": "緯度：$1",
+		"longitude": "經度：$1",
+		"last": "上次大約使用：$1",
+		"logout": "登出",
+		"curSes": "此為目前連線階段，您需要透過另一個選單登出。"
 	},
 	"widget": "公會小工具",
 	"widgetEnabled": "已啟用小工具",
