@@ -1963,12 +1963,6 @@ class Guild extends SnowFlake {
 				headers: this.headers,
 			})
 		).json()) as {application_commands: commandJson[]; applications: applicationJson[]};
-		//TODO remove this fix once the server fixes this
-		json.applications.forEach((_) => {
-			if (_.icon && _.icon.startsWith("data")) {
-				_.icon = null;
-			}
-		});
 		return {
 			apps: json.applications,
 			commands: json.application_commands.map((_) => new Command(_, this.localuser)),
