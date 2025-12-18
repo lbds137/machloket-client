@@ -658,8 +658,7 @@ class MarkDown {
 											mention.textContent = `@${role.name}`;
 											mention.style.color = `var(--role-${role.id})`;
 										} else {
-											//TODO tranlation
-											mention.textContent = "@unknown-role";
+											mention.textContent = I18n.guild.unknownRole();
 										}
 									}
 								} else {

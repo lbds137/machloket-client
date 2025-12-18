@@ -352,6 +352,7 @@
 	"edit": "Edit",
 	"discovery":"Discovery",
 	"guild": {
+		"unknownRole":"@unknown-role",
 		"memberCount":"$1 {{PLURAL:$1|member|members}}",
 		"joinConfirm":"Join $1?",
 		"guilds":"Guilds",
