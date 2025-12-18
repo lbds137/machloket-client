@@ -503,8 +503,8 @@ class SelectInput implements OptionsElement<number> {
 	private onChange(index = -1) {
 		this.owner.changed();
 		if (index !== -1) {
-			this.onchange(index);
 			this.index = index;
+			this.onchange(index);
 			return;
 		}
 		const select = this.select.deref();
