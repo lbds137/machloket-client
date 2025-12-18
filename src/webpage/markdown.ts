@@ -1,4 +1,3 @@
-//TODO for some reason Localuser must be at the top, don't know why
 import {Localuser} from "./localuser.js";
 import {Channel} from "./channel.js";
 import {Emoji} from "./emoji.js";
