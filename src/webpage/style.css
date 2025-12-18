@@ -915,6 +915,7 @@ textarea {
 }
 .svg-spoiler {
 	mask: url(./icons/spoiler.svg);
+	mask-size: contain !important;
 }
 .svg-pin {
 	mask: url(./icons/pin.svg);
@@ -926,71 +927,93 @@ textarea {
 }
 .svg-unspoiler {
 	mask: url(./icons/unspoiler.svg);
+	mask-size: contain !important;
 }
 .svg-soundMore {
 	mask: url(./icons/soundMore.svg);
+	mask-size: contain !important;
 }
 .svg-play {
 	mask: url(./icons/play.svg);
+	mask-size: contain !important;
 }
 .svg-pause {
 	mask: url(./icons/pause.svg);
+	mask-size: contain !important;
 }
 .svg-announce {
 	mask: url(./icons/announce.svg);
+	mask-size: contain !important;
 }
 .svg-emoji {
 	mask: url(./icons/emoji.svg);
+	mask-size: contain !important;
 }
 .svg-gif {
 	mask: url(./icons/gif.svg);
+	mask-size: contain !important;
 }
 .svg-edit {
 	mask: url(./icons/edit.svg);
+	mask-size: contain !important;
 }
 .svg-reply {
 	mask: url(./icons/reply.svg);
+	mask-size: contain !important;
 }
 .svg-delete {
 	mask: url(./icons/delete.svg);
+	mask-size: contain !important;
 }
 .svg-category {
 	mask: url(./icons/category.svg);
+	mask-size: contain !important;
 }
 .svg-intoMenu {
 	mask: url(./icons/intoMenu.svg);
+	mask-size: contain !important;
 }
 .svg-leftArrow {
 	mask: url(./icons/leftArrow.svg);
+	mask-size: contain !important;
 }
 .svg-channel {
 	mask: url(./icons/channel.svg);
+	mask-size: contain !important;
 }
 .svg-copy {
 	mask: url(./icons/copy.svg);
+	mask-size: contain !important;
 }
 .svg-explore {
 	mask: url(./icons/explore.svg);
+	mask-size: contain !important;
 }
 .svg-home {
 	mask: url(./icons/home.svg);
+	mask-size: contain !important;
 }
 .svg-settings {
 	mask: url(./icons/settings.svg);
+	mask-size: contain !important;
 }
 .svg-voice {
 	mask: url(./icons/voice.svg);
+	mask-size: contain !important;
 }
 .svg-plus {
 	mask: url(./icons/plus.svg);
+	mask-size: contain !important;
 }
 .svg-upload {
 	mask: url(./icons/upload.svg);
+	mask-size: contain !important;
 	width: 0.2in !important;
 	cursor: pointer;
 }
 .svg-x {
 	mask: url(./icons/x.svg);
+	mask-size: contain !important;
 }
 .svg-update {
 	mask: url(./icons/update.svg);
@@ -1006,22 +1029,28 @@ textarea {
 	width: 24px !important;
 	height: 24px !important;
 	margin-right: 0 !important;
+	mask-size: contain !important;
 }
 .svg-frmessage {
 	mask: url(./icons/frmessage.svg);
+	mask-size: contain !important;
 }
 .svg-addfriend {
 	mask: url(./icons/addfriend.svg);
+	mask-size: contain !important;
 }
 
 .svg-channelnsfw {
 	mask: url(./icons/channelnsfw.svg);
+	mask-size: contain !important;
 }
 .svg-announcensfw {
 	mask: url(./icons/announcensfw.svg);
+	mask-size: contain !important;
 }
 .svg-voicensfw {
 	mask: url(./icons/voicensfw.svg);
+	mask-size: contain !important;
 }
 
 .svgicon {
