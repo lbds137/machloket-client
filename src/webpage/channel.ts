@@ -2011,7 +2011,7 @@ class Channel extends SnowFlake {
 			this.lastmessageid = undefined;
 			this.lastreadmessageid = undefined;
 		}
-		this.slowmode();
+		await this.slowmode();
 	}
 	delChannel(json: channeljson) {
 		const build: Channel[] = [];

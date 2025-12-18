@@ -4162,6 +4162,7 @@ fieldset input[type="radio"] {
 	padding: 0.075in;
 	box-sizing: border-box;
 	pointer-events: none;
+	z-index: 10000000;
 }
 @keyframes goout {
 	0%,

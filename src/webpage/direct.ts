@@ -172,7 +172,6 @@ class Direct extends Guild {
 			return div;
 		}
 		{
-			//TODO update on users coming online
 			const online = document.createElement("button");
 			online.textContent = I18n.friends.online();
 			channelTopic.append(online);
@@ -572,7 +571,6 @@ class Group extends Channel {
 		this.updatePosition();
 	}
 	updatePosition(time?: number) {
-		//TODO see if fake messages break this
 		if (time) {
 			this.position = time;
 		} else if (this.lastmessage) {

@@ -1586,14 +1586,14 @@ class Guild extends SnowFlake {
 
 		const full = new Dialog("");
 		full.options.addTitle(I18n.guild.confirmDelete(this.properties.name));
-		full.options.addTextInput(I18n.guild.serverName(), () => {}).onchange = (e) =>
-			(confirmname = e);
+		const form = full.options.addForm("", () => {}, {submitText: ""});
+		const txt = form.addTextInput(I18n.guild.serverName(), "");
+		txt.onchange = (e) => (confirmname = e);
 
-		const options = full.options.addOptions("", {ltr: true});
+		const options = form.addOptions("", {ltr: true});
 		options.addButtonInput("", I18n.guild.yesDelete(), () => {
 			if (confirmname !== this.properties.name) {
-				//TODO maybe some sort of form error? idk
-				alert("names don't match");
+				form.handleError(new FormError(txt, I18n.guild.nameNoMatch()));
 				return;
 			}
 			this.delete().then((_) => {

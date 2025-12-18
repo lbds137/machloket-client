@@ -363,6 +363,7 @@
 			"changePerms":"Change Permissions to find",
 			"owner":"Find the owner","ownName":"Owner"
 		},
+		"nameNoMatch":"Names don't match",
 		"viewTemplate": "View Template",
 		"createFromTemplate": "Guild From Template",
 		"tempUseCount": "Template has been used $1 {{PLURAL:$1|time|times}}",

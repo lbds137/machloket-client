@@ -1865,12 +1865,22 @@ class Form implements OptionsElement<object> {
 	addTitle(str: string) {
 		this.options.addTitle(str);
 	}
+	handleError(error: FormError) {
+		this.onFormError(error);
+		const elm = this.options.html.get(error.elem);
+		if (elm) {
+			const html = elm.deref();
+			if (html) {
+				this.makeError(html, error.message);
+			}
+		}
+	}
 	button!: WeakRef<HTMLButtonElement>;
 	generateHTML(): HTMLElement {
 		const div = document.createElement("div");
 		div.append(this.options.generateHTML());
 		div.classList.add("FormSettings");
-		if (!this.traditionalSubmit) {
+		if (!this.traditionalSubmit && this.submitText) {
 			const button = document.createElement("button");
 			button.onclick = (_) => {
 				this.submit();
@@ -1914,14 +1924,7 @@ class Form implements OptionsElement<object> {
 					(build as any)[key] = thing();
 				} catch (e: any) {
 					if (e instanceof FormError) {
-						this.onFormError(e);
-						const elm = this.options.html.get(e.elem);
-						if (elm) {
-							const html = elm.deref();
-							if (html) {
-								this.makeError(html, e.message);
-							}
-						}
+						this.handleError(e);
 					}
 					return;
 				}
@@ -1979,14 +1982,7 @@ class Form implements OptionsElement<object> {
 			this.preprocessor(build);
 		} catch (e) {
 			if (e instanceof FormError) {
-				this.onFormError(e);
-				const elm = this.options.html.get(e.elem);
-				if (elm) {
-					const html = elm.deref();
-					if (html) {
-						this.makeError(html, e.message);
-					}
-				}
+				this.handleError(e);
 			}
 			return;
 		}
@@ -1997,14 +1993,7 @@ class Form implements OptionsElement<object> {
 				} catch (e) {
 					console.error(e);
 					if (e instanceof FormError) {
-						this.onFormError(e);
-						const elm = this.options.html.get(e.elem);
-						if (elm) {
-							const html = elm.deref();
-							if (html) {
-								this.makeError(html, e.message);
-							}
-						}
+						this.handleError(e);
 					}
 					return;
 				}
@@ -2049,20 +2038,14 @@ class Form implements OptionsElement<object> {
 				await this.onSubmit(build, build);
 			} catch (e) {
 				if (e instanceof FormError) {
-					this.onFormError(e);
-					const elm = this.options.html.get(e.elem);
-					if (elm) {
-						const html = elm.deref();
-						if (html) {
-							this.makeError(html, e.message);
-						}
-					}
+					this.handleError(e);
 				}
 				return;
 			}
 		}
 		console.warn("needs to be implemented");
 	}
+
 	errors(errors: {
 		code: number;
 		message: string;
