@@ -2747,10 +2747,12 @@ class Localuser {
 					}
 					let in1 = "";
 					let in2 = "";
-					form.addTextInput(I18n.localuser["newPassword:"](), "").watchForChange((text) => {
-						in1 = text;
-					});
-					const copy = form.addTextInput("New password again:", "");
+					form
+						.addTextInput(I18n.localuser["newPassword:"](), "", {password: true})
+						.watchForChange((text) => {
+							in1 = text;
+						});
+					const copy = form.addTextInput("New password again:", "", {password: true});
 					copy.watchForChange((text) => {
 						in2 = text;
 					});
