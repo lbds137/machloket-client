@@ -196,31 +196,34 @@ self.addEventListener("fetch", async (e) => {
 	const port = rMap.get(host || "");
 	if (port) {
 		const url = new URL(event.request.url);
-		const expired =
-			url.searchParams.get("ex") &&
-			Number.parseInt(url.searchParams.get("ex") || "", 16) < Date.now() - 5000;
-		event.respondWith(
-			new Promise(async (res) => {
-				const cached = await getFromCache(url);
-				if (cached) {
-					res(cached);
-					return;
-				}
-				if (expired) {
-					const old = url;
-					const p = Date.now();
-					req = await Promise.race<Request>([
-						new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
-						new Promise((res) => setTimeout(() => res(req), 5000)),
-					]);
-					console.log(p - Date.now(), old === url);
-				}
-				const f = await fetch(req);
-				res(f);
-				putInCache(url, f.clone());
-			}),
-		);
-		return;
+		const ignore = ["/api", "/_spacebar"].find((_) => url.pathname.startsWith(_));
+		if (!ignore) {
+			const expired =
+				url.searchParams.get("ex") &&
+				Number.parseInt(url.searchParams.get("ex") || "", 16) < Date.now() - 5000;
+			event.respondWith(
+				new Promise(async (res) => {
+					const cached = await getFromCache(url);
+					if (cached) {
+						res(cached);
+						return;
+					}
+					if (expired) {
+						const old = url;
+						const p = Date.now();
+						req = await Promise.race<Request>([
+							new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
+							new Promise((res) => setTimeout(() => res(req), 5000)),
+						]);
+						console.log(p - Date.now(), old === url);
+					}
+					const f = await fetch(req);
+					res(f);
+					putInCache(url, f.clone());
+				}),
+			);
+			return;
+		}
 	}
 
 	if (apiHosts?.has(host || "")) {
