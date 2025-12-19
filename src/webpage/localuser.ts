@@ -70,6 +70,9 @@ class Localuser {
 	guilds!: Guild[];
 	guildids: Map<string, Guild> = new Map();
 	user!: User;
+	idToPrev: Map<string, string | undefined> = new Map();
+	idToNext: Map<string, string | undefined> = new Map();
+	messages: Map<string, Message> = new Map();
 	get status() {
 		return this.user.status;
 	}

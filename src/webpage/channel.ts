@@ -60,9 +60,9 @@ class Channel extends SnowFlake {
 	static contextmenu = new Contextmenu<Channel, undefined>("channel menu");
 	replyingto!: Message | null;
 	infinite!: InfiniteScroller;
-	idToPrev: Map<string, string | undefined> = new Map();
-	idToNext: Map<string, string | undefined> = new Map();
-	messages: Map<string, Message> = new Map();
+	idToPrev: Map<string, string | undefined>;
+	idToNext: Map<string, string | undefined>;
+	messages: Map<string, Message>;
 	voice?: Voice;
 	bitrate: number = 128000;
 
@@ -489,6 +489,9 @@ class Channel extends SnowFlake {
 	last_pin_timestamp?: string;
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
+		this.idToNext = owner.localuser.idToNext;
+		this.idToPrev = owner.localuser.idToPrev;
+		this.messages = owner.localuser.messages;
 
 		this.owner = owner;
 		this.headers = this.owner.headers;
