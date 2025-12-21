@@ -65,6 +65,7 @@ User-Agent: *
 DisallowAITraining: /
 Content-Usage: ai=n
 Disallow: /channel/
+Disallow: /app
 Allow: /invite/
 Allow: /oauth2/
 Allow: /login
