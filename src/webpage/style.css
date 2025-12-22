@@ -482,6 +482,15 @@ pre,
 form {
 	margin: 0;
 }
+#inviteBanner {
+	img {
+		height: 30vh;
+		width: 80vw;
+		object-fit: cover;
+		margin: -24px;
+		margin-bottom: 0px;
+	}
+}
 h2:empty {
 	display: none;
 }
@@ -1446,7 +1455,13 @@ span.instanceStatus {
 	flex-direction: column;
 	align-items: center;
 	gap: 8px;
+	box-shadow: 1px 1px 15px 0px black;
+
+	&.moreShadow {
+		box-shadow: 1px 1px 20px 10px black;
+	}
 }
+
 .inviteGuild {
 	height: 64px;
 	width: 64px;
@@ -4573,4 +4588,9 @@ img.error::after {
 		flex-shrink: 0;
 	}
 }
-
+.inviteBG {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}

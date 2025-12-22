@@ -1,6 +1,6 @@
 import {I18n} from "./i18n.js";
 import {AccountSwitcher} from "./utils/switcher.js";
-import {getapiurls} from "./utils/utils.js";
+import {createImg, getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 
 (async () => {
@@ -59,6 +59,18 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 				json.inviter.username,
 				guildjson.name,
 			);
+			if (guildjson.discovery_splash) {
+				const img = createImg(
+					`${urls!.cdn}/banners/${guildjson.id}/${guildjson.discovery_splash}.png`,
+				);
+				img.classList.add("inviteBG");
+				document.body.prepend(img);
+				document.getElementById("invitebody")?.classList.add("moreShadow");
+			}
+			if (guildjson.banner) {
+				const img = createImg(`${urls!.cdn}/banners/${guildjson.id}/${guildjson.banner}.png`);
+				document.getElementById("inviteBanner")!.append(img);
+			}
 			if (guildjson.icon) {
 				const img = document.createElement("img");
 				img.src = `${urls!.cdn}/icons/${guildjson.id}/${guildjson.icon}.png`;
