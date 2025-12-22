@@ -490,7 +490,6 @@
 		"customSound": "Aangepast geluid",
 		"soundTooLarge": "Het geluid dat je probeerde te uploaden was te groot. Probeer het nog eens.",
 		"accentColor": "Accentkleur:",
-		"enableEVoice": "Experimentele spraakondersteuning inschakelen",
 		"VoiceWarning": "Weet je zeker dat je dit wilt inschakelen? Het is erg experimenteel en kan problemen opleveren. (Deze functie is er voor ontwikkelaars. Blijf er liever van af als je niet weet wat je doet.)",
 		"updateSettings": "Instellingen bijwerken",
 		"swSettings": "Service Worker-instelling",

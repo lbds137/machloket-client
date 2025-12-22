@@ -233,7 +233,6 @@
 		"theme:": "Tema",
 		"notisound": "Pranešimo garsas:",
 		"accentColor": "Akcento spalva:",
-		"enableEVoice": "Įgalinti eksperimentinį balso palaikymą",
 		"VoiceWarning": "Ar tikrai norite tai įjungti, tai eksperimentinė versija ir gali sukelti problemų. (ši funkcija skirta kūrėjams, neįjunkite, jei nežinote, ką darote)",
 		"updateSettings": "Atnaujinti nustatymus",
 		"swSettings": "Paslaugos darbuotojo nustatymas",

@@ -367,7 +367,6 @@
 		"customSound": "Dźwięk niestandardowy",
 		"soundTooLarge": "Dźwięk, który próbowałeś przesłać, był za duży, spróbuj ponownie",
 		"accentColor": "Kolor akcentowy:",
-		"enableEVoice": "Włącz eksperymentalną obsługę głosu",
 		"VoiceWarning": "Czy na pewno chcesz to włączyć? Ta funkcja jest bardzo eksperymentalna i może spowodować problemy. (ta funkcja jest przeznaczona dla programistów, nie włączaj jej, jeśli nie wiesz, co robisz)",
 		"updateSettings": "Ustawienia aktualizacji",
 		"swSettings": "Ustawienia Service Workera",

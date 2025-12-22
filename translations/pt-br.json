@@ -510,7 +510,6 @@
 		"customSound": "Som Customizado",
 		"soundTooLarge": "O som que você tentou enviar é grande demais, tente novamente",
 		"accentColor": "Cor de destaque:",
-		"enableEVoice": "Habilitar suporte a Voz experimental",
 		"VoiceWarning": "Você tem certeza que quer habilitar isto? É bem experimental e pode causar problemas. (esta função é somente para desenvolvedores, não a ative se não sabe o que está fazendo)",
 		"updateSettings": "Configurações de atualização",
 		"swSettings": "Configuração do Trabalhador de Serviço",

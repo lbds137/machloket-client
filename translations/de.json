@@ -385,7 +385,6 @@
 		"customSound": "Benutzerdefinierter Sound",
 		"soundTooLarge": "Die hochgeladene Sound-Datei war zu groß. Versuche es erneut.",
 		"accentColor": "Akzentfarbe:",
-		"enableEVoice": "Experimentelle Sprachunterstützung aktivieren",
 		"VoiceWarning": "Diese Funktion wirklich aktivieren? Sie ist sehr experimentell und verursacht wahrscheinlich Probleme. (Diese Funktion ist für Entwickler. Bitte nicht aktivieren, wenn Du nicht weißt, was Du tust.)",
 		"updateSettings": "Update-Einstellungen",
 		"swSettings": "Service-Worker-Einstellung",

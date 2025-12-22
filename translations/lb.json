@@ -354,6 +354,11 @@
 		"404": "404 Säit net fonnt",
 		"blog": "De Fermi-Blog"
 	},
+	"deviceManage": {
+		"country": "Land: $1",
+		"region": "Regioun: $1",
+		"continent": "Kontinent: $1"
+	},
 	"uploadFilesText": "Lued Är Fichieren hei erop!",
 	"bot": "BOT"
 }

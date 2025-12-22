@@ -511,7 +511,6 @@
 		"customSound": "Âm thanh tùy chỉnh",
 		"soundTooLarge": "Tệp âm thanh bạn vừa tải lên có dung lượng quá lớn, vui lòng thử lại.",
 		"accentColor": "Màu nhấn:",
-		"enableEVoice": "Bật hỗ trợ giọng nói thử nghiệm",
 		"VoiceWarning": "Bạn có chắc chắn muốn bật tính năng này không? Đây là tính năng thử nghiệm và có thể gây ra sự cố. (Tính năng này dành cho nhà phát triển, vui lòng không bật nếu bạn không biết mình đang làm gì)",
 		"updateSettings": "Cập nhật tùy chọn",
 		"swSettings": "Cài đặt nhân viên phục vụ",

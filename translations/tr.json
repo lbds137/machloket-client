@@ -391,7 +391,6 @@
 		"customSound": "Özel Ses",
 		"soundTooLarge": "Yüklemeye çalıştığınız ses çok büyük, tekrar deneyin",
 		"accentColor": "Vurgu rengi:",
-		"enableEVoice": "Deneysel Ses desteğini etkinleştir",
 		"VoiceWarning": "Bunu etkinleştirmek istediğinizden emin misiniz, bu çok deneysel ve sorunlara neden olabilir. (bu özellik geliştiriciler içindir, ne yaptığınızı bilmiyorsanız lütfen etkinleştirmeyin)",
 		"updateSettings": "Ayarları Güncelle",
 		"swSettings": "Servis Çalışanı ayarı",

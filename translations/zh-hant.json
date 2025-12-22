@@ -352,6 +352,7 @@
 	"edit": "編輯",
 	"discovery": "探索",
 	"guild": {
+		"unknownRole": "@不明角色",
 		"memberCount": "$1 個{{PLURAL:$1|成員}}",
 		"joinConfirm": "加入$1？",
 		"guilds": "公會",
@@ -364,6 +365,7 @@
 			"owner": "尋找擁有者",
 			"ownName": "擁有者"
 		},
+		"nameNoMatch": "名稱不符",
 		"viewTemplate": "查看模板",
 		"createFromTemplate": "公會模板",
 		"tempUseCount": "模板已使用 $1 {{PLURAL:$1|次}}",
@@ -511,7 +513,6 @@
 		"customSound": "自訂音效",
 		"soundTooLarge": "您嘗試上傳的音效太大，請重試",
 		"accentColor": "強調色彩：",
-		"enableEVoice": "啟用實驗性語音支援功能",
 		"VoiceWarning": "您確定要啟用這個功能嗎？這是非常實驗性的，可能會引發問題。（此功能僅供開發者使用，如果您不確定操作，請不要啟用。）",
 		"updateSettings": "更新設定",
 		"swSettings": "Service Worker 設定",

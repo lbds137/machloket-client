@@ -429,7 +429,6 @@
 		"customSound": "Son personnalisé",
 		"soundTooLarge": "Le son que vous avez essayé de télécharger était trop volumineux, réessayez",
 		"accentColor": "Couleur d'accentuation :",
-		"enableEVoice": "Activer la prise en charge vocale expérimentale",
 		"VoiceWarning": "Etes-vous sûr de vouloir activer cela ? C'est très expérimental et est susceptible de causer des problèmes (cette fonctionnalité est destinée aux développeurs, veuillez ne pas l'activer si vous ne savez pas ce que vous faites)",
 		"updateSettings": "Mettre à jour les paramètres",
 		"swSettings": "Paramètre Service Worker",
