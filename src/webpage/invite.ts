@@ -52,6 +52,12 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 	})
 		.then((response) => response.json())
 		.then((json) => {
+			if (json.code === 404) {
+				document.getElementById("AcceptInvite")?.remove();
+				document.getElementById("invitename")!.textContent = I18n.invite.notFound();
+				document.getElementById("invitedescription")!.textContent = "";
+				return;
+			}
 			const guildjson = json.guild;
 			guildinfo = guildjson;
 			document.getElementById("invitename")!.textContent = guildjson.name;

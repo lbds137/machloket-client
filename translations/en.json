@@ -667,7 +667,8 @@
 		"createdAt": "Created at $1",
 		"expires": "Expires: $1",
 		"never": "Never",
-		"maxUses": "Max uses: $1"
+		"maxUses": "Max uses: $1",
+		"notFound":"Invite could not be found"
 	},
 	"friends": {
 		"blocked": "Blocked",
