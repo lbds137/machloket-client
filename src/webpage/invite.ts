@@ -67,7 +67,7 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 			);
 			if (guildjson.discovery_splash) {
 				const img = createImg(
-					`${urls!.cdn}/banners/${guildjson.id}/${guildjson.discovery_splash}.png`,
+					`${urls!.cdn}/discovery-splashes/${guildjson.id}/${guildjson.discovery_splash}.png`,
 				);
 				img.classList.add("inviteBG");
 				document.body.prepend(img);
