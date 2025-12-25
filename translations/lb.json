@@ -357,6 +357,7 @@
 	"deviceManage": {
 		"country": "Land: $1",
 		"region": "Regioun: $1",
+		"city": "Stad: $1",
 		"continent": "Kontinent: $1"
 	},
 	"uploadFilesText": "Lued Är Fichieren hei erop!",

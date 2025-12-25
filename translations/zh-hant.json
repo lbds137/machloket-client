@@ -668,7 +668,8 @@
 		"createdAt": "建立於 $1",
 		"expires": "期限：$1",
 		"never": "永不",
-		"maxUses": "最多：$1"
+		"maxUses": "最多：$1",
+		"notFound": "找不到邀請"
 	},
 	"friends": {
 		"blocked": "已封鎖",
