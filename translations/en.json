@@ -427,7 +427,8 @@
 		"howJoin": "How can people join your guild?",
 		"COMMUNITY": "Apply to join",
 		"INVITES_DISABLED": "Invite only",
-		"DISCOVERABLE": "Discovery"
+		"DISCOVERABLE": "Discovery",
+		"splash":"Discovery splash:"
 	},
 	"welcomeMessages": "Welcome $1! Nice to see ya!\nHello, nice to meet you $1!\nWelcome, hope you brought pizza $1!",
 	"createAccount":"Create Account",

@@ -580,11 +580,20 @@ class Guild extends SnowFlake {
 					: "",
 				objectFit: "cover",
 			});
+
 			form.addImageInput(I18n.guild["icon:"](), "icon", {
 				clear: true,
 				initImg: this.properties.icon
 					? this.info.cdn + "/icons/" + this.id + "/" + this.properties.icon + ".png"
 					: "",
+			});
+
+			form.addImageInput(I18n.guild.splash(), "discovery_splash", {
+				clear: true,
+				initImg: this.properties.discovery_splash
+					? `${this.info.cdn}/discovery-splashes/${this.id}/${this.properties.discovery_splash}.png`
+					: "",
+				width: 96 * 2,
 			});
 
 			form.addHR();
