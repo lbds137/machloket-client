@@ -430,7 +430,7 @@ export async function getapiurls(str: string): Promise<
 	| false
 > {
 	function appendApi(str: string) {
-		return str.includes("api") ? "" : str.endsWith("/") ? "api" : "/api";
+		return str.includes("api") ? str : str.endsWith("/") ? str + "api" : str + "/api";
 	}
 	if (!URL.canParse(str)) {
 		const val = stringURLMap.get(str);
@@ -534,11 +534,11 @@ export async function getapiurls(str: string): Promise<
 		).then((x) => x.json());
 		const apiurl = new URL(info.apiEndpoint);
 		urls = {
-			api: info.apiEndpoint + appendApi(apiurl.pathname),
+			api: apiurl.origin + appendApi(apiurl.pathname),
 			gateway: info.gateway,
 			cdn: info.cdn,
 			wellknown: str,
-			login: info.apiEndpoint + appendApi(apiurl.pathname),
+			login: apiurl.origin + appendApi(apiurl.pathname),
 		};
 		fixApi();
 	} catch {
