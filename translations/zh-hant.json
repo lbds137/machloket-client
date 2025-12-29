@@ -428,7 +428,8 @@
 		"howJoin": "其他人如何加入您的公會？",
 		"COMMUNITY": "申請加入",
 		"INVITES_DISABLED": "僅邀請",
-		"DISCOVERABLE": "發現"
+		"DISCOVERABLE": "發現",
+		"splash": "發現亮點："
 	},
 	"welcomeMessages": "歡迎，$1！很高興看到您！\n您好，很高興見到您，$1！\n歡迎，希望您有帶了些披薩，$1！",
 	"createAccount": "建立帳號",
@@ -668,7 +669,8 @@
 		"createdAt": "建立於 $1",
 		"expires": "期限：$1",
 		"never": "永不",
-		"maxUses": "最多：$1"
+		"maxUses": "最多：$1",
+		"notFound": "找不到邀請"
 	},
 	"friends": {
 		"blocked": "已封鎖",
