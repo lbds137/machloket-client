@@ -285,7 +285,16 @@
 	"switchAccounts": "Cangé 'd cont ⇌",
 	"accountNotStart": "Impossìbil anviaré ël cont",
 	"home": {
-		"uptimeStats": "Temp ëd disponibilità: \n Tut ël temp: $1%\nSta sman-a: $2%\nAncheuj: $3%"
+		"uptimeStats": "Temp ëd disponibilità: \n Tut ël temp: $1%\nSta sman-a: $2%\nAncheuj: $3%",
+		"warnOffiline": "L'istansa a l'é fòra 'd linia, impossìbil coleghesse",
+		"icon": "Plancia dl'istansa ëd $1"
+	},
+	"devSettings": {
+		"name": "Gust dël dësvlupador",
+		"badUser": "Conession abilità për j'oget dij cativ utent ch'a mando tròpe anformassion:"
+	},
+	"htmlPages": {
+		"idpermissions": "Sòn a përmëttra al trigomiro ëd:"
 	},
 	"blog": {
 		"blog": "Scartari",
