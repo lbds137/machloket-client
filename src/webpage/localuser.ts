@@ -2493,13 +2493,13 @@ class Localuser {
 			const sw = update.addSelect(
 				I18n.localuser.swSettings(),
 				() => {},
-				(["SWOff", "SWOffline", "SWOn"] as const).map((e) => I18n.localuser[e]()),
+				(["SWOff", "SWOffline", "SWOn", "SWUnregistered"] as const).map((e) => I18n.localuser[e]()),
 				{
 					defaultIndex: index,
 				},
 			);
 			sw.onchange = (e) => {
-				SW.setMode((["false", "offlineOnly", "true"] as const)[e]);
+				SW.setMode((["false", "offlineOnly", "true", "unregistered"] as const)[e]);
 			};
 			update.addButtonInput("", I18n.localuser.CheckUpdate(), async () => {
 				const update = await SW.checkUpdates();

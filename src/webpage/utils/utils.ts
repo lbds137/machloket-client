@@ -986,6 +986,9 @@ export class SW {
 	}
 	static async start() {
 		if (!("serviceWorker" in navigator)) return;
+
+		// If it's registered, it handles CDN caching regardless of settings.
+		if(localStorage.getItem("SWMode") === "unregistered") return;
 		return new Promise<void>((res) => {
 			navigator.serviceWorker
 				.register("/service.js", {
@@ -1016,7 +1019,7 @@ export class SW {
 				});
 		});
 	}
-	static setMode(mode: "false" | "offlineOnly" | "true") {
+	static setMode(mode: "false" | "offlineOnly" | "true" | "unregistered") {
 		localStorage.setItem("SWMode", mode);
 		if (this.worker) {
 			this.worker.postMessage({data: mode, code: "setMode"});

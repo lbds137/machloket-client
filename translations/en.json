@@ -516,6 +516,7 @@
 		"VoiceWarning": "Are you sure you want to enable this? It's very experimental and is likely to cause issues. (this feature is for devs, please don't enable if you don't know what you're doing)",
 		"updateSettings": "Update Settings",
 		"swSettings": "Service Worker setting",
+		"SWUnregistered": "Off (including media cache)",
 		"SWOff": "Off",
 		"SWOffline": "Offline only",
 		"SWOn": "On",
