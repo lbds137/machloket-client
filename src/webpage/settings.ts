@@ -1077,7 +1077,7 @@ class Options implements OptionsElement<void> {
 		const container = this.container.deref();
 		if (container) {
 			if (this.isTop()) {
-				this.generateContainter();
+				this.generateContainer();
 			} else if (this.owner instanceof Options) {
 				this.owner.genTop();
 			} else {
@@ -1318,7 +1318,7 @@ class Options implements OptionsElement<void> {
 		const container = document.createElement("div");
 		this.container = new WeakRef(container);
 		container.classList.add(this.ltr ? "flexltr" : "flexttb", "flexspace");
-		this.generateContainter();
+		this.generateContainer();
 		div.append(container);
 		return div;
 	}
@@ -1368,7 +1368,7 @@ class Options implements OptionsElement<void> {
 			this.owner instanceof Float
 		);
 	}
-	generateContainter() {
+	generateContainer() {
 		const container = this.container.deref();
 		if (container) {
 			container.innerHTML = "";
@@ -1711,8 +1711,8 @@ class Form implements OptionsElement<object> {
 			traditionalSubmit,
 		});
 	}
-	generateContainter() {
-		this.options.generateContainter();
+	generateContainer() {
+		this.options.generateContainer();
 		if (this.options.isTop() && this.button && this.button.deref()) {
 			(this.button.deref() as HTMLElement).hidden = false;
 		}
