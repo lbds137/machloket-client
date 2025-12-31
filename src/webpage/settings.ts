@@ -1245,7 +1245,7 @@ class Options implements OptionsElement<void> {
 		return text;
 	}
 	addHR() {
-		const rule = new HorrizonalRule();
+		const rule = new HorizontalRule();
 		this.options.push(rule);
 		this.generate(rule);
 		return rule;
@@ -2098,7 +2098,7 @@ class Form implements OptionsElement<object> {
 		element.textContent = message;
 	}
 }
-class HorrizonalRule implements OptionsElement<unknown> {
+class HorizontalRule implements OptionsElement<unknown> {
 	constructor() {}
 	generateHTML(): HTMLElement {
 		return document.createElement("hr");
