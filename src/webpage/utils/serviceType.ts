@@ -12,6 +12,9 @@ export type messageTo =
 			code: "CheckUpdate";
 	  }
 	| {
+			code: "clearCdnCache";
+	  }
+	| {
 			code: "isValid";
 			url: string;
 	  }

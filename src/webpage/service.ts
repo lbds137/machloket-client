@@ -343,6 +343,9 @@ self.addEventListener("message", (message) => {
 		case "ForceClear":
 			deleteoldcache();
 			break;
+		case "clearCdnCache":
+			caches.delete("cdn");
+			break;
 		case "port": {
 			const port = data.port as MessagePort;
 			ports.add(port);
