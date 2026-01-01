@@ -291,7 +291,9 @@
 	},
 	"devSettings": {
 		"name": "Gust dël dësvlupador",
-		"badUser": "Conession abilità për j'oget dij cativ utent ch'a mando tròpe anformassion:"
+		"description": "Costi a son për ij dësvlupador ëd Spacebar e Fermi. S'a sa nen lòn ch'a fa, për piasì ch'a fasa pa dij paciòch con costi paràmeter.",
+		"badUser": "Conession abilità për j'oget dij cativ utent ch'a mando tròpe anformassion:",
+		"logGateway": "L'argistr a l'ha arseivù dj'eveniment ëd passarela (anformassion an sël livel ëd l'argistr):"
 	},
 	"htmlPages": {
 		"idpermissions": "Sòn a përmëttra al trigomiro ëd:"
