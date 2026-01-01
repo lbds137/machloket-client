@@ -97,7 +97,7 @@ menu.addButton(
 			thisUser.lookingguild.createchannels();
 		}
 	},
-	{visable: () => thisUser.isAdmin()},
+	{visible: () => thisUser.isAdmin()},
 );
 
 menu.addButton(
@@ -107,7 +107,7 @@ menu.addButton(
 			thisUser.lookingguild.createcategory();
 		}
 	},
-	{visable: () => thisUser.isAdmin()},
+	{visible: () => thisUser.isAdmin()},
 );
 const channelw = document.getElementById("channelw");
 console.log(channelw);

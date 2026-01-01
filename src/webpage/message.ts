@@ -77,7 +77,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-reply",
 				},
-				visable: function () {
+				visible: function () {
 					return !this.ephemeral && this.channel.hasPermission("SEND_MESSAGES");
 				},
 			},
@@ -89,7 +89,7 @@ class Message extends SnowFlake {
 				this.setEdit();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.author.id === this.localuser.user.id && editTypes.has(this.type);
 				},
 
@@ -110,7 +110,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-emoji",
 				},
-				visable: function () {
+				visible: function () {
 					return this.channel.hasPermission("ADD_REACTIONS");
 				},
 			},
@@ -121,7 +121,7 @@ class Message extends SnowFlake {
 				this.viewReactions();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return !!this.reactions.length;
 				},
 			},
@@ -163,7 +163,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-pin",
 				},
-				visable: function () {
+				visible: function () {
 					if (this.pinned) return false;
 					if (this.channel.guild.id === "@me") return true;
 					return this.channel.hasPermission("MANAGE_MESSAGES");
@@ -184,7 +184,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-pin",
 				},
-				visable: function () {
+				visible: function () {
 					if (!this.pinned) return false;
 					if (this.channel.guild.id === "@me") return true;
 					return this.channel.hasPermission("MANAGE_MESSAGES");
@@ -206,7 +206,7 @@ class Message extends SnowFlake {
 				this.confirmDelete();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.canDelete();
 				},
 				icon: {
@@ -221,7 +221,7 @@ class Message extends SnowFlake {
 			() => I18n.usedFermi(),
 			() => {},
 			{
-				visable: function () {
+				visible: function () {
 					return !!this.nonce && this.nonce.length <= 9 && this.nonce.length !== 0;
 				},
 				enabled: () => false,
