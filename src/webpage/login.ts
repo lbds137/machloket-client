@@ -1,4 +1,4 @@
-import {instanceinfo, adduser, Specialuser} from "./utils/utils.js";
+import {InstanceInfo, adduser, Specialuser} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
 import {Dialog, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
@@ -15,7 +15,7 @@ function generateRecArea(recover = document.getElementById("recover")) {
 	}
 }
 const recMap = new Map<string, Promise<boolean>>();
-async function recover(e: instanceinfo, recover = document.getElementById("recover")) {
+async function recover(e: InstanceInfo, recover = document.getElementById("recover")) {
 	const prom = new Promise<boolean>(async (res) => {
 		if (!recover) {
 			res(false);
