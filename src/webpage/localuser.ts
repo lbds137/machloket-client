@@ -2246,6 +2246,8 @@ class Localuser {
 		};
 	}
 	async showusersettings() {
+		const prefs = await getPreferences();
+		const localSettings = getLocalSettings();
 		const settings = new Settings(I18n.localuser.settings());
 		{
 			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
@@ -2375,13 +2377,13 @@ class Localuser {
 				const themes = ["Dark", "WHITE", "Light", "Dark-Accent"];
 				tas.addSelect(
 					I18n.localuser["theme:"](),
-					(_) => {
-						localStorage.setItem("theme", themes[_]);
-						setTheme();
+					async (_) => {
+						prefs.theme = themes[_] as ThemeOption;
+						await setTheme();
 					},
 					themes,
 					{
-						defaultIndex: themes.indexOf(localStorage.getItem("theme") as string),
+						defaultIndex: themes.indexOf(prefs.theme),
 					},
 				);
 			}

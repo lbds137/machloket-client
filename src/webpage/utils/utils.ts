@@ -26,14 +26,10 @@ let instances:
 			};
 	  }[]
 	| null = null;
-setTheme();
-export function setTheme() {
-	let name = localStorage.getItem("theme");
-	if (!name) {
-		localStorage.setItem("theme", "Dark");
-		name = "Dark";
-	}
-	document.body.className = name + "-theme";
+await setTheme();
+export async function setTheme() {
+	const prefs = await getPreferences();
+	document.body.className = prefs.theme + "-theme";
 }
 export function getBulkUsers() {
 	const json = getBulkInfo();

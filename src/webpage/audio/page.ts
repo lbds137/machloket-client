@@ -2,7 +2,7 @@ import {BinWrite} from "../utils/binaryUtils.js";
 import {setTheme} from "../utils/utils.js";
 import {Play} from "./play.js";
 
-setTheme();
+await setTheme();
 const w = new BinWrite(2 ** 12);
 w.writeStringNo("jasf");
 w.write8(4);

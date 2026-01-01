@@ -304,7 +304,7 @@ document.addEventListener("paste", async (e: ClipboardEvent) => {
 	}
 });
 
-setTheme();
+await setTheme();
 
 function userSettings(): void {
 	thisUser.showusersettings();
