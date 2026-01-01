@@ -14,6 +14,7 @@ import {createImg, removeAni, safeImg} from "./utils/utils.js";
 import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
+import {getDeveloperSettings} from "./utils/storage/devSettings";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -45,7 +46,7 @@ class User extends SnowFlake {
 	constructor(userjson: userjson, owner: Localuser, dontclone: boolean = false) {
 		super(userjson.id);
 		this.owner = owner;
-		if (localStorage.getItem("logbad") && owner.user && owner.user.id !== userjson.id) {
+		if (getDeveloperSettings().logBannedFields && owner.user && owner.user.id !== userjson.id) {
 			this.checkfortmi(userjson);
 		}
 		if (!owner) {

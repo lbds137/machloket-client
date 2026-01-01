@@ -4,6 +4,9 @@ import {Dialog} from "../settings.js";
 import {fix} from "./cssMagic.js";
 import {messageFrom, messageTo} from "./serviceType.js";
 import {isLoopback, trimTrailingSlashes} from "./netUtils";
+import {getLocalSettings, ServiceWorkerMode, setLocalSettings} from "./storage/localSettings";
+import {getPreferences} from "./storage/userPreferences";
+import {getDeveloperSettings} from "./storage/devSettings";
 
 fix();
 const apiDoms = new Set<string>();
@@ -38,7 +41,7 @@ export function getBulkUsers() {
 		const user = (json.users[thing] = new Specialuser(json.users[thing]));
 		apiDoms.add(new URL(user.serverurls.api).host);
 	}
-	if (localStorage.getItem("capTrace")) {
+	if (getDeveloperSettings().interceptApiTraces) {
 		SW.postMessage({
 			code: "apiUrls",
 			hosts: [...apiDoms],
@@ -235,10 +238,6 @@ export class Specialuser {
 		info.users[this.uid] = this.toJSON();
 		localStorage.setItem("userinfos", JSON.stringify(info));
 	}
-}
-//this currently does not work, and need to be implemented better at some time.
-if (!localStorage.getItem("SWMode")) {
-	localStorage.setItem("SWMode", "SWOn");
 }
 export function trimswitcher() {
 	const json = getBulkInfo();
@@ -857,11 +856,10 @@ export {checkInstance};
 
 export class SW {
 	static worker: undefined | ServiceWorker;
+	static registration: ServiceWorkerRegistration;
 	static port?: MessagePort;
 	static init() {
-		SW.setMode(
-			(localStorage.getItem("SWMode") as "false" | "offlineOnly" | "true" | undefined) || "true",
-		);
+		SW.setMode(getLocalSettings().serviceWorkerMode);
 		const port = new MessageChannel();
 		SW.worker?.postMessage(
 			{
@@ -879,7 +877,7 @@ export class SW {
 			port.port1.close();
 		});
 		this.postMessage({code: "ping"});
-		this.postMessage({code: "isDev", dev: !!localStorage.getItem("isDev")});
+		this.postMessage({code: "isDev", dev: getDeveloperSettings().cacheSourceMaps});
 		this.captureEvent("updates", (update, stop) => {
 			this.needsUpdate ||= update.updates;
 			if (update) {
@@ -984,7 +982,7 @@ export class SW {
 		if (!("serviceWorker" in navigator)) return;
 
 		// If it's registered, it handles CDN caching regardless of settings.
-		if(localStorage.getItem("SWMode") === "unregistered") return;
+		if (getLocalSettings().serviceWorkerMode == ServiceWorkerMode.Unregistered) return;
 		return new Promise<void>((res) => {
 			navigator.serviceWorker
 				.register("/service.js", {
@@ -994,32 +992,37 @@ export class SW {
 					let serviceWorker: ServiceWorker | undefined;
 					if (registration.installing) {
 						serviceWorker = registration.installing;
-						console.log("installing");
+						console.log("Service worker: installing");
 					} else if (registration.waiting) {
 						serviceWorker = registration.waiting;
-						console.log("waiting");
+						console.log("Service worker: waiting");
 					} else if (registration.active) {
 						serviceWorker = registration.active;
-						console.log("active");
+						console.log("Service worker: active");
 					}
 					SW.worker = serviceWorker;
+					SW.registration = registration;
 					SW.init();
 
 					if (serviceWorker) {
-						console.log(serviceWorker.state);
+						console.log("Service worker state changed:", serviceWorker.state);
 						serviceWorker.addEventListener("statechange", (_) => {
-							console.log(serviceWorker.state);
+							console.log("Service worker state changed:", serviceWorker.state);
 						});
 						res();
 					}
 				});
 		});
 	}
-	static setMode(mode: "false" | "offlineOnly" | "true" | "unregistered") {
-		localStorage.setItem("SWMode", mode);
+	static setMode(mode: ServiceWorkerMode) {
+		const localSettings = getLocalSettings();
+		localSettings.serviceWorkerMode = mode;
+		setLocalSettings(localSettings);
 		if (this.worker) {
 			this.worker.postMessage({data: mode, code: "setMode"});
 		}
+
+		if (mode === ServiceWorkerMode.Unregistered) this.registration.unregister().then(r => console.log("Service worker unregistered:", r));
 	}
 
 	static forceClear() {
