@@ -16,6 +16,7 @@ import {Hover} from "./hover.js";
 import {Dialog} from "./settings.js";
 import {Sticker} from "./sticker.js";
 import {Components} from "./interactions/compontents.js";
+import {ImagesDisplay} from "./disimg";
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];
@@ -939,6 +940,42 @@ class Message extends SnowFlake {
 			const firstspan = document.createElement("span");
 			firstspan.textContent = first;
 			text.appendChild(firstspan);
+
+			// TODO: settings how?
+			if (true) {
+				const img = document.createElement("img");
+				img.classList.add("avatar");
+				img.style.height = "1em";
+				img.style.width = "1em";
+				img.style.objectFit = "cover";
+				img.src = this.author.getpfpsrc(this.guild) + "?size=1";
+				img.loading = "lazy";
+				img.decoding = "async";
+				img.addEventListener(
+					"load",
+					() => {
+						img.src = this.author.getpfpsrc(this.guild) + "?size=" + firstspan.clientHeight;
+					},
+					{once: true},
+				);
+				img.onclick = () => {
+					const full = new ImagesDisplay([
+						new File(
+							{
+								content_type: "image/webp",
+								filename: "0",
+								id: "0",
+								size: 0,
+								url: this.author.getpfpsrc(this.guild),
+							},
+							this,
+						),
+					]);
+					full.show();
+				};
+
+				text.appendChild(img);
+			}
 
 			const username = document.createElement("span");
 			username.textContent = this.author.name;
