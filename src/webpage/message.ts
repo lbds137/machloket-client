@@ -942,7 +942,7 @@ class Message extends SnowFlake {
 			text.appendChild(firstspan);
 
 			// TODO: settings how?
-			if (true) {
+			if (false) {
 				const img = document.createElement("img");
 				img.classList.add("avatar");
 				img.style.height = "1em";
