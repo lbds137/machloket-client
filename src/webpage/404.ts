@@ -1,7 +1,7 @@
 import {I18n} from "./i18n";
 import {setTheme, SW} from "./utils/utils";
 
-setTheme();
+await setTheme();
 await I18n.done;
 I18n.translatePage();
 

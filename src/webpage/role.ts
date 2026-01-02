@@ -425,7 +425,7 @@ class RoleList extends Buttons {
 				});
 			},
 			{
-				visable: function (role) {
+				visible: function (role) {
 					//TODO, maybe this needs a check if the user is above/bellow the other user, hard to say
 					return role.id !== this.guild.id;
 				},
@@ -475,7 +475,7 @@ class RoleList extends Buttons {
 				this.deleteRole(role);
 			},
 			{
-				visable: (role) => role.id !== role.guild.id,
+				visible: (role) => role.id !== role.guild.id,
 			},
 		);
 		menu.addButton(

@@ -36,6 +36,14 @@ import {Sticker} from "./sticker.js";
 import {Hover} from "./hover.js";
 import {AccountSwitcher} from "./utils/switcher.js";
 import {Favorites} from "./favorites.js";
+import {
+	AnimateTristateValues,
+	getPreferences,
+	setPreferences,
+	ThemeOption,
+} from "./utils/storage/userPreferences";
+import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
+import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -289,25 +297,26 @@ class Localuser {
 	}
 	async queryBlog() {
 		this.perminfo.localuser ??= {};
-		const bstate = localStorage.getItem("blogUpdates") as "Yes" | "No" | "Wait" | null;
-		if (!bstate) {
-			localStorage.setItem("blogUpdates", "Wait");
-		} else if (bstate === "Wait") {
+		const prefs = await getPreferences();
+		const bstate = prefs.showBlogUpdates;
+		if (bstate === undefined) {
 			const pop = new Dialog("");
 			pop.options.addText(I18n.blog.wantUpdates());
 			const opts = pop.options.addOptions("", {ltr: true});
-			opts.addButtonInput("", I18n.yes(), () => {
-				localStorage.setItem("blogUpdates", "Yes");
+			opts.addButtonInput("", I18n.yes(), async () => {
+				prefs.showBlogUpdates = true;
+				await setPreferences(prefs);
 				this.queryBlog();
 				pop.hide();
 			});
-			opts.addButtonInput("", I18n.no(), () => {
-				localStorage.setItem("blogUpdates", "No");
+			opts.addButtonInput("", I18n.no(), async () => {
+				prefs.showBlogUpdates = false;
+				await setPreferences(prefs);
 				this.queryBlog();
 				pop.hide();
 			});
 			pop.show();
-		} else if (bstate === "Yes") {
+		} else if (bstate) {
 			const post = (await this.getPosts()).items[0];
 			if (this.perminfo.localuser.mostRecent !== post.url) {
 				this.perminfo.localuser.mostRecent = post.url;
@@ -441,7 +450,7 @@ class Localuser {
 		if (!this.resume_gateway_url || !this.session_id) {
 			resume = false;
 		}
-		const doComp = DecompressionStream && !localStorage.getItem("gateWayComp");
+		const doComp = DecompressionStream && !getDeveloperSettings().gatewayCompression;
 		const ws = new WebSocket(
 			(resume ? this.resume_gateway_url : this.serverurls.gateway.toString()) +
 				"?encoding=json&v=9" +
@@ -674,7 +683,7 @@ class Localuser {
 	}
 	async handleEvent(temp: wsjson) {
 		if (temp.d._trace) this.handleTrace(temp.d._trace);
-		if (localStorage.getItem("logGateway")) console.debug(temp);
+		if (getDeveloperSettings().gatewayLogging) console.debug(temp);
 		if (temp.s) this.lastSequence = temp.s;
 		if (temp.op === 9 && this.ws) {
 			this.errorBackoff = 0;
@@ -1443,7 +1452,7 @@ class Localuser {
 			if (this.channelfocus.guild.id === "@me") {
 				return;
 			}
-			if (!this.channelfocus.visable) return;
+			if (!this.channelfocus.visible) return;
 			this.ws.send(
 				JSON.stringify({
 					d: {
@@ -2246,6 +2255,8 @@ class Localuser {
 		};
 	}
 	async showusersettings() {
+		const prefs = await getPreferences();
+		const localSettings = getLocalSettings();
 		const settings = new Settings(I18n.localuser.settings());
 		{
 			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
@@ -2375,13 +2386,13 @@ class Localuser {
 				const themes = ["Dark", "WHITE", "Light", "Dark-Accent"];
 				tas.addSelect(
 					I18n.localuser["theme:"](),
-					(_) => {
-						localStorage.setItem("theme", themes[_]);
-						setTheme();
+					async (_) => {
+						prefs.theme = themes[_] as ThemeOption;
+						await setTheme();
 					},
 					themes,
 					{
-						defaultIndex: themes.indexOf(localStorage.getItem("theme") as string),
+						defaultIndex: themes.indexOf(prefs.theme),
 					},
 				);
 			}
@@ -2448,31 +2459,34 @@ class Localuser {
 			}
 
 			{
-				let userinfos = getBulkInfo();
+				const prefs = await getPreferences();
 				tas.addColorInput(
 					I18n.localuser.accentColor(),
-					(_) => {
-						userinfos = getBulkInfo();
-						userinfos.accent_color = _;
-						localStorage.setItem("userinfos", JSON.stringify(userinfos));
-						document.documentElement.style.setProperty("--accent-color", userinfos.accent_color);
+					async (_) => {
+						prefs.accentColor = _;
+						await setPreferences(prefs);
+
+						document.documentElement.style.setProperty("--accent-color", prefs.accentColor);
 					},
-					{initColor: userinfos.accent_color},
+					{initColor: prefs.accentColor},
 				);
 			}
 			{
+				const prefs = await getPreferences();
 				const options = [[null, I18n.noEmojiFont()], ...Localuser.fonts] as const;
-				const cur = localStorage.getItem("emoji-font");
+				const cur = prefs.emojiFont;
 				let index = options.findIndex((_) => _[1] == cur);
 				if (index === -1) index = 0;
 				tas.addSelect(
 					I18n.emojiSelect(),
-					(index) => {
+					async (index) => {
 						if (options[index][0]) {
-							localStorage.setItem("emoji-font", options[index][1]);
+							prefs.emojiFont = options[index][1];
 						} else {
-							localStorage.removeItem("emoji-font");
+							prefs.emojiFont = undefined;
 						}
+
+						await setPreferences(prefs);
 						Localuser.loadFont();
 					},
 					options.map((font) => font[1]),
@@ -2481,25 +2495,34 @@ class Localuser {
 					},
 				);
 			}
+			{
+				const cur = prefs.renderJoinAvatars;
+				tas.addCheckboxInput(
+					I18n.renderJoinAvatars(),
+					async (v) => {
+						prefs.renderJoinAvatars = v;
+						await setPreferences(prefs);
+					},
+					{initState: cur},
+				);
+			}
 		}
 		{
 			const update = settings.addButton(I18n.localuser.updateSettings());
-			let index = ["false", "offlineOnly", "true"].indexOf(
-				localStorage.getItem("SWMode") as string,
-			);
+			let index = ServiceWorkerModeValues.indexOf(localSettings.serviceWorkerMode);
 			if (index === -1) {
 				index = 2;
 			}
 			const sw = update.addSelect(
-				I18n.localuser.swSettings(),
+				I18n.settings.updates.serviceWorkerMode.title(),
 				() => {},
-				(["SWOff", "SWOffline", "SWOn"] as const).map((e) => I18n.localuser[e]()),
+				ServiceWorkerModeValues.map((e) => I18n.settings.updates.serviceWorkerMode[e]()),
 				{
 					defaultIndex: index,
 				},
 			);
 			sw.onchange = (e) => {
-				SW.setMode((["false", "offlineOnly", "true"] as const)[e]);
+				SW.setMode(ServiceWorkerModeValues[e]);
 			};
 			update.addButtonInput("", I18n.localuser.CheckUpdate(), async () => {
 				const update = await SW.checkUpdates();
@@ -2772,16 +2795,12 @@ class Localuser {
 						this.updateTranslations();
 					},
 					[...langmap.values()],
-					{
-						defaultIndex: I18n.options().indexOf(I18n.lang),
-					},
+					{defaultIndex: I18n.options().indexOf(I18n.lang)},
 				);
 
 				{
 					security.addButtonInput("", I18n.logout.logout(), async () => {
-						if (await this.userinfo.logout()) {
-							window.location.href = "/";
-						}
+						if (await this.userinfo.logout()) window.location.href = "/";
 					});
 				}
 			};
@@ -2795,9 +2814,7 @@ class Localuser {
 					console.log(t);
 					this.perminfo.user.disableColors = !t;
 				},
-				{
-					initState: !this.perminfo.user.disableColors,
-				},
+				{initState: !this.perminfo.user.disableColors},
 			);
 			accessibility.addCheckboxInput(
 				I18n.channel.allowIcons(),
@@ -2805,36 +2822,25 @@ class Localuser {
 					console.log(t);
 					this.perminfo.user.disableIcons = !t;
 				},
-				{
-					initState: !this.perminfo.user.disableIcons,
-				},
+				{initState: !this.perminfo.user.disableIcons},
 			);
-			const gifSettings = ["hover", "always", "never"] as const;
 			accessibility.addSelect(
 				I18n.accessibility.playGif(),
-				(i) => {
-					localStorage.setItem("gifSetting", gifSettings[i]);
+				async (i) => {
+					prefs.animateGifs = AnimateTristateValues[i];
+					await setPreferences(prefs);
 				},
-				gifSettings.map((_) => I18n.accessibility.gifSettings[_]()),
-				{
-					defaultIndex:
-						((gifSettings as readonly string[]).indexOf(
-							localStorage.getItem("gifSetting") as string,
-						) + 1 || 1) - 1,
-				},
+				AnimateTristateValues.map((_) => I18n.accessibility.gifSettings[_]()),
+				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateGifs)},
 			);
 			accessibility.addSelect(
 				I18n.accessibility.playIcon(),
-				(i) => {
-					localStorage.setItem("iconSetting", gifSettings[i]);
+				async (i) => {
+					prefs.animateIcons = AnimateTristateValues[i];
+					await setPreferences(prefs);
 				},
-				gifSettings.map((_) => I18n.accessibility.gifSettings[_]()),
-				{
-					defaultIndex:
-						((gifSettings as readonly string[]).indexOf(
-							localStorage.getItem("iconSetting") as string,
-						) + 1 || 1) - 1,
-				},
+				AnimateTristateValues.map((_) => I18n.accessibility.gifSettings[_]()),
+				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateIcons)},
 			);
 		}
 		{
@@ -2907,9 +2913,7 @@ class Localuser {
 						I18n.localuser["team:"](),
 						"team_id",
 						["Personal", ...teams.map((team: {name: string}) => team.name)],
-						{
-							defaultIndex: 0,
-						},
+						{defaultIndex: 0},
 					);
 				});
 
@@ -3258,14 +3262,11 @@ class Localuser {
 			const blog = settings.addButton(I18n.blog.blog());
 			blog.addCheckboxInput(
 				I18n.blog.blogUpdates(),
-				(check) => {
-					if (check) {
-						localStorage.setItem("blogUpdates", "Yes");
-					} else {
-						localStorage.setItem("blogUpdates", "No");
-					}
+				async (check) => {
+					prefs.showBlogUpdates = check;
+					await setPreferences(prefs);
 				},
-				{initState: localStorage.getItem("blogUpdates") === "Yes"},
+				{initState: prefs.showBlogUpdates},
 			);
 			(async () => {
 				const posts = await this.getPosts();
@@ -3295,74 +3296,84 @@ class Localuser {
 			devSettings.addText(I18n.devSettings.description());
 			devSettings.addHR();
 			const box1 = devSettings.addCheckboxInput(I18n.devSettings.logGateway(), () => {}, {
-				initState: Boolean(localStorage.getItem("logGateway")),
+				initState: getDeveloperSettings().gatewayLogging,
 			});
 			box1.onchange = (e) => {
-				if (e) {
-					localStorage.setItem("logGateway", "true");
-				} else {
-					localStorage.removeItem("logGateway");
-				}
+				const settings = getDeveloperSettings();
+				settings.gatewayLogging = e;
+				setDeveloperSettings(settings);
 			};
+
 			const box2 = devSettings.addCheckboxInput(I18n.devSettings.badUser(), () => {}, {
-				initState: Boolean(localStorage.getItem("logbad")),
+				initState: getDeveloperSettings().logBannedFields,
 			});
 			box2.onchange = (e) => {
-				if (e) {
-					localStorage.setItem("logbad", "true");
-				} else {
-					localStorage.removeItem("logbad");
-				}
+				const settings = getDeveloperSettings();
+				settings.logBannedFields = e;
+				setDeveloperSettings(settings);
 			};
 
 			const box3 = devSettings.addCheckboxInput(I18n.devSettings.traces(), () => {}, {
-				initState: Boolean(localStorage.getItem("traces")),
+				initState: getDeveloperSettings().showTraces,
 			});
 			box3.onchange = (e) => {
-				if (e) {
-					localStorage.setItem("traces", "true");
-				} else {
-					localStorage.removeItem("traces");
-				}
+				const settings = getDeveloperSettings();
+				settings.showTraces = e;
+				setDeveloperSettings(settings);
 			};
+
 			const box4 = devSettings.addCheckboxInput(I18n.devSettings.cache(), () => {}, {
-				initState: !!localStorage.getItem("isDev"),
+				initState: getDeveloperSettings().cacheSourceMaps,
 			});
 			box4.onchange = (e) => {
-				if (e) {
-					localStorage.setItem("isDev", "true");
-				} else {
-					localStorage.removeItem("isDev");
-				}
+				const settings = getDeveloperSettings();
+				settings.cacheSourceMaps = e;
+				setDeveloperSettings(settings);
 				SW.postMessage({code: "isDev", dev: e});
 			};
 			devSettings.addText(I18n.devSettings.cacheDesc());
 
 			const box5 = devSettings.addCheckboxInput(I18n.devSettings.captureTrace(), () => {}, {
-				initState: !!localStorage.getItem("capTrace"),
+				initState: getDeveloperSettings().interceptApiTraces,
 			});
 			box5.onchange = (e) => {
-				if (e) {
-					localStorage.setItem("capTrace", "true");
-				} else {
-					localStorage.removeItem("capTrace");
-				}
+				const settings = getDeveloperSettings();
+				settings.interceptApiTraces = e;
+				setDeveloperSettings(settings);
 				SW.traceInit();
 			};
 
 			const box6 = devSettings.addCheckboxInput(I18n.devSettings.gatewayComp(), () => {}, {
-				initState: !!localStorage.getItem("gateWayComp"),
+				initState: getDeveloperSettings().gatewayCompression,
 			});
 			box6.onchange = (e) => {
-				if (e) {
-					localStorage.setItem("gateWayComp", "true");
-				} else {
-					localStorage.removeItem("gateWayComp");
-				}
+				const settings = getDeveloperSettings();
+				settings.gatewayCompression = e;
+				setDeveloperSettings(settings);
 				SW.traceInit();
 			};
+
+			devSettings.addButtonInput("", I18n.devSettings.clearWellKnowns(), async () => {
+				const currentUserInfos = JSON.parse(localStorage.getItem("userinfos")!);
+				for (const user of Object.keys(currentUserInfos.users)) {
+					const key =
+						currentUserInfos.users[user].serverurls.value ??
+						currentUserInfos.users[user].serverurls.wellknown ??
+						currentUserInfos.users[user].serverurls.api;
+					currentUserInfos.users[user].serverurls = await getapiurls(key);
+					console.log(key, currentUserInfos.users[user].serverurls);
+					localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
+				}
+				localStorage.removeItem("instanceinfo");
+				await SW.postMessage({
+					code: "CheckUpdate",
+				});
+
+				// @ts-ignore - chromium is smelly for not supporting the `forceGet` option (aka skip cache)
+				window.location.reload(true);
+			});
 		}
-		if (this.trace.length && localStorage.getItem("traces")) {
+		if (this.trace.length && getDeveloperSettings().showTraces) {
 			const traces = settings.addButton(I18n.localuser.trace(), {
 				noSubmit: true,
 			});
@@ -4026,7 +4037,7 @@ class Localuser {
 			remove();
 		}
 	}
-	MDFindChannel(name: string, orginal: string, box: HTMLDivElement, typebox: MarkDown) {
+	MDFindChannel(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
 		const maybe: [number, Channel][] = [];
 		if (this.lookingguild && this.lookingguild.id !== "@me") {
 			for (const channel of this.lookingguild.channels) {
@@ -4039,7 +4050,7 @@ class Localuser {
 		maybe.sort((a, b) => b[0] - a[0]);
 		this.MDSearchOptions(
 			maybe.map((a) => ["# " + a[1].name, `<#${a[1].id}> `, undefined]),
-			orginal,
+			original,
 			box,
 			typebox,
 		);
@@ -4113,7 +4124,7 @@ class Localuser {
 			}
 		}
 	}
-	findEmoji(search: string, orginal: string, box: HTMLDivElement, typebox: MarkDown) {
+	findEmoji(search: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
 		const emj = Emoji.searchEmoji(search, this, 10);
 		const map = emj.map(([emoji]): [string, string, HTMLElement, () => void] => {
 			return [
@@ -4127,7 +4138,7 @@ class Localuser {
 				},
 			];
 		});
-		this.MDSearchOptions(map, orginal, box, typebox);
+		this.MDSearchOptions(map, original, box, typebox);
 	}
 	async findCommands(search: string, box: HTMLDivElement, md: MarkDown) {
 		const guild = this.lookingguild;
@@ -4360,17 +4371,20 @@ class Localuser {
 	readonly presences: Map<string, presencejson> = new Map();
 	static font?: FontFace;
 	static async loadFont() {
-		const fontName = localStorage.getItem("emoji-font");
+		const prefs = await getPreferences();
+		const fontName = prefs.emojiFont;
+
 		if (this.font) {
 			//TODO see when/if this can be removed
 			//@ts-ignore this is stupid. it's been here since 2020
 			document.fonts.delete(this.font);
 		}
+
 		const realname = this.fonts.find((_) => _[1] === fontName)?.[0];
 		if (realname) {
 			const font = new FontFace("emojiFont", `url("/emoji/${realname}")`);
 			await font.load();
-			console.error("fun");
+			console.error("Loaded font:", fontName, "/", realname);
 			//TODO see when/if this can be removed
 			//@ts-ignore this is stupid. it's been here since 2020
 			document.fonts.add(font);

@@ -16,6 +16,14 @@ class I18n {
 		res = res2;
 	});
 	static async create(lang: string) {
+		if (!(lang + ".json" in langs)) {
+			if (lang.includes("-")) lang = lang.split("-")[0];
+			if (!(lang + ".json" in langs)) {
+				console.warn("Language " + lang + " not found, defaulting to en");
+				lang = "en";
+			}
+		}
+
 		const json = (await (await fetch("/translations/" + lang + ".json")).json()) as translation;
 		const translations: translation[] = [];
 		translations.push(json);
@@ -107,8 +115,11 @@ class I18n {
 	}
 	static setLanguage(lang: string) {
 		if (this.options().indexOf(userLocale) !== -1) {
-			localStorage.setItem("lang", lang);
-			I18n.create(lang);
+			getPreferences().then(async (prefs) => {
+				prefs.locale = lang;
+				await I18n.create(lang);
+				await setPreferences(prefs);
+			});
 		}
 	}
 }
@@ -117,11 +128,13 @@ let userLocale = navigator.language.slice(0, 2) || "en";
 if (I18n.options().indexOf(userLocale) === -1) {
 	userLocale = "en";
 }
-const storage = localStorage.getItem("lang");
+const prefs = await getPreferences();
+const storage = prefs.locale;
 if (storage) {
 	userLocale = storage;
 } else {
-	localStorage.setItem("lang", userLocale);
+	prefs.locale = userLocale;
+	await setPreferences(prefs);
 }
 I18n.create(userLocale);
 function makeWeirdProxy(obj: [string, translation | void] = ["", undefined]) {
@@ -162,6 +175,7 @@ function makeWeirdProxy(obj: [string, translation | void] = ["", undefined]) {
 	});
 }
 import jsonType from "./../../translations/en.json";
+import {getPreferences, setPreferences} from "./utils/storage/userPreferences";
 type beforeType = typeof jsonType;
 
 type DoTheThing<T> = {

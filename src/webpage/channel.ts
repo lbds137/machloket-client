@@ -99,7 +99,7 @@ class Channel extends SnowFlake {
 				this.createInvite();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.hasPermission("CREATE_INSTANT_INVITE") && this.type !== 4;
 				},
 				color: "blue",
@@ -119,7 +119,7 @@ class Channel extends SnowFlake {
 				this.muteChannel();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return !this.muted && this.type !== 4;
 				},
 			},
@@ -130,7 +130,7 @@ class Channel extends SnowFlake {
 				this.unmuteChannel();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.muted;
 				},
 			},
@@ -142,7 +142,7 @@ class Channel extends SnowFlake {
 				this.generateSettings();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.hasPermission("MANAGE_CHANNELS");
 				},
 				icon: {
@@ -162,7 +162,7 @@ class Channel extends SnowFlake {
 				this.deleteChannel();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.hasPermission("MANAGE_CHANNELS");
 				},
 				icon: {
@@ -741,7 +741,7 @@ class Channel extends SnowFlake {
 	}
 	static dragged: [Channel, HTMLDivElement] | [] = [];
 	html: WeakRef<HTMLElement> | undefined;
-	get visable() {
+	get visible() {
 		return this.hasPermission("VIEW_CHANNEL");
 	}
 	voiceUsers = new WeakRef(document.createElement("div"));
@@ -807,10 +807,10 @@ class Channel extends SnowFlake {
 			);
 		}
 		this.html = new WeakRef(div);
-		if (!this.visable) {
+		if (!this.visible) {
 			let quit = true;
 			for (const thing of this.children) {
-				if (thing.visable) {
+				if (thing.visible) {
 					quit = false;
 				}
 			}
@@ -1706,7 +1706,7 @@ class Channel extends SnowFlake {
 		command.render(typebox, this);
 	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
-		if (!this.visable) {
+		if (!this.visible) {
 			this.guild.loadChannel();
 			return;
 		}

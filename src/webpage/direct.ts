@@ -410,7 +410,7 @@ class Group extends Channel {
 			},
 			{
 				group: "default",
-				visable: function (user) {
+				visible: function (user) {
 					return this.localuser.user.id !== user.id && this.owner_id === this.localuser.user.id;
 				},
 				color: "red",
@@ -435,7 +435,7 @@ class Group extends Channel {
 				this.edit();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.type !== 1;
 				},
 			},
@@ -466,7 +466,7 @@ class Group extends Channel {
 				navigator.clipboard.writeText(this.users[0].id);
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.type === 1;
 				},
 			},
@@ -576,7 +576,6 @@ class Group extends Channel {
 		} else if (this.lastmessage) {
 			this.position = this.lastmessage.getTimeStamp();
 		} else if (this.lastmessageid) {
-			console.log(this.lastmessageid);
 			this.position = SnowFlake.stringToUnixTime(this.lastmessageid);
 		} else {
 			this.position = 0;

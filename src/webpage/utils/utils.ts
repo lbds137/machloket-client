@@ -3,6 +3,11 @@ import {MarkDown} from "../markdown.js";
 import {Dialog} from "../settings.js";
 import {fix} from "./cssMagic.js";
 import {messageFrom, messageTo} from "./serviceType.js";
+import {isLoopback, trimTrailingSlashes} from "./netUtils";
+import {getLocalSettings, ServiceWorkerMode, setLocalSettings} from "./storage/localSettings";
+import {getPreferences} from "./storage/userPreferences";
+import {getDeveloperSettings} from "./storage/devSettings";
+
 fix();
 const apiDoms = new Set<string>();
 let instances:
@@ -24,14 +29,10 @@ let instances:
 			};
 	  }[]
 	| null = null;
-setTheme();
-export function setTheme() {
-	let name = localStorage.getItem("theme");
-	if (!name) {
-		localStorage.setItem("theme", "Dark");
-		name = "Dark";
-	}
-	document.body.className = name + "-theme";
+await setTheme();
+export async function setTheme() {
+	const prefs = await getPreferences();
+	document.body.className = prefs.theme + "-theme";
 }
 export function getBulkUsers() {
 	const json = getBulkInfo();
@@ -40,7 +41,7 @@ export function getBulkUsers() {
 		const user = (json.users[thing] = new Specialuser(json.users[thing]));
 		apiDoms.add(new URL(user.serverurls.api).host);
 	}
-	if (localStorage.getItem("capTrace")) {
+	if (getDeveloperSettings().interceptApiTraces) {
 		SW.postMessage({
 			code: "apiUrls",
 			hosts: [...apiDoms],
@@ -95,13 +96,7 @@ export function setDefaults() {
 }
 setDefaults();
 export class Specialuser {
-	serverurls: {
-		api: string;
-		cdn: string;
-		gateway: string;
-		wellknown: string;
-		login: string;
-	};
+	serverurls: InstanceUrls;
 	email: string;
 	token: string;
 	loggedin;
@@ -117,7 +112,6 @@ export class Specialuser {
 		this.serverurls.cdn = new URL(json.serverurls.cdn).toString().replace(/\/$/, "");
 		this.serverurls.gateway = new URL(json.serverurls.gateway).toString().replace(/\/$/, "");
 		this.serverurls.wellknown = new URL(json.serverurls.wellknown).toString().replace(/\/$/, "");
-		this.serverurls.login = new URL(json.serverurls.login).toString().replace(/\/$/, "");
 		this.email = json.email;
 		this.token = json.token;
 		this.loggedin = json.loggedin;
@@ -244,10 +238,6 @@ export class Specialuser {
 		info.users[this.uid] = this.toJSON();
 		localStorage.setItem("userinfos", JSON.stringify(info));
 	}
-}
-//this currently does not work, and need to be implemented better at some time.
-if (!localStorage.getItem("SWMode")) {
-	localStorage.setItem("SWMode", "SWOn");
 }
 export function trimswitcher() {
 	const json = getBulkInfo();
@@ -416,57 +406,131 @@ const stringURLsMap = new Map<
 		login?: string;
 	}
 >();
+
+export interface InstanceUrls {
+	admin?: string;
+	api: string;
+	cdn: string;
+	gateway: string;
+	wellknown: string;
+}
+
+export interface InstanceInfo extends InstanceUrls {
+	value: string;
+}
+
+export async function getapiurls(str: string): Promise<InstanceUrls | null> {
+	str = str.trim();
+	if (!str) return null;
+
+	console.info("Attempting to fetch .well-known's for", str);
+
+	// Override first:
+	let urls: InstanceUrls | null = await getInstanceInfo(str);
+	if (urls) return urls;
+
+	// Otherwise, fall back to looking it up...
+	try {
+		urls = await getApiUrlsV2(str);
+		if (!urls) throw new Error("meow");
+		return urls;
+	} catch {
+		return await getApiUrlsV1(str);
+	}
+}
+
+//region Instance list
+export async function getInstanceInfo(str: string): Promise<InstanceInfo | null> {
+	// wait for it to be loaded...? Where is this even comming from?
+	if (stringURLMap.size == 0) {
+		await new Promise<void>((res, _) => {
+			let intervalId = setInterval(() => {
+				if (stringURLMap.size !== 0) {
+					clearInterval(intervalId);
+					res();
+				}
+			}, 10);
+		});
+	}
+
+	console.info("Checking if we already know", str, "in our instance lists:", {
+		stringURLMap,
+		stringURLsMap,
+	});
+
+	if (stringURLMap.has(str)) {
+		console.error("OOH WE GOT STRING->URL MAP ENTRY FOR", str, "!!!!", stringURLMap.get(str));
+		return (await getapiurls(stringURLMap.get(str)!)) as InstanceInfo;
+	}
+
+	if (stringURLsMap.has(str)) {
+		console.error(
+			"WE GOT URL->INSTANCE MAP ENTRY FOR ",
+			str,
+			"!!!!!!!!!!11",
+			stringURLsMap.get(str),
+		);
+		return stringURLsMap.get(str) as InstanceInfo;
+	}
+
+	return null;
+}
+//endregion
+
+//region Well-Known v2
+export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
+	if (!URL.canParse(str)) {
+		console.log("getApiUrlsV2:", str, "is not a parseable url");
+		return null;
+	}
+	try {
+		const info = await fetch(str + "/.well-known/spacebar/client").then((r) => r.json());
+		return {
+			admin: info.admin?.baseUrl,
+			api: info.api.baseUrl + "/api/v" + info.api.apiVersions.default,
+			gateway: info.gateway.baseUrl,
+			cdn: info.cdn.baseUrl,
+			wellknown: str,
+		};
+	} catch (e) {
+		console.log("No .well-known v2 for", str, (e as Error).message);
+		return null;
+	}
+}
+//endregion
+
+//region Well-Known v1
 /**
- * this fucntion checks if a string is an instance, it'll either return the API urls or false
+ * this function checks if a string is an instance, it'll either return the API urls or null
  */
-export async function getapiurls(str: string): Promise<
-	| {
-			api: string;
-			cdn: string;
-			gateway: string;
-			wellknown: string;
-			login: string;
-	  }
-	| false
-> {
+export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 	function appendApi(str: string) {
 		return str.includes("api") ? str : str.endsWith("/") ? str + "api" : str + "/api";
 	}
 	if (!URL.canParse(str)) {
-		const val = stringURLMap.get(str);
 		if (stringURLMap.size === 0) {
 			await new Promise<void>((res) => {
-				setInterval(() => {
+				let intervalID = setInterval(() => {
 					if (stringURLMap.size !== 0) {
+						clearInterval(intervalID);
 						res();
 					}
 				}, 100);
 			});
 		}
+		const val = stringURLMap.get(str);
 		if (val) {
 			str = val;
 		} else {
 			const val = stringURLsMap.get(str);
 			if (val) {
-				const responce = await fetch(val.api + (val.api.endsWith("/") ? "" : "/") + "ping");
-				if (responce.ok) {
+				const response = await fetch(val.api + (val.api.endsWith("/") ? "" : "/") + "ping");
+				if (response.ok) {
 					if (val.login) {
-						return val as {
-							wellknown: string;
-							api: string;
-							cdn: string;
-							gateway: string;
-							login: string;
-						};
+						return val as InstanceUrls;
 					} else {
 						val.login = val.api;
-						return val as {
-							wellknown: string;
-							api: string;
-							cdn: string;
-							gateway: string;
-							login: string;
-						};
+						return val as InstanceUrls;
 					}
 				}
 			} else if (!str.match(/^https?:\/\//gm)) {
@@ -474,60 +538,29 @@ export async function getapiurls(str: string): Promise<
 			}
 		}
 	}
-	if (str.at(-1) !== "/") {
-		str += "/";
-	}
+	str = trimTrailingSlashes(str);
 	let api: string;
 	try {
-		const info = await fetch(`${str}.well-known/spacebar`).then((x) => x.json());
-		if (info.api.endsWith("/")) {
-			const temp = info.api.split("/");
-			temp.pop();
-			info.api = temp.join("/");
-		}
-		api = info.api;
+		const info = await fetch(`${str}/.well-known/spacebar`).then((x) => x.json());
+		api = trimTrailingSlashes(info.api);
 	} catch {
 		api = str;
 	}
 	if (!URL.canParse(api)) {
-		return false;
+		return null;
 	}
 	const url = new URL(api);
-	function isloopback(str: string) {
-		return str.includes("localhost") || str.includes("127.0.0.1");
-	}
-	let urls:
-		| undefined
-		| {
-				api: string;
-				cdn: string;
-				gateway: string;
-				wellknown: string;
-				login: string;
-		  };
+	let urls: undefined | InstanceUrls;
 	function fixApi() {
 		if (!urls) return;
-		if (urls.api.endsWith("/")) {
-			const split = urls.api.split("/");
-			split.pop();
-			urls.api = split.join("/");
-		}
-		if (urls.cdn.endsWith("/")) {
-			const split = urls.cdn.split("/");
-			split.pop();
-			urls.cdn = split.join("/");
-		}
-		if (urls.gateway.endsWith("/")) {
-			const split = urls.gateway.split("/");
-			split.pop();
-			urls.gateway = split.join("/");
-		}
-		if (urls.login.endsWith("/")) {
-			const split = urls.login.split("/");
-			split.pop();
-			urls.login = split.join("/");
-		}
+		urls = {
+			wellknown: trimTrailingSlashes(urls.wellknown),
+			api: trimTrailingSlashes(urls.api),
+			cdn: trimTrailingSlashes(urls.cdn),
+			gateway: trimTrailingSlashes(urls.gateway),
+		};
 	}
+
 	try {
 		const info = await fetch(
 			`${api}${url.pathname.includes("api") ? "" : "api"}/policies/instance/domains`,
@@ -538,49 +571,27 @@ export async function getapiurls(str: string): Promise<
 			gateway: info.gateway,
 			cdn: info.cdn,
 			wellknown: str,
-			login: apiurl.origin + appendApi(apiurl.pathname),
 		};
 		fixApi();
 	} catch {
 		const val = stringURLsMap.get(str);
 		if (val) {
-			const responce = await fetch(val.api + (val.api.endsWith("/") ? "" : "/") + "ping");
-			if (responce.ok) {
+			const response = await fetch(trimTrailingSlashes(val.api) + "/ping");
+			if (response.ok) {
 				if (val.login) {
-					urls = val as {
-						wellknown: string;
-						api: string;
-						cdn: string;
-						gateway: string;
-						login: string;
-					};
+					urls = val as InstanceUrls;
 					fixApi();
 				} else {
 					val.login = val.api;
-					urls = val as {
-						wellknown: string;
-						api: string;
-						cdn: string;
-						gateway: string;
-						login: string;
-					};
+					urls = val as InstanceUrls;
 					fixApi();
 				}
 			}
 		}
 	}
 	if (urls) {
-		if (isloopback(urls.api) !== isloopback(str)) {
-			return new Promise<
-				| {
-						api: string;
-						cdn: string;
-						gateway: string;
-						wellknown: string;
-						login: string;
-				  }
-				| false
-			>((res) => {
+		if (isLoopback(urls.api) !== isLoopback(str)) {
+			return new Promise<InstanceUrls | null>((res) => {
 				const menu = new Dialog("");
 				const options = menu.float.options;
 				options.addMDText(new MarkDown(I18n.incorrectURLS(), undefined));
@@ -589,31 +600,28 @@ export async function getapiurls(str: string): Promise<
 				opt.addButtonInput("", I18n.yes(), async () => {
 					if (clicked) return;
 					clicked = true;
+					if (urls == null) throw new Error("Unexpected undefined, exiting");
 					const temp = new URL(str);
 					temp.port = "";
-					const newOrgin = temp.host;
-					const protical = temp.protocol;
+					const newOrigin = temp.host;
+					const protocol = temp.protocol;
 					const tempurls = {
 						api: new URL(urls.api),
 						cdn: new URL(urls.cdn),
 						gateway: new URL(urls.gateway),
 						wellknown: new URL(urls.wellknown),
-						login: new URL(urls.login),
 					};
-					tempurls.api.host = newOrgin;
-					tempurls.api.protocol = protical;
+					tempurls.api.host = newOrigin;
+					tempurls.api.protocol = protocol;
 
-					tempurls.cdn.host = newOrgin;
-					tempurls.api.protocol = protical;
+					tempurls.cdn.host = newOrigin;
+					tempurls.api.protocol = protocol;
 
-					tempurls.gateway.host = newOrgin;
+					tempurls.gateway.host = newOrigin;
 					tempurls.gateway.protocol = temp.protocol === "http:" ? "ws:" : "wss:";
 
-					tempurls.wellknown.host = newOrgin;
-					tempurls.wellknown.protocol = protical;
-
-					tempurls.login.host = newOrgin;
-					tempurls.login.protocol = protical;
+					tempurls.wellknown.host = newOrigin;
+					tempurls.wellknown.protocol = protocol;
 
 					try {
 						if (
@@ -623,12 +631,12 @@ export async function getapiurls(str: string): Promise<
 								)
 							).ok
 						) {
-							res(false);
+							res(null);
 							menu.hide();
 							return;
 						}
 					} catch {
-						res(false);
+						res(null);
 						menu.hide();
 						return;
 					}
@@ -637,23 +645,23 @@ export async function getapiurls(str: string): Promise<
 						cdn: tempurls.cdn.toString(),
 						gateway: tempurls.gateway.toString(),
 						wellknown: tempurls.wellknown.toString(),
-						login: tempurls.login.toString(),
 					});
 					menu.hide();
 				});
 				const no = opt.addButtonInput("", I18n.no(), async () => {
 					if (clicked) return;
 					clicked = true;
+					if (urls == null) throw new Error("URLs is undefined");
 					try {
 						//TODO make this a promise race for when the server just never responds
 						//TODO maybe try to strip ports as another way to fix it
 						if (!(await fetch(urls.api + "ping")).ok) {
-							res(false);
+							res(null);
 							menu.hide();
 							return;
 						}
 					} catch {
-						res(false);
+						res(null);
 						return;
 					}
 					res(urls);
@@ -673,15 +681,17 @@ export async function getapiurls(str: string): Promise<
 		//*/
 		try {
 			if (!(await fetch(urls.api + "/ping")).ok) {
-				return false;
+				return null;
 			}
 		} catch {
-			return false;
+			return null;
 		}
 		return urls;
 	}
-	return false;
+	return null;
 }
+//endregion
+
 async function isAnimated(src: string) {
 	try {
 		src = new URL(src).pathname;
@@ -780,14 +790,7 @@ export function createImg(
 		},
 	});
 }
-export interface instanceinfo {
-	wellknown: string;
-	api: string;
-	cdn: string;
-	gateway: string;
-	login: string;
-	value: string;
-}
+
 /**
  *
  * This function takes in a string and checks if the string is a valid instance
@@ -807,7 +810,7 @@ const checkInstance = Object.assign(
 			loginButton.disabled = true;
 			verify!.textContent = I18n.login.checking();
 			const instanceValue = instance;
-			const instanceinfo = (await getapiurls(instanceValue)) as instanceinfo;
+			const instanceinfo = (await getapiurls(instanceValue)) as InstanceInfo;
 			if (instanceinfo) {
 				instanceinfo.value = instanceValue;
 				localStorage.setItem("instanceinfo", JSON.stringify(instanceinfo));
@@ -827,21 +830,13 @@ const checkInstance = Object.assign(
 				return;
 			}
 		} catch {
-			console.log("catch");
 			verify!.textContent = I18n.login.invalid();
 			loginButton.disabled = true;
 			return;
 		}
 	},
 	{} as {
-		alt?: (e: {
-			wellknown: string;
-			api: string;
-			cdn: string;
-			gateway: string;
-			login: string;
-			value: string;
-		}) => void;
+		alt?: (e: InstanceInfo) => void;
 	},
 );
 {
@@ -861,11 +856,10 @@ export {checkInstance};
 
 export class SW {
 	static worker: undefined | ServiceWorker;
+	static registration: ServiceWorkerRegistration;
 	static port?: MessagePort;
 	static init() {
-		SW.setMode(
-			(localStorage.getItem("SWMode") as "false" | "offlineOnly" | "true" | undefined) || "true",
-		);
+		SW.setMode(getLocalSettings().serviceWorkerMode);
 		const port = new MessageChannel();
 		SW.worker?.postMessage(
 			{
@@ -883,7 +877,7 @@ export class SW {
 			port.port1.close();
 		});
 		this.postMessage({code: "ping"});
-		this.postMessage({code: "isDev", dev: !!localStorage.getItem("isDev")});
+		this.postMessage({code: "isDev", dev: getDeveloperSettings().cacheSourceMaps});
 		this.captureEvent("updates", (update, stop) => {
 			this.needsUpdate ||= update.updates;
 			if (update) {
@@ -986,6 +980,9 @@ export class SW {
 	}
 	static async start() {
 		if (!("serviceWorker" in navigator)) return;
+
+		// If it's registered, it handles CDN caching regardless of settings.
+		if (getLocalSettings().serviceWorkerMode == ServiceWorkerMode.Unregistered) return;
 		return new Promise<void>((res) => {
 			navigator.serviceWorker
 				.register("/service.js", {
@@ -995,32 +992,37 @@ export class SW {
 					let serviceWorker: ServiceWorker | undefined;
 					if (registration.installing) {
 						serviceWorker = registration.installing;
-						console.log("installing");
+						console.log("Service worker: installing");
 					} else if (registration.waiting) {
 						serviceWorker = registration.waiting;
-						console.log("waiting");
+						console.log("Service worker: waiting");
 					} else if (registration.active) {
 						serviceWorker = registration.active;
-						console.log("active");
+						console.log("Service worker: active");
 					}
 					SW.worker = serviceWorker;
+					SW.registration = registration;
 					SW.init();
 
 					if (serviceWorker) {
-						console.log(serviceWorker.state);
+						console.log("Service worker state changed:", serviceWorker.state);
 						serviceWorker.addEventListener("statechange", (_) => {
-							console.log(serviceWorker.state);
+							console.log("Service worker state changed:", serviceWorker.state);
 						});
 						res();
 					}
 				});
 		});
 	}
-	static setMode(mode: "false" | "offlineOnly" | "true") {
-		localStorage.setItem("SWMode", mode);
+	static setMode(mode: ServiceWorkerMode) {
+		const localSettings = getLocalSettings();
+		localSettings.serviceWorkerMode = mode;
+		setLocalSettings(localSettings);
 		if (this.worker) {
 			this.worker.postMessage({data: mode, code: "setMode"});
 		}
+
+		if (mode === ServiceWorkerMode.Unregistered) this.registration.unregister().then(r => console.log("Service worker unregistered:", r));
 	}
 
 	static forceClear() {

@@ -16,6 +16,7 @@ import {Hover} from "./hover.js";
 import {Dialog} from "./settings.js";
 import {Sticker} from "./sticker.js";
 import {Components} from "./interactions/compontents.js";
+import {ImagesDisplay} from "./disimg";
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];
@@ -77,7 +78,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-reply",
 				},
-				visable: function () {
+				visible: function () {
 					return !this.ephemeral && this.channel.hasPermission("SEND_MESSAGES");
 				},
 			},
@@ -89,7 +90,7 @@ class Message extends SnowFlake {
 				this.setEdit();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.author.id === this.localuser.user.id && editTypes.has(this.type);
 				},
 
@@ -110,7 +111,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-emoji",
 				},
-				visable: function () {
+				visible: function () {
 					return this.channel.hasPermission("ADD_REACTIONS");
 				},
 			},
@@ -121,7 +122,7 @@ class Message extends SnowFlake {
 				this.viewReactions();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return !!this.reactions.length;
 				},
 			},
@@ -163,7 +164,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-pin",
 				},
-				visable: function () {
+				visible: function () {
 					if (this.pinned) return false;
 					if (this.channel.guild.id === "@me") return true;
 					return this.channel.hasPermission("MANAGE_MESSAGES");
@@ -184,7 +185,7 @@ class Message extends SnowFlake {
 				icon: {
 					css: "svg-pin",
 				},
-				visable: function () {
+				visible: function () {
 					if (!this.pinned) return false;
 					if (this.channel.guild.id === "@me") return true;
 					return this.channel.hasPermission("MANAGE_MESSAGES");
@@ -206,7 +207,7 @@ class Message extends SnowFlake {
 				this.confirmDelete();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.canDelete();
 				},
 				icon: {
@@ -221,7 +222,7 @@ class Message extends SnowFlake {
 			() => I18n.usedFermi(),
 			() => {},
 			{
-				visable: function () {
+				visible: function () {
 					return !!this.nonce && this.nonce.length <= 9 && this.nonce.length !== 0;
 				},
 				enabled: () => false,
@@ -939,6 +940,42 @@ class Message extends SnowFlake {
 			const firstspan = document.createElement("span");
 			firstspan.textContent = first;
 			text.appendChild(firstspan);
+
+			// TODO: settings how?
+			if (false) {
+				const img = document.createElement("img");
+				img.classList.add("avatar");
+				img.style.height = "1em";
+				img.style.width = "1em";
+				img.style.objectFit = "cover";
+				img.src = this.author.getpfpsrc(this.guild) + "?size=1";
+				img.loading = "lazy";
+				img.decoding = "async";
+				img.addEventListener(
+					"load",
+					() => {
+						img.src = this.author.getpfpsrc(this.guild) + "?size=" + firstspan.clientHeight;
+					},
+					{once: true},
+				);
+				img.onclick = () => {
+					const full = new ImagesDisplay([
+						new File(
+							{
+								content_type: "image/webp",
+								filename: "0",
+								id: "0",
+								size: 0,
+								url: this.author.getpfpsrc(this.guild),
+							},
+							this,
+						),
+					]);
+					full.show();
+				};
+
+				text.appendChild(img);
+			}
 
 			const username = document.createElement("span");
 			username.textContent = this.author.name;

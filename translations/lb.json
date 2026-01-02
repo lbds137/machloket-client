@@ -1,365 +1,367 @@
 {
+	"2faCode": "2FA-Code:",
+	"404": {
+		"404": "404 Säit net fonnt",
+		"blog": "De Fermi-Blog"
+	},
 	"@metadata": {
-		"authors": [
-			"Volvox"
-		]
+		"authors": ["Volvox"]
 	},
-	"vc": {
-		"joinstream": "Stream kucken"
+	"DMs": {
+		"markRead": "Als gelies markéieren"
 	},
-	"readableName": "Lëtzebuergesch",
-	"reply": "Äntweren",
-	"media": {
-		"loading": "Lueden",
-		"moreInfo": "Méi Informatiounen",
-		"artist": "Kënschtler: $1",
-		"composer": "Komponist: $1",
-		"length": "Längt: $1 Minutten a(n) $2 Sekonnen"
-	},
-	"logout": {
-		"logout": "Ausloggen",
-		"error": {
-			"title": "Beim Versuch Iech auszeloggen ass e Feeler geschitt",
-			"cancel": "Ofbriechen",
-			"cont": "Trotzdeem virufueren"
+	"Voice": {
+		"status": {
+			"conectionFailed": "Verbindung feelgeschloen",
+			"done": "Verbonnen",
+			"noSDP": "Keen SDP",
+			"notconnected": "Net verbonnen"
 		}
 	},
-	"cancel": "Ofbriechen",
-	"permissions": {
-		"readableNames": {
-			"ADMINISTRATOR": "Administrateur",
-			"STREAM": "Video",
-			"ATTACH_FILES": "Fichieren uspéngelen",
-			"USE_EXTERNAL_EMOJIS": "Extern Emojie benotzen",
-			"CONNECT": "Verbannen",
-			"SPEAK": "Schwätzen",
-			"MUTE_MEMBERS": "Membere stommschalten",
-			"CHANGE_NICKNAME": "Spëtznumm änneren",
-			"MANAGE_NICKNAMES": "Spëtznimm geréieren",
-			"MANAGE_ROLES": "Rolle geréieren",
-			"MANAGE_GUILD_EXPRESSIONS": "Ausdréck geréieren",
-			"CREATE_EVENTS": "Evenementer uleeën",
-			"SEND_POLLS": "Ëmfroen uleeën",
-			"USE_EXTERNAL_APPS": "Extern Appe benotzen"
-		}
-	},
-	"deleteConfirm": "Sidd Dir sécher, datt Dir dat läsche wëllt?",
-	"yes": "Jo",
-	"no": "Nee",
-	"todayAt": "Haut um $1",
-	"yesterdayAt": "Gëschter um $1",
-	"botSettings": "Bot-Astellungen",
-	"pronouns": "Pronomen:",
-	"profileColor": "Profilfaarf",
-	"confirmGuildLeave": "Sidd Dir sécher, datt Dir aus $1 erausgoe wëllt",
-	"typing": "$2 {{PLURAL:$1|ass|sinn}} am schreiwen",
-	"blankMessage": "Eidele Message",
 	"accessibility": {
 		"gifSettings": {
 			"always": "Ëmmer",
 			"never": "Ni"
 		}
 	},
-	"profile": {
-		"userInfo": "Benotzerinformatiounen",
-		"bio": "Iwwer mech:"
-	},
-	"channel": {
-		"creating": "Kanal uleeën",
-		"name": "Kanal",
-		"copyId": "Kanal-ID kopéieren",
-		"markRead": "Als gelies markéieren",
-		"settings": "Astellungen",
-		"delete": "Kanal läschen",
-		"deleteCat": "Kategorie läschen",
-		"makeInvite": "Invitatioun maachen",
-		"settingsFor": "Astellunge fir $1",
-		"text": "Text",
-		"announcement": "Ukënnegungen",
-		"name:": "Numm:",
-		"icon": "Symbol:",
-		"topic:": "Theema:",
-		"nsfw:": "NSFW:",
-		"selectType": "Kanaltyp auswielen",
-		"selectName": "Numm vum Kanal",
-		"selectCatName": "Numm vun der Kategorie",
-		"createChannel": "Kanal uleeën",
-		"createCatagory": "Kategorie uleeën"
-	},
-	"Voice": {
-		"status": {
-			"done": "Verbonnen",
-			"notconnected": "Net verbonnen",
-			"conectionFailed": "Verbindung feelgeschloen",
-			"noSDP": "Keen SDP"
-		}
-	},
-	"delete": "Läschen",
-	"webhooks": {
-		"name": "Numm:",
-		"channel": "Kanal",
-		"type": "Typ: $1",
-		"areYouSureDelete": "Sidd Dir sécher, datt Dir $1 läsche wëllt?"
-	},
-	"switchAccounts": "Konto wiesselen ⇌",
-	"devSettings": {
-		"name": "Entwécklerastellungen"
-	},
-	"htmlPages": {
-		"instanceField": "Instanz:",
-		"emailField": "E-Mail:",
-		"pwField": "Passwuert:",
-		"loginButton": "Aloggen",
-		"noAccount": "Hutt Dir kee Benotzerkont?",
-		"userField": "Benotzernumm:",
-		"pw2Field": "Passwuert nach eng Kéier aginn:",
-		"dobField": "Gebuertsdatum:",
-		"createAccount": "Kont uleeën",
-		"trans": "Iwwersetzen",
-		"transTitle": "Fermi iwwersetzen",
-		"transDesc": "Dir kënnt dobäi hëllefe fir Fermi an Är eege Sprooch z'iwwersetzen!"
-	},
-	"useTemplate": "$1 als Schabloun benotzen",
-	"useTemplateButton": "Schabloun benotzen",
-	"register": {
-		"passwordError:": "Passwuert: $1",
-		"usernameError": "Benotzernumm: $1",
-		"emailError": "E-Mail-Adress: $1",
-		"DOBError": "Gebuertsdatum: $1"
-	},
-	"edit": "Änneren",
-	"discovery": "Entdeckung",
-	"guild": {
-		"memberCount": "$1 {{PLURAL:$1|Member|Memberen}}",
-		"template": "Schabloun:",
-		"admins": "Administrateure fannen",
-		"adminMenu": {
-			"finding": "Administrateure fannen",
-			"owner": "De Besëtzer fannen",
-			"ownName": "Besëtzer"
-		},
-		"viewTemplate": "Schabloun weisen",
-		"tempCreatedBy": "Schabloun ugeluecht vum:",
-		"createNewTemplate": "Nei Schabloun uleeën",
-		"templates": "Schablounen",
-		"templateName": "Numm vun der Schabloun:",
-		"templateDesc": "Beschreiwung vun der Schabloun:",
-		"templateURL": "URL vun der Schabloun: $1",
-		"community": "Communautéit",
-		"markRead": "Als gelies markéieren",
-		"notifications": "Notifikatiounen",
-		"settings": "Astellungen",
-		"settingsFor": "Astellunge fir $1",
-		"name:": "Numm:",
-		"region:": "Regioun:",
-		"roles": "Rollen",
-		"all": "all",
-		"none": "keng",
-		"yesLeave": "Jo, ech si mer sécher",
-		"serverName": "Servernumm:",
-		"yesDelete": "Jo, ech si mer sécher",
-		"loadingDiscovery": "Lueden…",
-		"default": "Standard ($1)",
-		"description:": "Beschreiwung:"
-	},
-	"createAccount": "Kont uleeën",
-	"role": {
-		"roles": "Rollen",
-		"perms": "Berechtegungen",
-		"color": "Faarf",
-		"delete": "Roll läschen",
-		"deleting": "Roll gëtt geläscht …",
-		"colors": {
-			"name": "Zuel vu Faarwen:",
-			"one": "Eng",
-			"two": "Zwou",
-			"three": "Dräi",
-			"secondColor": "Zweet Faarf:",
-			"thirdColor": "Drëtt Faarf:"
-		}
-	},
-	"folder": {
-		"name": "Numm vum Dossier:",
-		"color": "Faarf vum Dossier:",
-		"create": "Neien Dossier uleeën",
-		"edit": "Dossier änneren"
-	},
-	"settings": {
-		"save": "Ännerunge späicheren",
-		"img": "Bild eroplueden"
-	},
-	"trace": {
-		"totalTime": "$2: $1&nbsp;ms",
-		"traces": "$1 ($2:&nbsp;ms) $3"
-	},
-	"blog": {
-		"blog": "Blog",
-		"fermi": "Fermi-Blog"
-	},
-	"remove": "Ewechhuelen",
+	"add": "Derbäisetzen",
 	"applications": {
 		"delete": "Applikatioun läschen",
 		"sure": "Sidd Dir sécher, datt Dir $1 läsche wëllt?"
 	},
-	"webauth": {
-		"manage": "Sécherheetsschlëssele geréieren",
-		"addKey": "Schlëssel derbäisetzen"
+	"badge": {
+		"certified_moderator": "Moderateur"
 	},
-	"localuser": {
-		"trace": "Spueren",
-		"install": "Installéieren",
-		"installJank": "Fermi installéieren",
-		"status": "Status",
+	"blankMessage": "Eidele Message",
+	"blog": {
+		"blog": "Blog",
+		"fermi": "Fermi-Blog"
+	},
+	"bot": "BOT",
+	"botSettings": "Bot-Astellungen",
+	"cancel": "Ofbriechen",
+	"channel": {
+		"announcement": "Ukënnegungen",
+		"copyId": "Kanal-ID kopéieren",
+		"createCatagory": "Kategorie uleeën",
+		"createChannel": "Kanal uleeën",
+		"creating": "Kanal uleeën",
+		"delete": "Kanal läschen",
+		"deleteCat": "Kategorie läschen",
+		"icon": "Symbol:",
+		"makeInvite": "Invitatioun maachen",
+		"markRead": "Als gelies markéieren",
+		"name": "Kanal",
+		"name:": "Numm:",
+		"nsfw:": "NSFW:",
+		"selectCatName": "Numm vun der Kategorie",
+		"selectName": "Numm vum Kanal",
+		"selectType": "Kanaltyp auswielen",
 		"settings": "Astellungen",
-		"userSettings": "Benotzerastellungen",
-		"notisound": "Notifikatiounstoun:",
-		"updateSettings": "Astellungen aktualiséieren",
-		"SWOff": "Aus",
-		"SWOffline": "Nëmmen offline",
-		"SWOn": "Un",
-		"clearCache": "Cache eidelmaachen",
-		"CheckUpdate": "No Aktualiséierunge sichen",
-		"2faDisable": "2FA desaktivéieren",
-		"badCode": "Ongültege Code",
-		"2faEnable": "2FA aktivéieren",
-		"2faCode:": "Code:",
-		"badPassword": "Falscht Passwuert",
-		"changeEmail": "E-Mail-Adress änneren",
-		"password:": "Passwuert",
-		"newEmail:": "Nei E-Mail",
-		"changeUsername": "Benotzernumm änneren",
-		"newUsername": "Neie Benotzernumm:",
-		"changePassword": "Passwuert änneren",
-		"oldPassword:": "Aalt Passwuert:",
-		"newPassword:": "Neit Passwuert:",
-		"PasswordsNoMatch": "D'Passwierder sinn net d'selwecht",
-		"description": "Beschreiwung:",
-		"manageBot": "Bot geréieren",
-		"addBot": "Bot derbäisetzen",
-		"botUsername": "Botbenotzernumm:",
-		"advancedBot": "Erweidert Bot-Astellungen",
-		"language": "Sprooch:",
-		"connections": "Verbindungen",
-		"deleteAccountButton": "Kont läschen"
+		"settingsFor": "Astellunge fir $1",
+		"text": "Text",
+		"topic:": "Theema:"
 	},
-	"search": {
-		"back": "Zeréck",
-		"next": "Nächst",
-		"page": "Säit $1",
-		"new": "Nei",
-		"old": "Al",
-		"search": "Sichen"
+	"commands": {
+		"errorNotValid": "$1 ass kee gültege Choix fir $2"
 	},
-	"manageInstance": {
-		"length": "Längt:",
-		"genericType": "Geneeresch",
-		"copy": "Kopéieren"
+	"confirmGuildLeave": "Sidd Dir sécher, datt Dir aus $1 erausgoe wëllt",
+	"createAccount": "Kont uleeën",
+	"delete": "Läschen",
+	"deleteConfirm": "Sidd Dir sécher, datt Dir dat läsche wëllt?",
+	"devSettings": {
+		"name": "Entwécklerastellungen"
+	},
+	"deviceManage": {
+		"city": "Stad: $1",
+		"continent": "Kontinent: $1",
+		"country": "Land: $1",
+		"region": "Regioun: $1"
+	},
+	"discovery": "Entdeckung",
+	"edit": "Änneren",
+	"emoji": {
+		"confirmDel": "Sidd Dir sécher, datt Dir dësen Emoji läsche wëllt?",
+		"image:": "Bild:",
+		"name:": "Numm:",
+		"title": "Emojien",
+		"upload": "Emojien eroplueden"
 	},
 	"emojiSelect": "Emoji:",
-	"message": {
-		"reactionAdd": "Reaktioun derbäisetzen",
-		"reactions": "Reaktioune weisen",
-		"delete": "Message läschen",
-		"edit": "Message änneren",
-		"edited": "(geännert)",
-		"deleted": "Geläschte Message",
-		"fullMessage": "Vollstännege Message:",
-		"reactionsTitle": "Reaktiounen"
-	},
-	"instanceStats": {
-		"users": "Registréiert Benotzer: $1",
-		"servers": "Serveren: $1",
-		"messages": "Messagen: $1",
-		"members": "Memberen: $1"
-	},
-	"inviteOptions": {
-		"title": "Leit invitéieren",
-		"30m": "30 Minutten",
-		"1h": "1 Stonn",
-		"6h": "6 Stonnen",
-		"12h": "12 Stonnen",
-		"1d": "1 Dag",
-		"7d": "7 Deeg",
-		"30d": "30 Deeg",
-		"never": "Ni",
-		"noLimit": "Keng Limitt"
-	},
-	"2faCode": "2FA-Code:",
-	"invite": {
-		"invitedBy": "Dir gouft vum $1 invitéiert",
-		"alreadyJoined": "Scho bäigetrueden",
-		"accept": "Akzeptéieren",
-		"channel:": "Kanal:",
-		"createInvite": "Invitatioun maachen",
-		"never": "Ni"
+	"folder": {
+		"color": "Faarf vum Dossier:",
+		"create": "Neien Dossier uleeën",
+		"edit": "Dossier änneren",
+		"name": "Numm vum Dossier:"
 	},
 	"friends": {
 		"blocked": "Gespaart",
 		"blockedusers": "Gespaarte Benotzer:",
 		"bu": "Gespaarte Benotzer",
+		"friends": "Frënn",
 		"notfound": "Benotzer net fonnt",
-		"online": "Online",
-		"friends": "Frënn"
+		"online": "Online"
 	},
-	"DMs": {
-		"markRead": "Als gelies markéieren"
-	},
-	"user": {
-		"online": "Online",
-		"offline": "Offline",
-		"invisible": "Onsiichtbar",
-		"block": "Benotzer spären",
-		"unblock": "Benotzer entspären",
-		"editServerProfile": "Serverprofil änneren",
-		"remove": "Benotzer ewechhuelen"
-	},
-	"loaded": "Gelueden",
-	"login": {
-		"recover": "Passwuert vergiess?",
-		"newPassword": "Neit Passwuert:",
-		"login": "Aloggen"
-	},
-	"member": {
-		"reason:": "Grond:",
-		"nick:": "Spëtznumm:"
-	},
-	"commands": {
-		"errorNotValid": "$1 ass kee gültege Choix fir $2"
-	},
-	"badge": {
-		"certified_moderator": "Moderateur"
-	},
-	"add": "Derbäisetzen",
 	"group": {
 		"edit": "Gruppenchat änneren"
 	},
-	"emoji": {
-		"title": "Emojien",
-		"upload": "Emojien eroplueden",
-		"image:": "Bild:",
+	"guild": {
+		"adminMenu": {
+			"finding": "Administrateure fannen",
+			"ownName": "Besëtzer",
+			"owner": "De Besëtzer fannen"
+		},
+		"admins": "Administrateure fannen",
+		"all": "all",
+		"community": "Communautéit",
+		"createNewTemplate": "Nei Schabloun uleeën",
+		"default": "Standard ($1)",
+		"description:": "Beschreiwung:",
+		"loadingDiscovery": "Lueden…",
+		"markRead": "Als gelies markéieren",
+		"memberCount": "$1 {{PLURAL:$1|Member|Memberen}}",
 		"name:": "Numm:",
-		"confirmDel": "Sidd Dir sécher, datt Dir dësen Emoji läsche wëllt?"
+		"none": "keng",
+		"notifications": "Notifikatiounen",
+		"region:": "Regioun:",
+		"roles": "Rollen",
+		"serverName": "Servernumm:",
+		"settings": "Astellungen",
+		"settingsFor": "Astellunge fir $1",
+		"tempCreatedBy": "Schabloun ugeluecht vum:",
+		"template": "Schabloun:",
+		"templateDesc": "Beschreiwung vun der Schabloun:",
+		"templateName": "Numm vun der Schabloun:",
+		"templateURL": "URL vun der Schabloun: $1",
+		"templates": "Schablounen",
+		"viewTemplate": "Schabloun weisen",
+		"yesDelete": "Jo, ech si mer sécher",
+		"yesLeave": "Jo, ech si mer sécher"
+	},
+	"htmlPages": {
+		"createAccount": "Kont uleeën",
+		"dobField": "Gebuertsdatum:",
+		"emailField": "E-Mail:",
+		"instanceField": "Instanz:",
+		"loginButton": "Aloggen",
+		"noAccount": "Hutt Dir kee Benotzerkont?",
+		"pw2Field": "Passwuert nach eng Kéier aginn:",
+		"pwField": "Passwuert:",
+		"trans": "Iwwersetzen",
+		"transDesc": "Dir kënnt dobäi hëllefe fir Fermi an Är eege Sprooch z'iwwersetzen!",
+		"transTitle": "Fermi iwwersetzen",
+		"userField": "Benotzernumm:"
+	},
+	"instanceStats": {
+		"members": "Memberen: $1",
+		"messages": "Messagen: $1",
+		"servers": "Serveren: $1",
+		"users": "Registréiert Benotzer: $1"
+	},
+	"invite": {
+		"accept": "Akzeptéieren",
+		"alreadyJoined": "Scho bäigetrueden",
+		"channel:": "Kanal:",
+		"createInvite": "Invitatioun maachen",
+		"invitedBy": "Dir gouft vum $1 invitéiert",
+		"never": "Ni"
+	},
+	"inviteOptions": {
+		"12h": "12 Stonnen",
+		"1d": "1 Dag",
+		"1h": "1 Stonn",
+		"30d": "30 Deeg",
+		"30m": "30 Minutten",
+		"6h": "6 Stonnen",
+		"7d": "7 Deeg",
+		"never": "Ni",
+		"noLimit": "Keng Limitt",
+		"title": "Leit invitéieren"
+	},
+	"loaded": "Gelueden",
+	"localuser": {
+		"2faCode:": "Code:",
+		"2faDisable": "2FA desaktivéieren",
+		"2faEnable": "2FA aktivéieren",
+		"CheckUpdate": "No Aktualiséierunge sichen",
+		"PasswordsNoMatch": "D'Passwierder sinn net d'selwecht",
+		"addBot": "Bot derbäisetzen",
+		"advancedBot": "Erweidert Bot-Astellungen",
+		"badCode": "Ongültege Code",
+		"badPassword": "Falscht Passwuert",
+		"botUsername": "Botbenotzernumm:",
+		"changeEmail": "E-Mail-Adress änneren",
+		"changePassword": "Passwuert änneren",
+		"changeUsername": "Benotzernumm änneren",
+		"clearCache": "Cache eidelmaachen",
+		"connections": "Verbindungen",
+		"deleteAccountButton": "Kont läschen",
+		"description": "Beschreiwung:",
+		"install": "Installéieren",
+		"installJank": "Fermi installéieren",
+		"language": "Sprooch:",
+		"manageBot": "Bot geréieren",
+		"newEmail:": "Nei E-Mail",
+		"newPassword:": "Neit Passwuert:",
+		"newUsername": "Neie Benotzernumm:",
+		"notisound": "Notifikatiounstoun:",
+		"oldPassword:": "Aalt Passwuert:",
+		"password:": "Passwuert",
+		"settings": "Astellungen",
+		"status": "Status",
+		"trace": "Spueren",
+		"updateSettings": "Astellungen aktualiséieren",
+		"userSettings": "Benotzerastellungen"
+	},
+	"login": {
+		"login": "Aloggen",
+		"newPassword": "Neit Passwuert:",
+		"recover": "Passwuert vergiess?"
+	},
+	"logout": {
+		"error": {
+			"cancel": "Ofbriechen",
+			"cont": "Trotzdeem virufueren",
+			"title": "Beim Versuch Iech auszeloggen ass e Feeler geschitt"
+		},
+		"logout": "Ausloggen"
+	},
+	"manageInstance": {
+		"copy": "Kopéieren",
+		"genericType": "Geneeresch",
+		"length": "Längt:"
+	},
+	"media": {
+		"artist": "Kënschtler: $1",
+		"composer": "Komponist: $1",
+		"length": "Längt: $1 Minutten a(n) $2 Sekonnen",
+		"loading": "Lueden",
+		"moreInfo": "Méi Informatiounen"
+	},
+	"member": {
+		"nick:": "Spëtznumm:",
+		"reason:": "Grond:"
+	},
+	"message": {
+		"delete": "Message läschen",
+		"deleted": "Geläschte Message",
+		"edit": "Message änneren",
+		"edited": "(geännert)",
+		"fullMessage": "Vollstännege Message:",
+		"reactionAdd": "Reaktioun derbäisetzen",
+		"reactions": "Reaktioune weisen",
+		"reactionsTitle": "Reaktiounen"
+	},
+	"no": "Nee",
+	"permissions": {
+		"readableNames": {
+			"ADMINISTRATOR": "Administrateur",
+			"ATTACH_FILES": "Fichieren uspéngelen",
+			"CHANGE_NICKNAME": "Spëtznumm änneren",
+			"CONNECT": "Verbannen",
+			"CREATE_EVENTS": "Evenementer uleeën",
+			"MANAGE_GUILD_EXPRESSIONS": "Ausdréck geréieren",
+			"MANAGE_NICKNAMES": "Spëtznimm geréieren",
+			"MANAGE_ROLES": "Rolle geréieren",
+			"MUTE_MEMBERS": "Membere stommschalten",
+			"SEND_POLLS": "Ëmfroen uleeën",
+			"SPEAK": "Schwätzen",
+			"STREAM": "Video",
+			"USE_EXTERNAL_APPS": "Extern Appe benotzen",
+			"USE_EXTERNAL_EMOJIS": "Extern Emojie benotzen"
+		}
+	},
+	"profile": {
+		"bio": "Iwwer mech:",
+		"userInfo": "Benotzerinformatiounen"
+	},
+	"profileColor": "Profilfaarf",
+	"pronouns": "Pronomen:",
+	"readableName": "Lëtzebuergesch",
+	"register": {
+		"DOBError": "Gebuertsdatum: $1",
+		"emailError": "E-Mail-Adress: $1",
+		"passwordError:": "Passwuert: $1",
+		"usernameError": "Benotzernumm: $1"
+	},
+	"remove": "Ewechhuelen",
+	"reply": "Äntweren",
+	"role": {
+		"color": "Faarf",
+		"colors": {
+			"name": "Zuel vu Faarwen:",
+			"one": "Eng",
+			"secondColor": "Zweet Faarf:",
+			"thirdColor": "Drëtt Faarf:",
+			"three": "Dräi",
+			"two": "Zwou"
+		},
+		"delete": "Roll läschen",
+		"deleting": "Roll gëtt geläscht …",
+		"perms": "Berechtegungen",
+		"roles": "Rollen"
+	},
+	"search": {
+		"back": "Zeréck",
+		"new": "Nei",
+		"next": "Nächst",
+		"old": "Al",
+		"page": "Säit $1",
+		"search": "Sichen"
+	},
+	"settings": {
+		"img": "Bild eroplueden",
+		"save": "Ännerunge späicheren",
+		"updates": {
+			"serviceWorkerMode": {
+				"disabled": "Aus",
+				"enabled": "Un",
+				"offlineOnly": "Nëmmen offline"
+			}
+		}
 	},
 	"sticker": {
-		"title": "Stickeren",
-		"upload": "Stickeren eroplueden",
-		"image": "Bild:",
-		"name": "Numm:",
-		"desc": "Beschreiwung",
 		"confirmDel": "Sidd Dir sécher, datt Dir dëse Sticker läsche wëllt?",
 		"del": "Sticker läschen",
-		"tags": "Associéierten Emoji:"
+		"desc": "Beschreiwung",
+		"image": "Bild:",
+		"name": "Numm:",
+		"tags": "Associéierten Emoji:",
+		"title": "Stickeren",
+		"upload": "Stickeren eroplueden"
 	},
-	"404": {
-		"404": "404 Säit net fonnt",
-		"blog": "De Fermi-Blog"
+	"switchAccounts": "Konto wiesselen ⇌",
+	"todayAt": "Haut um $1",
+	"trace": {
+		"totalTime": "$2: $1&nbsp;ms",
+		"traces": "$1 ($2:&nbsp;ms) $3"
 	},
-	"deviceManage": {
-		"country": "Land: $1",
-		"region": "Regioun: $1",
-		"city": "Stad: $1",
-		"continent": "Kontinent: $1"
-	},
+	"typing": "$2 {{PLURAL:$1|ass|sinn}} am schreiwen",
 	"uploadFilesText": "Lued Är Fichieren hei erop!",
-	"bot": "BOT"
+	"useTemplate": "$1 als Schabloun benotzen",
+	"useTemplateButton": "Schabloun benotzen",
+	"user": {
+		"block": "Benotzer spären",
+		"editServerProfile": "Serverprofil änneren",
+		"invisible": "Onsiichtbar",
+		"offline": "Offline",
+		"online": "Online",
+		"remove": "Benotzer ewechhuelen",
+		"unblock": "Benotzer entspären"
+	},
+	"vc": {
+		"joinstream": "Stream kucken"
+	},
+	"webauth": {
+		"addKey": "Schlëssel derbäisetzen",
+		"manage": "Sécherheetsschlëssele geréieren"
+	},
+	"webhooks": {
+		"areYouSureDelete": "Sidd Dir sécher, datt Dir $1 läsche wëllt?",
+		"channel": "Kanal",
+		"name": "Numm:",
+		"type": "Typ: $1"
+	},
+	"yes": "Jo",
+	"yesterdayAt": "Gëschter um $1"
 }

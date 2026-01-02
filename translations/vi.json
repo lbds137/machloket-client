@@ -1,17 +1,14 @@
 {
 	"@metadata": {
-		"authors": [
-			"Bapham123",
-			"Duongvu"
-		]
+		"authors": ["Bapham123", "Duongvu"]
 	},
-	"readableName": "Tiếng Anh",
-	"pinMessage": "Ghim tin nhắn",
-	"reply": "Trả lời",
 	"logout": {
-		"logout": "Đăng xuất",
 		"error": {
 			"cancel": "Hủy bỏ"
-		}
-	}
+		},
+		"logout": "Đăng xuất"
+	},
+	"pinMessage": "Ghim tin nhắn",
+	"readableName": "Tiếng Anh",
+	"reply": "Trả lời"
 }

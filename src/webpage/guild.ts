@@ -235,7 +235,7 @@ class Guild extends SnowFlake {
 				this.confirmleave();
 			},
 			{
-				visable: function (_) {
+				visible: function (_) {
 					return this.properties.owner_id !== this.member.user.id;
 				},
 				color: "red",
@@ -248,7 +248,7 @@ class Guild extends SnowFlake {
 				this.confirmDelete();
 			},
 			{
-				visable: function (_) {
+				visible: function (_) {
 					return this.properties.owner_id === this.member.user.id;
 				},
 				color: "red",
@@ -264,7 +264,7 @@ class Guild extends SnowFlake {
 				this.generateSettings();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.member.hasPermission("MANAGE_GUILD");
 				},
 				icon: {
@@ -287,7 +287,7 @@ class Guild extends SnowFlake {
 				this.createchannels();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.member.hasPermission("MANAGE_CHANNELS");
 				},
 			},
@@ -298,7 +298,7 @@ class Guild extends SnowFlake {
 				this.createcategory();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.member.hasPermission("MANAGE_CHANNELS");
 				},
 			},
@@ -1723,14 +1723,14 @@ class Guild extends SnowFlake {
 				return;
 			}
 		}
-		if (this.prevchannel && ID !== null && this.prevchannel.visable) {
+		if (this.prevchannel && ID !== null && this.prevchannel.visible) {
 			console.log(this.prevchannel);
 			await this.prevchannel.getHTML(addstate, undefined, message);
 			return;
 		}
 		if (this.id !== "@me") {
 			for (const thing of this.channels) {
-				if (thing.type !== 4 && thing.visable) {
+				if (thing.type !== 4 && thing.visible) {
 					await thing.getHTML(addstate, undefined, message);
 					return;
 				}
@@ -1762,7 +1762,7 @@ class Guild extends SnowFlake {
 	}
 	noChannel(addstate: boolean) {
 		for (const c of this.channels) {
-			if (c.visable) {
+			if (c.visible) {
 				this.loadChannel(c.id, addstate);
 				return;
 			}

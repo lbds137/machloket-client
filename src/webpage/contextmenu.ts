@@ -25,7 +25,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 	private text: string | ((this: x, arg: y) => string);
 	private onClick: (this: x, arg: y, e: MouseEvent) => void;
 	private icon?: iconJson;
-	private visable?: (this: x, arg: y) => boolean;
+	private visible?: (this: x, arg: y) => boolean;
 	private enabled?: (this: x, arg: y) => boolean;
 	//TODO there *will* be more colors
 	private color?: "red" | "blue";
@@ -35,7 +35,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		onClick: ContextButton<x, y>["onClick"],
 		addProps: {
 			icon?: iconJson;
-			visable?: (this: x, arg: y) => boolean;
+			visible?: (this: x, arg: y) => boolean;
 			enabled?: (this: x, arg: y) => boolean;
 			color?: "red" | "blue";
 			group?: string;
@@ -44,17 +44,17 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		this.text = text;
 		this.onClick = onClick;
 		this.icon = addProps.icon;
-		this.visable = addProps.visable;
+		this.visible = addProps.visible;
 		this.enabled = addProps.enabled;
 		this.color = addProps.color;
 		this.group = addProps.group;
 	}
-	isVisable(obj1: x, obj2: y): boolean {
-		if (!this.visable) return true;
-		return this.visable.call(obj1, obj2);
+	isVisible(obj1: x, obj2: y): boolean {
+		if (!this.visible) return true;
+		return this.visible.call(obj1, obj2);
 	}
 	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement) {
-		if (!this.isVisable(obj1, obj2)) {
+		if (!this.isVisible(obj1, obj2)) {
 			return;
 		}
 
@@ -113,22 +113,22 @@ class ContextButton<x, y> implements menuPart<x, y> {
 	}
 }
 class ContextGroup<x, y> implements menuPart<x, y> {
-	private visable?: (this: x, arg: y) => boolean;
+	private visible?: (this: x, arg: y) => boolean;
 	groupSel: string;
 	group = undefined;
 	constructor(
 		group: string,
 		addProps: {
-			visable?: (this: x, arg: y) => boolean;
+			visible?: (this: x, arg: y) => boolean;
 		} = {},
 	) {
-		this.visable = addProps.visable;
+		this.visible = addProps.visible;
 
 		this.groupSel = group;
 	}
-	isVisable(obj1: x, obj2: y): boolean {
-		if (!this.visable) return true;
-		return this.visable.call(obj1, obj2);
+	isVisible(obj1: x, obj2: y): boolean {
+		if (!this.visible) return true;
+		return this.visible.call(obj1, obj2);
 	}
 	makeContextHTML(
 		x: x,
@@ -137,7 +137,7 @@ class ContextGroup<x, y> implements menuPart<x, y> {
 		layered: contextCluster<unknown, unknown>[],
 		processed: WeakSet<menuPart<unknown, unknown>>,
 	) {
-		if (!this.isVisable(x, y)) {
+		if (!this.isVisible(x, y)) {
 			return;
 		}
 		for (const [menu, x, y] of layered) {
@@ -151,14 +151,14 @@ class ContextGroup<x, y> implements menuPart<x, y> {
 	}
 }
 class Seperator<x, y> implements menuPart<x, y> {
-	private visable?: (obj1: x, obj2: y) => boolean;
+	private visible?: (obj1: x, obj2: y) => boolean;
 	group?: string;
-	constructor(visable?: (obj1: x, obj2: y) => boolean, group?: string) {
-		this.visable = visable;
+	constructor(visible?: (obj1: x, obj2: y) => boolean, group?: string) {
+		this.visible = visible;
 		this.group = group;
 	}
 	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement): void {
-		if (!this.visable || this.visable(obj1, obj2)) {
+		if (!this.visible || this.visible(obj1, obj2)) {
 			if (menu.children[menu.children.length - 1].tagName === "HR") {
 				return;
 			}
@@ -236,7 +236,7 @@ class Contextmenu<x, y> {
 		onClick: ContextButton<x, y>["onClick"],
 		addProps: {
 			icon?: iconJson;
-			visable?: (this: x, arg: y) => boolean;
+			visible?: (this: x, arg: y) => boolean;
 			enabled?: (this: x, arg: y) => boolean;
 			color?: "red" | "blue";
 			group?: string;
@@ -244,13 +244,13 @@ class Contextmenu<x, y> {
 	) {
 		this.buttons.push(new ContextButton(text, onClick, addProps));
 	}
-	addSeperator(visable?: (obj1: x, obj2: y) => boolean, group?: string) {
-		this.buttons.push(new Seperator(visable, group));
+	addSeperator(visible?: (obj1: x, obj2: y) => boolean, group?: string) {
+		this.buttons.push(new Seperator(visible, group));
 	}
 	addGroup(
 		group: string,
 		addprops?: {
-			visable?: (this: x, arg: y) => boolean;
+			visible?: (this: x, arg: y) => boolean;
 		},
 	) {
 		this.buttons.push(new ContextGroup<x, y>(group, addprops));

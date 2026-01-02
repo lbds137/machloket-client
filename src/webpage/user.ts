@@ -14,6 +14,7 @@ import {createImg, removeAni, safeImg} from "./utils/utils.js";
 import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
+import {getDeveloperSettings} from "./utils/storage/devSettings";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -45,7 +46,7 @@ class User extends SnowFlake {
 	constructor(userjson: userjson, owner: Localuser, dontclone: boolean = false) {
 		super(userjson.id);
 		this.owner = owner;
-		if (localStorage.getItem("logbad") && owner.user && owner.user.id !== userjson.id) {
+		if (getDeveloperSettings().logBannedFields && owner.user && owner.user.id !== userjson.id) {
 			this.checkfortmi(userjson);
 		}
 		if (!owner) {
@@ -298,7 +299,7 @@ class User extends SnowFlake {
 				this.block();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.relationshipType !== 2 && this.id !== this.localuser.user.id;
 				},
 			},
@@ -310,7 +311,7 @@ class User extends SnowFlake {
 				this.unblock();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.relationshipType === 2 && this.id !== this.localuser.user.id;
 				},
 			},
@@ -321,7 +322,7 @@ class User extends SnowFlake {
 				this.changeRelationship(1);
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return (
 						(this.relationshipType === 0 || this.relationshipType === 3) &&
 						this.id !== this.localuser.user.id &&
@@ -339,7 +340,7 @@ class User extends SnowFlake {
 				this.changeRelationship(0);
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.relationshipType === 1 && this.id !== this.localuser.user.id;
 				},
 			},
@@ -363,7 +364,7 @@ class User extends SnowFlake {
 				this.setFriendNick();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return new Set([1, 2, 3, 4]).has(this.relationshipType);
 				},
 			},
@@ -378,7 +379,7 @@ class User extends SnowFlake {
 				member.showEditProfile();
 			},
 			{
-				visable: function (member) {
+				visible: function (member) {
 					return member?.id === this.localuser.user.id;
 				},
 			},
@@ -391,7 +392,7 @@ class User extends SnowFlake {
 				member.showEditNick();
 			},
 			{
-				visable: function (member) {
+				visible: function (member) {
 					return (
 						!!member &&
 						member?.id !== this.localuser.user.id &&
@@ -407,7 +408,7 @@ class User extends SnowFlake {
 				member?.timeout();
 			},
 			{
-				visable: function (member) {
+				visible: function (member) {
 					if (!member) return false;
 					if (member.hasPermission("MODERATE_MEMBERS")) return false;
 
@@ -428,7 +429,7 @@ class User extends SnowFlake {
 				memb?.removeTimeout();
 			},
 			{
-				visable: function (member) {
+				visible: function (member) {
 					if (!member) return false;
 
 					return (
@@ -447,7 +448,7 @@ class User extends SnowFlake {
 				member?.kick();
 			},
 			{
-				visable: function (member) {
+				visible: function (member) {
 					if (!member) return false;
 					const us = member.guild.member;
 					if (member.id === us.id) {
@@ -469,7 +470,7 @@ class User extends SnowFlake {
 				member?.ban();
 			},
 			{
-				visable: function (member) {
+				visible: function (member) {
 					if (!member) return false;
 					const us = member.guild.member;
 					if (member.id === us.id) {
@@ -505,7 +506,7 @@ class User extends SnowFlake {
 				}
 			},
 			{
-				visable: (member) => {
+				visible: (member) => {
 					if (!member) return false;
 					const us = member.guild.member;
 					console.log(us.hasPermission("MANAGE_ROLES"));
@@ -532,7 +533,7 @@ class User extends SnowFlake {
 				}
 			},
 			{
-				visable: (member) => {
+				visible: (member) => {
 					if (!member) return false;
 					const us = member.guild.member;
 					console.log(us.hasPermission("MANAGE_ROLES"));
@@ -584,7 +585,7 @@ class User extends SnowFlake {
 				menu.show();
 			},
 			{
-				visable: function () {
+				visible: function () {
 					return this.localuser.rights.hasPermission("MANAGE_USERS");
 				},
 				color: "red",

@@ -3,7 +3,7 @@ import {
 	getInstances,
 	getStringURLMapPair,
 	instancefetch,
-	instanceinfo,
+	InstanceInfo,
 	removeAni,
 } from "./utils/utils.js";
 import {Emoji} from "./emoji.js";
@@ -890,13 +890,13 @@ class Dialog {
 		removeAni(background);
 	}
 }
-class InstancePicker implements OptionsElement<instanceinfo | null> {
-	value: instanceinfo | null = null;
+class InstancePicker implements OptionsElement<InstanceInfo | null> {
+	value: InstanceInfo | null = null;
 	owner: Options | Form;
 	verify = document.createElement("p");
-	onchange = (_: instanceinfo) => {};
+	onchange = (_: InstanceInfo) => {};
 	instance?: string;
-	watchForChange(func: (arg1: instanceinfo) => void) {
+	watchForChange(func: (arg1: InstanceInfo) => void) {
 		this.onchange = func;
 	}
 	constructor(
@@ -1077,7 +1077,7 @@ class Options implements OptionsElement<void> {
 		const container = this.container.deref();
 		if (container) {
 			if (this.isTop()) {
-				this.generateContainter();
+				this.generateContainer();
 			} else if (this.owner instanceof Options) {
 				this.owner.genTop();
 			} else {
@@ -1142,10 +1142,10 @@ class Options implements OptionsElement<void> {
 		onchange?: InstancePicker["onchange"],
 		{button, instance}: {button?: HTMLButtonElement; instance?: string} = {},
 	) {
-		const instacePicker = new InstancePicker(this, onchange, button, instance);
-		this.options.push(instacePicker);
-		this.generate(instacePicker);
-		return instacePicker;
+		const instancePicker = new InstancePicker(this, onchange, button, instance);
+		this.options.push(instancePicker);
+		this.generate(instancePicker);
+		return instancePicker;
 	}
 	returnFromSub() {
 		this.subOptions = undefined;
@@ -1245,7 +1245,7 @@ class Options implements OptionsElement<void> {
 		return text;
 	}
 	addHR() {
-		const rule = new HorrizonalRule();
+		const rule = new HorizontalRule();
 		this.options.push(rule);
 		this.generate(rule);
 		return rule;
@@ -1318,7 +1318,7 @@ class Options implements OptionsElement<void> {
 		const container = document.createElement("div");
 		this.container = new WeakRef(container);
 		container.classList.add(this.ltr ? "flexltr" : "flexttb", "flexspace");
-		this.generateContainter();
+		this.generateContainer();
 		div.append(container);
 		return div;
 	}
@@ -1368,7 +1368,7 @@ class Options implements OptionsElement<void> {
 			this.owner instanceof Float
 		);
 	}
-	generateContainter() {
+	generateContainer() {
 		const container = this.container.deref();
 		if (container) {
 			container.innerHTML = "";
@@ -1711,8 +1711,8 @@ class Form implements OptionsElement<object> {
 			traditionalSubmit,
 		});
 	}
-	generateContainter() {
-		this.options.generateContainter();
+	generateContainer() {
+		this.options.generateContainer();
 		if (this.options.isTop() && this.button && this.button.deref()) {
 			(this.button.deref() as HTMLElement).hidden = false;
 		}
@@ -2098,7 +2098,7 @@ class Form implements OptionsElement<object> {
 		element.textContent = message;
 	}
 }
-class HorrizonalRule implements OptionsElement<unknown> {
+class HorizontalRule implements OptionsElement<unknown> {
 	constructor() {}
 	generateHTML(): HTMLElement {
 		return document.createElement("hr");
