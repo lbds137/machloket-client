@@ -1,5 +1,5 @@
 // Async in order to account for maybe some day Spacebar supporting account data...
-export enum AnimateTristateValue {
+export const enum AnimateTristateValue {
 	Always = "always",
 	OnlyOnHover = "hover",
 	Never = "never",
@@ -10,7 +10,7 @@ export const AnimateTristateValues = [
 	AnimateTristateValue.Never,
 ];
 
-export enum ThemeOption {
+export const enum ThemeOption {
 	Dark = "Dark",
 	White = "WHITE",
 	Light = "Light",
@@ -40,14 +40,13 @@ export class UserPreferences {
 	}
 }
 
-export async function getPreferences(): Promise<UserPreferences>{
+export async function getPreferences(): Promise<UserPreferences> {
 	return new UserPreferences(JSON.parse(localStorage.getItem("userPreferences") || "{}"));
 }
 
-export async function setPreferences(prefs: UserPreferences): Promise<void>{
+export async function setPreferences(prefs: UserPreferences): Promise<void> {
 	localStorage.setItem("userPreferences", JSON.stringify(prefs));
 }
-
 
 //region Migration from untyped storage
 async function migrateOldPreferences(): Promise<void> {

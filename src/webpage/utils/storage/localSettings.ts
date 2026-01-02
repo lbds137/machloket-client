@@ -1,4 +1,4 @@
-export enum ServiceWorkerMode {
+export const enum ServiceWorkerMode {
 	// Skips registering the service worker completely
 	Unregistered = "unregistered",
 	// Registers the service worker but does not activate it
