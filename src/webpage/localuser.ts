@@ -3366,7 +3366,7 @@ class Localuser {
 				}
 				localStorage.removeItem("instanceinfo");
 				await SW.postMessage({
-					code: "CheckUpdate",
+					code: "clearCdnCache",
 				});
 
 				// @ts-ignore - chromium is smelly for not supporting the `forceGet` option (aka skip cache)
