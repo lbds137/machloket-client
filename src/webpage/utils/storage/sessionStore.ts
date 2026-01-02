@@ -7,8 +7,8 @@ export type UserAuth = {
 	// @deprecated
 	cachedEmail?: string;
 	sessionId: string;
-}
-
+};
+/*
 export class SessionStore {
 	currentSession: string;
 	sessions: Map<string, UserAuth> = {};
@@ -21,3 +21,4 @@ export class SessionStore {
 		return this.sessions.get(this.currentSession) || null;
 	}
 }
+*/
