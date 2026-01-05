@@ -1,18 +1,4 @@
 {
-	"2faCode": "Code 2FA :",
-	"404": {
-		"404": "404 Page non trouvée",
-		"app": "Vers l'application",
-		"blog": "Le blog Fermi",
-		"home": "Page d’accueil",
-		"listtitle": "Tu voulais peut-être aller dans un de ces endroits",
-		"login": "Connexion",
-		"report": "Si vous avez trouvé cette page dans le client, veuillez le signaler :",
-		"reset": "Page de réinitialisation du mot de passe",
-		"title": "Il semble que tu sois perdu",
-		"whatelse": "Que pensez-vous qu'il devrait se passer d'autre ?",
-		"whereever": "Où que ce soit"
-	},
 	"@metadata": {
 		"authors": [
 			"Asteralee",
@@ -30,6 +16,20 @@
 			"WillyM",
 			"Wladek92"
 		]
+	},
+	"2faCode": "Code 2FA :",
+	"404": {
+		"404": "404 Page non trouvée",
+		"app": "Vers l'application",
+		"blog": "Le blog Fermi",
+		"home": "Page d’accueil",
+		"listtitle": "Tu voulais peut-être aller dans un de ces endroits",
+		"login": "Connexion",
+		"report": "Si vous avez trouvé cette page dans le client, veuillez le signaler :",
+		"reset": "Page de réinitialisation du mot de passe",
+		"title": "Il semble que tu sois perdu",
+		"whatelse": "Que pensez-vous qu'il devrait se passer d'autre ?",
+		"whereever": "Où que ce soit"
 	},
 	"DMs": {
 		"close": "Fermer le message en direct",
@@ -589,7 +589,7 @@
 		"tos": "Vous devez accepter les conditions d’utilisation",
 		"usernameError": "Nom d’utilisateur : $1"
 	},
-	"renderJoinAvatars": "Afficer l'image de profile dex nouveaux membres: ",
+	"renderJoinAvatars": "Afficer l'image de profile dex nouveaux membres:",
 	"reply": "Répondre",
 	"replyingTo": "En réponse à $1",
 	"retrying": "Nouvelle tentative...",

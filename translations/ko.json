@@ -1,8 +1,14 @@
 {
-	"2faCode": "2FA 코드:",
 	"@metadata": {
-		"authors": ["Bisang", "McDutchie", "Suleiman the Magnificent Television", "YeBoy371", "Ykhwong"]
+		"authors": [
+			"Bisang",
+			"McDutchie",
+			"Suleiman the Magnificent Television",
+			"YeBoy371",
+			"Ykhwong"
+		]
 	},
+	"2faCode": "2FA 코드:",
 	"DMs": {
 		"close": "DM 닫기",
 		"copyId": "DM ID 복사",

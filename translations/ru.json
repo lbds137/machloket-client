@@ -1,9 +1,8 @@
 {
-	"2faCode": "Код двухфакторной аутентификации:",
-	"404": {
-		"reset": "Страница сброса пароля"
-	},
 	"@metadata": {
+		"comment": "Русский перевод Jank Client",
+		"last-updated": "2024/15/24",
+		"locale": "ru",
 		"authors": [
 			"Amire80",
 			"Aprenik",
@@ -18,10 +17,11 @@
 			"StealthTheAngryBird",
 			"Vl1",
 			"Yupik"
-		],
-		"comment": "Русский перевод Jank Client",
-		"last-updated": "2024/15/24",
-		"locale": "ru"
+		]
+	},
+	"2faCode": "Код двухфакторной аутентификации:",
+	"404": {
+		"reset": "Страница сброса пароля"
 	},
 	"DMs": {
 		"close": "Закрыть ЛС",

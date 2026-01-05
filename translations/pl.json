@@ -1,8 +1,10 @@
 {
-	"2faCode": "Kod 2FA:",
 	"@metadata": {
-		"authors": ["Atvalerie"]
+		"authors": [
+			"Atvalerie"
+		]
 	},
+	"2faCode": "Kod 2FA:",
 	"DMs": {
 		"close": "Zamknij prywatną wiadomość",
 		"copyId": "Kopiuj identyfikator DM",

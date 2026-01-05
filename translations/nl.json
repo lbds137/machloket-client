@@ -1,4 +1,11 @@
 {
+	"@metadata": {
+		"authors": [
+			"ABPMAB",
+			"McDutchie",
+			"Siebrand"
+		]
+	},
 	"2faCode": "2FA-code:",
 	"404": {
 		"404": "404 Pagina niet gevonden",
@@ -12,9 +19,6 @@
 		"title": "Ben je verdwaald?",
 		"whatelse": "Wat denk je dat er anders nog moet gebeuren?",
 		"whereever": "Waar dit ook is"
-	},
-	"@metadata": {
-		"authors": ["ABPMAB", "McDutchie", "Siebrand"]
 	},
 	"DMs": {
 		"close": "Direct bericht sluiten",
@@ -653,7 +657,7 @@
 		"usernameError": "Gebruikersnaam: $1"
 	},
 	"remove": "Verwijderen",
-	"renderJoinAvatars": "Profielafbeeldingen weergeven voor nieuwe leden: ",
+	"renderJoinAvatars": "Profielafbeeldingen weergeven voor nieuwe leden:",
 	"reply": "Antwoorden",
 	"replyingTo": "Reageren op $1",
 	"retrying": "Opnieuw proberen...",

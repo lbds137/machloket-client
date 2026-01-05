@@ -1,8 +1,11 @@
 {
-	"2faCode": "2FA kodas:",
 	"@metadata": {
-		"authors": ["McDutchie", "Nokeoo"]
+		"authors": [
+			"McDutchie",
+			"Nokeoo"
+		]
 	},
+	"2faCode": "2FA kodas:",
 	"DMs": {
 		"close": "Uždaryti DM",
 		"copyId": "Kopijuoti DM id",

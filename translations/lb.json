@@ -1,11 +1,13 @@
 {
+	"@metadata": {
+		"authors": [
+			"Volvox"
+		]
+	},
 	"2faCode": "2FA-Code:",
 	"404": {
 		"404": "404 Säit net fonnt",
 		"blog": "De Fermi-Blog"
-	},
-	"@metadata": {
-		"authors": ["Volvox"]
 	},
 	"DMs": {
 		"markRead": "Als gelies markéieren"

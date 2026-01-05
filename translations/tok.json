@@ -1,9 +1,13 @@
 {
+	"@metadata": {
+		"authors": [
+			"Illyria",
+			"Ookap",
+			"Sylvie"
+		]
+	},
 	"404": {
 		"login": "o kama lon sijelo"
-	},
-	"@metadata": {
-		"authors": ["Illyria", "Ookap", "Sylvie"]
 	},
 	"channel": {
 		"delete": "o weka poki toki",

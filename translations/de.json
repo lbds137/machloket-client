@@ -1,5 +1,4 @@
 {
-	"2faCode": "2FA-Code:",
 	"@metadata": {
 		"authors": [
 			"Booky",
@@ -15,6 +14,7 @@
 			"SomeRandomDeveloper"
 		]
 	},
+	"2faCode": "2FA-Code:",
 	"DMs": {
 		"close": "DM schließen",
 		"copyId": "DM-ID kopieren",

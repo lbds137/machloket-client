@@ -1,6 +1,19 @@
 {
 	"@metadata": {
-		"authors": ["Borichèt"]
+		"authors": [
+			"Borichèt"
+		]
+	},
+	"2faCode": "Còdes 2FA:",
+	"404": {
+		"404": "404 Pàgina nen trovà",
+		"app": "Vers l'aplicassion",
+		"blog": "Lë scartari Fermi",
+		"home": "Pàgina d'intrada",
+		"listtitle": "Peul desse ch'a vorìa andé ant un ëd costi pòst",
+		"login": "Intré ant ël sistema",
+		"report": "S'a l'ha trovà costa pàgina ant ël client, për piasì ch'a lo signala:",
+		"reset": "Pàgina ëd riampostassion ëd ciav"
 	},
 	"UrlGen": "Generator d'URL",
 	"Voice": {
@@ -84,9 +97,14 @@
 	"deleteConfirm": "É-lo sigur ëd vorèj dëscancelé sòn?",
 	"devSettings": {
 		"badUser": "Conession abilità për j'oget dij cativ utent ch'a mando tròpe anformassion:",
+		"cache": "Abilité ël servissi d'archivi ëd carte për ij travajeur dla memòria local:",
+		"cacheDesc": "j'archivi dle carte as cariëran an tuti ij cas, sòn a sigurërà mach che a son ant la memòria local cand a ven fòra un neuv agiornament.",
+		"captureTrace": "Cost paràmeter a dis a Fermi ëd ciapé dle propietà _pista dal servent. Soa abilitassion a podrìa fé nen marcé la decodificassion JSON progressiva (a podrìa essie damanca ëd carié torna)",
 		"description": "Costi a son për ij dësvlupador ëd Spacebar e Fermi. S'a sa nen lòn ch'a fa, për piasì ch'a fasa pa dij paciòch con costi paràmeter.",
+		"gatewayComp": "Disabilité la compression ëd passarela",
 		"logGateway": "L'argistr a l'ha arseivù dj'eveniment ëd passarela (anformassion an sël livel ëd l'argistr):",
-		"name": "Gust dël dësvlupador"
+		"name": "Gust dël dësvlupador",
+		"traces": "Smon-e le piste:"
 	},
 	"favoriteGifs": "Gif preferì",
 	"hideBlockedMessages": "A l'ha blocà cost utent, ch'a sgnaca pr'ëstërmé si mëssagi",
@@ -96,7 +114,24 @@
 		"warnOffiline": "L'istansa a l'é fòra 'd linia, impossìbil coleghesse"
 	},
 	"htmlPages": {
-		"idpermissions": "Sòn a përmëttra al trigomiro ëd:"
+		"addBot": "Gionté a la corporassion",
+		"alreadyHave": "Ha-lo già un cont?",
+		"box1title": "Fermi a l'é un client compatìbil con Spacebar ch'a sërca a esse mej ch'as peul con tante fonsionalità, dont:",
+		"createAccount": "Creé un cont",
+		"dobField": "Dàita ëd nassensa:",
+		"emailField": "Adrëssa eletrònica:",
+		"idpermissions": "Sòn a përmëttra al trigomiro ëd:",
+		"instanceField": "Istansa:",
+		"loaddesc": "A dovrìa nen vorèje tant",
+		"loadingText": "Fermi a l'é an camin ch'as caria",
+		"loginButton": "Rintré ant ël sistema",
+		"noAccount": "Ha-lo nen un cont?",
+		"openClient": "Duverté ël client",
+		"pw2Field": "Ch'a buta torna la ciav:",
+		"pwField": "Ciav:",
+		"switchaccounts": "Cangé 'd cont",
+		"userField": "Stranòm:",
+		"welcomeJank": "Bin-ëvnù an Fermi"
 	},
 	"interactions": {
 		"ephemeralDismiss": "Scarté ël mëssagi",

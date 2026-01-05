@@ -1,6 +1,8 @@
 {
-	"2faCode": "2FA kodu:",
 	"@metadata": {
+		"comment": "Sizli bizli",
+		"last-updated": "2024/11/24",
+		"locale": "tr",
 		"authors": [
 			"Botorfj",
 			"Erkin Alp Güney",
@@ -10,11 +12,9 @@
 			"Sakblue",
 			"SaldırganSincap",
 			"Slickdaddy"
-		],
-		"comment": "Sizli bizli",
-		"last-updated": "2024/11/24",
-		"locale": "tr"
+		]
 	},
+	"2faCode": "2FA kodu:",
 	"DMs": {
 		"close": "DM'yi kapat",
 		"copyId": "DM kimliğini kopyala",

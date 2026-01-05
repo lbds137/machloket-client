@@ -1,9 +1,13 @@
 {
 	"@metadata": {
-		"authors": ["MathMan05", "McDutchie", "Vl1"],
 		"comment": "Don't know how often I'll update this top part lol",
 		"last-updated": "2024/11/4",
-		"locale": "en"
+		"locale": "en",
+		"authors": [
+			"MathMan05",
+			"McDutchie",
+			"Vl1"
+		]
 	},
 	"botGuilds": "This means \"the guilds that the bot is in\" (i.e., is a member of).",
 	"errorReconnect": "Uses MarkDown",

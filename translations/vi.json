@@ -1,6 +1,9 @@
 {
 	"@metadata": {
-		"authors": ["Bapham123", "Duongvu"]
+		"authors": [
+			"Bapham123",
+			"Duongvu"
+		]
 	},
 	"logout": {
 		"error": {

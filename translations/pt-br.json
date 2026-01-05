@@ -1,4 +1,13 @@
 {
+	"@metadata": {
+		"authors": [
+			"Erol",
+			"Illyria",
+			"S0rs immanis12",
+			"Sixaxis",
+			"YuriNikolai"
+		]
+	},
 	"2faCode": "Código 2FA:",
 	"404": {
 		"404": "404 Página Não Encontrada",
@@ -12,9 +21,6 @@
 		"title": "Parece que você tá perdido",
 		"whatelse": "O que mais você acha que deveria acontecer?",
 		"whereever": "O que quer que isso seja"
-	},
-	"@metadata": {
-		"authors": ["Erol", "Illyria", "S0rs immanis12", "Sixaxis", "YuriNikolai"]
 	},
 	"DMs": {
 		"add": "Adicione alguém para este PV",
