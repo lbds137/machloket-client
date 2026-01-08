@@ -13,7 +13,10 @@
 		"listtitle": "Peul desse ch'a vorìa andé ant un ëd costi pòst",
 		"login": "Intré ant ël sistema",
 		"report": "S'a l'ha trovà costa pàgina ant ël client, për piasì ch'a lo signala:",
-		"reset": "Pàgina ëd riampostassion ëd ciav"
+		"reset": "Pàgina ëd riampostassion ëd ciav",
+		"title": "As dirìa ch'a l'é sperdusse",
+		"whatelse": "Cò' d'àutr a prensa ch'a dovrìa sucedie?",
+		"whereever": "An qualsëssìa pòst a sia"
 	},
 	"UrlGen": "Generator d'URL",
 	"Voice": {

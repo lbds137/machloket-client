@@ -134,7 +134,8 @@
 		"createInvite": "초대장 만들기",
 		"inviteLinkCode": "초대 링크/코드",
 		"invitedBy": "$1님이 당신을 초대했습니다",
-		"longInvitedBy": "$1님이 당신을 $2에 초대했습니다"
+		"longInvitedBy": "$1님이 당신을 $2에 초대했습니다",
+		"notFound": "초대장을 찾을 수 없습니다"
 	},
 	"inviteOptions": {
 		"12h": "12시간",
