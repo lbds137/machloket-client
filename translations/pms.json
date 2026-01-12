@@ -18,6 +18,13 @@
 		"whatelse": "Cò' d'àutr a prensa ch'a dovrìa sucedie?",
 		"whereever": "An qualsëssìa pòst a sia"
 	},
+	"DMs": {
+		"add": "Gionté cheidun a cost MD",
+		"close": "Saré ël mëssagi diret",
+		"copyId": "Copié l'identificativ dël mëssagi diret",
+		"markRead": "Marché coma lesù",
+		"name": "Mëssagi diret"
+	},
 	"UrlGen": "Generator d'URL",
 	"Voice": {
 		"status": {
@@ -48,6 +55,32 @@
 		"roleColors": "Disativé ij color dij ròj"
 	},
 	"accountNotStart": "Impossìbil anviaré ël cont",
+	"add": "Gionté",
+	"applications": {
+		"delete": "Eliminé l'aplicassion",
+		"sure": "É-lo sigur ëd vorèj eliminé $1?"
+	},
+	"badge": {
+		"active_developer": "Dësvlupador ativ",
+		"application_guild_subscription": "A l'ha un premi",
+		"automod": "Dovré la modìfica automàtica",
+		"bot_commands": "A manten ij comand",
+		"bug_hunter_level_1": "Cassador ëd givo livel 1",
+		"bug_hunter_level_2": "Cassador ëd givo livel 2",
+		"certified_moderator": "Moderator",
+		"early_supporter": "Sostegn dla prima ora",
+		"guild_booster_lvl1": "Corporassion ranforsà",
+		"guild_booster_lvl2": "Corporassion ranforsà",
+		"guild_booster_lvl3": "Corporassion ranforsà",
+		"guild_booster_lvl4": "Corporassion ranforsà",
+		"guild_booster_lvl5": "Corporassion ranforsà",
+		"guild_booster_lvl6": "Corporassion ranforsà",
+		"guild_booster_lvl7": "Corporassion ranforsà",
+		"guild_booster_lvl8": "Corporassion ranforsà",
+		"guild_booster_lvl9": "Corporassion ranforsà da 'n bon moment",
+		"hypesquad": "Còsa sota drit d'autor",
+		"hypesquad_house_1": "Coragi"
+	},
 	"bio": "Biografìa:",
 	"blankMessage": "Mëssagi veuid",
 	"blog": {

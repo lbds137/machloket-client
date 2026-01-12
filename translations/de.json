@@ -144,7 +144,7 @@
 		"timedOutUntil": "Im Timeout bis: $1",
 		"topic:": "Thema:",
 		"typebox": "Nachricht in $1",
-		"unmute": "Stummschaltung des Kanal aufheben",
+		"unmute": "Stummschaltung des Kanals aufheben",
 		"voice": "Sprache"
 	},
 	"channelLink": "# $1",
@@ -820,7 +820,7 @@
 		"message": "Nachricht an den Benutzer",
 		"nick": {
 			"foe": "Spitzname verwenden",
-			"friend": "Spitznamen eines Freund festlegen",
+			"friend": "Spitznamen eines Freundes festlegen",
 			"stalker": "Spitzname des Anfragenden vergeben",
 			"stalking": "Spitzname des Angefragten vergeben"
 		},
