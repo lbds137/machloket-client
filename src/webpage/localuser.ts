@@ -3539,6 +3539,11 @@ class Localuser {
 		form.addTextInput(I18n.localuser.privacyPolcyURL(), "privacy_policy_url", {
 			initText: json.privacy_policy_url,
 		});
+		form.addText(I18n.localuser.appID(appId));
+		form.addButtonInput("", I18n.localuser.showSecret(), () => {
+			const opt = form.addSubOptions(I18n.localuser.secret());
+			opt.addText(I18n.localuser.clientSecret(json.verify_key));
+		});
 		form.addTextInput(I18n.localuser.TOSURL(), "terms_of_service_url", {
 			initText: json.terms_of_service_url,
 		});
