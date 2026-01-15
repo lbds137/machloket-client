@@ -79,14 +79,24 @@
 		"guild_booster_lvl8": "Corporassion ranforsà",
 		"guild_booster_lvl9": "Corporassion ranforsà da 'n bon moment",
 		"hypesquad": "Còsa sota drit d'autor",
-		"hypesquad_house_1": "Coragi"
+		"hypesquad_house_1": "Coragi",
+		"hypesquad_house_2": "Briliantëssa",
+		"hypesquad_house_3": "Echilibri",
+		"legacy_username": "A l'ha në stranòm ardità",
+		"partner": "Cambrada dl'istansa",
+		"premium": "A pagament",
+		"quest_completed": "a l'ha fàit n'arcesta",
+		"staff": "Përsonal ëd l'istansa",
+		"verified_developer": "Dësvlupador verificà"
 	},
 	"bio": "Biografìa:",
 	"blankMessage": "Mëssagi veuid",
 	"blog": {
 		"blog": "Scartari",
+		"blogUpdates": "Agiornament a lë scartari:",
 		"desc": "Lese o abonesse a lë scartari për dj'agiornament su Fermi!",
-		"fermi": "Scartari ëd Fermi"
+		"fermi": "Scartari ëd Fermi",
+		"gotoPost": "Andé a la publicassion"
 	},
 	"botGuilds": "Corporassion a le quaj a aparten ël trigomiro:",
 	"botSettings": "Paràmeter dël trigomiro",

@@ -470,7 +470,7 @@
 		"oldPassword:": "Old password:",
 		"password:": "Password",
 		"privacyPolcyURL": "Privacy policy URL:",
-		"appID":"Appreciation ID: $1",
+		"appID":"Application ID: $1",
 		"showSecret":"Show Client Secret",
 		"clientSecret":"Client Secret: $1",
 		"secret":"Secret",
