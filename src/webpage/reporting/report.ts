@@ -502,7 +502,7 @@ class ReportElement {
 			}
 			case "guild_preview": {
 				const guild = map.guild;
-				if (!guild) return;
+				if (!guild) break;
 				const guildDiv = document.createElement("div");
 				guildDiv.classList.add("flexltr");
 				guildDiv.append(guild.generateGuildIcon(false));
