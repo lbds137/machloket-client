@@ -15,6 +15,7 @@ import {
 	reportPut,
 	reportTypes,
 	reportUserPut,
+	reportGuildPut,
 } from "./types.js";
 interface InfoMap {
 	message?: Message;
@@ -123,6 +124,17 @@ export class ReportMenu {
 					name: "user",
 					user_id: user.id,
 					guild_id: this.infoMap.member?.guild.id || "@me",
+				};
+				realBody = m;
+				break;
+			}
+			case "guild": {
+				const guild = this.infoMap.guild;
+				if (!guild) throw new Error("Guild expected");
+				const m: reportGuildPut = {
+					...obj,
+					name: "guild",
+					guild_id: guild.id,
 				};
 				realBody = m;
 				break;
@@ -478,6 +490,26 @@ class ReportElement {
 				const span = document.createElement("span");
 				span.textContent = this.owner.owner.infoMap.failMessage;
 				div.append(span);
+				break;
+			}
+			case "text": {
+				const h4 = document.createElement("h4");
+				h4.textContent = json.data.header;
+				const p = document.createElement("p");
+				p.textContent = json.data.body;
+				div.append(h4, p);
+				break;
+			}
+			case "guild_preview": {
+				const guild = map.guild;
+				if (!guild) return;
+				const guildDiv = document.createElement("div");
+				guildDiv.classList.add("flexltr");
+				guildDiv.append(guild.generateGuildIcon(false));
+				const title = document.createElement("h4");
+				title.textContent = guild.properties.name;
+				guildDiv.append(title);
+				div.append(guildDiv);
 				break;
 			}
 			default:

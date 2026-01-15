@@ -247,6 +247,7 @@
 			"owner": "Find the owner",
 			"permission": "Permissions:"
 		},
+		"report":"Report Guild",
 		"admins": "Find Admins",
 		"all": "all",
 		"banReason": "Ban reason: $1",

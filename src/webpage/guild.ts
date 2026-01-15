@@ -32,6 +32,8 @@ import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {MarkDown} from "./markdown.js";
 import {Command} from "./interactions/commands.js";
 import {Hover} from "./hover.js";
+import {ReportMenu} from "./reporting/report.js";
+import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
@@ -309,6 +311,20 @@ class Guild extends SnowFlake {
 			() => I18n.guild.copyId(),
 			function (this: Guild) {
 				navigator.clipboard.writeText(this.id);
+			},
+		);
+		Guild.contextmenu.addButton(
+			() => I18n.guild.report(),
+			async function () {
+				const menu = await ReportMenu.makeReport("guild", this.localuser, {guild: this});
+				menu?.spawnMenu();
+			},
+			{
+				visible: function () {
+					const settings = getDeveloperSettings();
+					return this.properties.owner_id !== this.localuser.user.id && settings.reportSystem;
+				},
+				color: "red",
 			},
 		);
 		//TODO mute guild button

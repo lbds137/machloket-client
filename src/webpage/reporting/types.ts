@@ -259,7 +259,7 @@ interface reportGuildDirPut extends reportPut {
 	guild_id: string;
 	name: "guild_directory_entry";
 }
-interface reportGuildPut extends reportPut {
+export interface reportGuildPut extends reportPut {
 	guild_id: string;
 	name: "guild";
 }
