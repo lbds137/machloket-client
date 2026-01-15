@@ -3353,6 +3353,16 @@ class Localuser {
 				SW.traceInit();
 			};
 
+			const box7 = devSettings.addCheckboxInput(I18n.devSettings.reportSystem(), () => {}, {
+				initState: getDeveloperSettings().reportSystem,
+			});
+			box7.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.reportSystem = e;
+				setDeveloperSettings(settings);
+				SW.traceInit();
+			};
+
 			devSettings.addButtonInput("", I18n.devSettings.clearWellKnowns(), async () => {
 				const currentUserInfos = JSON.parse(localStorage.getItem("userinfos")!);
 				for (const user of Object.keys(currentUserInfos.users)) {

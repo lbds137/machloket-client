@@ -17,6 +17,8 @@ import {Dialog} from "./settings.js";
 import {Sticker} from "./sticker.js";
 import {Components} from "./interactions/compontents.js";
 import {ImagesDisplay} from "./disimg";
+import {ReportMenu} from "./reporting/report.js";
+import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];
@@ -212,6 +214,20 @@ class Message extends SnowFlake {
 				},
 				icon: {
 					css: "svg-delete",
+				},
+				color: "red",
+			},
+		);
+		Message.contextmenu.addButton(
+			() => I18n.message.report(),
+			async function () {
+				const menu = await ReportMenu.makeReport("message", this.localuser, {message: this});
+				menu?.spawnMenu();
+			},
+			{
+				visible: function () {
+					const settings = getDeveloperSettings();
+					return this.author.id !== this.localuser.user.id && settings.reportSystem;
 				},
 				color: "red",
 			},

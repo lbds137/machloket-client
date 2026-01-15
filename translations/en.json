@@ -158,6 +158,7 @@
 		"clearWellKnowns": "Re-fetch .well-known records",
 		"description": "These are for developers of Spacebar/Fermi, if you don't know what you're doing, please don't mess with these settings.",
 		"gatewayComp": "Disable Gateway compression",
+		"reportSystem":"Enable experimental reporting system",
 		"logGateway": "Log received gateway events (log level info):",
 		"name": "Developer Settings",
 		"traces": "Expose traces:"
@@ -556,6 +557,7 @@
 		"andMore": "$1, and more!",
 		"attached": "Sent an attachment",
 		"delete": "Delete message",
+		"report":"Report message",
 		"deleted": "Deleted message",
 		"edit": "Edit message",
 		"edited": "(edited)",
@@ -567,6 +569,15 @@
 		"reactionsTitle": "Reactions",
 		"retry": "Resend errored message",
 		"viewrest": "View rest"
+	},
+	"report":{
+		"back":"Back",
+		"next":"Next",
+		"cancel":"Cancel",
+		"submit":"Submit",
+		"blockUser":"Block user",
+		"timeout":"Timeout Member",
+		"summary":"Report Summary:"
 	},
 	"messageLink": "Message in # $1",
 	"muteDuration": "Unmute in:",

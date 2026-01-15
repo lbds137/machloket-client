@@ -1,4 +1,4 @@
-type reportTypes =
+export type reportTypes =
 	| "message"
 	| "user"
 	| "guild_discovery"
@@ -10,7 +10,7 @@ type reportTypes =
 	| "application"
 	| "widget"
 	| "guild_directory_entry";
-type buttonTypes =
+export type buttonTypes =
 	| "submit" // This button shows a warning about making false reports along with the submit and back button
 	| "done" //This button just shows a Done button without a back button
 	| "cancel" //This button may provide a back button, but does not provide a button to move forward
@@ -39,7 +39,6 @@ type singleElementTypes =
 	| "guild_directory_entry_preview" // Shows the user a preview of the dirrectory the user is reporting
 	| "guild_scheduled_event_preview" //Shows the user a preview of the event the user is reporting
 	| "channel_preview" //shows the user a preview of the reported channel
-	| "app_preview" //show the user of the reported
 	| "widget_preview" //show the user a preview of the reported widget
 	| "breadcrumbs" // I think this is a defunct element that visually does not do anything, but was at one point a signal to include the breadcrumbs of how the user got there.
 	| "fail" // used in the failed menus
@@ -152,12 +151,15 @@ interface reportText extends reportElementBase {
 		is_localized: boolean;
 	};
 }
-type reportElements =
+export type reportElements =
 	| singleElementReport<singleElementTypes>
 	| externalLinkReport
 	| selectReport
-	| selfHarmHelp;
-interface report {
+	| selfHarmHelp
+	| reportText
+	| freeTextReport
+	| dropdownReport;
+export interface report {
 	name: reportTypes;
 	variant: string;
 	version: string;
@@ -177,49 +179,50 @@ interface report {
 	 */
 	language?: string;
 	nodes: {
-		[key: string]: {
-			id: number;
-			/**
-			 * this key is likely only used for translation reasons, and is not used during the reporting process
-			 */
-			key: string;
-			header: string;
-			subheader: string | null;
-			/**
-			 * information about a certain section displayed in a special box
-			 */
-			info: null | string;
-			/**
-			 * the button at the bottom of the report box
-			 */
-			button: {
-				type: buttonTypes;
-				target: null | number;
-			} | null;
-			/**
-			 * these are the elements that aren't the buttons to just continue along and may provide information to the user, or present the user with more options
-			 */
-			elements: reportElements[];
-			/**
-			 * this says what type of thing the user is reporting, though isn't actually used in the process of reporting
-			 */
-			report_type: null | string;
-			/**
-			 * These are the options with the strings leading to the numbers which represent the nodes to go to
-			 */
-			children: [string, number][];
-			/**
-			 * This is true if the checkbox element is required to have at least one element selected to continue
-			 */
-			is_multi_select_required: boolean;
-			/**
-			 * Used if this screen automatically submits the report without additional input
-			 */
-			is_auto_submit: boolean;
-		};
+		[key: string]: reportNode;
 	};
 }
-interface reportPut {
+export interface reportNode {
+	id: number;
+	/**
+	 * this key is likely only used for translation reasons, and is not used during the reporting process
+	 */
+	key: string;
+	header: string;
+	subheader: string | null;
+	/**
+	 * information about a certain section displayed in a special box
+	 */
+	info: null | string;
+	/**
+	 * the button at the bottom of the report box
+	 */
+	button: {
+		type: buttonTypes;
+		target: null | number;
+	} | null;
+	/**
+	 * these are the elements that aren't the buttons to just continue along and may provide information to the user, or present the user with more options
+	 */
+	elements: reportElements[];
+	/**
+	 * this says what type of thing the user is reporting, though isn't actually used in the process of reporting
+	 */
+	report_type: null | string;
+	/**
+	 * These are the options with the strings leading to the numbers which represent the nodes to go to
+	 */
+	children: [string, number][];
+	/**
+	 * This is true if the checkbox element is required to have at least one element selected to continue
+	 */
+	is_multi_select_required: boolean;
+	/**
+	 * Used if this screen automatically submits the report without additional input
+	 */
+	is_auto_submit: boolean;
+}
+export interface reportPut {
 	version: string;
 	variant: string;
 	language: string;
@@ -237,7 +240,7 @@ interface reportPut {
 	name: reportTypes;
 }
 
-interface reportMessagePut extends reportPut {
+export interface reportMessagePut extends reportPut {
 	channel_id: string;
 	message_id: string;
 	name: "message";

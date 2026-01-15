@@ -5,6 +5,7 @@ export class DeveloperSettings {
 	interceptApiTraces: boolean = false;
 	cacheSourceMaps: boolean = false;
 	logBannedFields: boolean = false;
+	reportSystem = false;
 
 	constructor(data: Partial<DeveloperSettings> = {}) {
 		Object.assign(this, data);
@@ -12,9 +13,7 @@ export class DeveloperSettings {
 }
 
 export function getDeveloperSettings(): DeveloperSettings {
-	return new DeveloperSettings(
-		JSON.parse(localStorage.getItem("developerSettings") || "{}"),
-	);
+	return new DeveloperSettings(JSON.parse(localStorage.getItem("developerSettings") || "{}"));
 }
 
 export function setDeveloperSettings(settings: DeveloperSettings): void {

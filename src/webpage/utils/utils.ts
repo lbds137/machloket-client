@@ -1022,7 +1022,8 @@ export class SW {
 			this.worker.postMessage({data: mode, code: "setMode"});
 		}
 
-		if (mode === ServiceWorkerMode.Unregistered) this.registration.unregister().then(r => console.log("Service worker unregistered:", r));
+		if (mode === ServiceWorkerMode.Unregistered)
+			this.registration.unregister().then((r) => console.log("Service worker unregistered:", r));
 	}
 
 	static forceClear() {

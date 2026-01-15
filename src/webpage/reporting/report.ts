@@ -1,0 +1,473 @@
+import {I18n} from "../i18n.js";
+import {Localuser} from "../localuser.js";
+import {MarkDown} from "../markdown.js";
+import {Member} from "../member.js";
+import {Message} from "../message.js";
+import {removeAni} from "../utils/utils.js";
+import {
+	buttonTypes,
+	report,
+	reportElements,
+	reportMessagePut,
+	reportNode,
+	reportPut,
+	reportTypes,
+} from "./types.js";
+interface InfoMap {
+	message?: Message;
+	failMessage?: string;
+}
+export class ReportMenu {
+	variant: string;
+	name: reportTypes;
+	owner: Localuser;
+	postback_url: URL;
+	rootNodeId: number;
+	successNodeId: number;
+	failNodeId: number;
+	reportNodes: Record<string, ReportNode>;
+	get localuser() {
+		return this.owner;
+	}
+	get info() {
+		return this.localuser.info;
+	}
+	nodes: ReportNode[];
+	options: string[] = [];
+	infoMap: InfoMap;
+	node?: ReportNode;
+	constructor(json: report, localuser: Localuser, infoMap: InfoMap) {
+		if (json.version !== "1.0") throw new Error("uh oh");
+		this.name = json.name;
+		this.variant = json.variant;
+		this.owner = localuser;
+		this.postback_url = new URL(json.postback_url, this.info.api);
+		this.rootNodeId = json.root_node_id;
+		this.successNodeId = json.success_node_id;
+		this.failNodeId = json.fail_node_id;
+		this.reportNodes = {};
+		for (const [id, nodejson] of Object.entries(json.nodes)) {
+			this.reportNodes[id] = new ReportNode(nodejson, this);
+		}
+		const first = this.reportNodes[this.rootNodeId];
+		if (!first) throw new Error("unable to find first node");
+		this.nodes = [];
+		this.infoMap = infoMap;
+	}
+	div?: HTMLDivElement;
+	async spawnMenu() {
+		const background = document.createElement("div");
+		background.classList.add("background");
+		background.onkeydown = (e) => {
+			if (e.key == "Escape") {
+				removeAni(background);
+			}
+		};
+		background.onclick = () => {
+			removeAni(background);
+		};
+
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "reportMenu");
+		background.append(div);
+		this.div = div;
+		div.onclick = (e) => {
+			e.stopImmediatePropagation();
+		};
+		const first = this.reportNodes[this.rootNodeId];
+		first.render();
+
+		document.body.append(background);
+	}
+	static async makeReport(type: reportTypes, localuser: Localuser, infoMap: InfoMap = {}) {
+		const res = await fetch(localuser.info.api + "/reporting/menu/" + type, {
+			headers: localuser.headers,
+		});
+		if (!res.ok) return;
+		const json = (await res.json()) as report;
+		return new ReportMenu(json, localuser, infoMap);
+	}
+	async submit(takeToScreen = true) {
+		const obj: Omit<reportPut, "name"> = {
+			version: "1.0",
+			variant: this.variant,
+			language: I18n.lang,
+			breadcrumbs: [...this.nodes.map((_) => _.id), this.node?.id as number],
+			elements: this.gatherElements(),
+		};
+		let realBody: any;
+		switch (this.name) {
+			case "message": {
+				const message = this.infoMap.message;
+				if (!message) throw new Error("Message expected");
+				const m: reportMessagePut = {
+					...obj,
+					name: "message",
+					message_id: message.id,
+					channel_id: message.channel.id,
+				};
+				realBody = m;
+			}
+		}
+		const res = await fetch(this.postback_url, {
+			method: "POST",
+			headers: this.localuser.headers,
+			body: JSON.stringify(realBody),
+		});
+		if (res.ok) {
+			if (takeToScreen) {
+				const suc = this.reportNodes[this.successNodeId];
+				if (!suc) throw new Error("unable to find suc node");
+				suc.render();
+			}
+		} else {
+			const json = await res.json();
+			this.errorNode(json?.message);
+		}
+	}
+	errorNode(message?: string) {
+		const error = this.reportNodes[this.failNodeId];
+		this.infoMap.failMessage = message;
+		if (!error) throw new Error("unable to find suc node");
+		error.render();
+	}
+	gatherElements() {
+		let elms: Record<string, string[]> = {};
+		for (const node of this.nodes) {
+			elms = {
+				...node.gatherElements(),
+				...elms,
+			};
+		}
+		return elms;
+	}
+}
+class ReportNode {
+	owner: ReportMenu;
+	key: string;
+	header: string;
+	subheader: string | null;
+	info: string | null;
+	buttonType?: buttonTypes;
+	buttonTarget?: number;
+	elements: ReportElement[];
+	reportType: string | null;
+	children: [string, number][];
+	isMultiSelectRequired: boolean;
+	isAutoSubmit: boolean;
+	id: number;
+	constructor(json: reportNode, owner: ReportMenu) {
+		this.owner = owner;
+		this.header = json.header;
+		this.subheader = json.subheader;
+		this.key = json.key;
+		this.buttonType = json.button?.type;
+		this.buttonTarget = json.button?.target || undefined;
+		this.elements = json.elements.map((_) => new ReportElement(_, this));
+		this.reportType = json.report_type;
+		this.children = json.children;
+		this.isMultiSelectRequired = json.is_multi_select_required;
+		this.isAutoSubmit = json.is_auto_submit;
+		this.id = json.id;
+		this.info = json.info;
+	}
+	div?: HTMLDivElement;
+	render() {
+		if (this.owner.node) {
+			if (this.owner.node.div) removeAni(this.owner.node.div);
+		}
+		this.owner.node = this;
+		const div = document.createElement("div");
+		div.classList.add("flexttb");
+		this.div = div;
+		const title = document.createElement("h2");
+		title.textContent = this.header;
+		div.append(title);
+
+		if (this.subheader) {
+			const sub = document.createElement("h3");
+			sub.textContent = this.subheader;
+			div.append(sub);
+		}
+		div.append(document.createElement("hr"));
+		if (this.info) {
+			const info = document.createElement("span");
+			info.textContent = this.info;
+			div.append(info);
+		}
+		div.append(...this.elements.map((e) => e.makeHTML()));
+		const children = document.createElement("div");
+		children.classList.add("reportChildren", "flexttb");
+		children.append(
+			...this.children.map(([name, id]) => {
+				const button = document.createElement("button");
+				button.textContent = name;
+				button.onclick = () => {
+					this.jumpPannel(id, true, name);
+				};
+				return button;
+			}),
+		);
+
+		const buttonDiv = document.createElement("div");
+		buttonDiv.classList.add("flexltr", "reportButtonDiv");
+		console.log(this.buttonType);
+		switch (this.buttonType) {
+			case "next": {
+				const next = document.createElement("button");
+				next.textContent = I18n.report.next();
+				buttonDiv.append(next);
+				next.onclick = () => {
+					if (this.isMultiSelectRequired) {
+						for (const elm of this.elements) {
+							if (elm.notFilled()) {
+								return;
+							}
+						}
+					}
+					if (this.buttonTarget !== undefined) this.jumpPannel(this.buttonTarget, true);
+				};
+				break;
+			}
+			case "submit": {
+				const submit = document.createElement("button");
+				submit.textContent = I18n.report.submit();
+				buttonDiv.append(submit);
+				submit.onclick = () => {
+					this.owner.submit();
+				};
+				break;
+			}
+			case "cancel": {
+				const cancel = document.createElement("button");
+				cancel.textContent = I18n.report.cancel();
+				buttonDiv.prepend(cancel);
+				cancel.onclick = () => {
+					const div = this.owner.div?.parentElement;
+					if (div) removeAni(div);
+				};
+				break;
+			}
+
+			default:
+				console.log(this.buttonType);
+		}
+		if (
+			this.buttonType !== "cancel" &&
+			this.buttonType !== "done" &&
+			!this.elements.find((e) => e.json.type === "skip")
+		) {
+			const back = document.createElement("button");
+			back.textContent = I18n.report.back();
+			buttonDiv.prepend(back);
+			back.onclick = () => {
+				const pop = this.owner.nodes.pop();
+				this.owner.options.pop();
+				if (pop) {
+					this.jumpPannel(pop.id);
+				}
+			};
+		}
+
+		div.append(children, buttonDiv);
+		if (this.isAutoSubmit) this.owner.submit(false);
+
+		this.owner.div?.append(div);
+	}
+	gatherElements() {
+		const elms: Record<string, string[]> = {};
+		for (const thing of this.elements) {
+			if (thing.options) elms[thing.json.name] = thing.options;
+		}
+		return elms;
+	}
+
+	jumpPannel(id: number, push = false, option = "") {
+		if (push) {
+			this.owner.nodes.push(this);
+			this.owner.options.push(option);
+		}
+		const next = this.owner.reportNodes[id];
+		if (!next) throw new Error("node doesn't exist");
+		next.render();
+	}
+	getSelectStr() {
+		let comb: string[] = [];
+		for (const elm of this.elements) {
+			if (elm.optionReal.length) {
+				comb.push(...elm.optionReal);
+			}
+		}
+		console.log(comb, this);
+		return new Intl.ListFormat(I18n.lang).format(comb);
+	}
+}
+class ReportElement {
+	json: reportElements;
+	owner: ReportNode;
+	options: string[] = [];
+	optionReal: string[] = [];
+	constructor(json: reportElements, owner: ReportNode) {
+		this.json = json;
+		this.owner = owner;
+	}
+	makeHTML() {
+		const div = document.createElement("div");
+		div.classList.add("reportOption", "flexttb");
+		const json = this.json;
+		if (json.skip_if_unlocalized && !json.is_localized) return div;
+		const map = this.owner.owner.infoMap;
+		switch (json.type) {
+			case "external_link": {
+				const data = json.data;
+				if (data.is_header_hidden) break;
+				const a = document.createElement("a");
+				MarkDown.safeLink(a, data.url);
+				a.textContent = data.link_text;
+				div.append(a);
+				if (data.link_description) {
+					const span = document.createElement("span");
+					span.textContent = data.link_description;
+					div.append(span);
+				}
+				break;
+			}
+			case "message_preview": {
+				const m = this.owner.owner.infoMap.message;
+				if (m) {
+					div.append(m.buildhtml(undefined, true));
+				} else {
+					div.append("You should never see this");
+				}
+				break;
+			}
+			case "breadcrumbs": {
+				const title = document.createElement("span");
+				title.textContent = I18n.report.summary();
+				div.append(title);
+				const ul = document.createElement("ul");
+
+				for (let i = 0; i < this.owner.owner.options.length; i++) {
+					const str = this.owner.owner.options[i];
+					if (str) {
+						const li = document.createElement("li");
+						li.textContent = str;
+						ul.append(li);
+					}
+					const op = this.owner.owner.nodes[i];
+					if (op) {
+						const str = op.getSelectStr();
+						if (str) {
+							const li = document.createElement("li");
+							li.textContent = str;
+							ul.append(li);
+						}
+					}
+				}
+
+				div.append(ul);
+				break;
+			}
+			case "ignore_users":
+			case "share_with_parents": {
+				//TODO implement when spacebar implements these
+				break;
+			}
+			case "block_users": {
+				const user = map.message?.author;
+				if (!user) break;
+				const button = document.createElement("button");
+				button.textContent = I18n.report.blockUser();
+				div.append(button);
+				button.onclick = () => {
+					user.block();
+				};
+				break;
+			}
+			case "mute_users": {
+				const message = map.message;
+				if (!message) break;
+				if (!message.guild.member.hasPermission("MUTE_MEMBERS")) break;
+				(async () => {
+					const member = await Member.resolveMember(message.author, message.guild);
+					if (!member) return;
+
+					const button = document.createElement("button");
+					button.textContent = I18n.report.timeout();
+					div.append(button);
+					button.onclick = () => {
+						member.timeout();
+					};
+				})();
+
+				break;
+			}
+			case "app_preview": {
+				//TODO figure out what this is supposed to be
+				break;
+			}
+			case "skip": {
+				break;
+			}
+			case "checkbox": {
+				div.classList.add("friendGroupSelect");
+				for (const [subName, name, desc] of json.data) {
+					const elm = document.createElement("div");
+					elm.classList.add("flexltr", "checkCard");
+					const check = document.createElement("input");
+					check.type = "checkbox";
+					check.checked = this.options.includes(subName);
+					check.onclick = (e) => e.stopImmediatePropagation();
+					elm.onclick = (e) => {
+						e.stopImmediatePropagation();
+						check.click();
+					};
+					check.onchange = () => {
+						if (check.checked) {
+							this.options.push(subName);
+						} else {
+							this.options = this.options.filter((_) => _ !== subName);
+						}
+						this.optionReal = this.options.map(
+							(_) => json.data.find((e) => e[0] === _)?.[1] as string,
+						);
+					};
+
+					const names = document.createElement("div");
+					names.classList.add("flexttb");
+					const nameElm = document.createElement("span");
+					nameElm.textContent = name;
+					names.append(name);
+					if (desc) {
+						const descElm = document.createElement("span");
+						descElm.textContent = desc;
+						names.append(desc);
+					}
+					elm.append(names, check);
+					div.append(elm);
+				}
+				break;
+			}
+			case "fail": {
+				if (!this.owner.owner.infoMap.failMessage) break;
+				const span = document.createElement("span");
+				span.textContent = this.owner.owner.infoMap.failMessage;
+				div.append(span);
+				break;
+			}
+			default:
+				console.log(json);
+				div.textContent = this.json.type;
+		}
+
+		return div;
+	}
+	notFilled() {
+		switch (this.json.type) {
+			case "checkbox":
+				return !this.options.length;
+			default:
+				return false;
+		}
+	}
+}

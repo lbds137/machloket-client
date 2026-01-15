@@ -3604,6 +3604,51 @@ fieldset input[type="radio"] {
 		border-radius: 3px 3px 1px 1px;
 	}
 }
+.reportMenu {
+	background: var(--primary-bg);
+	padding: 16px;
+	border-radius: 4px;
+	box-shadow: 1px 2px 5px 2px black;
+	width: 70%;
+	height: 70%;
+	overflow-y: auto;
+	> div {
+		> * {
+			margin-bottom: 4px;
+		}
+		min-height: 100%;
+	}
+}
+.removeElm {
+	> .reportMenu {
+		animation-duration: 0.2s;
+		animation-name: fade-in-back;
+		animation-fill-mode: forwards;
+		animation-timing-function: ease-out;
+		animation-name: fade-in-back-out;
+	}
+}
+.checkCard {
+	padding: 2px;
+	background: #00000036;
+	margin: 2px;
+	border-radius: 4px;
+	cursor: pointer;
+}
+.reportButtonDiv {
+	flex-shrink: 0;
+	button {
+		margin-right: 6px;
+	}
+}
+.reportChildren {
+	margin-top: auto;
+	height: fit-content;
+
+	button {
+		margin-bottom: 6px;
+	}
+}
 .settingbuttons {
 	flex: none;
 	width: 192px;
