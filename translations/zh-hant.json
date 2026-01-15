@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Key0121",
 			"Kly",
 			"張詠涵"
 		]
@@ -453,7 +454,7 @@
 		"disableConnection": "此連接已被伺服器端禁用",
 		"editingBot": "編輯機器人$1",
 		"install": "安裝",
-		"installDesc": "安裝 Fermi 後，您可以在其獨立的視窗中開啟，就像 Femi 自己的應用程式一樣！您也可以像以前那樣在網頁瀏覽器中使用 Fermi，功能是相同的。",
+		"installDesc": "安裝 Fermi 後，您可以在其獨立的視窗中開啟，就像 Fermi 自己的應用程式一樣！您也可以像以前那樣在網頁瀏覽器中使用 Fermi，功能是相同的。",
 		"installJank": "安裝 Fermi",
 		"language": "語言：",
 		"manageBot": "管理機器人",
@@ -469,6 +470,9 @@
 		"oldPassword:": "舊密碼：",
 		"password:": "密碼",
 		"privacyPolcyURL": "隱私政策 URL：",
+		"showSecret": "顯示客戶端密鑰",
+		"clientSecret": "客戶端密鑰：$1",
+		"secret": "密鑰",
 		"publicAvaliable": "讓機器人可以公開邀請？",
 		"refreshPage": "重整以套用",
 		"requireCode": "需要代碼授予才能邀請機器人？",
@@ -688,7 +692,7 @@
 		"bio": "關於我：",
 		"joined": "已建立帳號：$1",
 		"joinedMember": "已加入$1：$2",
-		"mut": "互助公會",
+		"mut": "共同公會",
 		"mutFriends": "共同好友",
 		"permInfo": "權限",
 		"userInfo": "使用者資訊"
