@@ -1,3 +1,4 @@
+import {Guild} from "../guild.js";
 import {I18n} from "../i18n.js";
 import {Localuser} from "../localuser.js";
 import {MarkDown} from "../markdown.js";
@@ -20,6 +21,7 @@ interface InfoMap {
 	user?: User;
 	member?: Member;
 	failMessage?: string;
+	guild?: Guild;
 }
 export class ReportMenu {
 	variant: string;
@@ -460,11 +462,11 @@ class ReportElement {
 					names.classList.add("flexttb");
 					const nameElm = document.createElement("span");
 					nameElm.textContent = name;
-					names.append(name);
+					names.append(nameElm);
 					if (desc) {
 						const descElm = document.createElement("span");
 						descElm.textContent = desc;
-						names.append(desc);
+						names.append(descElm);
 					}
 					elm.append(names, check);
 					div.append(elm);
