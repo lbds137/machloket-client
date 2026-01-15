@@ -278,7 +278,7 @@ interface reportApplicationPut extends reportPut {
 	application_id: string;
 	name: "application";
 }
-interface reportUserPut extends reportPut {
+export interface reportUserPut extends reportPut {
 	guild_id: string;
 	user_id: string;
 	name: "user";

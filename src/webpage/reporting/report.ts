@@ -13,6 +13,7 @@ import {
 	reportNode,
 	reportPut,
 	reportTypes,
+	reportUserPut,
 } from "./types.js";
 interface InfoMap {
 	message?: Message;
@@ -110,6 +111,19 @@ export class ReportMenu {
 					channel_id: message.channel.id,
 				};
 				realBody = m;
+				break;
+			}
+			case "user": {
+				const user = this.infoMap.user;
+				if (!user) throw new Error("User expected");
+				const m: reportUserPut = {
+					...obj,
+					name: "user",
+					user_id: user.id,
+					guild_id: this.infoMap.member?.guild.id || "@me",
+				};
+				realBody = m;
+				break;
 			}
 		}
 		const res = await fetch(this.postback_url, {
