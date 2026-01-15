@@ -3,6 +3,7 @@ import {Localuser} from "../localuser.js";
 import {MarkDown} from "../markdown.js";
 import {Member} from "../member.js";
 import {Message} from "../message.js";
+import {User} from "../user.js";
 import {removeAni} from "../utils/utils.js";
 import {
 	buttonTypes,
@@ -15,6 +16,8 @@ import {
 } from "./types.js";
 interface InfoMap {
 	message?: Message;
+	user?: User;
+	member?: Member;
 	failMessage?: string;
 }
 export class ReportMenu {
@@ -374,7 +377,7 @@ class ReportElement {
 				break;
 			}
 			case "block_users": {
-				const user = map.message?.author;
+				const user = map.message?.author || map.user;
 				if (!user) break;
 				const button = document.createElement("button");
 				button.textContent = I18n.report.blockUser();
@@ -404,6 +407,12 @@ class ReportElement {
 			}
 			case "app_preview": {
 				//TODO figure out what this is supposed to be
+				break;
+			}
+			case "user_preview": {
+				const user = map.user;
+				if (!user) break;
+				div.append(user.createWidget(map.member?.guild));
 				break;
 			}
 			case "skip": {

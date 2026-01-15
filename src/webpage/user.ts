@@ -15,6 +15,7 @@ import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
+import {ReportMenu} from "./reporting/report.js";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -551,6 +552,21 @@ class User extends SnowFlake {
 		);
 
 		this.contextmenu.addSeperator();
+
+		this.contextmenu.addButton(
+			() => I18n.user.report(),
+			async function (member) {
+				const menu = await ReportMenu.makeReport("user", this.localuser, {user: this, member});
+				menu?.spawnMenu();
+			},
+			{
+				visible: function () {
+					const settings = getDeveloperSettings();
+					return this.id !== this.localuser.user.id && settings.reportSystem;
+				},
+				color: "red",
+			},
+		);
 
 		this.contextmenu.addButton(
 			() => I18n.user.instanceBan(),

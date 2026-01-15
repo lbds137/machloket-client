@@ -809,6 +809,7 @@
 	"useTemplateButton": "Use Template",
 	"usedFermi": "Used Fermi",
 	"user": {
+		"report":"Report user",
 		"addRole": "Add roles",
 		"ban": "Ban member",
 		"block": "Block user",
