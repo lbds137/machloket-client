@@ -1,7 +1,10 @@
+import {Contextmenu} from "./contextmenu.js";
 import {Direct} from "./direct.js";
 import {I18n} from "./i18n.js";
 import {guildjson} from "./jsontypes.js";
+import {ReportMenu} from "./reporting/report.js";
 import {Dialog} from "./settings.js";
+import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {createImg} from "./utils/utils.js";
 
 export class Discovery {
@@ -17,6 +20,30 @@ export class Discovery {
 	}
 	constructor(owner: Direct) {
 		this.owner = owner;
+		this.context = this.makeContextMenu();
+	}
+	context: Contextmenu<string, () => HTMLElement>;
+	makeContextMenu() {
+		const menu = new Contextmenu<string, () => HTMLElement>("discovery");
+		const local = this.localuser;
+		menu.addButton(
+			() => I18n.guild.report(),
+			async function (elm) {
+				const menu = await ReportMenu.makeReport("guild_discovery", local, {
+					guild_id: this,
+					dyn_preview: elm,
+				});
+				menu?.spawnMenu();
+			},
+			{
+				visible: function () {
+					const settings = getDeveloperSettings();
+					return settings.reportSystem;
+				},
+				color: "red",
+			},
+		);
+		return menu;
 	}
 	async makeMenu() {
 		if (this.owner instanceof Direct) {
@@ -92,6 +119,22 @@ export class Discovery {
 
 		json.guilds.forEach((guild: guildjson["properties"]) => {
 			const content = document.createElement("div");
+
+			this.context.bindContextmenu(content, guild.id, () => {
+				const div = document.createElement("div");
+				div.classList.add("flexltr");
+				const img = this.getIconURL(guild);
+				img.classList.add("icon");
+				img.crossOrigin = "anonymous";
+
+				img.alt = "";
+				div.appendChild(img);
+
+				const name = document.createElement("h3");
+				name.textContent = guild.name;
+				div.appendChild(name);
+				return div;
+			});
 			content.classList.add("discovery-guild");
 			const banner = this.getBannerURL(guild);
 			if (banner) {

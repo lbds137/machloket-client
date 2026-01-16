@@ -16,6 +16,7 @@ import {
 	reportTypes,
 	reportUserPut,
 	reportGuildPut,
+	reportGuildDiscovery,
 } from "./types.js";
 interface InfoMap {
 	message?: Message;
@@ -23,6 +24,8 @@ interface InfoMap {
 	member?: Member;
 	failMessage?: string;
 	guild?: Guild;
+	guild_id?: string;
+	dyn_preview?: () => HTMLElement;
 }
 export class ReportMenu {
 	variant: string;
@@ -139,6 +142,17 @@ export class ReportMenu {
 				realBody = m;
 				break;
 			}
+			case "guild_discovery": {
+				const id = this.infoMap.guild_id;
+				if (!id) throw new Error("id expected");
+				const m: reportGuildDiscovery = {
+					...obj,
+					name: "guild_discovery",
+					guild_id: id,
+				};
+				realBody = m;
+				break;
+			}
 		}
 		const res = await fetch(this.postback_url, {
 			method: "POST",
@@ -217,7 +231,7 @@ class ReportNode {
 
 		if (this.subheader) {
 			const sub = document.createElement("h3");
-			sub.textContent = this.subheader;
+			sub.append(new MarkDown(this.subheader).makeHTML());
 			div.append(sub);
 		}
 		div.append(document.createElement("hr"));
@@ -368,7 +382,8 @@ class ReportElement {
 				if (m) {
 					div.append(m.buildhtml(undefined, true));
 				} else {
-					div.append("You should never see this");
+					//Apparently discord is dumb and will use in menus without messages
+					//div.append("You should never see this");
 				}
 				break;
 			}
@@ -510,6 +525,12 @@ class ReportElement {
 				title.textContent = guild.properties.name;
 				guildDiv.append(title);
 				div.append(guildDiv);
+				break;
+			}
+			case "guild_discovery_preview": {
+				const dyn = map.dyn_preview;
+				if (!dyn) break;
+				div.append(dyn());
 				break;
 			}
 			default:

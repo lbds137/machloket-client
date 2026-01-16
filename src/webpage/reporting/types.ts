@@ -52,7 +52,8 @@ type singleElementTypes =
 	| "user_preview" // Shows a preview of the user
 	| "skip" // Exits the menu and does not allow for going back
 	| "leave_guild" // An option to let you leave the guild
-	| "deauthorize_app"; //An option to deauthorize the app
+	| "deauthorize_app" //An option to deauthorize the app
+	| "guild_discovery_preview";
 
 interface singleElementReport<X extends singleElementTypes> extends reportElementBase {
 	name: X;
@@ -245,7 +246,7 @@ export interface reportMessagePut extends reportPut {
 	message_id: string;
 	name: "message";
 }
-interface reportGuildDiscovery extends reportPut {
+export interface reportGuildDiscovery extends reportPut {
 	guild_id: string;
 	name: "guild_discovery";
 }
