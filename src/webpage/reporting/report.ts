@@ -17,6 +17,7 @@ import {
 	reportUserPut,
 	reportGuildPut,
 	reportGuildDiscovery,
+	reportApplicationPut,
 } from "./types.js";
 interface InfoMap {
 	message?: Message;
@@ -26,6 +27,7 @@ interface InfoMap {
 	guild?: Guild;
 	guild_id?: string;
 	dyn_preview?: () => HTMLElement;
+	application_id?: string;
 }
 export class ReportMenu {
 	variant: string;
@@ -149,6 +151,17 @@ export class ReportMenu {
 					...obj,
 					name: "guild_discovery",
 					guild_id: id,
+				};
+				realBody = m;
+				break;
+			}
+			case "application": {
+				const id = this.infoMap.application_id;
+				if (!id) throw new Error("id expected");
+				const m: reportApplicationPut = {
+					...obj,
+					name: "application",
+					application_id: id,
 				};
 				realBody = m;
 				break;
@@ -300,7 +313,8 @@ class ReportNode {
 		if (
 			this.buttonType !== "cancel" &&
 			this.buttonType !== "done" &&
-			!this.elements.find((e) => e.json.type === "skip")
+			!this.elements.find((e) => e.json.type === "skip") &&
+			this.owner.nodes.length
 		) {
 			const back = document.createElement("button");
 			back.textContent = I18n.report.back();

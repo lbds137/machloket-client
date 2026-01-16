@@ -811,6 +811,7 @@
 	"usedFermi": "Used Fermi",
 	"user": {
 		"report":"Report user",
+		"reportApp":"Report Application",
 		"addRole": "Add roles",
 		"ban": "Ban member",
 		"block": "Block user",

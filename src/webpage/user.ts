@@ -567,6 +567,23 @@ class User extends SnowFlake {
 				color: "red",
 			},
 		);
+		this.contextmenu.addButton(
+			() => I18n.user.reportApp(),
+			async function (member) {
+				const menu = await ReportMenu.makeReport("application", this.localuser, {
+					user: this,
+					member,
+				});
+				menu?.spawnMenu();
+			},
+			{
+				visible: function () {
+					const settings = getDeveloperSettings();
+					return this.bot && settings.reportSystem;
+				},
+				color: "red",
+			},
+		);
 
 		this.contextmenu.addButton(
 			() => I18n.user.instanceBan(),

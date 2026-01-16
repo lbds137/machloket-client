@@ -275,7 +275,7 @@ interface reportGuildEventPut extends reportPut {
 	guild_scheduled_event_id: string;
 	name: "guild_scheduled_event";
 }
-interface reportApplicationPut extends reportPut {
+export interface reportApplicationPut extends reportPut {
 	application_id: string;
 	name: "application";
 }
