@@ -569,10 +569,9 @@ class User extends SnowFlake {
 		);
 		this.contextmenu.addButton(
 			() => I18n.user.reportApp(),
-			async function (member) {
+			async function () {
 				const menu = await ReportMenu.makeReport("application", this.localuser, {
-					user: this,
-					member,
+					application_id: this.id,
 				});
 				menu?.spawnMenu();
 			},
