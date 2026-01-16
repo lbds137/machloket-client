@@ -18,6 +18,12 @@ if (urlMaybe && URL.canParse(urlMaybe)) {
 }
 let entryPoints: {sPath: string; newPath: string}[] = [];
 async function bundleFiles() {
+	const filter = new Set<string>();
+	entryPoints = entryPoints.filter((_) => {
+		if (filter.has(_.sPath)) return false;
+		filter.add(_.sPath);
+		return true;
+	});
 	let mod = await swc.bundle(
 		entryPoints.map(({sPath}) => {
 			return {

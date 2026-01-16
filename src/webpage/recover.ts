@@ -89,11 +89,12 @@ function makeMenu1() {
 	});
 	d.show(false);
 }
-if (
-	window.location.href.split("#").length == 2 &&
-	new URLSearchParams(window.location.href.split("#")[1]).has("token")
-) {
-	makeMenu2();
-} else {
-	makeMenu1();
-}
+if (window.location.pathname.startsWith("/reset"))
+	if (
+		window.location.href.split("#").length == 2 &&
+		new URLSearchParams(window.location.href.split("#")[1]).has("token")
+	) {
+		makeMenu2();
+	} else {
+		makeMenu1();
+	}
