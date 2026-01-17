@@ -374,12 +374,15 @@ class ReportElement {
 		const div = document.createElement("div");
 		div.classList.add("reportOption", "flexttb");
 		const json = this.json;
-		if (json.skip_if_unlocalized && !json.is_localized) return div;
+		if (json.skip_if_unlocalized && !json.is_localized) {
+			return div;
+		}
 		const map = this.owner.owner.infoMap;
 		switch (json.type) {
 			case "external_link": {
 				const data = json.data;
-				if (data.is_header_hidden) break;
+				//TODO figure out what this actually was
+				//if (data.is_header_hidden) break;
 				const a = document.createElement("a");
 				MarkDown.safeLink(a, data.url);
 				a.textContent = data.link_text;
