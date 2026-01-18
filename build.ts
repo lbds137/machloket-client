@@ -197,8 +197,8 @@ async function build() {
 	langs = langs.filter((e) => e !== "qqq.json");
 	const langobj = {};
 	for (const lang of langs) {
-		const str = await fs.readFile(path.join(__dirname, "translations", lang));
-		const json = JSON.parse(str.toString());
+		const str = (await fs.readFile(path.join(__dirname, "translations", lang))).toString();
+		const json = JSON.parse(str);
 		langobj[lang] = json.readableName;
 		fs.writeFile(path.join(__dirname, "dist", "webpage", "translations", lang), str);
 	}
