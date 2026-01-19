@@ -254,6 +254,9 @@
 		"reactions": "Reaktioune weisen",
 		"reactionsTitle": "Reaktiounen"
 	},
+	"report": {
+		"cancel": "Ofbriechen"
+	},
 	"no": "Nee",
 	"permissions": {
 		"readableNames": {

@@ -159,6 +159,7 @@
 		"clearWellKnowns": "重新取得 .well-known 紀錄",
 		"description": "這些是給 Spacebar/Fermi 的開發人員使用，若您不清楚用途，請不要變動這些設定。",
 		"gatewayComp": "停用閘道器壓縮",
+		"reportSystem": "啟用實驗性回報系統",
 		"logGateway": "記錄接收到的閘道器事件（日誌等級資訊）：",
 		"name": "開發人員設定",
 		"traces": "暴露痕跡："
@@ -247,6 +248,7 @@
 			"owner": "尋找擁有者",
 			"permission": "權限："
 		},
+		"report": "回報公會",
 		"admins": "尋找管理員",
 		"all": "全部",
 		"banReason": "禁止原因：$1",
@@ -470,6 +472,7 @@
 		"oldPassword:": "舊密碼：",
 		"password:": "密碼",
 		"privacyPolcyURL": "隱私政策 URL：",
+		"appID": "應用程式 ID： $1",
 		"showSecret": "顯示客戶端密鑰",
 		"clientSecret": "客戶端密鑰：$1",
 		"secret": "密鑰",
@@ -556,6 +559,7 @@
 		"andMore": "$1，還有更多！",
 		"attached": "已發送附件",
 		"delete": "删除訊息",
+		"report": "回報訊息",
 		"deleted": "删除訊息",
 		"edit": "編輯訊息",
 		"edited": "（已編輯）",
@@ -567,6 +571,15 @@
 		"reactionsTitle": "反應",
 		"retry": "重新發送錯誤訊息",
 		"viewrest": "查看剩餘內容"
+	},
+	"report": {
+		"back": "返回",
+		"next": "下一個",
+		"cancel": "取消",
+		"submit": "送出",
+		"blockUser": "封鎖使用者",
+		"timeout": "逾時成員",
+		"summary": "回報摘要："
 	},
 	"messageLink": "在 # $1 的訊息",
 	"muteDuration": "取消噤聲：",
@@ -798,6 +811,8 @@
 	"useTemplateButton": "使用模板",
 	"usedFermi": "已使用 Fermi",
 	"user": {
+		"report": "回報使用者",
+		"reportApp": "回報申請",
 		"addRole": "新增角色",
 		"ban": "禁止成員",
 		"block": "封鎖使用者",

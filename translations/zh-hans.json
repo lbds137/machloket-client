@@ -3,6 +3,7 @@
 		"authors": [
 			"22593",
 			"ExoHyper2026",
+			"GuoPC",
 			"Key0121",
 			"Pawsdt",
 			"Peterxy12",
@@ -163,6 +164,7 @@
 		"clearWellKnowns": "重新获取 .well-known 记录",
 		"description": "这些设置是给 Spacebar/Fermi 的开发者用的，如果你不知道自己在做什么，请不要更改这些设置。",
 		"gatewayComp": "禁用网关压缩",
+		"reportSystem": "启用实验性举报系统",
 		"logGateway": "记录接收到的网关事件（日志级别信息）：",
 		"name": "开发者设置",
 		"traces": "暴露痕迹："
@@ -251,6 +253,7 @@
 			"owner": "寻找所有者",
 			"permission": "权限："
 		},
+		"report": "举报公会",
 		"admins": "寻找管理员",
 		"all": "全部",
 		"banReason": "禁止原因：$1",
@@ -474,7 +477,7 @@
 		"oldPassword:": "旧密码：",
 		"password:": "密码",
 		"privacyPolcyURL": "隐私政策 URL：",
-		"appID": "评价 ID：$1",
+		"appID": "应用程序 ID：$1",
 		"showSecret": "显示客户端密钥",
 		"clientSecret": "客户端密钥：$1",
 		"secret": "密钥",
@@ -561,6 +564,7 @@
 		"andMore": "$1，还有更多！",
 		"attached": "已发送附件",
 		"delete": "删除消息",
+		"report": "举报消息",
 		"deleted": "已删除消息",
 		"edit": "编辑消息",
 		"edited": "（已编辑）",
@@ -572,6 +576,15 @@
 		"reactionsTitle": "反应",
 		"retry": "重新发送错误消息",
 		"viewrest": "查看剩余内容"
+	},
+	"report": {
+		"back": "返回",
+		"next": "下一步",
+		"cancel": "取消",
+		"submit": "提交",
+		"blockUser": "封禁用户",
+		"timeout": "超时成员",
+		"summary": "举报摘要："
 	},
 	"messageLink": "在 # $1 的消息",
 	"muteDuration": "取消静音：",
@@ -803,6 +816,8 @@
 	"useTemplateButton": "使用模板",
 	"usedFermi": "已使用 Fermi",
 	"user": {
+		"report": "举报用户",
+		"reportApp": "举报应用程序",
 		"addRole": "添加角色",
 		"ban": "禁止成员",
 		"block": "封禁用户",
