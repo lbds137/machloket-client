@@ -1,0 +1,281 @@
+{
+	"@metadata": {
+		"authors": [
+			"Beta16",
+			"Dream Indigo",
+			"Slow",
+			"Wheelygay"
+		]
+	},
+	"404": {
+		"404": "404 Pagina non trovata",
+		"home": "Pagina principale",
+		"login": "Entra"
+	},
+	"DMs": {
+		"add": "Aggiungi qualcuno a questo DM",
+		"name": "Messaggi diretti"
+	},
+	"Voice": {
+		"status": {
+			"conectionFailed": "Connessione fallita",
+			"done": "Connesso",
+			"notconnected": "Non connesso",
+			"sendingStreams": "Invio di flussi audio",
+			"startingRTC": "Avvio della connessione RTC"
+		}
+	},
+	"accessibility": {
+		"gifSettings": {
+			"always": "Sempre",
+			"never": "Mai"
+		},
+		"name": "Accessibilità"
+	},
+	"add": "Aggiungi",
+	"applications": {
+		"delete": "Cancella applicazione",
+		"sure": "Sei sicuro di voler cancellare $1?"
+	},
+	"bio": "Biografia:",
+	"channel": {
+		"announcement": "Annunci",
+		"deleteCat": "Cancella categoria",
+		"name": "Canale",
+		"name:": "Nome:",
+		"permissions": "Permessi",
+		"selectCatName": "Nome della categoria",
+		"settings": "Impostazioni",
+		"text": "Testo",
+		"voice": "Voce"
+	},
+	"commands": {
+		"errorNotValid": "$1 non è una scelta valida per $2",
+		"required": "$1 è una parte obbligatoria di questo comando"
+	},
+	"createAccount": "Registrati",
+	"delete": "Cancella",
+	"devSettings": {
+		"name": "Impostazioni sviluppatore"
+	},
+	"deviceManage": {
+		"city": "Città: $1",
+		"continent": "Continente: $1",
+		"country": "Paese: $1",
+		"ip": "Ultimo IP conosciuto: $1",
+		"last": "Approssimativamente usato per l'ultima volta: $1",
+		"latitude": "Latitudine: $1",
+		"logout": "Esci",
+		"longitude": "Longitudine: $1",
+		"manageDev": "Gestisci dispositivo",
+		"region": "Regione: $1",
+		"title": "Gestisci sessioni"
+	},
+	"emoji": {
+		"confirmDel": "Sei sicuro di voler cancellare questo emoji?",
+		"image:": "Immagine:",
+		"name:": "Nome:",
+		"title": "Emoji",
+		"upload": "Carica emoji"
+	},
+	"emojiSelect": "Emoji:",
+	"folder": {
+		"color": "Colore cartella:",
+		"edit": "Modifica cartella",
+		"name": "Nome cartella:"
+	},
+	"form": {
+		"captcha": "Aspetta, sei un essere umano?"
+	},
+	"friends": {
+		"addfriend": "Aggiungi amico",
+		"blocked": "Bloccato",
+		"blockedusers": "Utenti bloccati:",
+		"bu": "Utenza bloccata"
+	},
+	"guild": {
+		"adminMenu": {
+			"ownName": "Proprietario",
+			"permission": "Permessi:"
+		},
+		"all": "tutti",
+		"boostMessage?": "Invia un messaggio quando qualcuno potenzia la tua gilda!",
+		"community": "Comunità",
+		"default": "Predefinito ($1)",
+		"defaultNoti": "Imposta le impostazioni di notifica predefinite della tua gilda!",
+		"description:": "Descrizione:",
+		"helpTips?": "Invia suggerimenti utili per la tua gilda!",
+		"invites": "Inviti",
+		"loadingDiscovery": "Caricamento...",
+		"markRead": "Segna come letto",
+		"name:": "Nome:",
+		"noLeave": "Non importa",
+		"none": "nessuno",
+		"notifications": "Notifiche",
+		"region:": "Regione:",
+		"sendrandomwelcome?": "Invia un messaggio casuale quando qualcuno si unisce a questa gilda",
+		"serverName": "Nome della gilda:",
+		"settings": "Impostazioni",
+		"stickWelcomeReact?": "Chiedi ai membri della tua gilda di reagire con un adesivo quando qualcuno si unisce!",
+		"systemSelect:": "Canale dei messaggi di sistema:",
+		"topic:": "Argomento:",
+		"unknownRole": "@ruolo-sconosciuto",
+		"yesLeave": "Si, ne sono sicuro"
+	},
+	"htmlPages": {
+		"addBot": "Aggiungi alla gilda",
+		"alreadyHave": "Hai già un'utenza?",
+		"createAccount": "Registrati",
+		"dobField": "Data di nascita:",
+		"trans": "Traduci",
+		"transDesc": "Puoi aiutarci a tradurre Fermi nella tua lingua!",
+		"transTitle": "Traduci Fermi",
+		"userField": "Nome utente:"
+	},
+	"instInfo": "Informazioni sull'istanza",
+	"instanceInfo": {
+		"name": "Informazioni sull'istanza",
+		"publicUrl": "[URL pubblico]($1)"
+	},
+	"instanceStats": {
+		"members": "Membri: $1",
+		"servers": "Gilda: $1"
+	},
+	"invite": {
+		"accept": "Accetta",
+		"channel:": "Canale:",
+		"createInvite": "Crea invito",
+		"createdAt": "Creato il $1",
+		"expireAfter": "Scadenza dopo:",
+		"expires": "Scade: $1",
+		"inviteMaker": "Creatore di inviti",
+		"never": "Mai",
+		"used": "Usato $1 {{PLURAL:$1|volta|volte}}."
+	},
+	"inviteOptions": {
+		"12h": "12 ore",
+		"1d": "1 giorno",
+		"1h": "1 ora",
+		"30d": "30 giorni",
+		"30m": "30 minuti",
+		"6h": "6 ore",
+		"7d": "7 giorni",
+		"never": "Mai"
+	},
+	"loaded": "Caricato",
+	"localuser": {
+		"2faCode:": "Codice:",
+		"areYouSureDelete": "Sei sicuro di voler cancellare la tua utenza? Se sì, inserisci la frase $1",
+		"connections": "Connessioni",
+		"deleteAccount": "Cancellazione utenza",
+		"deleteAccountButton": "Cancella utenza",
+		"install": "Installa",
+		"language": "Lingua:",
+		"mustTypePhrase": "Per cancellare la tua utenza devi digitare la frase",
+		"noUpdates": "Nessun aggiornamento trovato",
+		"appID": "ID applicazione: $1",
+		"refreshPage": "Aggiorna per applicare",
+		"settings": "Impostazioni",
+		"trace": "Tracciati",
+		"trusted": "Domini attendibili",
+		"updatesYay": "Sono stati trovati aggiornamenti!",
+		"userSettings": "Impostazioni utente"
+	},
+	"login": {
+		"allGood": "Tutto bene"
+	},
+	"media": {
+		"artist": "Artista: $1",
+		"composer": "Compositore: $1",
+		"length": "Durata: $1 minuti e $2 secondi",
+		"loading": "Caricamento",
+		"moreInfo": "Ulteriori informazioni"
+	},
+	"message": {
+		"attached": "Inviato un allegato",
+		"report": "Segnala messaggio",
+		"deleted": "Messaggio cancellato",
+		"edited": "(modificato)"
+	},
+	"report": {
+		"back": "Indietro",
+		"next": "Successivo",
+		"cancel": "Annulla",
+		"submit": "Invia",
+		"blockUser": "Blocca utente"
+	},
+	"messageLink": "Messaggio in # $1",
+	"no": "No",
+	"noPins": "Sembra che qui non ci sia niente... per ora",
+	"otherAt": "$1 alle $2",
+	"permissions": {
+		"descriptions": {
+			"BYPASS_SLOWMODE": "La slowmode non ha più effetto su questo utente",
+			"PIN_MESSAGES": "Consente all'utente di fissare messaggi",
+			"SEND_VOICE_MESSAGES": "Consente l'invio di messaggi vocali"
+		},
+		"readableNames": {
+			"BYPASS_SLOWMODE": "Bypassa la slowmode",
+			"CONNECT": "Connetti",
+			"PIN_MESSAGES": "Fissa messaggi",
+			"SEND_MESSAGES": "Invia messaggi",
+			"STREAM": "Video"
+		}
+	},
+	"profileColor": "Colore del profilo",
+	"pronouns": "Pronomi:",
+	"readableName": "Italiano",
+	"register": {
+		"register": "Registrati",
+		"usernameError": "Nome utente: $1"
+	},
+	"remove": "Rimuovi",
+	"reply": "Rispondi",
+	"role": {
+		"color": "Colore",
+		"copyId": "Copia ID ruolo",
+		"displaySettings": "Impostazioni di visualizzazione",
+		"perms": "Autorizzazioni",
+		"roles": "Ruoli"
+	},
+	"search": {
+		"back": "Indietro",
+		"new": "Nuovo",
+		"next": "Successivo",
+		"old": "Vecchio",
+		"page": "Pagina $1"
+	},
+	"settings": {
+		"clear": "Pulisci",
+		"img": "Carica immagine"
+	},
+	"sticker": {
+		"desc": "Descrizione",
+		"image": "Immagine:",
+		"name": "Nome:"
+	},
+	"todayAt": "Oggi alle $1",
+	"updateAv": "Aggiornamenti disponibili",
+	"uploadFilesText": "Carica i tuoi file qui!",
+	"user": {
+		"report": "Segnala utente",
+		"reportApp": "Segnala applicazione",
+		"editServerProfile": "Modifica il profilo della gilda",
+		"remove": "Rimuovi utente",
+		"unblock": "Sblocca utente"
+	},
+	"webauth": {
+		"addKey": "Aggiungi chiave",
+		"keyname": "Nome chiave:",
+		"manage": "Gestisci chiavi di sicurezza"
+	},
+	"webhooks": {
+		"channel": "Canale",
+		"createdBy": "Creato da:",
+		"name": "Nome:",
+		"type": "Tipo: $1",
+		"type3": "Applicazione"
+	},
+	"yes": "Si",
+	"yesterdayAt": "Ieri alle $1"
+}

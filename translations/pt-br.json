@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Eduardoaddad",
 			"Erol",
 			"Illyria",
 			"S0rs immanis12",
@@ -155,10 +156,32 @@
 	"deleteConfirm": "Tem certeza de que quer apagar isso?",
 	"devSettings": {
 		"badUser": "Habilitar o registro no console de objetos de usuário ruins que enviam informação demais:",
+		"cache": "Ativar arquivos de mapa de cache do Trabalhador de Serviços:",
+		"cacheDesc": "Os arquivos de mapa ainda vão carregar, isso só vai garantir que eles estão em um cache quando novas atualizações cheguem.",
+		"captureTrace": "Essa configuração diz ao Fermi para capturar propriedades _trace do servidor, ativar isso pode causar a decodificação progressiva do JSON a parar de funcionar (talvez exija um recarregamento)",
+		"clearWellKnowns": "Re-obter registros .well-known",
 		"description": "Essas são para desenvolvedores do Spacebar/Fermi, se você não sabe o que está fazendo, por favor não mexa com elas.",
+		"gatewayComp": "Desabilitar compressão do Gateway",
+		"reportSystem": "Habilitar sistema experimental de denúncias",
 		"logGateway": "Registrar no console eventos de gateway:",
 		"name": "Configurações de desenvolvedor",
 		"traces": "Expôr traços:"
+	},
+	"deviceManage": {
+		"city": "Cidade: $1",
+		"continent": "Continente: $1",
+		"country": "País: $1",
+		"curSes": "Essa é a sessão atual, você deve sair pelo outro menu",
+		"estimateWarn": "Aviso: toda essa informação só é uma suposição, pode estar incorreta.",
+		"ip": "Último IP reconhecido: $1",
+		"last": "Usado por último há aproximadamente: $1",
+		"latitude": "Latitude: $1",
+		"logout": "Sair",
+		"longitude": "Longitude: $1",
+		"manageDev": "Gerenciar dispositivo",
+		"postal": "Postal: $1",
+		"region": "Região: $1",
+		"title": "Gerenciar sessões"
 	},
 	"discovery": "Descobrir",
 	"dms": "Mensagens Privadas",
@@ -228,6 +251,7 @@
 			"owner": "Encontrar o dono",
 			"permission": "Permissões:"
 		},
+		"report": "Denunciar guilda",
 		"admins": "Encontrar Administradores",
 		"all": "todas",
 		"banReason": "Motivo do banimento: $1",
@@ -264,6 +288,7 @@
 		"memberCount": "$1 {{PLURAL:$1|membro|membros}}",
 		"mute": "Silenciar Guilda",
 		"name:": "Nome:",
+		"nameNoMatch": "Nomes não correspondem",
 		"noDelete": "Deixa pra lá",
 		"noLeave": "Deixa pra lá",
 		"none": "nenhuma",
@@ -278,6 +303,7 @@
 		"serverName": "Nome da guilda:",
 		"settings": "Configurações",
 		"settingsFor": "Configurações para $1",
+		"splash": "Splash no Descobrir:",
 		"stickWelcomeReact?": "Motive membros da sua guilda a reagir com um adesivo quando alguém entra!",
 		"systemSelect:": "Canal de mensagens do sistema:",
 		"tempCreatedBy": "Modelo criado por:",
@@ -290,6 +316,7 @@
 		"templates": "Modelos",
 		"templcateMetaDesc": "Um modelo permite que outros usem essa guilda como uma base para suas próprias guildas, irá copiar os canais, cargos e configurações dessa guilda, mas não as mensagens dessa guilda, bots ou seu ícone.",
 		"topic:": "Tópico:",
+		"unknownRole": "@cargo-desconhecido",
 		"viewTemplate": "Ver Modelo",
 		"yesDelete": "Sim, tenho certeza",
 		"yesLeave": "Sim, tenho certeza"
@@ -371,6 +398,7 @@
 		"maxUses": "Máximo de usos: $1",
 		"never": "Nunca",
 		"noAccount": "Crie uma conta para aceitar o convite",
+		"notFound": "Convite não pôde ser encontrado",
 		"subtext": "para $1 em $2",
 		"used": "Usado $1 {{PLURAL:$1|vez|vezes}}"
 	},
@@ -447,6 +475,10 @@
 		"oldPassword:": "Senha antiga:",
 		"password:": "Senha",
 		"privacyPolcyURL": "URL da Política de Privacidade:",
+		"appID": "ID do aplicativo: $1",
+		"showSecret": "Mostrar segredo do cliente",
+		"clientSecret": "Segredo do cliente: $1",
+		"secret": "Segredo",
 		"publicAvaliable": "Criar bot publicamente convidável?",
 		"refreshPage": "Recarregue para aplicar",
 		"requireCode": "Exigir código para convidar o bot?",
@@ -521,6 +553,7 @@
 		"ban": "Banir $1 de $2",
 		"kick": "Expulsar $1 de $2",
 		"nick:": "Apelido:",
+		"persist": "Apagar somente o usuário:",
 		"reason:": "Motivo:",
 		"timeout": "Castigo $1",
 		"timeoutTime": "Tempo de Castigo:"
@@ -529,6 +562,7 @@
 		"andMore": "$1, e mais!",
 		"attached": "Enviou um anexo",
 		"delete": "Excluir mensagem",
+		"report": "Denunciar mensagem",
 		"deleted": "Mensagem excluída",
 		"edit": "Editar mensagem",
 		"edited": "editado",
@@ -540,6 +574,15 @@
 		"reactionsTitle": "Reações",
 		"retry": "Reenviar mensagem com erro",
 		"viewrest": "Ver o resto"
+	},
+	"report": {
+		"back": "Voltar",
+		"next": "Próximo",
+		"cancel": "Cancelar",
+		"submit": "Enviar",
+		"blockUser": "Bloquear usuário",
+		"timeout": "Castigar membro",
+		"summary": "Sumário do reporte:"
 	},
 	"messageLink": "Mensageie # $1",
 	"muteDuration": "Dessilenciar em:",
@@ -685,6 +728,7 @@
 		"usernameError": "Nome de usuário: $1"
 	},
 	"remove": "Remover",
+	"renderJoinAvatars": "Mostrar avatares de membros novos:",
 	"reply": "Responder",
 	"replyingTo": "Respondendo a $1",
 	"retrying": "Tentando novamente...",
@@ -732,7 +776,8 @@
 				"disabled": "Desligado",
 				"enabled": "Ligado",
 				"offlineOnly": "Somente offline",
-				"title": "Configuração do Trabalhador de Serviço"
+				"title": "Configuração do Trabalhador de Serviço",
+				"unregistered": "Desabilitado (incluindo cache de mídia)"
 			}
 		}
 	},
@@ -769,12 +814,15 @@
 	"useTemplateButton": "Usar modelo",
 	"usedFermi": "Usou Fermi",
 	"user": {
+		"report": "Denunciar usuário",
+		"reportApp": "Denunciar aplicativo",
 		"addRole": "Adicionar cargos",
 		"ban": "Banir membro",
 		"block": "Bloquear usuário",
 		"confirmInstBan": "Tem certeza de que quer banir $1 da instância?",
 		"copyId": "Copiar ID do usuário",
 		"dnd": "Não-perturbe",
+		"editNick": "Editar Apelido",
 		"editServerProfile": "Editar perfil da guilda",
 		"friendReq": "Pedido de amizade",
 		"idle": "Ausente",
@@ -782,6 +830,12 @@
 		"invisible": "Invisível",
 		"kick": "Expulsar membro",
 		"message": "Enviar mensagem",
+		"nick": {
+			"foe": "Definir apelido de inimigo",
+			"friend": "Definir apelido de amigo",
+			"stalker": "Definir apelido do solicitador",
+			"stalking": "Definir apelido do solicitado"
+		},
 		"offline": "Offline",
 		"online": "Online",
 		"remove": "Remover usuário",

@@ -1,17 +1,49 @@
 {
 	"@metadata": {
 		"authors": [
-			"Atvalerie"
+			"Atvalerie",
+			"Woytecr"
 		]
 	},
 	"2faCode": "Kod 2FA:",
+	"404": {
+		"404": "404 Strona nie znaleziona",
+		"app": "Do aplikacji",
+		"blog": "Blog Fermi",
+		"home": "Strona główna",
+		"listtitle": "Może miałeś zamiar wybrać się do jednego z tych miejsc",
+		"login": "Zaloguj się",
+		"report": "Jeżeli znalazłeś tę stronę w kliencie, zgłoś ją:",
+		"reset": "Strona resetowania hasła",
+		"title": "Wygląda na to, że się zgubiłeś",
+		"whatelse": "Co jeszcze Twoim zdaniem powinno się wydarzyć?",
+		"whereever": "Gdziekolwiek to jest"
+	},
 	"DMs": {
+		"add": "Dodaj kogoś do tej wiadomości prywatnej",
 		"close": "Zamknij prywatną wiadomość",
 		"copyId": "Kopiuj identyfikator DM",
 		"markRead": "Oznacz jako przeczytane",
 		"name": "Prywatne Wiadomości"
 	},
 	"UrlGen": "Generator adresów URL",
+	"Voice": {
+		"status": {
+			"badWS": "Zła odpowiedź od WS",
+			"conectionFailed": "Połączenie nie powiodło się",
+			"done": "Połączony",
+			"left": "Opuszczono voice chat",
+			"makingOffer": "Składanie oferty",
+			"noSDP": "Brak SDP",
+			"notconnected": "Nie połączono",
+			"sendingStreams": "Wysyłanie strumieni audio",
+			"startingRTC": "Rozpoczęcie połączenia RTC",
+			"waitingMainWS": "Oczekiwanie na głowny WS",
+			"waitingURL": "Oczekiwanie na adres URL głosu",
+			"wsAuth": "oczekiwanie na autoryzację WS",
+			"wsOpen": "Oczekiwanie na otwarcie WS"
+		}
+	},
 	"accessibility": {
 		"gifSettings": {
 			"always": "Zawsze",
@@ -19,10 +51,16 @@
 			"never": "Nigdy"
 		},
 		"name": "Dostępność",
-		"playGif": "Odtwarzaj pliki GIF:",
+		"playGif": "Odtwarzaj pliki GIF na:",
+		"playIcon": "Odtwarzaj animowane ikony na:",
 		"roleColors": "Wyłącz kolory ról"
 	},
 	"accountNotStart": "Nie można uruchomić konta",
+	"add": "Dodaj",
+	"applications": {
+		"delete": "Usuń aplikację",
+		"sure": "Czy na pewno chcesz usunąć $1?"
+	},
 	"badge": {
 		"active_developer": "Aktywny programista",
 		"application_guild_subscription": "Ma premium",
@@ -54,18 +92,34 @@
 	},
 	"bio": "O mnie:",
 	"blankMessage": "Pusta wiadomość",
+	"blog": {
+		"blog": "Blog",
+		"blogUpdates": "Aktualizacje bloga:",
+		"desc": "Przeczytaj lub subskrybuj blog, aby uzyskać informacje na temat Fermi!",
+		"fermi": "Blog Fermi",
+		"gotoPost": "Przejdź do postu",
+		"wantUpdates": "Czy chcesz otrzymywać cotygodniowe aktualizacje blogowe na temat stanu Fermi?"
+	},
 	"bot": "BOT",
 	"botGuilds": "Gildie, w których bot się znajduje:",
 	"botSettings": "Ustawienia botów",
+	"cancel": "Anuluj",
 	"channel": {
+		"SlowmodeCool": "Czas Spowolnienia: $1",
+		"TimeOutCool": "W przerwie do: $1",
+		"allowIcons": "Zezwalaj na niestandardowe ikony kanałów",
 		"announcement": "Ogłoszeniowy",
 		"copyId": "Kopiuj identyfikator kanału",
+		"copyIdCat": "Kopiuj identyfikator kategorii",
 		"createCatagory": "Utwórz kategorię",
 		"createChannel": "Utwórz kanał",
 		"creating": "Tworzenie kanału",
 		"delete": "Usuń kanał",
+		"deleteCat": "Usuń kategorię",
+		"icon": "Ikona:",
 		"makeInvite": "Zaproś",
 		"markRead": "Oznacz jako przeczytane",
+		"mute": "Wycisz kanał",
 		"name": "Kanał",
 		"name:": "Nazwa:",
 		"nsfw:": "NSFW:",
@@ -75,25 +129,83 @@
 		"selectType": "Wybierz typ kanału",
 		"settings": "Ustawienia",
 		"settingsFor": "Ustawienia dla $1",
+		"slowmode": "Tryb powolny:",
 		"text": "Tekstowy",
+		"timedOutUntil": "W przerwie do: $1",
 		"topic:": "Temat:",
+		"typebox": "Wiadomość w $1",
+		"unmute": "Wyłącz wyciszenie kanału",
 		"voice": "Głosowy"
 	},
-	"clientDesc": "Wersja klienta: $1\n\n[Dołącz do oficjalnej gildii Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Pomóż w tłumaczeniu Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Pomóż w tworzeniu Fermi](https://github.com/MathMan05/Fermi)\n\n[Pomóż w utrzymaniu serwera, na którym opiera się Fermi](https://github.com/spacebarchat/server)\n\nObliczone uprawnienia: $3",
+	"channelLink": "# $1",
+	"clientDesc": "Wersja klienta: $1\n\n[Dołącz do oficjalnej gildii Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Pomóż w tłumaczeniu Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Pomóż w tworzeniu Fermi](https://github.com/MathMan05/Fermi)\n\n[Pomóż w utrzymaniu serwera, na którym opiera się Fermi](https://github.com/spacebarchat/server)\n\n[Czytaj blog](https://blog.fermi.chat/)\n\nObliczone uprawnienia: $3",
+	"commands": {
+		"errorNotValid": "$1 nie jest prawidłowym wyborem dla $2",
+		"required": "$1 jest wymaganą częścią tej komendy"
+	},
 	"confirmGuildLeave": "Czy na pewno chcesz opuścić $1",
+	"copyLink": "Kopiuj link do wiadomości",
 	"copymessageid": "Kopiuj identyfikator wiadomości",
 	"copyrawtext": "Kopiuj surowy tekst",
+	"createAccount": "Utwórz konto",
 	"delete": "Usuń",
 	"deleteConfirm": "Czy na pewno chcesz to usunąć?",
+	"devSettings": {
+		"badUser": "Włączono logowanie złych obiektów użytkowników, które wysyłają zbyt dużo informacji:",
+		"cache": "Włącz buforowanie plików map przy użyciu Service Workera:",
+		"cacheDesc": "pliki map zostaną załadowane w każdym razie, to tylko upewni się, że są w pamięci podręcznej, gdy pojawi się nowa aktualizacja.",
+		"captureTrace": "To ustawienie mówi Fermi aby przechwytywał właściwości _trace z serwera, włączenie tej opcji może spowodować, że progresywne dekodowanie JSON nie będzie działać (może to wymagać ponownego załadowania).",
+		"clearWellKnowns": "Pobierz ponownie rekordy .well-known",
+		"description": "Są one przeznaczone dla programistów Spacebar/Fermi. Jeśli nie wiesz, co robisz, nie zmieniaj tych ustawień.",
+		"gatewayComp": "Wyłącz kompresję bramy",
+		"logGateway": "Log odbieranych zdarzeń bramy (informacje na poziomie logów):",
+		"name": "Ustawienia programisty",
+		"traces": "Ujawnij ślady:"
+	},
+	"deviceManage": {
+		"city": "Miasto: $1",
+		"continent": "Kontynent: $1",
+		"country": "Kraj: $1",
+		"curSes": "To jest obecna sesja, musisz się wylogować za pomocą innego menu",
+		"estimateWarn": "Uwaga: Wszystkie te informacje są jedynie przypuszczeniami i mogą być nieprawdziwe.",
+		"ip": "Ostatni znany adres IP: $1",
+		"last": "Przybliżone ostatnie użycie: $1",
+		"latitude": "Szerokość geograficzna: $1",
+		"logout": "Wyloguj",
+		"longitude": "Długość geograficzna: $1",
+		"manageDev": "Zarządzaj urządzeniem",
+		"postal": "Poczta: $1",
+		"region": "Region: $1",
+		"title": "Zarządzaj sesjami"
+	},
+	"discovery": "Odkrywanie",
+	"dms": "Prywatne Wiadomości",
 	"edit": "Edytuj",
 	"emoji": {
 		"confirmDel": "Czy na pewno chcesz usunąć tę emoji?",
+		"found": {
+			"not": "Ta emoji nie pochodzi z żadnej z Twoich gildii. Aby móc używać tej emoji, musisz do niej dołączyć.",
+			"other": "Ta emoji pochodzi z jednej z Twoich innych gildii.",
+			"private": "Nie można znaleźć gildii, z której pochodzi to emoji",
+			"this": "Ta emoji pochodzi z tej gildii."
+		},
+		"from": "Ta emoji pochodzi z",
 		"image:": "Zdjęcie:",
+		"join": "Dołącz do gildii",
 		"name:": "Nazwa:",
+		"privateGuild": "Ta gildia jest prywatna",
 		"title": "Emoji",
 		"upload": "Wrzuć emoji"
 	},
+	"emojiSelect": "Emoji:",
 	"errorReconnect": "Nie można połączyć się z serwerem, ponowna próba za **$1** sekund...",
+	"favoriteGifs": "Ulubione Gify",
+	"folder": {
+		"color": "Kolor folderu:",
+		"create": "Utwórz nowy folder",
+		"edit": "Edytuj folder",
+		"name": "Nazwa folderu:"
+	},
 	"form": {
 		"captcha": "Poczekaj, czy jesteś człowiekiem?"
 	},
@@ -104,6 +216,7 @@
 		"all:": "Wszyscy znajomi:",
 		"blocked": "Zablokowani",
 		"blockedusers": "Zablokowani użytkownicy:",
+		"bu": "Zablokowany użytkownik",
 		"discnotfound": "Dyskryminator nie został znaleziony",
 		"friendlist": "Lista znajomych",
 		"friends": "Znajomi",
@@ -117,10 +230,23 @@
 	"goThere": "Przejdź tam",
 	"goThereTrust": "Przejdź tam i zaufaj w przyszłości",
 	"goingToURL": "Przechodzisz do $1. Czy na pewno chcesz tam przejść?",
+	"group": {
+		"createdm": "Utwórz DM!",
+		"edit": "Edytuj czat grupowy",
+		"select": "Wybierz znajomych"
+	},
 	"guild": {
 		"COMMUNITY": "Prośba o dołączenie",
 		"DISCOVERABLE": "Odkryciem",
 		"INVITES_DISABLED": "Tylko z zaproszeniem",
+		"adminMenu": {
+			"changePerms": "Zmień uprawnienia, aby znaleźć",
+			"finding": "Znajdowanie administratorów",
+			"ownName": "Właściciel",
+			"owner": "Znajdź właściciela",
+			"permission": "Uprawnienia:"
+		},
+		"admins": "Znajdź administratorów",
 		"all": "wszystkie",
 		"banReason": "Powód bana: $1",
 		"bannedBy": "Zbanowany przez:",
@@ -143,15 +269,20 @@
 		"editingTemplate": "Edytowanie $1",
 		"emptytext": "Jesteś w dziwnym miejscu, ta gildia nie ma kanałów",
 		"emptytitle": "Dziwne miejsce",
+		"guilds": "Gildie",
 		"helpTips?": "Wyślij pomocne wskazówki dla swojej gildii!",
 		"howJoin": "W jaki sposób ludzie mogą dołączyć do twojej gildii?",
 		"icon:": "Ikona:",
 		"invites": "Zaproszenia",
+		"joinConfirm": "Dołącz do $1?",
 		"leave": "Opuść gildię",
 		"loadingDiscovery": "Ładowanie...",
 		"makeInvite": "Zaproś",
 		"markRead": "Oznacz jako przeczytane",
+		"memberCount": "$1 {{PLURAL:$1|członek|członków}}",
+		"mute": "Wycisz gildię",
 		"name:": "Nazwa:",
+		"nameNoMatch": "Nazwy nie pasują",
 		"noDelete": "Nieważne",
 		"noLeave": "Nieważne",
 		"none": "brak",
@@ -163,9 +294,10 @@
 		"ruleId": "Kanał z zasadami:",
 		"selectnoti": "Wybierz typ powiadomień",
 		"sendrandomwelcome?": "Wyślij losową wiadomość, gdy ktoś dołączy do tej gildii",
-		"serverName": "Nazwa serwera:",
+		"serverName": "Nazwa gildii:",
 		"settings": "Ustawienia",
 		"settingsFor": "Ustawienia dla $1",
+		"splash": "Baner odkrywania",
 		"stickWelcomeReact?": "Zachęć członków swojej gildii do zareagowania naklejką, gdy ktoś dołączy!",
 		"systemSelect:": "Kanał wiadomości systemowych:",
 		"tempCreatedBy": "Szablon stworzony przez:",
@@ -178,6 +310,7 @@
 		"templates": "Szablony",
 		"templcateMetaDesc": "Szablon pozwala innym użytkownikom na użycie tej gildii jako podstawy dla własnych gildii. Skopiuje on kanały, role i ustawienia gildii, ale nie wiadomości, botów ani ikony gildii.",
 		"topic:": "Temat:",
+		"unknownRole": "@nieznana-rola",
 		"viewTemplate": "Wyświetl szablon",
 		"yesDelete": "Tak, jestem pewien",
 		"yesLeave": "Tak, jestem pewien"
@@ -189,7 +322,7 @@
 		"warnOffiline": "Instancja jest offline, nie można się połączyć"
 	},
 	"htmlPages": {
-		"addBot": "Dodaj do serwera",
+		"addBot": "Dodaj do gildii",
 		"alreadyHave": "Posiadasz już konto?",
 		"box1Items": "Wiadomości|Obsługa reakcji|Zaproszenia|Zmiana kont|Ustawienia użytkownika|Portal programisty|Zaproszenia botów|Obsługa tłumaczeń",
 		"box1title": "Fermi to klient kompatybilny z Spacebar, który stara się być tak dobry, jak to tylko możliwe, oferując wiele funkcji, w tym:",
@@ -217,12 +350,29 @@
 	},
 	"incorrectURLS": "## Ta instancja prawdopodobnie wysłała niepoprawne adresy URL.\n### Jeśli jesteś właścicielem instancji proszę zapoznaj się z [tym](https://docs.spacebar.chat/setup/server/) pod *Connecting from remote machines* aby rozwiązać problem.\n Czy chcesz aby Fermi automatycznie spróbował naprawić ten błąd, aby umożliwić Ci połączenie się z instancją?",
 	"instInfo": "Informacje o instancji",
+	"instanceInfo": {
+		"contact": "Wyślij maila do administratorów instancji",
+		"frontPage": "[Strona główna]($1)",
+		"name": "Informacje o instancji",
+		"publicUrl": "[Publiczny adres URL]($1)",
+		"tosPage": "[Strona TOS]($1)"
+	},
 	"instanceStats": {
 		"members": "Członkowie: $1",
 		"messages": "Wiadomości: $1",
 		"name": "Statystyki instancji: $1",
-		"servers": "Serwery: $1",
+		"servers": "Gildie: $1",
 		"users": "Zarejestrowani użytkownicy: $1"
+	},
+	"interactions": {
+		"ephemeralDismiss": "Ukryj wiadomość",
+		"failed": "Interakcja nie powiodła się",
+		"nonsence": "Serwer wysłał komponent typu $1, który nie istnieje",
+		"notImpl": "Fermi nie zaimplementował jeszcze typu komponentu $1",
+		"onlyYou": "Tylko Ty możesz zobaczyć tę wiadomość",
+		"replyline": "Rozpoczęto interakcję",
+		"started": "Przetwarzanie interakcji...",
+		"worked": "Interakcja powiodła się"
 	},
 	"invite": {
 		"accept": "Akceptuj",
@@ -242,6 +392,7 @@
 		"maxUses": "Maksymalna liczba użyć: $1",
 		"never": "Nigdy",
 		"noAccount": "Utwórz konto, aby przyjąć zaproszenie",
+		"notFound": "Nie znaleziono zaproszenia",
 		"subtext": "do $1 w $2",
 		"used": "Użyte $1 {{PLURAL:$1|raz|razy}}"
 	},
@@ -261,6 +412,7 @@
 	"jankInfo": "Informacje o kliencie",
 	"leaveGuild": "Opuść Gildię",
 	"leaving": "Opuszczasz Spacebar",
+	"loaded": "Załadowano",
 	"localuser": {
 		"2faCode:": "Kod:",
 		"2faCodeGive": "Twój sekret to: $1, ma 6 cyfr i jest ważny przez 30 sekund",
@@ -312,11 +464,17 @@
 		"newPassword:": "Nowe hasło:",
 		"newUsername": "Nowa nazwa użytkownika:",
 		"noToken": "Nie znam tokenu więc nie mogę go zapisać do localStorage, przepraszam",
+		"noUpdates": "Nie znaleziono aktualizacji",
 		"notisound": "Dźwięk powiadomienia:",
 		"oldPassword:": "Stare hasło:",
 		"password:": "Hasło",
 		"privacyPolcyURL": "URL polityki prywatności:",
+		"appID": "Identyfikator aplikacji: $1",
+		"showSecret": "Pokaż sekret klienta",
+		"clientSecret": "Sekret klienta: $1",
+		"secret": "Sekret",
 		"publicAvaliable": "Czy bot może być publicznie zapraszany?",
+		"refreshPage": "Odśwież, aby zastosować",
 		"requireCode": "Czy zaproszenie bota wymaga przyznania kodu?",
 		"resetToken": "Resetuj token",
 		"saveToken": "Zapisz token do localStorage",
@@ -331,7 +489,10 @@
 		"themesAndSounds": "Motywy i dźwięki",
 		"tokenDisplay": "Token: $1",
 		"trace": "Ślady",
+		"trusted": "Zaufane domeny",
+		"trustedDesc": "Te domeny, gdy klikniesz na linki z nich, ***nie*** poproszą cię o pozwolenie na otwarcie jak inne linki, dawaj to tylko adresom URL którym ufasz",
 		"updateSettings": "Ustawienia aktualizacji",
+		"updatesYay": "Znaleziono aktualizacje!",
 		"userSettings": "Ustawienia użytkownika"
 	},
 	"login": {
@@ -345,6 +506,15 @@
 		"recover": "Nie pamiętasz hasła?",
 		"recovery": "Zapomniane hasło",
 		"waiting": "Czekanie aby sprawdzić instancję"
+	},
+	"logout": {
+		"error": {
+			"cancel": "Anuluj",
+			"cont": "Kontynuuj mimo to",
+			"desc": "Fermi nie mógł cię wylogować\n Czy mimo wszystko chcesz usunąć konto?",
+			"title": "Wystąpił błąd podczas próby wylogowania"
+		},
+		"logout": "Wyloguj się"
 	},
 	"manageInstance": {
 		"AreYouSureStop": "Czy na pewno chcesz zatrzymać instancję?",
@@ -377,22 +547,37 @@
 		"ban": "Zbanuj $1 z $2",
 		"kick": "Wyrzuć $1 z $2",
 		"nick:": "Pseudonim:",
-		"reason:": "Powód:"
+		"persist": "Usuń tylko użytkownika:",
+		"reason:": "Powód:",
+		"timeout": "Przerwa $1",
+		"timeoutTime": "Czas przerwy:"
 	},
 	"message": {
+		"andMore": "$1, i więcej!",
 		"attached": "Wysłano załącznik",
 		"delete": "Usuń wiadomość",
 		"deleted": "Usunięta wiadomość",
 		"edit": "Edytuj wiadomość",
 		"edited": "(edytowane)",
+		"fullMessage": "Pełna wiadomość:",
 		"pin": "$1 przypiął wiadomość",
+		"reactedWith": "Zareagował z $1",
 		"reactionAdd": "Dodaj reakcję",
-		"retry": "Wyślij ponownie błędną wiadomość"
+		"reactions": "Wyświetl reakcje",
+		"reactionsTitle": "Reakcje",
+		"retry": "Wyślij ponownie błędną wiadomość",
+		"viewrest": "Wyświetl resztę"
 	},
+	"messageLink": "Wiadomość w # $1",
+	"muteDuration": "Koniec wyciszenia za:",
 	"nevermind": "Nieważne",
 	"no": "Nie",
+	"noEmojiFont": "Użyj emoji systemowych",
 	"noMessages": "Wygląda na to, że nie ma tu żadnych wiadomości, bądź pierwszy, który coś powie!",
 	"noPins": "Wygląda na to, że jeszcze nic tu nie ma...",
+	"noStickers": "Wygląda na to, że jesteś w dziwnym miejscu, nie ma żadnych naklejek, których mógłbyś użyć!",
+	"notiClump": "Otrzymałeś $1 powiadomień od $2",
+	"notiVolume": "Głośność powiadomień:",
 	"otherAt": "$1 o $2",
 	"permissions": {
 		"descriptions": {
@@ -400,6 +585,7 @@
 			"ADMINISTRATOR": "Nadaje wszystkie uprawnienia i pomija ograniczenia kanałów. Nadanie tego uprawnienia może być ryzykowne!",
 			"ATTACH_FILES": "Pozwala użytkownikowi na załączanie plików",
 			"BAN_MEMBERS": "Pozwala użytkownikowi banować członków z gildii",
+			"BYPASS_SLOWMODE": "Tryb powolny nie ma już wpływu na tego użytkownika",
 			"CHANGE_NICKNAME": "Pozwala użytkownikowi na zmianę własnego pseudonimu",
 			"CONNECT": "Pozwala użytkownikowi na połączenie się z kanałem głosowym",
 			"CREATE_EVENTS": "Pozwala na tworzenie zaplanowanych wydarzeń oraz edycję i usuwanie tych utworzonych przez użytkownika.",
@@ -423,6 +609,7 @@
 			"MODERATE_MEMBERS": "Pozwala użytkownikowi wyciszać innych użytkowników czasowo, aby uniemożliwić im wysyłanie wiadomości, reagowanie na nie oraz mówienie w kanałach głosowych i scenicznych",
 			"MOVE_MEMBERS": "Pozwala użytkownikowi na przenoszenie członków pomiędzy kanałami głosowymi",
 			"MUTE_MEMBERS": "Pozwala użytkownikowi wyciszać innych członków",
+			"PIN_MESSAGES": "Umożliwia użytkownikowi przypinanie wiadomości",
 			"PRIORITY_SPEAKER": "Pozwala na korzystanie z funkcji priorytetowego rozmówcy w kanale głosowym",
 			"READ_MESSAGE_HISTORY": "Pozwala użytkownikowi na czytanie historii wiadomości",
 			"REQUEST_TO_SPEAK": "Pozwala użytkownikowi poprosić o głos w kanale scenicznym",
@@ -435,9 +622,9 @@
 			"STREAM": "Pozwala użytkownikowi na streamowanie",
 			"USE_APPLICATION_COMMANDS": "Pozwala użytkownikowi na korzystanie z poleceń aplikacji",
 			"USE_EMBEDDED_ACTIVITIES": "Pozwala użytkownikowi na korzystanie z wbudowanych aktywności",
-			"USE_EXTERNAL_APPS": "Pozwala aplikacjom zainstalowanym przez użytkownika na wysyłanie publicznych odpowiedzi. Po wyłączeniu tej opcji użytkownicy nadal będą mogli korzystać ze swoich aplikacji, ale odpowiedzi będa prywatne. Dotyczy to tylko aplikacji które nie są również zainstalowane na serwerze.",
+			"USE_EXTERNAL_APPS": "Pozwala aplikacjom zainstalowanym przez użytkownika na wysyłanie publicznych odpowiedzi. Po wyłączeniu tej opcji użytkownicy nadal będą mogli korzystać ze swoich aplikacji, ale odpowiedzi będa prywatne. Dotyczy to tylko aplikacji które nie są również zainstalowane w gildii.",
 			"USE_EXTERNAL_EMOJIS": "Pozwala użytkownikowi na używanie zewnętrznych emoji",
-			"USE_EXTERNAL_SOUNDS": "Pozwala na korzystanie z dźwięków z innych serwerów",
+			"USE_EXTERNAL_SOUNDS": "Pozwala na korzystanie z dźwięków z innych gildii",
 			"USE_EXTERNAL_STICKERS": "Pozwala użytkownikowi na korzystanie z zewnętrznych naklejek",
 			"USE_SOUNDBOARD": "Pozwala na korzystanie z dźwięków w kanale głosowym",
 			"USE_VAD": "Pozwala użytkownikowi na mówienie w kanale głosowym bez konieczności korzystania z funkcji Naciśnij i Mów",
@@ -451,6 +638,7 @@
 			"ADMINISTRATOR": "Administrator",
 			"ATTACH_FILES": "Załączanie plików",
 			"BAN_MEMBERS": "Banowanie członków",
+			"BYPASS_SLOWMODE": "Omiń tryb powolny",
 			"CHANGE_NICKNAME": "Zmiana pseudonimu",
 			"CONNECT": "Połącz",
 			"CREATE_EVENTS": "Tworzenie wydarzeń",
@@ -474,6 +662,7 @@
 			"MODERATE_MEMBERS": "Wyciszanie członków czasowo",
 			"MOVE_MEMBERS": "Przenoszenie członków",
 			"MUTE_MEMBERS": "Wyciszanie członków",
+			"PIN_MESSAGES": "Przypnij wiadomości",
 			"PRIORITY_SPEAKER": "Priorytetowy rozmówca",
 			"READ_MESSAGE_HISTORY": "Czytanie historii wiadomości",
 			"REQUEST_TO_SPEAK": "Prośba o głos",
@@ -499,9 +688,19 @@
 		}
 	},
 	"pinMessage": "Przypnij wiadomość",
+	"profile": {
+		"bio": "O mnie:",
+		"joined": "Założono konto: $1",
+		"joinedMember": "Dołączył $1: $2",
+		"mut": "Wspólne Gildie",
+		"mutFriends": "Wspólni Znajomi",
+		"permInfo": "Uprawnienia",
+		"userInfo": "Informacje o użytkowniku"
+	},
 	"profileColor": "Kolor profilu",
 	"pronouns": "Zaimki:",
 	"readableName": "Polski",
+	"recentEmoji": "Ostatnie emoji",
 	"register": {
 		"DOBError": "Data urodzenia: $1",
 		"agreeTOS": "Zgadzam się z [Warunkami korzystania z usługi]($1):",
@@ -512,20 +711,34 @@
 		"tos": "Musisz zaakceptować Warunki korzystania z usługi",
 		"usernameError": "Nazwa użytkownika: $1"
 	},
+	"remove": "Usuń",
+	"renderJoinAvatars": "Wyświetl awatary dla nowych członków:",
 	"reply": "Odpowiedz",
 	"replyingTo": "Odpowiadasz do $1",
 	"retrying": "Ponawianie próby...",
 	"role": {
 		"color": "Kolor",
+		"colors": {
+			"name": "Liczba kolorów:",
+			"one": "Jeden",
+			"secondColor": "Drugi kolor:",
+			"thirdColor": "Trzeci kolor:",
+			"three": "Trzy",
+			"two": "Dwa"
+		},
 		"confirmDelete": "Czy na pewno chcesz usunąć $1?",
+		"copyId": "Kopiuj identyfikator roli",
 		"delete": "Usuń rolę",
+		"deleting": "Usuwanie roli...",
 		"displaySettings": "Ustawienia wyświetlania",
 		"hoisted": "Wyświetlana osobno",
 		"mentionable": "Zezwól wszystkim na wzmiankę tej roli:",
 		"name": "Nazwa roli:",
+		"perms": "Uprawnienia",
 		"remove": "Zabierz rolę",
 		"roleEmoji": "Emoji roli:",
-		"roleFileIcon": "Ikona roli:"
+		"roleFileIcon": "Ikona roli:",
+		"roles": "Role"
 	},
 	"search": {
 		"back": "Wstecz",
@@ -547,7 +760,8 @@
 				"disabled": "Wyłączony",
 				"enabled": "Włączony",
 				"offlineOnly": "Tylko offline",
-				"title": "Ustawienia Service Workera"
+				"title": "Ustawienia Service Workera",
+				"unregistered": "Wyłączone (w tym pamięć podręczna multimediów)"
 			}
 		}
 	},
@@ -576,11 +790,13 @@
 	"unableToConnect": "Nie można połączyć się z serwerem Spacebar. Spróbuj się wylogować i zalogować ponownie.",
 	"unableToPin": "Nie można przypiąć wiadomości",
 	"unpinMessage": "Odepnij wiadomość",
+	"updateAv": "Dostępne aktualizacje",
 	"uploadBanner": "Zmień baner:",
 	"uploadFilesText": "Wrzuć swoje pliki tutaj!",
 	"uploadPfp": "Zmień awatar:",
 	"useTemplate": "Użyj $1 jako szablonu",
 	"useTemplateButton": "Użyj szablonu",
+	"usedFermi": "Użył Fermi",
 	"user": {
 		"addRole": "Dodaj role",
 		"ban": "Zbanuj członka",
@@ -588,18 +804,33 @@
 		"confirmInstBan": "Czy na pewno chcesz zbanować $1 z instancji?",
 		"copyId": "Kopiuj identyfikator użytkownika",
 		"dnd": "Nie przeszkadzaj",
-		"editServerProfile": "Edytuj profil serwerowy",
+		"editNick": "Edytuj pseudonim",
+		"editServerProfile": "Edytuj profil gildii",
 		"friendReq": "Zaproszenie do znajomych",
 		"idle": "Bezczynny",
 		"instanceBan": "Ban instancji",
 		"invisible": "Niewidzialny",
 		"kick": "Wyrzuć członka",
 		"message": "Napisz do użytkownika",
+		"nick": {
+			"foe": "Ustaw pseudonim wroga",
+			"friend": "Ustaw pseudonim znajomego",
+			"stalker": "Ustaw pseudonim osoby zapraszającej",
+			"stalking": "Ustaw pseudonim osoby zaproszonej"
+		},
 		"offline": "Niedostępny",
 		"online": "Dostępny",
+		"remove": "Usuń użytkownika",
 		"removeRole": "Zabierz role",
+		"sendMessage": "Wyślij wiadomość do @$1",
+		"timeout": "Wyślij członka na przerwę",
+		"unTimeout": "Usuń przerwę członkowi",
 		"unban": "Odbanuj $1",
 		"unblock": "Odblokuj użytkownika"
+	},
+	"userping": {
+		"resolving": "rozwiązywanie użytkownika",
+		"unknown": "@nieznany"
 	},
 	"vc": {
 		"joinForStream": "Dołącz do kanału głosowego, aby oglądać",
@@ -607,6 +838,11 @@
 		"joinstream": "Oglądaj stream",
 		"leavestream": "Opuść stream",
 		"stopstream": "Zatrzymaj stream"
+	},
+	"webauth": {
+		"addKey": "Dodaj klucz",
+		"keyname": "Nazwa klucza:",
+		"manage": "Zarządzaj kluczami bezpieczeństwa"
 	},
 	"webhook": "WEBHOOK",
 	"webhooks": {
