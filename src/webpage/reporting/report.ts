@@ -350,7 +350,7 @@ class ReportNode {
 	gatherElements() {
 		const elms: Record<string, string[]> = {};
 		for (const thing of this.elements) {
-			if (thing.options) elms[thing.json.name] = thing.options;
+			if (thing.options?.length) elms[thing.json.name] = thing.options;
 		}
 		return elms;
 	}
