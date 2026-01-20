@@ -265,6 +265,20 @@ class ReportNode {
 				};
 				return button;
 			}),
+			...this.elements
+				.filter((_) => _.json.type === "external_link")
+				.map(({json}) => {
+					if (json.type !== "external_link") return;
+					if (json.skip_if_unlocalized && !json.is_localized) return;
+					const data = json.data;
+					const button = document.createElement("button");
+					button.textContent = data.link_text;
+					button.onclick = () => {
+						window.open(data.url, "_blank")?.focus();
+					};
+					return button;
+				})
+				.filter((_) => _ !== undefined),
 		);
 
 		const buttonDiv = document.createElement("div");
@@ -379,21 +393,6 @@ class ReportElement {
 		}
 		const map = this.owner.owner.infoMap;
 		switch (json.type) {
-			case "external_link": {
-				const data = json.data;
-				//TODO figure out what this actually was
-				//if (data.is_header_hidden) break;
-				const a = document.createElement("a");
-				MarkDown.safeLink(a, data.url);
-				a.textContent = data.link_text;
-				div.append(a);
-				if (data.link_description) {
-					const span = document.createElement("span");
-					span.textContent = data.link_description;
-					div.append(span);
-				}
-				break;
-			}
 			case "message_preview": {
 				const m = this.owner.owner.infoMap.message;
 				if (m) {
@@ -475,6 +474,7 @@ class ReportElement {
 				div.append(user.createWidget(map.member?.guild));
 				break;
 			}
+			case "external_link":
 			case "skip": {
 				break;
 			}
