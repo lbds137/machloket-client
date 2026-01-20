@@ -33,7 +33,7 @@ export class ReportMenu {
 	variant: string;
 	name: reportTypes;
 	owner: Localuser;
-	postback_url: URL;
+	postbackUrl: URL;
 	rootNodeId: number;
 	successNodeId: number;
 	failNodeId: number;
@@ -53,7 +53,7 @@ export class ReportMenu {
 		this.name = json.name;
 		this.variant = json.variant;
 		this.owner = localuser;
-		this.postback_url = new URL(json.postback_url, this.info.api);
+		this.postbackUrl = new URL(json.postback_url, this.info.api);
 		this.rootNodeId = json.root_node_id;
 		this.successNodeId = json.success_node_id;
 		this.failNodeId = json.fail_node_id;
@@ -167,7 +167,7 @@ export class ReportMenu {
 				break;
 			}
 		}
-		const res = await fetch(this.postback_url, {
+		const res = await fetch(this.postbackUrl, {
 			method: "POST",
 			headers: this.localuser.headers,
 			body: JSON.stringify(realBody),
