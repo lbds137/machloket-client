@@ -44,7 +44,7 @@ type botjsonfetch = {
 	};
 	authorized: boolean;
 };
-if (window.location.pathname.startsWith("oauth2")) {
+if (window.location.pathname.startsWith("/oauth2")) {
 	const users = getBulkUsers();
 	const params = new URLSearchParams(window.location.search);
 	const well = params.get("instance");
