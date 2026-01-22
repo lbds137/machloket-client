@@ -4,6 +4,7 @@
 			"Booky",
 			"Brettchenweber",
 			"Byte",
+			"LeoGe25",
 			"McDutchie",
 			"Mrmaffen",
 			"Mukeber",
@@ -169,6 +170,7 @@
 		"clearWellKnowns": "Lade .well-known Einträge neu",
 		"description": "Diese Hinweise richten sich an die Entwickler von Spacebar/Fermi. Wenn Sie nicht genau wissen, was Sie tun, verändern Sie diese Einstellungen bitte nicht.",
 		"gatewayComp": "Gateway-Komprimierung deaktivieren",
+		"reportSystem": "Experimentelles Meldesystem aktivieren",
 		"logGateway": "Log-Empfang von Gateway-Ereignisse (Log-Level-Informationen):",
 		"name": "Entwicklereinstellungen",
 		"traces": "Spuren aufdecken:"
@@ -257,6 +259,7 @@
 			"owner": "Finde den Besitzer",
 			"permission": "Berechtigungen:"
 		},
+		"report": "Berichtsvereinigung",
 		"admins": "Admin finden",
 		"all": "alle",
 		"banReason": "Begründung des Banns: $1",
@@ -480,6 +483,7 @@
 		"oldPassword:": "Altes Passwort:",
 		"password:": "Passwort",
 		"privacyPolcyURL": "Datenschutzerklärung:",
+		"appID": "Anwendungs-ID: $1",
 		"publicAvaliable": "Bot öffentlich einladbar machen?",
 		"refreshPage": "Aktualisieren, um die Anwendung zu übernehmen",
 		"requireCode": "Ist eine Code-Bewilligung erforderlich, um den Bot einzuladen?",
@@ -563,6 +567,7 @@
 		"andMore": "$1, und mehr!",
 		"attached": "Anhang gesendet",
 		"delete": "Nachricht löschen",
+		"report": "Beitrag melden",
 		"deleted": "Gelöschte Nachricht",
 		"edit": "Nachricht bearbeiten",
 		"edited": "(bearbeitet)",
@@ -574,6 +579,15 @@
 		"reactionsTitle": "Reaktionen",
 		"retry": "Fehlerhafte Nachricht erneut senden",
 		"viewrest": "Rest anzeigen"
+	},
+	"report": {
+		"back": "Zurück",
+		"next": "nächster",
+		"cancel": "Abbrechen",
+		"submit": "Speichern",
+		"blockUser": "Benutzer sperren",
+		"timeout": "Benutzer im Timeout",
+		"summary": "Zusammenfassung des Reports"
 	},
 	"messageLink": "Nachricht in $1",
 	"muteDuration": "Stummschaltung aufheben in:",
@@ -805,6 +819,8 @@
 	"useTemplateButton": "Vorlage verwenden",
 	"usedFermi": "Gebrauch von Fermi",
 	"user": {
+		"report": "Nutzer melden",
+		"reportApp": "Anwendung melden",
 		"addRole": "Rollen hinzufügen",
 		"ban": "Mitglied bannen",
 		"block": "Benutzer bannen",
