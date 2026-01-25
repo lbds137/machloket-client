@@ -158,6 +158,7 @@
 		"clearWellKnowns": "Pobierz ponownie rekordy .well-known",
 		"description": "Są one przeznaczone dla programistów Spacebar/Fermi. Jeśli nie wiesz, co robisz, nie zmieniaj tych ustawień.",
 		"gatewayComp": "Wyłącz kompresję bramy",
+		"reportSystem": "Włącz eksperymentalny system zgłaszania",
 		"logGateway": "Log odbieranych zdarzeń bramy (informacje na poziomie logów):",
 		"name": "Ustawienia programisty",
 		"traces": "Ujawnij ślady:"
@@ -246,6 +247,7 @@
 			"owner": "Znajdź właściciela",
 			"permission": "Uprawnienia:"
 		},
+		"report": "Zgłoś Gildię",
 		"admins": "Znajdź administratorów",
 		"all": "wszystkie",
 		"banReason": "Powód bana: $1",
@@ -556,6 +558,7 @@
 		"andMore": "$1, i więcej!",
 		"attached": "Wysłano załącznik",
 		"delete": "Usuń wiadomość",
+		"report": "Zgłoś wiadomość",
 		"deleted": "Usunięta wiadomość",
 		"edit": "Edytuj wiadomość",
 		"edited": "(edytowane)",
@@ -567,6 +570,15 @@
 		"reactionsTitle": "Reakcje",
 		"retry": "Wyślij ponownie błędną wiadomość",
 		"viewrest": "Wyświetl resztę"
+	},
+	"report": {
+		"back": "Wstecz",
+		"next": "Dalej",
+		"cancel": "Anuluj",
+		"submit": "Wyślij",
+		"blockUser": "Zablokuj użytkownika",
+		"timeout": "Wyślij członka na przerwę",
+		"summary": "Podsumowanie zgłoszenia:"
 	},
 	"messageLink": "Wiadomość w # $1",
 	"muteDuration": "Koniec wyciszenia za:",
@@ -798,6 +810,8 @@
 	"useTemplateButton": "Użyj szablonu",
 	"usedFermi": "Użył Fermi",
 	"user": {
+		"report": "Zgłoś użytkownika",
+		"reportApp": "Zgłoś aplikację",
 		"addRole": "Dodaj role",
 		"ban": "Zbanuj członka",
 		"block": "Zablokuj użytkownika",

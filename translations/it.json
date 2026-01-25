@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Amedeo463",
 			"Beta16",
 			"Dream Indigo",
 			"Slow",
@@ -56,6 +57,7 @@
 	"createAccount": "Registrati",
 	"delete": "Cancella",
 	"devSettings": {
+		"reportSystem": "Attiva sistema di segnalazione sperimentale",
 		"name": "Impostazioni sviluppatore"
 	},
 	"deviceManage": {
@@ -98,6 +100,7 @@
 			"ownName": "Proprietario",
 			"permission": "Permessi:"
 		},
+		"report": "Segnala Guild",
 		"all": "tutti",
 		"boostMessage?": "Invia un messaggio quando qualcuno potenzia la tua gilda!",
 		"community": "Comunità",
