@@ -737,7 +737,7 @@ class User extends SnowFlake {
 		const pfp = createImg(this.getpfpsrc(), undefined, hoverElm);
 		pfp.loading = "lazy";
 		pfp.classList.add("pfp");
-		pfp.classList.add("userid:" + this.id);
+		if (!this.webhook) pfp.classList.add("userid:" + this.id);
 		if (guild) {
 			(async () => {
 				if (guild instanceof Guild) {
