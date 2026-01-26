@@ -15,7 +15,6 @@ import {
 	messagejson,
 	presencejson,
 	readyjson,
-	sessionJson,
 	startTypingjson,
 	wsjson,
 } from "./jsontypes.js";

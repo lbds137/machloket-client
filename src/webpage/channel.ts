@@ -28,7 +28,6 @@ import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
-import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
 
@@ -2140,7 +2139,7 @@ class Channel extends SnowFlake {
 			).json()) as messagejson[];
 			let previd = id;
 			let i = 0;
-			for await (const response of messages) {
+			for (const response of messages) {
 				let messager: Message;
 				if (this.messages.has(response.id)) {
 					messager = this.messages.get(response.id) as Message;
@@ -2159,7 +2158,7 @@ class Channel extends SnowFlake {
 
 				previd = messager.id;
 
-				if (messages.done && i < 99) {
+				if (i < 99) {
 					this.topid = previd;
 				}
 

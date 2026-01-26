@@ -202,6 +202,7 @@ class InfiniteScroller {
 		this.observer.observe(elm);
 		return elm;
 	}
+	//@ts-ignore-error
 	private checkIDs() {
 		const scroll = this.scroller;
 		if (!scroll) return;
