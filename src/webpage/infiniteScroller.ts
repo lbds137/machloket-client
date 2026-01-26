@@ -1,3 +1,31 @@
+function fragAppend(div: HTMLElement, pre = false) {
+	let qued = false;
+	function appendFrag() {
+		const elms = Array.from(frag.children) as HTMLElement[];
+		div[pre ? "prepend" : "append"](frag);
+		if (pre && !supports) {
+			const h = elms.map((_) => _.getBoundingClientRect().height).reduce((a, b) => a + b, 0);
+			const p = div.parentNode;
+			if (p instanceof HTMLElement) {
+				p.scrollTop += h;
+				console.warn(h);
+			}
+		}
+	}
+	const frag = document.createDocumentFragment();
+	return (elm: HTMLElement) => {
+		frag[pre ? "prepend" : "append"](elm);
+		if (!qued) {
+			queueMicrotask(() => {
+				appendFrag();
+				qued = false;
+			});
+			qued = true;
+		}
+	};
+}
+
+const supports = CSS.supports("overflow-anchor", "auto");
 class InfiniteScroller {
 	readonly getIDFromOffset: (ID: string, offset: number) => Promise<string | undefined>;
 	readonly getHTMLFromID: (ID: string) => Promise<HTMLElement>;
@@ -34,6 +62,7 @@ class InfiniteScroller {
 	}
 	observer: IntersectionObserver = new IntersectionObserver(console.log);
 
+	private heightMap = new WeakMap<HTMLElement, number>();
 	private createObserver(root: HTMLDivElement) {
 		const scroller = root.children[0];
 		function sorted() {
@@ -49,6 +78,8 @@ class InfiniteScroller {
 						} else {
 							visable.delete(obv.target);
 						}
+
+						this.heightMap.set(obv.target, obv.boundingClientRect.height);
 					}
 				}
 				for (const obv of obvs) {
@@ -204,6 +235,7 @@ class InfiniteScroller {
 		const futElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
+
 		while (top) {
 			count++;
 			if (count > 100) {
@@ -212,6 +244,12 @@ class InfiniteScroller {
 					list.push(top);
 					top = this.forElm.get(top);
 				}
+				const heights = list
+					.map((_) => this.curElms.get(_))
+					.map((_) => this.heightMap.get(_ as HTMLElement))
+					.filter((_) => _ !== undefined)
+					.reduce((a, b) => a + b, 0);
+				this.div!.scrollTop -= heights;
 				list.forEach((_) => this.removeElm(_));
 				break;
 			}
@@ -230,9 +268,11 @@ class InfiniteScroller {
 				top = id;
 			}
 		}
+
+		const app = fragAppend(scroll, true);
 		for (const elmProm of futElms) {
 			const elm = await elmProm;
-			scroll.prepend(elm);
+			app(elm);
 		}
 	}
 	private async fillInBottom() {
@@ -269,9 +309,11 @@ class InfiniteScroller {
 				bottom = id;
 			}
 		}
+
+		const app = fragAppend(scroll);
 		for (const elmProm of backElms) {
 			const elm = await elmProm;
-			scroll.append(elm);
+			app(elm);
 		}
 	}
 
