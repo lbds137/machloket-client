@@ -466,6 +466,7 @@ class Channel extends SnowFlake {
 				return document.createElement("div");
 			},
 			async (id: string) => {
+				console.log(id);
 				const message = this.messages.get(id);
 				try {
 					if (message) {
@@ -2226,17 +2227,18 @@ class Channel extends SnowFlake {
 			elm.remove();
 			console.warn("rouge element detected and removed");
 		}
-		messages.append(await this.infinite.getDiv(id));
-
-		this.infinite.updatestuff();
+		messages.append(await this.infinite.getDiv(id, falsh));
+		/*
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
 
 			await this.infinite.focus(id, falsh); //if someone could figure out how to make this work correctly without this, that's be great :P
-			loading.classList.remove("loading");
+
 
 			this.infinite.focus(id, falsh, true);
 		});
+		*/
+		loading.classList.remove("loading");
 		//this.infinite.focus(id.id,false);
 	}
 	private goBackIds(id: string, back: number, returnifnotexistant = true): string | undefined {
