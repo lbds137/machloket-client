@@ -1249,7 +1249,7 @@ class Channel extends SnowFlake {
 				waits.push(this.grabBefore(id));
 				break;
 			}
-			m1 = this.idToNext.get(m1);
+			if (this.idToNext.has(m1) && !(m1 = this.idToNext.get(m1))) break;
 		}
 		m1 = m.id;
 		for (let i = 0; i <= 10; i++) {
@@ -1257,7 +1257,7 @@ class Channel extends SnowFlake {
 				waits.push(this.grabAfter(id));
 				break;
 			}
-			m1 = this.idToPrev.get(m1);
+			if (this.idToPrev.has(m1) && !(m1 = this.idToPrev.get(m1))) break;
 		}
 		await Promise.all(waits);
 	}

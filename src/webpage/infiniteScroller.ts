@@ -336,7 +336,12 @@ class InfiniteScroller {
 		}
 	}
 
-	async delete(): Promise<void> {}
+	async delete(): Promise<void> {
+		if (this.div) {
+			this.div.remove();
+		}
+		this.clearElms();
+	}
 }
 
 export {InfiniteScroller};
