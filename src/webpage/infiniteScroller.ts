@@ -68,6 +68,16 @@ class InfiniteScroller {
 			},
 			{root, threshold: 0.1},
 		);
+		root.addEventListener("scroll", () => {
+			if (this.scrollBottom < 5) {
+				const scroll = this.scroller;
+				if (!scroll) return;
+				const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
+				if (!last) return;
+				if (this.backElm.get(last) || !this.backElm.has(last)) return;
+				this.reachesBottom();
+			}
+		});
 	}
 
 	async getDiv(initialId: string, flash = false): Promise<HTMLDivElement> {
@@ -83,23 +93,40 @@ class InfiniteScroller {
 		this.focus(initialId, flash, true);
 		return div;
 	}
+	private get scrollBottom() {
+		if (this.div) {
+			return this.div.scrollHeight - this.div.scrollTop - this.div.clientHeight;
+		} else {
+			return 0;
+		}
+	}
 
 	async addedBottom(): Promise<void> {
+		const snap = this.snapBottom();
 		const scroll = this.scroller;
 		if (!scroll) return;
 		const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
 		if (!last) return;
 		this.backElm.delete(last);
-		this.fillIn();
+		await this.fillIn();
+		snap();
 	}
 
 	snapBottom(): () => void {
-		const scrollBottom = this.scrollBottom;
-		return () => {
-			if (this.div && scrollBottom < 4) {
-				this.div.scrollTop = this.div.scrollHeight;
-			}
-		};
+		const nothing = () => {};
+		const scroll = this.scroller;
+		if (!scroll) return nothing;
+		const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
+		if (!last) return nothing;
+		if (this.backElm.get(last) || !this.backElm.has(last)) return nothing;
+		if (this.div) {
+			const trigger = this.scrollBottom < 4;
+			return () => {
+				if (this.div && trigger) this.div.scrollTop = this.div.scrollHeight;
+			};
+		} else {
+			return nothing;
+		}
 	}
 
 	async deleteId(id: string) {
@@ -261,28 +288,29 @@ class InfiniteScroller {
 			if (this.filling === fill) {
 				this.filling = undefined;
 			}
-			this.checkIDs();
 		});
 		this.filling = fill;
 		return fill;
 	}
 
 	async focus(id: string, flash = true, sec = false): Promise<void> {
+		// debugger;
 		const scroller = this.scroller;
 		if (!scroller) return;
-		await this.clearElms();
 
 		let div = this.curElms.get(id);
+		if (div && !document.contains(div)) div = undefined;
 		let had = true;
+		this.curFocID = id;
 
 		if (!div) {
+			await this.clearElms();
 			had = false;
 			const obj = await this.getFromID(id);
 			scroller.append(obj);
-			this.curFocID = id;
-			await this.fillIn(true);
 			div = obj;
 		}
+		await this.fillIn(true);
 		if (had && !sec) {
 			div.scrollIntoView({
 				behavior: "smooth",
@@ -290,12 +318,21 @@ class InfiniteScroller {
 				block: "center",
 			});
 		} else {
+			console.log(had, sec);
 			div.scrollIntoView({
 				block: "center",
 			});
 		}
 
 		if (flash) {
+			await new Promise((resolve) => {
+				setTimeout(resolve, 1000);
+			});
+			div.classList.remove("jumped");
+			await new Promise((resolve) => {
+				setTimeout(resolve, 100);
+			});
+			div.classList.add("jumped");
 		}
 	}
 

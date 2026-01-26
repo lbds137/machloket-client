@@ -773,7 +773,7 @@ class Message extends SnowFlake {
 			reply.onclick = (_) => {
 				if (!this.message_reference) return;
 				// TODO: FIX this
-				this.channel.infinite.focus(this.message_reference.message_id);
+				this.channel.focus(this.message_reference.message_id);
 			};
 			div.appendChild(replyline);
 		}

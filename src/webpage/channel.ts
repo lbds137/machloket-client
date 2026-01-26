@@ -1239,35 +1239,45 @@ class Channel extends SnowFlake {
 			return new Message(json[0], this);
 		}
 	}
-	async focus(id: string) {
-		const m = this.messages.get(id);
-		if (m && m.div) {
-			if (document.contains(m.div)) {
-				m.div.scrollIntoView({
-					behavior: "smooth",
-					block: "center",
-				});
-				await new Promise((resolve) => {
-					setTimeout(resolve, 1000);
-				});
-				m.div.classList.remove("jumped");
-				await new Promise((resolve) => {
-					setTimeout(resolve, 100);
-				});
-				m.div.classList.add("jumped");
-				return;
+	async getMessages(id: string) {
+		const m = await this.getmessage(id);
+		if (!m) return;
+		const waits: Promise<unknown>[] = [];
+		let m1: string | undefined = m.id;
+		for (let i = 0; i <= 10; i++) {
+			if (!m1) {
+				waits.push(this.grabBefore(id));
+				break;
 			}
+			m1 = this.idToNext.get(m1);
 		}
-		console.log(await this.getmessage(id));
+		m1 = m.id;
+		for (let i = 0; i <= 10; i++) {
+			if (!m1) {
+				waits.push(this.grabAfter(id));
+				break;
+			}
+			m1 = this.idToPrev.get(m1);
+		}
+		await Promise.all(waits);
+	}
+	async focus(id: string) {
+		const prom = this.getMessages(id);
 
-		if (this.localuser.channelfocus === this) {
-			this.localuser.channelfocus?.infinite.delete();
-			this.localuser.channelfocus = undefined;
+		if (await Promise.race([prom, new Promise((res) => setTimeout(() => res(true), 300))])) {
+			const loading = document.getElementById("loadingdiv") as HTMLDivElement;
+			Channel.regenLoadingMessages();
+			loading.classList.add("loading");
+			await prom;
+			loading.classList.remove("loading");
 		}
-		await this.getHTML(true);
-		console.warn(id);
+
+		if (this.localuser.channelfocus !== this) {
+			await this.getHTML(true);
+		}
+
 		try {
-			await this.buildmessages(id);
+			await this.infinite.focus(id);
 		} catch {}
 		this.infinite.focus(id, true, true);
 	}
