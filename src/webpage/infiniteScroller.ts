@@ -114,10 +114,12 @@ class InfiniteScroller {
 		const back = this.backElm.get(id);
 		console.log(id, back, "back");
 		if (back) this.forElm.delete(back);
+		this.backElm.delete(id);
 
 		const forward = this.forElm.get(id);
 		console.log(id, forward, "for");
 		if (forward) this.backElm.delete(forward);
+		this.forElm.delete(id);
 
 		// This purposefully leaves all references pointing out alone so nothing breaks
 		const elm = this.curElms.get(id);
