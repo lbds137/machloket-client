@@ -2052,17 +2052,15 @@ class Channel extends SnowFlake {
 		if (!tempy) return;
 		id = tempy;
 		this.afterProm = new Promise(async (res) => {
-			const messages = await ProgessiveDecodeJSON<messagejson[]>(
-				this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id,
-				{
+			const messages = (await (
+				await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id, {
 					headers: this.headers,
-				},
-			);
+				})
+			).json()) as messagejson[];
 			let i = 0;
 			let previd: string = id;
-			for await (const obj of messages) {
+			for (const response of messages) {
 				let messager: Message;
-				const response = await obj.getWhole();
 				let willbreak = false;
 				if (this.messages.has(response.id)) {
 					messager = this.messages.get(response.id) as Message;
@@ -2132,16 +2130,17 @@ class Channel extends SnowFlake {
 				return;
 			}
 			id = tempy;
-			const messages = await ProgessiveDecodeJSON<messagejson[]>(
-				this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100",
-				{
-					headers: this.headers,
-				},
-			);
+			const messages = (await (
+				await fetch(
+					this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100",
+					{
+						headers: this.headers,
+					},
+				)
+			).json()) as messagejson[];
 			let previd = id;
 			let i = 0;
-			for await (const messageProm of messages) {
-				const response = await messageProm.getWhole();
+			for await (const response of messages) {
 				let messager: Message;
 				if (this.messages.has(response.id)) {
 					messager = this.messages.get(response.id) as Message;
