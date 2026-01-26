@@ -96,8 +96,8 @@ class InfiniteScroller {
 		};
 	}
 
-	deleteId(id: string) {
-		this.removeElm(id);
+	async deleteId(id: string) {
+		await this.removeElm(id);
 	}
 
 	private async clearElms() {
@@ -121,7 +121,6 @@ class InfiniteScroller {
 		if (forward) this.backElm.delete(forward);
 		this.forElm.delete(id);
 
-		// This purposefully leaves all references pointing out alone so nothing breaks
 		const elm = this.curElms.get(id);
 		this.curElms.delete(id);
 		await this.destroyFromID(id);
