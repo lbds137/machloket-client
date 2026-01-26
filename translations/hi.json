@@ -1,0 +1,250 @@
+{
+	"@metadata": {
+		"authors": [
+			"Abijeet Patro",
+			"Saurmandal"
+		]
+	},
+	"2faCode": "2FA कोड:",
+	"404": {
+		"404": "404 पृष्ठ नहीं मिला",
+		"app": "ऐप पर",
+		"blog": "Fermi ब्लॉग",
+		"home": "मुखपृष्ठ",
+		"listtitle": "हो सकता है कि आप इनमें से किसी एक जगह पर जाना चाहते हों",
+		"login": "लॉग-इन करें",
+		"report": "अगर आपको यह पृष्ठ क्लाइंट पर मिला है तो कृपया इसे रिपोर्ट करें:",
+		"reset": "पासवर्ड रीसेट पृष्ठ",
+		"title": "लगता है आप रास्ता भटक गए हैं",
+		"whatelse": "आपके अनुसार और क्या होना चाहिए?",
+		"whereever": "यह जहाँ कहीं भी हो"
+	},
+	"DMs": {
+		"add": "इस DM में किसी को जोड़ें",
+		"close": "DM बंद करें",
+		"copyId": "DM ID कॉपी करें",
+		"markRead": "पठित चिह्नित करें",
+		"name": "प्रत्यक्ष संदेश"
+	},
+	"UrlGen": "URL जनरेटर",
+	"Voice": {
+		"status": {
+			"badWS": "WS की ओर से खराब उत्तर",
+			"conectionFailed": "कनेक्शन विफल",
+			"done": "कनेक्ट हो गया",
+			"left": "वॉइस चैट छोड़ दिया",
+			"makingOffer": "प्रस्ताव दिया जा रहा है",
+			"noSDP": "कोई SDP नहीं",
+			"notconnected": "कनेक्ट नहीं किए हुए",
+			"sendingStreams": "ऑडियो स्ट्रीम्स भेजे जा रहे हैं",
+			"startingRTC": "RTC कनेक्शन शुरू की जा रही है",
+			"waitingMainWS": "मुख्य WS की प्रतीक्षा में",
+			"waitingURL": "वॉइस URL की प्रतीक्षा में",
+			"wsAuth": "WS द्वारा अधिकृत किए जाने की प्रतीक्षा में",
+			"wsOpen": "WS के खुलने की प्रतीक्षा में"
+		}
+	},
+	"accessibility": {
+		"gifSettings": {
+			"always": "हमेशा",
+			"hover": "होवर पर",
+			"never": "कभी नहीं"
+		},
+		"name": "सुलभता",
+		"playGif": "GIF चित्र चलाएँ:",
+		"playIcon": "ऐनिमेटेड आईकॉन्स चलाएँ:",
+		"roleColors": "भूमिकाओं के रंग अक्षम करें"
+	},
+	"accountNotStart": "खाता शुरू नहीं किया जा सका",
+	"add": "जोड़ें",
+	"applications": {
+		"delete": "एप्लिकेशन हटाएँ",
+		"sure": "क्या आप वाकई में $1 को हटाना चाहते हैं?"
+	},
+	"badge": {
+		"active_developer": "सक्रिय विकासक",
+		"application_guild_subscription": "प्रीमियम है",
+		"automod": "ऑटोमॉड उपयोगकर्ता",
+		"bot_commands": "कमांड्स का समर्थन",
+		"bug_hunter_level_1": "बग हंटर लेवल 1",
+		"bug_hunter_level_2": "बग हंटर लेवल 2",
+		"certified_moderator": "मॉडरेटर",
+		"early_supporter": "प्रारंभिक समर्थक",
+		"guild_booster_lvl1": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl2": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl3": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl4": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl5": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl6": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl7": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl8": "गिल्ड को बूस्ट किया है",
+		"guild_booster_lvl9": "काफी समय तक गिल्ड को बूस्ट किया है",
+		"hypesquad": "कॉपीराइट की हुई चीज़",
+		"hypesquad_house_1": "वीरता",
+		"hypesquad_house_2": "प्रतिभा",
+		"hypesquad_house_3": "संतुलन",
+		"legacy_username": "पुराना उपयोगकर्ता नाम है",
+		"partner": "इंस्टैंस सहभागी",
+		"premium": "प्रीमियम",
+		"quest_completed": "एक खोज पूरी की",
+		"staff": "इंस्टैंस स्टाफ़",
+		"verified_developer": "सत्यापित विकासक"
+	},
+	"bio": "बायो:",
+	"blankMessage": "खाली संदेश",
+	"blog": {
+		"blog": "ब्लॉग",
+		"blogUpdates": "ब्लॉग अपडेट्स:"
+	},
+	"bot": "बॉट",
+	"botGuilds": "बॉट जिन गिल्ड्स में मौजूद है:",
+	"botSettings": "बॉट सेटिंग्स",
+	"cancel": "रद्द करें",
+	"channel": {
+		"SlowmodeCool": "धीमे मोड का कूलडाउन: $1",
+		"TimeOutCool": "$1 तक टाइम-आउट किए हुए",
+		"allowIcons": "अनुकूलित चैनल आईकॉन्स की अनुमति दें",
+		"announcement": "घोषणाएँ",
+		"copyId": "चैनल ID कॉपी करें",
+		"copyIdCat": "श्रेणी ID कॉपी करें",
+		"createCatagory": "श्रेणी बनाएँ",
+		"createChannel": "चैनल बनाएँ",
+		"creating": "चैनल बनाया जा रहा है",
+		"delete": "चैनल हटाएँ",
+		"deleteCat": "श्रेणी हटाएँ",
+		"icon": "आईकॉन:",
+		"makeInvite": "आमंत्रण बनाएँ",
+		"markRead": "पठित चिह्नित करें",
+		"mute": "चैनल को म्यूट करें",
+		"name": "चैनल",
+		"name:": "नाम:",
+		"nsfw:": "NSFW (अश्लील):",
+		"permissions": "अनुमतियाँ",
+		"selectCatName": "श्रेणी का नाम",
+		"selectName": "चैनल का नाम",
+		"selectType": "चैनल का प्रकार चुनें",
+		"settings": "सेटिंग्स",
+		"settingsFor": "$1 के लिए सेटिंग्स",
+		"slowmode": "धीमा मोड:",
+		"text": "टेक्स्ट",
+		"timedOutUntil": "$1 तक टाइम-आउट किए हुए",
+		"topic:": "विषय:",
+		"typebox": "$1 में संदेश",
+		"unmute": "चैनल को अनम्यूट करें",
+		"voice": "वॉइस"
+	},
+	"clientDesc": "क्लाइंट संस्करण: $1\n\n[आधिकारिक Fermi गिल्ड में शामिल हों]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Fermi का अनुवाद करने में सहायता करें](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermi के निर्माण में सहायता करें](https://github.com/MathMan05/Fermi)\n\n[Fermi जिस सर्वर पर निर्भर है उसके रखरखाव में सहायता करें](https://github.com/spacebarchat/server)\n\n[ब्लॉग पढ़ें](https://blog.fermi.chat/)\n\nगणना किए गए अधिकार: $3",
+	"commands": {
+		"errorNotValid": "$1 $2 के लिए कोई मान्य विकल्प नहीं",
+		"required": "$1 इस कमांड का एक अनिवार्य हिस्सा है"
+	},
+	"confirmGuildLeave": "क्या आप वाकई में $1 को छोड़ना चाहते हैं?",
+	"copyLink": "संदेश की कड़ी कॉपी करें",
+	"copymessageid": "संदेश ID कॉपी करें",
+	"copyrawtext": "रॉ टेक्स्ट कॉपी करें",
+	"createAccount": "खाता बनाएँ",
+	"delete": "हटाएँ",
+	"deleteConfirm": "क्या आप वाकई में इसे हटाना चाहते हैं?",
+	"deviceManage": {
+		"continent": "महाद्वीप: $1",
+		"country": "देश: $1",
+		"curSes": "यह वर्तमान सत्र है; आपको दूसरे मेन्यू से लॉग-आउट करने होगा",
+		"estimateWarn": "चेतावनी: यह सारी जानकारी केवल एक अनुमान है, और यह गलत भी हो सकती है।",
+		"ip": "अंतिम ज्ञात IP: $1",
+		"last": "लगभग अंतिम बार उपयोग किया गया: $1",
+		"latitude": "अक्षांश: $1",
+		"logout": "लॉग-आउट करें",
+		"longitude": "रेखांश: $1",
+		"manageDev": "डिवाइस प्रबंधित करें",
+		"postal": "डाक कोड: $1",
+		"region": "क्षेत्र: $1",
+		"title": "सत्र प्रबंधित करें"
+	},
+	"discovery": "अन्वेषण",
+	"dms": "प्रत्यक्ष संदेश",
+	"edit": "सम्पादित करें",
+	"emoji": {
+		"confirmDel": "क्या आप सच में इस इमोजी को हटाना चाहते हैं?",
+		"found": {
+			"not": "यह इमोजी आपके किसी भी गिल्ड से नहीं है। इस इमोजी का प्रयोग करने के लिए आपको इसमें शामिल होना होगा",
+			"other": "यह इमोजी आपके एक दूसरे गिल्ड से है।",
+			"private": "इस इमोजी का गिल्ड नहीं मिला",
+			"this": "यह इमोजी इस गिल्ड से है।"
+		},
+		"from": "यह इमोजी यहाँ से है:",
+		"image:": "चित्र:",
+		"join": "गिल्ड में शामिल हों",
+		"name:": "नाम:",
+		"privateGuild": "यह गिल्ड गोपनीय है",
+		"title": "इमोजी",
+		"upload": "इमोजी अपलोड करें"
+	},
+	"emojiSelect": "इमोजी:",
+	"favoriteGifs": "पसंदीदा GIF",
+	"folder": {
+		"color": "फ़ोल्डर का रंग:",
+		"create": "नया फ़ोल्डर बनाएँ",
+		"edit": "फ़ोल्डर सम्पादित करें",
+		"name": "फ़ोल्डर का नाम:"
+	},
+	"form": {
+		"captcha": "ठहरिए, क्या आप एक इंसान हैं?"
+	},
+	"friends": {
+		"addfriend": "दोस्त जोड़ें",
+		"addfriendpromt": "उपयोगकर्ता नाम से दोस्त जोड़ें:",
+		"all": "सभी",
+		"all:": "सभी दोस्त:",
+		"blocked": "अवरोधित",
+		"blockedusers": "अवरोधित उपयोगकर्ताएँ:",
+		"bu": "अवरोधित उपयोगकर्ता",
+		"discnotfound": "भेदकर्ता नहीं मिला",
+		"friendlist": "दोस्तों की सूची",
+		"friends": "दोस्त",
+		"notfound": "उपयोगकर्ता नहीं मिला",
+		"online": "ऑनलाइन",
+		"online:": "ऑनलाइन दोस्त:",
+		"pending": "लंबित",
+		"pending:": "लंबित दोस्ती के अनुरोध:",
+		"removeFriend": "दोस्त हटाएँ"
+	},
+	"goThere": "वहाँ जाएँ",
+	"guild": {
+		"all": "सभी",
+		"name:": "नाम:",
+		"topic:": "विषय:"
+	},
+	"htmlPages": {
+		"dobField": "जन्म तिथि:",
+		"emailField": "ईमेल:",
+		"loginButton": "लॉग-इन करें",
+		"pwField": "पासवर्ड:",
+		"userField": "उपयोगकर्ता नाम:"
+	},
+	"invite": {
+		"never": "कभी नहीं"
+	},
+	"no": "नहीं",
+	"permissions": {
+		"readableNames": {
+			"SEND_MESSAGES": "संदेश भेजें",
+			"STREAM": "वीडियो"
+		}
+	},
+	"readableName": "हिन्दी",
+	"register": {
+		"emailError": "ईमेल: $1",
+		"passwordError:": "पासवर्ड: $1",
+		"usernameError": "उपयोगकर्ता नाम: $1"
+	},
+	"reply": "उत्तर दें",
+	"settings": {
+		"clear": "खाली करें"
+	},
+	"todayAt": "आज $1 पर",
+	"webhooks": {
+		"name": "नाम:"
+	},
+	"yes": "हाँ",
+	"yesterdayAt": "कल $1 पर"
+}
