@@ -84,7 +84,14 @@ class InfiniteScroller {
 		return div;
 	}
 
-	async addedBottom(): Promise<void> {}
+	async addedBottom(): Promise<void> {
+		const scroll = this.scroller;
+		if (!scroll) return;
+		const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
+		if (!last) return;
+		this.backElm.delete(last);
+		this.fillIn();
+	}
 
 	snapBottom(): () => void {
 		const scrollBottom = this.scrollBottom;
@@ -237,7 +244,7 @@ class InfiniteScroller {
 		}
 	}
 
-	filling?: Promise<void>;
+	private filling?: Promise<void>;
 	private async fillIn(refill = false) {
 		if (this.filling && !refill) {
 			return this.filling;
