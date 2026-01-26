@@ -466,7 +466,6 @@ class Channel extends SnowFlake {
 				return document.createElement("div");
 			},
 			async (id: string) => {
-				console.log(id);
 				const message = this.messages.get(id);
 				try {
 					if (message) {

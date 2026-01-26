@@ -58,7 +58,6 @@ class InfiniteScroller {
 							const elms = sorted();
 
 							const middle = elms[(elms.length / 2) | 0];
-							console.log(obv.target, middle, elms);
 							const id = this.weakElmId.get(middle);
 							if (!id) continue;
 							this.curFocID = id;
@@ -112,12 +111,10 @@ class InfiniteScroller {
 
 	private async removeElm(id: string) {
 		const back = this.backElm.get(id);
-		console.log(id, back, "back");
 		if (back) this.forElm.delete(back);
 		this.backElm.delete(id);
 
 		const forward = this.forElm.get(id);
-		console.log(id, forward, "for");
 		if (forward) this.backElm.delete(forward);
 		this.forElm.delete(id);
 
@@ -175,10 +172,8 @@ class InfiniteScroller {
 				const list: string[] = [];
 				while (top) {
 					list.push(top);
-					console.log("top");
 					top = this.forElm.get(top);
 				}
-				console.log(list, top);
 				list.forEach((_) => this.removeElm(_));
 				break;
 			}
@@ -206,7 +201,7 @@ class InfiniteScroller {
 		const scroll = this.scroller;
 		if (!scroll) return;
 		let bottom = this.curFocID;
-		const backElms: [string, Promise<HTMLElement>, string][] = [];
+		const backElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
 		while (bottom) {
@@ -215,10 +210,8 @@ class InfiniteScroller {
 				const list: string[] = [];
 				while (bottom) {
 					list.push(bottom);
-					console.log("bottom");
 					bottom = this.backElm.get(bottom);
 				}
-				console.log(list, bottom);
 				list.forEach((_) => this.removeElm(_));
 				break;
 			}
@@ -233,19 +226,15 @@ class InfiniteScroller {
 				this.addLink(id, bottom);
 
 				if (id) {
-					if (this.curElms.has(id)) debugger;
-					console.log(this.curElms.has(bottom));
-					backElms.push([id, this.getFromID(id), bottom]);
+					backElms.push(this.getFromID(id));
 				}
 				bottom = id;
 			}
 		}
-		for (const [id, elmProm] of backElms) {
+		for (const elmProm of backElms) {
 			const elm = await elmProm;
-			if (!this.curElms.has(id)) console.error("bottom is missing");
 			scroll.append(elm);
 		}
-		console.log(backElms);
 	}
 
 	filling?: Promise<void>;
