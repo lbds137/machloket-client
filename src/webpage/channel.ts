@@ -1260,7 +1260,7 @@ class Channel extends SnowFlake {
 		}
 		await Promise.all(waits);
 	}
-	async focus(id: string) {
+	async focus(id: string, flash = true) {
 		const prom = this.getMessages(id);
 
 		if (await Promise.race([prom, new Promise((res) => setTimeout(() => res(true), 300))])) {
@@ -1278,7 +1278,7 @@ class Channel extends SnowFlake {
 		try {
 			await this.infinite.focus(id);
 		} catch {}
-		this.infinite.focus(id, true, true);
+		this.infinite.focus(id, flash, true);
 	}
 	editLast() {
 		let message: Message | undefined = this.lastmessage;
@@ -2849,8 +2849,7 @@ class Channel extends SnowFlake {
 		}
 	}
 	async goToBottom() {
-		if (this.localuser.channelfocus !== this) await this.tryfocusinfinate();
-		if (this.lastmessageid) this.infinite.focus(this.lastmessageid, false, true);
+		if (this.lastmessageid) this.focus(this.lastmessageid, false);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
@@ -2887,6 +2886,15 @@ class Channel extends SnowFlake {
 		}
 		this.setLastMessageId(messagez.id);
 
+		this.unreads();
+		this.guild.unreads();
+		if (this === this.localuser.channelfocus) {
+			if (!this.infinitefocus) {
+				await this.tryfocusinfinate();
+			}
+			await this.infinite.addedBottom();
+		}
+
 		if (messagez.author === this.localuser.user) {
 			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
 			this.lastSentMessage = messagez;
@@ -2902,14 +2910,7 @@ class Channel extends SnowFlake {
 				await this.goToBottom();
 			}
 		}
-		this.unreads();
-		this.guild.unreads();
-		if (this === this.localuser.channelfocus) {
-			if (!this.infinitefocus) {
-				await this.tryfocusinfinate();
-			}
-			await this.infinite.addedBottom();
-		}
+
 		if (messagez.author === this.localuser.user) {
 			return;
 		}

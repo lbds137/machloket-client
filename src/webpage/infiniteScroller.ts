@@ -186,8 +186,8 @@ class InfiniteScroller {
 	}
 
 	async deleteId(id: string) {
-		const prev = this.backElm.get(id) || this.backElm.has(id) ? null : undefined;
-		const next = this.forElm.get(id) || this.forElm.has(id) ? null : undefined;
+		const prev = this.backElm.get(id) || (this.backElm.has(id) ? null : undefined);
+		const next = this.forElm.get(id) || (this.forElm.has(id) ? null : undefined);
 		await this.removeElm(id);
 		if (prev && next !== null) this.forElm.set(prev, next);
 		if (next && prev !== null) this.backElm.set(next, prev);
@@ -324,7 +324,7 @@ class InfiniteScroller {
 				break;
 			}
 			if (this.backElm.has(bottom) && this.curElms.has(bottom)) {
-				if (limit === 75) throw new Error("patchy?");
+				if (limit === 75) console.error("patchy?");
 				bottom = this.backElm.get(bottom);
 			} else if (count > limit) {
 				break;
