@@ -1243,20 +1243,22 @@ class Channel extends SnowFlake {
 		if (!m) return;
 		const waits: Promise<unknown>[] = [];
 		let m1: string | undefined = m.id;
-		for (let i = 0; i <= 10; i++) {
+		for (let i = 0; i <= 50; i++) {
 			if (!m1) {
 				waits.push(this.grabBefore(id));
 				break;
 			}
-			if (this.idToNext.has(m1) && !(m1 = this.idToNext.get(m1))) break;
+			if (this.idToNext.has(m1) && !this.idToNext.get(m1)) break;
+			m1 = this.idToNext.get(m1);
 		}
 		m1 = m.id;
-		for (let i = 0; i <= 10; i++) {
+		for (let i = 0; i <= 50; i++) {
 			if (!m1) {
 				waits.push(this.grabAfter(id));
 				break;
 			}
-			if (this.idToPrev.has(m1) && !(m1 = this.idToPrev.get(m1))) break;
+			if (this.idToPrev.has(m1) && !this.idToPrev.get(m1)) break;
+			m1 = this.idToPrev.get(m1);
 		}
 		await Promise.all(waits);
 	}
