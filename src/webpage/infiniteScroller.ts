@@ -250,7 +250,7 @@ class InfiniteScroller {
 					.map((_) => this.heightMap.get(_ as HTMLElement))
 					.filter((_) => _ !== undefined)
 					.reduce((a, b) => a + b, 0);
-				this.div!.scrollTop -= heights;
+				if (!supports) this.div!.scrollTop -= heights;
 				list.forEach((_) => this.removeElm(_));
 				break;
 			}
