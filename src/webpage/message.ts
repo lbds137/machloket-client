@@ -540,9 +540,9 @@ class Message extends SnowFlake {
 		const next = this.channel.idToNext.get(this.id);
 
 		this.channel.messages.delete(this.id);
-		if (prev && next) {
-			this.channel.idToPrev.set(next, prev);
-			this.channel.idToNext.set(prev, next);
+		if (this.channel.idToPrev.has(this.id) && this.channel.idToNext.has(this.id)) {
+			if (next) this.channel.idToPrev.set(next, prev);
+			if (prev) this.channel.idToNext.set(prev, next);
 		} else if (prev) {
 			this.channel.idToNext.delete(prev);
 		} else if (next) {

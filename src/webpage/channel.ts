@@ -1246,9 +1246,11 @@ class Channel extends SnowFlake {
 		for (let i = 0; i <= 50; i++) {
 			if (!m1) {
 				waits.push(this.grabBefore(id));
+				console.log("hi!!!");
 				break;
 			}
-			if (this.idToNext.has(m1) && !this.idToNext.get(m1)) break;
+			if ((this.idToNext.has(m1) && !this.idToNext.get(m1)) || this.lastmessage?.id === m1) break;
+			console.log(this.idToNext.has(m1), this.idToNext.get(m1));
 			m1 = this.idToNext.get(m1);
 		}
 		m1 = m.id;
@@ -1261,6 +1263,7 @@ class Channel extends SnowFlake {
 			m1 = this.idToPrev.get(m1);
 		}
 		await Promise.all(waits);
+		console.log(waits);
 	}
 	async focus(id: string, flash = true) {
 		const prom = this.getMessages(id);
@@ -2851,7 +2854,7 @@ class Channel extends SnowFlake {
 		}
 	}
 	async goToBottom() {
-		if (this.lastmessageid) this.focus(this.lastmessageid, false);
+		if (this.lastmessageid) await this.focus(this.lastmessageid, false);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
@@ -2898,18 +2901,14 @@ class Channel extends SnowFlake {
 		}
 
 		if (messagez.author === this.localuser.user) {
-			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
 			this.lastSentMessage = messagez;
 			this.slowmode();
 			this.lastreadmessageid = messagez.id;
 			this.mentions = 0;
 			this.unreads();
 			this.guild.unreads();
-			if (next) {
-				next.generateMessage();
-			}
 			if (this == this.localuser.channelfocus) {
-				await this.goToBottom();
+				setTimeout(() => this.goToBottom());
 			}
 		}
 
