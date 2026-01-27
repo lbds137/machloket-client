@@ -255,6 +255,7 @@ class InfiniteScroller {
 		const futElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
+		const r = (Math.random() * 1000) ^ 0;
 
 		while (top) {
 			count++;
@@ -348,14 +349,16 @@ class InfiniteScroller {
 		if (this.filling && !refill) {
 			return this.filling;
 		}
+
 		await this.filling;
+		if (this.filling) return;
 
 		const fill = new Promise<void>(async (res) => {
 			await Promise.all([this.fillInTop(), this.fillInBottom()]);
-			res();
 			if (this.filling === fill) {
 				this.filling = undefined;
 			}
+			res();
 		});
 		this.filling = fill;
 		return fill;
