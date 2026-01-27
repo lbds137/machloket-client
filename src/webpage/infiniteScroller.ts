@@ -1,8 +1,23 @@
 function fragAppend(div: HTMLElement, pre = false) {
 	let qued = false;
+	const par = div.parentElement as Element;
+	if (!par) throw new Error("parrent is missing");
 	function appendFrag() {
 		const elms = Array.from(frag.children) as HTMLElement[];
+		let didForce = false;
+		if (pre) {
+			if (supports) {
+				if (par.scrollTop === 0) {
+					par.scrollTop += 3;
+					didForce = true;
+				}
+			}
+		}
 		div[pre ? "prepend" : "append"](frag);
+
+		if (didForce) {
+			par.scrollTop -= 3;
+		}
 		if (pre && !supports) {
 			const h = elms.map((_) => _.getBoundingClientRect().height).reduce((a, b) => a + b, 0);
 			const p = div.parentNode;
@@ -13,16 +28,20 @@ function fragAppend(div: HTMLElement, pre = false) {
 		}
 	}
 	const frag = document.createDocumentFragment();
-	return (elm: HTMLElement) => {
-		frag[pre ? "prepend" : "append"](elm);
-		if (!qued) {
-			queueMicrotask(() => {
-				appendFrag();
-				qued = false;
-			});
-			qued = true;
-		}
-	};
+	return (elm: HTMLElement) =>
+		new Promise<void>((res) => {
+			frag[pre ? "prepend" : "append"](elm);
+			if (!qued) {
+				setTimeout(() => {
+					appendFrag();
+					qued = false;
+					res();
+				});
+				qued = true;
+			} else {
+				res();
+			}
+		});
 }
 
 const supports = CSS.supports("overflow-anchor", "auto");
@@ -245,12 +264,14 @@ class InfiniteScroller {
 					list.push(top);
 					top = this.forElm.get(top);
 				}
-				const heights = list
-					.map((_) => this.curElms.get(_))
-					.map((_) => this.heightMap.get(_ as HTMLElement))
-					.filter((_) => _ !== undefined)
-					.reduce((a, b) => a + b, 0);
-				if (!supports) this.div!.scrollTop -= heights;
+				if (!supports) {
+					const heights = list
+						.map((_) => this.curElms.get(_))
+						.map((_) => this.heightMap.get(_ as HTMLElement))
+						.filter((_) => _ !== undefined)
+						.reduce((a, b) => a + b, 0);
+					this.div!.scrollTop -= heights;
+				}
 				list.forEach((_) => this.removeElm(_));
 				break;
 			}
@@ -271,10 +292,12 @@ class InfiniteScroller {
 		}
 
 		const app = fragAppend(scroll, true);
+		const proms: Promise<void>[] = [];
 		for (const elmProm of futElms) {
 			const elm = await elmProm;
-			app(elm);
+			proms.push(app(elm));
 		}
+		await Promise.all(proms);
 	}
 	private async fillInBottom() {
 		const scroll = this.scroller;
@@ -312,10 +335,12 @@ class InfiniteScroller {
 		}
 
 		const app = fragAppend(scroll);
+		const proms: Promise<void>[] = [];
 		for (const elmProm of backElms) {
 			const elm = await elmProm;
-			app(elm);
+			proms.push(app(elm));
 		}
+		await Promise.all(proms);
 	}
 
 	private filling?: Promise<void>;
