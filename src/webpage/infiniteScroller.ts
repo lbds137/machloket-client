@@ -30,7 +30,6 @@ function fragAppend(div: HTMLElement, pre = false) {
 			const p = div.parentNode;
 			if (p instanceof HTMLElement) {
 				p.scrollTop += h;
-				console.warn(h);
 			}
 		}
 	}
@@ -262,7 +261,6 @@ class InfiniteScroller {
 		const futElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
-		const r = (Math.random() * 1000) ^ 0;
 
 		while (top) {
 			count++;
