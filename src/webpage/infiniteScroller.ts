@@ -19,7 +19,14 @@ function fragAppend(div: HTMLElement, pre = false) {
 			par.scrollTop -= 3;
 		}
 		if (pre && !supports) {
-			const h = elms.map((_) => _.getBoundingClientRect().height).reduce((a, b) => a + b, 0);
+			let top = -Infinity;
+			let bottom = Infinity;
+			elms.forEach((_) => {
+				const rec = _.getBoundingClientRect();
+				top = Math.max(top, rec.top);
+				bottom = Math.min(bottom, rec.bottom);
+			});
+			const h = top - bottom;
 			const p = div.parentNode;
 			if (p instanceof HTMLElement) {
 				p.scrollTop += h;
