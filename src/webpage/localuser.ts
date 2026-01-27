@@ -15,7 +15,6 @@ import {
 	messagejson,
 	presencejson,
 	readyjson,
-	sessionJson,
 	startTypingjson,
 	wsjson,
 } from "./jsontypes.js";
@@ -4314,9 +4313,7 @@ class Localuser {
 						html.addEventListener("click", async () => {
 							try {
 								sideContainDiv.classList.add("hideSearchDiv");
-								(await message.channel.getmessage(message.id))?.deleteDiv();
-
-								await message.channel.getHTML(true, true, message.id);
+								await message.channel.focus(message.id);
 							} catch (e) {
 								console.error(e);
 							}

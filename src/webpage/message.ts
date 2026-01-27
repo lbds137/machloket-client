@@ -676,14 +676,10 @@ class Message extends SnowFlake {
 					div.append(span);
 					span.classList.add("blocked");
 					span.onclick = (_) => {
-						const scroll = this.channel.infinite.scrollTop;
 						let next: Message | undefined = this;
 						while (next?.author === this.author) {
 							next.generateMessage();
 							next = this.channel.messages.get(this.channel.idToNext.get(next.id) as string);
-						}
-						if (this.channel.infinite.scollDiv && scroll) {
-							this.channel.infinite.scollDiv.scrollTop = scroll;
 						}
 					};
 				}
@@ -706,7 +702,6 @@ class Message extends SnowFlake {
 					span.textContent = I18n.showBlockedMessages(count + "");
 					build.append(span);
 					span.onclick = (_) => {
-						const scroll = this.channel.infinite.scrollTop;
 						const func = this.channel.infinite.snapBottom();
 						let next: Message | undefined = this;
 						while (next?.author === this.author) {
@@ -714,10 +709,7 @@ class Message extends SnowFlake {
 							next = this.channel.messages.get(this.channel.idToNext.get(next.id) as string);
 							console.log("loopy");
 						}
-						if (this.channel.infinite.scollDiv && scroll) {
-							func();
-							this.channel.infinite.scollDiv.scrollTop = scroll;
-						}
+						func();
 					};
 					div.appendChild(build);
 					return div;
@@ -781,7 +773,7 @@ class Message extends SnowFlake {
 			reply.onclick = (_) => {
 				if (!this.message_reference) return;
 				// TODO: FIX this
-				this.channel.infinite.focus(this.message_reference.message_id);
+				this.channel.focus(this.message_reference.message_id);
 			};
 			div.appendChild(replyline);
 		}

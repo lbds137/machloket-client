@@ -28,7 +28,6 @@ import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
-import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
 
@@ -1239,37 +1238,47 @@ class Channel extends SnowFlake {
 			return new Message(json[0], this);
 		}
 	}
-	async focus(id: string) {
-		const m = this.messages.get(id);
-		if (m && m.div) {
-			if (document.contains(m.div)) {
-				m.div.scrollIntoView({
-					behavior: "smooth",
-					block: "center",
-				});
-				await new Promise((resolve) => {
-					setTimeout(resolve, 1000);
-				});
-				m.div.classList.remove("jumped");
-				await new Promise((resolve) => {
-					setTimeout(resolve, 100);
-				});
-				m.div.classList.add("jumped");
-				return;
+	async getMessages(id: string) {
+		const m = await this.getmessage(id);
+		if (!m) return;
+		const waits: Promise<unknown>[] = [];
+		let m1: string | undefined = m.id;
+		for (let i = 0; i <= 10; i++) {
+			if (!m1) {
+				waits.push(this.grabBefore(id));
+				break;
 			}
+			if (this.idToNext.has(m1) && !(m1 = this.idToNext.get(m1))) break;
 		}
-		console.log(await this.getmessage(id));
+		m1 = m.id;
+		for (let i = 0; i <= 10; i++) {
+			if (!m1) {
+				waits.push(this.grabAfter(id));
+				break;
+			}
+			if (this.idToPrev.has(m1) && !(m1 = this.idToPrev.get(m1))) break;
+		}
+		await Promise.all(waits);
+	}
+	async focus(id: string, flash = true) {
+		const prom = this.getMessages(id);
 
-		if (this.localuser.channelfocus === this) {
-			this.localuser.channelfocus?.infinite.delete();
-			this.localuser.channelfocus = undefined;
+		if (await Promise.race([prom, new Promise((res) => setTimeout(() => res(true), 300))])) {
+			const loading = document.getElementById("loadingdiv") as HTMLDivElement;
+			Channel.regenLoadingMessages();
+			loading.classList.add("loading");
+			await prom;
+			loading.classList.remove("loading");
 		}
-		await this.getHTML(true);
-		console.warn(id);
+
+		if (this.localuser.channelfocus !== this) {
+			await this.getHTML(true);
+		}
+
 		try {
-			await this.buildmessages(id);
+			await this.infinite.focus(id);
 		} catch {}
-		this.infinite.focus(id, true, true);
+		this.infinite.focus(id, flash, true);
 	}
 	editLast() {
 		let message: Message | undefined = this.lastmessage;
@@ -2042,17 +2051,15 @@ class Channel extends SnowFlake {
 		if (!tempy) return;
 		id = tempy;
 		this.afterProm = new Promise(async (res) => {
-			const messages = await ProgessiveDecodeJSON<messagejson[]>(
-				this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id,
-				{
+			const messages = (await (
+				await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id, {
 					headers: this.headers,
-				},
-			);
+				})
+			).json()) as messagejson[];
 			let i = 0;
 			let previd: string = id;
-			for await (const obj of messages) {
+			for (const response of messages) {
 				let messager: Message;
-				const response = await obj.getWhole();
 				let willbreak = false;
 				if (this.messages.has(response.id)) {
 					messager = this.messages.get(response.id) as Message;
@@ -2122,16 +2129,17 @@ class Channel extends SnowFlake {
 				return;
 			}
 			id = tempy;
-			const messages = await ProgessiveDecodeJSON<messagejson[]>(
-				this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100",
-				{
-					headers: this.headers,
-				},
-			);
+			const messages = (await (
+				await fetch(
+					this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100",
+					{
+						headers: this.headers,
+					},
+				)
+			).json()) as messagejson[];
 			let previd = id;
 			let i = 0;
-			for await (const messageProm of messages) {
-				const response = await messageProm.getWhole();
+			for (const response of messages) {
 				let messager: Message;
 				if (this.messages.has(response.id)) {
 					messager = this.messages.get(response.id) as Message;
@@ -2150,7 +2158,7 @@ class Channel extends SnowFlake {
 
 				previd = messager.id;
 
-				if (messages.done && i < 99) {
+				if (i < 99) {
 					this.topid = previd;
 				}
 
@@ -2226,17 +2234,18 @@ class Channel extends SnowFlake {
 			elm.remove();
 			console.warn("rouge element detected and removed");
 		}
-		messages.append(await this.infinite.getDiv(id));
-
-		this.infinite.updatestuff();
+		messages.append(await this.infinite.getDiv(id, falsh));
+		/*
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
 
 			await this.infinite.focus(id, falsh); //if someone could figure out how to make this work correctly without this, that's be great :P
-			loading.classList.remove("loading");
+
 
 			this.infinite.focus(id, falsh, true);
 		});
+		*/
+		loading.classList.remove("loading");
 		//this.infinite.focus(id.id,false);
 	}
 	private goBackIds(id: string, back: number, returnifnotexistant = true): string | undefined {
@@ -2840,8 +2849,7 @@ class Channel extends SnowFlake {
 		}
 	}
 	async goToBottom() {
-		if (this.localuser.channelfocus !== this) await this.tryfocusinfinate();
-		if (this.lastmessageid) this.infinite.focus(this.lastmessageid, false, true);
+		if (this.lastmessageid) this.focus(this.lastmessageid, false);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
@@ -2878,6 +2886,15 @@ class Channel extends SnowFlake {
 		}
 		this.setLastMessageId(messagez.id);
 
+		this.unreads();
+		this.guild.unreads();
+		if (this === this.localuser.channelfocus) {
+			if (!this.infinitefocus) {
+				await this.tryfocusinfinate();
+			}
+			await this.infinite.addedBottom();
+		}
+
 		if (messagez.author === this.localuser.user) {
 			const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
 			this.lastSentMessage = messagez;
@@ -2893,14 +2910,7 @@ class Channel extends SnowFlake {
 				await this.goToBottom();
 			}
 		}
-		this.unreads();
-		this.guild.unreads();
-		if (this === this.localuser.channelfocus) {
-			if (!this.infinitefocus) {
-				await this.tryfocusinfinate();
-			}
-			await this.infinite.addedBottom();
-		}
+
 		if (messagez.author === this.localuser.user) {
 			return;
 		}

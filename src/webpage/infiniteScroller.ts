@@ -1,40 +1,79 @@
+function fragAppend(div: HTMLElement, pre = false) {
+	let qued = false;
+	const par = div.parentElement as Element;
+	if (!par) throw new Error("parrent is missing");
+	function appendFrag() {
+		const elms = Array.from(frag.children) as HTMLElement[];
+		let didForce = false;
+		if (pre) {
+			if (supports) {
+				if (par.scrollTop === 0) {
+					par.scrollTop += 3;
+					didForce = true;
+				}
+			}
+		}
+		div[pre ? "prepend" : "append"](frag);
+
+		if (didForce) {
+			par.scrollTop -= 3;
+		}
+		if (pre && !supports) {
+			let top = -Infinity;
+			let bottom = Infinity;
+			elms.forEach((_) => {
+				const rec = _.getBoundingClientRect();
+				top = Math.max(top, rec.top);
+				bottom = Math.min(bottom, rec.bottom);
+			});
+			const h = top - bottom;
+			const p = div.parentNode;
+			if (p instanceof HTMLElement) {
+				p.scrollTop += h;
+			}
+		}
+	}
+	const frag = document.createDocumentFragment();
+	return (elm: HTMLElement) =>
+		new Promise<void>((res) => {
+			frag[pre ? "prepend" : "append"](elm);
+			if (!qued) {
+				setTimeout(() => {
+					appendFrag();
+					qued = false;
+					res();
+				});
+				qued = true;
+			} else {
+				res();
+			}
+		});
+}
+
+const supports = CSS.supports("overflow-anchor", "auto");
 class InfiniteScroller {
 	readonly getIDFromOffset: (ID: string, offset: number) => Promise<string | undefined>;
 	readonly getHTMLFromID: (ID: string) => Promise<HTMLElement>;
 	readonly destroyFromID: (ID: string) => Promise<boolean>;
 	readonly reachesBottom: () => void;
-	private readonly minDist = 2000;
-	private readonly fillDist = 3000;
-	private readonly maxDist = 6000;
-	HTMLElements: [HTMLElement, string][] = [];
-	div: HTMLDivElement | null = null;
-	timeout: ReturnType<typeof setTimeout> | null = null;
-	beenloaded = false;
-	scrollBottom = 0;
-	scrollTop = 0;
-	needsupdate = true;
-	averageheight = 60;
-	watchtime = false;
-	changePromise: Promise<boolean> | undefined;
-	scollDiv!: {scrollTop: number; scrollHeight: number; clientHeight: number};
 
-	resetVars() {
-		this.scrollTop = 0;
-		this.scrollBottom = 0;
-		this.averageheight = 60;
-		this.watchtime = false;
-		this.needsupdate = true;
-		this.beenloaded = false;
-		this.changePromise = undefined;
-		if (this.timeout) {
-			clearTimeout(this.timeout);
-			this.timeout = null;
-		}
-		for (const thing of this.HTMLElements) {
-			this.destroyFromID(thing[1]);
-		}
-		this.HTMLElements = [];
+	private weakDiv = new WeakRef(document.createElement("div"));
+	private curFocID?: string;
+	private curElms = new Map<string, HTMLElement>();
+	private backElm = new Map<string, string | undefined>();
+	private forElm = new Map<string, string | undefined>();
+	private weakElmId = new WeakMap<HTMLElement, string>();
+
+	get div() {
+		return this.weakDiv.deref();
 	}
+	set div(div: HTMLDivElement | undefined) {
+		this.weakDiv = new WeakRef(div || document.createElement("div"));
+	}
+	get scroller() {
+		return this.div?.children[0] as HTMLDivElement | undefined;
+	}
+
 	constructor(
 		getIDFromOffset: InfiniteScroller["getIDFromOffset"],
 		getHTMLFromID: InfiniteScroller["getHTMLFromID"],
@@ -46,360 +85,338 @@ class InfiniteScroller {
 		this.destroyFromID = destroyFromID;
 		this.reachesBottom = reachesBottom;
 	}
+	observer: IntersectionObserver = new IntersectionObserver(console.log);
 
-	async getDiv(initialId: string): Promise<HTMLDivElement> {
-		if (this.div) {
-			return this.div;
+	private heightMap = new WeakMap<HTMLElement, number>();
+	private createObserver(root: HTMLDivElement) {
+		const scroller = root.children[0];
+		function sorted() {
+			return Array.from(scroller.children).filter((_) => visable.has(_)) as HTMLElement[];
 		}
-		this.resetVars();
-		const scroll = document.createElement("div");
-		scroll.classList.add("scroller");
-		this.div = scroll;
+		const visable = new Set<Element>();
+		this.observer = new IntersectionObserver(
+			(obvs) => {
+				for (const obv of obvs) {
+					if (obv.target instanceof HTMLElement) {
+						if (obv.isIntersecting) {
+							visable.add(obv.target);
+						} else {
+							visable.delete(obv.target);
+						}
 
-		this.div.addEventListener("scroll", () => {
-			this.checkscroll();
+						this.heightMap.set(obv.target, obv.boundingClientRect.height);
+					}
+				}
+				for (const obv of obvs) {
+					if (obv.target instanceof HTMLElement) {
+						const id = this.weakElmId.get(obv.target);
+						if (id && !obv.isIntersecting && id === this.curFocID) {
+							const elms = sorted();
+
+							const middle = elms[(elms.length / 2) | 0];
+							const id = this.weakElmId.get(middle);
+							if (!id) continue;
+							this.curFocID = id;
+							this.fillIn(true);
+						} else if (!id) console.log("uh...");
+					}
+				}
+			},
+			{root, threshold: 0.1},
+		);
+		root.addEventListener("scroll", () => {
 			if (this.scrollBottom < 5) {
-				this.scrollBottom = 5;
+				const scroll = this.scroller;
+				if (!scroll) return;
+				const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
+				if (!last) return;
+				if (this.backElm.get(last) || !this.backElm.has(last)) return;
+				this.reachesBottom();
 			}
-			if (this.timeout === null) {
-				this.timeout = setTimeout(this.updatestuff.bind(this), 300);
-			}
-			this.watchForChange();
 		});
-
-		let oldheight = 0;
-		new ResizeObserver(() => {
-			this.checkscroll();
-			const func = this.snapBottom();
-			this.updatestuff();
-			const change = oldheight - scroll.offsetHeight;
-			if (change > 0 && this.div) {
-				this.div.scrollTop += change;
-			}
-			oldheight = scroll.offsetHeight;
-			this.watchForChange();
-			func();
-		}).observe(scroll);
-
-		new ResizeObserver(() => this.watchForChange()).observe(scroll);
-
-		await this.firstElement(initialId);
-		this.updatestuff();
-		await this.watchForChange().then(() => {
-			this.updatestuff();
-			this.beenloaded = true;
-		});
-
-		return scroll;
 	}
 
-	checkscroll(): void {
-		if (this.beenloaded && this.div && !document.body.contains(this.div)) {
-			console.warn("not in document");
-			this.div = null;
-		}
+	async getDiv(initialId: string, flash = false): Promise<HTMLDivElement> {
+		const div = document.createElement("div");
+		div.classList.add("scroller");
+		this.div = div;
+
+		const scroll = document.createElement("div");
+		div.append(scroll);
+
+		this.createObserver(div);
+
+		this.focus(initialId, flash, true);
+		return div;
 	}
-
-	async updatestuff(): Promise<void> {
-		this.timeout = null;
-		if (!this.div) return;
-
-		this.scrollBottom = this.div.scrollHeight - this.div.scrollTop - this.div.clientHeight;
-		this.averageheight = this.div.scrollHeight / this.HTMLElements.length;
-		if (this.averageheight < 10) {
-			this.averageheight = 60;
+	private get scrollBottom() {
+		if (this.div) {
+			return this.div.scrollHeight - this.div.scrollTop - this.div.clientHeight;
+		} else {
+			return 0;
 		}
-		this.scrollTop = this.div.scrollTop;
-
-		if (this.scrollBottom < 5 && !(await this.watchForChange())) {
-			this.reachesBottom();
-		}
-		if (!this.scrollTop) {
-			await this.watchForChange();
-		}
-		this.needsupdate = false;
-	}
-
-	async firstElement(id: string): Promise<void> {
-		if (!this.div) return;
-		const html = await this.getHTMLFromID(id);
-		this.div.appendChild(html);
-		this.HTMLElements.push([html, id]);
 	}
 
 	async addedBottom(): Promise<void> {
-		await this.updatestuff();
-		const func = this.snapBottom();
-		if (this.changePromise) {
-			while (this.changePromise) {
-				await new Promise((res) => setTimeout(res, 30));
-			}
-		} else {
-			await this.watchForChange();
-		}
-		func();
+		const snap = this.snapBottom();
+		const scroll = this.scroller;
+		if (!scroll) return;
+		const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
+		if (!last) return;
+		this.backElm.delete(last);
+		await this.fillIn();
+		snap();
 	}
 
 	snapBottom(): () => void {
-		const scrollBottom = this.scrollBottom;
-		return () => {
-			if (this.div && scrollBottom < 4) {
-				this.div.scrollTop = this.div.scrollHeight;
-			}
-		};
-	}
-	whenFrag: (() => number)[] = [];
-	private async watchForTop(already = false, fragment = new DocumentFragment()): Promise<boolean> {
-		const supports = CSS.supports("overflow-anchor", "auto");
-		if (!this.div) return false;
-		const div = this.div;
-		try {
-			let again = false;
-			if (this.scrollTop < (already ? this.fillDist : this.minDist)) {
-				let nextid: string | undefined;
-				const firstelm = this.HTMLElements.at(0);
-				if (firstelm) {
-					const previd = firstelm[1];
-					nextid = await this.getIDFromOffset(previd, 1);
-				}
-
-				if (nextid) {
-					const html = await this.getHTMLFromID(nextid);
-
-					if (!html) {
-						this.destroyFromID(nextid);
-						return false;
-					}
-					if (!supports) {
-						this.whenFrag.push(() => {
-							const box = html.getBoundingClientRect();
-							return box.height;
-						});
-					}
-					again = true;
-					fragment.prepend(html);
-					this.HTMLElements.unshift([html, nextid]);
-					this.scrollTop += this.averageheight;
-				}
-			}
-			if (this.scrollTop > this.maxDist && this.remove) {
-				const html = this.HTMLElements.shift();
-				if (html) {
-					let dec = 0;
-					if (!supports) {
-						const box = html[0].getBoundingClientRect();
-						dec = box.height;
-					}
-					again = true;
-					await this.destroyFromID(html[1]);
-
-					div.scrollTop -= dec;
-					this.scrollTop -= this.averageheight;
-				}
-			}
-			if (again) {
-				await this.watchForTop(true, fragment);
-			}
-			return again;
-		} finally {
-			if (!already) {
-				if (this.div.scrollTop === 0) {
-					this.scrollTop = 1;
-					this.div.scrollTop = 10;
-				}
-				let height = 0;
-
-				this.div.prepend(fragment);
-				this.whenFrag.forEach((_) => (height += _()));
-				this.div.scrollTop += height;
-
-				this.whenFrag = [];
-			}
-		}
-	}
-	deleteId(id: string) {
-		this.HTMLElements = this.HTMLElements.filter(([elm, elmid]) => {
-			if (id === elmid) {
-				elm.remove();
-				return false;
-			} else {
-				return true;
-			}
-		});
-	}
-
-	async watchForBottom(already = false, fragment = new DocumentFragment()): Promise<boolean> {
-		let func: Function | undefined;
-		if (!already) func = this.snapBottom();
-		if (!this.div) return false;
-		try {
-			let again = false;
-			const scrollBottom = this.scrollBottom;
-			if (scrollBottom < (already ? this.fillDist : this.minDist)) {
-				let nextid: string | undefined;
-				const lastelm = this.HTMLElements.at(-1);
-				if (lastelm) {
-					const previd = lastelm[1];
-					nextid = await this.getIDFromOffset(previd, -1);
-				}
-				if (nextid) {
-					again = true;
-					const html = await this.getHTMLFromID(nextid);
-					fragment.appendChild(html);
-					this.HTMLElements.push([html, nextid]);
-					this.scrollBottom += this.averageheight;
-				}
-			}
-			if (scrollBottom > this.maxDist && this.remove) {
-				const html = this.HTMLElements.pop();
-				if (html) {
-					await this.destroyFromID(html[1]);
-					this.scrollBottom -= this.averageheight;
-					again = true;
-				}
-			}
-			if (again) {
-				await this.watchForBottom(true, fragment);
-			}
-			return again;
-		} finally {
-			if (!already) {
-				this.div.append(fragment);
-				if (func) {
-					func();
-				}
-			}
-		}
-	}
-
-	async watchForChange(stop = false): Promise<boolean> {
-		if (!this.remove) return false;
-		if (stop == true) {
-			let prom = this.changePromise;
-			while (this.changePromise) {
-				prom = this.changePromise;
-				await this.changePromise;
-				if (prom === this.changePromise) {
-					this.changePromise = undefined;
-					break;
-				}
-			}
-		}
-		if (this.changePromise) {
-			this.watchtime = true;
-			return await this.changePromise;
+		const nothing = () => {};
+		const scroll = this.scroller;
+		if (!scroll) return nothing;
+		const last = this.weakElmId.get(Array.from(scroll.children).at(-1) as HTMLElement);
+		if (!last) return nothing;
+		if (this.backElm.get(last) || !this.backElm.has(last)) return nothing;
+		if (this.div) {
+			const trigger = this.scrollBottom < 4;
+			return () => {
+				if (this.div && trigger) this.div.scrollTop = this.div.scrollHeight;
+			};
 		} else {
-			this.watchtime = false;
+			return nothing;
+		}
+	}
+
+	async deleteId(id: string) {
+		const prev = this.backElm.get(id) || (this.backElm.has(id) ? null : undefined);
+		const next = this.forElm.get(id) || (this.forElm.has(id) ? null : undefined);
+		await this.removeElm(id);
+		if (prev && next !== null) this.forElm.set(prev, next);
+		if (next && prev !== null) this.backElm.set(next, prev);
+	}
+
+	private async clearElms() {
+		await Promise.all(this.curElms.keys().map((id) => this.destroyFromID(id)));
+		this.curElms.clear();
+		this.backElm.clear();
+		this.forElm.clear();
+		const scroller = this.scroller;
+		if (!scroller) return;
+		scroller.innerHTML = "";
+	}
+
+	private async removeElm(id: string) {
+		const back = this.backElm.get(id);
+		if (back) this.forElm.delete(back);
+		this.backElm.delete(id);
+
+		const forward = this.forElm.get(id);
+		if (forward) this.backElm.delete(forward);
+		this.forElm.delete(id);
+
+		const elm = this.curElms.get(id);
+		this.curElms.delete(id);
+		await this.destroyFromID(id);
+		elm?.remove();
+	}
+	private async getFromID(id: string) {
+		if (this.curElms.has(id)) {
+			return this.curElms.get(id) as HTMLElement;
+		}
+		const elm = await this.getHTMLFromID(id);
+		this.curElms.set(id, elm);
+		this.weakElmId.set(elm, id);
+		this.observer.observe(elm);
+		return elm;
+	}
+	//@ts-ignore-error
+	private checkIDs() {
+		const scroll = this.scroller;
+		if (!scroll) return;
+		const kids = Array.from(scroll.children)
+			.map((_) => this.weakElmId.get(_ as HTMLElement))
+			.filter((_) => _ !== undefined);
+		let last = null;
+		for (const kid of kids) {
+			if (last === null) {
+				last = kid;
+			} else {
+				if (this.backElm.get(last) !== kid)
+					console.log("back is wrong", kid, this.backElm.get(kid));
+				if (this.forElm.get(kid) !== last)
+					console.log("for is wrong", last, this.backElm.get(last));
+				last = kid;
+			}
+		}
+		const e = new Set(this.curElms.keys());
+		if (e.symmetricDifference(new Set(kids)).size)
+			console.log("cur elms is wrong", e.symmetricDifference(new Set(kids)));
+	}
+	private addLink(prev: string | undefined, next: string | undefined) {
+		if (prev) this.forElm.set(prev, next);
+		if (next) this.backElm.set(next, prev);
+	}
+	private async fillInTop() {
+		const scroll = this.scroller;
+		if (!scroll) return;
+		let top = this.curFocID;
+		const futElms: Promise<HTMLElement>[] = [];
+		let count = 0;
+		let limit = 50;
+
+		while (top) {
+			count++;
+			if (count > 100) {
+				const list: string[] = [];
+				while (top) {
+					list.push(top);
+					top = this.forElm.get(top);
+				}
+				if (!supports) {
+					const heights = list
+						.map((_) => this.curElms.get(_))
+						.map((_) => this.heightMap.get(_ as HTMLElement))
+						.filter((_) => _ !== undefined)
+						.reduce((a, b) => a + b, 0);
+					this.div!.scrollTop -= heights;
+				}
+				list.forEach((_) => this.removeElm(_));
+				break;
+			}
+			if (this.forElm.has(top) && this.curElms.has(top)) {
+				top = this.forElm.get(top);
+			} else if (count > limit) {
+				break;
+			} else {
+				limit = 75;
+				const id = await this.getIDFromOffset(top, 1);
+				this.addLink(top, id);
+
+				if (id) {
+					futElms.push(this.getFromID(id));
+				}
+				top = id;
+			}
 		}
 
-		this.changePromise = new Promise<boolean>(async (res) => {
-			try {
-				if (!this.div) {
-					res(false);
-				}
-				const out = (await Promise.allSettled([this.watchForTop(), this.watchForBottom()])) as {
-					value: boolean;
-				}[];
-				const changed = out[0].value || out[1].value;
-				if (this.timeout === null && changed) {
-					this.timeout = setTimeout(this.updatestuff.bind(this), 300);
-				}
-				res(Boolean(changed));
-			} catch (e) {
-				console.error(e);
-				res(false);
-			} finally {
-				if (stop === true) {
-					this.changePromise = undefined;
-					return;
-				}
-				setTimeout(() => {
-					this.changePromise = undefined;
-					if (this.watchtime) {
-						this.watchForChange();
-					}
-				}, 300);
-			}
-		});
-
-		return await this.changePromise;
+		const app = fragAppend(scroll, true);
+		const proms: Promise<void>[] = [];
+		for (const elmProm of futElms) {
+			const elm = await elmProm;
+			proms.push(app(elm));
+		}
+		await Promise.all(proms);
 	}
-	remove = true;
+	private async fillInBottom() {
+		const scroll = this.scroller;
+		if (!scroll) return;
+		let bottom = this.curFocID;
+		const backElms: Promise<HTMLElement>[] = [];
+		let count = 0;
+		let limit = 50;
+		while (bottom) {
+			count++;
+			if (count > 100) {
+				const list: string[] = [];
+				while (bottom) {
+					list.push(bottom);
+					bottom = this.backElm.get(bottom);
+				}
+				list.forEach((_) => this.removeElm(_));
+				break;
+			}
+			if (this.backElm.has(bottom) && this.curElms.has(bottom)) {
+				if (limit === 75) console.error("patchy?");
+				bottom = this.backElm.get(bottom);
+			} else if (count > limit) {
+				break;
+			} else {
+				limit = 75;
+				const id = await this.getIDFromOffset(bottom, -1);
+				this.addLink(id, bottom);
+
+				if (id) {
+					backElms.push(this.getFromID(id));
+				}
+				bottom = id;
+			}
+		}
+
+		const app = fragAppend(scroll);
+		const proms: Promise<void>[] = [];
+		for (const elmProm of backElms) {
+			const elm = await elmProm;
+			proms.push(app(elm));
+		}
+		await Promise.all(proms);
+	}
+
+	private filling?: Promise<void>;
+	private async fillIn(refill = false) {
+		if (this.filling && !refill) {
+			return this.filling;
+		}
+
+		await this.filling;
+		if (this.filling) return;
+
+		const fill = new Promise<void>(async (res) => {
+			await Promise.all([this.fillInTop(), this.fillInBottom()]);
+			if (this.filling === fill) {
+				this.filling = undefined;
+			}
+			res();
+		});
+		this.filling = fill;
+		return fill;
+	}
+
 	async focus(id: string, flash = true, sec = false): Promise<void> {
-		let element: HTMLElement | undefined;
-		for (const thing of this.HTMLElements) {
-			if (thing[1] === id) {
-				element = thing[0];
-			}
-		}
-		if (sec && element && document.contains(element)) {
-			if (flash) {
-				element.scrollIntoView({
-					behavior: "smooth",
-					inline: "center",
-					block: "center",
-				});
-				await new Promise((resolve) => {
-					setTimeout(resolve, 1000);
-				});
-				element.classList.remove("jumped");
-				await new Promise((resolve) => {
-					setTimeout(resolve, 100);
-				});
-				element.classList.add("jumped");
-			} else {
-				element.scrollIntoView({
-					block: "center",
-				});
-			}
-		} else if (!sec) {
-			this.resetVars();
-			//TODO may be a redundant loop, not 100% sure :P
-			for (const thing of this.HTMLElements) {
-				await this.destroyFromID(thing[1]);
-			}
-			this.HTMLElements = [];
-			await this.firstElement(id);
-			this.changePromise = new Promise<boolean>(async (resolve) => {
-				try {
-					await this.updatestuff();
-					this.remove = false;
-					await Promise.all([this.watchForBottom(), this.watchForTop()]);
+		// debugger;
+		const scroller = this.scroller;
+		if (!scroller) return;
 
-					await new Promise<void>((res) => queueMicrotask(res));
-					await this.focus(id, !element && flash, true);
-					this.remove = true;
-					//TODO figure out why this fixes it and fix it for real :P
-					await new Promise(requestAnimationFrame);
-					await new Promise(requestAnimationFrame);
-					this.changePromise = undefined;
-				} finally {
-					resolve(true);
-				}
+		let div = this.curElms.get(id);
+		if (div && !document.contains(div)) div = undefined;
+		let had = true;
+		this.curFocID = id;
+
+		if (!div) {
+			await this.clearElms();
+			had = false;
+			const obj = await this.getFromID(id);
+			scroller.append(obj);
+			div = obj;
+		}
+		await this.fillIn(true);
+		if (had && !sec) {
+			div.scrollIntoView({
+				behavior: "smooth",
+				inline: "center",
+				block: "center",
 			});
-			await this.changePromise;
 		} else {
-			console.warn("elm not exist");
+			console.log(had, sec);
+			div.scrollIntoView({
+				block: "center",
+			});
+		}
+
+		if (flash) {
+			await new Promise((resolve) => {
+				setTimeout(resolve, 1000);
+			});
+			div.classList.remove("jumped");
+			await new Promise((resolve) => {
+				setTimeout(resolve, 100);
+			});
+			div.classList.add("jumped");
 		}
 	}
 
 	async delete(): Promise<void> {
 		if (this.div) {
 			this.div.remove();
-			this.div = null;
 		}
-		this.resetVars();
-		try {
-			for (const thing of this.HTMLElements) {
-				await this.destroyFromID(thing[1]);
-			}
-		} catch (e) {
-			console.error(e);
-		}
-		this.HTMLElements = [];
-		if (this.timeout) {
-			clearTimeout(this.timeout);
-		}
+		this.clearElms();
 	}
 }
 
