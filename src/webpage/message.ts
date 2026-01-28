@@ -912,13 +912,6 @@ class Message extends SnowFlake {
 					messagedwrap.classList.add("flexttb");
 					messagedwrap.appendChild(messaged);
 				}
-				text.onclick = () => {
-					if (text.getBoundingClientRect().height > 950) {
-						const pop = new Dialog(I18n.message.fullMessage());
-						pop.float.options.addMDText(this.content);
-						pop.show();
-					}
-				};
 			}
 			text.appendChild(messagedwrap);
 			build.appendChild(text);
