@@ -1281,9 +1281,8 @@ class Channel extends SnowFlake {
 		}
 
 		try {
-			await this.infinite.focus(id);
+			await this.infinite.focus(id, flash, true);
 		} catch {}
-		this.infinite.focus(id, flash, true);
 	}
 	editLast() {
 		let message: Message | undefined = this.lastmessage;
