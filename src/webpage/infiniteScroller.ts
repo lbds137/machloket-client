@@ -34,15 +34,30 @@ function fragAppend(div: HTMLElement, pre = false) {
 		}
 	}
 	const frag = document.createDocumentFragment();
+	let count = 0;
 	return (elm: HTMLElement) =>
 		new Promise<void>((res) => {
+			count++;
 			frag[pre ? "prepend" : "append"](elm);
 			if (!qued) {
-				setTimeout(() => {
-					appendFrag();
-					qued = false;
-					res();
-				});
+				let lcount = count;
+				function wait(t = 0) {
+					if (count !== lcount) {
+						lcount = count;
+						t = 0;
+					}
+					if (t === 10) {
+						appendFrag();
+						qued = false;
+						res();
+						console.log("micro :3");
+						return;
+					}
+					queueMicrotask(() => {
+						wait(t + 1);
+					});
+				}
+				wait();
 				qued = true;
 			} else {
 				res();
