@@ -50,7 +50,6 @@ function fragAppend(div: HTMLElement, pre = false) {
 						appendFrag();
 						qued = false;
 						res();
-						console.log("micro :3");
 						return;
 					}
 					queueMicrotask(() => {
