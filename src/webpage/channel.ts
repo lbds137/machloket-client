@@ -46,7 +46,17 @@ class Channel extends SnowFlake {
 	topic!: string;
 	nsfw!: boolean;
 	position: number = 0;
-	lastreadmessageid?: string;
+	private lastreadmessageidint?: string;
+	get lastreadmessageid() {
+		return this.lastreadmessageidint;
+	}
+	set lastreadmessageid(id: string | undefined) {
+		const cur = this.lastreadmessageidint;
+		this.lastreadmessageidint = id;
+		const m = this.messages.get(cur as string);
+		if (!m) return;
+		m.generateMessage();
+	}
 	lastmessageid?: string;
 	trueLastMessageid?: string;
 	rate_limit_per_user: number = 0;
