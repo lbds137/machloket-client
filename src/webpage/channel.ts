@@ -53,9 +53,14 @@ class Channel extends SnowFlake {
 	set lastreadmessageid(id: string | undefined) {
 		const cur = this.lastreadmessageidint;
 		this.lastreadmessageidint = id;
-		const m = this.messages.get(cur as string);
-		if (!m) return;
-		m.generateMessage();
+		const m = this.messages.get(this.idToPrev.get(cur as string) as string);
+		if (m) {
+			m.generateMessage();
+		}
+		const m2 = this.messages.get(this.idToPrev.get(id as string) as string);
+		if (m2) {
+			m2.generateMessage();
+		}
 	}
 	lastmessageid?: string;
 	trueLastMessageid?: string;
