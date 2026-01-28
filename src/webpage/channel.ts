@@ -2903,6 +2903,8 @@ class Channel extends SnowFlake {
 			this.lastSentMessage = messagez;
 			this.slowmode();
 			this.lastreadmessageid = messagez.id;
+			this.lastmessage = messagez;
+			this.lastreadmessageid = messagez.id;
 			this.mentions = 0;
 			this.unreads();
 			this.guild.unreads();
