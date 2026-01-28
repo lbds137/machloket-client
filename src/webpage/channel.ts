@@ -1261,11 +1261,9 @@ class Channel extends SnowFlake {
 		for (let i = 0; i <= 50; i++) {
 			if (!m1) {
 				waits.push(this.grabBefore(id));
-				console.log("hi!!!");
 				break;
 			}
 			if ((this.idToNext.has(m1) && !this.idToNext.get(m1)) || this.lastmessage?.id === m1) break;
-			console.log(this.idToNext.has(m1), this.idToNext.get(m1));
 			m1 = this.idToNext.get(m1);
 		}
 		m1 = m.id;
