@@ -2890,6 +2890,10 @@ class Channel extends SnowFlake {
 		}
 		this.setLastMessageId(messagez.id);
 
+		if (this.infinite.atBottom()) {
+			this.lastreadmessageid = messagez.id;
+		}
+
 		this.unreads();
 		this.guild.unreads();
 		if (this === this.localuser.channelfocus) {
@@ -2902,9 +2906,6 @@ class Channel extends SnowFlake {
 		if (messagez.author === this.localuser.user) {
 			this.lastSentMessage = messagez;
 			this.slowmode();
-			this.lastreadmessageid = messagez.id;
-			this.lastmessage = messagez;
-			this.lastreadmessageid = messagez.id;
 			this.mentions = 0;
 			this.unreads();
 			this.guild.unreads();
