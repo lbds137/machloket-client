@@ -2872,8 +2872,8 @@ class Channel extends SnowFlake {
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return;
 		}
-		if(this.messages.get(messagep.d.id)){
-			console.error("Duped messaged?")
+		if (this.messages.get(messagep.d.id)) {
+			console.error("Duped messaged?");
 			return;
 		}
 		this.nonces.add(messagep.d.nonce);
