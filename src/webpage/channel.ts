@@ -2873,7 +2873,7 @@ class Channel extends SnowFlake {
 			return;
 		}
 		if (this.messages.get(messagep.d.id)) {
-			console.error("Duped messaged?");
+			console.error("Duped message?");
 			return;
 		}
 		this.nonces.add(messagep.d.nonce);
