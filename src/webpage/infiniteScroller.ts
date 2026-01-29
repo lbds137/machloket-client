@@ -107,6 +107,14 @@ class InfiniteScroller {
 		function sorted() {
 			return Array.from(scroller.children).filter((_) => visable.has(_)) as HTMLElement[];
 		}
+		if ("ResizeObserver" in globalThis) {
+			let height = 0;
+			new ResizeObserver((e) => {
+				const nh = e[0].target.getBoundingClientRect().height;
+				root.scrollTop += height - nh;
+				height = nh;
+			}).observe(root);
+		}
 		const visable = new Set<Element>();
 		this.observer = new IntersectionObserver(
 			(obvs) => {
