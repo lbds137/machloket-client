@@ -115,6 +115,7 @@ class InfiniteScroller {
 				height = nh;
 			}).observe(root);
 		}
+		//TODO maybe a workarround?
 		const visable = new Set<Element>();
 		this.observer = new IntersectionObserver(
 			(obvs) => {
