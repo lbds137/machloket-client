@@ -2234,6 +2234,14 @@ span.instanceStatus {
 .messagediv {
 	position: relative;
 }
+.messagediv:not(.topMessage):hover::after {
+	content: var(--time-text);
+	position: absolute;
+	color: #ffffffb8;
+	left: 2px;
+	top: 5px;
+	font-size: 12px;
+}
 .messagediv:hover {
 	background: var(--primary-hover);
 }

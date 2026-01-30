@@ -618,6 +618,12 @@ class Message extends SnowFlake {
 		) {
 			div.classList.add("mentioned");
 		}
+		div.style.setProperty(
+			"--time-text",
+			JSON.stringify(
+				new Date(this.getUnixTime()).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}),
+			),
+		);
 
 		if (this === this.channel.replyingto) {
 			div.classList.add("replying");
@@ -911,6 +917,14 @@ class Message extends SnowFlake {
 				if (!this.embeds.find((_) => _.json.url === messaged.textContent)) {
 					messagedwrap.classList.add("flexttb");
 					messagedwrap.appendChild(messaged);
+					if (!combine && this.edited_timestamp) {
+						const edit = document.createElement("span");
+						edit.classList.add("timestamp");
+						edit.textContent = I18n.message.edited();
+						const hover = new Hover(new Date(this.edited_timestamp).toString());
+						hover.addEvent(edit);
+						messagedwrap.append(edit);
+					}
 				}
 			}
 			text.appendChild(messagedwrap);
