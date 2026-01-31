@@ -449,6 +449,9 @@ class Localuser {
 		if (!this.resume_gateway_url || !this.session_id) {
 			resume = false;
 		}
+		if (!resume) {
+			this.messages.clear();
+		}
 		const doComp = DecompressionStream && !getDeveloperSettings().gatewayCompression;
 		const ws = new WebSocket(
 			(resume ? this.resume_gateway_url : this.serverurls.gateway.toString()) +
@@ -590,9 +593,9 @@ class Localuser {
 			this.unload();
 			(document.getElementById("loading") as HTMLElement).classList.remove("doneloading");
 			(document.getElementById("loading") as HTMLElement).classList.add("loading");
-			this.fetchingmembers = new Map();
-			this.noncemap = new Map();
-			this.noncebuild = new Map();
+			this.fetchingmembers.clear();
+			this.noncemap.clear();
+			this.noncebuild.clear();
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			if (
 				(event.code > 1000 && event.code < 1016) ||

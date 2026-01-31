@@ -114,7 +114,6 @@ class I18n {
 		return [...langmap.keys()].map((e) => e.replace(".json", ""));
 	}
 	static setLanguage(lang: string) {
-		debugger;
 		if (this.options().indexOf(lang) !== -1) {
 			getPreferences().then(async (prefs) => {
 				prefs.locale = lang;
