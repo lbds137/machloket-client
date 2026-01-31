@@ -451,6 +451,8 @@ class Localuser {
 		}
 		if (!resume) {
 			this.messages.clear();
+			this.idToPrev.clear();
+			this.idToNext.clear();
 		}
 		const doComp = DecompressionStream && !getDeveloperSettings().gatewayCompression;
 		const ws = new WebSocket(
