@@ -411,8 +411,9 @@ class Message extends SnowFlake {
 					thread = new Channel(messagejson.thread, this.guild);
 					thread.resolveparent();
 					this.localuser.channelids.set(thread.id, thread);
-					this.thread = thread;
 				}
+				this.thread = thread;
+				continue;
 			}
 			(this as any)[thing] = (messagejson as any)[thing];
 		}
@@ -572,6 +573,8 @@ class Message extends SnowFlake {
 	}
 	deleteEvent() {
 		if (!this.channel.messages.has(this.id)) return;
+		if (!this.id.includes("fake") && this.channel.messageCount !== undefined)
+			this.channel.messageCount--;
 		console.log("deleted");
 		this.channel.infinite.deleteId(this.id);
 		if (this.div) {
@@ -1208,7 +1211,8 @@ class Message extends SnowFlake {
 			};
 			const messages = document.createElement("span");
 			messages.classList.add("clickable");
-			messages.textContent = I18n.message.messages("10");
+			messages.textContent = I18n.message.messages(thread.messageCount + "");
+			console.log(thread);
 			topRow.append(title, messages);
 			threadBox.append(topRow);
 			div.append(threadBox);

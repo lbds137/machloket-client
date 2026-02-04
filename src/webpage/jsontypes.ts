@@ -544,6 +544,9 @@ export interface threadMember {
 	member?: memberjson;
 }
 type channeljson = {
+	member_count?: number;
+	message_count?: number;
+	total_message_sent?: number;
 	member: threadMember;
 	id: string;
 	rate_limit_per_user?: number;
@@ -557,6 +560,7 @@ type channeljson = {
 	parent_id: string;
 	last_pin_timestamp: string;
 	default_auto_archive_duration: number;
+	thread_metadata?: threadMetadata;
 	permission_overwrites: {
 		id: string;
 		allow: string;
@@ -720,6 +724,14 @@ type messagejson = {
 	message_reference?: string;
 };
 
+export interface threadMetadata {
+	archived: boolean;
+	auto_archive_duration: number;
+	archive_timestamp: string;
+	locked: boolean;
+	invitable?: boolean;
+	create_timestamp: string; //Discord docs say this is optional, but it's only for after a certain date so it's not
+}
 type filejson = {
 	id: string;
 	filename: string;

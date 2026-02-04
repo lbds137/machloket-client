@@ -17,6 +17,7 @@ import {
 	readyjson,
 	startTypingjson,
 	threadMember,
+	threadMetadata,
 } from "./jsontypes.js";
 import {MarkDown} from "./markdown.js";
 import {Member} from "./member.js";
@@ -80,7 +81,7 @@ class Channel extends SnowFlake {
 	messages: Map<string, Message>;
 	voice?: Voice;
 	bitrate: number = 128000;
-
+	threadData?: threadMetadata;
 	mute_config: mute_config | null = {selected_time_window: -1, end_time: 0};
 	setLastMessageId(id: string) {
 		this.lastmessageid = id;
@@ -532,6 +533,11 @@ class Channel extends SnowFlake {
 	}
 	last_pin_timestamp?: string;
 	member?: threadMember;
+
+	memberCount?: number;
+	messageCount?: number;
+	totalMessageSent?: number;
+
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
 		this.idToNext = owner.localuser.idToNext;
@@ -544,6 +550,10 @@ class Channel extends SnowFlake {
 		if (json === -1) {
 			return;
 		}
+		this.memberCount = json.member_count;
+		this.messageCount = json.message_count;
+		this.totalMessageSent = json.total_message_sent;
+		this.owner_id = json.owner_id;
 		this.member = json.member;
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
 		this.editing;
@@ -592,6 +602,7 @@ class Channel extends SnowFlake {
 		}
 		this.setUpInfiniteScroller();
 		this.perminfo ??= {};
+		this.threadData = json.thread_metadata;
 		const read = this.localuser.unknownRead.get(this.id);
 		if (read) {
 			this.readStateInfo(read);
@@ -884,9 +895,7 @@ class Channel extends SnowFlake {
 		});
 		const childrendiv = document.createElement("div");
 		childrendiv.classList.add("channels");
-		for (const channel of this.children.filter(
-			(_) => !_.isThread() || _.member || this.localuser.channelfocus === _,
-		)) {
+		for (const channel of this.children.filter((_) => !_.isThread() || _.threadVis())) {
 			childrendiv.appendChild(channel.createguildHTML(admin));
 		}
 
@@ -987,6 +996,15 @@ class Channel extends SnowFlake {
 		}
 		div.appendChild(childrendiv);
 		return div;
+	}
+	owner_id?: string;
+	threadVis() {
+		return (
+			(this.member ||
+				this.localuser.channelfocus === this ||
+				this.owner_id === this.localuser.user.id) &&
+			!this.threadData?.archived
+		);
 	}
 	async moveForDrag(x: number) {
 		const mainarea = document.getElementById("mainarea");
@@ -2366,8 +2384,10 @@ class Channel extends SnowFlake {
 		console.trace("trace me");
 		this.type = json.type;
 		this.name = json.name;
+		this.owner_id = json.owner_id;
 		this.icon = json.icon;
 		this.renderIcon();
+		this.threadData = json.thread_metadata;
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
 		this.slowmode();
 
@@ -2930,6 +2950,8 @@ class Channel extends SnowFlake {
 		if (this.lastmessageid) await this.focus(this.lastmessageid, false);
 	}
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
+		if (this.totalMessageSent !== undefined) this.totalMessageSent++;
+		if (this.messageCount !== undefined) this.messageCount++;
 		if (!this.hasPermission("VIEW_CHANNEL")) {
 			return;
 		}
