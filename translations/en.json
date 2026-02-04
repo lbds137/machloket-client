@@ -137,6 +137,11 @@
 		"unmute": "Unmute Channel",
 		"voice": "Voice"
 	},
+	"threads":{
+		"leave":"Leave Thread",
+		"join":"Join Thread",
+		"name":"Name:"
+	},
 	"channelLink": "# $1",
 	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermi.chat/)\n\nCalculated rights: $3",
 	"commands": {
@@ -555,6 +560,7 @@
 		"timeoutTime": "Timeout Time:"
 	},
 	"message": {
+		"messages":"$1 {{PLURAL:$1|Message|Messages}} >",
 		"andMore": "$1, and more!",
 		"attached": "Sent an attachment",
 		"delete": "Delete message",
@@ -564,8 +570,11 @@
 		"edited": "(edited)",
 		"fullMessage": "Full message:",
 		"pin": "$1 has pinned a message",
+		"pin": "$1 has created a thread: $2",
 		"reactedWith": "Reacted with $1",
 		"reactionAdd": "Add reaction",
+		"createThread":"Create Thread",
+		"threadOptions":"Thread options",
 		"reactions": "View Reactions",
 		"reactionsTitle": "Reactions",
 		"retry": "Resend errored message",

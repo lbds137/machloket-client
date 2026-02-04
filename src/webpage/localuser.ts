@@ -14,6 +14,7 @@ import {
 	messageCreateJson,
 	messagejson,
 	presencejson,
+	readStateEntry,
 	readyjson,
 	startTypingjson,
 	wsjson,
@@ -122,10 +123,10 @@ class Localuser {
 		sessionStorage.setItem("currentuser", specialUser.uid);
 		localStorage.setItem("userinfos", JSON.stringify(Localuser.users));
 
-		thisUser.initwebsocket().then(() => {
+		thisUser.initwebsocket().then(async () => {
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			thisUser.loaduser();
-			thisUser.init();
+			await thisUser.init();
 			loading.classList.add("doneloading");
 			loaddesc.textContent = I18n.loaded();
 			loading.classList.remove("loading");
@@ -331,6 +332,7 @@ class Localuser {
 		}
 	}
 	guildFolders: guildFolder[] = [];
+	unknownRead = new Map<string, readStateEntry>();
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
 		this.queryBlog();
@@ -406,6 +408,7 @@ class Localuser {
 			for (const thing of ready.d.read_state.entries) {
 				const channel = this.channelids.get(thing.channel_id);
 				if (!channel) {
+					this.unknownRead.set(thing.channel_id, thing);
 					continue;
 				}
 				channel.readStateInfo(thing);
@@ -654,9 +657,9 @@ class Localuser {
 					() => {
 						if (this.swapped) return;
 						loaddesc.textContent = I18n.retrying();
-						this.initwebsocket().then(() => {
+						this.initwebsocket().then(async () => {
 							this.loaduser();
-							this.init();
+							await this.init();
 							const loading = document.getElementById("loading") as HTMLElement;
 							loading.classList.add("doneloading");
 							loading.classList.remove("loading");
@@ -695,6 +698,31 @@ class Localuser {
 		}
 		if (temp.op == 0) {
 			switch (temp.t) {
+				case "THREAD_MEMBERS_UPDATE": {
+					const channel = this.channelids.get(temp.d.id);
+					if (!channel) return;
+					if (temp.d.added_members) {
+						for (const memb of temp.d.added_members) {
+							if (memb.user_id === this.user.id) {
+								channel.member = memb;
+								channel.parent?.createguildHTML();
+							} else {
+								//TODO store these somewhere
+							}
+						}
+					}
+					if (temp.d.removed_member_ids) {
+						for (const id of temp.d.removed_member_ids) {
+							if (id === this.user.id) {
+								channel.member = undefined;
+								channel.parent?.createguildHTML();
+							} else {
+								//TODO unstore these somewhere
+							}
+						}
+					}
+					break;
+				}
 				case "INTERACTION_FAILURE":
 				case "INTERACTION_CREATE":
 				case "INTERACTION_SUCCESS":
@@ -1507,7 +1535,7 @@ class Localuser {
 			this.loadGuild(json.guild_id, true);
 		}
 	}
-	init(): void {
+	async init() {
 		const location = window.location.href.split("/");
 		this.buildservers();
 		if (location[3] === "channels") {
@@ -1515,7 +1543,7 @@ class Localuser {
 			if (!guild) {
 				return;
 			}
-			guild.loadChannel(location[5], true, location[6]);
+			await guild.loadChannel(location[5], true, location[6]);
 			this.channelfocus = this.channelids.get(location[5]);
 		}
 	}

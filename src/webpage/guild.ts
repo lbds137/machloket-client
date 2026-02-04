@@ -1373,12 +1373,18 @@ class Guild extends SnowFlake {
 			this.channels.push(temp);
 			this.localuser.channelids.set(temp.id, temp);
 		}
+
 		this.headchannels = [];
 		for (const thing of this.channels) {
 			const parent = thing.resolveparent(this);
 			if (!parent) {
 				this.headchannels.push(thing);
 			}
+		}
+		for (const thread of json.threads) {
+			const temp = new Channel(thread, this);
+			this.localuser.channelids.set(temp.id, temp);
+			temp.resolveparent(this);
 		}
 		this.prevchannel = this.localuser.channelids.get(this.perminfo.prevchannel);
 		this.stickers = json.stickers.map((_) => new Sticker(_, this)) || [];
@@ -1675,6 +1681,21 @@ class Guild extends SnowFlake {
 			noti.classList.add("notiunread");
 		}
 	}
+	async goToThread(threadId: string) {
+		if (!this.localuser.channelids.has(threadId)) {
+			const channelJson = (await (
+				await fetch(this.info.api + "/channels/" + threadId, {
+					headers: this.headers,
+				})
+			).json()) as channeljson;
+			const channel = new Channel(channelJson, this);
+			this.localuser.channelids.set(channel.id, channel);
+			channel.resolveparent(this);
+			const par = this.localuser.channelids.get(channel.parent_id as string);
+			par?.createguildHTML();
+		}
+		this.localuser.goToChannel(threadId);
+	}
 	getHTML() {
 		const sideContainDiv = document.getElementById("sideContainDiv");
 		if (sideContainDiv) {
@@ -1736,6 +1757,9 @@ class Guild extends SnowFlake {
 			const channel = this.localuser.channelids.get(ID);
 			if (channel) {
 				await channel.getHTML(addstate, undefined, message);
+				return;
+			} else {
+				await this.goToThread(ID);
 				return;
 			}
 		}
@@ -1809,22 +1833,22 @@ class Guild extends SnowFlake {
 	updateChannel(json: channeljson) {
 		const channel = this.localuser.channelids.get(json.id);
 		if (channel) {
+			const parent = channel.parent;
 			channel.updateChannel(json);
-			this.headchannels = [];
-			for (const thing of this.channels) {
-				thing.children = [];
-			}
-			this.headchannels = [];
-			for (const thing of this.channels) {
-				const parent = thing.resolveparent(this);
-				if (!parent) {
-					this.headchannels.push(thing);
+			this.channels = this.channels.sort((a, b) => a.position - b.position);
+			if (parent !== channel.parent) {
+				if (parent) parent.children.filter((_) => _ !== channel);
+				channel.resolveparent();
+			} else if (parent && !json.parent_id) {
+				this.headchannels.push(channel);
+				for (const thing of this.channels) {
+					thing.children = thing.children.filter((_) => _ !== channel);
 				}
 			}
+
 			for (const channel of this.channels) {
 				channel.children = channel.children.sort((a, b) => a.position - b.position);
 			}
-			this.channels = this.channels.sort((a, b) => a.position - b.position);
 			this.printServers();
 		}
 	}

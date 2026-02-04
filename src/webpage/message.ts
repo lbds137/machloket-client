@@ -8,7 +8,14 @@ import {Localuser} from "./localuser.js";
 import {Role} from "./role.js";
 import {File} from "./file.js";
 import {SnowFlake} from "./snowflake.js";
-import {emojijson, interactionEvents, memberjson, messagejson, userjson} from "./jsontypes.js";
+import {
+	channeljson,
+	emojijson,
+	interactionEvents,
+	memberjson,
+	messagejson,
+	userjson,
+} from "./jsontypes.js";
 import {Emoji} from "./emoji.js";
 import {mobile} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
@@ -115,6 +122,33 @@ class Message extends SnowFlake {
 				},
 				visible: function () {
 					return this.channel.hasPermission("ADD_REACTIONS");
+				},
+			},
+		);
+
+		Message.contextmenu.addButton(
+			() => I18n.message.createThread(),
+			function () {
+				const dio = new Dialog(I18n.message.threadOptions());
+				const opt = dio.options.addForm(
+					"",
+					(body) => {
+						const channelJson = body as channeljson;
+						this.guild.goToThread(channelJson.id);
+						dio.hide();
+					},
+					{
+						fetchURL:
+							this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id + "/threads",
+						headers: this.headers,
+					},
+				);
+				opt.addTextInput(I18n.threads.name(), "name");
+				dio.show();
+			},
+			{
+				visible: function () {
+					return this.channel.hasPermission("CREATE_PUBLIC_THREADS");
 				},
 			},
 		);
@@ -335,6 +369,7 @@ class Message extends SnowFlake {
 	}
 	components?: Components;
 	edited_timestamp: string | null = null;
+	thread?: Channel;
 	giveData(messagejson: messagejson) {
 		const func = this.channel.infinite.snapBottom();
 		for (const thing of Object.keys(messagejson)) {
@@ -370,6 +405,14 @@ class Message extends SnowFlake {
 			} else if (thing === "components" && messagejson.components) {
 				this.components = new Components(messagejson.components, this);
 				continue;
+			} else if (thing === "thread" && messagejson.thread) {
+				let thread = this.localuser.channelids.get(messagejson.thread.id);
+				if (!thread) {
+					thread = new Channel(messagejson.thread, this.guild);
+					thread.resolveparent();
+					this.localuser.channelids.set(thread.id, thread);
+					this.thread = thread;
+				}
 			}
 			(this as any)[thing] = (messagejson as any)[thing];
 		}
@@ -606,6 +649,15 @@ class Message extends SnowFlake {
 		if (div === this.div) {
 			this.div.classList.add("messagediv");
 		}
+		if (this.type === 21) {
+			this.channel.parent?.getmessage(this.message_reference?.message_id as string).then((_) => {
+				const gen = _?.generateMessage(undefined, undefined, div);
+				if (!gen) {
+					//idk
+				}
+			});
+			return div;
+		}
 
 		const editmode = this.channel.editing === this;
 		if (!premessage && !dupe) {
@@ -722,7 +774,7 @@ class Message extends SnowFlake {
 				}
 			}
 		}
-		if (this.message_reference && this.type !== 6) {
+		if (this.message_reference && this.type !== 6 && this.type !== 18) {
 			const replyline = document.createElement("div");
 
 			const minipfp = document.createElement("img");
@@ -1036,6 +1088,38 @@ class Message extends SnowFlake {
 			time.classList.add("timestamp");
 			text.append(time);
 			div.classList.add("topMessage");
+		} else if (this.type === 18) {
+			const text = document.createElement("div");
+			build.appendChild(text);
+
+			const m = I18n.message.pin("|||", "???").split("|||");
+			if (m.length === 2) text.append(m.shift() as string);
+
+			const username = document.createElement("span");
+			username.textContent = this.author.name;
+			//this.author.profileclick(username);
+			this.author.bind(username, this.guild);
+			text.appendChild(username);
+			username.classList.add("username");
+			const midText = m[0].split("???");
+
+			const afterText = document.createElement("span");
+			afterText.textContent = midText[0];
+			text.append(afterText);
+
+			const threadName = document.createElement("span");
+			threadName.textContent = this.content.rawString;
+			threadName.classList.add("pinText");
+			text.append(threadName);
+			threadName.onclick = () => {
+				this.guild.goToThread(this.message_reference?.channel_id as string);
+			};
+
+			const time = document.createElement("span");
+			time.textContent = "  " + formatTime(new Date(this.timestamp));
+			time.classList.add("timestamp");
+			text.append(time);
+			div.classList.add("topMessage");
 		}
 		const stickerArea = document.createElement("div");
 		stickerArea.classList.add("flexltr", "stickerMArea");
@@ -1110,6 +1194,25 @@ class Message extends SnowFlake {
 			}
 		}
 		this.bindButtonEvent();
+
+		if (!dupe && this.thread) {
+			const thread = this.thread;
+			const threadBox = document.createElement("div");
+			threadBox.classList.add("flexttb", "threadBox");
+			const topRow = document.createElement("div");
+			topRow.classList.add("flexltr");
+			const title = document.createElement("span");
+			title.textContent = thread.name;
+			topRow.onclick = () => {
+				this.localuser.goToChannel(thread.id);
+			};
+			const messages = document.createElement("span");
+			messages.classList.add("clickable");
+			messages.textContent = I18n.message.messages("10");
+			topRow.append(title, messages);
+			threadBox.append(topRow);
+			div.append(threadBox);
+		}
 
 		return div;
 	}

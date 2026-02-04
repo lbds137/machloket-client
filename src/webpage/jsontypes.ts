@@ -48,13 +48,7 @@ interface readyjson {
 		guilds: guildjson[];
 		relationships: relationJson[];
 		read_state: {
-			entries: {
-				id: string;
-				channel_id: string;
-				last_message_id: string;
-				last_pin_timestamp: string;
-				mention_count: number; //in theory, the server doesn't actually send this as far as I'm aware
-			}[];
+			entries: readStateEntry[];
 			partial: boolean;
 			version: number;
 		};
@@ -90,6 +84,13 @@ interface readyjson {
 			flags: number;
 		};
 	};
+}
+export interface readStateEntry {
+	id: string;
+	channel_id: string;
+	last_message_id: string;
+	last_pin_timestamp: string;
+	mention_count: number; //in theory, the server doesn't actually send this as far as I'm aware
 }
 export interface sessionJson {
 	active: boolean;
@@ -455,6 +456,7 @@ type emojipjson = emojijson & {
 type guildjson = {
 	application_command_counts: {[key: string]: number};
 	channels: channeljson[];
+	threads: channeljson[];
 	data_mode: string;
 	emojis: emojipjson[];
 	guild_scheduled_events: [];
@@ -503,7 +505,6 @@ type guildjson = {
 	roles: rolesjson[];
 	stage_instances: [];
 	stickers: stickerJson[];
-	threads: [];
 	version: string;
 	guild_hashes: {};
 	joined_at: string;
@@ -530,7 +531,20 @@ type startTypingjson = {
 		member?: memberjson;
 	};
 };
+export interface threadMember {
+	id: string;
+	user_id: string;
+	join_timestamp: string;
+	flags: number;
+	muted: boolean;
+	mute_config?: {
+		end_time?: string;
+		selected_time_window?: number;
+	};
+	member?: memberjson;
+}
 type channeljson = {
+	member: threadMember;
 	id: string;
 	rate_limit_per_user?: number;
 	owner_id?: string;
@@ -683,6 +697,7 @@ type messagejson = {
 		emoji: emojijson; //very likely needs expanding
 		me: boolean;
 	}[];
+	thread?: channeljson;
 	interaction?: {
 		id: string;
 		type: 2 | 3;
@@ -841,6 +856,18 @@ type wsjson =
 			};
 			s: number;
 			t: "MESSAGE_DELETE";
+	  }
+	| {
+			op: 0;
+			t: "THREAD_MEMBERS_UPDATE";
+			d: {
+				guild_id: string;
+				id: string;
+				member_count: number;
+				added_members?: [threadMember];
+				removed_member_ids?: string[];
+			};
+			s: 3;
 	  }
 	| {
 			op: 0;

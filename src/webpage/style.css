@@ -1706,6 +1706,33 @@ span.instanceStatus {
 	color: var(--primary-text-soft);
 	overflow-y: auto;
 }
+.threads {
+	button {
+		position: relative;
+	}
+	button::before {
+		content: "";
+		position: absolute;
+		top: 0px;
+		left: 0px;
+		height: calc(50% - 1px);
+		width: 3px;
+		border-bottom: 2px solid var(--reply-line);
+		border-left: 2px solid var(--reply-line);
+		border-bottom-left-radius: 8px;
+	}
+	button::after {
+		content: "";
+		position: absolute;
+		bottom: 0px;
+		left: 0px;
+		height: calc(50% - 1px);
+		width: 3px;
+		border-top: 2px solid var(--reply-line);
+		border-left: 2px solid var(--reply-line);
+		border-top-left-radius: 8px;
+	}
+}
 .channels {
 	overflow-y: hidden;
 	transition: height 0.2s ease-in-out;
@@ -1744,8 +1771,8 @@ span.instanceStatus {
 .channels .channelbutton {
 	margin-left: 8px;
 }
-.viewChannel .channelbutton,
-.viewChannel .channelbutton:hover {
+.viewChannel > .channelbutton,
+.viewChannel > .channelbutton:hover {
 	background: var(--channel-selected);
 	font-weight: bold;
 	color: var(--primary-text-prominent);
@@ -4635,4 +4662,30 @@ img.error::after {
 	height: 100%;
 	object-fit: cover;
 	opacity: 0.8;
+}
+.threadBox {
+	padding: 6px;
+	background: #00000063;
+	border-radius: 4px;
+	margin: 6px;
+	min-width: 300px;
+	width: fit-content;
+	margin-left: 50px;
+	margin-top: 10px;
+	position: relative;
+	::before {
+		content: "";
+		position: absolute;
+		top: -8px;
+		left: -32px;
+		height: calc(100% - 8px);
+		width: 26px;
+		border-bottom: 2px solid var(--reply-line);
+		border-left: 2px solid var(--reply-line);
+		border-bottom-left-radius: 8px;
+	}
+	.clickable {
+		color: var(--link);
+		margin-left: auto;
+	}
 }
