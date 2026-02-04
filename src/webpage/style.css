@@ -499,7 +499,7 @@ h2:empty {
 	font-weight: bold;
 }
 .cunread {
-	.ellipsis {
+	> button > .ellipsis {
 		font-weight: bold;
 		color: var(--primary-text);
 	}
@@ -1784,7 +1784,7 @@ span.instanceStatus {
 .cunread:after {
 	content: "";
 	position: absolute;
-	top: calc(50% - 8px);
+	top: 8px;
 	left: -10px;
 	height: 16px;
 	width: 7px;
