@@ -38,8 +38,10 @@ export function getBulkUsers() {
 	const json = getBulkInfo();
 	apiDoms.clear();
 	for (const thing in json.users) {
-		const user = (json.users[thing] = new Specialuser(json.users[thing]));
-		apiDoms.add(new URL(user.serverurls.api).host);
+		try {
+			const user = (json.users[thing] = new Specialuser(json.users[thing]));
+			apiDoms.add(new URL(user.serverurls.api).host);
+		} catch {}
 	}
 	if (getDeveloperSettings().interceptApiTraces) {
 		SW.postMessage({
