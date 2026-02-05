@@ -4445,6 +4445,28 @@ class Localuser {
 			["BlobmojiCompat.ttf", "Blobmoji"],
 		] as const;
 	}
+	getMemberMap = new Map<string, Promise<Member | undefined>>();
+	async getMember(id: string, guildid: string): Promise<Member | undefined> {
+		const user = this.userMap.get(id);
+		const guild = this.guildids.get(guildid) as Guild;
+		if (user) {
+			const memb = user.members.get(guild);
+			if (memb) return memb;
+		}
+		const uid = id + "-" + guildid;
+		const prom = this.getMemberMap.get(uid);
+		if (prom) return prom;
+		const prom2 = new Promise<Member | undefined>(async (res) => {
+			const json = await this.resolvemember(id, guildid);
+			if (!json) {
+				res(undefined);
+				return;
+			}
+			res(Member.new(json, guild));
+		});
+		this.getMemberMap.set(uid, prom2);
+		return prom2;
+	}
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
 		if (guildid === "@me") {
 			return undefined;

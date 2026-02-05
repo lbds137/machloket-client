@@ -1084,6 +1084,63 @@ textarea {
 		display: none;
 	}
 }
+.forumIcon {
+	width: 28px;
+	height: 28px;
+}
+.forumHead {
+	width: calc(100% - 12px);
+	background: #00000073;
+	padding: 6px;
+	margin: 6px;
+	box-sizing: border-box;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	flex: 0;
+	min-height: 48px;
+}
+.forumBody {
+	height: 100%;
+}
+.forumList {
+	flex: 1;
+	overflow-y: scroll;
+}
+.forumTag {
+	padding: 3px;
+	background: #ffffff21;
+	border-radius: 12px;
+}
+.forumPostBody {
+	background: #00000075;
+	margin: 4px 12px;
+	padding: 6px;
+	border-radius: 4px;
+	> * {
+		margin-bottom: 4px;
+	}
+	cursor: pointer;
+}
+.forumMessageRow {
+	.svg-frmessage {
+		width: 16px;
+		margin-right: 4px;
+	}
+	display: flex;
+	align-items: center;
+}
+.msep {
+	margin: 6px;
+	background: #000000de;
+	width: 3px;
+	height: 3px;
+	border-radius: 100%;
+}
+.forumSearch {
+	margin-left: 3px;
+	background: transparent !important;
+}
 .svg-mic {
 	height: 22px;
 	width: 22px;

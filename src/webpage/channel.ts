@@ -11,6 +11,7 @@ import {
 	channeljson,
 	embedjson,
 	filejson,
+	memberjson,
 	messageCreateJson,
 	messagejson,
 	mute_config,
@@ -32,6 +33,7 @@ import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
+import {Tag} from "./tag.js";
 
 class Channel extends SnowFlake {
 	editing!: Message | null;
@@ -198,6 +200,9 @@ class Channel extends SnowFlake {
 
 		this.contextmenu.addButton(
 			function () {
+				if (this.isThread()) {
+					return I18n.channel.deleteThread();
+				}
 				if (this.type === 4) {
 					return I18n.channel.deleteCat();
 				}
@@ -208,7 +213,9 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.hasPermission("MANAGE_CHANNELS");
+					return this.isThread()
+						? this.hasPermission("MANAGE_THREADS")
+						: this.hasPermission("MANAGE_CHANNELS");
 				},
 				icon: {
 					css: "svg-delete",
@@ -537,6 +544,7 @@ class Channel extends SnowFlake {
 	memberCount?: number;
 	messageCount?: number;
 	totalMessageSent?: number;
+	availableTags: Tag[] = [];
 
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
@@ -551,6 +559,8 @@ class Channel extends SnowFlake {
 			return;
 		}
 		this.memberCount = json.member_count;
+		this.appliedTags = json.applied_tags || [];
+		this.availableTags = json.available_tags?.map((tag) => new Tag(tag, this)) || [];
 		this.messageCount = json.message_count;
 		this.totalMessageSent = json.total_message_sent;
 		this.owner_id = json.owner_id;
@@ -1000,10 +1010,8 @@ class Channel extends SnowFlake {
 	owner_id?: string;
 	threadVis() {
 		return (
-			(this.member ||
-				this.localuser.channelfocus === this ||
-				this.owner_id === this.localuser.user.id) &&
-			!this.threadData?.archived
+			((this.member || this.owner_id === this.localuser.user.id) && !this.threadData?.archived) ||
+			this.localuser.channelfocus === this
 		);
 	}
 	async moveForDrag(x: number) {
@@ -1797,6 +1805,154 @@ class Channel extends SnowFlake {
 		typebox.addEventListener("keyup", func);
 		command.render(typebox, this);
 	}
+	isForum() {
+		return this.type === 15 || this.type === 16;
+	}
+	async renderThread() {
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "forumPostBody");
+		div.onclick = (e) => {
+			if (e.button === 0) this.getHTML();
+		};
+		const tags = document.createElement("div");
+		tags.classList.add("flexltr", "tagDiv");
+		for (const tagid of this.appliedTags) {
+			const tag = this.parent?.availableTags.find((tag) => tag.id === tagid);
+			if (!tag) continue;
+			tags.append(tag.makeHTML());
+		}
+		div.append(tags);
+
+		const title = document.createElement("h3");
+		title.textContent = new MarkDown(this.name).makeHTML().textContent;
+		div.append(title);
+
+		const member =
+			(await this.localuser.getMember(this.owner_id as string, this.guild.id)) ||
+			(await User.resolve(this.owner_id as string, this.localuser));
+		const message = this.localuser.messages.get(this.id);
+
+		const name = document.createElement("span");
+		name.classList.add("forumUsername");
+		name.textContent = (member?.name || I18n.user.deleted()) + ": ";
+
+		const messageContent = document.createElement("span");
+		messageContent.classList.add("messageForumContent");
+		if (message) messageContent.append(message.content.makeHTML());
+		else messageContent.textContent = I18n.message.deleted();
+
+		const mrow = document.createElement("div");
+		mrow.classList.add("flexltr");
+		mrow.append(name, messageContent);
+		div.append(mrow);
+
+		const micon = document.createElement("span");
+		micon.classList.add("svg-frmessage", "svgicon");
+
+		const mcount = document.createElement("span");
+		mcount.textContent = this.messageCount + "";
+
+		const msep = document.createElement("span");
+		msep.classList.add("msep");
+
+		const mtime = document.createElement("span");
+		mtime.textContent = MarkDown.relTime(
+			new Date(
+				this.lastmessageid ? SnowFlake.stringToUnixTime(this.lastmessageid) : this.getUnixTime(),
+			),
+		);
+
+		const lrow = document.createElement("div");
+		lrow.classList.add("forumMessageRow", "flexltr");
+
+		lrow.append(micon, mcount, msep, mtime);
+		div.append(lrow);
+
+		return div;
+	}
+	appliedTags = [] as string[];
+	forumFilters = {
+		sortActive: true,
+		recentFirst: true,
+		tagMatchAll: false,
+		tags: [] as string[],
+	};
+	hasFetchedForForum = false;
+	async fetchForum() {
+		const arr = (await (
+			await fetch(this.info.api + "/channels/" + this.id + "/post-data", {
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({thread_ids: this.children.map(({id}) => id)}),
+			})
+		).json()) as {
+			threads: Record<string, {first_message: null | messagejson; owner: null | memberjson}>;
+		};
+		for (const [id, {first_message, owner}] of Object.entries(arr.threads)) {
+			const child = this.children.find(({id: cid}) => cid === id);
+			if (!child) continue;
+			if (owner) Member.new(owner, this.guild);
+			if (first_message) {
+				const m = this.localuser.messages.get(first_message.id);
+				if (!m) this.localuser.messages.set(first_message.id, new Message(first_message, child));
+			}
+		}
+		this.hasFetchedForForum = true;
+		return;
+	}
+
+	async forumSearch(text: string, div: HTMLDivElement) {
+		while (!this.hasFetchedForForum) await this.fetchForum();
+		const filters = this.forumFilters;
+		text = text.toLowerCase();
+		let match = this.children.filter((thread) => thread.name.toLowerCase().includes(text));
+		const tagSet = new Set(filters.tags);
+		if (tagSet.size)
+			match = match.filter((thread) => {
+				const tags = new Set(thread.appliedTags);
+				if (filters.tagMatchAll) {
+					return tags.isSubsetOf(tagSet);
+				} else {
+					return tags.intersection(tagSet).size;
+				}
+			});
+		match.sort((c1, c2) => {
+			if (filters.sortActive) {
+				return +(Number(c1.lastmessageid || c1.id) > Number(c2.lastmessageid || c2.id)) ^
+					+filters.recentFirst
+					? 1
+					: -1;
+			} else {
+				return +(Number(c1.id) > Number(c2.id)) ^ +filters.recentFirst ? 1 : -1;
+			}
+		});
+		div.innerHTML = "";
+		div.append(...(await Promise.all(match.map((_) => _.renderThread()))));
+	}
+	renderForum() {
+		(document.getElementById("typediv") as HTMLElement).style.visibility = "hidden";
+		const container = document.createElement("div");
+		container.classList.add("messagecontainer", "flexttb", "forumBody");
+		(document.getElementById("scrollWrap") as HTMLElement).append(container);
+		const headContainer = document.createElement("div");
+		headContainer.classList.add("flexltr", "forumHead");
+		container.append(headContainer);
+
+		const icon = document.createElement("span");
+		icon.classList.add("svgicon", "svg-search", "forumIcon");
+		headContainer.append(icon);
+
+		const text = document.createElement("input");
+		text.type = "text";
+		text.classList.add("forumSearch");
+		headContainer.append(text);
+		text.placeholder = I18n.forum.creorsear();
+
+		const theadList = document.createElement("div");
+		theadList.classList.add("flexttb", "forumList");
+		container.append(theadList);
+		this.forumSearch("", theadList);
+	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
 		if (!this.visible) {
 			this.guild.loadChannel();
@@ -1814,11 +1970,14 @@ class Channel extends SnowFlake {
 			this.curCommand.render(typebox, this);
 		}
 		typebox.style.setProperty("--channel-text", JSON.stringify(I18n.channel.typebox(this.name)));
-		if (!this.curCommand) {
+		if (!this.curCommand && !this.isForum()) {
 			const md = typebox.markdown;
 			md.owner = this;
 			typebox.textContent = this.textSave;
 			md.boxupdate(Infinity);
+		}
+		if (this.isForum()) {
+			typebox.textContent = "";
 		}
 		this.localuser.fileExtange(this.files, this.htmls);
 
@@ -1897,7 +2056,7 @@ class Channel extends SnowFlake {
 				this.localuser.channelfocus = this;
 				prev.parent?.createguildHTML();
 			}
-		} else if (this.localuser.channelfocus === this && !aroundMessage) {
+		} else if (this.localuser.channelfocus === this && !aroundMessage && !this.isForum()) {
 			if (this.lastmessageid)
 				this.infinite.focus(aroundMessage || this.lastmessageid, !!aroundMessage, true);
 			return;
@@ -1921,6 +2080,11 @@ class Channel extends SnowFlake {
 			return;
 		}
 		this.slowmode();
+		this.localuser.getSidePannel();
+		if (this.isForum()) {
+			this.renderForum();
+			return;
+		}
 
 		const prom = this.infinite.delete();
 		if (getMessages) {
@@ -1929,10 +2093,7 @@ class Channel extends SnowFlake {
 			loading.classList.add("loading");
 		}
 		this.rendertyping();
-		this.localuser.getSidePannel();
-		if (this.voice && this.localuser.voiceAllowed) {
-			//this.localuser.joinVoice(this);
-		}
+
 		try {
 			(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
 				? "plaintext-only"
@@ -2389,6 +2550,9 @@ class Channel extends SnowFlake {
 		this.renderIcon();
 		this.threadData = json.thread_metadata;
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
+		this.appliedTags = json.applied_tags || this.appliedTags;
+		this.availableTags =
+			json.available_tags?.map((tag) => new Tag(tag, this)) || this.availableTags;
 		this.slowmode();
 
 		const span = this.nameSpan.deref();

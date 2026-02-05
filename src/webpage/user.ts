@@ -932,6 +932,8 @@ class User extends SnowFlake {
 	}
 
 	static async resolve(id: string, localuser: Localuser): Promise<User> {
+		let user: User | undefined;
+		if ((user = localuser.userMap.get(id))) return user;
 		const json = await fetch(localuser.info.api.toString() + "/users/" + id + "/profile", {
 			headers: localuser.headers,
 		}).then((res) => res.json());
