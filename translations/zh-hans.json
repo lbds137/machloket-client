@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"0x48fe75df30",
 			"22593",
 			"ExoHyper2026",
 			"GuoPC",
@@ -142,6 +143,10 @@
 		"typebox": "在$1的消息",
 		"unmute": "取消静音頻道",
 		"voice": "语音"
+	},
+	"threads": {
+		"join": "加入讨论",
+		"name": "名称："
 	},
 	"channelLink": "# $1",
 	"clientDesc": "客户端版本：$1 \n\n[加入 Fermi 官方公会]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[帮助翻译 Fermi]（https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc）\n\n[帮助开发 Fermi]（https://github.com/MathMan05/Fermi）\n\n[帮助维护 Fermi 所依赖的服务器]（https://github.com/spacebarchat/server）\n\n[阅读博客]（https://blog.fermi.chat/）\n\n计算权限：$3",
@@ -569,7 +574,7 @@
 		"edit": "编辑消息",
 		"edited": "（已编辑）",
 		"fullMessage": "完整消息：",
-		"pin": "$1已置顶一条消息",
+		"pin": "$1已创建一条讨论消息：$2",
 		"reactedWith": "以$1反应",
 		"reactionAdd": "添加反应",
 		"reactions": "查看反应",

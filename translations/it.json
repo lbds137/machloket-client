@@ -50,6 +50,10 @@
 		"text": "Testo",
 		"voice": "Voce"
 	},
+	"threads": {
+		"join": "Unisciti alla discussione",
+		"name": "Nome:"
+	},
 	"commands": {
 		"errorNotValid": "$1 non è una scelta valida per $2",
 		"required": "$1 è una parte obbligatoria di questo comando"
@@ -195,6 +199,7 @@
 		"moreInfo": "Ulteriori informazioni"
 	},
 	"message": {
+		"messages": "$1 {{PLURAL:$1|messaggio|messaggi}} >",
 		"attached": "Inviato un allegato",
 		"report": "Segnala messaggio",
 		"deleted": "Messaggio cancellato",
