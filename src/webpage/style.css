@@ -895,6 +895,16 @@ textarea {
 	mask-size: contain !important;
 	background: var(--primary-text);
 }
+.svg-select {
+	mask: url(./icons/select.svg);
+	mask-size: contain !important;
+	background: var(--primary-text);
+}
+.svg-noSelect {
+	mask: url(./icons/noSelect.svg);
+	mask-size: contain !important;
+	background: var(--primary-text);
+}
 .svg-stopstream {
 	mask: url(./icons/stopstream.svg);
 	mask-size: contain !important;
@@ -1107,10 +1117,32 @@ textarea {
 	flex: 1;
 	overflow-y: scroll;
 }
+.allTagButton {
+	margin-left: auto;
+}
+.forumSortRow {
+	flex-shrink: 0;
+	padding: 4px 12px;
+	align-items: center;
+}
+.forumTagSelect {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	overflow-y: clip;
+	height: 26px;
+	> * {
+		margin-left: 6px;
+	}
+	.selected {
+		background: #ffffff5e;
+	}
+}
 .forumTag {
 	padding: 3px;
 	background: #ffffff21;
 	border-radius: 12px;
+	cursor: pointer;
 }
 .forumPostBody {
 	background: #00000075;
@@ -1121,6 +1153,14 @@ textarea {
 		margin-bottom: 4px;
 	}
 	cursor: pointer;
+}
+.forumButtonRow {
+	flex-shrink: 0;
+	mix-height: fit-content;
+	padding: 12px;
+	button {
+		margin-right: 10px;
+	}
 }
 .forumMessageRow {
 	.svg-frmessage {

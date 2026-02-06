@@ -144,7 +144,28 @@
 		"name":"Name:"
 	},
 	"forum":{
-		"creorsear":"Create or search for post"
+		"creorsear":"Create or search for post",
+		"next":"Next",
+		"back":"Back",
+		"sortOptions":{
+			"sortby":{
+				"title":"Sort By",
+				"recent":"Recently Active",
+				"posted":"Posted Date"
+			},
+			"sortOrder":{
+				"title":"Sort Order",
+				"recent":"Recent First",
+				"old":"Old First"
+			},
+			"tagMatch":{
+				"title":"Tag Matching",
+				"some":"Match Some",
+				"all":"Match All"
+			},
+			"name":"Sort Options"
+		},
+		"allTags":"All Tags"
 	},
 	"channelLink": "# $1",
 	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermi.chat/)\n\nCalculated rights: $3",

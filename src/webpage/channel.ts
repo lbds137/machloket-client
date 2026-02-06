@@ -1901,8 +1901,85 @@ class Channel extends SnowFlake {
 		return;
 	}
 
-	async forumSearch(text: string, div: HTMLDivElement) {
-		while (!this.hasFetchedForForum) await this.fetchForum();
+	umap = new Map<string, [number, string]>();
+	search: [string, number, string][] = [];
+	hasAllThreads = false;
+
+	async fetchThreads(text: string, offset: number) {
+		const filters = this.forumFilters;
+		const uid = `${filters.recentFirst}-${filters.sortActive}-${filters.tagMatchAll}-${filters.tags.join("-")}-${text}`;
+		const search = new URLSearchParams([
+			["archived", "true"],
+			["limit", "25"],
+			["sort_by", filters.sortActive ? "last_message_time" : "creation_time"],
+			["sort_order", filters.recentFirst ? "desc" : "asc"],
+			["tag_setting", filters.tagMatchAll ? "match_all" : "match_some"],
+			["offset", offset + ""],
+			["tag", filters.tags.join(",")],
+		]);
+		const res = (await (
+			await fetch(this.info.api + "/channels/" + this.id + "/threads/search?" + search, {
+				headers: this.headers,
+			})
+		).json()) as {
+			threads: channeljson[];
+			members: memberjson[];
+			messages: messagejson[];
+			total_results: number;
+			has_more: boolean;
+		};
+		for (const threadjson of res.threads) {
+			if (this.localuser.channelids.has(threadjson.id)) continue;
+			const thread = new Channel(threadjson, this.guild);
+			this.localuser.channelids.set(threadjson.id, thread);
+			thread.resolveparent();
+		}
+		for (const message of res.messages) {
+			const thread = this.localuser.channelids.get(message.channel_id);
+			if (!thread) continue;
+			const m = this.localuser.messages.get(message.id);
+			if (!m) this.localuser.messages.set(message.id, new Message(message, thread));
+		}
+		for (const member of res.members) {
+			Member.new(member, this.guild);
+		}
+		if (res.has_more) {
+			const lastid = res.threads.at(-1)?.id as string;
+			if (text) {
+				const arr = this.search.find(([id]) => id === uid);
+				if (arr) {
+					arr[1] = offset + 25;
+					arr[2] = lastid;
+				} else {
+					this.search.push([uid, offset + 25, lastid]);
+					if (this.search.length > 200) {
+						this.search.shift();
+					}
+				}
+			} else {
+				this.umap.set(uid, [offset + 25, lastid]);
+			}
+		} else {
+			if (text) {
+				const arr = this.search.find(([id]) => id === uid);
+				if (arr) {
+					arr[1] = offset + 25;
+					arr[2] = "-1";
+				} else {
+					this.search.push([uid, offset + 25, "-1"]);
+					if (this.search.length > 200) {
+						this.search.shift();
+					}
+				}
+			} else {
+				this.umap.clear();
+				this.search = [];
+				this.hasAllThreads = true;
+			}
+		}
+	}
+
+	genCurSort(text: string, offset: number) {
 		const filters = this.forumFilters;
 		text = text.toLowerCase();
 		let match = this.children.filter((thread) => thread.name.toLowerCase().includes(text));
@@ -1911,7 +1988,7 @@ class Channel extends SnowFlake {
 			match = match.filter((thread) => {
 				const tags = new Set(thread.appliedTags);
 				if (filters.tagMatchAll) {
-					return tags.isSubsetOf(tagSet);
+					return tagSet.isSubsetOf(tags);
 				} else {
 					return tags.intersection(tagSet).size;
 				}
@@ -1926,8 +2003,222 @@ class Channel extends SnowFlake {
 				return +(Number(c1.id) > Number(c2.id)) ^ +filters.recentFirst ? 1 : -1;
 			}
 		});
-		div.innerHTML = "";
-		div.append(...(await Promise.all(match.map((_) => _.renderThread()))));
+		return [match.splice(offset, offset + 24), !!match.at(offset + 25)] as const;
+	}
+
+	async findMatches(text: string, offset: number): Promise<readonly [Channel[], boolean]> {
+		if (this.hasAllThreads) return this.genCurSort(text, offset);
+
+		const filters = this.forumFilters;
+		const uid = `${filters.recentFirst}-${filters.sortActive}-${filters.tagMatchAll}-${filters.tags.join("-")}-${text}`;
+		let offset2 = 0;
+		let lastid = "";
+		if (text) {
+			[, offset2, lastid] = this.search.find(([id]) => id === uid) || ["", 0, ""];
+		} else {
+			[offset2, lastid] = this.umap.get(uid) || [0, ""];
+		}
+
+		if (lastid) {
+			const [list, more] = this.genCurSort(text, offset);
+			for (const elm of list) {
+				if (elm.id === lastid) {
+					await this.fetchThreads(text, offset2);
+					return this.genCurSort(text, offset);
+				}
+			}
+			return [list, more];
+		} else {
+			await this.fetchThreads(text, offset2);
+			return this.genCurSort(text, offset);
+		}
+	}
+
+	async forumSearch(text: string, div: HTMLDivElement) {
+		while (!this.hasFetchedForForum) await this.fetchForum();
+		let offset = 0;
+		const flipPage = async (by: number) => {
+			offset += by;
+			const [match, more] = await this.findMatches(text, 0);
+			await renderDiv(match, more);
+		};
+
+		const renderDiv = async (threads: Channel[], more: boolean) => {
+			div.innerHTML = "";
+
+			const sortRow = document.createElement("div");
+			sortRow.classList.add("flexltr", "forumSortRow");
+			div.append(sortRow);
+
+			const cMenu = new Contextmenu<void, void>("sortAndStuff");
+			const opts = I18n.forum.sortOptions;
+
+			cMenu.addText(opts.sortby.title());
+			cMenu.addButton(
+				opts.sortby.recent(),
+				() => {
+					this.forumFilters.sortActive = true;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.sortActive ? "svg-select" : "svg-noSelect",
+					},
+				},
+			);
+			cMenu.addButton(
+				opts.sortby.posted(),
+				() => {
+					this.forumFilters.sortActive = false;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.sortActive ? "svg-noSelect" : "svg-select",
+					},
+				},
+			);
+			cMenu.addSeperator();
+
+			cMenu.addText(opts.sortOrder.title());
+			cMenu.addButton(
+				opts.sortOrder.recent(),
+				() => {
+					this.forumFilters.recentFirst = true;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.recentFirst ? "svg-select" : "svg-noSelect",
+					},
+				},
+			);
+
+			cMenu.addButton(
+				opts.sortOrder.old(),
+				() => {
+					this.forumFilters.recentFirst = false;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.recentFirst ? "svg-noSelect" : "svg-select",
+					},
+				},
+			);
+			cMenu.addSeperator();
+
+			cMenu.addText(opts.tagMatch.title());
+			cMenu.addButton(
+				opts.tagMatch.some(),
+				() => {
+					this.forumFilters.tagMatchAll = false;
+					flipPage(0);
+				},
+				{
+					icon: {css: this.forumFilters.tagMatchAll ? "svg-noSelect" : "svg-select"},
+				},
+			);
+			cMenu.addButton(
+				opts.tagMatch.all(),
+				() => {
+					this.forumFilters.tagMatchAll = true;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.tagMatchAll ? "svg-select" : "svg-noSelect",
+					},
+				},
+			);
+
+			const sortOptionButton = document.createElement("button");
+			sortOptionButton.textContent = opts.name();
+
+			sortOptionButton.onclick = (e) => {
+				if (e.button !== 0) return;
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				const box = sortOptionButton.getBoundingClientRect();
+				cMenu.makemenu(box.left, box.bottom + 6);
+			};
+
+			const tags = document.createElement("div");
+			tags.classList.add("forumTagSelect");
+
+			const allMenu = new Contextmenu<void, void>("allTagMenu");
+
+			for (const tag of this.availableTags) {
+				const html = tag.makeHTML();
+				if (this.forumFilters.tags.includes(tag.id)) html.classList.add("selected");
+				html.onclick = () => {
+					if (this.forumFilters.tags.includes(tag.id)) {
+						this.forumFilters.tags = this.forumFilters.tags.filter((id) => id !== tag.id);
+					} else {
+						this.forumFilters.tags.push(tag.id);
+						this.forumFilters.tags.sort();
+					}
+					flipPage(0);
+				};
+				tags.append(html);
+				allMenu.addButton(
+					tag.name,
+					() => {
+						if (this.forumFilters.tags.includes(tag.id)) {
+							this.forumFilters.tags = this.forumFilters.tags.filter((id) => id !== tag.id);
+						} else {
+							this.forumFilters.tags.push(tag.id);
+							this.forumFilters.tags.sort();
+						}
+						flipPage(0);
+					},
+					{
+						icon: {css: this.forumFilters.tags.includes(tag.id) ? "svg-select" : "svg-noSelect"},
+					},
+				);
+			}
+
+			const allTags = document.createElement("button");
+			allTags.classList.add("allTagButton");
+			allTags.textContent = I18n.forum.allTags();
+
+			allTags.onclick = (e) => {
+				if (e.button !== 0) return;
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				const box = allTags.getBoundingClientRect();
+				allMenu.makemenu(box.right - window.innerWidth, box.bottom + 6);
+			};
+
+			sortRow.append(sortOptionButton, tags, allTags);
+
+			div.append(...(await Promise.all(threads.map((_) => _.renderThread()))));
+
+			const buttonRow = document.createElement("div");
+			buttonRow.classList.add("flexltr", "forumButtonRow");
+
+			const next = document.createElement("button");
+			next.textContent = I18n.forum.next();
+			next.disabled = !more;
+			if (more) {
+				next.onclick = () => {
+					flipPage(25);
+				};
+			}
+
+			const back = document.createElement("button");
+			back.textContent = I18n.forum.back();
+			back.disabled = !offset;
+			if (offset) {
+				back.onclick = () => {
+					flipPage(-25);
+				};
+			}
+
+			buttonRow.append(back, next);
+			div.append(buttonRow);
+		};
+		await flipPage(0);
 	}
 	renderForum() {
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "hidden";
@@ -1951,6 +2242,14 @@ class Channel extends SnowFlake {
 		const theadList = document.createElement("div");
 		theadList.classList.add("flexttb", "forumList");
 		container.append(theadList);
+
+		let curidsearch = 0;
+		text.onkeyup = async () => {
+			const thisid = ++curidsearch;
+			await new Promise((res) => setTimeout(res, 120));
+			if (thisid !== curidsearch) return;
+			this.forumSearch(text.value, theadList);
+		};
 		this.forumSearch("", theadList);
 	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
