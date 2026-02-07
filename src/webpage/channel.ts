@@ -545,6 +545,7 @@ class Channel extends SnowFlake {
 	messageCount?: number;
 	totalMessageSent?: number;
 	availableTags: Tag[] = [];
+	flags!: number;
 
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
@@ -558,6 +559,7 @@ class Channel extends SnowFlake {
 		if (json === -1) {
 			return;
 		}
+		this.flags = json.flags || 0;
 		this.memberCount = json.member_count;
 		this.appliedTags = json.applied_tags || [];
 		this.availableTags = json.available_tags?.map((tag) => new Tag(tag, this)) || [];
@@ -2249,6 +2251,15 @@ class Channel extends SnowFlake {
 
 		post.onclick = () => {
 			const postF = async () => {
+				if (this.flags & (1 << 4) && !tagList.length) {
+					showError(I18n.forum.errors.tagsReq());
+					return;
+				}
+				const content = md.rawString;
+				if (!content) {
+					showError(I18n.forum.errors.requireText());
+					return;
+				}
 				const res = (await (
 					await fetch(this.info.api + "/channels/" + this.id + "/threads", {
 						method: "POST",
@@ -2257,7 +2268,7 @@ class Channel extends SnowFlake {
 							name: text.value,
 							applied_tags: tagList,
 							message: {
-								content: md.rawString,
+								content,
 							},
 						}),
 					})
@@ -2324,6 +2335,16 @@ class Channel extends SnowFlake {
 				tags.append(html);
 			}
 			superContainer.append(tags);
+			function showError(text: string) {
+				errorText.textContent = text;
+				setTimeout(() => {
+					errorText.textContent = "";
+				}, 5000);
+			}
+
+			const errorText = document.createElement("span");
+			errorText.classList.add("forumPostError");
+			superContainer.append(errorText);
 		};
 
 		const theadList = document.createElement("div");
@@ -2928,8 +2949,8 @@ class Channel extends SnowFlake {
 	}
 	nameSpan = new WeakRef(document.createElement("span") as HTMLElement);
 	updateChannel(json: channeljson) {
-		console.trace("trace me");
 		this.type = json.type;
+		if (json.flags !== undefined) this.flags = json.flags;
 		this.name = json.name;
 		this.owner_id = json.owner_id;
 		this.icon = json.icon;

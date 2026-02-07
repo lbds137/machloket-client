@@ -1184,6 +1184,9 @@ textarea {
 	border-radius: 12px;
 	cursor: pointer;
 }
+.forumPostError {
+	color: var(--red);
+}
 .forumPostBody {
 	background: #00000075;
 	margin: 4px 12px;

@@ -167,6 +167,10 @@
 			},
 			"name":"Sort Options"
 		},
+		"errors":{
+			"tagsReq":"Tags are required",
+			"requireText":"Message has to be non-empty"
+		},
 		"allTags":"All Tags"
 	},
 	"channelLink": "# $1",
