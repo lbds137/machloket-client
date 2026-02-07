@@ -428,7 +428,7 @@ class Channel extends SnowFlake {
 				},
 				times,
 			);
-			if (this.type !== 4) {
+			if (this.type !== 4 && !this.isThread()) {
 				const options = ["voice", "text", "announcement"] as const;
 				form.addSelect(
 					"Type:",
