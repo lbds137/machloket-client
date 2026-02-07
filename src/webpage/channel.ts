@@ -876,7 +876,9 @@ class Channel extends SnowFlake {
 				this.addRoleToPerms(role);
 			}
 		}
-		return this.hasPermission("SEND_MESSAGES");
+		return this.isThread()
+			? this.hasPermission("SEND_MESSAGES_IN_THREADS")
+			: this.hasPermission("SEND_MESSAGES");
 	}
 	sortchildren() {
 		this.children.sort((a, b) => {
