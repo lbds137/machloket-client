@@ -119,7 +119,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.hasPermission("CREATE_INSTANT_INVITE") && this.type !== 4;
+					return this.hasPermission("CREATE_INSTANT_INVITE") && this.type !== 4 && !this.isThread();
 				},
 				color: "blue",
 			},
@@ -139,6 +139,7 @@ class Channel extends SnowFlake {
 				},
 			},
 		);
+
 		this.contextmenu.addButton(
 			() => I18n.threads.join(),
 			function () {
@@ -153,6 +154,19 @@ class Channel extends SnowFlake {
 				},
 			},
 		);
+
+		this.contextmenu.addButton(
+			() => I18n.threads.editTags(),
+			function () {
+				this.editTags();
+			},
+			{
+				visible: function () {
+					return !!(this.isThread() && this.parent?.isForum() && this.parent.availableTags);
+				},
+			},
+		);
+
 		this.contextmenu.addSeperator();
 		//TODO notifcations icon
 		this.contextmenu.addButton(
@@ -1913,6 +1927,7 @@ class Channel extends SnowFlake {
 		div.onclick = (e) => {
 			if (e.button === 0) this.getHTML();
 		};
+		Channel.contextmenu.bindContextmenu(div, this, undefined);
 		const tags = document.createElement("div");
 		tags.classList.add("flexltr", "tagDiv");
 		for (const tagid of this.appliedTags) {
@@ -1977,6 +1992,45 @@ class Channel extends SnowFlake {
 		tags: [] as string[],
 	};
 	hasFetchedForForum = false;
+	editTags() {
+		const d = new Dialog(I18n.threads.editTags());
+		if (!this.appliedTags || !this.parent) return;
+		let tagList = [...this.appliedTags];
+		const patchList = () => {
+			fetch(this.info.api + "/channels/" + this.id, {
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({
+					applied_tags: tagList,
+				}),
+			});
+		};
+
+		const tags = document.createElement("div");
+		tags.classList.add("forumTagSelect");
+		for (const tag of this.parent.availableTags.filter(
+			(tag) => !tag.moderated || this.hasPermission("MANAGE_THREADS"),
+		)) {
+			const html = tag.makeHTML();
+			html.onclick = () => {
+				if (tagList.includes(tag.id)) {
+					tagList = tagList.filter((id) => id !== tag.id);
+					html.classList.remove("selected");
+					patchList();
+				} else {
+					tagList.push(tag.id);
+					tagList.sort();
+					html.classList.add("selected");
+					patchList();
+				}
+			};
+			if (tagList.includes(tag.id)) html.classList.add("selected");
+			tags.append(html);
+		}
+		const opt = d.options;
+		opt.addHTMLArea(tags);
+		d.show();
+	}
 	async fetchForum() {
 		const arr = (await (
 			await fetch(this.info.api + "/channels/" + this.id + "/post-data", {
