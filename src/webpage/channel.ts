@@ -20,7 +20,7 @@ import {
 	threadMember,
 	threadMetadata,
 } from "./jsontypes.js";
-import {MarkDown} from "./markdown.js";
+import {MarkDown, saveCaretPosition} from "./markdown.js";
 import {Member} from "./member.js";
 import {Voice} from "./voice.js";
 import {User} from "./user.js";
@@ -2225,9 +2225,12 @@ class Channel extends SnowFlake {
 		const container = document.createElement("div");
 		container.classList.add("messagecontainer", "flexttb", "forumBody");
 		(document.getElementById("scrollWrap") as HTMLElement).append(container);
+		const superContainer = document.createElement("div");
+		superContainer.classList.add("forumHead", "flexttb");
 		const headContainer = document.createElement("div");
-		headContainer.classList.add("flexltr", "forumHead");
-		container.append(headContainer);
+		superContainer.append(headContainer);
+		headContainer.classList.add("flexltr");
+		container.append(superContainer);
 
 		const icon = document.createElement("span");
 		icon.classList.add("svgicon", "svg-search", "forumIcon");
@@ -2238,6 +2241,90 @@ class Channel extends SnowFlake {
 		text.classList.add("forumSearch");
 		headContainer.append(text);
 		text.placeholder = I18n.forum.creorsear();
+
+		const post = document.createElement("button");
+		post.textContent = I18n.forum.newPost();
+		post.classList.add("newPostForumButton");
+		headContainer.append(post);
+
+		post.onclick = () => {
+			const postF = async () => {
+				const res = (await (
+					await fetch(this.info.api + "/channels/" + this.id + "/threads", {
+						method: "POST",
+						headers: this.headers,
+						body: JSON.stringify({
+							name: text.value,
+							applied_tags: tagList,
+							message: {
+								content: md.rawString,
+							},
+						}),
+					})
+				).json()) as channeljson;
+				this.localuser.goToChannel(res.id);
+			};
+			post.onclick = postF;
+			post.textContent = I18n.forum.post();
+			const box = document.createElement("div");
+			box.classList.add("messageEditContainer");
+			const area = document.createElement("div");
+			const sb = document.createElement("div");
+			sb.style.position = "absolute";
+			sb.style.width = "100%";
+			const search = document.createElement("div");
+			search.classList.add("searchOptions", "flexttb");
+			area.classList.add("editMessage");
+			try {
+				area.contentEditable = "plaintext-only";
+			} catch {
+				area.contentEditable = "true";
+			}
+			const md = new MarkDown("", this, {keep: true});
+			area.append(md.makeHTML());
+			area.addEventListener("keyup", (event) => {
+				if (this.localuser.keyup(event)) return;
+			});
+			area.addEventListener("keydown", (event) => {
+				this.localuser.keydown(event);
+			});
+			md.giveBox(area, (str, pre) => {
+				this.localuser.search(search, md, str, pre);
+			});
+			sb.append(search);
+			box.append(sb, area);
+			superContainer.append(box);
+			setTimeout(() => {
+				area.focus();
+				const fun = saveCaretPosition(area, Infinity);
+				if (fun) fun();
+			});
+			box.oncontextmenu = (e) => {
+				e.stopImmediatePropagation();
+			};
+
+			let tagList: string[] = [];
+
+			const tags = document.createElement("div");
+			tags.classList.add("forumTagSelect");
+			for (const tag of this.availableTags.filter(
+				(tag) => !tag.moderated || this.hasPermission("MANAGE_THREADS"),
+			)) {
+				const html = tag.makeHTML();
+				html.onclick = () => {
+					if (tagList.includes(tag.id)) {
+						tagList = tagList.filter((id) => id !== tag.id);
+						html.classList.remove("selected");
+					} else {
+						tagList.push(tag.id);
+						tagList.sort();
+						html.classList.add("selected");
+					}
+				};
+				tags.append(html);
+			}
+			superContainer.append(tags);
+		};
 
 		const theadList = document.createElement("div");
 		theadList.classList.add("flexttb", "forumList");

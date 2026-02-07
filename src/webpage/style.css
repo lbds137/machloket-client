@@ -319,6 +319,7 @@ body {
 	bottom: 0;
 	width: calc(100% - 32px);
 	box-sizing: border-box;
+
 	> span {
 		transition: background 0.1s;
 		margin-bottom: 0.025in;
@@ -1105,10 +1106,48 @@ textarea {
 	margin: 6px;
 	box-sizing: border-box;
 	border-radius: 4px;
-	display: flex;
-	align-items: center;
 	flex: 0;
-	min-height: 48px;
+	min-height: fit-content;
+	height: max-content;
+	flex-shrink: 0;
+	/* overflow: clip; */
+
+	> .flexltr {
+		width: 100%;
+		align-items: center;
+	}
+	.editMessage {
+		margin-top: 6px;
+	}
+	.searchOptions {
+		top: 32px;
+		bottom: unset;
+	}
+	.forumTagSelect {
+		margin-top: 6px;
+		> * {
+			margin-left: 0px;
+			margin-right: 6px;
+		}
+	}
+}
+.newPostForumButton {
+	width: 100px;
+	height: 34px;
+	padding: 6px;
+	transition:
+		width 0.15s,
+		padding 0.15s;
+	overflow: clip;
+	text-overflow: clip;
+	white-space: nowrap;
+	text-align: center;
+}
+.forumHead:has(input:placeholder-shown) {
+	.newPostForumButton {
+		width: 0px;
+		padding: 0px;
+	}
 }
 .forumBody {
 	height: 100%;
@@ -1130,7 +1169,8 @@ textarea {
 	flex-direction: row;
 	flex-wrap: wrap;
 	overflow-y: clip;
-	height: 26px;
+	min-height: fit-content;
+
 	> * {
 		margin-left: 6px;
 	}

@@ -860,7 +860,8 @@ type wsjson =
 				| "GUILD_DELETE"
 				| "GUILD_CREATE"
 				| "MESSAGE_REACTION_REMOVE_ALL"
-				| "MESSAGE_REACTION_REMOVE_EMOJI";
+				| "MESSAGE_REACTION_REMOVE_EMOJI"
+				| "THREAD_CREATE";
 	  }
 	| {
 			op: 0;

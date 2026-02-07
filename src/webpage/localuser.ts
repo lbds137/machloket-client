@@ -788,6 +788,7 @@ class Localuser {
 					}
 					break;
 				case "CHANNEL_CREATE":
+				case "THREAD_CREATE":
 					if (this.initialized) {
 						this.createChannel(temp.d);
 					}

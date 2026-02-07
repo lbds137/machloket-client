@@ -147,6 +147,8 @@
 		"creorsear":"Create or search for post",
 		"next":"Next",
 		"back":"Back",
+		"newPost":"New Post",
+		"post":"Post",
 		"sortOptions":{
 			"sortby":{
 				"title":"Sort By",
