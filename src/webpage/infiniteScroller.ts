@@ -169,7 +169,7 @@ class InfiniteScroller {
 
 		this.createObserver(div);
 
-		this.focus(initialId, flash, true);
+		await this.focus(initialId, flash, true);
 		return div;
 	}
 	private get scrollBottom() {
@@ -243,7 +243,7 @@ class InfiniteScroller {
 		await this.destroyFromID(id);
 		elm?.remove();
 	}
-	private async getFromID(id: string) {
+	private getFromID(id: string) {
 		if (this.curElms.has(id)) {
 			return this.curElms.get(id) as HTMLElement;
 		}
@@ -284,9 +284,10 @@ class InfiniteScroller {
 		const scroll = this.scroller;
 		if (!scroll) return;
 		let top = this.curFocID;
-		const futElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
+		const app = fragAppend(scroll, true);
+		const proms: Promise<void>[] = [];
 
 		while (top) {
 			count++;
@@ -317,27 +318,22 @@ class InfiniteScroller {
 				this.addLink(top, id);
 
 				if (id) {
-					futElms.push(this.getFromID(id));
+					proms.push(app(this.getFromID(id)));
 				}
 				top = id;
 			}
 		}
 
-		const app = fragAppend(scroll, true);
-		const proms: Promise<void>[] = [];
-		for (const elmProm of futElms) {
-			const elm = await elmProm;
-			proms.push(app(elm));
-		}
 		await Promise.all(proms);
 	}
 	private async fillInBottom() {
 		const scroll = this.scroller;
 		if (!scroll) return;
 		let bottom = this.curFocID;
-		const backElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
+		const app = fragAppend(scroll);
+		const proms: Promise<void>[] = [];
 		while (bottom) {
 			count++;
 			if (count > 100) {
@@ -360,18 +356,12 @@ class InfiniteScroller {
 				this.addLink(id, bottom);
 
 				if (id) {
-					backElms.push(this.getFromID(id));
+					proms.push(app(this.getFromID(id)));
 				}
 				bottom = id;
 			}
 		}
 
-		const app = fragAppend(scroll);
-		const proms: Promise<void>[] = [];
-		for (const elmProm of backElms) {
-			const elm = await elmProm;
-			proms.push(app(elm));
-		}
 		await Promise.all(proms);
 	}
 
@@ -420,7 +410,6 @@ class InfiniteScroller {
 				block: "center",
 			});
 		} else {
-			console.log(had, sec);
 			div.scrollIntoView({
 				block: "center",
 			});

@@ -3042,7 +3042,7 @@ class Channel extends SnowFlake {
 		await this.tryfocusinfinate(id, !!id);
 	}
 	infinitefocus = false;
-	async tryfocusinfinate(id: string | void, falsh = false) {
+	async tryfocusinfinate(id: string | void, flash = false) {
 		if (typeof id === "string" && !this.messages.has(id)) await this.getmessage(id);
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
@@ -3084,7 +3084,7 @@ class Channel extends SnowFlake {
 			elm.remove();
 			console.warn("rouge element detected and removed");
 		}
-		messages.append(await this.infinite.getDiv(id, falsh));
+		messages.append(await this.infinite.getDiv(id, flash));
 		/*
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
@@ -3095,6 +3095,7 @@ class Channel extends SnowFlake {
 			this.infinite.focus(id, falsh, true);
 		});
 		*/
+		await this.focus(id, flash);
 		loading.classList.remove("loading");
 		//this.infinite.focus(id.id,false);
 	}
