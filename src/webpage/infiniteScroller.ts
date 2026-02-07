@@ -152,7 +152,9 @@ class InfiniteScroller {
 			},
 			{root, threshold: 0.1},
 		);
-		root.addEventListener("scroll", () => {
+		let time = Date.now();
+		const handleScroll = async () => {
+			await new Promise((res) => requestAnimationFrame(res));
 			if (this.scrollBottom < 5) {
 				const scroll = this.scroller;
 				if (!scroll) return;
@@ -161,6 +163,17 @@ class InfiniteScroller {
 				if (this.backElm.get(last) || !this.backElm.has(last)) return;
 				this.reachesBottom();
 			}
+		};
+		let last = 0;
+		root.addEventListener("scroll", async () => {
+			const now = Date.now();
+			const thisid = ++last;
+			if (now - time < 500) {
+				await new Promise((res) => setTimeout(res, 500));
+				if (thisid !== last) return;
+			}
+			time = now;
+			handleScroll();
 		});
 	}
 

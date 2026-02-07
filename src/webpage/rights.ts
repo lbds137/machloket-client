@@ -6,6 +6,9 @@ class Rights {
 	constructor(allow: string | number) {
 		this.update(allow);
 	}
+	isSameAs(allow: string | number) {
+		return this.allow === BigInt(allow);
+	}
 	update(allow: string | number) {
 		try {
 			this.allow = BigInt(allow);

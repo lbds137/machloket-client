@@ -681,6 +681,7 @@ class Localuser {
 	relationshipsUpdate = () => {};
 	rights: Rights;
 	updateRights(rights: string | number) {
+		if (this.rights.isSameAs(rights)) return;
 		this.rights.update(rights);
 		this.perminfo.user.rights = rights;
 	}
