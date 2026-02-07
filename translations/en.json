@@ -136,7 +136,8 @@
 		"typebox": "Message in $1",
 		"unmute": "Unmute Channel",
 		"voice": "Voice",
-		"deleteThread":"Delete Thread"
+		"deleteThread":"Delete Thread",
+		"hideThreads":"Hide After Inactivity"
 	},
 	"threads":{
 		"leave":"Leave Thread",
@@ -171,7 +172,15 @@
 			"tagsReq":"Tags are required",
 			"requireText":"Message has to be non-empty"
 		},
-		"allTags":"All Tags"
+		"allTags":"All Tags",
+		"settings":{
+			"editTags":"Edit Tags:",
+			"editTag":"Edit Tag",
+			"tagName":"Tag name:",
+			"moderated":"Only allow thread moderators to apply tag:",
+			"addTag":"Add a Tag",
+			"delTag":"Delete Tag"
+		}
 	},
 	"channelLink": "# $1",
 	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermi.chat/)\n\nCalculated rights: $3",

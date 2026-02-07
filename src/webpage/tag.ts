@@ -12,9 +12,14 @@ export class Tag extends SnowFlake {
 		super(json.id);
 		this.name = json.name;
 		this.moderated = json.moderated;
+		this.update(json);
+		this.owner = owner;
+	}
+	update(json: tagjson) {
+		this.name = json.name;
+		this.moderated = json.moderated;
 		this.emoji_id = json.emoji_id;
 		this.emoji_name = json.emoji_name;
-		this.owner = owner;
 	}
 	makeHTML() {
 		const tagDiv = document.createElement("div");

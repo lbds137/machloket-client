@@ -17,6 +17,7 @@ import {
 	mute_config,
 	readyjson,
 	startTypingjson,
+	tagjson,
 	threadMember,
 	threadMetadata,
 } from "./jsontypes.js";
@@ -428,6 +429,95 @@ class Channel extends SnowFlake {
 				},
 				times,
 			);
+			const arcTimes = [60, 60 * 24, 60 * 24 * 3, 60 * 24 * 7];
+			form.addSelect(
+				I18n.channel.hideThreads(),
+				"default_auto_archive_duration",
+				["1h", "24h", "3d", "7d"],
+				{
+					defaultIndex: arcTimes.findIndex((_) => _ === (this.defaultAutoArchiveDuration ?? 1440)),
+				},
+				arcTimes,
+			);
+			if (this.isForum()) {
+				form.addText(I18n.forum.settings.editTags());
+				const tags = document.createElement("div");
+				tags.classList.add("forumTagSelect");
+				const tagSet = new Set<string>();
+				const makeTagHTML = (tag: Tag) => {
+					tagSet.add(tag.id);
+					let html = tag.makeHTML();
+					html.onclick = () => {
+						const d = new Dialog(I18n.forum.settings.editTag());
+						const f = d.options.addForm(
+							"",
+							(_, obj) => {
+								tag.update(obj as tagjson);
+								const newhtml = tag.makeHTML();
+								html.parentNode?.insertBefore(newhtml, html);
+								html.remove();
+								newhtml.onclick = html.onclick;
+								html = newhtml;
+								d.hide();
+							},
+							{
+								fetchURL: this.info.api + "/channels/" + this.id + "/tags/" + tag.id,
+								method: "PUT",
+								headers: this.headers,
+							},
+						);
+						f.addTextInput(I18n.forum.settings.tagName(), "name", {
+							initText: tag.name,
+						});
+						f.addCheckboxInput(I18n.forum.settings.moderated(), "moderated", {
+							initState: tag.moderated,
+						});
+						f.addButtonInput("", I18n.forum.settings.delTag(), async () => {
+							const res = await fetch(this.info.api + "/channels/" + this.id + "/tags/" + tag.id, {
+								method: "DELETE",
+								headers: this.headers,
+							});
+							if (res.ok) {
+								d.hide();
+								html.remove();
+							}
+						});
+						d.show();
+					};
+					tags.append(html);
+				};
+				for (const tag of this.availableTags) {
+					makeTagHTML(tag);
+				}
+				form.addHTMLArea(tags);
+				form.addButtonInput("", I18n.forum.settings.addTag(), () => {
+					const d = new Dialog(I18n.forum.settings.editTag());
+					const f = d.options.addForm(
+						"",
+						(json) => {
+							const channel = json as channeljson;
+							if (!channel.available_tags) return;
+							const dontHave = channel.available_tags.filter((_) => !tagSet.has(_.id));
+							for (const tagJson of dontHave) {
+								makeTagHTML(new Tag(tagJson, this));
+							}
+							d.hide();
+						},
+						{
+							fetchURL: this.info.api + "/channels/" + this.id + "/tags",
+							method: "POST",
+							headers: this.headers,
+						},
+					);
+					f.addTextInput(I18n.forum.settings.tagName(), "name", {
+						initText: "",
+					});
+					f.addCheckboxInput(I18n.forum.settings.moderated(), "moderated", {
+						initState: false,
+					});
+					d.show();
+				});
+			}
 			if (this.type !== 4 && !this.isThread() && !this.isForum()) {
 				const options = ["voice", "text", "announcement"] as const;
 				form.addSelect(
@@ -549,6 +639,7 @@ class Channel extends SnowFlake {
 	totalMessageSent?: number;
 	availableTags: Tag[] = [];
 	flags!: number;
+	defaultAutoArchiveDuration!: number;
 
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
@@ -564,6 +655,7 @@ class Channel extends SnowFlake {
 		}
 		this.flags = json.flags || 0;
 		this.memberCount = json.member_count;
+		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
 		this.appliedTags = json.applied_tags || [];
 		this.availableTags = json.available_tags?.map((tag) => new Tag(tag, this)) || [];
 		this.messageCount = json.message_count;
@@ -2957,6 +3049,7 @@ class Channel extends SnowFlake {
 		this.name = json.name;
 		this.owner_id = json.owner_id;
 		this.icon = json.icon;
+		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
 		this.renderIcon();
 		this.threadData = json.thread_metadata;
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
