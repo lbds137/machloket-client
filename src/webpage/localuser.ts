@@ -1201,6 +1201,11 @@ class Localuser {
 		}
 	}
 	createChannel(json: channeljson): undefined | Channel {
+		const c = this.channelids.get(json.id);
+		if (c) {
+			c.updateChannel(json);
+			return c;
+		}
 		json.guild_id ??= "@me";
 		const guild = this.guildids.get(json.guild_id);
 		if (!guild) return;
