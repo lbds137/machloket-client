@@ -673,6 +673,7 @@ class Channel extends SnowFlake {
 		if (json === -1) {
 			return;
 		}
+		this.localuser.channelids.set(this.id, this);
 		this.flags = json.flags || 0;
 		this.memberCount = json.member_count;
 		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
