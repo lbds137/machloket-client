@@ -1662,7 +1662,7 @@ class Guild extends SnowFlake {
 		let read = true;
 		let mentions = this.mentions;
 		for (const thing of this.channels) {
-			if (thing.hasunreads) {
+			if (thing.hasunreads && (!thing.isThread() || thing.owner)) {
 				read = false;
 				break;
 			}
