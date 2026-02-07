@@ -612,7 +612,7 @@ class Channel extends SnowFlake {
 				}
 				return undefined;
 			},
-			async (id: string): Promise<HTMLElement> => {
+			(id: string): HTMLElement => {
 				//await new Promise(_=>{setTimeout(_,Math.random()*10)})
 				const message = this.messages.get(id);
 				try {

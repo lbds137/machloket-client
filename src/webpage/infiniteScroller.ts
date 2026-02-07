@@ -67,7 +67,7 @@ function fragAppend(div: HTMLElement, pre = false) {
 const supports = CSS.supports("overflow-anchor", "auto");
 class InfiniteScroller {
 	readonly getIDFromOffset: (ID: string, offset: number) => Promise<string | undefined>;
-	readonly getHTMLFromID: (ID: string) => Promise<HTMLElement>;
+	readonly getHTMLFromID: (ID: string) => HTMLElement;
 	readonly destroyFromID: (ID: string) => Promise<boolean>;
 	readonly reachesBottom: () => void;
 
@@ -247,7 +247,7 @@ class InfiniteScroller {
 		if (this.curElms.has(id)) {
 			return this.curElms.get(id) as HTMLElement;
 		}
-		const elm = await this.getHTMLFromID(id);
+		const elm = this.getHTMLFromID(id);
 		this.curElms.set(id, elm);
 		this.weakElmId.set(elm, id);
 		this.observer.observe(elm);
