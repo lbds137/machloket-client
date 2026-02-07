@@ -1491,7 +1491,7 @@ class Guild extends SnowFlake {
 				build.push(thisthing);
 			}
 			position++;
-			if (thing.children.length > 0) {
+			if (thing.children.length > 0 && thing.type === 4) {
 				let things: buildtype;
 				[things, position] = thing.calculateReorder(position);
 				for (const thing of things) {
