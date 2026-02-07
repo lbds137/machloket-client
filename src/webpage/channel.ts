@@ -449,23 +449,26 @@ class Channel extends SnowFlake {
 				});
 			}
 		}
-		const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
+		if (!this.isThread()) {
+			const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
 
-		(async () => {
-			const list = await Promise.all(
-				this.permission_overwritesar.map(async (_) => {
-					return [await _[0], _[1]] as [Role | User, Permissions];
-				}),
-			);
+			(async () => {
+				const list = await Promise.all(
+					this.permission_overwritesar.map(async (_) => {
+						return [await _[0], _[1]] as [Role | User, Permissions];
+					}),
+				);
 
-			s1.options.push(new RoleList(list, this.guild, this.updateRolePermissions.bind(this), this));
-		})();
+				s1.options.push(
+					new RoleList(list, this.guild, this.updateRolePermissions.bind(this), this),
+				);
+			})();
+			const inviteMenu = settings.addButton(I18n.guild.invites());
+			makeInviteMenu(inviteMenu, this.owner, this.info.api + `/channels/${this.id}/invites`);
 
-		const inviteMenu = settings.addButton(I18n.guild.invites());
-		makeInviteMenu(inviteMenu, this.owner, this.info.api + `/channels/${this.id}/invites`);
-
-		const webhooks = settings.addButton(I18n.webhooks.base());
-		webhookMenu(this.guild, this.info.api + `/channels/${this.id}/webhooks`, webhooks, this.id);
+			const webhooks = settings.addButton(I18n.webhooks.base());
+			webhookMenu(this.guild, this.info.api + `/channels/${this.id}/webhooks`, webhooks, this.id);
+		}
 
 		settings.show();
 	}
