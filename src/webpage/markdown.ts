@@ -938,10 +938,11 @@ class MarkDown {
 		}
 		return span;
 	}
-	static relTime(date: Date): string {
+	static relTime(date: Date, nextUpdate?: () => void): string {
 		const time = Date.now() - +date;
 
 		let seconds = Math.round(time / 1000);
+		const round = time % 1000;
 		let minutes = Math.floor(seconds / 60);
 		seconds -= minutes * 60;
 		let hours = Math.floor(minutes / 60);
@@ -953,14 +954,24 @@ class MarkDown {
 
 		const formatter = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
 		if (years) {
+			if (nextUpdate)
+				setTimeout(
+					nextUpdate,
+					round + (seconds + (minutes + (hours + days * 24) * 60) * 60) * 1000,
+				);
 			return formatter.format(-years, "year");
 		} else if (days) {
+			if (nextUpdate)
+				setTimeout(nextUpdate, round + (seconds + (minutes + hours * 60) * 60) * 1000);
 			return formatter.format(-days, "days");
 		} else if (hours) {
+			if (nextUpdate) setTimeout(nextUpdate, round + (seconds + minutes * 60) * 1000);
 			return formatter.format(-hours, "hours");
 		} else if (minutes) {
+			if (nextUpdate) setTimeout(nextUpdate, round + seconds * 1000);
 			return formatter.format(-minutes, "minutes");
 		} else {
+			if (nextUpdate) setTimeout(nextUpdate, round);
 			return formatter.format(-seconds, "seconds");
 		}
 	}

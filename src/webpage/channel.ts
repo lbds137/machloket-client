@@ -86,6 +86,12 @@ class Channel extends SnowFlake {
 	bitrate: number = 128000;
 	threadData?: threadMetadata;
 	mute_config: mute_config | null = {selected_time_window: -1, end_time: 0};
+	updateEvents = new Set<() => void>();
+	fireEvents() {
+		for (const thing of this.updateEvents) {
+			thing();
+		}
+	}
 	setLastMessageId(id: string) {
 		this.lastmessageid = id;
 		try {
@@ -834,6 +840,9 @@ class Channel extends SnowFlake {
 	hasPermission(name: string, member = this.guild.member): boolean {
 		if (member.isAdmin()) {
 			return true;
+		}
+		if (this.isThread() && this.parent) {
+			return this.parent.hasPermission(name, member);
 		}
 		if (this.guild.member.commuicationDisabledLeft()) {
 			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
@@ -1923,8 +1932,23 @@ class Channel extends SnowFlake {
 	isForum() {
 		return this.type === 15 || this.type === 16;
 	}
-	async renderThread() {
-		const div = document.createElement("div");
+	async renderThread(update = true) {
+		let div = document.createElement("div");
+		if (update) {
+			const up = async () => {
+				if (!document.contains(div)) {
+					this.updateEvents.delete(up);
+					return;
+				}
+				console.log(this.updateEvents);
+				const c = await this.renderThread(false);
+				if (!c) return;
+				div.after(c);
+				div.remove();
+				div = c;
+			};
+			this.updateEvents.add(up);
+		}
 		div.classList.add("flexttb", "forumPostBody");
 		div.onclick = (e) => {
 			if (e.button === 0) this.getHTML();
@@ -1972,11 +1996,18 @@ class Channel extends SnowFlake {
 		msep.classList.add("msep");
 
 		const mtime = document.createElement("span");
-		mtime.textContent = MarkDown.relTime(
-			new Date(
-				this.lastmessageid ? SnowFlake.stringToUnixTime(this.lastmessageid) : this.getUnixTime(),
-			),
-		);
+		const updateTime = () => {
+			mtime.textContent = MarkDown.relTime(
+				new Date(
+					this.lastmessageid ? SnowFlake.stringToUnixTime(this.lastmessageid) : this.getUnixTime(),
+				),
+				() => {
+					if (!document.contains(mtime)) return;
+					updateTime();
+				},
+			);
+		};
+		updateTime();
 
 		const lrow = document.createElement("div");
 		lrow.classList.add("forumMessageRow", "flexltr");
@@ -2378,6 +2409,7 @@ class Channel extends SnowFlake {
 	renderForum() {
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "hidden";
 		const container = document.createElement("div");
+
 		container.classList.add("messagecontainer", "flexttb", "forumBody");
 		(document.getElementById("scrollWrap") as HTMLElement).append(container);
 		const superContainer = document.createElement("div");
@@ -3171,6 +3203,7 @@ class Channel extends SnowFlake {
 		console.log(pchange, nchange);
 		this.topic = json.topic;
 		this.nsfw = json.nsfw;
+		this.fireEvents();
 	}
 	croleUpdate: (role: Role | User, perm: Permissions, added: boolean) => unknown = () => {};
 	typingstart() {
@@ -3738,6 +3771,7 @@ class Channel extends SnowFlake {
 				setTimeout(() => this.goToBottom());
 			}
 		}
+		this.fireEvents();
 
 		if (messagez.author === this.localuser.user) {
 			return;
