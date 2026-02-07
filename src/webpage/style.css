@@ -1010,6 +1010,14 @@ textarea {
 	mask: url(./icons/channel.svg);
 	mask-size: contain !important;
 }
+.svg-forum {
+	mask: url(./icons/forum.svg);
+	mask-size: contain !important;
+}
+.svg-forumnsfw {
+	mask: url(./icons/forumnsfw.svg);
+	mask-size: contain !important;
+}
 .svg-copy {
 	mask: url(./icons/copy.svg);
 	mask-size: contain !important;

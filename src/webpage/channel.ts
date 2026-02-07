@@ -958,6 +958,8 @@ class Channel extends SnowFlake {
 		} else if (this.type === 5) {
 			//
 			icon.classList.add("space", "svgicon", this.nsfw ? "svg-announcensfw" : "svg-announce");
+		} else if (this.type === 15) {
+			icon.classList.add("space", "svgicon", this.nsfw ? "svg-forumnsfw" : "svg-forum");
 		} else {
 			console.log(this.type);
 		}
