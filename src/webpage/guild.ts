@@ -1873,7 +1873,9 @@ class Guild extends SnowFlake {
 		}
 	}
 	createchannels(func = this.createChannel.bind(this)) {
-		const options = (["text", "announcement", "voice"] as const).map((e) => I18n.channel[e]());
+		const options = (["text", "announcement", "voice", "forum"] as const).map((e) =>
+			I18n.channel[e](),
+		);
 
 		const channelselect = new Dialog("");
 		const form = channelselect.options.addForm("", (e: any) => {
@@ -1881,7 +1883,7 @@ class Guild extends SnowFlake {
 			channelselect.hide();
 		});
 
-		form.addSelect(I18n.channel.selectType(), "type", options, {radio: true}, [0, 5, 2]);
+		form.addSelect(I18n.channel.selectType(), "type", options, {radio: true}, [0, 5, 2, 15]);
 		form.addTextInput(I18n.channel.selectName(), "name");
 		channelselect.show();
 	}

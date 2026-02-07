@@ -137,7 +137,8 @@
 		"unmute": "Unmute Channel",
 		"voice": "Voice",
 		"deleteThread":"Delete Thread",
-		"hideThreads":"Hide After Inactivity"
+		"hideThreads":"Hide After Inactivity",
+		"forum":"Forum"
 	},
 	"threads":{
 		"leave":"Leave Thread",
