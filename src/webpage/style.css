@@ -2732,7 +2732,8 @@ span .quote:last-of-type .quoteline {
 .replying:hover {
 	background: color-mix(in srgb, var(--reply-highlight) 10%, var(--primary-hover));
 }
-.mentioned > button {
+.mentioned > button,
+.mentioned.messagediv {
 	background: color-mix(in srgb, var(--mention-highlight) 10%, transparent);
 	border-color: var(--mention-highlight);
 }
