@@ -319,6 +319,7 @@ body {
 	bottom: 0;
 	width: calc(100% - 32px);
 	box-sizing: border-box;
+
 	> span {
 		transition: background 0.1s;
 		margin-bottom: 0.025in;
@@ -895,6 +896,16 @@ textarea {
 	mask-size: contain !important;
 	background: var(--primary-text);
 }
+.svg-select {
+	mask: url(./icons/select.svg);
+	mask-size: contain !important;
+	background: var(--primary-text);
+}
+.svg-noSelect {
+	mask: url(./icons/noSelect.svg);
+	mask-size: contain !important;
+	background: var(--primary-text);
+}
 .svg-stopstream {
 	mask: url(./icons/stopstream.svg);
 	mask-size: contain !important;
@@ -999,6 +1010,14 @@ textarea {
 	mask: url(./icons/channel.svg);
 	mask-size: contain !important;
 }
+.svg-forum {
+	mask: url(./icons/forum.svg);
+	mask-size: contain !important;
+}
+.svg-forumnsfw {
+	mask: url(./icons/forumnsfw.svg);
+	mask-size: contain !important;
+}
 .svg-copy {
 	mask: url(./icons/copy.svg);
 	mask-size: contain !important;
@@ -1083,6 +1102,135 @@ textarea {
 	&[hidden] {
 		display: none;
 	}
+}
+.forumIcon {
+	width: 28px;
+	height: 28px;
+}
+.forumHead {
+	width: calc(100% - 12px);
+	background: #00000073;
+	padding: 6px;
+	margin: 6px;
+	box-sizing: border-box;
+	border-radius: 4px;
+	flex: 0;
+	min-height: fit-content;
+	height: max-content;
+	flex-shrink: 0;
+	/* overflow: clip; */
+
+	> .flexltr {
+		width: 100%;
+		align-items: center;
+	}
+	.editMessage {
+		margin-top: 6px;
+	}
+	.searchOptions {
+		top: 32px;
+		bottom: unset;
+	}
+	.forumTagSelect {
+		margin-top: 6px;
+		> * {
+			margin-left: 0px;
+			margin-right: 6px;
+		}
+	}
+}
+.newPostForumButton {
+	width: 100px;
+	height: 34px;
+	padding: 6px;
+	transition:
+		width 0.15s,
+		padding 0.15s;
+	overflow: clip;
+	text-overflow: clip;
+	white-space: nowrap;
+	text-align: center;
+}
+.forumHead:has(input:placeholder-shown) {
+	.newPostForumButton {
+		width: 0px;
+		padding: 0px;
+	}
+}
+.forumBody {
+	height: 100%;
+}
+.forumList {
+	flex: 1;
+	overflow-y: scroll;
+}
+.allTagButton {
+	margin-left: auto;
+}
+.forumSortRow {
+	flex-shrink: 0;
+	padding: 4px 12px;
+	align-items: center;
+}
+.forumTagSelect {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	overflow-y: clip;
+	min-height: fit-content;
+
+	> * {
+		margin-left: 6px;
+	}
+	.selected {
+		background: #ffffff5e;
+	}
+}
+.forumTag {
+	padding: 3px;
+	background: #ffffff21;
+	border-radius: 12px;
+	cursor: pointer;
+}
+.forumPostError {
+	color: var(--red);
+}
+.forumPostBody {
+	background: #00000075;
+	margin: 4px 12px;
+	padding: 6px;
+	border-radius: 4px;
+	> * {
+		margin-bottom: 4px;
+	}
+	cursor: pointer;
+}
+.forumButtonRow {
+	flex-shrink: 0;
+	mix-height: fit-content;
+	padding: 12px;
+	button {
+		margin-right: 10px;
+	}
+}
+.forumMessageRow {
+	.svg-frmessage {
+		width: 16px;
+		margin-right: 4px;
+	}
+	display: flex;
+	align-items: center;
+}
+.msep {
+	margin: 6px;
+	background: #000000de;
+	width: 3px;
+	height: 3px;
+	border-radius: 100%;
+}
+.forumSearch {
+	margin-left: 3px;
+	background: transparent !important;
 }
 .svg-mic {
 	height: 22px;
@@ -2584,11 +2732,12 @@ span .quote:last-of-type .quoteline {
 .replying:hover {
 	background: color-mix(in srgb, var(--reply-highlight) 10%, var(--primary-hover));
 }
-.mentioned {
+.mentioned > button,
+.mentioned.messagediv {
 	background: color-mix(in srgb, var(--mention-highlight) 10%, transparent);
 	border-color: var(--mention-highlight);
 }
-.mentioned:hover {
+.mentioned:hover > button {
 	background: color-mix(in srgb, var(--mention-highlight) 10%, var(--primary-hover));
 }
 #slideCount {

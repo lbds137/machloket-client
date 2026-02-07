@@ -543,9 +543,18 @@ export interface threadMember {
 	};
 	member?: memberjson;
 }
+export interface tagjson {
+	name: string;
+	id: string;
+	moderated: boolean;
+	emoji_id?: string;
+	emoji_name?: string;
+}
 type channeljson = {
 	member_count?: number;
 	message_count?: number;
+	applied_tags?: string[];
+	available_tags?: tagjson[];
 	total_message_sent?: number;
 	member: threadMember;
 	id: string;
@@ -851,7 +860,8 @@ type wsjson =
 				| "GUILD_DELETE"
 				| "GUILD_CREATE"
 				| "MESSAGE_REACTION_REMOVE_ALL"
-				| "MESSAGE_REACTION_REMOVE_EMOJI";
+				| "MESSAGE_REACTION_REMOVE_EMOJI"
+				| "THREAD_CREATE";
 	  }
 	| {
 			op: 0;

@@ -67,7 +67,7 @@ function fragAppend(div: HTMLElement, pre = false) {
 const supports = CSS.supports("overflow-anchor", "auto");
 class InfiniteScroller {
 	readonly getIDFromOffset: (ID: string, offset: number) => Promise<string | undefined>;
-	readonly getHTMLFromID: (ID: string) => Promise<HTMLElement>;
+	readonly getHTMLFromID: (ID: string) => HTMLElement;
 	readonly destroyFromID: (ID: string) => Promise<boolean>;
 	readonly reachesBottom: () => void;
 
@@ -111,7 +111,12 @@ class InfiniteScroller {
 			let height = 0;
 			new ResizeObserver((e) => {
 				const nh = e[0].target.getBoundingClientRect().height;
-				if (height) root.scrollTop += height - nh;
+				if (height) {
+					if (this.scrollBottom - height + nh < 2) root.scrollTop = root.scrollHeight;
+					else if (root.scrollTop + nh + 6 > root.scrollHeight) root.scrollTop += -height + nh;
+					else root.scrollTop += height - nh;
+					console.log(root.scrollTop + height + 6 - root.scrollHeight);
+				}
 				height = nh;
 			}).observe(root);
 		}
@@ -147,7 +152,9 @@ class InfiniteScroller {
 			},
 			{root, threshold: 0.1},
 		);
-		root.addEventListener("scroll", () => {
+		let time = Date.now();
+		const handleScroll = async () => {
+			await new Promise((res) => requestAnimationFrame(res));
 			if (this.scrollBottom < 5) {
 				const scroll = this.scroller;
 				if (!scroll) return;
@@ -156,6 +163,17 @@ class InfiniteScroller {
 				if (this.backElm.get(last) || !this.backElm.has(last)) return;
 				this.reachesBottom();
 			}
+		};
+		let last = 0;
+		root.addEventListener("scroll", async () => {
+			const now = Date.now();
+			const thisid = ++last;
+			if (now - time < 500) {
+				await new Promise((res) => setTimeout(res, 500));
+				if (thisid !== last) return;
+			}
+			time = now;
+			handleScroll();
 		});
 	}
 
@@ -169,7 +187,7 @@ class InfiniteScroller {
 
 		this.createObserver(div);
 
-		this.focus(initialId, flash, true);
+		await this.focus(initialId, flash, true);
 		return div;
 	}
 	private get scrollBottom() {
@@ -243,11 +261,11 @@ class InfiniteScroller {
 		await this.destroyFromID(id);
 		elm?.remove();
 	}
-	private async getFromID(id: string) {
+	private getFromID(id: string) {
 		if (this.curElms.has(id)) {
 			return this.curElms.get(id) as HTMLElement;
 		}
-		const elm = await this.getHTMLFromID(id);
+		const elm = this.getHTMLFromID(id);
 		this.curElms.set(id, elm);
 		this.weakElmId.set(elm, id);
 		this.observer.observe(elm);
@@ -284,9 +302,10 @@ class InfiniteScroller {
 		const scroll = this.scroller;
 		if (!scroll) return;
 		let top = this.curFocID;
-		const futElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
+		const app = fragAppend(scroll, true);
+		const proms: Promise<void>[] = [];
 
 		while (top) {
 			count++;
@@ -317,27 +336,22 @@ class InfiniteScroller {
 				this.addLink(top, id);
 
 				if (id) {
-					futElms.push(this.getFromID(id));
+					proms.push(app(this.getFromID(id)));
 				}
 				top = id;
 			}
 		}
 
-		const app = fragAppend(scroll, true);
-		const proms: Promise<void>[] = [];
-		for (const elmProm of futElms) {
-			const elm = await elmProm;
-			proms.push(app(elm));
-		}
 		await Promise.all(proms);
 	}
 	private async fillInBottom() {
 		const scroll = this.scroller;
 		if (!scroll) return;
 		let bottom = this.curFocID;
-		const backElms: Promise<HTMLElement>[] = [];
 		let count = 0;
 		let limit = 50;
+		const app = fragAppend(scroll);
+		const proms: Promise<void>[] = [];
 		while (bottom) {
 			count++;
 			if (count > 100) {
@@ -360,18 +374,12 @@ class InfiniteScroller {
 				this.addLink(id, bottom);
 
 				if (id) {
-					backElms.push(this.getFromID(id));
+					proms.push(app(this.getFromID(id)));
 				}
 				bottom = id;
 			}
 		}
 
-		const app = fragAppend(scroll);
-		const proms: Promise<void>[] = [];
-		for (const elmProm of backElms) {
-			const elm = await elmProm;
-			proms.push(app(elm));
-		}
 		await Promise.all(proms);
 	}
 
@@ -420,7 +428,6 @@ class InfiniteScroller {
 				block: "center",
 			});
 		} else {
-			console.log(had, sec);
 			div.scrollIntoView({
 				block: "center",
 			});

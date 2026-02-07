@@ -11,15 +11,17 @@ import {
 	channeljson,
 	embedjson,
 	filejson,
+	memberjson,
 	messageCreateJson,
 	messagejson,
 	mute_config,
 	readyjson,
 	startTypingjson,
+	tagjson,
 	threadMember,
 	threadMetadata,
 } from "./jsontypes.js";
-import {MarkDown} from "./markdown.js";
+import {MarkDown, saveCaretPosition} from "./markdown.js";
 import {Member} from "./member.js";
 import {Voice} from "./voice.js";
 import {User} from "./user.js";
@@ -32,6 +34,7 @@ import {CustomHTMLDivElement} from "./index.js";
 import {Direct} from "./direct.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
+import {Tag} from "./tag.js";
 
 class Channel extends SnowFlake {
 	editing!: Message | null;
@@ -83,6 +86,12 @@ class Channel extends SnowFlake {
 	bitrate: number = 128000;
 	threadData?: threadMetadata;
 	mute_config: mute_config | null = {selected_time_window: -1, end_time: 0};
+	updateEvents = new Set<() => void>();
+	fireEvents() {
+		for (const thing of this.updateEvents) {
+			thing();
+		}
+	}
 	setLastMessageId(id: string) {
 		this.lastmessageid = id;
 		try {
@@ -116,7 +125,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.hasPermission("CREATE_INSTANT_INVITE") && this.type !== 4;
+					return this.hasPermission("CREATE_INSTANT_INVITE") && this.type !== 4 && !this.isThread();
 				},
 				color: "blue",
 			},
@@ -136,6 +145,7 @@ class Channel extends SnowFlake {
 				},
 			},
 		);
+
 		this.contextmenu.addButton(
 			() => I18n.threads.join(),
 			function () {
@@ -150,6 +160,19 @@ class Channel extends SnowFlake {
 				},
 			},
 		);
+
+		this.contextmenu.addButton(
+			() => I18n.threads.editTags(),
+			function () {
+				this.editTags();
+			},
+			{
+				visible: function () {
+					return !!(this.isThread() && this.parent?.isForum() && this.parent.availableTags);
+				},
+			},
+		);
+
 		this.contextmenu.addSeperator();
 		//TODO notifcations icon
 		this.contextmenu.addButton(
@@ -188,7 +211,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.hasPermission("MANAGE_CHANNELS");
+					return this.hasPermission("MANAGE_CHANNELS") || this.owner_id === this.localuser.user.id;
 				},
 				icon: {
 					css: "svg-settings",
@@ -198,6 +221,9 @@ class Channel extends SnowFlake {
 
 		this.contextmenu.addButton(
 			function () {
+				if (this.isThread()) {
+					return I18n.channel.deleteThread();
+				}
 				if (this.type === 4) {
 					return I18n.channel.deleteCat();
 				}
@@ -208,7 +234,9 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.hasPermission("MANAGE_CHANNELS");
+					return this.isThread()
+						? this.hasPermission("MANAGE_THREADS")
+						: this.hasPermission("MANAGE_CHANNELS");
 				},
 				icon: {
 					css: "svg-delete",
@@ -421,7 +449,96 @@ class Channel extends SnowFlake {
 				},
 				times,
 			);
-			if (this.type !== 4) {
+			const arcTimes = [60, 60 * 24, 60 * 24 * 3, 60 * 24 * 7];
+			form.addSelect(
+				I18n.channel.hideThreads(),
+				"default_auto_archive_duration",
+				["1h", "24h", "3d", "7d"],
+				{
+					defaultIndex: arcTimes.findIndex((_) => _ === (this.defaultAutoArchiveDuration ?? 1440)),
+				},
+				arcTimes,
+			);
+			if (this.isForum()) {
+				form.addText(I18n.forum.settings.editTags());
+				const tags = document.createElement("div");
+				tags.classList.add("forumTagSelect");
+				const tagSet = new Set<string>();
+				const makeTagHTML = (tag: Tag) => {
+					tagSet.add(tag.id);
+					let html = tag.makeHTML();
+					html.onclick = () => {
+						const d = new Dialog(I18n.forum.settings.editTag());
+						const f = d.options.addForm(
+							"",
+							(_, obj) => {
+								tag.update(obj as tagjson);
+								const newhtml = tag.makeHTML();
+								html.parentNode?.insertBefore(newhtml, html);
+								html.remove();
+								newhtml.onclick = html.onclick;
+								html = newhtml;
+								d.hide();
+							},
+							{
+								fetchURL: this.info.api + "/channels/" + this.id + "/tags/" + tag.id,
+								method: "PUT",
+								headers: this.headers,
+							},
+						);
+						f.addTextInput(I18n.forum.settings.tagName(), "name", {
+							initText: tag.name,
+						});
+						f.addCheckboxInput(I18n.forum.settings.moderated(), "moderated", {
+							initState: tag.moderated,
+						});
+						f.addButtonInput("", I18n.forum.settings.delTag(), async () => {
+							const res = await fetch(this.info.api + "/channels/" + this.id + "/tags/" + tag.id, {
+								method: "DELETE",
+								headers: this.headers,
+							});
+							if (res.ok) {
+								d.hide();
+								html.remove();
+							}
+						});
+						d.show();
+					};
+					tags.append(html);
+				};
+				for (const tag of this.availableTags) {
+					makeTagHTML(tag);
+				}
+				form.addHTMLArea(tags);
+				form.addButtonInput("", I18n.forum.settings.addTag(), () => {
+					const d = new Dialog(I18n.forum.settings.editTag());
+					const f = d.options.addForm(
+						"",
+						(json) => {
+							const channel = json as channeljson;
+							if (!channel.available_tags) return;
+							const dontHave = channel.available_tags.filter((_) => !tagSet.has(_.id));
+							for (const tagJson of dontHave) {
+								makeTagHTML(new Tag(tagJson, this));
+							}
+							d.hide();
+						},
+						{
+							fetchURL: this.info.api + "/channels/" + this.id + "/tags",
+							method: "POST",
+							headers: this.headers,
+						},
+					);
+					f.addTextInput(I18n.forum.settings.tagName(), "name", {
+						initText: "",
+					});
+					f.addCheckboxInput(I18n.forum.settings.moderated(), "moderated", {
+						initState: false,
+					});
+					d.show();
+				});
+			}
+			if (this.type !== 4 && !this.isThread() && !this.isForum()) {
 				const options = ["voice", "text", "announcement"] as const;
 				form.addSelect(
 					"Type:",
@@ -442,23 +559,26 @@ class Channel extends SnowFlake {
 				});
 			}
 		}
-		const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
+		if (!this.isThread()) {
+			const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
 
-		(async () => {
-			const list = await Promise.all(
-				this.permission_overwritesar.map(async (_) => {
-					return [await _[0], _[1]] as [Role | User, Permissions];
-				}),
-			);
+			(async () => {
+				const list = await Promise.all(
+					this.permission_overwritesar.map(async (_) => {
+						return [await _[0], _[1]] as [Role | User, Permissions];
+					}),
+				);
 
-			s1.options.push(new RoleList(list, this.guild, this.updateRolePermissions.bind(this), this));
-		})();
+				s1.options.push(
+					new RoleList(list, this.guild, this.updateRolePermissions.bind(this), this),
+				);
+			})();
+			const inviteMenu = settings.addButton(I18n.guild.invites());
+			makeInviteMenu(inviteMenu, this.owner, this.info.api + `/channels/${this.id}/invites`);
 
-		const inviteMenu = settings.addButton(I18n.guild.invites());
-		makeInviteMenu(inviteMenu, this.owner, this.info.api + `/channels/${this.id}/invites`);
-
-		const webhooks = settings.addButton(I18n.webhooks.base());
-		webhookMenu(this.guild, this.info.api + `/channels/${this.id}/webhooks`, webhooks, this.id);
+			const webhooks = settings.addButton(I18n.webhooks.base());
+			webhookMenu(this.guild, this.info.api + `/channels/${this.id}/webhooks`, webhooks, this.id);
+		}
 
 		settings.show();
 	}
@@ -492,7 +612,7 @@ class Channel extends SnowFlake {
 				}
 				return undefined;
 			},
-			async (id: string): Promise<HTMLElement> => {
+			(id: string): HTMLElement => {
 				//await new Promise(_=>{setTimeout(_,Math.random()*10)})
 				const message = this.messages.get(id);
 				try {
@@ -537,6 +657,9 @@ class Channel extends SnowFlake {
 	memberCount?: number;
 	messageCount?: number;
 	totalMessageSent?: number;
+	availableTags: Tag[] = [];
+	flags!: number;
+	defaultAutoArchiveDuration!: number;
 
 	constructor(json: channeljson | -1, owner: Guild, id: string = json === -1 ? "" : json.id) {
 		super(id);
@@ -550,7 +673,11 @@ class Channel extends SnowFlake {
 		if (json === -1) {
 			return;
 		}
+		this.flags = json.flags || 0;
 		this.memberCount = json.member_count;
+		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
+		this.appliedTags = json.applied_tags || [];
+		this.availableTags = json.available_tags?.map((tag) => new Tag(tag, this)) || [];
 		this.messageCount = json.message_count;
 		this.totalMessageSent = json.total_message_sent;
 		this.owner_id = json.owner_id;
@@ -714,6 +841,9 @@ class Channel extends SnowFlake {
 		if (member.isAdmin()) {
 			return true;
 		}
+		if (this.isThread() && this.parent) {
+			return this.parent.hasPermission(name, member);
+		}
 		if (this.guild.member.commuicationDisabledLeft()) {
 			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 			if (!allowSet.has(name)) {
@@ -755,7 +885,9 @@ class Channel extends SnowFlake {
 				this.addRoleToPerms(role);
 			}
 		}
-		return this.hasPermission("SEND_MESSAGES");
+		return this.isThread()
+			? this.hasPermission("SEND_MESSAGES_IN_THREADS")
+			: this.hasPermission("SEND_MESSAGES");
 	}
 	sortchildren() {
 		this.children.sort((a, b) => {
@@ -851,6 +983,8 @@ class Channel extends SnowFlake {
 		} else if (this.type === 5) {
 			//
 			icon.classList.add("space", "svgicon", this.nsfw ? "svg-announcensfw" : "svg-announce");
+		} else if (this.type === 15) {
+			icon.classList.add("space", "svgicon", this.nsfw ? "svg-forumnsfw" : "svg-forum");
 		} else {
 			console.log(this.type);
 		}
@@ -1000,10 +1134,8 @@ class Channel extends SnowFlake {
 	owner_id?: string;
 	threadVis() {
 		return (
-			(this.member ||
-				this.localuser.channelfocus === this ||
-				this.owner_id === this.localuser.user.id) &&
-			!this.threadData?.archived
+			((this.member || this.owner_id === this.localuser.user.id) && !this.threadData?.archived) ||
+			this.localuser.channelfocus === this
 		);
 	}
 	async moveForDrag(x: number) {
@@ -1136,16 +1268,25 @@ class Channel extends SnowFlake {
 			next.generateMessage();
 		}
 	}
-
+	static lastDragDiv = document.createElement("div");
 	coatDropDiv(div: HTMLDivElement, container: HTMLElement | false = false) {
 		div.style.position = "relative";
 		div.addEventListener("dragenter", (event) => {
 			console.log("enter");
 			event.preventDefault();
 		});
+		const dragDiv = () => {
+			if (Channel.lastDragDiv !== div) {
+				Channel.lastDragDiv.classList.remove("dragTopView");
+				Channel.lastDragDiv.classList.remove("dragBottomView");
+			}
+			Channel.lastDragDiv = div;
+		};
 
 		div.addEventListener("dragover", (event) => {
+			dragDiv();
 			const height = div.getBoundingClientRect().height;
+
 			if (event.offsetY / height < 0.5) {
 				div.classList.add("dragTopView");
 				div.classList.remove("dragBottomView");
@@ -1156,10 +1297,12 @@ class Channel extends SnowFlake {
 			event.preventDefault();
 		});
 		div.addEventListener("dragleave", () => {
+			dragDiv();
 			div.classList.remove("dragTopView");
 			div.classList.remove("dragBottomView");
 		});
 		div.addEventListener("drop", (event) => {
+			dragDiv();
 			div.classList.remove("dragTopView");
 			div.classList.remove("dragBottomView");
 			const that = Channel.dragged[0];
@@ -1797,6 +1940,622 @@ class Channel extends SnowFlake {
 		typebox.addEventListener("keyup", func);
 		command.render(typebox, this);
 	}
+	isForum() {
+		return this.type === 15 || this.type === 16;
+	}
+	async renderThread(update = true) {
+		let div = document.createElement("div");
+		if (update) {
+			const up = async () => {
+				if (!document.contains(div)) {
+					this.updateEvents.delete(up);
+					return;
+				}
+				console.log(this.updateEvents);
+				const c = await this.renderThread(false);
+				if (!c) return;
+				div.after(c);
+				div.remove();
+				div = c;
+			};
+			this.updateEvents.add(up);
+		}
+		div.classList.add("flexttb", "forumPostBody");
+		div.onclick = (e) => {
+			if (e.button === 0) this.getHTML();
+		};
+		Channel.contextmenu.bindContextmenu(div, this, undefined);
+		const tags = document.createElement("div");
+		tags.classList.add("flexltr", "tagDiv");
+		for (const tagid of this.appliedTags) {
+			const tag = this.parent?.availableTags.find((tag) => tag.id === tagid);
+			if (!tag) continue;
+			tags.append(tag.makeHTML());
+		}
+		div.append(tags);
+
+		const title = document.createElement("h3");
+		title.textContent = new MarkDown(this.name).makeHTML().textContent;
+		div.append(title);
+
+		const member =
+			(await this.localuser.getMember(this.owner_id as string, this.guild.id)) ||
+			(await User.resolve(this.owner_id as string, this.localuser));
+		const message = this.localuser.messages.get(this.id);
+
+		const name = document.createElement("span");
+		name.classList.add("forumUsername");
+		name.textContent = (member?.name || I18n.user.deleted()) + ": ";
+
+		const messageContent = document.createElement("span");
+		messageContent.classList.add("messageForumContent");
+		if (message) messageContent.append(message.content.makeHTML());
+		else messageContent.textContent = I18n.message.deleted();
+
+		const mrow = document.createElement("div");
+		mrow.classList.add("flexltr");
+		mrow.append(name, messageContent);
+		div.append(mrow);
+
+		const micon = document.createElement("span");
+		micon.classList.add("svg-frmessage", "svgicon");
+
+		const mcount = document.createElement("span");
+		mcount.textContent = this.messageCount + "";
+
+		const msep = document.createElement("span");
+		msep.classList.add("msep");
+
+		const mtime = document.createElement("span");
+		const updateTime = () => {
+			mtime.textContent = MarkDown.relTime(
+				new Date(
+					this.lastmessageid ? SnowFlake.stringToUnixTime(this.lastmessageid) : this.getUnixTime(),
+				),
+				() => {
+					if (!document.contains(mtime)) return;
+					updateTime();
+				},
+			);
+		};
+		updateTime();
+
+		const lrow = document.createElement("div");
+		lrow.classList.add("forumMessageRow", "flexltr");
+
+		lrow.append(micon, mcount, msep, mtime);
+		div.append(lrow);
+
+		return div;
+	}
+	appliedTags = [] as string[];
+	forumFilters = {
+		sortActive: true,
+		recentFirst: true,
+		tagMatchAll: false,
+		tags: [] as string[],
+	};
+	hasFetchedForForum = false;
+	editTags() {
+		const d = new Dialog(I18n.threads.editTags());
+		if (!this.appliedTags || !this.parent) return;
+		let tagList = [...this.appliedTags];
+		const patchList = () => {
+			fetch(this.info.api + "/channels/" + this.id, {
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({
+					applied_tags: tagList,
+				}),
+			});
+		};
+
+		const tags = document.createElement("div");
+		tags.classList.add("forumTagSelect");
+		for (const tag of this.parent.availableTags.filter(
+			(tag) => !tag.moderated || this.hasPermission("MANAGE_THREADS"),
+		)) {
+			const html = tag.makeHTML();
+			html.onclick = () => {
+				if (tagList.includes(tag.id)) {
+					tagList = tagList.filter((id) => id !== tag.id);
+					html.classList.remove("selected");
+					patchList();
+				} else {
+					tagList.push(tag.id);
+					tagList.sort();
+					html.classList.add("selected");
+					patchList();
+				}
+			};
+			if (tagList.includes(tag.id)) html.classList.add("selected");
+			tags.append(html);
+		}
+		const opt = d.options;
+		opt.addHTMLArea(tags);
+		d.show();
+	}
+	async fetchForum() {
+		const arr = (await (
+			await fetch(this.info.api + "/channels/" + this.id + "/post-data", {
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({thread_ids: this.children.map(({id}) => id)}),
+			})
+		).json()) as {
+			threads: Record<string, {first_message: null | messagejson; owner: null | memberjson}>;
+		};
+		for (const [id, {first_message, owner}] of Object.entries(arr.threads)) {
+			const child = this.children.find(({id: cid}) => cid === id);
+			if (!child) continue;
+			if (owner) Member.new(owner, this.guild);
+			if (first_message) {
+				const m = this.localuser.messages.get(first_message.id);
+				if (!m) this.localuser.messages.set(first_message.id, new Message(first_message, child));
+			}
+		}
+		this.hasFetchedForForum = true;
+		return;
+	}
+
+	umap = new Map<string, [number, string]>();
+	search: [string, number, string][] = [];
+	hasAllThreads = false;
+
+	async fetchThreads(text: string, offset: number) {
+		const filters = this.forumFilters;
+		const uid = `${filters.recentFirst}-${filters.sortActive}-${filters.tagMatchAll}-${filters.tags.join("-")}-${text}`;
+		const search = new URLSearchParams([
+			["archived", "true"],
+			["limit", "25"],
+			["sort_by", filters.sortActive ? "last_message_time" : "creation_time"],
+			["sort_order", filters.recentFirst ? "desc" : "asc"],
+			["tag_setting", filters.tagMatchAll ? "match_all" : "match_some"],
+			["offset", offset + ""],
+			["tag", filters.tags.join(",")],
+		]);
+		const res = (await (
+			await fetch(this.info.api + "/channels/" + this.id + "/threads/search?" + search, {
+				headers: this.headers,
+			})
+		).json()) as {
+			threads: channeljson[];
+			members: memberjson[];
+			messages: messagejson[];
+			total_results: number;
+			has_more: boolean;
+		};
+		for (const threadjson of res.threads) {
+			if (this.localuser.channelids.has(threadjson.id)) continue;
+			const thread = new Channel(threadjson, this.guild);
+			this.localuser.channelids.set(threadjson.id, thread);
+			thread.resolveparent();
+		}
+		for (const message of res.messages) {
+			const thread = this.localuser.channelids.get(message.channel_id);
+			if (!thread) continue;
+			const m = this.localuser.messages.get(message.id);
+			if (!m) this.localuser.messages.set(message.id, new Message(message, thread));
+		}
+		for (const member of res.members) {
+			Member.new(member, this.guild);
+		}
+		if (res.has_more) {
+			const lastid = res.threads.at(-1)?.id as string;
+			if (text) {
+				const arr = this.search.find(([id]) => id === uid);
+				if (arr) {
+					arr[1] = offset + 25;
+					arr[2] = lastid;
+				} else {
+					this.search.push([uid, offset + 25, lastid]);
+					if (this.search.length > 200) {
+						this.search.shift();
+					}
+				}
+			} else {
+				this.umap.set(uid, [offset + 25, lastid]);
+			}
+		} else {
+			if (text) {
+				const arr = this.search.find(([id]) => id === uid);
+				if (arr) {
+					arr[1] = offset + 25;
+					arr[2] = "-1";
+				} else {
+					this.search.push([uid, offset + 25, "-1"]);
+					if (this.search.length > 200) {
+						this.search.shift();
+					}
+				}
+			} else {
+				this.umap.clear();
+				this.search = [];
+				this.hasAllThreads = true;
+			}
+		}
+	}
+
+	genCurSort(text: string, offset: number) {
+		const filters = this.forumFilters;
+		text = text.toLowerCase();
+		let match = this.children.filter((thread) => thread.name.toLowerCase().includes(text));
+		const tagSet = new Set(filters.tags);
+		if (tagSet.size)
+			match = match.filter((thread) => {
+				const tags = new Set(thread.appliedTags);
+				if (filters.tagMatchAll) {
+					return tagSet.isSubsetOf(tags);
+				} else {
+					return tags.intersection(tagSet).size;
+				}
+			});
+		match.sort((c1, c2) => {
+			if (filters.sortActive) {
+				return +(Number(c1.lastmessageid || c1.id) > Number(c2.lastmessageid || c2.id)) ^
+					+filters.recentFirst
+					? 1
+					: -1;
+			} else {
+				return +(Number(c1.id) > Number(c2.id)) ^ +filters.recentFirst ? 1 : -1;
+			}
+		});
+		return [match.splice(offset, offset + 24), !!match.at(offset + 25)] as const;
+	}
+
+	async findMatches(text: string, offset: number): Promise<readonly [Channel[], boolean]> {
+		if (this.hasAllThreads) return this.genCurSort(text, offset);
+
+		const filters = this.forumFilters;
+		const uid = `${filters.recentFirst}-${filters.sortActive}-${filters.tagMatchAll}-${filters.tags.join("-")}-${text}`;
+		let offset2 = 0;
+		let lastid = "";
+		if (text) {
+			[, offset2, lastid] = this.search.find(([id]) => id === uid) || ["", 0, ""];
+		} else {
+			[offset2, lastid] = this.umap.get(uid) || [0, ""];
+		}
+
+		if (lastid) {
+			const [list, more] = this.genCurSort(text, offset);
+			for (const elm of list) {
+				if (elm.id === lastid) {
+					await this.fetchThreads(text, offset2);
+					return this.genCurSort(text, offset);
+				}
+			}
+			return [list, more];
+		} else {
+			await this.fetchThreads(text, offset2);
+			return this.genCurSort(text, offset);
+		}
+	}
+
+	async forumSearch(text: string, div: HTMLDivElement) {
+		while (!this.hasFetchedForForum) await this.fetchForum();
+		let offset = 0;
+		const flipPage = async (by: number) => {
+			offset += by;
+			const [match, more] = await this.findMatches(text, 0);
+			await renderDiv(match, more);
+		};
+
+		const renderDiv = async (threads: Channel[], more: boolean) => {
+			div.innerHTML = "";
+
+			const sortRow = document.createElement("div");
+			sortRow.classList.add("flexltr", "forumSortRow");
+			div.append(sortRow);
+
+			const cMenu = new Contextmenu<void, void>("sortAndStuff");
+			const opts = I18n.forum.sortOptions;
+
+			cMenu.addText(opts.sortby.title());
+			cMenu.addButton(
+				opts.sortby.recent(),
+				() => {
+					this.forumFilters.sortActive = true;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.sortActive ? "svg-select" : "svg-noSelect",
+					},
+				},
+			);
+			cMenu.addButton(
+				opts.sortby.posted(),
+				() => {
+					this.forumFilters.sortActive = false;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.sortActive ? "svg-noSelect" : "svg-select",
+					},
+				},
+			);
+			cMenu.addSeperator();
+
+			cMenu.addText(opts.sortOrder.title());
+			cMenu.addButton(
+				opts.sortOrder.recent(),
+				() => {
+					this.forumFilters.recentFirst = true;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.recentFirst ? "svg-select" : "svg-noSelect",
+					},
+				},
+			);
+
+			cMenu.addButton(
+				opts.sortOrder.old(),
+				() => {
+					this.forumFilters.recentFirst = false;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.recentFirst ? "svg-noSelect" : "svg-select",
+					},
+				},
+			);
+			cMenu.addSeperator();
+
+			cMenu.addText(opts.tagMatch.title());
+			cMenu.addButton(
+				opts.tagMatch.some(),
+				() => {
+					this.forumFilters.tagMatchAll = false;
+					flipPage(0);
+				},
+				{
+					icon: {css: this.forumFilters.tagMatchAll ? "svg-noSelect" : "svg-select"},
+				},
+			);
+			cMenu.addButton(
+				opts.tagMatch.all(),
+				() => {
+					this.forumFilters.tagMatchAll = true;
+					flipPage(0);
+				},
+				{
+					icon: {
+						css: this.forumFilters.tagMatchAll ? "svg-select" : "svg-noSelect",
+					},
+				},
+			);
+
+			const sortOptionButton = document.createElement("button");
+			sortOptionButton.textContent = opts.name();
+
+			sortOptionButton.onclick = (e) => {
+				if (e.button !== 0) return;
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				const box = sortOptionButton.getBoundingClientRect();
+				cMenu.makemenu(box.left, box.bottom + 6);
+			};
+
+			const tags = document.createElement("div");
+			tags.classList.add("forumTagSelect");
+
+			const allMenu = new Contextmenu<void, void>("allTagMenu");
+
+			for (const tag of this.availableTags) {
+				const html = tag.makeHTML();
+				if (this.forumFilters.tags.includes(tag.id)) html.classList.add("selected");
+				html.onclick = () => {
+					if (this.forumFilters.tags.includes(tag.id)) {
+						this.forumFilters.tags = this.forumFilters.tags.filter((id) => id !== tag.id);
+					} else {
+						this.forumFilters.tags.push(tag.id);
+						this.forumFilters.tags.sort();
+					}
+					flipPage(0);
+				};
+				tags.append(html);
+				allMenu.addButton(
+					tag.name,
+					() => {
+						if (this.forumFilters.tags.includes(tag.id)) {
+							this.forumFilters.tags = this.forumFilters.tags.filter((id) => id !== tag.id);
+						} else {
+							this.forumFilters.tags.push(tag.id);
+							this.forumFilters.tags.sort();
+						}
+						flipPage(0);
+					},
+					{
+						icon: {css: this.forumFilters.tags.includes(tag.id) ? "svg-select" : "svg-noSelect"},
+					},
+				);
+			}
+
+			const allTags = document.createElement("button");
+			allTags.classList.add("allTagButton");
+			allTags.textContent = I18n.forum.allTags();
+
+			allTags.onclick = (e) => {
+				if (e.button !== 0) return;
+				e.preventDefault();
+				e.stopImmediatePropagation();
+				const box = allTags.getBoundingClientRect();
+				allMenu.makemenu(box.right - window.innerWidth, box.bottom + 6);
+			};
+
+			sortRow.append(sortOptionButton, tags, allTags);
+
+			div.append(...(await Promise.all(threads.map((_) => _.renderThread()))));
+
+			const buttonRow = document.createElement("div");
+			buttonRow.classList.add("flexltr", "forumButtonRow");
+
+			const next = document.createElement("button");
+			next.textContent = I18n.forum.next();
+			next.disabled = !more;
+			if (more) {
+				next.onclick = () => {
+					flipPage(25);
+				};
+			}
+
+			const back = document.createElement("button");
+			back.textContent = I18n.forum.back();
+			back.disabled = !offset;
+			if (offset) {
+				back.onclick = () => {
+					flipPage(-25);
+				};
+			}
+
+			buttonRow.append(back, next);
+			div.append(buttonRow);
+		};
+		await flipPage(0);
+	}
+	renderForum() {
+		(document.getElementById("typediv") as HTMLElement).style.visibility = "hidden";
+		const container = document.createElement("div");
+
+		container.classList.add("messagecontainer", "flexttb", "forumBody");
+		(document.getElementById("scrollWrap") as HTMLElement).append(container);
+		const superContainer = document.createElement("div");
+		superContainer.classList.add("forumHead", "flexttb");
+		const headContainer = document.createElement("div");
+		superContainer.append(headContainer);
+		headContainer.classList.add("flexltr");
+		container.append(superContainer);
+
+		const icon = document.createElement("span");
+		icon.classList.add("svgicon", "svg-search", "forumIcon");
+		headContainer.append(icon);
+
+		const text = document.createElement("input");
+		text.type = "text";
+		text.classList.add("forumSearch");
+		headContainer.append(text);
+		text.placeholder = I18n.forum.creorsear();
+
+		const post = document.createElement("button");
+		post.textContent = I18n.forum.newPost();
+		post.classList.add("newPostForumButton");
+		headContainer.append(post);
+
+		post.onclick = () => {
+			const postF = async () => {
+				if (this.flags & (1 << 4) && !tagList.length) {
+					showError(I18n.forum.errors.tagsReq());
+					return;
+				}
+				const content = md.rawString;
+				if (!content) {
+					showError(I18n.forum.errors.requireText());
+					return;
+				}
+				const res = (await (
+					await fetch(this.info.api + "/channels/" + this.id + "/threads", {
+						method: "POST",
+						headers: this.headers,
+						body: JSON.stringify({
+							name: text.value,
+							applied_tags: tagList,
+							message: {
+								content,
+							},
+						}),
+					})
+				).json()) as channeljson;
+				this.localuser.goToChannel(res.id);
+			};
+			post.onclick = postF;
+			post.textContent = I18n.forum.post();
+			const box = document.createElement("div");
+			box.classList.add("messageEditContainer");
+			const area = document.createElement("div");
+			const sb = document.createElement("div");
+			sb.style.position = "absolute";
+			sb.style.width = "100%";
+			const search = document.createElement("div");
+			search.classList.add("searchOptions", "flexttb");
+			area.classList.add("editMessage");
+			try {
+				area.contentEditable = "plaintext-only";
+			} catch {
+				area.contentEditable = "true";
+			}
+			const md = new MarkDown("", this, {keep: true});
+			area.append(md.makeHTML());
+			area.addEventListener("keyup", (event) => {
+				if (this.localuser.keyup(event)) return;
+			});
+			area.addEventListener("keydown", (event) => {
+				this.localuser.keydown(event);
+			});
+			md.giveBox(area, (str, pre) => {
+				this.localuser.search(search, md, str, pre);
+			});
+			sb.append(search);
+			box.append(sb, area);
+			superContainer.append(box);
+			setTimeout(() => {
+				area.focus();
+				const fun = saveCaretPosition(area, Infinity);
+				if (fun) fun();
+			});
+			box.oncontextmenu = (e) => {
+				e.stopImmediatePropagation();
+			};
+
+			let tagList: string[] = [];
+
+			const tags = document.createElement("div");
+			tags.classList.add("forumTagSelect");
+			for (const tag of this.availableTags.filter(
+				(tag) => !tag.moderated || this.hasPermission("MANAGE_THREADS"),
+			)) {
+				const html = tag.makeHTML();
+				html.onclick = () => {
+					if (tagList.includes(tag.id)) {
+						tagList = tagList.filter((id) => id !== tag.id);
+						html.classList.remove("selected");
+					} else {
+						tagList.push(tag.id);
+						tagList.sort();
+						html.classList.add("selected");
+					}
+				};
+				tags.append(html);
+			}
+			superContainer.append(tags);
+			function showError(text: string) {
+				errorText.textContent = text;
+				setTimeout(() => {
+					errorText.textContent = "";
+				}, 5000);
+			}
+
+			const errorText = document.createElement("span");
+			errorText.classList.add("forumPostError");
+			superContainer.append(errorText);
+		};
+
+		const theadList = document.createElement("div");
+		theadList.classList.add("flexttb", "forumList");
+		container.append(theadList);
+
+		let curidsearch = 0;
+		text.onkeyup = async () => {
+			const thisid = ++curidsearch;
+			await new Promise((res) => setTimeout(res, 120));
+			if (thisid !== curidsearch) return;
+			this.forumSearch(text.value, theadList);
+		};
+		this.forumSearch("", theadList);
+	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
 		if (!this.visible) {
 			this.guild.loadChannel();
@@ -1814,11 +2573,14 @@ class Channel extends SnowFlake {
 			this.curCommand.render(typebox, this);
 		}
 		typebox.style.setProperty("--channel-text", JSON.stringify(I18n.channel.typebox(this.name)));
-		if (!this.curCommand) {
+		if (!this.curCommand && !this.isForum()) {
 			const md = typebox.markdown;
 			md.owner = this;
 			typebox.textContent = this.textSave;
 			md.boxupdate(Infinity);
+		}
+		if (this.isForum()) {
+			typebox.textContent = "";
 		}
 		this.localuser.fileExtange(this.files, this.htmls);
 
@@ -1897,7 +2659,7 @@ class Channel extends SnowFlake {
 				this.localuser.channelfocus = this;
 				prev.parent?.createguildHTML();
 			}
-		} else if (this.localuser.channelfocus === this && !aroundMessage) {
+		} else if (this.localuser.channelfocus === this && !aroundMessage && !this.isForum()) {
 			if (this.lastmessageid)
 				this.infinite.focus(aroundMessage || this.lastmessageid, !!aroundMessage, true);
 			return;
@@ -1921,6 +2683,11 @@ class Channel extends SnowFlake {
 			return;
 		}
 		this.slowmode();
+		this.localuser.getSidePannel();
+		if (this.isForum()) {
+			this.renderForum();
+			return;
+		}
 
 		const prom = this.infinite.delete();
 		if (getMessages) {
@@ -1929,10 +2696,7 @@ class Channel extends SnowFlake {
 			loading.classList.add("loading");
 		}
 		this.rendertyping();
-		this.localuser.getSidePannel();
-		if (this.voice && this.localuser.voiceAllowed) {
-			//this.localuser.joinVoice(this);
-		}
+
 		try {
 			(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
 				? "plaintext-only"
@@ -2289,7 +3053,7 @@ class Channel extends SnowFlake {
 		await this.tryfocusinfinate(id, !!id);
 	}
 	infinitefocus = false;
-	async tryfocusinfinate(id: string | void, falsh = false) {
+	async tryfocusinfinate(id: string | void, flash = false) {
 		if (typeof id === "string" && !this.messages.has(id)) await this.getmessage(id);
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
@@ -2331,7 +3095,7 @@ class Channel extends SnowFlake {
 			elm.remove();
 			console.warn("rouge element detected and removed");
 		}
-		messages.append(await this.infinite.getDiv(id, falsh));
+		messages.append(await this.infinite.getDiv(id, flash));
 		/*
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
@@ -2342,6 +3106,7 @@ class Channel extends SnowFlake {
 			this.infinite.focus(id, falsh, true);
 		});
 		*/
+		await this.focus(id, flash);
 		loading.classList.remove("loading");
 		//this.infinite.focus(id.id,false);
 	}
@@ -2381,14 +3146,18 @@ class Channel extends SnowFlake {
 	}
 	nameSpan = new WeakRef(document.createElement("span") as HTMLElement);
 	updateChannel(json: channeljson) {
-		console.trace("trace me");
 		this.type = json.type;
+		if (json.flags !== undefined) this.flags = json.flags;
 		this.name = json.name;
 		this.owner_id = json.owner_id;
 		this.icon = json.icon;
+		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
 		this.renderIcon();
 		this.threadData = json.thread_metadata;
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
+		this.appliedTags = json.applied_tags || this.appliedTags;
+		this.availableTags =
+			json.available_tags?.map((tag) => new Tag(tag, this)) || this.availableTags;
 		this.slowmode();
 
 		const span = this.nameSpan.deref();
@@ -2446,6 +3215,7 @@ class Channel extends SnowFlake {
 		console.log(pchange, nchange);
 		this.topic = json.topic;
 		this.nsfw = json.nsfw;
+		this.fireEvents();
 	}
 	croleUpdate: (role: Role | User, perm: Permissions, added: boolean) => unknown = () => {};
 	typingstart() {
@@ -3013,6 +3783,7 @@ class Channel extends SnowFlake {
 				setTimeout(() => this.goToBottom());
 			}
 		}
+		this.fireEvents();
 
 		if (messagez.author === this.localuser.user) {
 			return;

@@ -335,6 +335,7 @@ class Localuser {
 	unknownRead = new Map<string, readStateEntry>();
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
+		this.errorBackoff = 0;
 		this.queryBlog();
 		this.guildFolders = ready.d.user_settings.guild_folders;
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
@@ -680,6 +681,7 @@ class Localuser {
 	relationshipsUpdate = () => {};
 	rights: Rights;
 	updateRights(rights: string | number) {
+		if (this.rights.isSameAs(rights)) return;
 		this.rights.update(rights);
 		this.perminfo.user.rights = rights;
 	}
@@ -788,6 +790,7 @@ class Localuser {
 					}
 					break;
 				case "CHANNEL_CREATE":
+				case "THREAD_CREATE":
 					if (this.initialized) {
 						this.createChannel(temp.d);
 					}
@@ -1199,6 +1202,11 @@ class Localuser {
 		}
 	}
 	createChannel(json: channeljson): undefined | Channel {
+		const c = this.channelids.get(json.id);
+		if (c) {
+			c.updateChannel(json);
+			return c;
+		}
 		json.guild_id ??= "@me";
 		const guild = this.guildids.get(json.guild_id);
 		if (!guild) return;
@@ -4444,6 +4452,28 @@ class Localuser {
 			["Twemoji-16.0.1.ttf", "Twemoji"],
 			["BlobmojiCompat.ttf", "Blobmoji"],
 		] as const;
+	}
+	getMemberMap = new Map<string, Promise<Member | undefined>>();
+	async getMember(id: string, guildid: string): Promise<Member | undefined> {
+		const user = this.userMap.get(id);
+		const guild = this.guildids.get(guildid) as Guild;
+		if (user) {
+			const memb = user.members.get(guild);
+			if (memb) return memb;
+		}
+		const uid = id + "-" + guildid;
+		const prom = this.getMemberMap.get(uid);
+		if (prom) return prom;
+		const prom2 = new Promise<Member | undefined>(async (res) => {
+			const json = await this.resolvemember(id, guildid);
+			if (!json) {
+				res(undefined);
+				return;
+			}
+			res(Member.new(json, guild));
+		});
+		this.getMemberMap.set(uid, prom2);
+		return prom2;
 	}
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
 		if (guildid === "@me") {

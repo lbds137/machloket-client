@@ -166,6 +166,25 @@ class Seperator<x, y> implements menuPart<x, y> {
 		}
 	}
 }
+
+class ContextMenuText<x, y> implements menuPart<x, y> {
+	private visible?: (obj1: x, obj2: y) => boolean;
+	group?: string;
+	text: string;
+	constructor(text: string, visible?: (obj1: x, obj2: y) => boolean, group?: string) {
+		this.visible = visible;
+		this.group = group;
+		this.text = text;
+	}
+	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement): void {
+		if (!this.visible || this.visible(obj1, obj2)) {
+			const span = document.createElement("span");
+			span.textContent = this.text;
+			menu.append(span);
+		}
+	}
+}
+
 declare global {
 	interface HTMLElementEventMap {
 		layered: LayeredEvent;
@@ -242,10 +261,15 @@ class Contextmenu<x, y> {
 			group?: string;
 		} = {},
 	) {
-		this.buttons.push(new ContextButton(text, onClick, addProps));
+		const button = new ContextButton(text, onClick, addProps);
+		this.buttons.push(button);
+		return button;
 	}
 	addSeperator(visible?: (obj1: x, obj2: y) => boolean, group?: string) {
 		this.buttons.push(new Seperator(visible, group));
+	}
+	addText(text: string, visible?: (obj1: x, obj2: y) => boolean, group?: string) {
+		this.buttons.push(new ContextMenuText(text, visible, group));
 	}
 	addGroup(
 		group: string,
@@ -287,7 +311,12 @@ class Contextmenu<x, y> {
 		} else {
 			div.style.bottom = y * -1 + "px";
 		}
-		div.style.left = x + "px";
+		if (x > 0) {
+			div.style.left = x + "px";
+		} else {
+			div.style.right = x * -1 + "px";
+		}
+
 		document.body.appendChild(div);
 		Contextmenu.keepOnScreen(div);
 
