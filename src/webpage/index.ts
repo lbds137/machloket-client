@@ -154,7 +154,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		return nonce;
 	}
 	async function handleEnter(event: KeyboardEvent): Promise<void> {
-		if (event.key === "Escape") {
+		if (event.key === "Escape" && (images.length || thisUser.channelfocus?.replyingto)) {
 			while (images.length) {
 				const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
 				if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
@@ -164,6 +164,7 @@ if (window.location.pathname.startsWith("/channels")) {
 				thisUser.channelfocus.replyingto = null;
 				thisUser.channelfocus.makereplybox();
 			}
+			return;
 		}
 		if (thisUser.handleKeyUp(event)) {
 			return;

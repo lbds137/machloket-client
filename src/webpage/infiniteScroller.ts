@@ -111,10 +111,12 @@ class InfiniteScroller {
 			let height = 0;
 			new ResizeObserver((e) => {
 				const nh = e[0].target.getBoundingClientRect().height;
-				if (root.scrollTop - height + nh + 4 > root.scrollHeight - nh) {
-					root.scrollTop += -height + nh;
-				} else if (height) root.scrollTop += height - nh;
-
+				if (height) {
+					if (this.scrollBottom - height + nh < 2) root.scrollTop = root.scrollHeight;
+					else if (root.scrollTop + nh + 6 > root.scrollHeight) root.scrollTop += -height + nh;
+					else root.scrollTop += height - nh;
+					console.log(root.scrollTop + height + 6 - root.scrollHeight);
+				}
 				height = nh;
 			}).observe(root);
 		}
