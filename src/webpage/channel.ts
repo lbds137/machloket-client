@@ -1268,16 +1268,25 @@ class Channel extends SnowFlake {
 			next.generateMessage();
 		}
 	}
-
+	static lastDragDiv = document.createElement("div");
 	coatDropDiv(div: HTMLDivElement, container: HTMLElement | false = false) {
 		div.style.position = "relative";
 		div.addEventListener("dragenter", (event) => {
 			console.log("enter");
 			event.preventDefault();
 		});
+		const dragDiv = () => {
+			if (Channel.lastDragDiv !== div) {
+				Channel.lastDragDiv.classList.remove("dragTopView");
+				Channel.lastDragDiv.classList.remove("dragBottomView");
+			}
+			Channel.lastDragDiv = div;
+		};
 
 		div.addEventListener("dragover", (event) => {
+			dragDiv();
 			const height = div.getBoundingClientRect().height;
+
 			if (event.offsetY / height < 0.5) {
 				div.classList.add("dragTopView");
 				div.classList.remove("dragBottomView");
@@ -1288,10 +1297,12 @@ class Channel extends SnowFlake {
 			event.preventDefault();
 		});
 		div.addEventListener("dragleave", () => {
+			dragDiv();
 			div.classList.remove("dragTopView");
 			div.classList.remove("dragBottomView");
 		});
 		div.addEventListener("drop", (event) => {
+			dragDiv();
 			div.classList.remove("dragTopView");
 			div.classList.remove("dragBottomView");
 			const that = Channel.dragged[0];
