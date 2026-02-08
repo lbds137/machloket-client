@@ -1382,6 +1382,7 @@ class Guild extends SnowFlake {
 			}
 		}
 		for (const thread of json.threads) {
+			if (this.localuser.channelids.has(thread.id)) continue;
 			const temp = new Channel(thread, this);
 			this.localuser.channelids.set(temp.id, temp);
 			temp.resolveparent(this);
