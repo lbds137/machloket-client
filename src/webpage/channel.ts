@@ -141,7 +141,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return !!this.member;
+					return this.isThread() && !!this.member;
 				},
 			},
 		);
@@ -156,7 +156,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return !this.member;
+					return this.isThread() && !this.member;
 				},
 			},
 		);
