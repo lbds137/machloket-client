@@ -337,7 +337,7 @@ class Localuser {
 		await I18n.done;
 		this.errorBackoff = 0;
 		this.channelids.clear();
-		this.userMap.cleare();
+		this.userMap.clear();
 		this.queryBlog();
 		this.guildFolders = ready.d.user_settings.guild_folders;
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
