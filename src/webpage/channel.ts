@@ -1030,7 +1030,6 @@ class Channel extends SnowFlake {
 		});
 		const childrendiv = document.createElement("div");
 		childrendiv.classList.add("channels");
-		if (this.id === "1464809843841561424") console.log(this.children);
 		for (const channel of this.children.filter((_) => !_.isThread() || _.threadVis())) {
 			childrendiv.appendChild(channel.createguildHTML(admin));
 		}

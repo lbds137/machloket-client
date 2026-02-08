@@ -336,6 +336,7 @@ class Localuser {
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
 		this.errorBackoff = 0;
+		this.channelids.clear();
 		this.queryBlog();
 		this.guildFolders = ready.d.user_settings.guild_folders;
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
