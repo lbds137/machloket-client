@@ -44,6 +44,7 @@ import {
 } from "./utils/storage/userPreferences";
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
 import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
+import {PromiseLock} from "./utils/promiseLock.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -4477,6 +4478,7 @@ class Localuser {
 		this.getMemberMap.set(uid, prom2);
 		return prom2;
 	}
+	memberLock = new PromiseLock();
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
 		if (guildid === "@me") {
 			return undefined;
@@ -4484,6 +4486,7 @@ class Localuser {
 		const guild = this.guildids.get(guildid);
 		const borked = true;
 		if (!guild || (borked && guild.member_count > 250)) {
+			const unlock = await this.memberLock.acquireLock();
 			try {
 				const req = await fetch(this.info.api + "/guilds/" + guildid + "/members/" + id, {
 					headers: this.headers,
@@ -4494,6 +4497,8 @@ class Localuser {
 				return await req.json();
 			} catch {
 				return undefined;
+			} finally {
+				unlock();
 			}
 		}
 		let guildmap = this.waitingmembers.get(guildid);
