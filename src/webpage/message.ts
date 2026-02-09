@@ -1095,7 +1095,7 @@ class Message extends SnowFlake {
 			const text = document.createElement("div");
 			build.appendChild(text);
 
-			const m = I18n.message.pin("|||", "???").split("|||");
+			const m = I18n.message.thread("|||", "???").split("|||");
 			if (m.length === 2) text.append(m.shift() as string);
 
 			const username = document.createElement("span");
