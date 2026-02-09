@@ -285,6 +285,7 @@
 	},
 	"guild": {
 		"COMMUNITY": "Apply to join",
+		"disableInvites":"Disable Invites:",
 		"DISCOVERABLE": "Discovery",
 		"INVITES_DISABLED": "Invite only",
 		"adminMenu": {

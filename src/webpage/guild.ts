@@ -627,6 +627,10 @@ class Guild extends SnowFlake {
 				options,
 			);
 
+			form.addCheckboxInput(I18n.guild.disableInvites(), "invDis", {
+				initState: !!this.properties.features.includes("INVITES_DISABLED"),
+			});
+
 			form.addCheckboxInput(I18n.guild["sendrandomwelcome?"](), "s1", {
 				initState: !(this.properties.system_channel_flags & 1),
 			});
@@ -658,6 +662,14 @@ class Guild extends SnowFlake {
 				if (e.features === "DISCOVERABLE") {
 					temp.push("COMMUNITY");
 				}
+				if (e.invDis) {
+					if (!temp.includes("INVITES_DISABLED")) {
+						temp.push("INVITES_DISABLED");
+					}
+				} else {
+					temp = temp.filter((_) => _ !== "INVITES_DISABLED");
+				}
+				delete e.invDis;
 				if (temp.includes("COMMUNITY")) {
 					if (!com) {
 						this.addCommunity(settings, textChannels);
