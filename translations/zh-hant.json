@@ -136,7 +136,54 @@
 		"topic:": "主題：",
 		"typebox": "在$1的訊息",
 		"unmute": "取消噤聲頻道",
-		"voice": "語音"
+		"voice": "語音",
+		"deleteThread": "刪除討論串",
+		"hideThreads": "不活躍後隱藏",
+		"forum": "論壇"
+	},
+	"threads": {
+		"leave": "離開討論串",
+		"join": "加入討論串",
+		"name": "名稱：",
+		"editTags": "編輯標籤"
+	},
+	"forum": {
+		"creorsear": "建立或搜尋貼文",
+		"next": "下一個",
+		"back": "上一個",
+		"newPost": "新貼文",
+		"post": "貼文",
+		"sortOptions": {
+			"sortby": {
+				"title": "排序依",
+				"recent": "最近活躍",
+				"posted": "發布日期"
+			},
+			"sortOrder": {
+				"title": "排序順序",
+				"recent": "最新優先",
+				"old": "較舊優先"
+			},
+			"tagMatch": {
+				"title": "標籤匹配",
+				"some": "部分匹配",
+				"all": "全部匹配"
+			},
+			"name": "排序選項"
+		},
+		"errors": {
+			"tagsReq": "標籤為必需",
+			"requireText": "訊息必須不為空"
+		},
+		"allTags": "全部標籤",
+		"settings": {
+			"editTags": "編輯標籤：",
+			"editTag": "編輯標籤",
+			"tagName": "標籤名稱：",
+			"moderated": "僅允許討論串版主套用標籤：",
+			"addTag": "新增標籤",
+			"delTag": "刪除標籤"
+		}
 	},
 	"channelLink": "# $1",
 	"clientDesc": "客戶端版本：$1 \n\n[加入 Fermi 官方公會]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[協助翻譯 Fermi]（https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc）\n\n[協助開發 Fermi]（https://github.com/MathMan05/Fermi）\n\n[協助維護 Fermi 所依賴的伺服器]（https://github.com/spacebarchat/server）\n\n[閱讀部落格]（https://blog.fermi.chat/）\n\n計算權限：$3",
@@ -556,6 +603,7 @@
 		"timeoutTime": "逾時時間："
 	},
 	"message": {
+		"messages": "$1 則{{PLURAL:$1|訊息}} >",
 		"andMore": "$1，還有更多！",
 		"attached": "已發送附件",
 		"delete": "删除訊息",
@@ -564,9 +612,11 @@
 		"edit": "編輯訊息",
 		"edited": "（已編輯）",
 		"fullMessage": "完整訊息：",
-		"pin": "$1已置頂一則訊息",
+		"pin": "$1已建立一則訊息：$2",
 		"reactedWith": "以$1反應",
 		"reactionAdd": "添加反應",
+		"createThread": "建立討論串",
+		"threadOptions": "討論串選項",
 		"reactions": "查看反應",
 		"reactionsTitle": "反應",
 		"retry": "重新發送錯誤訊息",
@@ -812,6 +862,7 @@
 	"usedFermi": "已使用 Fermi",
 	"user": {
 		"report": "回報使用者",
+		"deleted": "刪除使用者",
 		"reportApp": "回報申請",
 		"addRole": "新增角色",
 		"ban": "禁止成員",

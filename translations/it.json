@@ -48,11 +48,26 @@
 		"selectCatName": "Nome della categoria",
 		"settings": "Impostazioni",
 		"text": "Testo",
-		"voice": "Voce"
+		"voice": "Voce",
+		"hideThreads": "Nascondi dopo inattività"
 	},
 	"threads": {
 		"join": "Unisciti alla discussione",
-		"name": "Nome:"
+		"name": "Nome:",
+		"editTags": "Modifica etichette"
+	},
+	"forum": {
+		"next": "Successivo",
+		"sortOptions": {
+			"sortby": {
+				"posted": "Data di pubblicazione"
+			}
+		},
+		"settings": {
+			"editTag": "Modifica etichetta",
+			"tagName": "Nome etichetta:",
+			"delTag": "Cancella etichetta"
+		}
 	},
 	"commands": {
 		"errorNotValid": "$1 non è una scelta valida per $2",
@@ -267,6 +282,7 @@
 	"uploadFilesText": "Carica i tuoi file qui!",
 	"user": {
 		"report": "Segnala utente",
+		"deleted": "Utente cancellato",
 		"reportApp": "Segnala applicazione",
 		"editServerProfile": "Modifica il profilo della gilda",
 		"remove": "Rimuovi utente",
