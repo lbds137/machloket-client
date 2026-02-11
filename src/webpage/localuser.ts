@@ -2431,7 +2431,8 @@ class Localuser {
 					I18n.localuser["theme:"](),
 					async (_) => {
 						prefs.theme = themes[_] as ThemeOption;
-						await setTheme();
+
+						await setTheme(prefs.theme);
 					},
 					themes,
 					{

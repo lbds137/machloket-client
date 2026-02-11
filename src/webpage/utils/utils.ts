@@ -30,9 +30,10 @@ let instances:
 	  }[]
 	| null = null;
 await setTheme();
-export async function setTheme() {
+export async function setTheme(theme?: string) {
 	const prefs = await getPreferences();
-	document.body.className = prefs.theme + "-theme";
+	document.body.className = (theme || prefs.theme) + "-theme";
+	console.log(theme);
 }
 export function getBulkUsers() {
 	const json = getBulkInfo();
