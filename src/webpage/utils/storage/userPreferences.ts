@@ -28,7 +28,7 @@ export class UserPreferences {
 	locale: string = navigator.language || "en";
 
 	// render settings
-	animateIcons: AnimateTristateValue = AnimateTristateValue.Always;
+	animateIcons: AnimateTristateValue = AnimateTristateValue.OnlyOnHover;
 	animateGifs: AnimateTristateValue = AnimateTristateValue.OnlyOnHover;
 	renderJoinAvatars: boolean = true;
 	theme: ThemeOption = ThemeOption.Dark;
