@@ -105,10 +105,7 @@ export class Discovery {
 		});
 		const json = await res.json();
 		console.log([...json.guilds], json.guilds);
-		//@ts-ignore
-		json.guilds = json.guilds.sort((a, b) => {
-			return b.member_count - a.member_count;
-		});
+
 		content.innerHTML = "";
 		const title = document.createElement("h2");
 		title.textContent = I18n.guild.disoveryTitle(json.guilds.length + "");
