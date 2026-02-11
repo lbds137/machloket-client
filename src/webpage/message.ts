@@ -720,9 +720,6 @@ class Message extends SnowFlake {
 			username.textContent = user.name;
 			user.bind(username, this.guild);
 
-			const line2 = document.createElement("hr");
-			replyline.appendChild(line2);
-			line2.classList.add("reply");
 			replyline.classList.add("flexltr", "replyflex");
 
 			div.appendChild(replyline);
@@ -792,9 +789,6 @@ class Message extends SnowFlake {
 			reply.classList.add("replytext", "ellipsis");
 			replyline.appendChild(reply);
 
-			const line2 = document.createElement("hr");
-			replyline.appendChild(line2);
-			line2.classList.add("reply");
 			replyline.classList.add("flexltr", "replyflex");
 			// TODO: Fix this
 			this.channel.getmessage(this.message_reference.message_id).then((message) => {
