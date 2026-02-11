@@ -1651,7 +1651,7 @@ span.instanceStatus {
 
 /* Loading */
 #loading {
-	z-index: 100;
+	z-index: 110;
 	position: absolute;
 	height: 100%;
 	width: 100%;
@@ -3648,7 +3648,7 @@ fieldset input[type="radio"] {
 	color: var(--primary-text-soft);
 }
 .accountSwitcher {
-	z-index: 102;
+	z-index: 111;
 }
 .accountSwitcher h1 {
 	margin-bottom: 4px;
