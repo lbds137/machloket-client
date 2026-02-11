@@ -853,16 +853,19 @@ class Float {
 }
 class Dialog {
 	float: Float;
+	above = false;
 	get options() {
 		return this.float.options;
 	}
 	background = new WeakRef(document.createElement("div"));
-	constructor(name: string, {ltr = false, noSubmit = true} = {}) {
+	constructor(name: string, {ltr = false, noSubmit = true, goAbove = false} = {}) {
 		this.float = new Float(name, {ltr, noSubmit});
+		this.above = goAbove;
 	}
 	show(hideOnClick = true) {
 		const background = document.createElement("div");
 		background.classList.add("background");
+		if (this.above) background.style.zIndex = "200";
 		if (!hideOnClick) background.classList.add("solidBackground");
 		const center = this.float.generateHTML();
 		center.classList.add("centeritem", "nonimagecenter");
@@ -2029,6 +2032,14 @@ class Form implements OptionsElement<object> {
 								return;
 							}
 						}
+						if (
+							Math.floor(json.code / 100) === 4 &&
+							json.message &&
+							typeof json.message === "string"
+						) {
+							this.showPrimError(json.message);
+							return;
+						}
 						onSubmit(json);
 					});
 			};
@@ -2045,7 +2056,10 @@ class Form implements OptionsElement<object> {
 		}
 		console.warn("needs to be implemented");
 	}
-
+	showPrimError(error: string) {
+		const pop = new PopUp(error, {goAbove: true, buttons: popUpButtonTypes.dismiss});
+		pop.show();
+	}
 	errors(errors: {
 		code: number;
 		message: string;
@@ -2096,6 +2110,27 @@ class Form implements OptionsElement<object> {
 			}, 100);
 		}
 		element.textContent = message;
+	}
+}
+export const enum popUpButtonTypes {
+	ok = 1,
+	dismiss,
+}
+export class PopUp extends Dialog {
+	constructor(message: string, {buttons = popUpButtonTypes.ok, goAbove = false} = {}) {
+		super(message, {goAbove});
+		switch (buttons) {
+			case popUpButtonTypes.ok:
+				this.options.addButtonInput("", I18n.ok(), () => {
+					this.hide();
+				});
+				break;
+			case popUpButtonTypes.dismiss:
+				this.options.addButtonInput("", I18n.dismiss(), () => {
+					this.hide();
+				});
+				break;
+		}
 	}
 }
 class HorizontalRule implements OptionsElement<unknown> {

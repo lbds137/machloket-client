@@ -26,6 +26,8 @@
 		"markRead": "Mark as read",
 		"name": "Direct Messages"
 	},
+	"ok":"Ok",
+	"dismiss":"Dismiss",
 	"UrlGen": "URL generator",
 	"Voice": {
 		"status": {
