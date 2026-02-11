@@ -86,7 +86,9 @@ if (window.location.pathname.startsWith("/channels")) {
 		regSwap(thisUser);
 		thisUser.initwebsocket().then(async () => {
 			thisUser.loaduser();
+			console.warn("huh");
 			await thisUser.init();
+			console.warn("huh2");
 			const loading = document.getElementById("loading") as HTMLDivElement;
 			loading.classList.add("doneloading");
 			loading.classList.remove("loading");

@@ -530,7 +530,9 @@ class Localuser {
 							const temp = JSON.parse(build);
 							build = "";
 							await this.handleEvent(temp);
+
 							if (temp.op === 0 && temp.t === "READY") {
+								console.log("in here?");
 								returny();
 							}
 						} catch {}
@@ -662,6 +664,7 @@ class Localuser {
 						if (this.swapped) return;
 						loaddesc.textContent = I18n.retrying();
 						this.initwebsocket().then(async () => {
+							console.log("FINE ME");
 							this.loaduser();
 							await this.init();
 							const loading = document.getElementById("loading") as HTMLElement;
@@ -675,7 +678,9 @@ class Localuser {
 				);
 			} else loaddesc.textContent = I18n.unableToConnect();
 		});
+		console.log("here?");
 		await promise;
+		console.warn("huh");
 	}
 	interNonceMap = new Map<string, Message>();
 	registerInterNonce(nonce: string, thing: Message) {
@@ -2859,6 +2864,14 @@ class Localuser {
 					this.perminfo.user.disableColors = !t;
 				},
 				{initState: !this.perminfo.user.disableColors},
+			);
+			accessibility.addCheckboxInput(
+				I18n.accessibility.gradientColors(),
+				(t) => {
+					console.log(t);
+					this.perminfo.user.gradientColors = t;
+				},
+				{initState: this.perminfo.user.gradientColors},
 			);
 			accessibility.addCheckboxInput(
 				I18n.channel.allowIcons(),

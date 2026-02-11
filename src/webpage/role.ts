@@ -28,6 +28,7 @@ class Role extends SnowFlake {
 	};
 	constructor(json: rolesjson, owner: Guild) {
 		super(json.id);
+
 		this.headers = owner.headers;
 		this.info = owner.info;
 		for (const thing of Object.keys(json)) {
@@ -36,9 +37,9 @@ class Role extends SnowFlake {
 			}
 			(this as any)[thing] = (json as any)[thing];
 		}
-		this.roleLoad();
 		this.permissions = new Permissions(json.permissions);
 		this.owner = owner;
+		this.roleLoad();
 	}
 	getIcon(): HTMLElement | void {
 		const hover = new Hover(this.name);
@@ -57,10 +58,11 @@ class Role extends SnowFlake {
 		}
 	}
 	getColorStyle(short = false) {
+		const grad = this.localuser.perminfo?.user?.gradientColors as boolean;
 		const [len1, len2, len3] = short
 			? (["", "", ""] as const)
 			: (["30px", "60px", "90px"] as const);
-		if (this.colors) {
+		if (this.colors && !grad) {
 			const prim = this.getColor();
 			if (this.colors.secondary_color) {
 				const second = Role.numberToColor(this.colors.secondary_color);
