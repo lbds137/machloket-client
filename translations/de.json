@@ -4,6 +4,7 @@
 			"Booky",
 			"Brettchenweber",
 			"Byte",
+			"Exil S",
 			"LeoGe25",
 			"McDutchie",
 			"Mrmaffen",
@@ -23,37 +24,39 @@
 		"app": "Zur App",
 		"blog": "Der Fermi-Blog",
 		"home": "Startseite",
-		"listtitle": "Vielleicht wollten Sie zu einem dieser Orte gehen",
+		"listtitle": "Vielleicht wolltest du zu einem dieser Orte gehen",
 		"login": "Anmelden",
-		"report": "Falls Sie diese Seite im Client gefunden haben, melden Sie sie bitte:",
-		"reset": "Passwort-Reset-Seite",
+		"report": "Falls Du diese Seite im Client gefunden hast, melde Sie bitte:",
+		"reset": "Passwort Reset Seite",
 		"title": "Du scheinst dich verirrt zu haben",
-		"whatelse": "Was sollte Ihrer Meinung nach sonst noch geschehen?",
+		"whatelse": "Was sollte deiner Meinung nach sonst noch passieren?",
 		"whereever": "Wo auch immer das sein mag"
 	},
 	"DMs": {
 		"add": "Füge jemanden zu dieser Direktnachricht hinzu",
-		"close": "DM schließen",
-		"copyId": "DM-ID kopieren",
+		"close": "Direktnachricht schließen",
+		"copyId": "Direktnachricht-ID kopieren",
 		"markRead": "Als gelesen markieren",
 		"name": "Direktnachrichten"
 	},
+	"ok": "Okay",
+	"dismiss": "Schließen",
 	"UrlGen": "URL-Generator",
 	"Voice": {
 		"status": {
-			"badWS": "Schlechte Reaktion von WS",
+			"badWS": "Schlechte Reaktion vom Web Socket",
 			"conectionFailed": "Verbindung fehlgeschlagen",
 			"done": "Verbunden",
-			"left": "Hat den Sprachchat verlassen",
-			"makingOffer": "Angebot unterbreiten",
+			"left": "Sprachchat verlassen",
+			"makingOffer": "Angebot",
 			"noSDP": "Kein SDP",
 			"notconnected": "Nicht verbunden",
-			"sendingStreams": "Senden von Audio-Streams",
+			"sendingStreams": "Senden von Audio Streams",
 			"startingRTC": "Start der RTC-Verbindung",
-			"waitingMainWS": "Warten auf Haupt-WS",
+			"waitingMainWS": "Warten auf Haupt-Websocket",
 			"waitingURL": "Warten auf Sprach-URL",
-			"wsAuth": "Wartend auf die Genehmigung von WS",
-			"wsOpen": "Warten auf die Öffnung von WS"
+			"wsAuth": "Wartend auf die Genehmigung von Websocket",
+			"wsOpen": "Warten auf die Öffnung von Websocket"
 		}
 	},
 	"accessibility": {
@@ -65,7 +68,8 @@
 		"name": "Barrierefreiheit",
 		"playGif": "GIFs abspielen auf:",
 		"playIcon": "Animierte Symbole abspielen:",
-		"roleColors": "Rollenfarben deaktivieren"
+		"roleColors": "Rollenfarben deaktivieren",
+		"gradientColors": "Farbverläufe Ausschalten"
 	},
 	"accountNotStart": "Benutzerkonto kann nicht gestartet werden",
 	"add": "Hinzufügen",
@@ -78,28 +82,28 @@
 		"application_guild_subscription": "Hat Premium",
 		"automod": "Verwendet Automod",
 		"bot_commands": "Unterstützt Befehle",
-		"bug_hunter_level_1": "Bug-Jäger Level 1",
-		"bug_hunter_level_2": "Bug-Jäger Level 2",
+		"bug_hunter_level_1": "Bug-Hunter Level 1",
+		"bug_hunter_level_2": "Bug-Hunter Level 2",
 		"certified_moderator": "Moderator",
 		"early_supporter": "Früher Unterstützer",
-		"guild_booster_lvl1": "Geboosteter Server Level 1",
-		"guild_booster_lvl2": "Geboosteter Server Level 2",
-		"guild_booster_lvl3": "Geboosteter Server Level 3",
-		"guild_booster_lvl4": "Geboosteter Server Level 4",
-		"guild_booster_lvl5": "Geboosteter Server Level 5",
-		"guild_booster_lvl6": "Geboosteter Server Level 6",
-		"guild_booster_lvl7": "Geboosteter Server Level 7",
-		"guild_booster_lvl8": "Geboosteter Server Level 8",
+		"guild_booster_lvl1": "Server Boost Level 1",
+		"guild_booster_lvl2": "Server Boost Level 2",
+		"guild_booster_lvl3": "Server Boost Level 3",
+		"guild_booster_lvl4": "Server Boost Level 4",
+		"guild_booster_lvl5": "Server Boost Level 5",
+		"guild_booster_lvl6": "Server Boost Level 6",
+		"guild_booster_lvl7": "Server Boost Level 7",
+		"guild_booster_lvl8": "Server Boost Level 8",
 		"guild_booster_lvl9": "Unterstützt den Server seit einer ganzen Weile",
 		"hypesquad": "Urheberrechtlich geschützte Sache",
 		"hypesquad_house_1": "Tapferkeit",
 		"hypesquad_house_2": "Brillanz",
 		"hypesquad_house_3": "Balance",
-		"legacy_username": "Hat alten Benutzernamen",
+		"legacy_username": "Hat einen alten Benutzernamen",
 		"partner": "Instanzpartner",
 		"premium": "Premium",
 		"quest_completed": "hat eine Quest abgeschlossen",
-		"staff": "Instanzmitarbeiter",
+		"staff": "Instanz-Staff",
 		"verified_developer": "Verifizierter Entwickler"
 	},
 	"bio": "Bio:",
@@ -107,17 +111,17 @@
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Blog-Aktualisierungen:",
-		"desc": "Lesen oder abonnieren Sie den Blog, um über Fermi auf dem Laufenden zu bleiben!",
+		"desc": "Lese oder abonniere den Blog, um über Fermi auf dem Laufenden zu bleiben!",
 		"fermi": "Fermi Blog",
-		"gotoPost": "Zum Beitrag",
-		"wantUpdates": "Möchten Sie wöchentliche Blog-Updates zum aktuellen Stand von Fermi erhalten?"
+		"gotoPost": "Zum Beitrag gehen",
+		"wantUpdates": "Möchtest du wöchentliche Blog-Updates zum aktuellen Stand von Fermi erhalten?"
 	},
 	"bot": "BOT",
-	"botGuilds": "Server, denen der Bot angehört:",
+	"botGuilds": "Server, den der Bot angehört:",
 	"botSettings": "Boteinstellungen",
 	"cancel": "Abbrechen",
 	"channel": {
-		"SlowmodeCool": "Langsamer Abkühlmodus: $1",
+		"SlowmodeCool": "Langsamer Cooldown: $1",
 		"TimeOutCool": "Im Timeout bis: $1",
 		"allowIcons": "Erlaubt benutzerdefinierte Kanal-Icons",
 		"announcement": "Ankündigungen",
@@ -125,7 +129,7 @@
 		"copyIdCat": "Kategorie-ID kopieren",
 		"createCatagory": "Kategorie erstellen",
 		"createChannel": "Kanal erstellen",
-		"creating": "Erstelle Kanal",
+		"creating": "Kanal wird Erstellt",
 		"delete": "Kanal löschen",
 		"deleteCat": "Kategorie löschen",
 		"icon": "Symbol:",
@@ -147,7 +151,54 @@
 		"topic:": "Thema:",
 		"typebox": "Nachricht in $1",
 		"unmute": "Stummschaltung des Kanals aufheben",
-		"voice": "Sprache"
+		"voice": "Sprache",
+		"deleteThread": "Thread Löschen",
+		"hideThreads": "Nach Inaktivität verstecken",
+		"forum": "Forum"
+	},
+	"threads": {
+		"leave": "Thread Verlassen",
+		"join": "Thread Beitreten",
+		"name": "Name:",
+		"editTags": "Tags Beareiten"
+	},
+	"forum": {
+		"creorsear": "Erstelle oder Suche für Posts",
+		"next": "Weiter",
+		"back": "Zurück",
+		"newPost": "Neuer Post",
+		"post": "Post",
+		"sortOptions": {
+			"sortby": {
+				"title": "Sortieren Nach",
+				"recent": "Kürzlich Aktiv",
+				"posted": "Veröffentlichungsdatum"
+			},
+			"sortOrder": {
+				"title": "Sortierungs Ordnung",
+				"recent": "Letzte Zuerst",
+				"old": "Ältere Zuerst"
+			},
+			"tagMatch": {
+				"title": "Tag Übereinstimmungen",
+				"some": "Passende",
+				"all": "Alle Matches"
+			},
+			"name": "Sortierungs Optionen"
+		},
+		"errors": {
+			"tagsReq": "Tags sind erforderlich",
+			"requireText": "Die Nachricht darf nicht leer sein."
+		},
+		"allTags": "Alle Tags",
+		"settings": {
+			"editTags": "Tags Bearbeiten:",
+			"editTag": "Tag Beareiten",
+			"tagName": "Tag Name:",
+			"moderated": "Nur Thread Moderatoren Erlauben Tags anzuwenden:",
+			"addTag": "Tag Hinzufügen",
+			"delTag": "Tag Löschen"
+		}
 	},
 	"channelLink": "# $1",
 	"clientDesc": "Client-Version: $1 \n\n[Tritt der offiziellen Fermi-Server bei]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Hilf, Fermi zu übersetzen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Hilf, Fermi zu entwickeln](https://github.com/MathMan05/Fermi)\n\n[Hilf, den Server zu pflegen, auf den Fermi angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
@@ -155,16 +206,16 @@
 		"errorNotValid": "$1 ist keine gültige Option für $2",
 		"required": "$1 ist ein notwendiger Teil dieses Befehls"
 	},
-	"confirmGuildLeave": "Sicher, dass $1 verlassen werden soll",
+	"confirmGuildLeave": "Sicher, dass du $1 verlassen willst?",
 	"copyLink": "Nachrichten-Id kopieren",
-	"copymessageid": "Nachrichten-Id kopieren",
-	"copyrawtext": "Rohtext kopieren",
+	"copymessageid": "Nachrichten Id kopieren",
+	"copyrawtext": "Text Kopieren",
 	"createAccount": "Konto erstellen",
 	"delete": "Löschen",
-	"deleteConfirm": "Bist du dir sicher, dass das gelöscht werden soll?",
+	"deleteConfirm": "Bist du dir sicher das du das löschen willst?",
 	"devSettings": {
 		"badUser": "Aktiviere die Protokollierung schlechter Benutzer-Einträge, welche bspw. zu viele Informationen senden:",
-		"cache": "Aktivieren des Zwischenspeichern von Karten:",
+		"cache": "Service-Worker-Caching für Kartendateien aktivieren",
 		"cacheDesc": "Die Kartendateien werden trotzdem geladen, so dass sie nur sichergestellt werden, dass sie im Cache sind, wenn ein neues Update veröffentlicht wird.",
 		"captureTrace": "Diese Einstellung weist Fermi an, _trace-Eigenschaften vom Server zu erfassen. Durch die Aktivierung dieser Option kann es vorkommen, dass die progressive JSON-Dekodierung nicht funktioniert (möglicherweise ist ein Neuladen erforderlich).",
 		"clearWellKnowns": "Lade .well-known Einträge neu",
@@ -250,6 +301,7 @@
 	},
 	"guild": {
 		"COMMUNITY": "Beitritt beantragen",
+		"disableInvites": "Einladungen Ausschalten:",
 		"DISCOVERABLE": "Entdecken",
 		"INVITES_DISABLED": "Nur auf Einladung",
 		"adminMenu": {
@@ -484,6 +536,9 @@
 		"password:": "Passwort",
 		"privacyPolcyURL": "Datenschutzerklärung:",
 		"appID": "Anwendungs-ID: $1",
+		"showSecret": "Client Secret Anzeigen",
+		"clientSecret": "Client Secret: $1",
+		"secret": "Secret",
 		"publicAvaliable": "Bot öffentlich einladbar machen?",
 		"refreshPage": "Aktualisieren, um die Anwendung zu übernehmen",
 		"requireCode": "Ist eine Code-Bewilligung erforderlich, um den Bot einzuladen?",
@@ -564,6 +619,7 @@
 		"timeoutTime": "Timeout-Dauer:"
 	},
 	"message": {
+		"messages": "$1 {{PLURAL:$1|Nachricht|Nachrichten}} >",
 		"andMore": "$1, und mehr!",
 		"attached": "Anhang gesendet",
 		"delete": "Nachricht löschen",
@@ -573,8 +629,11 @@
 		"edited": "(bearbeitet)",
 		"fullMessage": "Vollständige Nachricht:",
 		"pin": "$1 hat eine Nachricht angeheftet",
+		"thread": "$1 hat einen neuen Thread erstellt: $2",
 		"reactedWith": "Reagiert mit $1",
 		"reactionAdd": "Reaktion hinzufügen",
+		"createThread": "Thread Erstellen",
+		"threadOptions": "Thread Optionen",
 		"reactions": "Reaktionen ansehen",
 		"reactionsTitle": "Reaktionen",
 		"retry": "Fehlerhafte Nachricht erneut senden",
@@ -820,6 +879,7 @@
 	"usedFermi": "Gebrauch von Fermi",
 	"user": {
 		"report": "Nutzer melden",
+		"deleted": "Benutzer Löschen",
 		"reportApp": "Anwendung melden",
 		"addRole": "Rollen hinzufügen",
 		"ban": "Mitglied bannen",

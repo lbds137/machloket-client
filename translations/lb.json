@@ -12,6 +12,7 @@
 	"DMs": {
 		"markRead": "Als gelies markéieren"
 	},
+	"ok": "OK",
 	"Voice": {
 		"status": {
 			"conectionFailed": "Verbindung feelgeschloen",
@@ -62,7 +63,22 @@
 		"settings": "Astellungen",
 		"settingsFor": "Astellunge fir $1",
 		"text": "Text",
-		"topic:": "Theema:"
+		"topic:": "Theema:",
+		"forum": "Forum"
+	},
+	"threads": {
+		"name": "Numm:"
+	},
+	"forum": {
+		"sortOptions": {
+			"sortby": {
+				"title": "Sortéieren no"
+			},
+			"name": "Sortéieroptiounen"
+		},
+		"settings": {
+			"delTag": "Markéierung läschen"
+		}
 	},
 	"commands": {
 		"errorNotValid": "$1 ass kee gültege Choix fir $2"
@@ -245,6 +261,7 @@
 		"reason:": "Grond:"
 	},
 	"message": {
+		"messages": "$1 {{PLURAL:$1|Message|Messagen}} >",
 		"delete": "Message läschen",
 		"deleted": "Geläschte Message",
 		"edit": "Message änneren",
@@ -346,6 +363,7 @@
 	"useTemplate": "$1 als Schabloun benotzen",
 	"useTemplateButton": "Schabloun benotzen",
 	"user": {
+		"deleted": "Geläschte Benotzer",
 		"block": "Benotzer spären",
 		"editServerProfile": "Serverprofil änneren",
 		"invisible": "Onsiichtbar",
