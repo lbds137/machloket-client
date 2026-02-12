@@ -1109,7 +1109,7 @@ textarea {
 }
 .forumHead {
 	width: calc(100% - 12px);
-	background: #00000073;
+	background: var(--dock-bg);
 	padding: 6px;
 	margin: 6px;
 	box-sizing: border-box;
@@ -1196,7 +1196,7 @@ textarea {
 	color: var(--red);
 }
 .forumPostBody {
-	background: #00000075;
+	background: var(--secondary-bg);
 	margin: 4px 12px;
 	padding: 6px;
 	border-radius: 4px;
@@ -2274,6 +2274,10 @@ span.instanceStatus {
 	height: 0;
 	overflow: hidden;
 }
+#replybox:not(:empty) ~ #typediv .outerTypeBox {
+	border-top-right-radius: 0;
+	border-top-left-radius: 0;
+}
 #realbox {
 	padding: 0 16px 28px 16px;
 	position: relative;
@@ -2633,6 +2637,7 @@ span.instanceStatus {
 	max-width: 100%;
 }
 .timestamp {
+	flex: none;
 	margin-left: 6px;
 	font-size: 0.75em;
 	color: var(--primary-text-soft);
