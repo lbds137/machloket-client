@@ -78,20 +78,6 @@ class Message extends SnowFlake {
 		Message.setupcmenu();
 	}
 	static setupcmenu() {
-		Message.contextmenu.addButton(
-			() => I18n.reply(),
-			function (this: Message) {
-				this.channel.setReplying(this);
-			},
-			{
-				icon: {
-					css: "svg-reply",
-				},
-				visible: function () {
-					return !this.ephemeral && this.channel.hasPermission("SEND_MESSAGES");
-				},
-			},
-		);
 		const editTypes = new Set([0, 19]);
 		Message.contextmenu.addButton(
 			() => I18n.message.edit(),
@@ -105,6 +91,20 @@ class Message extends SnowFlake {
 
 				icon: {
 					css: "svg-edit",
+				},
+			},
+		);
+		Message.contextmenu.addButton(
+			() => I18n.reply(),
+			function (this: Message) {
+				this.channel.setReplying(this);
+			},
+			{
+				icon: {
+					css: "svg-reply",
+				},
+				visible: function () {
+					return !this.ephemeral && this.channel.hasPermission("SEND_MESSAGES");
 				},
 			},
 		);

@@ -338,9 +338,13 @@ class Member extends SnowFlake {
 				this.roles = [];
 				for (const strrole of memberjson.roles) {
 					const role = this.guild.roleids.get(strrole);
-					if (!role) continue;
+					if (!role) {
+						console.warn(strrole + " is not in ", this.guild.roleids);
+						continue;
+					}
 					this.roles.push(role);
 				}
+
 				if (!this.user.bot) {
 					const everyone = this.guild.roleids.get(this.guild.id);
 					if (everyone && this.roles.indexOf(everyone) === -1) {
