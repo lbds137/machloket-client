@@ -320,7 +320,7 @@
 		"description:": "Description:",
 		"disoveryTitle": "Guild discovery ($1 {{PLURAL:$1|entry|entries}})",
 		"editingTemplate": "Editing $1",
-		"emptytext": "You're in a weird situation, this guild has no channels!",
+		"emptytext": "How curious, this guild has no channels!?",
 		"emptytitle": "Weird spot",
 		"guilds": "Guilds",
 		"helpTips?": "Send helpful tips for your guild!",
