@@ -4,6 +4,7 @@
 			"0x48fe75df30",
 			"22593",
 			"ExoHyper2026",
+			"Gsdn",
 			"GuoPC",
 			"Key0121",
 			"Pawsdt",
@@ -142,11 +143,42 @@
 		"topic:": "主题：",
 		"typebox": "在$1的消息",
 		"unmute": "取消静音頻道",
-		"voice": "语音"
+		"voice": "语音",
+		"hideThreads": "不活跃时隐藏"
 	},
 	"threads": {
+		"leave": "留下帖子",
 		"join": "加入讨论",
-		"name": "名称："
+		"name": "名称：",
+		"editTags": "编辑标签"
+	},
+	"forum": {
+		"next": "下一步",
+		"newPost": "新帖子",
+		"sortOptions": {
+			"sortby": {
+				"recent": "最近活跃",
+				"posted": "发布日期"
+			},
+			"sortOrder": {
+				"title": "排序顺序"
+			},
+			"tagMatch": {
+				"all": "匹配全部"
+			},
+			"name": "排序选项"
+		},
+		"errors": {
+			"tagsReq": "标签是必需的",
+			"requireText": "消息必须不为空"
+		},
+		"allTags": "所有标签",
+		"settings": {
+			"editTag": "编辑标签",
+			"tagName": "标签名称：",
+			"moderated": "仅允许版主添加标签：",
+			"delTag": "删除标签"
+		}
 	},
 	"channelLink": "# $1",
 	"clientDesc": "客户端版本：$1 \n\n[加入 Fermi 官方公会]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[帮助翻译 Fermi]（https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc）\n\n[帮助开发 Fermi]（https://github.com/MathMan05/Fermi）\n\n[帮助维护 Fermi 所依赖的服务器]（https://github.com/spacebarchat/server）\n\n[阅读博客]（https://blog.fermi.chat/）\n\n计算权限：$3",
@@ -249,6 +281,7 @@
 	},
 	"guild": {
 		"COMMUNITY": "申请加入",
+		"disableInvites": "禁用邀请：",
 		"DISCOVERABLE": "探索",
 		"INVITES_DISABLED": "仅邀請",
 		"adminMenu": {
@@ -566,6 +599,7 @@
 		"timeoutTime": "超时时间："
 	},
 	"message": {
+		"messages": "$1 {{PLURAL:$1|消息}} >",
 		"andMore": "$1，还有更多！",
 		"attached": "已发送附件",
 		"delete": "删除消息",
@@ -574,9 +608,12 @@
 		"edit": "编辑消息",
 		"edited": "（已编辑）",
 		"fullMessage": "完整消息：",
-		"pin": "$1已创建一条讨论消息：$2",
+		"pin": "$1已置顶一条消息",
+		"thread": "$1已创建一条讨论消息：$2",
 		"reactedWith": "以$1反应",
 		"reactionAdd": "添加反应",
+		"createThread": "创建帖子",
+		"threadOptions": "帖子选项",
 		"reactions": "查看反应",
 		"reactionsTitle": "反应",
 		"retry": "重新发送错误消息",
@@ -822,6 +859,7 @@
 	"usedFermi": "已使用 Fermi",
 	"user": {
 		"report": "举报用户",
+		"deleted": "已删除用户",
 		"reportApp": "举报应用程序",
 		"addRole": "添加角色",
 		"ban": "禁止成员",

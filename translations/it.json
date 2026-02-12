@@ -17,6 +17,8 @@
 		"add": "Aggiungi qualcuno a questo DM",
 		"name": "Messaggi diretti"
 	},
+	"ok": "Ok",
+	"dismiss": "Nascondi",
 	"Voice": {
 		"status": {
 			"conectionFailed": "Connessione fallita",
@@ -49,7 +51,8 @@
 		"settings": "Impostazioni",
 		"text": "Testo",
 		"voice": "Voce",
-		"hideThreads": "Nascondi dopo inattività"
+		"hideThreads": "Nascondi dopo inattività",
+		"forum": "Forum"
 	},
 	"threads": {
 		"join": "Unisciti alla discussione",
@@ -58,6 +61,7 @@
 	},
 	"forum": {
 		"next": "Successivo",
+		"back": "Indietro",
 		"sortOptions": {
 			"sortby": {
 				"posted": "Data di pubblicazione"
@@ -282,7 +286,7 @@
 	"uploadFilesText": "Carica i tuoi file qui!",
 	"user": {
 		"report": "Segnala utente",
-		"deleted": "Utente cancellato",
+		"deleted": "Utenza cancellata",
 		"reportApp": "Segnala applicazione",
 		"editServerProfile": "Modifica il profilo della gilda",
 		"remove": "Rimuovi utente",

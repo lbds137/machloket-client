@@ -286,6 +286,7 @@
 	},
 	"guild": {
 		"COMMUNITY": "申請加入",
+		"disableInvites": "停用邀請：",
 		"DISCOVERABLE": "發現",
 		"INVITES_DISABLED": "僅邀請",
 		"adminMenu": {
@@ -612,7 +613,8 @@
 		"edit": "編輯訊息",
 		"edited": "（已編輯）",
 		"fullMessage": "完整訊息：",
-		"pin": "$1已建立一則訊息：$2",
+		"pin": "$1已置頂一則訊息",
+		"thread": "$1已建立一個討論串：$2",
 		"reactedWith": "以$1反應",
 		"reactionAdd": "添加反應",
 		"createThread": "建立討論串",
