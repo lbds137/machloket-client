@@ -394,7 +394,7 @@ dmPermissions.setPermission("USE_VAD", 1);
 class Group extends Channel {
 	users: User[];
 	owner_id?: string;
-	static contextmenu = new Contextmenu<Group, undefined>("channel menu");
+	static groupcontextmenu = new Contextmenu<Group, undefined>("channel menu");
 	static groupMenu = this.makeGroupMenu();
 	static makeGroupMenu() {
 		const menu = new Contextmenu<Group, User>("group menu", true);
@@ -420,16 +420,16 @@ class Group extends Channel {
 	}
 
 	static setupcontextmenu() {
-		this.contextmenu.addButton(
+		this.groupcontextmenu.addButton(
 			() => I18n.DMs.markRead(),
 			function (this: Group) {
 				this.readbottom();
 			},
 		);
 
-		this.contextmenu.addSeperator();
+		this.groupcontextmenu.addSeperator();
 
-		this.contextmenu.addButton(
+		this.groupcontextmenu.addButton(
 			() => I18n.group.edit(),
 			function () {
 				this.edit();
@@ -441,7 +441,7 @@ class Group extends Channel {
 			},
 		);
 
-		this.contextmenu.addButton(
+		this.groupcontextmenu.addButton(
 			() => I18n.DMs.close(),
 			function (this: Group) {
 				this.deleteChannel();
@@ -451,16 +451,16 @@ class Group extends Channel {
 			},
 		);
 
-		this.contextmenu.addButton(
+		this.groupcontextmenu.addButton(
 			() => I18n.DMs.add(),
 			function (this: Group) {
 				this.addPerson();
 			},
 		);
 
-		this.contextmenu.addSeperator();
+		this.groupcontextmenu.addSeperator();
 
-		this.contextmenu.addButton(
+		this.groupcontextmenu.addButton(
 			() => I18n.user.copyId(),
 			function () {
 				navigator.clipboard.writeText(this.users[0].id);
@@ -472,7 +472,7 @@ class Group extends Channel {
 			},
 		);
 
-		this.contextmenu.addButton(
+		this.groupcontextmenu.addButton(
 			() => I18n.DMs.copyId(),
 			function (this: Group) {
 				navigator.clipboard.writeText(this.id);
@@ -590,7 +590,7 @@ class Group extends Channel {
 	}
 	createguildHTML() {
 		const div = document.createElement("div");
-		Group.contextmenu.bindContextmenu(div, this, undefined);
+		Group.groupcontextmenu.bindContextmenu(div, this, undefined);
 		this.html = new WeakRef(div);
 		div.classList.add("flexltr", "liststyle");
 		const myhtml = document.createElement("span");
