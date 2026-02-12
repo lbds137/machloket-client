@@ -514,7 +514,8 @@ class Localuser {
 									since: null, //new Date().getTime()
 									activities: [],
 									afk: false,
-								},
+								}, //TODO think this through, it's just a stupid large number to fix op 8 requests
+								large_threshold: 100000000,
 							},
 						}),
 					);
@@ -4498,7 +4499,8 @@ class Localuser {
 			return undefined;
 		}
 		const guild = this.guildids.get(guildid);
-		const borked = true;
+		//TODO well, maybe think this over, I set the member count and whatnot, maybe for "large enough" guilds I return a member that's filled out blankly unless its needed to be fully resolved, added stuff to identify to make it work
+		const borked = false;
 		if (!guild || (borked && guild.member_count > 250)) {
 			const unlock = await this.memberLock.acquireLock();
 			try {
