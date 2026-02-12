@@ -15,8 +15,8 @@
 	},
 	"@metadata": {
 		"authors": ["MathMan05"],
-		"comment": "Don't know how often I'll update this top part lol",
-		"last-updated": "2024/15/24",
+		"comment": "Don't know how often I'll update this top part lol // Don't worry about it :P - TheGeekn°72",
+		"last-updated": "2026/02/12",
 		"locale": "en"
 	},
 	"DMs": {
@@ -41,7 +41,7 @@
 			"sendingStreams": "Sending audio streams",
 			"startingRTC": "Starting RTC connection",
 			"waitingMainWS": "Waiting for main WS",
-			"waitingURL": "Waiting for voice channel link",
+			"waitingURL": "Waiting for voice URL",
 			"wsAuth": "waiting for WS to authorize",
 			"wsOpen": "Waiting for WS to open"
 		}
@@ -82,7 +82,7 @@
 		"guild_booster_lvl7": "Boosted guild",
 		"guild_booster_lvl8": "Boosted guild",
 		"guild_booster_lvl9": "Boosted guild for quite a while",
-		"hypesquad": "Vibesquad",
+		"hypesquad": "Vibesquad [PLACEHOLDER]",
 		"hypesquad_house_1": "Boldness",
 		"hypesquad_house_2": "Excellence",
 		"hypesquad_house_3": "Equilibrium",
@@ -99,7 +99,7 @@
 		"blog": "Blog",
 		"blogUpdates": "Blog updates:",
 		"desc": "Read or subscribe to the blog for updates on Fermi!",
-		"fermi": "Fermi's Blog",
+		"fermi": "Fermi Blog",
 		"gotoPost": "Go to post",
 		"wantUpdates": "Would you like to get weekly blog updates on the state of Fermi?"
 	},
@@ -278,8 +278,8 @@
 		"pending:": "Pending friend requests:",
 		"removeFriend": "Remove friend"
 	},
-	"goThere": "Yes",
-	"goThereTrust": "Yes, trust domain from now on",
+	"goThere": "Yes, let's go",
+	"goThereTrust": "Yes & trust this domain from now on",
 	"goingToURL": "This hyperlink will send you to $1. Are you sure you want to go there?",
 	"group": {
 		"createdm": "Create DM!",
