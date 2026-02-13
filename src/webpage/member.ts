@@ -69,8 +69,8 @@ class Member extends SnowFlake {
 			return this.banner;
 		}
 		if (this.banner) {
-			return `${this.info.cdn}/banners/${this.guild.id}/${
-				this.banner
+			return `${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/banners/${
+				this.avatar
 			}.${this.banner.startsWith("a_") ? "gif" : "png"}`;
 		} else {
 			return undefined;
