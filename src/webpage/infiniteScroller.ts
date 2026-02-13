@@ -128,7 +128,7 @@ class InfiniteScroller {
 							const nh = elm.target.getBoundingClientRect().height;
 							const height = heights.get(elm.target);
 							if (height && nh) {
-								root.scrollTop -= height - nh;
+								if (!this.atBottom()) root.scrollTop -= height - nh;
 							}
 							heights.set(elm.target, nh);
 						}
@@ -233,12 +233,15 @@ class InfiniteScroller {
 		if (this.backElm.get(last) || !this.backElm.has(last)) return false;
 		return this.scrollBottom < 4;
 	}
+	toBottom() {
+		if (this.div) this.div.scrollTop = this.div.scrollHeight;
+	}
 
 	snapBottom(): () => void {
 		if (this.div && this.atBottom()) {
 			const trigger = this.scrollBottom < 4;
 			return () => {
-				if (this.div && trigger) this.div.scrollTop = this.div.scrollHeight;
+				if (this.div && trigger) this.toBottom;
 			};
 		} else {
 			return () => {};

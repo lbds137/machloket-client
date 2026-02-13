@@ -58,11 +58,12 @@ class Channel extends SnowFlake {
 	set lastreadmessageid(id: string | undefined) {
 		const cur = this.lastreadmessageidint;
 		this.lastreadmessageidint = id;
-		const m = this.messages.get(this.idToPrev.get(cur as string) as string);
+		const m = this.messages.get(this.idToNext.get(cur as string) as string);
 		if (m) {
+			console.log(m);
 			m.generateMessage();
 		}
-		const m2 = this.messages.get(this.idToPrev.get(id as string) as string);
+		const m2 = this.messages.get(this.idToNext.get(id as string) as string);
 		if (m2) {
 			m2.generateMessage();
 		}
@@ -1268,6 +1269,7 @@ class Channel extends SnowFlake {
 		if (next) {
 			next.generateMessage();
 		}
+		this.infinite.toBottom();
 	}
 	static lastDragDiv = document.createElement("div");
 	coatDropDiv(div: HTMLDivElement, container: HTMLElement | false = false) {
