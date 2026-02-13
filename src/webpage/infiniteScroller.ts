@@ -400,7 +400,19 @@ class InfiniteScroller {
 			res();
 		});
 		this.filling = fill;
-		return fill;
+		await fill;
+
+		(async () => {
+			while (true) {
+				if (this.div && this.div.parentElement) {
+					if (this.div.parentElement.clientHeight !== this.div.clientHeight) this.reachesBottom();
+					break;
+				}
+				await new Promise((res) => setTimeout(res, 100));
+			}
+		})();
+
+		return;
 	}
 
 	async focus(id: string, flash = true, sec = false): Promise<void> {
@@ -416,7 +428,7 @@ class InfiniteScroller {
 		if (!div) {
 			await this.clearElms();
 			had = false;
-			const obj = await this.getFromID(id);
+			const obj = this.getFromID(id);
 			scroller.append(obj);
 			div = obj;
 		}
