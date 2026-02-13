@@ -338,6 +338,7 @@ class Localuser {
 		await I18n.done;
 		this.errorBackoff = 0;
 		this.channelids.clear();
+		this.inrelation.clear();
 		this.userMap.clear();
 		this.queryBlog();
 		this.guildFolders = ready.d.user_settings.guild_folders;
