@@ -127,7 +127,7 @@ class InfiniteScroller {
 						for (const elm of e) {
 							const nh = elm.target.getBoundingClientRect().height;
 							const height = heights.get(elm.target);
-							if (height) {
+							if (height && nh) {
 								root.scrollTop -= height - nh;
 							}
 							heights.set(elm.target, nh);
