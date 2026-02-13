@@ -592,7 +592,7 @@ class Guild extends SnowFlake {
 				clear: true,
 				width: 96 * 3,
 				initImg: this.banner
-					? this.info.cdn + "/banner/" + this.id + "/" + this.banner + ".png?size=256"
+					? this.info.cdn + "/banners/" + this.id + "/" + this.banner + ".png?size=256"
 					: "",
 				objectFit: "cover",
 			});

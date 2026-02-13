@@ -1555,7 +1555,7 @@ class User extends SnowFlake {
 	getBannerUrl(): string | undefined {
 		if (this.banner) {
 			if (!this.hypotheticalbanner) {
-				return `${this.info.cdn}/banner/${this.id.replace("#clone", "")}/${this.banner}.png`;
+				return `${this.info.cdn}/banners/${this.id.replace("#clone", "")}/${this.banner}.png`;
 			} else {
 				return this.banner;
 			}

@@ -184,7 +184,7 @@ export class Discovery {
 	getBannerURL(guild: guildjson["properties"]) {
 		return (
 			guild.banner &&
-			createImg(this.info.cdn + "/banner/" + guild.id + "/" + guild.banner + ".png?size=256")
+			createImg(this.info.cdn + "/banners/" + guild.id + "/" + guild.banner + ".png?size=256")
 		);
 	}
 	async confirmJoin(guild: guildjson["properties"]) {
