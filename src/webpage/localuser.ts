@@ -2338,7 +2338,7 @@ class Localuser {
 				},
 				{clear: true, initImg: this.user.getpfpsrc()},
 			);
-			finput.img.children.classList.add("pfp");
+			finput.img.classList.add("pfp");
 			finput.watchForChange((_) => {
 				if (!_) {
 					file = null;
@@ -4766,4 +4766,3 @@ class Localuser {
 	}
 }
 export {Localuser};
-
