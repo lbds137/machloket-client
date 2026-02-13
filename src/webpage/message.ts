@@ -859,7 +859,7 @@ class Message extends SnowFlake {
 			text.classList.add("commentrow", "flexttb");
 			if (combine) {
 				const username = document.createElement("span");
-				username.classList.add("username");
+				username.classList.add("username", "ellipsis");
 				this.author.bind(username, this.guild);
 				const membProm = Member.resolveMember(this.author, this.guild);
 				membProm.then((member) => {
