@@ -3366,6 +3366,7 @@ class Channel extends SnowFlake {
 				await this.tryfocusinfinate();
 			}
 			await this.infinite.addedBottom();
+			this.focus(m.id);
 		}
 
 		return {
