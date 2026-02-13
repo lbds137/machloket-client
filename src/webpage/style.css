@@ -2538,6 +2538,10 @@ span.instanceStatus {
 		object-fit: contain;
 		border-radius: 16px;
 	}
+	&.pfp {
+		border-radius: 50%;
+		overflow: clip;
+	}
 
 	display: flex;
 	justify-content: center;
