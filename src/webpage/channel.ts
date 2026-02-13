@@ -3366,7 +3366,7 @@ class Channel extends SnowFlake {
 				await this.tryfocusinfinate();
 			}
 			await this.infinite.addedBottom();
-			this.focus(m.id);
+			this.focus(m.id, false);
 		}
 
 		return {
@@ -3395,6 +3395,41 @@ class Channel extends SnowFlake {
 				html.remove();
 			},
 		};
+	}
+	async uploadFile(files: globalThis.File[]) {
+		const urls = (await (
+			await fetch(this.info.api + "/channels/" + this.id + "/attachments", {
+				headers: this.headers,
+				body: JSON.stringify({
+					files: files.map((file, index) => {
+						return {
+							file_size: file.size,
+							filename: file.name,
+							id: index + "",
+						};
+					}),
+				}),
+				method: "POST",
+			})
+		).json()) as {
+			attachments: {
+				id: string;
+				upload_url: string;
+				upload_filename: string;
+				original_content_type?: string;
+			}[];
+		};
+		Promise.all(
+			urls.attachments.map(async ({upload_url, id}) => {
+				return await (
+					await fetch(upload_url, {
+						body: files[+id],
+						method: "PUT",
+					})
+				).json();
+			}),
+		);
+		return urls.attachments;
 	}
 	nonces = new Set<string>();
 	lastSentMessage?: Message;
