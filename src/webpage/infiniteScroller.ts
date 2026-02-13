@@ -120,6 +120,20 @@ class InfiniteScroller {
 				height = nh;
 			}).observe(root);
 		}
+		const heights = new WeakMap<Element, number>();
+		const re =
+			"ResizeObserver" in globalThis
+				? new ResizeObserver((e) => {
+						for (const elm of e) {
+							const nh = elm.target.getBoundingClientRect().height;
+							const height = heights.get(elm.target);
+							if (height) {
+								root.scrollTop -= height - nh;
+							}
+							heights.set(elm.target, nh);
+						}
+					})
+				: undefined;
 		//TODO maybe a workarround?
 		const visable = new Set<Element>();
 		this.observer = new IntersectionObserver(
@@ -128,8 +142,10 @@ class InfiniteScroller {
 					if (obv.target instanceof HTMLElement) {
 						if (obv.isIntersecting) {
 							visable.add(obv.target);
+							re?.observe(obv.target);
 						} else {
 							visable.delete(obv.target);
+							re?.unobserve(obv.target);
 						}
 
 						this.heightMap.set(obv.target, obv.boundingClientRect.height);
