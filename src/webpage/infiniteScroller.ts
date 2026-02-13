@@ -241,7 +241,7 @@ class InfiniteScroller {
 		if (this.div && this.atBottom()) {
 			const trigger = this.scrollBottom < 4;
 			return () => {
-				if (this.div && trigger) this.toBottom;
+				if (this.div && trigger) this.toBottom();
 			};
 		} else {
 			return () => {};
