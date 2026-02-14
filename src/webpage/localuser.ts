@@ -3988,13 +3988,13 @@ class Localuser {
 		if (empty) {
 			raw = "";
 		}
-		raw = (start ? original.replace(start, "") : original) + replacewith + raw;
+		raw = (start ? original.replace(start, "") : original) + " " + replacewith + raw;
 
 		typebox.txt = raw.split("");
 		const match = start ? original.match(start) : true;
 		if (match) {
 			typebox.boxupdate(
-				replacewith.length - (match === true ? 0 : match[0].length),
+				replacewith.length - (match === true ? 0 : match[0].length) + 1,
 				false,
 				original.length,
 			);
