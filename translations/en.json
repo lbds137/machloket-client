@@ -439,7 +439,7 @@
 		"inviteLinkCode": "Invite link/code",
 		"inviteMaker": "Invite maker",
 		"invitedBy": "You've been invited by $1",
-		"joinUsing": "Join a guild using an invite link",
+		"joinUsing": "Join a guild using an invite",
 		"loginOrCreateAccount": "Login or create an account ⇌",
 		"longInvitedBy": "$1 invited you to join $2",
 		"maxUses": "Max uses: $1",
@@ -648,7 +648,7 @@
 	"otherAt": "$1 at $2",
 	"permissions": {
 		"descriptions": {
-			"ADMINISTRATOR": "Gives **ALL permissions below** to role members, bypasses **ALL permission overwrites**. Only YOU and members/bots you ***absolutely*** trust should have this DANGEROUS permission!!",
+			"ADMINISTRATOR": "Gives ALL permissions below to role members, bypasses ALL permission overwrites. Only YOU and members/bots you absolutely trust should have this DANGEROUS permission!!",
 			"MANAGE_GUILD": "Allows role members to manage and edit the guild.",
 			"VIEW_AUDIT_LOG": "Allows role members to view the audit log.",
 			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Allows for viewing role subscription insights.",
