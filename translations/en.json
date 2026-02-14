@@ -792,7 +792,6 @@
 			"three": "3",
 			"secondColor": "Secondary color:",
 			"thirdColor": "Tertiary color:"
-			
 		},
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"copyId": "Copy role ID",
