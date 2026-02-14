@@ -94,7 +94,7 @@
 		"verified_developer": "Verified Developer"
 	},
 	"bio": "Bio:",
-	"blankMessage": "Blank Message",
+	"blankMessage": "Blank message",
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Blog updates:",
@@ -124,8 +124,8 @@
 		"markRead": "Mark as read",
 		"mute": "Mute channel",
 		"name": "Channel",
-		"name:": "Name:",
-		"nsfw:": "NSFW:",
+		"name:": "Channel name:",
+		"nsfw:": "NSFW/Mature content warning:",
 		"permissions": "Permissions",
 		"selectCatName": "Name of category",
 		"selectName": "Name of channel",
@@ -146,7 +146,7 @@
 	"threads":{
 		"leave":"Leave thread",
 		"join":"Join thread",
-		"name":"Name:",
+		"name":"Thread name:",
 		"editTags":"Edit tags"
 	},
 	"forum":{
@@ -310,8 +310,8 @@
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"confirmLeave": "Are you sure you want to leave?",
 		"copyId": "Copy guild id",
-		"create": "Create guild",
-		"createFromTemplate": "Guild from template",
+		"create": "Create guild from scratch",
+		"createFromTemplate": "Create guild from template",
 		"createNewTemplate": "Create new template",
 		"creating": "Creating guild",
 		"default": "Default ($1)",
@@ -355,16 +355,16 @@
 		"systemSelect:": "Systems messages channel:",
 		"tempCreatedBy": "Template created by:",
 		"tempUseCount": "Template has been used $1 time{{PLURAL:$1||s}}",
-		"template": "Template:",
-		"templateDesc": "Template Description:",
-		"templateName": "Template Name:",
+		"template": "Template link to build guild from:",
+		"templateDesc": "Template description:",
+		"templateName": "Template name:",
 		"templateNameShort": "Template name must at least be 2 characters long",
 		"templateURL": "Template link: $1",
 		"templates": "Templates",
-		"templcateMetaDesc": "A template allows others to use this guild as a base for their own guilds, it'll copy the channels, roles, and settings of this guild, but not the messages from within the guild, the bots, or the guilds icon.",
+		"templcateMetaDesc": "A template allows others to use this guild as a base for their own guilds: it'll copy the channels, roles and settings of this guild *but* not the messages from within the guild, the bots nor the guilds icon.",
 		"topic:": "Topic:",
 		"unknownRole": "@unknown-role",
-		"viewTemplate": "View Template",
+		"viewTemplate": "View template",
 		"yesDelete": "Yes, I'm sure",
 		"yesLeave": "Yes, I'm sure"
 	},
@@ -381,7 +381,7 @@
 		"box1title": "Fermi is a Spacebar-compatible client seeking to be as good as it can be with many features including:",
 		"box3description": "We always appreciate some help, whether that be in the form of bug reports, or code, or even just pointing out some typos.",
 		"box3title": "Contribute to Fermi",
-		"compatableInstances": "Spacebar-Compatible Instances:",
+		"compatableInstances": "Spacebar-compatible instances:",
 		"createAccount": "Create account",
 		"dobField": "Date of birth:",
 		"emailField": "Email:",
@@ -391,10 +391,10 @@
 		"loadingText": "Fermi is loading",
 		"loginButton": "Login",
 		"noAccount": "Don't have an account?",
-		"openClient": "Open Client",
+		"openClient": "Open client",
 		"pw2Field": "Enter password again:",
 		"pwField": "Password:",
-		"switchaccounts": "Switch Accounts",
+		"switchaccounts": "Switch accounts",
 		"trans": "Translate",
 		"transDesc": "You can help translate Fermi into your own language!",
 		"transTitle": "Translate Fermi",
@@ -402,13 +402,13 @@
 		"welcomeJank": "Welcome to Fermi"
 	},
 	"incorrectURLS": "## This instance has likely sent the incorrect links.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Fermi to automatically try to fix this error to let you connect to the instance?",
-	"instInfo": "Instance Information",
+	"instInfo": "Instance information",
 	"instanceInfo": {
-		"contact": "Email Instance Admins",
-		"frontPage": "[Front Page]($1)",
-		"name": "Instance Info",
+		"contact": "Email instance admins",
+		"frontPage": "[Front page]($1)",
+		"name": "Instance info",
 		"publicUrl": "[Public link]($1)",
-		"tosPage": "[TOS Page]($1)"
+		"tosPage": "[TOS page]($1)"
 	},
 	"instanceStats": {
 		"members": "Members: $1",
@@ -418,14 +418,14 @@
 		"users": "Registered users: $1"
 	},
 	"interactions": {
-		"ephemeralDismiss": "Dismiss Message",
-		"failed": "Interaction Failed",
+		"ephemeralDismiss": "Dismiss message",
+		"failed": "Interaction failed",
 		"nonsence": "The server sent a component of type $1 which does not exist",
 		"notImpl": "Fermi has not implemented component type $1 yet",
 		"onlyYou": "Only you can see this message",
 		"replyline": "Started interaction",
-		"started": "Processing Interaction...",
-		"worked": "Interaction Succeeded"
+		"started": "Processing interaction...",
+		"worked": "Interaction succeeded"
 	},
 	"invite": {
 		"accept": "Accept",
@@ -439,7 +439,7 @@
 		"inviteLinkCode": "Invite link/code",
 		"inviteMaker": "Invite maker",
 		"invitedBy": "You've been invited by $1",
-		"joinUsing": "Join using invite",
+		"joinUsing": "Join a guild using an invite link",
 		"loginOrCreateAccount": "Login or create an account ⇌",
 		"longInvitedBy": "$1 invited you to join $2",
 		"maxUses": "Max uses: $1",
@@ -447,7 +447,7 @@
 		"noAccount": "Create an account to accept the invite",
 		"notFound": "Invite could not be found",
 		"subtext": "to $1 in $2",
-		"used": "Used $1 time{{PLURAL:$1||s}}."
+		"used": "Used $1 time{{PLURAL:$1||s}}:"
 	},
 	"inviteOptions": {
 		"12h": "12 Hours",
@@ -460,10 +460,10 @@
 		"limit": "$1 use{{PLURAL:$1||s}}",
 		"never": "Never",
 		"noLimit": "No limit",
-		"title": "Invite People"
+		"title": "Invite people"
 	},
-	"jankInfo": "Client Information",
-	"leaveGuild": "Leave Guild",
+	"jankInfo": "Client information",
+	"leaveGuild": "Leave guild",
 	"leaving": "You're leaving Spacebar",
 	"loaded": "Loaded",
 	"localuser": {
@@ -475,7 +475,7 @@
 		"PasswordsNoMatch": "Passwords don't match",
 		"TOSURL": "Terms of Service link:",
 		"VoiceWarning": "Are you sure you want to enable this? It's very experimental and is likely to cause issues. (this feature is for devs, please don't enable if you don't know what you're doing)",
-		"accentColor": "Accent color:",
+		"accentColor": "Theme accent color:",
 		"accountSettings": "Account settings",
 		"addBot": "Add bot",
 		"addStatus": "Add status",
@@ -550,7 +550,7 @@
 	},
 	"login": {
 		"allGood": "All good",
-		"checking": "Checking Instance",
+		"checking": "Checking instance",
 		"enterPAgain": "Enter new password again:",
 		"invalid": "Invalid instance, try again",
 		"login": "Login",
@@ -639,7 +639,7 @@
 	"muteDuration": "Unmute in:",
 	"nevermind": "Nevermind",
 	"no": "No",
-	"noEmojiFont": "Use system Emoji",
+	"noEmojiFont": "Use system emojis",
 	"noMessages": "No messages here yet, be the first to say something!",
 	"noPins": "There's nothing for you here... yet",
 	"noStickers": "That's unfortunate, there are no stickers for you to use!",
@@ -648,7 +648,7 @@
 	"otherAt": "$1 at $2",
 	"permissions": {
 		"descriptions": {
-			"ADMINISTRATOR": "Gives ALL permissions below to role members, BYPASSES ALL permission overwrites. This is a DANGEROUS permission!!",
+			"ADMINISTRATOR": "Gives **ALL permissions below** to role members, bypasses **ALL permission overwrites**. Only YOU and members/bots you ***absolutely*** trust should have this DANGEROUS permission!!",
 			"MANAGE_GUILD": "Allows role members to manage and edit the guild.",
 			"VIEW_AUDIT_LOG": "Allows role members to view the audit log.",
 			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Allows for viewing role subscription insights.",
@@ -736,7 +736,7 @@
 			"SEND_MESSAGES": "Send messages",
 			"SEND_MESSAGES_IN_THREADS": "Send messages in threads",
 			"SEND_POLLS": "Create polls",
-			"SEND_TTS_MESSAGES": "Send text-to-speech messages",
+			"SEND_TTS_MESSAGES": "Send Text-To-Speech messages",
 			"SEND_VOICE_MESSAGES": "Send voice messages",
 			"SPEAK": "Speak",
 			"STREAM": "Video",
@@ -787,11 +787,12 @@
 		"color": "Primary color",
 		"colors": {
 			"name": "Color count:",
-			"one": "One",
+			"one": "1",
+			"two": "2",
+			"three": "3",
 			"secondColor": "Secondary color:",
-			"thirdColor": "Tertiary color:",
-			"three": "Three",
-			"two": "Two"
+			"thirdColor": "Tertiary color:"
+			
 		},
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"copyId": "Copy role ID",
@@ -838,7 +839,7 @@
 		"confirmDel": "Are you sure you want to delete this sticker?",
 		"del": "Delete sticker",
 		"desc": "Description",
-		"errEmjMust": "Must include an emoji with your sticker",
+		"errEmjMust": "Must pair an emoji with your sticker",
 		"errFileMust": "Must include an image for your sticker",
 		"image": "Image:",
 		"name": "Name:",
@@ -846,7 +847,7 @@
 		"title": "Stickers",
 		"upload": "Upload stickers"
 	},
-	"submit": "submit",
+	"submit": "Submit",
 	"switchAccounts": "Switch accounts ⇌",
 	"todayAt": "Today at $1",
 	"trace": {
@@ -863,11 +864,11 @@
 	"uploadPfp": "Upload avatar:",
 	"useTemplate": "Use $1 as a template",
 	"useTemplateButton": "Use template",
-	"usedFermi": "send via Fermi",
+	"usedFermi": "sent via Fermi",
 	"user": {
 		"report":"Report user",
 		"deleted":"Deleted user",
-		"reportApp":"Report Application",
+		"reportApp":"Report application",
 		"addRole": "Add roles",
 		"ban": "Ban member",
 		"block": "Block user",
@@ -900,7 +901,7 @@
 	},
 	"userping": {
 		"resolving": "resolving user",
-		"unknown": "@unknown"
+		"unknown": "@unknown-user"
 	},
 	"vc": {
 		"joinForStream": "Join the voice channel to watch",
@@ -920,12 +921,12 @@
 		"areYouSureDelete": "Are you sure you want to delete $1?",
 		"avatar": "Avatar",
 		"base": "Webhooks",
-		"channel": "Channel",
+		"channel": "Webhook outputs to channel:",
 		"copyURL": "Copy webhook link",
 		"createdAt": "Created at $1",
 		"createdBy": "Created by:",
 		"deleteWebhook": "Delete webhook",
-		"name": "Name:",
+		"name": "Webhook name:",
 		"newWebHook": "New webhook",
 		"notFound": "User no longer is in the guild",
 		"sillyDefaults": "Captain Hook\nBillie Hooks\nSpidey bot",
@@ -934,7 +935,7 @@
 		"type1": "Incoming",
 		"type2": "Channel follower",
 		"type3": "Application",
-		"url": "Webhook url: `$1`"
+		"url": "Webhook link: `$1`"
 	},
 	"welcomeMessages": "Welcome $1! Nice to see ya!\nHello, nice to meet you $1!\nWelcome, hope you brought pizza $1!",
 	"widget": "Guild widget",
