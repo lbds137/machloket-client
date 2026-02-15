@@ -55,8 +55,8 @@
 		"name": "Accessibility",
 		"playGif": "Play GIFs:",
 		"playIcon": "Play animated icons:",
-		"roleColors": "Disable role colors",
-		"gradientColors":"Disable gradient colors"
+		"roleColors": "Disable role colors:",
+		"gradientColors":"Disable gradient coloring:"
 	},
 	"accountNotStart": "Account unable to start",
 	"add": "Add",
@@ -784,14 +784,14 @@
 	"replyingTo": "Replying to $1",
 	"retrying": "Retrying...",
 	"role": {
-		"color": "Primary color",
+		"color": "First color",
 		"colors": {
 			"name": "Color count:",
-			"one": "unicolor",
-			"two": "bicolor",
-			"three": "tricolor",
-			"secondColor": "Secondary color:",
-			"thirdColor": "Tertiary color:"
+			"one": "1",
+			"two": "2",
+			"three": "3",
+			"secondColor": "Second color:",
+			"thirdColor": "Third color:"
 		},
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"copyId": "Copy role ID",
