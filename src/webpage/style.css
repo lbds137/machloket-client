@@ -2682,7 +2682,7 @@ span .quote:last-of-type .quoteline {
 	border-bottom-left-radius: 2px;
 	border-bottom-right-radius: 2px;
 }
-.quote span {
+.quote > span {
 	display: inline-block;
 	margin-left: 8px;
 }
