@@ -6,7 +6,7 @@
 	},
 	"2faCode": "2FA-Code:",
 	"404": {
-		"404": "404 Säit net fonnt",
+		"404": "Feeler: 404 – Säit net fonnt",
 		"blog": "De Fermi-Blog"
 	},
 	"DMs": {
@@ -64,6 +64,7 @@
 		"settingsFor": "Astellunge fir $1",
 		"text": "Text",
 		"topic:": "Theema:",
+		"hideThreads": "No Inaktivitéit verstoppen",
 		"forum": "Forum"
 	},
 	"threads": {
@@ -130,7 +131,7 @@
 			"owner": "De Besëtzer fannen"
 		},
 		"admins": "Administrateure fannen",
-		"all": "all",
+		"all": "All",
 		"community": "Communautéit",
 		"createNewTemplate": "Nei Schabloun uleeën",
 		"default": "Standard ($1)",
@@ -139,7 +140,7 @@
 		"markRead": "Als gelies markéieren",
 		"memberCount": "$1 {{PLURAL:$1|Member|Memberen}}",
 		"name:": "Numm:",
-		"none": "keng",
+		"none": "Keng",
 		"notifications": "Notifikatiounen",
 		"region:": "Regioun:",
 		"roles": "Rollen",
@@ -150,7 +151,7 @@
 		"template": "Schabloun:",
 		"templateDesc": "Beschreiwung vun der Schabloun:",
 		"templateName": "Numm vun der Schabloun:",
-		"templateURL": "URL vun der Schabloun: $1",
+		"templateURL": "Schablounelink: $1",
 		"templates": "Schablounen",
 		"viewTemplate": "Schabloun weisen",
 		"yesDelete": "Jo, ech si mer sécher",
@@ -300,6 +301,7 @@
 	"profileColor": "Profilfaarf",
 	"pronouns": "Pronomen:",
 	"readableName": "Lëtzebuergesch",
+	"recentEmoji": "Rezent Emojien",
 	"register": {
 		"DOBError": "Gebuertsdatum: $1",
 		"emailError": "E-Mail-Adress: $1",
@@ -309,12 +311,12 @@
 	"remove": "Ewechhuelen",
 	"reply": "Äntweren",
 	"role": {
-		"color": "Faarf",
+		"color": "Primär Faarf",
 		"colors": {
 			"name": "Zuel vu Faarwen:",
 			"one": "Eng",
-			"secondColor": "Zweet Faarf:",
-			"thirdColor": "Drëtt Faarf:",
+			"secondColor": "Sekundär Faarf:",
+			"thirdColor": "Tertiär Faarf:",
 			"three": "Dräi",
 			"two": "Zwou"
 		},
