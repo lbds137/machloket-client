@@ -2,6 +2,7 @@
 	"@metadata": {
 		"authors": [
 			"Amedeo463",
+			"Asteralee",
 			"Beta16",
 			"Dream Indigo",
 			"Slow",
@@ -9,7 +10,7 @@
 		]
 	},
 	"404": {
-		"404": "404 Pagina non trovata",
+		"404": "errore: 404 - Pagina non trovata",
 		"home": "Pagina principale",
 		"login": "Entra"
 	},
@@ -62,6 +63,7 @@
 	"forum": {
 		"next": "Successivo",
 		"back": "Indietro",
+		"post": "Messaggio",
 		"sortOptions": {
 			"sortby": {
 				"posted": "Data di pubblicazione"
@@ -70,6 +72,7 @@
 		"settings": {
 			"editTag": "Modifica etichetta",
 			"tagName": "Nome etichetta:",
+			"addTag": "Aggiungi un'etichetta",
 			"delTag": "Cancella etichetta"
 		}
 	},
@@ -80,7 +83,7 @@
 	"createAccount": "Registrati",
 	"delete": "Cancella",
 	"devSettings": {
-		"reportSystem": "Attiva sistema di segnalazione sperimentale",
+		"reportSystem": "Attiva sistema di segnalazione sperimentale:",
 		"name": "Impostazioni sviluppatore"
 	},
 	"deviceManage": {
@@ -116,15 +119,16 @@
 		"addfriend": "Aggiungi amico",
 		"blocked": "Bloccato",
 		"blockedusers": "Utenti bloccati:",
-		"bu": "Utenza bloccata"
+		"bu": "Utente bloccato",
+		"removeFriend": "Rimuovi amico"
 	},
 	"guild": {
 		"adminMenu": {
 			"ownName": "Proprietario",
 			"permission": "Permessi:"
 		},
-		"report": "Segnala Guild",
-		"all": "tutti",
+		"report": "Segnala gilda",
+		"all": "Tutto",
 		"boostMessage?": "Invia un messaggio quando qualcuno potenzia la tua gilda!",
 		"community": "Comunità",
 		"default": "Predefinito ($1)",
@@ -136,10 +140,10 @@
 		"markRead": "Segna come letto",
 		"name:": "Nome:",
 		"noLeave": "Non importa",
-		"none": "nessuno",
+		"none": "Nessuno",
 		"notifications": "Notifiche",
 		"region:": "Regione:",
-		"sendrandomwelcome?": "Invia un messaggio casuale quando qualcuno si unisce a questa gilda",
+		"sendrandomwelcome?": "Invia un messaggio casuale quando qualcuno si unisce a questa gilda:",
 		"serverName": "Nome della gilda:",
 		"settings": "Impostazioni",
 		"stickWelcomeReact?": "Chiedi ai membri della tua gilda di reagire con un adesivo quando qualcuno si unisce!",
@@ -161,7 +165,7 @@
 	"instInfo": "Informazioni sull'istanza",
 	"instanceInfo": {
 		"name": "Informazioni sull'istanza",
-		"publicUrl": "[URL pubblico]($1)"
+		"publicUrl": "[Link pubblico]($1)"
 	},
 	"instanceStats": {
 		"members": "Membri: $1",
@@ -191,6 +195,7 @@
 	"loaded": "Caricato",
 	"localuser": {
 		"2faCode:": "Codice:",
+		"accountSettings": "Impostazioni utenza",
 		"areYouSureDelete": "Sei sicuro di voler cancellare la tua utenza? Se sì, inserisci la frase $1",
 		"connections": "Connessioni",
 		"deleteAccount": "Cancellazione utenza",
@@ -204,11 +209,12 @@
 		"settings": "Impostazioni",
 		"trace": "Tracciati",
 		"trusted": "Domini attendibili",
-		"updatesYay": "Sono stati trovati aggiornamenti!",
+		"updatesYay": "Aggiornamenti trovati!",
 		"userSettings": "Impostazioni utente"
 	},
 	"login": {
-		"allGood": "Tutto bene"
+		"allGood": "Tutto bene",
+		"invalid": "Istanza non valida, riprova"
 	},
 	"media": {
 		"artist": "Artista: $1",
@@ -219,10 +225,11 @@
 	},
 	"message": {
 		"messages": "$1 {{PLURAL:$1|messaggio|messaggi}} >",
-		"attached": "Inviato un allegato",
+		"attached": "ha inviato un allegato",
 		"report": "Segnala messaggio",
 		"deleted": "Messaggio cancellato",
-		"edited": "(modificato)"
+		"edited": "(modificato)",
+		"reactionsTitle": "Reazioni"
 	},
 	"report": {
 		"back": "Indietro",
@@ -233,13 +240,15 @@
 	},
 	"messageLink": "Messaggio in # $1",
 	"no": "No",
-	"noPins": "Sembra che qui non ci sia niente... per ora",
+	"noPins": "Non c'è niente per te qui...per ora",
 	"otherAt": "$1 alle $2",
 	"permissions": {
 		"descriptions": {
-			"BYPASS_SLOWMODE": "La slowmode non ha più effetto su questo utente",
-			"PIN_MESSAGES": "Consente all'utente di fissare messaggi",
-			"SEND_VOICE_MESSAGES": "Consente l'invio di messaggi vocali"
+			"BYPASS_SLOWMODE": "La modalità lenta non ha più effetto sui membri del ruolo.",
+			"PIN_MESSAGES": "Consente ai membri del ruolo di fissare messaggi.",
+			"MANAGE_EVENTS": "Consente all'utente di modificare/cancellare eventi (esistenti e futuri).",
+			"SEND_VOICE_MESSAGES": "Consente l'invio di messaggi vocali nei canali di testo.",
+			"CREATE_INSTANT_INVITE": "Consente ai membri del ruolo di creare inviti per la gilda."
 		},
 		"readableNames": {
 			"BYPASS_SLOWMODE": "Bypassa la slowmode",
@@ -249,17 +258,24 @@
 			"STREAM": "Video"
 		}
 	},
+	"profile": {
+		"userInfo": "Informazioni utente"
+	},
 	"profileColor": "Colore del profilo",
 	"pronouns": "Pronomi:",
 	"readableName": "Italiano",
 	"register": {
+		"DOBError": "Data di nascita: $1",
 		"register": "Registrati",
 		"usernameError": "Nome utente: $1"
 	},
 	"remove": "Rimuovi",
 	"reply": "Rispondi",
 	"role": {
-		"color": "Colore",
+		"color": "Colore primario",
+		"colors": {
+			"secondColor": "Colore secondario:"
+		},
 		"copyId": "Copia ID ruolo",
 		"displaySettings": "Impostazioni di visualizzazione",
 		"perms": "Autorizzazioni",

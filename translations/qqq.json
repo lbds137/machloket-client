@@ -25,10 +25,10 @@
 	"permissions": {
 		"descriptions": {
 			"CREATE_GUILD_EXPRESSIONS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
-			"DEAFEN_MEMBERS": "To deafen means to temporarily disable your ability to hear any audio from a voice channel, while also muting your own microphone so others cannot hear you. Unlike muting, which only stops others from hearing you, deafening affects both incoming and outgoing audio, completely disabling your participation in the voice channel's audio.",
 			"MANAGE_GUILD_EXPRESSIONS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
-			"USE_EXTERNAL_SOUNDS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
-			"USE_SOUNDBOARD": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear."
+			"DEAFEN_MEMBERS": "To deafen means to temporarily disable your ability to hear any audio from a voice channel, while also muting your own microphone so others cannot hear you. Unlike muting, which only stops others from hearing you, deafening affects both incoming and outgoing audio, completely disabling your participation in the voice channel's audio.",
+			"USE_SOUNDBOARD": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear.",
+			"USE_EXTERNAL_SOUNDS": "The soundboard is a feature that lets you play short audio clips, like sound effects or voice lines, in voice channels for everyone to hear."
 		},
 		"readableNames": {
 			"DEAFEN_MEMBERS": "To deafen means to temporarily disable your ability to hear any audio from a voice channel, while also muting your own microphone so others cannot hear you. Unlike muting, which only stops others from hearing you, deafening affects both incoming and outgoing audio, completely disabling your participation in the voice channel's audio.",
