@@ -3916,7 +3916,7 @@ fieldset input[type="radio"] {
 }
 .flexspace {
 	padding-bottom: 32px;
-	overflow-y: auto;
+	overflow-y: visible;
 	position: relative;
 }
 .flexspace:has(.flexspace) {

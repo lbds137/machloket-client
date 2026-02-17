@@ -319,6 +319,7 @@ class Direct extends Guild {
 							const box = text.input.deref();
 							if (!box) return;
 							box.value = "";
+                            box.placeholder = I18n.friends.requestsent();
 						}
 					},
 					{

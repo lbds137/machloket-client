@@ -263,6 +263,7 @@
 	"friends": {
 		"addfriend": "Add friend",
 		"addfriendpromt": "Add friends by username:",
+        "requestsent": "Request sent!",
 		"all": "All",
 		"all:": "All friends:",
 		"blocked": "Blocked",
