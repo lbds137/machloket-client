@@ -4304,6 +4304,11 @@ fieldset input[type="radio"] {
 		margin-left: 12px;
 		margin-right: 12px;
 	}
+	.pinnedMessages {
+		box-sizing: border-box;
+		left: 8px;
+		width: calc(100% - 16px);
+	}
 	.contextmenu,
 	.profile,
 	.emojiPicker,
@@ -4319,9 +4324,16 @@ fieldset input[type="radio"] {
 			0 0 14px var(--shadow),
 			0 0 28px var(--shadow);
 	}
+	.contextmenu hr {
+		width: calc(100% - 24px);
+	}
 	.contextbutton {
 		width: 100%;
 		padding: 12px;
+		.svgicon {
+			top: 10px;
+			right: 12px;
+		}
 	}
 	.profile {
 		height: 65%;
