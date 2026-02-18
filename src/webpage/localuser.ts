@@ -835,7 +835,7 @@ class Localuser {
 						const guildy = new Guild(temp.d, this, this.user);
 						this.guilds.push(guildy);
 						this.guildids.set(guildy.id, guildy);
-						const divy = guildy.generateGuildIcon();
+						const divy = this.makeGuildIcon(guildy);
 						guildy.HTMLicon = divy;
 						(document.getElementById("servers") as HTMLDivElement).insertBefore(
 							divy,
