@@ -1700,12 +1700,17 @@ class Guild extends SnowFlake {
 				await fetch(this.info.api + "/channels/" + threadId, {
 					headers: this.headers,
 				})
-			).json()) as channeljson;
-			const channel = new Channel(channelJson, this);
-			this.localuser.channelids.set(channel.id, channel);
-			channel.resolveparent(this);
-			const par = this.localuser.channelids.get(channel.parent_id as string);
-			par?.createguildHTML();
+			).json());
+            if(channelJson.code == 200){
+                const channel = new Channel(channelJson as channeljson, this);
+                this.localuser.channelids.set(channel.id, channel);
+                channel.resolveparent(this);
+                const par = this.localuser.channelids.get(channel.parent_id as string);
+                par?.createguildHTML();
+            } else {
+                this.loadChannel();
+            }
+			
 		}
 		this.localuser.goToChannel(threadId);
 	}
