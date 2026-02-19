@@ -26,7 +26,7 @@
 		"markRead": "पठित चिह्नित करें",
 		"name": "प्रत्यक्ष संदेश"
 	},
-	"UrlGen": "URL जनरेटर",
+	"UrlGen": "बॉट आमंत्रण जनरेटर",
 	"Voice": {
 		"status": {
 			"badWS": "WS की ओर से खराब उत्तर",
@@ -80,9 +80,9 @@
 		"guild_booster_lvl8": "गिल्ड को बूस्ट किया है",
 		"guild_booster_lvl9": "काफी समय तक गिल्ड को बूस्ट किया है",
 		"hypesquad": "कॉपीराइट की हुई चीज़",
-		"hypesquad_house_1": "वीरता",
-		"hypesquad_house_2": "प्रतिभा",
-		"hypesquad_house_3": "संतुलन",
+		"hypesquad_house_1": "साहस",
+		"hypesquad_house_2": "उत्कृष्टता",
+		"hypesquad_house_3": "साम्यावस्था",
 		"legacy_username": "पुराना उपयोगकर्ता नाम है",
 		"partner": "इंस्टैंस सहभागी",
 		"premium": "प्रीमियम",
@@ -211,7 +211,7 @@
 		"pending:": "लंबित दोस्ती के अनुरोध:",
 		"removeFriend": "दोस्त हटाएँ"
 	},
-	"goThere": "वहाँ जाएँ",
+	"goThere": "हाँ, चलो चलें",
 	"guild": {
 		"all": "सभी",
 		"name:": "नाम:",

@@ -158,9 +158,9 @@
 	},
 	"threads": {
 		"leave": "Thread verlassen",
-		"join": "Thread Beitreten",
+		"join": "Thread beitreten",
 		"name": "Name:",
-		"editTags": "Tags Beareiten"
+		"editTags": "Tags bearbeiten"
 	},
 	"forum": {
 		"creorsear": "Erstelle oder suche Posts",
@@ -170,21 +170,21 @@
 		"post": "Post",
 		"sortOptions": {
 			"sortby": {
-				"title": "Sortieren Nach",
-				"recent": "Kürzlich Aktiv",
+				"title": "Sortieren nach",
+				"recent": "Kürzlich aktiv",
 				"posted": "Veröffentlichungsdatum"
 			},
 			"sortOrder": {
-				"title": "Sortierungs Ordnung",
-				"recent": "Letzte Zuerst",
-				"old": "Ältere Zuerst"
+				"title": "Sortierungsreihenfolge",
+				"recent": "Letzte zuerst",
+				"old": "Ältere zuerst"
 			},
 			"tagMatch": {
-				"title": "Tag Übereinstimmungen",
+				"title": "Tag-Übereinstimmungen",
 				"some": "Passende",
 				"all": "Alle Matches"
 			},
-			"name": "Sortierungs Optionen"
+			"name": "Sortierungsoptionen"
 		},
 		"errors": {
 			"tagsReq": "Tags sind erforderlich",
@@ -192,11 +192,11 @@
 		},
 		"allTags": "Alle Tags",
 		"settings": {
-			"editTags": "Tags Bearbeiten:",
-			"editTag": "Tag Beareiten",
+			"editTags": "Tags bearbeiten:",
+			"editTag": "Tag bearbeiten",
 			"tagName": "Tag-Name:",
 			"moderated": "Nur Thread-Moderatoren erlauben, Tags anzuwenden:",
-			"addTag": "Tag Hinzufügen",
+			"addTag": "Tag hinzufügen",
 			"delTag": "Tag löschen"
 		}
 	},
