@@ -2433,6 +2433,7 @@ class Localuser {
 			});
 		}
 		{
+			const prefs = await getPreferences();
 			const tas = settings.addButton(I18n.localuser.themesAndSounds());
 			{
 				const themes = ["Dark", "WHITE", "Light", "Dark-Accent"];
@@ -2512,7 +2513,6 @@ class Localuser {
 			}
 
 			{
-				const prefs = await getPreferences();
 				tas.addColorInput(
 					I18n.localuser.accentColor(),
 					async (_) => {
@@ -2525,7 +2525,6 @@ class Localuser {
 				);
 			}
 			{
-				const prefs = await getPreferences();
 				const options = [[null, I18n.noEmojiFont()], ...Localuser.fonts] as const;
 				const cur = prefs.emojiFont;
 				let index = options.findIndex((_) => _[1] == cur);
