@@ -30,6 +30,11 @@ class I18n {
 		if (lang !== "en") {
 			translations.push((await (await fetch("/translations/en.json")).json()) as translation);
 		}
+		const en = translations.find(
+			(_) => (_["@metadata"] as translation)?.locale === "en",
+		) as translation;
+		const weirdObj = transForm(en);
+		Object.assign(this, weirdObj);
 		this.lang = lang;
 		this.translations = translations;
 
@@ -137,43 +142,20 @@ if (storage) {
 	await setPreferences(prefs);
 }
 I18n.create(userLocale);
-function makeWeirdProxy(obj: [string, translation | void] = ["", undefined]) {
-	return new Proxy(obj, {
-		get: (target, input) => {
-			if (target[0] === "" && input in I18n) {
-				//@ts-ignore
-				return I18n[input];
-			} else if (typeof input === "string") {
-				let translations = obj[1];
-
-				if (!translations) {
-					//Really weird way to make sure I get english lol
-					translations = I18n.translations[I18n.translations.length - 1];
-					obj[1] = translations;
-				}
-				if (!translations) {
-					return;
-				}
-
-				const value = translations[input];
-				if (value) {
-					let path = obj[0];
-					if (path !== "") {
-						path += ".";
-					}
-					path += input;
-					if (typeof value === "string") {
-						return (...args: string[]) => {
-							return I18n.getTranslation(path, ...args);
-						};
-					} else {
-						return makeWeirdProxy([path, value]);
-					}
-				}
-			}
-		},
-	});
+function transForm(inobj: translation, path: string = "") {
+	const obj: Record<string, any> = {};
+	for (const [key, value] of Object.entries(inobj)) {
+		if (typeof value === "string") {
+			obj[key] = (...args: string[]) => {
+				return I18n.getTranslation((path ? path + "." : path) + key, ...args);
+			};
+		} else {
+			obj[key] = transForm(value, (path ? path + "." : path) + key);
+		}
+	}
+	return obj;
 }
+
 import jsonType from "./../../translations/en.json";
 import {getPreferences, setPreferences} from "./utils/storage/userPreferences";
 type beforeType = typeof jsonType;
@@ -182,5 +164,5 @@ type DoTheThing<T> = {
 	[K in keyof T]: T[K] extends string ? (...args: string[]) => string : DoTheThing<T[K]>;
 };
 
-const proxyClass = makeWeirdProxy() as unknown as typeof I18n & DoTheThing<beforeType>;
-export {proxyClass as I18n, langmap};
+const cast = I18n as unknown as typeof I18n & DoTheThing<beforeType>;
+export {cast as I18n, langmap};
