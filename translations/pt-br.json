@@ -11,10 +11,10 @@
 	},
 	"2faCode": "Código 2FA:",
 	"404": {
-		"404": "404 Página Não Encontrada",
+		"404": "Erro: 404 - Página não encontrada",
 		"app": "Ao aplicativo",
 		"blog": "O Blogue Fermi",
-		"home": "Início",
+		"home": "Menu inicial",
 		"listtitle": "Talvez você quis ir em um desses lugares",
 		"login": "Login",
 		"report": "Se você encontrou essa página dentro do app, por favor, denuncie:",
@@ -30,7 +30,9 @@
 		"markRead": "Marcar como lido",
 		"name": "Mensagens Privadas"
 	},
-	"UrlGen": "Gerador de URL",
+	"ok": "Ok",
+	"dismiss": "Ignorar",
+	"UrlGen": "Gerador de convite do bot",
 	"Voice": {
 		"status": {
 			"badWS": "Resposta ruim do WS",
@@ -51,13 +53,14 @@
 	"accessibility": {
 		"gifSettings": {
 			"always": "Sempre",
-			"hover": "Passar o mouse",
+			"hover": "Ao passar o mouse",
 			"never": "Nunca"
 		},
 		"name": "Acessibilidade",
-		"playGif": "Tocar gifs em:",
-		"playIcon": "Reproduzir ícones animados no:",
-		"roleColors": "Desabilitar cores de cargo"
+		"playGif": "Tocar GIFs:",
+		"playIcon": "Tocar ícones animados:",
+		"roleColors": "Desabilitar cores de cargo",
+		"gradientColors": "Desabilitar cores de gradiente"
 	},
 	"accountNotStart": "Conta falhou ao iniciar",
 	"add": "Adicionar",
@@ -139,7 +142,54 @@
 		"topic:": "Tópico:",
 		"typebox": "Converse em $1",
 		"unmute": "Dessilenciar Canal",
-		"voice": "Voz"
+		"voice": "Voz",
+		"deleteThread": "Apagar tópico",
+		"hideThreads": "Esconder após inatividade",
+		"forum": "Fórum"
+	},
+	"threads": {
+		"leave": "Sair do tópico",
+		"join": "Entrar no tópico",
+		"name": "Nome:",
+		"editTags": "Editar tags"
+	},
+	"forum": {
+		"creorsear": "Crie ou procure por um post",
+		"next": "Próximo",
+		"back": "Anterior",
+		"newPost": "Fazer um novo post",
+		"post": "Postar",
+		"sortOptions": {
+			"sortby": {
+				"title": "Filtrar por",
+				"recent": "Ativo recentemente",
+				"posted": "Data de postagem"
+			},
+			"sortOrder": {
+				"title": "Filtrar ordem",
+				"recent": "Recentes primeiro",
+				"old": "Antigos primeiro"
+			},
+			"tagMatch": {
+				"title": "Tag corresponde",
+				"some": "Corresponde a algumas tags",
+				"all": "Corresponde a todas as tags"
+			},
+			"name": "Opções de filtragem"
+		},
+		"errors": {
+			"tagsReq": "Tags são necessárias",
+			"requireText": "Mensagem não pode estar vazia"
+		},
+		"allTags": "Todas as tags",
+		"settings": {
+			"editTags": "Editar tags:",
+			"editTag": "Editar tag",
+			"tagName": "Nome da tag:",
+			"moderated": "Permitir que somente moderadores de tópicos apliquem tag:",
+			"addTag": "Adicionar uma tag",
+			"delTag": "Apagar tag"
+		}
 	},
 	"channelLink": "# $1",
 	"clientDesc": "Versão do cliente: $1\n\n[Entre na guilda oficial do Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Ajude a traduzir o Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Ajude a criar o Fermi](https://github.com/MathMan05/Fermi)\n\n[Ajude a manter o servidor que o Fermi depende](https://github.com/spacebarchat/server)\n\n[Leia o blog](https://blog.fermi.chat/)\n\nDireitos calculados: $3",
