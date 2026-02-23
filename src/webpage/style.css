@@ -1925,6 +1925,7 @@ span.instanceStatus {
 	font-weight: bold;
 	color: var(--primary-text-prominent);
 }
+
 .cunread {
 	position: relative;
 	color: var(--primary-text-prominent);
@@ -4392,6 +4393,31 @@ fieldset input[type="radio"] {
 	.mobileHidden {
 		transform: translate(100%, 0px);
 	}
+	.outerTypeBox:not(.noConent) {
+		#mobileSend {
+			width: 25px;
+			margin-left: 4px;
+		}
+		#buttonCol {
+			width: 0px;
+		}
+	}
+}
+
+#mobileSend {
+	cursor: pointer;
+	height: 25px;
+	margin: -3px 0px;
+	width: 0px;
+	transition:
+		width 0.2s,
+		margin-left 0.2s;
+	margin-left: 0px;
+}
+#buttonCol {
+	overflow: hidden;
+	width: 44px;
+	transition: width 0.2s;
 }
 .settingsHTMLArea {
 	position: relative;

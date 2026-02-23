@@ -105,7 +105,6 @@ const app = http.createServer(async (req, res) => {
 			res.end();
 		}
 	}
-
 	if (pathstr === "/") {
 		sendFile(path.join(__dirname, "webpage", "index.html"));
 		return;

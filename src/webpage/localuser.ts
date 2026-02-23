@@ -3740,7 +3740,17 @@ class Localuser {
 		const typeMd = typebox.markdown;
 		typeMd.owner = this;
 		typeMd.onUpdate = (str, pre) => {
+			console.log(
+				str,
+				!!str,
+				[...str].map((_) => _.charCodeAt(0)),
+			);
 			this.search(document.getElementById("searchOptions") as HTMLDivElement, typeMd, str, pre);
+			if (str && str !== "\n") {
+				typebox.parentElement!.classList.remove("noConent");
+			} else {
+				typebox.parentElement!.classList.add("noConent");
+			}
 		};
 	}
 	async pinnedClick(rect: DOMRect) {

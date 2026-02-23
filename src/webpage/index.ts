@@ -17,6 +17,7 @@ import "./invite.js";
 import "./oauth2/auth.js";
 import "./audio/page.js";
 import "./404.js";
+import {Channel} from "./channel.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -155,6 +156,74 @@ if (window.location.pathname.startsWith("/channels")) {
 		nonceMap.set(id, nonce);
 		return nonce;
 	}
+	const markdown = new MarkDown("", thisUser);
+	async function sendMessage(channel: Channel, content: string) {
+		if (!channel.canMessageRightNow()) return;
+		if (channel.curCommand) {
+			channel.submitCommand();
+			return;
+		}
+		markdown.onUpdate("", false);
+
+		replyingTo = thisUser.channelfocus ? thisUser.channelfocus.replyingto : null;
+		if (replyingTo?.div) {
+			replyingTo.div.classList.remove("replying");
+		}
+		if (thisUser.channelfocus) {
+			thisUser.channelfocus.replyingto = null;
+			thisUser.channelfocus.makereplybox();
+		}
+		const attachments = images.filter((_) => document.contains(imagesHtml.get(_) || null));
+		while (images.length) {
+			const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
+			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
+		}
+		typebox.innerHTML = "";
+		typebox.markdown.txt = [];
+		try {
+			await new Promise<void>((mres, rej) =>
+				channel.sendMessage(
+					content,
+					{
+						attachments,
+						embeds: [], // Add an empty array for the embeds property
+						replyingto: replyingTo,
+						sticker_ids: [],
+						//nonce: getNonce(channel.id),
+					},
+					(res) => {
+						if (res === "Ok") {
+							mres();
+						} else {
+							rej();
+						}
+					},
+				),
+			);
+		} catch {
+			images = attachments;
+			for (const file of images) {
+				const img = imagesHtml.get(file);
+				if (!img) continue;
+				pasteImageElement.append(img);
+			}
+			channel.replyingto = replyingTo;
+			channel.makereplybox();
+			typebox.textContent = content;
+			typebox.markdown.txt = content.split("");
+			typebox.markdown.boxupdate(Infinity);
+		}
+		nonceMap.delete(channel.id);
+	}
+	const mobileSend = document.getElementById("mobileSend");
+	if (mobileSend) {
+		mobileSend.onclick = () => {
+			const channel = thisUser.channelfocus;
+			if (!channel) return;
+			const content = MarkDown.gatherBoxText(typebox);
+			sendMessage(channel, content);
+		};
+	}
 	async function handleEnter(event: KeyboardEvent): Promise<void> {
 		if (event.key === "Escape" && (images.length || thisUser.channelfocus?.replyingto)) {
 			while (images.length) {
@@ -181,72 +250,19 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 		channel.typingstart();
 
-		if (event.key === "Enter" && !event.shiftKey) {
-			if (!channel.canMessageRightNow()) return;
-			if (channel.curCommand) {
-				channel.submitCommand();
-				return;
-			}
+		if (event.key === "Enter" && !event.shiftKey && window.innerWidth > 600) {
 			event.preventDefault();
-			replyingTo = thisUser.channelfocus ? thisUser.channelfocus.replyingto : null;
-			if (replyingTo?.div) {
-				replyingTo.div.classList.remove("replying");
-			}
-			if (thisUser.channelfocus) {
-				thisUser.channelfocus.replyingto = null;
-				thisUser.channelfocus.makereplybox();
-			}
-			const attachments = images.filter((_) => document.contains(imagesHtml.get(_) || null));
-			while (images.length) {
-				const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
-				if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
-			}
-			typebox.innerHTML = "";
-			typebox.markdown.txt = [];
-			try {
-				await new Promise<void>((mres, rej) =>
-					channel.sendMessage(
-						content,
-						{
-							attachments,
-							embeds: [], // Add an empty array for the embeds property
-							replyingto: replyingTo,
-							sticker_ids: [],
-							//nonce: getNonce(channel.id),
-						},
-						(res) => {
-							if (res === "Ok") {
-								mres();
-							} else {
-								rej();
-							}
-						},
-					),
-				);
-			} catch {
-				images = attachments;
-				for (const file of images) {
-					const img = imagesHtml.get(file);
-					if (!img) continue;
-					pasteImageElement.append(img);
-				}
-				channel.replyingto = replyingTo;
-				channel.makereplybox();
-				typebox.textContent = content;
-				typebox.markdown.txt = content.split("");
-				typebox.markdown.boxupdate(Infinity);
-			}
-			nonceMap.delete(channel.id);
+			await sendMessage(channel, content);
 		}
 	}
 
 	const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-	const markdown = new MarkDown("", thisUser);
+
 	typebox.markdown = markdown;
 	typebox.addEventListener("keyup", handleEnter);
 	typebox.addEventListener("keydown", (event) => {
 		thisUser.keydown(event);
-		if (event.key === "Enter" && !event.shiftKey) {
+		if (event.key === "Enter" && !event.shiftKey && window.innerWidth > 600) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 		}
