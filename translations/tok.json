@@ -9,32 +9,56 @@
 	"404": {
 		"login": "o kama lon sijelo"
 	},
+	"ok": "pona",
+	"bio": "lipu mi:",
+	"bot": "jan ilo",
 	"channel": {
 		"delete": "o weka poki toki",
+		"name:": "nimi:",
+		"text": "lipu",
 		"voice": "kalama"
+	},
+	"threads": {
+		"name": "nimi:"
 	},
 	"copyLink": "pali sin nasin lipu",
 	"copyrawtext": "pali sin lipu",
+	"createAccount": "o pali e sijelo sin",
 	"delete": "o weka",
 	"edit": "o ante",
 	"emoji": {
 		"found": {
-			"this": "sitelen pilin ni li tan poki toki ni."
+			"this": "sitelen Emosi ni la tan ma ni"
 		},
+		"from": "sitelen Emosi ni li tan",
 		"image:": "sitelen:",
-		"name:": "nimi:"
+		"join": "o kama ma",
+		"name:": "nimi:",
+		"title": "Emosi",
+		"upload": "o pana Emosi"
 	},
+	"emojiSelect": "Emosi:",
 	"favoriteGifs": "sitelen pona mute tawa sina",
 	"folder": {
 		"color": "kule poki:",
 		"name": "nimi poki:"
 	},
+	"friends": {
+		"all": "jan pona ale",
+		"all:": "jan pona ale:",
+		"friends": "jan pona",
+		"online": "lon"
+	},
 	"guild": {
 		"all": "ale",
+		"community": "kulupu ante",
+		"delete": "o weka ma",
+		"description:": "lipu ma:",
 		"icon:": "sitelen lili:",
 		"leave": "o kama ma",
+		"loadingDiscovery": "tenpo lon la ilo Pemi li kama...",
 		"name:": "nimi:",
-		"none": "ala"
+		"none": "weka"
 	},
 	"htmlPages": {
 		"createAccount": "o pali e sijelo",
@@ -61,7 +85,7 @@
 	},
 	"logout": {
 		"error": {
-			"cont": "o awen",
+			"cont": "o tawa",
 			"desc": "ilo Pemi li ken ala weka e sina tan sijelo ilo sina. taso, sina wile ala wile weka e sijelo ilo sina?"
 		},
 		"logout": "o weka sijelo"
@@ -84,10 +108,10 @@
 		"register": "o pali e sijelo"
 	},
 	"role": {
-		"color": "kule",
+		"color": "kule la ni wan",
 		"colors": {
 			"one": "wan",
-			"secondColor": "kule nanpa tu",
+			"secondColor": "kule la ni nanpa tu",
 			"two": "tu"
 		}
 	},
