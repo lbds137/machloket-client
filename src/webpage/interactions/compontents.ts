@@ -126,7 +126,7 @@ class Button extends compObj {
 		}
 		if (!this.disabled) {
 			if (this.url) {
-				MarkDown.safeLink(button, this.url);
+				MarkDown.safeLink(button, this.url, this.localuser);
 			} else {
 				button.onclick = () => {
 					this.clickEvent();
