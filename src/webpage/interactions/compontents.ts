@@ -1,9 +1,21 @@
 import {Channel} from "../channel.js";
 import {I18n} from "../i18n.js";
-import {actionRow, button, component, select} from "../jsontypes.js";
+import {
+	actionRow,
+	button,
+	component,
+	container,
+	mediaGallery,
+	MessageComponentType,
+	select,
+	seperator,
+	textDisp,
+} from "../jsontypes.js";
 import {MarkDown} from "../markdown";
 import {Message} from "../message.js";
 import {FancySelect} from "../utils/fancySelect.js";
+import {File} from "../file.js";
+
 abstract class compObj {
 	abstract owner: Components;
 	abstract getHTML(): HTMLElement;
@@ -38,12 +50,20 @@ export class Components {
 	}
 	toComp(comp: component): compObj {
 		switch (comp.type) {
-			case 1:
+			case MessageComponentType.ActionRow:
 				return new ActionRow(comp, this);
-			case 2:
+			case MessageComponentType.Button:
 				return new Button(comp, this);
-			case 3:
+			case MessageComponentType.StringSelect:
 				return new Select(comp, this);
+			case MessageComponentType.Container:
+				return new Container(comp, this);
+			case MessageComponentType.TextDisplay:
+				return new TextDisplay(comp, this);
+			case MessageComponentType.Separator:
+				return new Seperator(comp, this);
+			case MessageComponentType.MediaGallery:
+				return new MediaGallery(comp, this);
 			default:
 				return new ErrorElm(comp, this);
 		}
@@ -51,6 +71,127 @@ export class Components {
 	getHTML() {
 		const div = document.createElement("div");
 		div.classList.add("flexttb");
+		div.append(...this.components.map((_) => _.getHTML()));
+		return div;
+	}
+}
+class MediaGallery extends compObj {
+	items: {
+		media: File;
+		description?: string;
+		spoiler?: boolean;
+	}[];
+	owner: Components;
+	accentColor?: number;
+	constructor(comp: mediaGallery, owner: Components) {
+		super();
+		this.owner = owner;
+
+		this.items = comp.items.map((elm) => {
+			return {
+				media: new File(
+					{
+						...elm.media,
+						filename: "",
+						size: NaN,
+					},
+					this.message ?? null,
+				),
+				description: elm.description,
+				spoiler: elm.spoiler,
+			};
+		});
+		const files = this.items.map(({media}) => media);
+		files.forEach((file) => (file.files = files));
+	}
+	getHTML() {
+		//TODO handle spoiler
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "mediaDisp");
+		const items = this.items.map((elm) => {
+			return elm.media.getHTML();
+		});
+		const row = document.createElement("div");
+		row.classList.add("flexltr");
+		row.append(...items.slice(0, 2));
+		div.append(row);
+		if (items.length > 2) {
+			const row = document.createElement("div");
+			row.classList.add("flexltr");
+			row.append(...items.slice(2, 5));
+			div.append(row);
+		}
+		if (items.length > 5) {
+			const row = document.createElement("div");
+			row.classList.add("flexltr");
+			row.append(...items.slice(5, 10));
+			div.append(row);
+		}
+
+		div.append();
+		return div;
+	}
+}
+class Seperator extends compObj {
+	owner: Components;
+	divider: boolean;
+	spacing: 1 | 2;
+	constructor(comp: seperator, owner: Components) {
+		super();
+		this.owner = owner;
+		this.divider = comp.divider ?? true;
+		this.spacing = comp.spacing ?? 1;
+	}
+	getHTML() {
+		if (this.divider) {
+			const hr = document.createElement("hr");
+			if (this.spacing === 1) {
+				hr.style.margin = "4px";
+			} else {
+				hr.style.margin = "8px";
+			}
+			return hr;
+		} else {
+			const hr = document.createElement("span");
+
+			if (this.spacing === 1) {
+				hr.style.height = "16px";
+			} else {
+				hr.style.height = "32px";
+			}
+
+			return hr;
+		}
+	}
+}
+class TextDisplay extends compObj {
+	owner: Components;
+	content: string;
+	constructor(comp: textDisp, owner: Components) {
+		super();
+		this.owner = owner;
+		this.content = comp.content;
+	}
+	getHTML() {
+		return new MarkDown(this.content, this.channel).makeHTML();
+	}
+}
+class Container extends compObj {
+	components: compObj[];
+	owner: Components;
+	accentColor?: number;
+	constructor(comp: container, owner: Components) {
+		super();
+		this.owner = owner;
+		this.accentColor = comp.accent_color;
+		this.components = comp.components.map((comp) => owner.toComp(comp));
+	}
+	getHTML() {
+		//TODO handle spoiler
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "displayComp");
+		if (this.accentColor !== undefined)
+			div.style.setProperty("--accent-color", "#" + this.accentColor.toString(16).padStart(6, "0"));
 		div.append(...this.components.map((_) => _.getHTML()));
 		return div;
 	}

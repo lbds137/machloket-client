@@ -100,6 +100,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			}
 		});
 	} catch (e) {
+		debugger;
 		console.error(e);
 		loaddesc.textContent = I18n.accountNotStart();
 		thisUser = new Localuser(-1);

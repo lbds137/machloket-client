@@ -14,6 +14,7 @@ class File {
 	proxy_url: string | undefined;
 	url: string;
 	size: number;
+	files?: File[];
 	constructor(fileJSON: filejson, owner: Message | null) {
 		this.owner = owner;
 		this.id = fileJSON.id;
@@ -62,8 +63,8 @@ class File {
 				img.onclick = () => {
 					if (this.owner) {
 						const full = new ImagesDisplay(
-							this.owner.attachments,
-							this.owner.attachments.indexOf(this),
+							this.files || this.owner.attachments,
+							(this.files || this.owner.attachments).indexOf(this),
 						);
 						full.show();
 					} else {

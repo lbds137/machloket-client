@@ -109,12 +109,12 @@ class Localuser {
 		this.userinfo.localuserStore = e;
 	}
 	static users = getBulkUsers();
-	static async showAccountSwitcher(thisUser: Localuser) {
+	static async showAccountSwitcher(thisUser?: Localuser) {
 		const specialUser = await new AccountSwitcher().show();
 
-		const onswap = thisUser.onswap;
-		thisUser.unload();
-		thisUser.swapped = true;
+		const onswap = thisUser?.onswap;
+		thisUser?.unload();
+		if (thisUser) thisUser.swapped = true;
 		const loading = document.getElementById("loading") as HTMLDivElement;
 		loading.classList.remove("doneloading");
 		loading.classList.add("loading");
