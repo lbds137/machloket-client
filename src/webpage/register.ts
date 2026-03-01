@@ -19,7 +19,7 @@ export async function makeRegister(
 		},
 		{instance},
 	);
-	dialog.show(trasparentBg);
+	dialog.show(trasparentBg).parentElement!.style.zIndex = "200";
 
 	const form = opt.addForm(
 		"",
