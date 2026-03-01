@@ -48,6 +48,7 @@
 		"text": "텍스트",
 		"topic:": "주제:",
 		"voice": "음성",
+		"deleteThread": "스레드 삭제",
 		"forum": "포럼"
 	},
 	"threads": {
@@ -56,6 +57,16 @@
 	"forum": {
 		"next": "다음",
 		"back": "뒤로",
+		"newPost": "새 글 작성하기",
+		"sortOptions": {
+			"sortby": {
+				"title": "정렬 기준"
+			},
+			"sortOrder": {
+				"title": "정렬 순서"
+			}
+		},
+		"allTags": "모든 태그",
 		"settings": {
 			"tagName": "태그 이름:"
 		}
@@ -330,6 +341,9 @@
 			"VIEW_CHANNEL": "채널 보기"
 		}
 	},
+	"profile": {
+		"userInfo": "사용자 정보"
+	},
 	"readableName": "한국어",
 	"register": {
 		"DOBError": "출생일: $1",
@@ -359,6 +373,9 @@
 				"title": "서비스 워커 설정"
 			}
 		}
+	},
+	"sticker": {
+		"upload": "스티커 업로드"
 	},
 	"submit": "제출",
 	"switchAccounts": "계정 전환 ⇌",

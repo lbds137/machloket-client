@@ -4,10 +4,23 @@
 		"last-updated": "2024/11/4",
 		"locale": "en",
 		"authors": [
+			"Angelsn",
 			"MathMan05",
 			"McDutchie",
 			"Vl1"
 		]
+	},
+	"404": {
+		"whatelse": "what's the context of this message?"
+	},
+	"DMs": {
+		"add": "I was thinking of using \"Mensaje Directo (MD)\" to refer to DM, but \"chat\" is shorter but if you want me to use the first one you can tell me"
+	},
+	"ok": "Assuming that it's an Ok button",
+	"Voice": {
+		"status": {
+			"badWS": "what WS mean?"
+		}
 	},
 	"botGuilds": "This means \"the guilds that the bot is in\" (i.e., is a member of).",
 	"errorReconnect": "Uses MarkDown",

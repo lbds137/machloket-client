@@ -171,24 +171,24 @@
 				"old": "Antigos primeiro"
 			},
 			"tagMatch": {
-				"title": "Tag corresponde",
-				"some": "Corresponde a algumas tags",
+				"title": "Etiqueta corresponde",
+				"some": "Corresponde a algumas etiquetas",
 				"all": "Corresponde a todas as tags"
 			},
 			"name": "Opções de filtragem"
 		},
 		"errors": {
-			"tagsReq": "Tags são necessárias",
+			"tagsReq": "Etiqueta são necessárias",
 			"requireText": "Mensagem não pode estar vazia"
 		},
-		"allTags": "Todas as tags",
+		"allTags": "Todas as etiquetas",
 		"settings": {
-			"editTags": "Editar tags:",
-			"editTag": "Editar tag",
-			"tagName": "Nome da tag:",
-			"moderated": "Permitir que somente moderadores de tópicos apliquem tag:",
-			"addTag": "Adicionar uma tag",
-			"delTag": "Apagar tag"
+			"editTags": "Editar etiquetas:",
+			"editTag": "Editar etiqueta",
+			"tagName": "Nome da etiqueta:",
+			"moderated": "Permitir que somente moderadores de tópicos apliquem etiqueta:",
+			"addTag": "Adicionar etiqueta",
+			"delTag": "Apagar etiqueta"
 		}
 	},
 	"channelLink": "# $1",
