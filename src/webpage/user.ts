@@ -932,6 +932,26 @@ class User extends SnowFlake {
 	}
 
 	static async resolve(id: string, localuser: Localuser): Promise<User> {
+		const time = SnowFlake.stringToUnixTime(id);
+
+		if (time < 1420070400000 + 100)
+			return new User(
+				{
+					id: "0",
+					public_flags: 0,
+					username: I18n.friends.notfound(),
+					avatar: null,
+					discriminator: "0000",
+					bio: "",
+					bot: false,
+					premium_type: 0,
+					premium_since: "",
+					accent_color: 0,
+					theme_colors: null,
+					badge_ids: [],
+				},
+				localuser,
+			);
 		let user: User | undefined;
 		if ((user = localuser.userMap.get(id))) return user;
 		const json = await fetch(localuser.info.api.toString() + "/users/" + id + "/profile", {

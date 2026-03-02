@@ -425,8 +425,6 @@ class Localuser {
 		}
 
 		this.pingEndpoint();
-
-		this.generateFavicon();
 	}
 	inrelation = new Set<User>();
 	outoffocus(): void {
@@ -537,7 +535,11 @@ class Localuser {
 								console.log("in here?");
 								returny();
 							}
-						} catch {}
+						} catch (e) {
+							if (!(e instanceof SyntaxError)) {
+								console.error(e);
+							}
+						}
 					}
 				})();
 			}
@@ -1557,6 +1559,7 @@ class Localuser {
 	async init() {
 		const location = window.location.href.split("/");
 		this.buildservers();
+		this.generateFavicon();
 		if (location[3] === "channels") {
 			const guild = this.loadGuild(location[4]);
 			if (!guild) {
