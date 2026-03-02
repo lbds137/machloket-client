@@ -693,7 +693,12 @@ export interface button {
 	emoji?: emojijson;
 	style: 1 | 2 | 3 | 4 | 5 | 6;
 }
-
+export interface section {
+	type: MessageComponentType.Section;
+	id?: number;
+	components: component[];
+	accessory: button | thumbnail;
+}
 export interface select {
 	type: MessageComponentType.StringSelect;
 	id?: number;
@@ -752,7 +757,13 @@ export interface seperator {
 	divider?: boolean;
 	spacing?: 1 | 2;
 }
-
+export interface thumbnail {
+	type: MessageComponentType.Thumbnail;
+	id?: number;
+	media: UnfurledMediaItem;
+	description?: string;
+	spoiler?: string;
+}
 export type component =
 	| actionRow
 	| button
@@ -760,7 +771,9 @@ export type component =
 	| container
 	| textDisp
 	| seperator
-	| mediaGallery;
+	| mediaGallery
+	| section
+	| thumbnail;
 
 type messagejson = {
 	id: string;

@@ -2221,6 +2221,9 @@ span.instanceStatus {
 	flex-direction: column;
 	flex-shrink: 1;
 	max-height: fit-content;
+	> * {
+		flex: 0;
+	}
 }
 #pasteimage {
 	height: 30%;

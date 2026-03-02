@@ -7,14 +7,17 @@ import {
 	container,
 	mediaGallery,
 	MessageComponentType,
+	section,
 	select,
 	seperator,
 	textDisp,
+	thumbnail,
 } from "../jsontypes.js";
 import {MarkDown} from "../markdown";
 import {Message} from "../message.js";
 import {FancySelect} from "../utils/fancySelect.js";
 import {File} from "../file.js";
+import {copyFile} from "fs";
 
 abstract class compObj {
 	abstract owner: Components;
@@ -64,6 +67,10 @@ export class Components {
 				return new Seperator(comp, this);
 			case MessageComponentType.MediaGallery:
 				return new MediaGallery(comp, this);
+			case MessageComponentType.Section:
+				return new Section(comp, this);
+			case MessageComponentType.Thumbnail:
+				return new Thumbnail(comp, this);
 			default:
 				return new ErrorElm(comp, this);
 		}
@@ -164,6 +171,28 @@ class Seperator extends compObj {
 		}
 	}
 }
+class Thumbnail extends compObj {
+	owner: Components;
+	file: File;
+	constructor(comp: thumbnail, owner: Components) {
+		super();
+		this.owner = owner;
+		//TODO deal with more
+		this.file = new File(
+			{
+				...comp.media,
+				filename: "",
+				size: NaN,
+				content_type: "image/",
+			},
+			this.message ?? null,
+		);
+		this.file.files = [this.file];
+	}
+	getHTML() {
+		return this.file.getHTML();
+	}
+}
 class TextDisplay extends compObj {
 	owner: Components;
 	content: string;
@@ -174,6 +203,30 @@ class TextDisplay extends compObj {
 	}
 	getHTML() {
 		return new MarkDown(this.content, this.channel).makeHTML();
+	}
+}
+class Section extends compObj {
+	components: compObj[];
+	owner: Components;
+	button: compObj;
+	constructor(comp: section, owner: Components) {
+		super();
+		this.owner = owner;
+		this.button = owner.toComp(comp.accessory);
+		this.components = comp.components.map((comp) => owner.toComp(comp));
+	}
+	getHTML() {
+		//TODO handle spoiler
+		const div = document.createElement("div");
+		div.classList.add("flexltr");
+		const div2 = document.createElement("div");
+		div2.classList.add("flexttb");
+		div2.append(...this.components.map((_) => _.getHTML()));
+		const b = this.button.getHTML();
+		b.style.marginLeft = "auto";
+
+		div.append(div2, b);
+		return div;
 	}
 }
 class Container extends compObj {

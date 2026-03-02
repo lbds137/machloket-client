@@ -733,6 +733,8 @@ export function createImg(
 		);
 	});
 	const img = document.createElement("img");
+	img.loading = "lazy";
+	img.decoding = "async";
 	img.addEventListener("error", () => {
 		img.classList.add("error");
 	});

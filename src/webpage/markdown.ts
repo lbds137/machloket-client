@@ -160,6 +160,10 @@ class MarkDown {
 					element.classList.add("quote");
 					keepys = "> ";
 					i += 3;
+				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3]?.match(isSpace)) {
+					element = document.createElement("small");
+					keepys = "-# ";
+					i += 4;
 				}
 				if (keepys) {
 					appendcurrent();
