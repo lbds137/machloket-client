@@ -3282,7 +3282,6 @@ img.bigembedimg {
 	background: var(--primary-bg);
 }
 .banner {
-	background: yellow;
 	height: 100px;
 	width: 100%;
 	object-fit: cover;
