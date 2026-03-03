@@ -3909,7 +3909,8 @@ class Localuser {
 			searchBox();
 		};
 		search.classList.add("searchGifBar");
-		search.placeholder = I18n.searchGifs();
+		//TODO fix this once we swap over
+		search.placeholder = I18n.searchGifs("Tenor");
 		const favs = this.favorites.favoriteGifs();
 		if (favs.length) {
 			favs.forEach(async (_) => (_.src = await this.refreshIfNeeded(_.src)));

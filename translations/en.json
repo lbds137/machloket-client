@@ -816,7 +816,7 @@
 		"page": "Page $1",
 		"search": "Search"
 	},
-	"searchGifs": "Search Tenor",
+	"searchGifs": "Search $1",
 	"settings": {
 		"clear": "Clear",
 		"img": "Upload image",
