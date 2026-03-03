@@ -100,8 +100,8 @@ class Embed {
 			if (this.json.author.icon_url) {
 				const img = document.createElement("img");
 				img.classList.add("authorEmbedImg");
-				this.localuser.refreshIfNeeded(this.json.author.icon_url).then(url => {
-					this.json.author.icon_url = url;
+				this.localuser.refreshIfNeeded(this.json.author.icon_url).then((url) => {
+					if (this.json.author) this.json.author.icon_url = url;
 					img.src = url;
 				});
 				authorline.append(img);
@@ -152,8 +152,8 @@ class Embed {
 			const footer = document.createElement("div");
 			if (this.json?.footer?.icon_url) {
 				const img = document.createElement("img");
-				this.localuser.refreshIfNeeded(this.json.footer.icon_url).then(url => {
-					this.json.footer.icon_url = url;
+				this.localuser.refreshIfNeeded(this.json.footer.icon_url).then((url) => {
+					if (this.json.footer) this.json.footer.icon_url = url;
 					img.src = url;
 				});
 				img.classList.add("embedicon");
