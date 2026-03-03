@@ -4909,3 +4909,8 @@ img.error::after {
 		margin-left: auto;
 	}
 }
+.embedImg {
+	max-width: 400px;
+	max-height: 400px;
+	border-radius: 3px;
+}

@@ -859,6 +859,12 @@ type embedjson = {
 		text?: string;
 		thumbnail?: string;
 	};
+	image?: {
+		proxy_url?: string;
+		url: string;
+		width?: number;
+		height?: number;
+	};
 	timestamp?: string;
 	thumbnail: {
 		proxy_url: string;

@@ -148,6 +148,27 @@ class Embed {
 				embed.append(div);
 			}
 		}
+		if (this.json.image) {
+			const img = document.createElement("img");
+			img.classList.add("embedImg");
+			if (this.json.image.width) {
+				img.width = this.json.image.width;
+			}
+			if (this.json.image.height) {
+				img.height = this.json.image.height;
+			}
+			this.localuser.refreshIfNeeded(this.json.image.url).then((url) => {
+				if (this.json.image) this.json.image.url = url;
+				if (!this.json.image?.proxy_url) img.src = url;
+			});
+			if (this.json.image.proxy_url) {
+				this.localuser.refreshIfNeeded(this.json.image.url).then((url) => {
+					if (this.json.image) this.json.image.url = url;
+					img.src = url;
+				});
+			}
+			embed.append(img);
+		}
 		if (this.json.footer || this.json.timestamp) {
 			const footer = document.createElement("div");
 			if (this.json?.footer?.icon_url) {
