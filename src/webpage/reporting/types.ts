@@ -250,12 +250,12 @@ export interface reportGuildDiscovery extends reportPut {
 	guild_id: string;
 	name: "guild_discovery";
 }
-interface reportFirstDMPut extends reportPut {
+export interface reportFirstDMPut extends reportPut {
 	channel_id: string;
 	message_id: string;
 	name: "first_dm";
 }
-interface reportGuildDirPut extends reportPut {
+export interface reportGuildDirPut extends reportPut {
 	channel_id: string;
 	guild_id: string;
 	name: "guild_directory_entry";
@@ -264,13 +264,13 @@ export interface reportGuildPut extends reportPut {
 	guild_id: string;
 	name: "guild";
 }
-interface reportStagePut extends reportPut {
+export interface reportStagePut extends reportPut {
 	guild_id: string;
 	user_id: string;
 	stage_instance_id: string;
 	name: "stage_channel";
 }
-interface reportGuildEventPut extends reportPut {
+export interface reportGuildEventPut extends reportPut {
 	guild_id: string;
 	guild_scheduled_event_id: string;
 	name: "guild_scheduled_event";
@@ -284,7 +284,7 @@ export interface reportUserPut extends reportPut {
 	user_id: string;
 	name: "user";
 }
-interface reportWidgetPut extends reportPut {
+export interface reportWidgetPut extends reportPut {
 	user_id: string;
 	widget_id: string;
 	name: "widget";
