@@ -35,6 +35,7 @@ import {Direct} from "./direct.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
 import {Tag} from "./tag.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 class Channel extends SnowFlake {
 	editing!: Message | null;
@@ -329,7 +330,10 @@ class Channel extends SnowFlake {
 	}
 	icon?: string;
 	iconUrl() {
-		return `${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png`;
+		return (
+			`${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png` +
+			new CDNParams({expectedSize: 32})
+		);
 	}
 	createInvite() {
 		const div = document.createElement("div");

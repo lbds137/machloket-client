@@ -5,6 +5,7 @@ import {I18n} from "./i18n.js";
 import {stickerJson} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {SnowFlake} from "./snowflake.js";
+import {CDNParams} from "./utils/cdnParams.js";
 import {createImg} from "./utils/utils.js";
 
 class Sticker extends SnowFlake {
@@ -34,7 +35,7 @@ class Sticker extends SnowFlake {
 	}
 	getHTML(): HTMLElement {
 		const img = createImg(
-			this.owner.info.cdn + "/stickers/" + this.id + ".webp?size=160&quality=lossless",
+			this.owner.info.cdn + "/stickers/" + this.id + ".webp" + new CDNParams({expectedSize: 160}),
 		);
 		img.classList.add("sticker");
 		const hover = new Hover(this.name);
@@ -193,7 +194,8 @@ class Sticker extends SnowFlake {
 					guild.properties.id +
 					"/" +
 					guild.properties.icon +
-					".png?size=48";
+					".png" +
+					new CDNParams({expectedSize: 48});
 				img.alt = "Server: " + guild.properties.name;
 				select.appendChild(img);
 			} else {

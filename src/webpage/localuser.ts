@@ -45,6 +45,7 @@ import {
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
 import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
 import {PromiseLock} from "./utils/promiseLock.js";
+import {CDNParams} from "./utils/cdnParams.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -1613,7 +1614,7 @@ class Localuser {
 				//https://cdn.discordapp.com/banners/677271830838640680/fab8570de5bb51365ba8f36d7d3627ae.webp?size=240
 				banner.style.setProperty(
 					"background-image",
-					`linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 40%), url(${this.info.cdn}/banners/${guild.id}/${guild.banner})`,
+					`linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 40%), url(${this.info.cdn}/banners/${guild.id}/${guild.banner + new CDNParams({expectedSize: 128})})`,
 				);
 				banner.classList.add("Banner");
 				//background-image:
@@ -3004,7 +3005,8 @@ class Localuser {
 											application.id +
 											"/" +
 											(application.cover_image || application.icon) +
-											".png?size=256",
+											".png" +
+											new CDNParams({expectedSize: 256}),
 									);
 									cover.alt = "";
 									cover.loading = "lazy";
@@ -3607,7 +3609,14 @@ class Localuser {
 		});
 		form.addImageInput("Icon:", "icon", {
 			clear: true,
-			initImg: json.icon ? this.info.cdn + "/app-icons/" + appId + "/" + json.icon : "",
+			initImg: json.icon
+				? this.info.cdn +
+					"/app-icons/" +
+					appId +
+					"/" +
+					json.icon +
+					new CDNParams({expectedSize: 96})
+				: "",
 		});
 		form.addTextInput(I18n.localuser.privacyPolcyURL(), "privacy_policy_url", {
 			initText: json.privacy_policy_url,

@@ -16,6 +16,7 @@ import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
+import {CDNParams} from "./utils/cdnParams.js";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -1017,7 +1018,10 @@ class User extends SnowFlake {
 			}
 		}
 		if (this.avatar !== null) {
-			return `${this.info.cdn}/avatars/${this.id.replace("#clone", "")}/${this.avatar}.png`;
+			return (
+				`${this.info.cdn}/avatars/${this.id.replace("#clone", "")}/${this.avatar}.png` +
+				new CDNParams({expectedSize: 96})
+			);
 		} else {
 			const int = Number((BigInt(this.id.replace("#clone", "")) >> 22n) % 6n);
 			return `${this.info.cdn}/embed/avatars/${int}.png`;
@@ -1163,7 +1167,12 @@ class User extends SnowFlake {
 				if (URL.canParse(badgejson.icon)) {
 					src = badgejson.icon;
 				} else {
-					src = this.info.cdn + "/badge-icons/" + badgejson.icon + ".png";
+					src =
+						this.info.cdn +
+						"/badge-icons/" +
+						badgejson.icon +
+						".png" +
+						new CDNParams({expectedSize: 32});
 				}
 				const img = createImg(src, undefined, badgediv);
 
@@ -1423,7 +1432,12 @@ class User extends SnowFlake {
 				if (URL.canParse(badgejson.icon)) {
 					src = badgejson.icon;
 				} else {
-					src = this.info.cdn + "/badge-icons/" + badgejson.icon + ".png";
+					src =
+						this.info.cdn +
+						"/badge-icons/" +
+						badgejson.icon +
+						".png" +
+						new CDNParams({expectedSize: 32});
 				}
 				const img = createImg(src, undefined, badgediv);
 
@@ -1575,7 +1589,10 @@ class User extends SnowFlake {
 	getBannerUrl(): string | undefined {
 		if (this.banner) {
 			if (!this.hypotheticalbanner) {
-				return `${this.info.cdn}/banners/${this.id.replace("#clone", "")}/${this.banner}.png`;
+				return (
+					`${this.info.cdn}/banners/${this.id.replace("#clone", "")}/${this.banner}.png` +
+					new CDNParams({expectedSize: 160})
+				);
 			} else {
 				return this.banner;
 			}

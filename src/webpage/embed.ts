@@ -6,6 +6,7 @@ import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 class Embed {
 	type: string;
@@ -347,7 +348,13 @@ class Embed {
 			if (json.guild.banner) {
 				const banner = document.createElement("img");
 				banner.src =
-					info.cdn + "/banners/" + json.guild.id + "/" + json.guild.banner + ".png?size=256";
+					info.cdn +
+					"/banners/" +
+					json.guild.id +
+					"/" +
+					json.guild.banner +
+					".png" +
+					new CDNParams({expectedSize: 256});
 				banner.classList.add("banner");
 				div.append(banner);
 			}

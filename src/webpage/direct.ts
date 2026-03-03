@@ -11,6 +11,7 @@ import {I18n} from "./i18n.js";
 import {Dialog, Float, FormError} from "./settings.js";
 import {Discovery} from "./discovery.js";
 import {createImg} from "./utils/utils.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 class Direct extends Guild {
 	channels: Group[];
@@ -651,7 +652,13 @@ class Group extends Channel {
 			div.classList.add("groupDmDiv");
 			if (this.icon) {
 				const img = createImg(
-					this.info.cdn + "/channel-icons/" + this.id + "/" + this.icon + ".png?size=32",
+					this.info.cdn +
+						"/channel-icons/" +
+						this.id +
+						"/" +
+						this.icon +
+						".png" +
+						new CDNParams({expectedSize: 32}),
 				);
 				img.classList.add("pfp");
 				div.append(img);

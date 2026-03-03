@@ -34,6 +34,7 @@ import {Command} from "./interactions/commands.js";
 import {Hover} from "./hover.js";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
+import {CDNParams} from "./utils/cdnParams.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
@@ -592,7 +593,13 @@ class Guild extends SnowFlake {
 				clear: true,
 				width: 96 * 3,
 				initImg: this.banner
-					? this.info.cdn + "/banners/" + this.id + "/" + this.banner + ".png?size=256"
+					? this.info.cdn +
+						"/banners/" +
+						this.id +
+						"/" +
+						this.banner +
+						".png" +
+						new CDNParams({expectedSize: 256})
 					: "",
 				objectFit: "cover",
 			});
@@ -600,14 +607,21 @@ class Guild extends SnowFlake {
 			form.addImageInput(I18n.guild["icon:"](), "icon", {
 				clear: true,
 				initImg: this.properties.icon
-					? this.info.cdn + "/icons/" + this.id + "/" + this.properties.icon + ".png"
+					? this.info.cdn +
+						"/icons/" +
+						this.id +
+						"/" +
+						this.properties.icon +
+						".png" +
+						new CDNParams({expectedSize: 256})
 					: "",
 			});
 
 			form.addImageInput(I18n.guild.splash(), "discovery_splash", {
 				clear: true,
 				initImg: this.properties.discovery_splash
-					? `${this.info.cdn}/discovery-splashes/${this.id}/${this.properties.discovery_splash}.png`
+					? `${this.info.cdn}/discovery-splashes/${this.id}/${this.properties.discovery_splash}.png` +
+						new CDNParams({expectedSize: 256})
 					: "",
 				width: 96 * 2,
 			});
@@ -902,7 +916,9 @@ class Guild extends SnowFlake {
 				div.classList.add("flexltr", "bandiv");
 				let src: string;
 				if (ban.user.avatar !== null) {
-					src = `${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png`;
+					src =
+						`${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png` +
+						new CDNParams({expectedSize: 96});
 				} else {
 					const int = Number((BigInt(ban.user.id) >> 22n) % 6n);
 					src = `${this.info.cdn}/embed/avatars/${int}.png`;
@@ -1591,7 +1607,15 @@ class Guild extends SnowFlake {
 			weak: true,
 		});
 		if (icon !== null) {
-			const img = createImg(guild.info.cdn + "/icons/" + guild.id + "/" + icon + ".png");
+			const img = createImg(
+				guild.info.cdn +
+					"/icons/" +
+					guild.id +
+					"/" +
+					icon +
+					".png" +
+					new CDNParams({expectedSize: 96}),
+			);
 			img.classList.add("pfp", "servericon");
 			divy.appendChild(img);
 			if (guild instanceof Guild && autoLink) {
@@ -1697,21 +1721,20 @@ class Guild extends SnowFlake {
 	}
 	async goToThread(threadId: string) {
 		if (!this.localuser.channelids.has(threadId)) {
-			const channelJson = (await (
+			const channelJson = await (
 				await fetch(this.info.api + "/channels/" + threadId, {
 					headers: this.headers,
 				})
-			).json());
-            if(channelJson.code == 200){
-                const channel = new Channel(channelJson as channeljson, this);
-                this.localuser.channelids.set(channel.id, channel);
-                channel.resolveparent(this);
-                const par = this.localuser.channelids.get(channel.parent_id as string);
-                par?.createguildHTML();
-            } else {
-                this.loadChannel();
-            }
-			
+			).json();
+			if (channelJson.code == 200) {
+				const channel = new Channel(channelJson as channeljson, this);
+				this.localuser.channelids.set(channel.id, channel);
+				channel.resolveparent(this);
+				const par = this.localuser.channelids.get(channel.parent_id as string);
+				par?.createguildHTML();
+			} else {
+				this.loadChannel();
+			}
 		}
 		this.localuser.goToChannel(threadId);
 	}
