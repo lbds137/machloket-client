@@ -786,10 +786,10 @@
 	"role": {
 		"color": "First color",
 		"colors": {
-			"name": "Color count:",
-			"one": "1",
-			"two": "2",
-			"three": "3",
+			"name": "Color scheme:",
+			"one": "Monochrome",
+			"two": "Bicolor",
+			"three": "Tricolor",
 			"secondColor": "Second color:",
 			"thirdColor": "Third color:"
 		},
