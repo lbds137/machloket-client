@@ -100,7 +100,10 @@ class Embed {
 			if (this.json.author.icon_url) {
 				const img = document.createElement("img");
 				img.classList.add("authorEmbedImg");
-				img.src = this.json.author.icon_url;
+				this.localuser.refreshIfNeeded(this.json.author.icon_url).then(url => {
+					this.json.author.icon_url = url;
+					img.src = url;
+				});
 				authorline.append(img);
 			}
 			const a = this.json.author.url ? document.createElement("a") : document.createElement("span");
@@ -149,7 +152,10 @@ class Embed {
 			const footer = document.createElement("div");
 			if (this.json?.footer?.icon_url) {
 				const img = document.createElement("img");
-				img.src = this.json.footer.icon_url;
+				this.localuser.refreshIfNeeded(this.json.footer.icon_url).then(url => {
+					this.json.footer.icon_url = url;
+					img.src = url;
+				});
 				img.classList.add("embedicon");
 				footer.append(img);
 			}
