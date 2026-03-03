@@ -17,7 +17,6 @@ import {MarkDown} from "../markdown";
 import {Message} from "../message.js";
 import {FancySelect} from "../utils/fancySelect.js";
 import {File} from "../file.js";
-import {copyFile} from "fs";
 
 abstract class compObj {
 	abstract owner: Components;
