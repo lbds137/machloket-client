@@ -788,11 +788,11 @@ export function createImg(
 			src = nsrc;
 			staticsrc = nstaticsrc;
 			if (src) {
-				isAnimated(src).then((animated) => {
+				isAnimated(src).then(async (animated) => {
 					if (animated) {
 						img.crossOrigin = "anonymous";
 					}
-					img.src = settings !== "always" ? staticsrc || src || "" : src || "";
+					img.src = (await aniOpt) !== "always" ? staticsrc || src || "" : src || "";
 				});
 			}
 		},
