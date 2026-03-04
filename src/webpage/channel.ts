@@ -1139,10 +1139,7 @@ class Channel extends SnowFlake {
 	}
 	owner_id?: string;
 	threadVis() {
-		return (
-			((this.member || this.owner_id === this.localuser.user.id) && !this.threadData?.archived) ||
-			this.localuser.channelfocus === this
-		);
+		return (this.member && !this.threadData?.archived) || this.localuser.channelfocus === this;
 	}
 	async moveForDrag(x: number) {
 		const mainarea = document.getElementById("mainarea");
