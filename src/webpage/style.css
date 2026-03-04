@@ -2671,7 +2671,7 @@ span.instanceStatus {
 	top: 1px;
 	left: 1px;
 }
-input:read-only {
+input[type="search"]:read-only {
 	cursor: not-allowed;
 	color: var(--secondary-text-soft);
 }
