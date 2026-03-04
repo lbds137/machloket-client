@@ -714,7 +714,12 @@ async function isAnimated(src: string) {
 	try {
 		src = new URL(src).pathname;
 	} catch {}
-	return src.endsWith(".apng") || src.endsWith(".gif") || src.split("/").at(-1)?.startsWith("a_");
+	return (
+		src.endsWith(".apng") ||
+		src.endsWith(".gif") ||
+		src.split("/").at(-1)?.startsWith("a_") ||
+		src.includes("avatar-decoration-presets")
+	);
 }
 const staticImgMap = new Map<string, string | Promise<string>>();
 export async function removeAni(elm: HTMLElement, time = 500) {
@@ -783,17 +788,17 @@ export function createImg(
 			img.src = staticsrc;
 		}
 	};
-	elm.onmouseover = async () => {
+	elm.addEventListener("mouseover", async () => {
 		if ((await aniOpt) === "never") return;
 		if (img.src !== src && src) {
 			img.src = src;
 		}
-	};
-	elm.onmouseleave = async () => {
+	});
+	elm.addEventListener("mouseleave", async () => {
 		if (staticsrc && (await aniOpt) !== "always") {
 			img.src = staticsrc;
 		}
-	};
+	});
 
 	return Object.assign(img, {
 		setSrcs: (nsrc: string, nstaticsrc: string | void) => {
