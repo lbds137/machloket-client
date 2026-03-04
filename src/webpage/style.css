@@ -2665,6 +2665,12 @@ span.instanceStatus {
 .message img {
 	max-width: 100%;
 }
+.profile .avDec {
+	width: 110%;
+	height: 110%;
+	top: 1px;
+	left: 1px;
+}
 .avDec {
 	position: absolute;
 	cursor: pointer;
