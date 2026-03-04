@@ -176,6 +176,7 @@ class Message extends SnowFlake {
 				},
 			},
 		);
+		Message.contextmenu.addGroup("copyLink");
 		Message.contextmenu.addButton(
 			() => I18n.copyLink(),
 			function (this: Message) {

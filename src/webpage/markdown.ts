@@ -4,7 +4,13 @@ import {Emoji} from "./emoji.js";
 import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
-
+import {Contextmenu} from "./contextmenu.js";
+const linkMenu = new Contextmenu<string, void>("copyLink", true);
+linkMenu.addButton(
+	() => I18n.copyRegLink(),
+	() => {},
+	{group: "copyLink"},
+);
 class MarkDown {
 	static emoji?: typeof Emoji;
 	txt: string[];
@@ -576,6 +582,7 @@ class MarkDown {
 				if (URL.canParse(build)) {
 					appendcurrent();
 					const a = document.createElement("a");
+					linkMenu.bindContextmenu(a, build);
 					//a.href=build;
 
 					a.textContent = build;

@@ -196,6 +196,7 @@
 	},
 	"confirmGuildLeave": "Are you sure you want to leave $1",
 	"copyLink": "Copy message link",
+	"copyRegLink":"Copy link",
 	"copymessageid": "Copy message id",
 	"copyrawtext": "Copy raw text",
 	"createAccount": "Create Account",
