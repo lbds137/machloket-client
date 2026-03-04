@@ -8,7 +8,9 @@ import {Contextmenu} from "./contextmenu.js";
 const linkMenu = new Contextmenu<string, void>("copyLink", true);
 linkMenu.addButton(
 	() => I18n.copyRegLink(),
-	() => {},
+	function () {
+		navigator.clipboard.writeText(this);
+	},
 	{group: "copyLink"},
 );
 class MarkDown {
@@ -740,6 +742,7 @@ class MarkDown {
 							} else {
 								appendcurrent();
 								const a = document.createElement("a");
+								linkMenu.bindContextmenu(a, build);
 								if (!stdsize) {
 									const text = MarkDown.safeLink(a, build, this.localuser);
 									if (text) {
