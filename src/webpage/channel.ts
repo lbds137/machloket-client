@@ -2204,7 +2204,8 @@ class Channel extends SnowFlake {
 				return +(Number(c1.id) > Number(c2.id)) ^ +filters.recentFirst ? 1 : -1;
 			}
 		});
-		return [match.splice(offset, offset + 24), !!match.at(offset + 25)] as const;
+
+		return [match.slice(offset, offset + 25), !!match.at(offset + 25)] as const;
 	}
 
 	async findMatches(text: string, offset: number): Promise<readonly [Channel[], boolean]> {
@@ -2240,7 +2241,9 @@ class Channel extends SnowFlake {
 		let offset = 0;
 		const flipPage = async (by: number) => {
 			offset += by;
-			const [match, more] = await this.findMatches(text, 0);
+			div.scrollTop = 0;
+			const [match, more] = await this.findMatches(text, offset);
+
 			await renderDiv(match, more);
 		};
 
