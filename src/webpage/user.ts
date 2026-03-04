@@ -40,6 +40,11 @@ class User extends SnowFlake {
 	badge_ids!: string[];
 	members: WeakMap<Guild, Member | undefined | Promise<Member | undefined>> = new WeakMap();
 	status!: string;
+	avatar_decoration_data?: {
+		asset: string;
+		sku_id: string;
+	} | null;
+
 	resolving: false | Promise<any> = false;
 	get headers() {
 		return this.localuser.headers;
@@ -734,7 +739,10 @@ class User extends SnowFlake {
 		}
 	}
 
-	buildpfp(guild: Guild | void | Member | null, hoverElm: void | HTMLElement): HTMLImageElement {
+	buildpfp(guild: Guild | void | Member | null, hoverElm: void | HTMLElement): HTMLDivElement {
+		const div = document.createElement("div");
+		div.classList.add("pfpDiv");
+		hoverElm ??= div;
 		const pfp = createImg(this.getpfpsrc(), undefined, hoverElm);
 		pfp.loading = "lazy";
 		pfp.classList.add("pfp");
@@ -750,7 +758,19 @@ class User extends SnowFlake {
 				}
 			})();
 		}
-		return pfp;
+		if (this.avatar_decoration_data) {
+			const dec = createImg(
+				this.info.cdn +
+					`/avatar-decoration-presets/${this.avatar_decoration_data.asset}.png` +
+					new CDNParams({expectedSize: 96}),
+				void 0,
+				hoverElm,
+			);
+			dec.classList.add("avDec");
+			div.append(dec);
+		}
+		div.append(pfp);
+		return div;
 	}
 	createWidget(guild?: Guild) {
 		guild = this.localuser.guildids.get("@me") as Guild;
@@ -843,11 +863,9 @@ class User extends SnowFlake {
 		return has;
 	}
 	buildstatuspfp(guild: Guild | void | Member | null | Channel): HTMLDivElement {
-		const div = document.createElement("div");
-		div.classList.add("pfpDiv");
 		const isChannel = !!(guild && "guild" in guild);
-		const pfp = this.buildpfp(isChannel ? guild.guild : guild, div);
-		div.append(pfp);
+		const div = this.buildpfp(isChannel ? guild.guild : guild);
+
 		const status = document.createElement("div");
 		this.registerStatus(status, guild);
 		status.classList.add("statusDiv");

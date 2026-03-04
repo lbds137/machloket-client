@@ -406,6 +406,10 @@ type userjson = {
 	badge_ids: string[];
 	webhook?: webhookInfo;
 	uid?: string;
+	avatar_decoration_data?: {
+		asset: string;
+		sku_id: string;
+	} | null;
 };
 type memberjson = {
 	index?: number;

@@ -2665,6 +2665,15 @@ span.instanceStatus {
 .message img {
 	max-width: 100%;
 }
+.avDec {
+	position: absolute;
+	cursor: pointer;
+	width: 125%;
+	height: 125%;
+	top: -5px;
+	left: -5px;
+	max-width: 150% !important;
+}
 .timestamp {
 	flex: none;
 	margin-left: 6px;
