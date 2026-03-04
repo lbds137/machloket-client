@@ -1438,6 +1438,7 @@ class Options implements OptionsElement<void> {
 			};
 		}
 	}
+	afterSubmit = () => {};
 	submit() {
 		this.haschanged = false;
 		if (this.subOptions) {
@@ -1448,6 +1449,7 @@ class Options implements OptionsElement<void> {
 		for (const thing of this.options) {
 			thing.submit();
 		}
+		this.afterSubmit();
 	}
 }
 class Captcha implements OptionsElement<string> {

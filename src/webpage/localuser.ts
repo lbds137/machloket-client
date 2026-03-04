@@ -846,6 +846,7 @@ class Localuser {
 							document.getElementById("bottomseparator"),
 						);
 						guildy.message_notifications = guildy.properties.default_message_notifications;
+						guildy.showWelcome();
 					})();
 					break;
 				case "MESSAGE_REACTION_ADD":

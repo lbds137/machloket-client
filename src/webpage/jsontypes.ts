@@ -505,7 +505,9 @@ type guildjson = {
 		max_stage_video_channel_users: number;
 		nsfw: boolean;
 		safety_alerts_channel_id: string;
+		welcome_screen?: welcomeScreen;
 	};
+	//TODO implement onboarding too
 	roles: rolesjson[];
 	stage_instances: [];
 	stickers: stickerJson[];
@@ -513,6 +515,16 @@ type guildjson = {
 	guild_hashes: {};
 	joined_at: string;
 };
+export interface welcomeScreen {
+	enabled: boolean;
+	description: string;
+	welcome_channels: {
+		description: string;
+		emoji_id?: string;
+		emoji_name?: string;
+		channel_id: string;
+	}[];
+}
 interface stickerJson {
 	id: string;
 	name: string;

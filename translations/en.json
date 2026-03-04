@@ -19,6 +19,16 @@
 		"last-updated": "2026/02/13",
 		"locale": "en"
 	},
+	"onboarding":{
+		"name":"Onboaring",
+		"disable":"Disable onboarding",
+		"addChannel":"Add channel",
+		"channel":"Channel:",
+		"desc":"Description:",
+		"deleteChannel":"Delete channel from onboarding",
+		"enable":"Enable onboarding",
+		"title":"Welcome to $1!"
+	},
 	"DMs": {
 		"add": "Add someone to this DM",
 		"close": "Close DM",
