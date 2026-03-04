@@ -2105,10 +2105,12 @@ class Form implements OptionsElement<object> {
 			div.classList.add("suberror", "suberrora");
 			e.append(div);
 			element = div;
+			element.focus();
 		} else {
 			element.classList.remove("suberror");
 			setTimeout((_) => {
 				element.classList.add("suberror");
+				element.focus();
 			}, 100);
 		}
 		element.textContent = message;
