@@ -56,7 +56,8 @@
 		"playGif": "Play GIFs:",
 		"playIcon": "Play animated icons:",
 		"roleColors": "Disable role colors:",
-		"gradientColors":"Disable gradient coloring:"
+		"gradientColors":"Disable gradient coloring:",
+		"decorations":"Enable avatar decorations:"
 	},
 	"accountNotStart": "Account unable to start",
 	"add": "Add",

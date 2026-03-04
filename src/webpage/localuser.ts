@@ -232,6 +232,7 @@ class Localuser {
 		this.userinfo = userinfo;
 		this.perminfo.guilds ??= {};
 		this.perminfo.user ??= {};
+		this.perminfo.user.decorations ??= true;
 		this.serverurls = this.userinfo.serverurls;
 		this.initialized = false;
 		this.info = this.serverurls;
@@ -2899,6 +2900,14 @@ class Localuser {
 					this.perminfo.user.disableIcons = !t;
 				},
 				{initState: !this.perminfo.user.disableIcons},
+			);
+
+			accessibility.addCheckboxInput(
+				I18n.accessibility.decorations(),
+				(t) => {
+					this.perminfo.user.decorations = t;
+				},
+				{initState: this.perminfo.user.decorations},
 			);
 			accessibility.addSelect(
 				I18n.accessibility.playGif(),

@@ -758,7 +758,7 @@ class User extends SnowFlake {
 				}
 			})();
 		}
-		if (this.avatar_decoration_data) {
+		if (this.avatar_decoration_data && this.localuser.perminfo.user.decorations) {
 			const dec = createImg(
 				this.info.cdn +
 					`/avatar-decoration-presets/${this.avatar_decoration_data.asset}.png` +
