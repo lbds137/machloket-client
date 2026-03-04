@@ -85,7 +85,10 @@ export function setDefaults() {
 	if (userinfos.accent_color === undefined) {
 		userinfos.accent_color = "#3096f7";
 	}
-	document.documentElement.style.setProperty("--accent-color", userinfos.accent_color);
+
+	getPreferences().then((perfs) =>
+		document.documentElement.style.setProperty("--accent-color", perfs.accentColor),
+	);
 	if (userinfos.preferences === undefined) {
 		userinfos.preferences = {
 			theme: "Dark",
