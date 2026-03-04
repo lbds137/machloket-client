@@ -1069,7 +1069,6 @@ class Localuser {
 				this.ws.send(
 					JSON.stringify({
 						op: 40,
-						//TODO make active actually use metrics instead of just assuming
 						d: {seq: this.lastSequence, qos: {ver: 27, active: !!reasons.length, reasons}},
 					}),
 				);
