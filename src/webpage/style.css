@@ -2671,6 +2671,10 @@ span.instanceStatus {
 	top: 1px;
 	left: 1px;
 }
+input:read-only {
+	cursor: not-allowed;
+	color: var(--secondary-text-soft);
+}
 .avDec {
 	position: absolute;
 	cursor: pointer;

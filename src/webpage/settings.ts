@@ -926,6 +926,8 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		div.append(verify);
 
 		const input = this.input;
+		input.readOnly = !!new URLSearchParams(window.location.search).get("instance");
+		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
 		input.setAttribute("list", "instances");
 		div.append(input);
