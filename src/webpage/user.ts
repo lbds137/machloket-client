@@ -789,7 +789,7 @@ class User extends SnowFlake {
 			if (_) {
 				_.subName(name);
 				name.textContent = _.name;
-				pfp.src = _.getpfpsrc();
+				(pfp.children[0] as HTMLImageElement).src = _.getpfpsrc();
 			} else if (guild.id !== "@me") {
 				this.subName(name);
 				const notFound = document.createElement("span");
