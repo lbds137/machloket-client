@@ -1954,13 +1954,13 @@ class Form implements OptionsElement<object> {
 					console.log(input.value);
 					if (input.value) {
 						const reader = new FileReader();
-						reader.readAsDataURL(input.value[0]);
 						const promise = new Promise<void>((res) => {
 							reader.onload = () => {
 								(build as any)[thing] = reader.result;
 								res();
 							};
 						});
+						reader.readAsDataURL(input.value[0]);
 						promises.push(promise);
 						continue;
 					}
