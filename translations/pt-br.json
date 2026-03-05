@@ -787,10 +787,10 @@
 		"colors": {
 			"name": "Número de cores:",
 			"one": "Um",
-			"secondColor": "Segunda cor:",
-			"thirdColor": "Terceira cor:",
+			"two": "Duas",
 			"three": "Três",
-			"two": "Duas"
+			"secondColor": "Segunda cor:",
+			"thirdColor": "Terceira cor:"
 		},
 		"confirmDelete": "Tem certeza de que quer apagar $1?",
 		"copyId": "Copiar ID do cargo",

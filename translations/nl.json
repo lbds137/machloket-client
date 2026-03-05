@@ -56,7 +56,7 @@
 		"name": "Toegankelijkheid",
 		"playGif": "GIFs afspelen:",
 		"playIcon": "Geanimeerde pictogrammen afspelen:",
-		"roleColors": "Rolkleuren uitschakelen"
+		"roleColors": "Rolkleuren uitschakelen:"
 	},
 	"accountNotStart": "Account kan niet worden gestart",
 	"add": "Toevoegen",
@@ -121,8 +121,8 @@
 		"markRead": "Markeren als gelezen",
 		"mute": "Kanaal dempen",
 		"name": "Kanaal",
-		"name:": "Naam:",
-		"nsfw:": "Niet geschikt voor werk:",
+		"name:": "Kanaalnaam:",
+		"nsfw:": "Waarschuwing: inhoud niet geschikt voor minderjarigen:",
 		"permissions": "Machtigingen",
 		"selectCatName": "Naam van de categorie",
 		"selectName": "Naam van het kanaal",
@@ -139,7 +139,7 @@
 	"threads": {
 		"leave": "Discussie verlaten",
 		"join": "Aan discussie meedoen",
-		"name": "Naam:"
+		"name": "Onderwerpnaam:"
 	},
 	"forum": {
 		"next": "Volgende",
@@ -264,8 +264,8 @@
 		"confirmDelete": "Weet u zeker dat u $1 wilt verwijderen?",
 		"confirmLeave": "Weet u zeker dat u weg wilt?",
 		"copyId": "Gilde-ID kopiëren",
-		"create": "Gilde aanmaken",
-		"createFromTemplate": "Gilde op basis van sjabloon",
+		"create": "Volledig nieuw gilde maken",
+		"createFromTemplate": "Gilde maken op basis van sjabloon",
 		"createNewTemplate": "Nieuw sjabloon maken",
 		"creating": "Gilde wordt aangemaakt",
 		"default": "Standaard ($1)",
@@ -308,7 +308,7 @@
 		"systemSelect:": "Systeemberichtenkanaal:",
 		"tempCreatedBy": "Sjabloon gemaakt door:",
 		"tempUseCount": "Sjabloon is $1 {{PLURAL:$1|keer}} gebruikt",
-		"template": "Sjabloon:",
+		"template": "Sjabloonkoppeling of -code om gilde van te bouwen:",
 		"templateDesc": "Sjabloonbeschrijving:",
 		"templateName": "Sjabloonnaam:",
 		"templateNameShort": "De sjabloonnaam moet ten minste 2 tekens lang zijn",
@@ -384,14 +384,14 @@
 		"inviteLinkCode": "Uitnodigingskoppeling/-code",
 		"inviteMaker": "Uitnodigingsmaker",
 		"invitedBy": "U bent uitgenodigd door $1",
-		"joinUsing": "Inschrijven via uitnodiging",
+		"joinUsing": "Lid worden van een gilde via een uitnodiging",
 		"loginOrCreateAccount": "Aanmelden of een account aanmaken ⇌",
 		"longInvitedBy": "$1 heeft u uitgenodigd om lid te worden van $2",
 		"maxUses": "Gebruikslimiet: $1",
 		"never": "Nooit",
 		"noAccount": "Maak een account aan om de uitnodiging te accepteren",
 		"subtext": "bij $1 in $2",
-		"used": "$1 {{PLURAL:$1|keer}} gebruikt."
+		"used": "$1 {{PLURAL:$1|keer}} gebruikt:"
 	},
 	"inviteOptions": {
 		"12h": "12 uur",
@@ -419,7 +419,7 @@
 		"PasswordsNoMatch": "Wachtwoorden komen niet overeen",
 		"TOSURL": "Koppeling naar de gebruiksvoorwaarden:",
 		"VoiceWarning": "Weet u zeker dat u dit wilt inschakelen? Het is erg experimenteel en kan problemen opleveren. (Deze functie is er voor ontwikkelaars. Blijf er liever van af als u niet weet wat u doet.)",
-		"accentColor": "Accentkleur:",
+		"accentColor": "Thema-accentkleur:",
 		"accountSettings": "Accountinstellingen",
 		"addBot": "Robot toevoegen",
 		"addStatus": "Status toevoegen",
@@ -577,10 +577,10 @@
 	"otherAt": "$1 om $2",
 	"permissions": {
 		"descriptions": {
-			"ADMINISTRATOR": "Geeft alle onderstaande rechten aan rol-leden en omzeilt het overschrijven van kanaalrechten. Dit is een gevaarlijk recht!",
+			"ADMINISTRATOR": "Geeft alle onderstaande machtigingen aan rolleden en omzeilt alle overschrijvingen van machtigingen. Alleen U en leden/bots die u volledig vertrouwt, zouden deze UITGEBREIDE machtiging mogen hebben!",
 			"MANAGE_GUILD": "Maakt het beheren en bewerken van het gilde mogelijk.",
 			"VIEW_AUDIT_LOG": "Hiermee kunnen rol-leden het inspectielogboek bekijken",
-			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Maakt het mogelijk inzichten over rolabonnementen te bekijken.",
+			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Laat rolleden inzichten over rolabonnementen bekijken.",
 			"VIEW_GUILD_INSIGHTS": "Hiermee kunnen rol-leden inzichten over het gilde bekijken",
 			"BYPASS_SLOWMODE": "De langzame modus heeft geen effect meer op rol-leden.",
 			"MENTION_EVERYONE": "Hiermee kunnen rol-leden iedereen (@everyone) vermelden",
@@ -593,9 +593,9 @@
 			"MANAGE_ROLES": "Hiermee kunnen rol-leden rollen bewerken en verwijderen",
 			"MANAGE_WEBHOOKS": "Maakt beheren en verwijderen van webhooks mogelijk",
 			"CREATE_EVENTS": "Maakt het mogelijk geplande evenementen aan te maken.",
-			"MANAGE_EVENTS": "Hiermee kan de gebruiker evenementen bewerken en verwijderen.",
+			"MANAGE_EVENTS": "Laat rolleden evenementen bewerken en verwijderen (bestaand en toekomstig).",
 			"CREATE_GUILD_EXPRESSIONS": "Maakt het voor rol-leden mogelijk emoji’s, stickers en geluidspaneel-geluiden te maken.",
-			"MANAGE_GUILD_EXPRESSIONS": "Maakt het bewerken/verwijderen van emoji’s, stickers en geluidspaneel-geluiden mogelijk.",
+			"MANAGE_GUILD_EXPRESSIONS": "Laat rolleden emoji’s, stickers en geluidspaneel-geluiden bewerken en verwijderen.",
 			"MODERATE_MEMBERS": "Hiermee kunnen rol-leden gebruikers een time-out geven (om zo voorkomen dat ze berichten in chat en discussies verzenden of erop reageren en dat ze in spraak- en podiumkanalen spreken).",
 			"KICK_MEMBERS": "Hiermee kunnen rol-leden leden uit het gilde zetten.",
 			"BAN_MEMBERS": "Hiermee kunnen rol-leden leden uit het gilde verbannen.",
@@ -623,8 +623,8 @@
 			"STREAM": "Hiermee kunnen rolleden streamen in spraakkanalen.",
 			"USE_SOUNDBOARD": "Hiermee kunnen rolleden een soundboard gebruiken in spraakkanalen.",
 			"USE_EXTERNAL_SOUNDS": "Hiermee kunnen rolleden soundboardgeluiden van andere gilden gebruiken in spraakkanalen.",
-			"PRIORITY_SPEAKER": "Hiermee kan de prioriteitsspreker in spraakkanalen worden gebruikt.",
-			"REQUEST_TO_SPEAK": "Hiermee kan een gebruiker een spreekverzoek indienen in de podiumkanalen.",
+			"PRIORITY_SPEAKER": "Laat rolleden prioriteitsspreker in spraakkanalen worden.",
+			"REQUEST_TO_SPEAK": "Laat rolleden een spreekverzoek indienen in de podiumkanalen.",
 			"USE_EMBEDDED_ACTIVITIES": "Hiermee kunnen rolleden ingebedde activiteiten gebruiken.",
 			"USE_APPLICATION_COMMANDS": "Hiermee kunnen rolleden toepassingsopdrachten gebruiken.",
 			"USE_EXTERNAL_APPS": "Hiermee kunnen rolleden hun toepassingenreacties openbaar in het kanaal weergeven. Indien uitgeschakeld, kunnen gebruikers hun apps nog steeds gebruiken, maar zijn de reacties alleen voor henzelf zichtbaar. Dit geldt alleen voor apps die niet ook in het gilde zijn geïnstalleerd."
@@ -715,12 +715,12 @@
 	"role": {
 		"color": "Eerste kleur",
 		"colors": {
-			"name": "Aantal kleuren:",
-			"one": "Eén",
+			"name": "Kleurenschema:",
+			"one": "Monochroom",
+			"two": "Tweekleurig",
+			"three": "Driekleurig",
 			"secondColor": "Tweede kleur:",
-			"thirdColor": "Derde kleur:",
-			"three": "Drie",
-			"two": "Twee"
+			"thirdColor": "Derde kleur:"
 		},
 		"confirmDelete": "Weet u zeker dat u $1 wilt verwijderen?",
 		"copyId": "Rol-ID kopiëren",
@@ -745,7 +745,7 @@
 		"page": "Pagina $1",
 		"search": "Zoeken"
 	},
-	"searchGifs": "Tenor doorzoeken",
+	"searchGifs": "Zoeken in $1",
 	"settings": {
 		"clear": "Wissen",
 		"img": "Afbeelding uploaden",
@@ -766,7 +766,7 @@
 		"confirmDel": "Weet u zeker dat u deze sticker wilt verwijderen?",
 		"del": "Sticker verwijderen",
 		"desc": "Beschrijving",
-		"errEmjMust": "Moet een emoji bij uw sticker voegen",
+		"errEmjMust": "U moet een emoji aan uw sticker koppelen",
 		"errFileMust": "Moet een afbeelding bij uw sticker voegen",
 		"image": "Afbeelding:",
 		"name": "Naam:",
@@ -774,7 +774,7 @@
 		"title": "Stickers",
 		"upload": "Stickers uploaden"
 	},
-	"submit": "indienen",
+	"submit": "Opslaan",
 	"switchAccounts": "Van account wisselen ⇌",
 	"todayAt": "Vandaag om $1",
 	"trace": {
@@ -790,7 +790,7 @@
 	"uploadPfp": "Profielafbeelding uploaden:",
 	"useTemplate": "$1 als sjabloon gebruiken",
 	"useTemplateButton": "Sjabloon gebruiken",
-	"usedFermi": "verzenden via Fermi",
+	"usedFermi": "verzonden via Fermi",
 	"user": {
 		"addRole": "Rollen toevoegen",
 		"ban": "Lid verbannen",
@@ -815,7 +815,7 @@
 	},
 	"userping": {
 		"resolving": "gebruiken aan het opzoeken",
-		"unknown": "@onbekend"
+		"unknown": "@onbekende-gebruiker"
 	},
 	"vc": {
 		"joinForStream": "Word lid van het spraakkanaal om te kijken",
@@ -830,12 +830,12 @@
 		"areYouSureDelete": "Weet u zeker dat u $1 wilt verwijderen?",
 		"avatar": "Avatar",
 		"base": "Webhooks",
-		"channel": "Kanaal",
+		"channel": "Webhook-uitvoer naar kanaal:",
 		"copyURL": "Webhook-koppeling kopiëren",
 		"createdAt": "Aangemaakt op $1",
 		"createdBy": "Aangemaakt door:",
 		"deleteWebhook": "Webhook verwijderen",
-		"name": "Naam:",
+		"name": "Webhooknaam:",
 		"newWebHook": "Nieuwe webhook",
 		"notFound": "Gebruiker is niet meer in het gilde",
 		"sillyDefaults": "Kapitein Haak\nHaakje-de-voorste\nVan de haak op de taak\nHAAK 9000",
@@ -844,7 +844,7 @@
 		"type1": "Inkomend",
 		"type2": "Kanaalvolger",
 		"type3": "Toepassing",
-		"url": "Webhook-URL: `$1`"
+		"url": "Webhook-koppeling: `$1`"
 	},
 	"welcomeMessages": "Welkom $1! Leuk dat je er bent!\nHoi $1, leuk je te ontmoeten!\nDag $1, schuif ook gezellig aan!\nKom erbij $1, heb je pizza bij je?",
 	"widget": "Gilde-widget",

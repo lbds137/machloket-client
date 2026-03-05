@@ -9,6 +9,12 @@
 		"404": "Feeler: 404 – Säit net fonnt",
 		"blog": "De Fermi-Blog"
 	},
+	"onboarding": {
+		"addChannel": "Kanal derbäisetzen",
+		"channel": "Kanal:",
+		"desc": "Beschreiwung:",
+		"title": "Wëllkomm op $1!"
+	},
 	"DMs": {
 		"markRead": "Als gelies markéieren"
 	},
@@ -55,7 +61,7 @@
 		"makeInvite": "Invitatioun maachen",
 		"markRead": "Als gelies markéieren",
 		"name": "Kanal",
-		"name:": "Numm:",
+		"name:": "Numm vum Kanal:",
 		"nsfw:": "NSFW:",
 		"selectCatName": "Numm vun der Kategorie",
 		"selectName": "Numm vum Kanal",
@@ -68,7 +74,7 @@
 		"forum": "Forum"
 	},
 	"threads": {
-		"name": "Numm:"
+		"name": "Numm vum Thread:"
 	},
 	"forum": {
 		"sortOptions": {
@@ -85,6 +91,7 @@
 		"errorNotValid": "$1 ass kee gültege Choix fir $2"
 	},
 	"confirmGuildLeave": "Sidd Dir sécher, datt Dir aus $1 erausgoe wëllt",
+	"copyRegLink": "Link kopéieren",
 	"createAccount": "Kont uleeën",
 	"delete": "Läschen",
 	"deleteConfirm": "Sidd Dir sécher, datt Dir dat läsche wëllt?",
@@ -311,14 +318,14 @@
 	"remove": "Ewechhuelen",
 	"reply": "Äntweren",
 	"role": {
-		"color": "Primär Faarf",
+		"color": "Éischt Faarf",
 		"colors": {
-			"name": "Zuel vu Faarwen:",
-			"one": "Eng",
-			"secondColor": "Sekundär Faarf:",
-			"thirdColor": "Tertiär Faarf:",
-			"three": "Dräi",
-			"two": "Zwou"
+			"name": "Faarfscheema:",
+			"one": "Monochrom",
+			"two": "Zweefaarweg",
+			"three": "Dräifaarweg",
+			"secondColor": "Zweet Faarf:",
+			"thirdColor": "Drëtt Faarf:"
 		},
 		"delete": "Roll läschen",
 		"deleting": "Roll gëtt geläscht …",

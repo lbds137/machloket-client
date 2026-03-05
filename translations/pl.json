@@ -733,10 +733,10 @@
 		"colors": {
 			"name": "Liczba kolorów:",
 			"one": "Jeden",
-			"secondColor": "Drugi kolor:",
-			"thirdColor": "Trzeci kolor:",
+			"two": "Dwa",
 			"three": "Trzy",
-			"two": "Dwa"
+			"secondColor": "Drugi kolor:",
+			"thirdColor": "Trzeci kolor:"
 		},
 		"confirmDelete": "Czy na pewno chcesz usunąć $1?",
 		"copyId": "Kopiuj identyfikator roli",
