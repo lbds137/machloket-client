@@ -2687,6 +2687,7 @@ input[type="search"]:read-only {
 .timestamp {
 	flex: none;
 	margin-left: 6px;
+	margin-bottom: 1px;
 	font-size: 0.75em;
 	color: var(--primary-text-soft);
 }
@@ -4336,6 +4337,10 @@ fieldset input[type="radio"] {
 	.replyflex,
 	.reactiondiv {
 		padding-left: 44px;
+	}
+	.sticker {
+		height: auto;
+		max-width: 100%;
 	}
 	#realbox,
 	#logindiv,
