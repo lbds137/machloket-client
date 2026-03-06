@@ -20,7 +20,7 @@
 		"locale": "en"
 	},
 	"onboarding":{
-		"name":"Onboaring",
+		"name":"Onboarding",
 		"disable":"Disable onboarding",
 		"addChannel":"Add channel",
 		"channel":"Channel:",
