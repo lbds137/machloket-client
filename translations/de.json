@@ -801,10 +801,10 @@
 		"colors": {
 			"name": "Farbanzahl:",
 			"one": "Eins",
-			"secondColor": "Zweite Farbe:",
-			"thirdColor": "Dritte Farbe:",
+			"two": "Zwei",
 			"three": "Drei",
-			"two": "Zwei"
+			"secondColor": "Zweite Farbe:",
+			"thirdColor": "Dritte Farbe:"
 		},
 		"confirmDelete": "Sicher, dass $1 gelöscht werden soll?",
 		"copyId": "Rollen-ID kopieren",

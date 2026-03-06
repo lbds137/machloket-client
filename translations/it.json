@@ -24,6 +24,12 @@
 		"whatelse": "Cos'altro pensi che dovrebbe succedere?",
 		"whereever": "Ovunque questo sia"
 	},
+	"onboarding": {
+		"addChannel": "Aggiungi canale",
+		"channel": "Canale:",
+		"desc": "Descrizione:",
+		"title": "Benvenuto a $1!"
+	},
 	"DMs": {
 		"add": "Aggiungi qualcuno a questo DM",
 		"close": "Chiudi DM",
@@ -60,8 +66,8 @@
 		"name": "Accessibilità",
 		"playGif": "Riproduci GIF:",
 		"playIcon": "Riproduci icone animate:",
-		"roleColors": "Disabilita i colori per i ruoli",
-		"gradientColors": "Disabilita i colori sfumati"
+		"roleColors": "Disabilita i colori dei ruoli:",
+		"gradientColors": "Disattiva i colori sfumati:"
 	},
 	"accountNotStart": "Impossibile avviare l'account",
 	"add": "Aggiungi",
@@ -107,8 +113,8 @@
 		"announcement": "Annunci",
 		"deleteCat": "Cancella categoria",
 		"name": "Canale",
-		"name:": "Nome:",
-		"nsfw:": "NSFW:",
+		"name:": "Nome del canale:",
+		"nsfw:": "Avviso sui contenuti NSFW/per adulti:",
 		"permissions": "Permessi",
 		"selectCatName": "Nome della categoria",
 		"selectName": "Nome del canale",
@@ -125,7 +131,7 @@
 	},
 	"threads": {
 		"join": "Unisciti alla discussione",
-		"name": "Nome:",
+		"name": "Nome del thread:",
 		"editTags": "Modifica etichette"
 	},
 	"forum": {
@@ -216,8 +222,10 @@
 		"settings": "Impostazioni",
 		"stickWelcomeReact?": "Chiedi ai membri della tua gilda di reagire con un adesivo quando qualcuno si unisce!",
 		"systemSelect:": "Canale dei messaggi di sistema:",
+		"templateDesc": "Descrizione template:",
 		"topic:": "Argomento:",
 		"unknownRole": "@ruolo-sconosciuto",
+		"viewTemplate": "Vedi template",
 		"yesLeave": "Si, ne sono sicuro"
 	},
 	"htmlPages": {
@@ -232,12 +240,16 @@
 	},
 	"instInfo": "Informazioni sull'istanza",
 	"instanceInfo": {
+		"frontPage": "[Prima pagina]($1)",
 		"name": "Informazioni sull'istanza",
 		"publicUrl": "[Link pubblico]($1)"
 	},
 	"instanceStats": {
 		"members": "Membri: $1",
 		"servers": "Gilda: $1"
+	},
+	"interactions": {
+		"failed": "Interazione fallita"
 	},
 	"invite": {
 		"accept": "Accetta",
@@ -248,7 +260,7 @@
 		"expires": "Scade: $1",
 		"inviteMaker": "Creatore di inviti",
 		"never": "Mai",
-		"used": "Usato $1 {{PLURAL:$1|volta|volte}}."
+		"used": "Usato $1 {{PLURAL:$1|volta|volte}}:"
 	},
 	"inviteOptions": {
 		"12h": "12 ore",
@@ -258,7 +270,8 @@
 		"30m": "30 minuti",
 		"6h": "6 ore",
 		"7d": "7 giorni",
-		"never": "Mai"
+		"never": "Mai",
+		"title": "Invita persone"
 	},
 	"loaded": "Caricato",
 	"localuser": {
@@ -397,7 +410,7 @@
 		"descriptions": {
 			"BYPASS_SLOWMODE": "La modalità lenta non ha più effetto sui membri del ruolo.",
 			"PIN_MESSAGES": "Consente ai membri del ruolo di fissare messaggi.",
-			"MANAGE_EVENTS": "Consente all'utente di modificare/cancellare eventi (esistenti e futuri).",
+			"MANAGE_EVENTS": "Consente ai membri del ruolo di modificare/cancellare eventi (esistenti e futuri).",
 			"SEND_VOICE_MESSAGES": "Consente l'invio di messaggi vocali nei canali di testo.",
 			"CREATE_INSTANT_INVITE": "Consente ai membri del ruolo di creare inviti per la gilda."
 		},
@@ -423,9 +436,11 @@
 	"remove": "Rimuovi",
 	"reply": "Rispondi",
 	"role": {
-		"color": "Colore primario",
+		"color": "Primo colore",
 		"colors": {
-			"secondColor": "Colore secondario:"
+			"name": "Schema di colori:",
+			"two": "Bicolore",
+			"secondColor": "Secondo colore:"
 		},
 		"copyId": "Copia ID ruolo",
 		"displaySettings": "Impostazioni di visualizzazione",
@@ -439,6 +454,7 @@
 		"old": "Vecchio",
 		"page": "Pagina $1"
 	},
+	"searchGifs": "Ricerca $1",
 	"settings": {
 		"clear": "Pulisci",
 		"img": "Carica immagine"
@@ -459,15 +475,18 @@
 		"remove": "Rimuovi utente",
 		"unblock": "Sblocca utente"
 	},
+	"userping": {
+		"unknown": "@utente-sconosciuto"
+	},
 	"webauth": {
 		"addKey": "Aggiungi chiave",
 		"keyname": "Nome chiave:",
 		"manage": "Gestisci chiavi di sicurezza"
 	},
 	"webhooks": {
-		"channel": "Canale",
+		"channel": "Output del webhook sul canale:",
 		"createdBy": "Creato da:",
-		"name": "Nome:",
+		"name": "Nome del webhook:",
 		"type": "Tipo: $1",
 		"type3": "Applicazione"
 	},

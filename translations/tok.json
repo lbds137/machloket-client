@@ -112,8 +112,8 @@
 		"color": "kule la ni wan",
 		"colors": {
 			"one": "wan",
-			"secondColor": "kule la ni nanpa tu",
-			"two": "tu"
+			"two": "tu",
+			"secondColor": "kule la ni nanpa tu"
 		}
 	},
 	"settings": {

@@ -72,8 +72,9 @@
 		"name": "Accessibilité",
 		"playGif": "Jouer les GIFs :",
 		"playIcon": "Jouer les icônes animées :",
-		"roleColors": "Désactiver les couleurs des rôles",
-		"gradientColors": "Désactiver les couleurs dégradées"
+		"roleColors": "Désactiver les couleurs des rôles :",
+		"gradientColors": "Désactiver la coloration en dégradé :",
+		"decorations": "Activer les décorations d'avatar :"
 	},
 	"accountNotStart": "Impossible de démarrer le compte",
 	"add": "Ajouter",
@@ -141,8 +142,8 @@
 		"markRead": "Marquer comme lu",
 		"mute": "Rendre le canal muet",
 		"name": "Canal",
-		"name:": "Nom :",
-		"nsfw:": "NSFW :",
+		"name:": "Nom du canal :",
+		"nsfw:": "Avertissement contenu mature :",
 		"permissions": "Permissions",
 		"selectCatName": "Nom de la catégorie",
 		"selectName": "Nom du canal",
@@ -163,7 +164,7 @@
 	"threads": {
 		"leave": "Quitter le fil",
 		"join": "Rejoindre le fil",
-		"name": "Nom :",
+		"name": "Nom du fil :",
 		"editTags": "Modifier les tags"
 	},
 	"forum": {
@@ -212,6 +213,7 @@
 	},
 	"confirmGuildLeave": "Êtes-vous sûr·e de vouloir quitter $1",
 	"copyLink": "Copier le lien du message",
+	"copyRegLink": "Copier le lien",
 	"copymessageid": "Copier l'id du message",
 	"copyrawtext": "Copier le texte brut",
 	"createAccount": "Créer un compte",
@@ -327,8 +329,8 @@
 		"confirmDelete": "Voulez-vous vraiment supprimer $1 ?",
 		"confirmLeave": "Êtes-vous sûr·e de vouloir partir ?",
 		"copyId": "Copier l'identifiant de la guilde",
-		"create": "Créer une guilde",
-		"createFromTemplate": "Guilde à partir d'un modèle",
+		"create": "Créer une guilde à partir de zéro",
+		"createFromTemplate": "Créer une guilde à partir d'un modèle",
 		"createNewTemplate": "Créer un nouveau modèle",
 		"creating": "Création de la guilde",
 		"default": "Par défaut ($1)",
@@ -372,13 +374,13 @@
 		"systemSelect:": "Canal de messages systèmes :",
 		"tempCreatedBy": "Modèle créé par :",
 		"tempUseCount": "Le modèle a été utilisé $1 fois{{PLURAL:$1}}",
-		"template": "Modèle :",
+		"template": "Link/code du modèle de guilde à créer :",
 		"templateDesc": "Description du modèle :",
 		"templateName": "Nom du modèle :",
 		"templateNameShort": "Le nom du modèle doit comporter au moins 2 caractères",
 		"templateURL": "Lien du modèle : $1",
 		"templates": "Modèles",
-		"templcateMetaDesc": "Un modèle permet aux autres d’utiliser cette guilde comme base pour leurs propres guildes. Ce processus va copier les canaux, les rôles et les paramètres, mais pas les messages, les robots ou l’icône de guilde.",
+		"templcateMetaDesc": "Un modèle permet aux autres d’utiliser cette guilde comme base pour leurs propres guildes : cela va copier les canaux, les rôles et les paramètres, mais pas les messages, les bots ou l’icône de la guilde.",
 		"topic:": "Sujet :",
 		"unknownRole": "@rôle-inconnu",
 		"viewTemplate": "Afficher le modèle",
@@ -456,7 +458,7 @@
 		"inviteLinkCode": "Lien/code d'invitation",
 		"inviteMaker": "Créateur d'invitations",
 		"invitedBy": "Vous avez été invité par $1",
-		"joinUsing": "Rejoignez-nous en utilisant une invitation",
+		"joinUsing": "Rejoindre une guilde en utilisant une invitation",
 		"loginOrCreateAccount": "Connectez-vous ou créez un compte ⇌",
 		"longInvitedBy": "$1 vous a invité à rejoindre $2",
 		"maxUses": "Utilisations maximales : $1",
@@ -464,7 +466,7 @@
 		"noAccount": "Créez un compte pour accepter l'invitation",
 		"notFound": "Invitation introuvable",
 		"subtext": "à $1 sur $2",
-		"used": "Utilisée $1 fois{{PLURAL:$1|}}"
+		"used": "Utilisée $1 fois{{PLURAL:$1|}} :"
 	},
 	"inviteOptions": {
 		"12h": "12 heures",
@@ -492,7 +494,7 @@
 		"PasswordsNoMatch": "Les mots de passe ne correspondent pas",
 		"TOSURL": "Lien vers les Conditions Générales d'Utilisation :",
 		"VoiceWarning": "Êtes-vous sûr·e de vouloir activer cette option ? C'est très expérimental et est susceptible de causer des problèmes (cette fonctionnalité est destinée aux développeurs, veuillez ne pas l'activer si vous ne savez pas ce que vous faites)",
-		"accentColor": "Couleur d'accentuation :",
+		"accentColor": "Couleur d'accentuation du thème :",
 		"accountSettings": "Paramètres du compte",
 		"addBot": "Ajouter un bot",
 		"addStatus": "Ajouter un statut",
@@ -665,7 +667,7 @@
 	"otherAt": "$1 à $2",
 	"permissions": {
 		"descriptions": {
-			"ADMINISTRATOR": "Accorde TOUTES les autorisations ci-dessous aux membres du rôle, CONTOURNE TOUTES les permissions individuelles des canaux. Cette permission est DANGEREUSE !",
+			"ADMINISTRATOR": "Accorde TOUTES les permissions ci-dessous aux membres du rôle, contourne TOUTES les permissions individuelles des canaux. Seuls vous-même et les membres/bots de confiance absolue devraient avoir cette permission DANGEREUSE !!",
 			"MANAGE_GUILD": "Permet aux membres du rôle de gérer et éditer la guilde.",
 			"VIEW_AUDIT_LOG": "Permet aux membres du rôle de visualiser le journal d'audit.",
 			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Permet aux membres du rôle de visualiser les informations sur les abonnements aux rôles.",
@@ -681,7 +683,7 @@
 			"MANAGE_ROLES": "Permet aux membres du rôle d'éditer/modifier les rôles.",
 			"MANAGE_WEBHOOKS": "Permet aux membres du rôle d'éditer/modifier les Webhooks.",
 			"CREATE_EVENTS": "Permet aux membres du rôle de créer des événements planifiés.",
-			"MANAGE_EVENTS": "Permet aux membres du rôle d'éditer/supprimer les événements.",
+			"MANAGE_EVENTS": "Permet aux membres du rôle d'éditer/supprimer les événements (présents & futurs).",
 			"CREATE_GUILD_EXPRESSIONS": "Permet de créer des expressions (émojis, autocollants et sons de table de bruitage).",
 			"MANAGE_GUILD_EXPRESSIONS": "Permet aux membres du rôle d'éditer/modifier les expressions (émojis, autocollants et sons de table de bruitage).",
 			"MODERATE_MEMBERS": "Permet aux membres du rôle d'exclure temporairement des membres de la guilde (les empêche d'envoyer/réagir aux messages dans les canaux/fils de discussion et de parler dans les canaux vocaux et les scènes).",
@@ -753,7 +755,7 @@
 			"SEND_MESSAGES": "Envoyer des messages",
 			"SEND_MESSAGES_IN_THREADS": "Envoyer des messages dans des fils de discussion",
 			"SEND_POLLS": "Créer des sondages",
-			"SEND_TTS_MESSAGES": "Envoyer des messages de synthèse vocal TTS",
+			"SEND_TTS_MESSAGES": "Envoyer des messages TTS (synthèse vocale)",
 			"SEND_VOICE_MESSAGES": "Envoyer des messages vocaux",
 			"SPEAK": "Parler",
 			"STREAM": "Vidéo",
@@ -803,12 +805,12 @@
 	"role": {
 		"color": "Couleur primaire",
 		"colors": {
-			"name": "Nombre de couleurs :",
-			"one": "Un",
+			"name": "Schéma de couleurs :",
+			"one": "Monochrome",
+			"two": "Bicolore",
+			"three": "Tricolore",
 			"secondColor": "Couleur secondaire :",
-			"thirdColor": "Couleur tertiaire :",
-			"three": "Trois",
-			"two": "Deux"
+			"thirdColor": "Couleur tertiaire :"
 		},
 		"confirmDelete": "Êtes-vous sûr·e de vouloir supprimer $1 ?",
 		"copyId": "Copier l'ID du rôle",
@@ -833,7 +835,7 @@
 		"page": "Page $1",
 		"search": "Rechercher"
 	},
-	"searchGifs": "Rechercher sur Tenor",
+	"searchGifs": "Chercher sur $1",
 	"settings": {
 		"clear": "Retirer",
 		"img": "Importer une image",
@@ -855,7 +857,7 @@
 		"confirmDel": "Êtes-vous sûr·e de vouloir supprimer cet autocollant?",
 		"del": "Supprimer l'autocollant",
 		"desc": "Description",
-		"errEmjMust": "Vous devez inclure un emoji avec votre autocollant",
+		"errEmjMust": "Vous devez associer un emoji avec votre autocollant",
 		"errFileMust": "Vous devez inclure une image pour votre autocollant",
 		"image": "Image :",
 		"name": "Nom :",
@@ -863,7 +865,7 @@
 		"title": "Autocollants",
 		"upload": "Importer des autocollants"
 	},
-	"submit": "soumettre",
+	"submit": "Soumettre",
 	"switchAccounts": "Changer de compte ⇌",
 	"todayAt": "Aujourd'hui à $1",
 	"trace": {
@@ -917,7 +919,7 @@
 	},
 	"userping": {
 		"resolving": "résolution de l'utilisateur",
-		"unknown": "@inconnu"
+		"unknown": "@utilisateur-inconnu"
 	},
 	"vc": {
 		"joinForStream": "Rejoignez le canal vocal pour regarder",
@@ -937,12 +939,12 @@
 		"areYouSureDelete": "Êtes-vous sûr·e de vouloir supprimer $1 ?",
 		"avatar": "Avatar",
 		"base": "Webhooks",
-		"channel": "Canal",
+		"channel": "Webhook raccorde au canal :",
 		"copyURL": "Copier le lien du Webhook",
 		"createdAt": "Créé le $1",
 		"createdBy": "Créé par :",
 		"deleteWebhook": "Supprimer le Webhook",
-		"name": "Nom :",
+		"name": "Nom du Webhook :",
 		"newWebHook": "Nouveau Webhook",
 		"notFound": "L’utilisateur n’est plus dans la guilde",
 		"sillyDefaults": "Capitaine Crochet\nBillie Crochets\nSainte Ernette",
