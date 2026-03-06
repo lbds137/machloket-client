@@ -1522,7 +1522,7 @@ class Captcha implements OptionsElement<string> {
 		const float = new Dialog("", {noSubmit: true});
 		float.options.addTitle(I18n.form.captcha());
 		const cap = float.options.addForm("", () => {}, {traditionalSubmit: true}).addCaptcha();
-		float.show();
+		float.show().parentElement!.style.zIndex = "200";
 		const ret = cap.makeCaptcha(json);
 		await ret;
 		float.hide();
@@ -1608,7 +1608,7 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 					e.ticket = json.ticket;
 				});
 				const ti = form.addTextInput("", "code");
-				better.show();
+				better.show().parentElement!.style.zIndex = "200";
 			});
 		}
 	} else {
