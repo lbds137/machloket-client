@@ -57,8 +57,9 @@
 		"name": "無障礙",
 		"playGif": "播放GIF動圖：",
 		"playIcon": "播放動態圖示：",
-		"roleColors": "停用角色顏色",
-		"gradientColors": "停用漸層色彩"
+		"roleColors": "停用角色顏色：",
+		"gradientColors": "停用漸層色彩：",
+		"decorations": "啟用頭像裝飾："
 	},
 	"accountNotStart": "帳號無法啟動",
 	"add": "添加",
@@ -126,8 +127,8 @@
 		"markRead": "標記為已讀",
 		"mute": "靜音的頻道",
 		"name": "頻道",
-		"name:": "名稱：",
-		"nsfw:": "工作場所不宜：",
+		"name:": "頻道名稱：",
+		"nsfw:": "工作場所不宜/成人內容警告：",
 		"permissions": "權限",
 		"selectCatName": "分類名稱",
 		"selectName": "頻道名稱",
@@ -148,7 +149,7 @@
 	"threads": {
 		"leave": "離開討論串",
 		"join": "加入討論串",
-		"name": "名稱：",
+		"name": "討論串名稱：",
 		"editTags": "編輯標籤"
 	},
 	"forum": {
@@ -312,8 +313,8 @@
 		"confirmDelete": "您確定要刪除$1嗎？",
 		"confirmLeave": "您確定您要離開嗎？",
 		"copyId": "複製公會 ID",
-		"create": "建立公會",
-		"createFromTemplate": "公會模板",
+		"create": "從頭開始建立公會",
+		"createFromTemplate": "從模板建立公會",
 		"createNewTemplate": "建立新模板",
 		"creating": "建立公會",
 		"default": "預設（$1）",
@@ -357,13 +358,13 @@
 		"systemSelect:": "系統訊息頻道：",
 		"tempCreatedBy": "模板建立者：",
 		"tempUseCount": "模板已使用 $1 {{PLURAL:$1|次}}",
-		"template": "模板：",
+		"template": "用於建立公會的模板連結/代碼：",
 		"templateDesc": "模板描述：",
 		"templateName": "模板名稱：",
 		"templateNameShort": "模板名稱必須至少包含 2 個字元",
 		"templateURL": "模板連結：$1",
 		"templates": "模板",
-		"templcateMetaDesc": "模板允許其他人使用該公會作為自己公會的基礎內容，這會複製該公會的頻道、角色、設定，但不會複製公會內部的訊息、機器人或公會圖示。",
+		"templcateMetaDesc": "模板允許其他人使用該公會作為自己公會的基礎內容：這會複製該公會的頻道、角色與設定，但不會複製公會內部的訊息、機器人、公會圖示。",
 		"topic:": "主題：",
 		"unknownRole": "@不明角色",
 		"viewTemplate": "查看模板",
@@ -441,7 +442,7 @@
 		"inviteLinkCode": "邀請連結/代碼",
 		"inviteMaker": "邀請製作者",
 		"invitedBy": "您已收到來自$1的邀請",
-		"joinUsing": "加入使用邀請",
+		"joinUsing": "使用邀請加入公會",
 		"loginOrCreateAccount": "登入或建立帳號⇌",
 		"longInvitedBy": "$1邀請您加入$2",
 		"maxUses": "最多：$1",
@@ -449,7 +450,7 @@
 		"noAccount": "建立帳號來接受邀請",
 		"notFound": "找不到邀請",
 		"subtext": "到$2裡的$1",
-		"used": "使用過 $1 {{PLURAL:$1|次}}"
+		"used": "使用過 $1 {{PLURAL:$1|次}}："
 	},
 	"inviteOptions": {
 		"12h": "12 小時",
@@ -477,7 +478,7 @@
 		"PasswordsNoMatch": "密碼不符合",
 		"TOSURL": "服務條款的連結：",
 		"VoiceWarning": "您確定要啟用這個功能嗎？這是非常實驗性的，可能會引發問題。（此功能僅供開發者使用，如果您不確定操作，請不要啟用。）",
-		"accentColor": "強調色彩：",
+		"accentColor": "主題強調色彩：",
 		"accountSettings": "帳號設定",
 		"addBot": "新增機器人",
 		"addStatus": "新增狀態",
@@ -650,10 +651,10 @@
 	"otherAt": "於$2的$1",
 	"permissions": {
 		"descriptions": {
-			"ADMINISTRATOR": "會授予角色成員以下「所有」的權限、並「越過」所有權限覆寫。這是個「充滿危險」的許可！！",
+			"ADMINISTRATOR": "會授予角色成員以下「所有」的權限、並越過所有權限覆寫。只有您和您絕對信任的成員/機器人才能擁有這樣危險的權限！",
 			"MANAGE_GUILD": "允許角色成員管理和編輯公會。",
 			"VIEW_AUDIT_LOG": "允許角色成員查看稽核日誌。",
-			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "允許查看角色訂閱洞察。",
+			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "允許角色成員查看角色訂閱洞察。",
 			"VIEW_GUILD_INSIGHTS": "允許角色成員查看公會洞察。",
 			"BYPASS_SLOWMODE": "慢速模式不再影響角色成員。",
 			"MENTION_EVERYONE": "允許角色成員提及 <code>@</code>所有人。",
@@ -666,7 +667,7 @@
 			"MANAGE_ROLES": "允許角色成員編輯或刪除角色。",
 			"MANAGE_WEBHOOKS": "允許角色成員編輯或刪除 webhook。",
 			"CREATE_EVENTS": "允許角色成員建立計劃的事件。",
-			"MANAGE_EVENTS": "允許使用者編輯或刪除(既有和未來)事件",
+			"MANAGE_EVENTS": "允許角色成員編輯或刪除(既有和未來)事件",
 			"CREATE_GUILD_EXPRESSIONS": "允許角色成員建立各種表達(表情符號、貼圖、音效面板用音效)。",
 			"MANAGE_GUILD_EXPRESSIONS": "允許使用者編輯或刪除各種表達(表情符號、貼圖、音效面板用音效)。",
 			"MODERATE_MEMBERS": "允許角色成員對公會成員實施暫停權限（禁止其在聊天或討論串中發送或回應訊息，以及在語音或表演頻道中發言）。",
@@ -696,8 +697,8 @@
 			"STREAM": "允許角色成員在語音頻道中直播。",
 			"USE_SOUNDBOARD": "允許角色成員在語音頻道中使用音效面板。",
 			"USE_EXTERNAL_SOUNDS": "允許角色成員在語音頻道中使用來自其他公會的音效面板音效。",
-			"PRIORITY_SPEAKER": "允許在語音頻道中優先發言。",
-			"REQUEST_TO_SPEAK": "允許使用者請求在表演頻道中發言。",
+			"PRIORITY_SPEAKER": "允許角色成員在語音頻道中優先發言。",
+			"REQUEST_TO_SPEAK": "允許角色成員請求在表演頻道中發言。",
 			"USE_EMBEDDED_ACTIVITIES": "允許角色成員使用內嵌活動。",
 			"USE_APPLICATION_COMMANDS": "允許角色成員使用應用程式指令。",
 			"USE_EXTERNAL_APPS": "允許角色成員將應用程式回應公開顯示於頻道中（當此功能關閉時，使用者仍可使用其應用程式，但回應僅對自身可見。此設定僅適用於未同時安裝至公會的應用程式）。"
@@ -786,14 +787,14 @@
 	"replyingTo": "正在回覆給$1",
 	"retrying": "正在重試…",
 	"role": {
-		"color": "主要顏色",
+		"color": "第一種顏色",
 		"colors": {
-			"name": "顏色數量：",
-			"one": "一",
+			"name": "顏色方案：",
+			"one": "單色",
+			"two": "雙色",
+			"three": "三色",
 			"secondColor": "第二種顏色：",
-			"thirdColor": "第三種顏色：",
-			"three": "三",
-			"two": "二"
+			"thirdColor": "第三種顏色："
 		},
 		"confirmDelete": "您確定要刪除$1嗎？",
 		"copyId": "複製角色 ID",
@@ -818,7 +819,7 @@
 		"page": "第 $1 頁",
 		"search": "搜尋"
 	},
-	"searchGifs": "搜尋 Tenor",
+	"searchGifs": "搜尋$1",
 	"settings": {
 		"clear": "清除",
 		"img": "上傳圖片",
@@ -840,7 +841,7 @@
 		"confirmDel": "您確定要刪除這個貼圖嗎？",
 		"del": "刪除貼圖",
 		"desc": "描述",
-		"errEmjMust": "必須包含帶有您的貼圖的表情符號",
+		"errEmjMust": "表情符號必須搭配您的貼圖",
 		"errFileMust": "必須包含用於您的貼圖的圖片",
 		"image": "圖片：",
 		"name": "名稱：",
@@ -902,7 +903,7 @@
 	},
 	"userping": {
 		"resolving": "解析使用者",
-		"unknown": "@不明"
+		"unknown": "@不明使用者"
 	},
 	"vc": {
 		"joinForStream": "加入語音頻道來觀看",
@@ -922,12 +923,12 @@
 		"areYouSureDelete": "您確定要刪除$1嗎？",
 		"avatar": "頭像",
 		"base": "Webhook",
-		"channel": "頻道",
+		"channel": "Webhook 輸出到頻道：",
 		"copyURL": "複製 Webhook 連結",
 		"createdAt": "建立於 $1",
 		"createdBy": "建立由：",
 		"deleteWebhook": "刪除 Webhook",
-		"name": "名稱：",
+		"name": "Webhook 名稱：",
 		"newWebHook": "新 Webhook",
 		"notFound": "使用者不再屬於該公會",
 		"sillyDefaults": "Captain Hook\nBillie Hooks\nSpidey bot",
@@ -936,7 +937,7 @@
 		"type1": "傳入",
 		"type2": "頻道追蹤者",
 		"type3": "應用程式",
-		"url": "Webhook url：`$1`"
+		"url": "Webhook 連結：`$1`"
 	},
 	"welcomeMessages": "歡迎，$1！很高興看到您！\n$1您好，請問幾位？\n$1歡迎光臨，入內請脫鞋！",
 	"widget": "公會小工具",

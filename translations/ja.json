@@ -2,6 +2,8 @@
 	"@metadata": {
 		"authors": [
 			"Miyakkon",
+			"Omotecho",
+			"RhAnish",
 			"もなー(偽物)"
 		]
 	},
@@ -274,7 +276,7 @@
 		"confirmDelete": "$1を削除します。よろしいですか？",
 		"confirmLeave": "退出します。よろしいですか？",
 		"copyId": "ギルドIDをコピー",
-		"create": "ギルドを作成",
+		"create": "ゼロからギルドを作成",
 		"createFromTemplate": "テンプレートからギルド",
 		"createNewTemplate": "新しいテンプレートを作成",
 		"creating": "ギルドの作成",
@@ -372,7 +374,9 @@
 		"2faEnable": "2FAを有効にする",
 		"PasswordsNoMatch": "パスワードが一致しません",
 		"TOSURL": "利用規約リンク:",
-		"accentColor": "アクセント色:"
+		"accentColor": "アクセント色:",
+		"accountSettings": "アカウント設定",
+		"deleteAccount": "アカウント削除"
 	},
 	"logout": {
 		"error": {
@@ -399,7 +403,7 @@
 			"MANAGE_GUILD": "ギルドの管理と編集ができるようにする",
 			"VIEW_AUDIT_LOG": "利用者が監査ログを閲覧できるようにする",
 			"VIEW_GUILD_INSIGHTS": "利用者がギルドの分析情報を閲覧できるようにする",
-			"MENTION_EVERYONE": "利用者が全員にメンションできるようにする",
+			"MENTION_EVERYONE": "所属するユーザーが全員にメンションできるようにする",
 			"MANAGE_NICKNAMES": "利用者が他の参加者のニックネームを変更できるようにする",
 			"MANAGE_MESSAGES": "利用者が自分のものではないメッセージを削除できるようにする",
 			"MANAGE_CHANNELS": "利用者がチャンネルを管理・編集できるようにする",
@@ -426,6 +430,9 @@
 		}
 	},
 	"pinMessage": "メッセージをピン留め",
+	"profile": {
+		"userInfo": "利用者情報"
+	},
 	"readableName": "英語",
 	"recentEmoji": "最近の絵文字",
 	"reply": "返信",
