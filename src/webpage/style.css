@@ -4636,7 +4636,7 @@ fieldset input[type="radio"] {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		background: #00000099;
+		background: color-mix(in srgb, var(--card-bg) 60%, transparent);
 		font-weight: bold;
 	}
 }
@@ -4652,7 +4652,7 @@ fieldset input[type="radio"] {
 	overflow-x: clip;
 }
 .searchGifBar {
-	background: var(--black);
+	background: var(--card-bg);
 }
 .vr-message {
 	border-right: 1px solid var(--black) !important;
