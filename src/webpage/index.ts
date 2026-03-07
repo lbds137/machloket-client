@@ -116,7 +116,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		},
 		{
 			visible: function () {
-				return thisUser.channelfocus?.guild.member.hasPermission("MANAGE_CHANNELS") || false;
+				return thisUser.lookingguild?.member.hasPermission("MANAGE_CHANNELS") || false;
 			},
 		},
 	);
@@ -130,7 +130,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		},
 		{
 			visible: function () {
-				return thisUser.channelfocus?.guild.member.hasPermission("MANAGE_CHANNELS") || false;
+				return thisUser.lookingguild?.member.hasPermission("MANAGE_CHANNELS") || false;
 			},
 		},
 	);
