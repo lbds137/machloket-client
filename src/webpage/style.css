@@ -2047,7 +2047,9 @@ span.instanceStatus {
 	margin-bottom: 4px;
 	transition: background 0.2s;
 	&.viewChannel {
-		background: #00000050;
+		background: var(--channel-selected);
+		color: var(--primary-text-prominent);
+		font-weight: bold;
 	}
 }
 .memberListStyle {
@@ -2070,7 +2072,8 @@ span.instanceStatus {
 	color: var(--primary-text-prominent);
 }
 #channels .liststyle {
-	margin: 0 8px;
+	margin-left: 8px;
+	margin-right: 8px;
 }
 
 /* Dock */
