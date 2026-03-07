@@ -2046,7 +2046,7 @@ span.instanceStatus {
 	flex-shrink: 0;
 	margin-bottom: 4px;
 	transition: background 0.2s;
-	&.viewChannel {
+	&.viewChannel, &.viewChannel:hover {
 		background: var(--channel-selected);
 		color: var(--primary-text-prominent);
 		font-weight: bold;
