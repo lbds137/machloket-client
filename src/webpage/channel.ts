@@ -1055,7 +1055,7 @@ class Channel extends SnowFlake {
 			decdiv.appendChild(myhtml);
 			caps.appendChild(decdiv);
 
-			if (admin) {
+			if (this.guild.member.hasPermission("MANAGE_CHANNELS")) {
 				const addchannel = document.createElement("span");
 				addchannel.classList.add("addchannel", "svgicon", "svg-plus");
 				caps.appendChild(addchannel);
