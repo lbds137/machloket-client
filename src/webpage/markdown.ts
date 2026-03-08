@@ -4,7 +4,15 @@ import {Emoji} from "./emoji.js";
 import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
-
+import {Contextmenu} from "./contextmenu.js";
+const linkMenu = new Contextmenu<string, void>("copyLink", true);
+linkMenu.addButton(
+	() => I18n.copyRegLink(),
+	function () {
+		navigator.clipboard.writeText(this);
+	},
+	{group: "copyLink"},
+);
 class MarkDown {
 	static emoji?: typeof Emoji;
 	txt: string[];
@@ -160,6 +168,10 @@ class MarkDown {
 					element.classList.add("quote");
 					keepys = "> ";
 					i += 3;
+				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3]?.match(isSpace)) {
+					element = document.createElement("small");
+					keepys = "-# ";
+					i += 4;
 				}
 				if (keepys) {
 					appendcurrent();
@@ -572,6 +584,7 @@ class MarkDown {
 				if (URL.canParse(build)) {
 					appendcurrent();
 					const a = document.createElement("a");
+					linkMenu.bindContextmenu(a, build);
 					//a.href=build;
 
 					a.textContent = build;
@@ -729,6 +742,7 @@ class MarkDown {
 							} else {
 								appendcurrent();
 								const a = document.createElement("a");
+								linkMenu.bindContextmenu(a, build);
 								if (!stdsize) {
 									const text = MarkDown.safeLink(a, build, this.localuser);
 									if (text) {

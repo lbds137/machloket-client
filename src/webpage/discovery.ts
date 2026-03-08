@@ -4,6 +4,7 @@ import {I18n} from "./i18n.js";
 import {guildjson} from "./jsontypes.js";
 import {ReportMenu} from "./reporting/report.js";
 import {Dialog} from "./settings.js";
+import {CDNParams} from "./utils/cdnParams.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {createImg} from "./utils/utils.js";
 
@@ -177,7 +178,7 @@ export class Discovery {
 		return createImg(
 			this.info.cdn +
 				(guild.icon
-					? "/icons/" + guild.id + "/" + guild.icon + ".png?size=48"
+					? "/icons/" + guild.id + "/" + guild.icon + ".png" + new CDNParams({expectedSize: 48})
 					: "/embed/avatars/3.png"),
 		);
 	}

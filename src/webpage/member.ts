@@ -5,6 +5,7 @@ import {SnowFlake} from "./snowflake.js";
 import {highMemberJSON, memberjson, presencejson} from "./jsontypes.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Options, Settings} from "./settings.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 class Member extends SnowFlake {
 	static already = {};
@@ -58,9 +59,12 @@ class Member extends SnowFlake {
 			return this.avatar;
 		}
 		if (this.avatar !== undefined && this.avatar !== null) {
-			return `${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/avatars/${
-				this.avatar
-			}.${this.avatar.startsWith("a_") ? "gif" : "png"}`;
+			return (
+				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/avatars/${
+					this.avatar
+				}.${this.avatar.startsWith("a_") ? "gif" : "png"}` +
+				new CDNParams({expectedSize: 96, animated: this.avatar.startsWith("a_")})
+			);
 		}
 		return this.user.getpfpsrc();
 	}
@@ -69,9 +73,12 @@ class Member extends SnowFlake {
 			return this.banner;
 		}
 		if (this.banner) {
-			return `${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/banners/${
-				this.avatar
-			}.${this.banner.startsWith("a_") ? "gif" : "png"}`;
+			return (
+				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/banners/${
+					this.avatar
+				}.${this.banner.startsWith("a_") ? "gif" : "png"}` +
+				new CDNParams({expectedSize: 96, animated: this.banner.startsWith("a_")})
+			);
 		} else {
 			return undefined;
 		}

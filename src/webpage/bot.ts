@@ -7,6 +7,7 @@ import {guildjson} from "./jsontypes.js";
 import {PermissionToggle} from "./role.js";
 import {Permissions} from "./permissions.js";
 import {I18n} from "./i18n.js";
+import {CDNParams} from "./utils/cdnParams.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
@@ -162,7 +163,13 @@ class Bot {
 							banner.classList.add("banner");
 							banner.crossOrigin = "anonymous";
 							banner.src =
-								this.info.cdn + "/banners/" + guild.id + "/" + guild.banner + ".png?size=256";
+								this.info.cdn +
+								"/banners/" +
+								guild.id +
+								"/" +
+								guild.banner +
+								".png" +
+								new CDNParams({expectedSize: 256});
 							banner.alt = "";
 							content.appendChild(banner);
 						}
@@ -175,7 +182,12 @@ class Bot {
 						img.src =
 							this.info.cdn +
 							(guild.icon
-								? "/icons/" + guild.id + "/" + guild.icon + ".png?size=48"
+								? "/icons/" +
+									guild.id +
+									"/" +
+									guild.icon +
+									".png" +
+									new CDNParams({expectedSize: 96})
 								: "/embed/avatars/3.png");
 						img.alt = "";
 						nameContainer.appendChild(img);

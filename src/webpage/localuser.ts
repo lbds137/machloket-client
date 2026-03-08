@@ -45,6 +45,7 @@ import {
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
 import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
 import {PromiseLock} from "./utils/promiseLock.js";
+import {CDNParams} from "./utils/cdnParams.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -109,12 +110,12 @@ class Localuser {
 		this.userinfo.localuserStore = e;
 	}
 	static users = getBulkUsers();
-	static async showAccountSwitcher(thisUser: Localuser) {
+	static async showAccountSwitcher(thisUser?: Localuser) {
 		const specialUser = await new AccountSwitcher().show();
 
-		const onswap = thisUser.onswap;
-		thisUser.unload();
-		thisUser.swapped = true;
+		const onswap = thisUser?.onswap;
+		thisUser?.unload();
+		if (thisUser) thisUser.swapped = true;
 		const loading = document.getElementById("loading") as HTMLDivElement;
 		loading.classList.remove("doneloading");
 		loading.classList.add("loading");
@@ -231,6 +232,7 @@ class Localuser {
 		this.userinfo = userinfo;
 		this.perminfo.guilds ??= {};
 		this.perminfo.user ??= {};
+		this.perminfo.user.decorations ??= true;
 		this.serverurls = this.userinfo.serverurls;
 		this.initialized = false;
 		this.info = this.serverurls;
@@ -425,8 +427,6 @@ class Localuser {
 		}
 
 		this.pingEndpoint();
-
-		this.generateFavicon();
 	}
 	inrelation = new Set<User>();
 	outoffocus(): void {
@@ -537,7 +537,11 @@ class Localuser {
 								console.log("in here?");
 								returny();
 							}
-						} catch {}
+						} catch (e) {
+							if (!(e instanceof SyntaxError)) {
+								console.error(e);
+							}
+						}
 					}
 				})();
 			}
@@ -835,13 +839,14 @@ class Localuser {
 						const guildy = new Guild(temp.d, this, this.user);
 						this.guilds.push(guildy);
 						this.guildids.set(guildy.id, guildy);
-						const divy = guildy.generateGuildIcon();
+						const divy = this.makeGuildIcon(guildy);
 						guildy.HTMLicon = divy;
 						(document.getElementById("servers") as HTMLDivElement).insertBefore(
 							divy,
 							document.getElementById("bottomseparator"),
 						);
 						guildy.message_notifications = guildy.properties.default_message_notifications;
+						guildy.showWelcome();
 					})();
 					break;
 				case "MESSAGE_REACTION_ADD":
@@ -1060,12 +1065,24 @@ class Localuser {
 		} else if (temp.op === 11) {
 			setTimeout((_: any) => {
 				if (!this.ws) return;
+				const reasons = this.generateReasons();
+
 				if (this.connectionSucceed === 0) this.connectionSucceed = Date.now();
-				this.ws.send(JSON.stringify({op: 1, d: this.lastSequence}));
+				this.ws.send(
+					JSON.stringify({
+						op: 40,
+						d: {seq: this.lastSequence, qos: {ver: 27, active: !!reasons.length, reasons}},
+					}),
+				);
 			}, this.heartbeat_interval);
 		} else {
 			console.log("Unhandled case " + temp.d, temp);
 		}
+	}
+	generateReasons() {
+		const reasons: string[] = [];
+		if (!document.hidden) reasons.push("foregrounded");
+		return reasons;
 	}
 	get currentVoice() {
 		return this.voiceFactory?.currentVoice;
@@ -1557,6 +1574,7 @@ class Localuser {
 	async init() {
 		const location = window.location.href.split("/");
 		this.buildservers();
+		this.generateFavicon();
 		if (location[3] === "channels") {
 			const guild = this.loadGuild(location[4]);
 			if (!guild) {
@@ -1610,7 +1628,7 @@ class Localuser {
 				//https://cdn.discordapp.com/banners/677271830838640680/fab8570de5bb51365ba8f36d7d3627ae.webp?size=240
 				banner.style.setProperty(
 					"background-image",
-					`linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 40%), url(${this.info.cdn}/banners/${guild.id}/${guild.banner})`,
+					`linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 40%), url(${this.info.cdn}/banners/${guild.id}/${guild.banner + new CDNParams({expectedSize: 128})})`,
 				);
 				banner.classList.add("Banner");
 				//background-image:
@@ -2433,6 +2451,7 @@ class Localuser {
 			});
 		}
 		{
+			const prefs = await getPreferences();
 			const tas = settings.addButton(I18n.localuser.themesAndSounds());
 			{
 				const themes = ["Dark", "WHITE", "Light", "Dark-Accent"];
@@ -2512,7 +2531,6 @@ class Localuser {
 			}
 
 			{
-				const prefs = await getPreferences();
 				tas.addColorInput(
 					I18n.localuser.accentColor(),
 					async (_) => {
@@ -2525,7 +2543,6 @@ class Localuser {
 				);
 			}
 			{
-				const prefs = await getPreferences();
 				const options = [[null, I18n.noEmojiFont()], ...Localuser.fonts] as const;
 				const cur = prefs.emojiFont;
 				let index = options.findIndex((_) => _[1] == cur);
@@ -2885,6 +2902,14 @@ class Localuser {
 				},
 				{initState: !this.perminfo.user.disableIcons},
 			);
+
+			accessibility.addCheckboxInput(
+				I18n.accessibility.decorations(),
+				(t) => {
+					this.perminfo.user.decorations = t;
+				},
+				{initState: this.perminfo.user.decorations},
+			);
 			accessibility.addSelect(
 				I18n.accessibility.playGif(),
 				async (i) => {
@@ -3002,7 +3027,8 @@ class Localuser {
 											application.id +
 											"/" +
 											(application.cover_image || application.icon) +
-											".png?size=256",
+											".png" +
+											new CDNParams({expectedSize: 256}),
 									);
 									cover.alt = "";
 									cover.loading = "lazy";
@@ -3605,7 +3631,14 @@ class Localuser {
 		});
 		form.addImageInput("Icon:", "icon", {
 			clear: true,
-			initImg: json.icon ? this.info.cdn + "/app-icons/" + appId + "/" + json.icon : "",
+			initImg: json.icon
+				? this.info.cdn +
+					"/app-icons/" +
+					appId +
+					"/" +
+					json.icon +
+					new CDNParams({expectedSize: 96})
+				: "",
 		});
 		form.addTextInput(I18n.localuser.privacyPolcyURL(), "privacy_policy_url", {
 			initText: json.privacy_policy_url,
@@ -3742,6 +3775,11 @@ class Localuser {
 		typeMd.owner = this;
 		typeMd.onUpdate = (str, pre) => {
 			this.search(document.getElementById("searchOptions") as HTMLDivElement, typeMd, str, pre);
+			if (str && str !== "\n") {
+				typebox.parentElement!.classList.remove("noConent");
+			} else {
+				typebox.parentElement!.classList.add("noConent");
+			}
 		};
 	}
 	async pinnedClick(rect: DOMRect) {
@@ -3893,7 +3931,8 @@ class Localuser {
 			searchBox();
 		};
 		search.classList.add("searchGifBar");
-		search.placeholder = I18n.searchGifs();
+		//TODO fix this once we swap over
+		search.placeholder = I18n.searchGifs("Tenor");
 		const favs = this.favorites.favoriteGifs();
 		if (favs.length) {
 			favs.forEach(async (_) => (_.src = await this.refreshIfNeeded(_.src)));

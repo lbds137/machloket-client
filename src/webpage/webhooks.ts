@@ -5,6 +5,7 @@ import {MarkDown} from "./markdown.js";
 import {Dialog, Options} from "./settings.js";
 import {SnowFlake} from "./snowflake.js";
 import {User} from "./user.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 async function webhookMenu(
 	guild: Guild,
@@ -72,7 +73,8 @@ async function webhookMenu(
 		div.classList.add("flexltr", "webhookArea");
 		const pfp = document.createElement("img");
 		if (hook.avatar) {
-			pfp.src = `${guild.info.cdn}/avatars/${hook.id}/${hook.avatar}`;
+			pfp.src =
+				`${guild.info.cdn}/avatars/${hook.id}/${hook.avatar}` + new CDNParams({expectedSize: 96});
 		} else {
 			const int = Number((BigInt(hook.id) >> 22n) % 6n);
 			pfp.src = `${guild.info.cdn}/embed/avatars/${int}.png`;

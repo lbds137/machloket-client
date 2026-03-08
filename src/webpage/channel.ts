@@ -35,6 +35,7 @@ import {Direct} from "./direct.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
 import {Tag} from "./tag.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 class Channel extends SnowFlake {
 	editing!: Message | null;
@@ -329,7 +330,10 @@ class Channel extends SnowFlake {
 	}
 	icon?: string;
 	iconUrl() {
-		return `${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png`;
+		return (
+			`${this.info.cdn}/channel-icons/${this.id}/${this.icon}.png` +
+			new CDNParams({expectedSize: 32})
+		);
 	}
 	createInvite() {
 		const div = document.createElement("div");
@@ -853,10 +857,8 @@ class Channel extends SnowFlake {
 			}
 		}
 		const roles = new Set(member.roles);
-		const everyone = this.guild.roles[this.guild.roles.length - 1];
-		if (!member.user.bot || true) {
-			roles.add(everyone);
-		}
+		const everyone = this.guild.roleids.get(this.guild.id);
+		if (everyone) roles.add(everyone);
 
 		const premission = this.permission_overwrites.get(member.id);
 		if (premission) {
@@ -874,6 +876,8 @@ class Channel extends SnowFlake {
 					return perm === 1;
 				}
 			}
+		}
+		for (const thing of roles) {
 			if (thing.permissions.getPermission(name)) {
 				return true;
 			}
@@ -1051,7 +1055,7 @@ class Channel extends SnowFlake {
 			decdiv.appendChild(myhtml);
 			caps.appendChild(decdiv);
 
-			if (admin) {
+			if (this.guild.member.hasPermission("MANAGE_CHANNELS")) {
 				const addchannel = document.createElement("span");
 				addchannel.classList.add("addchannel", "svgicon", "svg-plus");
 				caps.appendChild(addchannel);
@@ -1135,10 +1139,7 @@ class Channel extends SnowFlake {
 	}
 	owner_id?: string;
 	threadVis() {
-		return (
-			((this.member || this.owner_id === this.localuser.user.id) && !this.threadData?.archived) ||
-			this.localuser.channelfocus === this
-		);
+		return (this.member && !this.threadData?.archived) || this.localuser.channelfocus === this;
 	}
 	async moveForDrag(x: number) {
 		const mainarea = document.getElementById("mainarea");
@@ -2203,7 +2204,8 @@ class Channel extends SnowFlake {
 				return +(Number(c1.id) > Number(c2.id)) ^ +filters.recentFirst ? 1 : -1;
 			}
 		});
-		return [match.splice(offset, offset + 24), !!match.at(offset + 25)] as const;
+
+		return [match.slice(offset, offset + 25), !!match.at(offset + 25)] as const;
 	}
 
 	async findMatches(text: string, offset: number): Promise<readonly [Channel[], boolean]> {
@@ -2239,7 +2241,9 @@ class Channel extends SnowFlake {
 		let offset = 0;
 		const flipPage = async (by: number) => {
 			offset += by;
-			const [match, more] = await this.findMatches(text, 0);
+			div.scrollTop = 0;
+			const [match, more] = await this.findMatches(text, offset);
+
 			await renderDiv(match, more);
 		};
 

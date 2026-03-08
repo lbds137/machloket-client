@@ -5,6 +5,7 @@ import {I18n} from "./i18n.js";
 import {emojijson, emojiSource} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {BinRead} from "./utils/binaryUtils.js";
+import {CDNParams} from "./utils/cdnParams.js";
 import {removeAni} from "./utils/utils.js";
 
 //I need to recompile the emoji format for translation
@@ -96,7 +97,7 @@ class Emoji {
 				this.id +
 				"." +
 				(this.animated ? "gif" : "png") +
-				"?size=32";
+				new CDNParams({expectedSize: 32, animated: this.animated});
 			emojiElem.alt = this.name;
 			emojiElem.loading = "lazy";
 
@@ -380,7 +381,8 @@ class Emoji {
 							guild.properties.id +
 							"/" +
 							guild.properties.icon +
-							".png?size=48";
+							".png" +
+							new CDNParams({expectedSize: 48});
 						img.alt = "Server: " + guild.properties.name;
 						select.appendChild(img);
 					} else {

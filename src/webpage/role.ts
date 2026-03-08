@@ -44,7 +44,15 @@ class Role extends SnowFlake {
 	getIcon(): HTMLElement | void {
 		const hover = new Hover(this.name);
 		if (this.icon) {
-			const img = createImg(this.info.cdn + "/role-icons/" + this.id + "/" + this.icon + ".webp");
+			const img = createImg(
+				this.info.cdn +
+					"/role-icons/" +
+					this.id +
+					"/" +
+					this.icon +
+					".webp" +
+					new CDNParams({expectedSize: 32}),
+			);
 			img.classList.add("roleIcon");
 			hover.addEvent(img);
 			return img;
@@ -133,6 +141,7 @@ import {Hover} from "./hover.js";
 import {Emoji} from "./emoji.js";
 import {User} from "./user.js";
 import {Member} from "./member.js";
+import {CDNParams} from "./utils/cdnParams.js";
 class PermissionToggle implements OptionsElement<number> {
 	readonly rolejson: {
 		name: string;
@@ -392,7 +401,13 @@ class RoleList extends Buttons {
 			});
 			form.addImageInput(I18n.role.roleFileIcon(), "icon", {
 				initImg: role.icon
-					? role.info.cdn + "/role-icons/" + role.id + "/" + role.icon + ".webp"
+					? role.info.cdn +
+						"/role-icons/" +
+						role.id +
+						"/" +
+						role.icon +
+						".webp" +
+						new CDNParams({expectedSize: 32})
 					: "",
 				clear: true,
 			});

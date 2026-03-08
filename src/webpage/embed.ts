@@ -6,6 +6,7 @@ import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
+import {CDNParams} from "./utils/cdnParams.js";
 
 class Embed {
 	type: string;
@@ -100,7 +101,10 @@ class Embed {
 			if (this.json.author.icon_url) {
 				const img = document.createElement("img");
 				img.classList.add("authorEmbedImg");
-				img.src = this.json.author.icon_url;
+				this.localuser.refreshIfNeeded(this.json.author.icon_url).then((url) => {
+					if (this.json.author) this.json.author.icon_url = url;
+					img.src = url;
+				});
 				authorline.append(img);
 			}
 			const a = this.json.author.url ? document.createElement("a") : document.createElement("span");
@@ -145,11 +149,35 @@ class Embed {
 				embed.append(div);
 			}
 		}
+		if (this.json.image) {
+			const img = document.createElement("img");
+			img.classList.add("embedImg");
+			if (this.json.image.width) {
+				img.width = this.json.image.width;
+			}
+			if (this.json.image.height) {
+				img.height = this.json.image.height;
+			}
+			this.localuser.refreshIfNeeded(this.json.image.url).then((url) => {
+				if (this.json.image) this.json.image.url = url;
+				if (!this.json.image?.proxy_url) img.src = url;
+			});
+			if (this.json.image.proxy_url) {
+				this.localuser.refreshIfNeeded(this.json.image.url).then((url) => {
+					if (this.json.image) this.json.image.url = url;
+					img.src = url;
+				});
+			}
+			embed.append(img);
+		}
 		if (this.json.footer || this.json.timestamp) {
 			const footer = document.createElement("div");
 			if (this.json?.footer?.icon_url) {
 				const img = document.createElement("img");
-				img.src = this.json.footer.icon_url;
+				this.localuser.refreshIfNeeded(this.json.footer.icon_url).then((url) => {
+					if (this.json.footer) this.json.footer.icon_url = url;
+					img.src = url;
+				});
 				img.classList.add("embedicon");
 				footer.append(img);
 			}
@@ -320,7 +348,13 @@ class Embed {
 			if (json.guild.banner) {
 				const banner = document.createElement("img");
 				banner.src =
-					info.cdn + "/banners/" + json.guild.id + "/" + json.guild.banner + ".png?size=256";
+					info.cdn +
+					"/banners/" +
+					json.guild.id +
+					"/" +
+					json.guild.banner +
+					".png" +
+					new CDNParams({expectedSize: 256});
 				banner.classList.add("banner");
 				div.append(banner);
 			}

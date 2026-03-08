@@ -5,7 +5,7 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 if (window.location.pathname.startsWith("/invite"))
 	(async () => {
 		const users = getBulkUsers();
-		const well = new URLSearchParams(window.location.search).get("instance");
+		const well = new URLSearchParams(window.location.search).get("instance") || "Spacebar";
 		const joinable: Specialuser[] = [];
 
 		for (const key in users.users) {
@@ -103,8 +103,18 @@ if (window.location.pathname.startsWith("/invite"))
 				{
 					loginText: () => I18n.login.login(),
 					createOpt: true,
-					loginurl: "/login?" + new URLSearchParams([["goback", window.location.href]]),
-					registerurl: "/register?" + new URLSearchParams([["goback", window.location.href]]),
+					loginurl:
+						"/login?" +
+						new URLSearchParams([
+							["goback", window.location.href],
+							["instance", well],
+						]),
+					registerurl:
+						"/register?" +
+						new URLSearchParams([
+							["goback", window.location.href],
+							["instance", well],
+						]),
 				},
 			).show();
 			fetch(`${urls!.api}/invites/${code}`, {

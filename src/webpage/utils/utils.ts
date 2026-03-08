@@ -85,7 +85,10 @@ export function setDefaults() {
 	if (userinfos.accent_color === undefined) {
 		userinfos.accent_color = "#3096f7";
 	}
-	document.documentElement.style.setProperty("--accent-color", userinfos.accent_color);
+
+	getPreferences().then((perfs) =>
+		document.documentElement.style.setProperty("--accent-color", perfs.accentColor),
+	);
 	if (userinfos.preferences === undefined) {
 		userinfos.preferences = {
 			theme: "Dark",
@@ -491,13 +494,18 @@ export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
 	}
 	try {
 		const info = await fetch(str + "/.well-known/spacebar/client").then((r) => r.json());
-		return {
+		let urls: InstanceUrls = {
 			admin: info.admin?.baseUrl,
-			api: info.api.baseUrl + "/api/v" + info.api.apiVersions.default,
+			api: info.api.baseUrl + "/api/v9", //We don't support anything other than v9
 			gateway: info.gateway.baseUrl,
 			cdn: info.cdn.baseUrl,
 			wellknown: str,
 		};
+		const check = await checkURLs(str, urls);
+		if (check) {
+			urls = check;
+		}
+		return urls;
 	} catch (e) {
 		console.log("No .well-known v2 for", str, (e as Error).message);
 		return null;
@@ -509,6 +517,97 @@ export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
 /**
  * this function checks if a string is an instance, it'll either return the API urls or null
  */
+async function checkURLs(wellknown: string, urls: InstanceUrls) {
+	if (isLoopback(urls.api) !== isLoopback(wellknown)) {
+		return new Promise<InstanceUrls | null>((res) => {
+			const menu = new Dialog("");
+			const options = menu.float.options;
+			options.addMDText(new MarkDown(I18n.incorrectURLS(), undefined));
+			const opt = options.addOptions("", {ltr: true});
+			let clicked = false;
+			opt.addButtonInput("", I18n.yes(), async () => {
+				if (clicked) return;
+				clicked = true;
+				if (urls == null) throw new Error("Unexpected undefined, exiting");
+				const temp = new URL(wellknown);
+				temp.port = "";
+				const newOrigin = temp.host;
+				const protocol = temp.protocol;
+				const tempurls = {
+					api: new URL(urls.api),
+					cdn: new URL(urls.cdn),
+					gateway: new URL(urls.gateway),
+					wellknown: new URL(urls.wellknown),
+				};
+				tempurls.api.host = newOrigin;
+				tempurls.api.protocol = protocol;
+
+				tempurls.cdn.host = newOrigin;
+				tempurls.api.protocol = protocol;
+
+				tempurls.gateway.host = newOrigin;
+				tempurls.gateway.protocol = temp.protocol === "http:" ? "ws:" : "wss:";
+
+				tempurls.wellknown.host = newOrigin;
+				tempurls.wellknown.protocol = protocol;
+
+				try {
+					if (
+						!(
+							await fetch(
+								tempurls.api + (tempurls.api.toString().endsWith("/") ? "" : "/") + "ping",
+							)
+						).ok
+					) {
+						res(null);
+						menu.hide();
+						return;
+					}
+				} catch {
+					res(null);
+					menu.hide();
+					return;
+				}
+				res({
+					api: tempurls.api.toString(),
+					cdn: tempurls.cdn.toString(),
+					gateway: tempurls.gateway.toString(),
+					wellknown: tempurls.wellknown.toString(),
+				});
+				menu.hide();
+			});
+			const no = opt.addButtonInput("", I18n.no(), async () => {
+				if (clicked) return;
+				clicked = true;
+				if (urls == null) throw new Error("URLs is undefined");
+				try {
+					//TODO make this a promise race for when the server just never responds
+					//TODO maybe try to strip ports as another way to fix it
+					if (!(await fetch(urls.api + "ping")).ok) {
+						res(null);
+						menu.hide();
+						return;
+					}
+				} catch {
+					res(null);
+					return;
+				}
+				res(urls);
+				menu.hide();
+			});
+			const span = document.createElement("span");
+			options.addHTMLArea(span);
+			const t = setInterval(() => {
+				if (!document.contains(span)) {
+					clearInterval(t);
+					no.onClick();
+				}
+			}, 100);
+			menu.show();
+		});
+	}
+	return undefined;
+}
 export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 	function appendApi(str: string) {
 		return str.includes("api") ? str : str.endsWith("/") ? str + "api" : str + "/api";
@@ -596,93 +695,9 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 		}
 	}
 	if (urls) {
-		if (isLoopback(urls.api) !== isLoopback(str)) {
-			return new Promise<InstanceUrls | null>((res) => {
-				const menu = new Dialog("");
-				const options = menu.float.options;
-				options.addMDText(new MarkDown(I18n.incorrectURLS(), undefined));
-				const opt = options.addOptions("", {ltr: true});
-				let clicked = false;
-				opt.addButtonInput("", I18n.yes(), async () => {
-					if (clicked) return;
-					clicked = true;
-					if (urls == null) throw new Error("Unexpected undefined, exiting");
-					const temp = new URL(str);
-					temp.port = "";
-					const newOrigin = temp.host;
-					const protocol = temp.protocol;
-					const tempurls = {
-						api: new URL(urls.api),
-						cdn: new URL(urls.cdn),
-						gateway: new URL(urls.gateway),
-						wellknown: new URL(urls.wellknown),
-					};
-					tempurls.api.host = newOrigin;
-					tempurls.api.protocol = protocol;
-
-					tempurls.cdn.host = newOrigin;
-					tempurls.api.protocol = protocol;
-
-					tempurls.gateway.host = newOrigin;
-					tempurls.gateway.protocol = temp.protocol === "http:" ? "ws:" : "wss:";
-
-					tempurls.wellknown.host = newOrigin;
-					tempurls.wellknown.protocol = protocol;
-
-					try {
-						if (
-							!(
-								await fetch(
-									tempurls.api + (tempurls.api.toString().endsWith("/") ? "" : "/") + "ping",
-								)
-							).ok
-						) {
-							res(null);
-							menu.hide();
-							return;
-						}
-					} catch {
-						res(null);
-						menu.hide();
-						return;
-					}
-					res({
-						api: tempurls.api.toString(),
-						cdn: tempurls.cdn.toString(),
-						gateway: tempurls.gateway.toString(),
-						wellknown: tempurls.wellknown.toString(),
-					});
-					menu.hide();
-				});
-				const no = opt.addButtonInput("", I18n.no(), async () => {
-					if (clicked) return;
-					clicked = true;
-					if (urls == null) throw new Error("URLs is undefined");
-					try {
-						//TODO make this a promise race for when the server just never responds
-						//TODO maybe try to strip ports as another way to fix it
-						if (!(await fetch(urls.api + "ping")).ok) {
-							res(null);
-							menu.hide();
-							return;
-						}
-					} catch {
-						res(null);
-						return;
-					}
-					res(urls);
-					menu.hide();
-				});
-				const span = document.createElement("span");
-				options.addHTMLArea(span);
-				const t = setInterval(() => {
-					if (!document.contains(span)) {
-						clearInterval(t);
-						no.onClick();
-					}
-				}, 100);
-				menu.show();
-			});
+		const check = await checkURLs(str, urls);
+		if (check) {
+			urls = check;
 		}
 		//*/
 		try {
@@ -702,7 +717,12 @@ async function isAnimated(src: string) {
 	try {
 		src = new URL(src).pathname;
 	} catch {}
-	return src.endsWith(".apng") || src.endsWith(".gif") || src.split("/").at(-1)?.startsWith("a_");
+	return (
+		src.endsWith(".apng") ||
+		src.endsWith(".gif") ||
+		src.split("/").at(-1)?.startsWith("a_") ||
+		src.includes("avatar-decoration-presets")
+	);
 }
 const staticImgMap = new Map<string, string | Promise<string>>();
 export async function removeAni(elm: HTMLElement, time = 500) {
@@ -733,6 +753,8 @@ export function createImg(
 		);
 	});
 	const img = document.createElement("img");
+	img.loading = "lazy";
+	img.decoding = "async";
 	img.addEventListener("error", () => {
 		img.classList.add("error");
 	});
@@ -769,28 +791,28 @@ export function createImg(
 			img.src = staticsrc;
 		}
 	};
-	elm.onmouseover = async () => {
+	elm.addEventListener("mouseover", async () => {
 		if ((await aniOpt) === "never") return;
 		if (img.src !== src && src) {
 			img.src = src;
 		}
-	};
-	elm.onmouseleave = async () => {
+	});
+	elm.addEventListener("mouseleave", async () => {
 		if (staticsrc && (await aniOpt) !== "always") {
 			img.src = staticsrc;
 		}
-	};
+	});
 
 	return Object.assign(img, {
 		setSrcs: (nsrc: string, nstaticsrc: string | void) => {
 			src = nsrc;
 			staticsrc = nstaticsrc;
 			if (src) {
-				isAnimated(src).then((animated) => {
+				isAnimated(src).then(async (animated) => {
 					if (animated) {
 						img.crossOrigin = "anonymous";
 					}
-					img.src = settings !== "always" ? staticsrc || src || "" : src || "";
+					img.src = (await aniOpt) !== "always" ? staticsrc || src || "" : src || "";
 				});
 			}
 		},

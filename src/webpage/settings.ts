@@ -926,6 +926,8 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		div.append(verify);
 
 		const input = this.input;
+		input.readOnly = !!new URLSearchParams(window.location.search).get("instance");
+		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
 		input.setAttribute("list", "instances");
 		div.append(input);
@@ -1436,6 +1438,7 @@ class Options implements OptionsElement<void> {
 			};
 		}
 	}
+	afterSubmit = () => {};
 	submit() {
 		this.haschanged = false;
 		if (this.subOptions) {
@@ -1446,6 +1449,7 @@ class Options implements OptionsElement<void> {
 		for (const thing of this.options) {
 			thing.submit();
 		}
+		this.afterSubmit();
 	}
 }
 class Captcha implements OptionsElement<string> {
@@ -1518,7 +1522,7 @@ class Captcha implements OptionsElement<string> {
 		const float = new Dialog("", {noSubmit: true});
 		float.options.addTitle(I18n.form.captcha());
 		const cap = float.options.addForm("", () => {}, {traditionalSubmit: true}).addCaptcha();
-		float.show();
+		float.show().parentElement!.style.zIndex = "200";
 		const ret = cap.makeCaptcha(json);
 		await ret;
 		float.hide();
@@ -1604,7 +1608,7 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 					e.ticket = json.ticket;
 				});
 				const ti = form.addTextInput("", "code");
-				better.show();
+				better.show().parentElement!.style.zIndex = "200";
 			});
 		}
 	} else {
@@ -1954,13 +1958,13 @@ class Form implements OptionsElement<object> {
 					console.log(input.value);
 					if (input.value) {
 						const reader = new FileReader();
-						reader.readAsDataURL(input.value[0]);
 						const promise = new Promise<void>((res) => {
 							reader.onload = () => {
 								(build as any)[thing] = reader.result;
 								res();
 							};
 						});
+						reader.readAsDataURL(input.value[0]);
 						promises.push(promise);
 						continue;
 					}

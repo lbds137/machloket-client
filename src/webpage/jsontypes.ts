@@ -406,6 +406,10 @@ type userjson = {
 	badge_ids: string[];
 	webhook?: webhookInfo;
 	uid?: string;
+	avatar_decoration_data?: {
+		asset: string;
+		sku_id: string;
+	} | null;
 };
 type memberjson = {
 	index?: number;
@@ -501,7 +505,9 @@ type guildjson = {
 		max_stage_video_channel_users: number;
 		nsfw: boolean;
 		safety_alerts_channel_id: string;
+		welcome_screen?: welcomeScreen;
 	};
+	//TODO implement onboarding too
 	roles: rolesjson[];
 	stage_instances: [];
 	stickers: stickerJson[];
@@ -509,6 +515,16 @@ type guildjson = {
 	guild_hashes: {};
 	joined_at: string;
 };
+export interface welcomeScreen {
+	enabled: boolean;
+	description: string;
+	welcome_channels: {
+		description: string;
+		emoji_id?: string;
+		emoji_name?: string;
+		channel_id: string;
+	}[];
+}
 interface stickerJson {
 	id: string;
 	name: string;
@@ -652,13 +668,38 @@ type webhookInfo = {
 	source_guild_id: string;
 	source_channel_id: string;
 };
+export enum MessageComponentType {
+	ActionRow = 1,
+	Button = 2,
+	StringSelect = 3,
+	TextInput = 4,
+	UserSelect = 5,
+	RoleSelect = 6,
+	MentionableSelect = 7,
+	ChannelSelect = 8,
+	Section = 9,
 
+	TextDisplay = 10,
+	Thumbnail = 11,
+	MediaGallery = 12,
+	File = 13,
+	Separator = 14,
+	// 15 is unknown?
+	ContentInventoryEntry = 16, // activity feed entry
+	Container = 17,
+	Label = 18,
+	FileUpload = 19,
+	CheckpointCard = 20, // year in review 2026
+	RadioGroup = 21,
+	CheckboxGroup = 22,
+	Checkbox = 23,
+}
 export interface actionRow {
-	type: 1;
+	type: MessageComponentType.ActionRow;
 	components: component[];
 }
 export interface button {
-	type: 2;
+	type: MessageComponentType.Button;
 	id?: number;
 	custom_id: string;
 	label?: string;
@@ -668,9 +709,14 @@ export interface button {
 	emoji?: emojijson;
 	style: 1 | 2 | 3 | 4 | 5 | 6;
 }
-
+export interface section {
+	type: MessageComponentType.Section;
+	id?: number;
+	components: component[];
+	accessory: button | thumbnail;
+}
 export interface select {
-	type: 3;
+	type: MessageComponentType.StringSelect;
 	id?: number;
 	custom_id: string;
 	options: {
@@ -686,8 +732,64 @@ export interface select {
 	required?: boolean;
 	disabled?: boolean;
 }
-
-export type component = actionRow | button | select;
+export interface container {
+	type: MessageComponentType.Container;
+	id?: number;
+	components: component[];
+	accent_color?: number;
+	spoiler?: boolean;
+}
+export interface textDisp {
+	type: MessageComponentType.TextDisplay;
+	id?: number;
+	content: string;
+}
+export interface UnfurledMediaItem {
+	id: string;
+	url: string;
+	proxy_url?: string;
+	height?: number;
+	width?: number;
+	flags?: number;
+	content_type: string;
+	content_scan_metadata?: unknown; //TODO deal with this lol
+	placeholder_version?: number;
+	placeholder?: string;
+	loading_state?: number;
+	attachment_id?: string;
+}
+export interface mediaGallery {
+	type: MessageComponentType.MediaGallery;
+	id?: number;
+	items: {
+		media: UnfurledMediaItem;
+		description?: string;
+		spoiler?: boolean;
+	}[];
+}
+export interface seperator {
+	type: MessageComponentType.Separator;
+	id?: number;
+	divider?: boolean;
+	spacing?: 1 | 2;
+}
+export interface thumbnail {
+	type: MessageComponentType.Thumbnail;
+	id?: number;
+	media: UnfurledMediaItem;
+	description?: string;
+	spoiler?: string;
+}
+export type component =
+	| actionRow
+	| button
+	| select
+	| container
+	| textDisp
+	| seperator
+	| mediaGallery
+	| section
+	| thumbnail;
 
 type messagejson = {
 	id: string;
@@ -772,6 +874,12 @@ type embedjson = {
 		icon_url?: string;
 		text?: string;
 		thumbnail?: string;
+	};
+	image?: {
+		proxy_url?: string;
+		url: string;
+		width?: number;
+		height?: number;
 	};
 	timestamp?: string;
 	thumbnail: {

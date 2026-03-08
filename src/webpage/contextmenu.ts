@@ -354,9 +354,9 @@ class Contextmenu<x, y> {
 		};
 		obj.addEventListener("layered", (layered) => {
 			if (this.layered) {
-				layered.menus.push([this, addinfo, other]);
+				layered.menus.push([this as Contextmenu<unknown, unknown>, addinfo, other]);
 			} else if (!layered.primary) {
-				layered.primary = [this, addinfo, other];
+				layered.primary = [this as Contextmenu<unknown, unknown>, addinfo, other];
 			}
 			return;
 		});

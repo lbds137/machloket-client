@@ -1,0 +1,20 @@
+name: TSC check CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  tsc:
+    name: tsc
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: install node v22
+      uses: actions/setup-node@v1
+      with:
+        node-version: 22
+    - name: npm i
+      run: npm i
+    - name: tsc
+      run: tsc --noEmit

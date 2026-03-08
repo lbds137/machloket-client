@@ -16,6 +16,7 @@ import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
+import {CDNParams} from "./utils/cdnParams.js";
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
@@ -39,6 +40,11 @@ class User extends SnowFlake {
 	badge_ids!: string[];
 	members: WeakMap<Guild, Member | undefined | Promise<Member | undefined>> = new WeakMap();
 	status!: string;
+	avatar_decoration_data?: {
+		asset: string;
+		sku_id: string;
+	} | null;
+
 	resolving: false | Promise<any> = false;
 	get headers() {
 		return this.localuser.headers;
@@ -733,7 +739,10 @@ class User extends SnowFlake {
 		}
 	}
 
-	buildpfp(guild: Guild | void | Member | null, hoverElm: void | HTMLElement): HTMLImageElement {
+	buildpfp(guild: Guild | void | Member | null, hoverElm: void | HTMLElement): HTMLDivElement {
+		const div = document.createElement("div");
+		div.classList.add("pfpDiv");
+		hoverElm ??= div;
 		const pfp = createImg(this.getpfpsrc(), undefined, hoverElm);
 		pfp.loading = "lazy";
 		pfp.classList.add("pfp");
@@ -749,7 +758,19 @@ class User extends SnowFlake {
 				}
 			})();
 		}
-		return pfp;
+		if (this.avatar_decoration_data && this.localuser.perminfo.user.decorations) {
+			const dec = createImg(
+				this.info.cdn +
+					`/avatar-decoration-presets/${this.avatar_decoration_data.asset}.png` +
+					new CDNParams({expectedSize: 96}),
+				void 0,
+				hoverElm,
+			);
+			dec.classList.add("avDec");
+			div.append(dec);
+		}
+		div.append(pfp);
+		return div;
 	}
 	createWidget(guild?: Guild) {
 		guild = this.localuser.guildids.get("@me") as Guild;
@@ -768,7 +789,7 @@ class User extends SnowFlake {
 			if (_) {
 				_.subName(name);
 				name.textContent = _.name;
-				pfp.src = _.getpfpsrc();
+				(pfp.children[0] as HTMLImageElement).src = _.getpfpsrc();
 			} else if (guild.id !== "@me") {
 				this.subName(name);
 				const notFound = document.createElement("span");
@@ -842,11 +863,9 @@ class User extends SnowFlake {
 		return has;
 	}
 	buildstatuspfp(guild: Guild | void | Member | null | Channel): HTMLDivElement {
-		const div = document.createElement("div");
-		div.classList.add("pfpDiv");
 		const isChannel = !!(guild && "guild" in guild);
-		const pfp = this.buildpfp(isChannel ? guild.guild : guild, div);
-		div.append(pfp);
+		const div = this.buildpfp(isChannel ? guild.guild : guild);
+
 		const status = document.createElement("div");
 		this.registerStatus(status, guild);
 		status.classList.add("statusDiv");
@@ -932,6 +951,26 @@ class User extends SnowFlake {
 	}
 
 	static async resolve(id: string, localuser: Localuser): Promise<User> {
+		const time = SnowFlake.stringToUnixTime(id);
+
+		if (time < 1420070400000 + 100)
+			return new User(
+				{
+					id: "0",
+					public_flags: 0,
+					username: I18n.friends.notfound(),
+					avatar: null,
+					discriminator: "0000",
+					bio: "",
+					bot: false,
+					premium_type: 0,
+					premium_since: "",
+					accent_color: 0,
+					theme_colors: null,
+					badge_ids: [],
+				},
+				localuser,
+			);
 		let user: User | undefined;
 		if ((user = localuser.userMap.get(id))) return user;
 		const json = await fetch(localuser.info.api.toString() + "/users/" + id + "/profile", {
@@ -997,7 +1036,10 @@ class User extends SnowFlake {
 			}
 		}
 		if (this.avatar !== null) {
-			return `${this.info.cdn}/avatars/${this.id.replace("#clone", "")}/${this.avatar}.png`;
+			return (
+				`${this.info.cdn}/avatars/${this.id.replace("#clone", "")}/${this.avatar}.png` +
+				new CDNParams({expectedSize: 96})
+			);
 		} else {
 			const int = Number((BigInt(this.id.replace("#clone", "")) >> 22n) % 6n);
 			return `${this.info.cdn}/embed/avatars/${int}.png`;
@@ -1143,7 +1185,12 @@ class User extends SnowFlake {
 				if (URL.canParse(badgejson.icon)) {
 					src = badgejson.icon;
 				} else {
-					src = this.info.cdn + "/badge-icons/" + badgejson.icon + ".png";
+					src =
+						this.info.cdn +
+						"/badge-icons/" +
+						badgejson.icon +
+						".png" +
+						new CDNParams({expectedSize: 32});
 				}
 				const img = createImg(src, undefined, badgediv);
 
@@ -1403,7 +1450,12 @@ class User extends SnowFlake {
 				if (URL.canParse(badgejson.icon)) {
 					src = badgejson.icon;
 				} else {
-					src = this.info.cdn + "/badge-icons/" + badgejson.icon + ".png";
+					src =
+						this.info.cdn +
+						"/badge-icons/" +
+						badgejson.icon +
+						".png" +
+						new CDNParams({expectedSize: 32});
 				}
 				const img = createImg(src, undefined, badgediv);
 
@@ -1555,7 +1607,10 @@ class User extends SnowFlake {
 	getBannerUrl(): string | undefined {
 		if (this.banner) {
 			if (!this.hypotheticalbanner) {
-				return `${this.info.cdn}/banners/${this.id.replace("#clone", "")}/${this.banner}.png`;
+				return (
+					`${this.info.cdn}/banners/${this.id.replace("#clone", "")}/${this.banner}.png` +
+					new CDNParams({expectedSize: 160})
+				);
 			} else {
 				return this.banner;
 			}

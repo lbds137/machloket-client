@@ -5,6 +5,7 @@ import {I18n} from "./i18n.js";
 import {stickerJson} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {SnowFlake} from "./snowflake.js";
+import {CDNParams} from "./utils/cdnParams.js";
 import {createImg} from "./utils/utils.js";
 
 class Sticker extends SnowFlake {
@@ -34,7 +35,7 @@ class Sticker extends SnowFlake {
 	}
 	getHTML(): HTMLElement {
 		const img = createImg(
-			this.owner.info.cdn + "/stickers/" + this.id + ".webp?size=160&quality=lossless",
+			this.owner.info.cdn + "/stickers/" + this.id + ".webp" + new CDNParams({expectedSize: 160}),
 		);
 		img.classList.add("sticker");
 		const hover = new Hover(this.name);
@@ -79,6 +80,30 @@ class Sticker extends SnowFlake {
 			}
 		}
 		return undefined;
+	}
+	static emojiMap = new WeakMap<Localuser, Map<string, Sticker | void>>();
+	static async lookupEmoji(id: string, localuser: Localuser): Promise<Sticker | void> {
+		const guild = localuser.guilds.find((guild) => guild.emojis.find((emoji) => emoji.id === id));
+		if (guild) {
+			const sticker = guild.stickers.find((_) => _.id === id);
+			if (sticker) return sticker;
+		}
+
+		const map = this.emojiMap.get(localuser) || new Map();
+		this.emojiMap.set(localuser, map);
+
+		if (map.has(id)) return map.get(id);
+
+		const res = await fetch(localuser.info.api + `/stickers/${id}`, {
+			headers: localuser.headers,
+		});
+		if (res.status === 403) {
+			map.set(id, undefined);
+			return undefined;
+		}
+		const json = (await res.json()) as stickerJson;
+		map.set(id, json);
+		return new Sticker(json, localuser);
 	}
 	static async stickerPicker(x: number, y: number, localuser: Localuser): Promise<Sticker> {
 		let res: (r: Sticker) => void;
@@ -193,7 +218,8 @@ class Sticker extends SnowFlake {
 					guild.properties.id +
 					"/" +
 					guild.properties.icon +
-					".png?size=48";
+					".png" +
+					new CDNParams({expectedSize: 48});
 				img.alt = "Server: " + guild.properties.name;
 				select.appendChild(img);
 			} else {

@@ -796,10 +796,10 @@
 		"colors": {
 			"name": "颜色数量：",
 			"one": "一",
-			"secondColor": "次要颜色：",
-			"thirdColor": "第三颜色：",
+			"two": "二",
 			"three": "三",
-			"two": "二"
+			"secondColor": "次要颜色：",
+			"thirdColor": "第三颜色："
 		},
 		"confirmDelete": "您确定要删除$1吗？",
 		"copyId": "复制角色 ID",

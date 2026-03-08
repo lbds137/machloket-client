@@ -21,6 +21,7 @@ import {
 	commandJson,
 	applicationJson,
 	presencejson,
+	welcomeScreen,
 } from "./jsontypes.js";
 import {User} from "./user.js";
 import {I18n} from "./i18n.js";
@@ -34,6 +35,7 @@ import {Command} from "./interactions/commands.js";
 import {Hover} from "./hover.js";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
+import {CDNParams} from "./utils/cdnParams.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
@@ -570,6 +572,32 @@ class Guild extends SnowFlake {
 		}
 		return [];
 	}
+	async showWelcome() {
+		this.welcomeScreen = await (
+			await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+				headers: this.headers,
+			})
+		).json();
+		if (!this.welcomeScreen?.enabled) return;
+		const dio = new Dialog(I18n.onboarding.title(this.properties.name));
+		const opt = dio.options;
+		let i = 0;
+		for (const cha of this.welcomeScreen.welcome_channels) {
+			const channel = this.getChannel(cha.channel_id);
+			if (!channel) continue;
+			opt.addButtonInput("", channel.name, () => {
+				dio.hide();
+				this.loadChannel(channel.id);
+			});
+			opt.addText(cha.description);
+			i++;
+			if (i !== this.welcomeScreen.welcome_channels.length)
+				opt.addHTMLArea(document.createElement("hr"));
+		}
+
+		dio.show();
+	}
+	welcomeScreen?: welcomeScreen;
 	generateSettings() {
 		const settings = new Settings(I18n.guild.settingsFor(this.properties.name));
 		const textChannels = this.channels.filter((e) => {
@@ -592,7 +620,13 @@ class Guild extends SnowFlake {
 				clear: true,
 				width: 96 * 3,
 				initImg: this.banner
-					? this.info.cdn + "/banners/" + this.id + "/" + this.banner + ".png?size=256"
+					? this.info.cdn +
+						"/banners/" +
+						this.id +
+						"/" +
+						this.banner +
+						".png" +
+						new CDNParams({expectedSize: 256})
 					: "",
 				objectFit: "cover",
 			});
@@ -600,14 +634,21 @@ class Guild extends SnowFlake {
 			form.addImageInput(I18n.guild["icon:"](), "icon", {
 				clear: true,
 				initImg: this.properties.icon
-					? this.info.cdn + "/icons/" + this.id + "/" + this.properties.icon + ".png"
+					? this.info.cdn +
+						"/icons/" +
+						this.id +
+						"/" +
+						this.properties.icon +
+						".png" +
+						new CDNParams({expectedSize: 256})
 					: "",
 			});
 
 			form.addImageInput(I18n.guild.splash(), "discovery_splash", {
 				clear: true,
 				initImg: this.properties.discovery_splash
-					? `${this.info.cdn}/discovery-splashes/${this.id}/${this.properties.discovery_splash}.png`
+					? `${this.info.cdn}/discovery-splashes/${this.id}/${this.properties.discovery_splash}.png` +
+						new CDNParams({expectedSize: 256})
 					: "",
 				width: 96 * 2,
 			});
@@ -779,6 +820,136 @@ class Guild extends SnowFlake {
 			emoji.addHTMLArea(containdiv);
 		}
 		{
+			const onboard = settings.addButton(I18n.onboarding.name());
+			const genOnboard = async () => {
+				this.welcomeScreen = await (
+					await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+						headers: this.headers,
+					})
+				).json();
+				onboard.removeAll();
+				if (this.welcomeScreen?.enabled) {
+					const welcomeScreen = this.welcomeScreen;
+					onboard.afterSubmit = () => {
+						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+							method: "PATCH",
+							headers: this.headers,
+							body: JSON.stringify(welcomeScreen),
+						});
+					};
+					onboard.addButtonInput("", I18n.onboarding.disable(), () => {
+						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+							method: "PATCH",
+							headers: this.headers,
+							body: JSON.stringify({enabled: false}),
+						}).then((r) => {
+							this.welcomeScreen = undefined;
+							if (r.ok) {
+								genOnboard();
+							}
+						});
+					});
+					onboard.addButtonInput("", I18n.onboarding.addChannel(), () => {
+						const d = new Dialog(I18n.onboarding.addChannel());
+						const form = d.options.addForm("", (o) => {
+							const obj = o as {description: string; channel_id: string};
+							welcomeScreen.welcome_channels.push(obj);
+							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify(welcomeScreen),
+							}).then((r) => {
+								if (r.ok) {
+									d.hide();
+									welcome(obj);
+								}
+							});
+						});
+						const channels = this.channels.filter((channel) => {
+							if (channel.isThread()) return false;
+							if (channel.type === 4) return false;
+							if (welcomeScreen.welcome_channels.find((c) => c.emoji_id === channel.id))
+								return false;
+							return true;
+						});
+						form.addSelect(
+							I18n.onboarding.channel(),
+							"channel_id",
+							channels.map(({name}) => name),
+							{},
+							channels.map(({id}) => id),
+						);
+						form.addTextInput(I18n.onboarding.desc(), "description");
+						d.show();
+					});
+					onboard.addMDInput(
+						I18n.onboarding.desc(),
+						(desc) => {
+							welcomeScreen.description = desc;
+						},
+						{
+							initText: welcomeScreen.description,
+						},
+					);
+					const welcome = (obj: {channel_id: string; description: string}) => {
+						const {channel_id, description} = obj;
+						const opt = onboard.addOptions("");
+						const channel = this.getChannel(channel_id);
+						if (!channel) return;
+						opt.addTitle(channel.name);
+						opt.addTextInput(
+							I18n.onboarding.desc(),
+							(desc) => {
+								obj.description = desc;
+							},
+							{initText: description},
+						);
+						opt.addButtonInput("", I18n.onboarding.deleteChannel(), () => {
+							welcomeScreen.welcome_channels = welcomeScreen.welcome_channels.filter(
+								({channel_id}) => channel_id !== channel_id,
+							);
+							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify(welcomeScreen),
+							}).then((r) => {
+								if (r.ok) {
+									opt.removeAll();
+								}
+							});
+						});
+					};
+					welcomeScreen.welcome_channels.forEach(welcome);
+				} else {
+					onboard.addButtonInput("", I18n.onboarding.enable(), () => {
+						const d = new Dialog("");
+						const form = d.options.addForm("", (o) => {
+							const obj = o as {description: string};
+							const welcome_screen = {
+								description: obj.description,
+								enabled: true,
+								welcome_channels: [],
+							} satisfies extendedProperties["welcome_screen"];
+							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify(welcome_screen),
+							}).then((r) => {
+								this.welcomeScreen = welcome_screen;
+								if (r.ok) {
+									d.hide();
+									genOnboard();
+								}
+							});
+						});
+						form.addTextInput(I18n.onboarding.desc(), "description");
+						d.show();
+					});
+				}
+			};
+			genOnboard();
+		}
+		{
 			const emoji = settings.addButton(I18n.sticker.title());
 			emoji.addButtonInput("", I18n.sticker.upload(), () => {
 				const popup = new Dialog(I18n.sticker.upload());
@@ -902,7 +1073,9 @@ class Guild extends SnowFlake {
 				div.classList.add("flexltr", "bandiv");
 				let src: string;
 				if (ban.user.avatar !== null) {
-					src = `${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png`;
+					src =
+						`${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png` +
+						new CDNParams({expectedSize: 96});
 				} else {
 					const int = Number((BigInt(ban.user.id) >> 22n) % 6n);
 					src = `${this.info.cdn}/embed/avatars/${int}.png`;
@@ -1318,6 +1491,7 @@ class Guild extends SnowFlake {
 		this.member_count = json.member_count;
 		this.emojis = json.emojis || [];
 		this.headers = this.owner.headers;
+		this.welcomeScreen = json.welcome_screen;
 		this.properties.features = json.features;
 		if (this.properties.icon !== json.icon) {
 			this.properties.icon = json.icon;
@@ -1353,6 +1527,7 @@ class Guild extends SnowFlake {
 		this.roles = [];
 		this.roleids = new Map();
 		this.banner = json.properties.banner;
+		this.welcomeScreen = json.properties.welcome_screen;
 		if (json.roles) {
 			for (const roley of json.roles) {
 				const roleh = new Role(roley, this);
@@ -1591,7 +1766,15 @@ class Guild extends SnowFlake {
 			weak: true,
 		});
 		if (icon !== null) {
-			const img = createImg(guild.info.cdn + "/icons/" + guild.id + "/" + icon + ".png");
+			const img = createImg(
+				guild.info.cdn +
+					"/icons/" +
+					guild.id +
+					"/" +
+					icon +
+					".png" +
+					new CDNParams({expectedSize: 96}),
+			);
 			img.classList.add("pfp", "servericon");
 			divy.appendChild(img);
 			if (guild instanceof Guild && autoLink) {
@@ -1659,7 +1842,8 @@ class Guild extends SnowFlake {
 	get mentions() {
 		let mentions = 0;
 		for (const thing of this.channels) {
-			mentions += thing.mentions;
+			if (thing.visible) mentions += thing.mentions;
+			else if (thing.mentions) console.error("Hidden Channel has pings:", thing);
 		}
 		return mentions;
 	}
@@ -1696,16 +1880,20 @@ class Guild extends SnowFlake {
 	}
 	async goToThread(threadId: string) {
 		if (!this.localuser.channelids.has(threadId)) {
-			const channelJson = (await (
+			const channelJson = await (
 				await fetch(this.info.api + "/channels/" + threadId, {
 					headers: this.headers,
 				})
-			).json()) as channeljson;
-			const channel = new Channel(channelJson, this);
-			this.localuser.channelids.set(channel.id, channel);
-			channel.resolveparent(this);
-			const par = this.localuser.channelids.get(channel.parent_id as string);
-			par?.createguildHTML();
+			).json();
+			if (channelJson.code == 200) {
+				const channel = new Channel(channelJson as channeljson, this);
+				this.localuser.channelids.set(channel.id, channel);
+				channel.resolveparent(this);
+				const par = this.localuser.channelids.get(channel.parent_id as string);
+				par?.createguildHTML();
+			} else {
+				this.loadChannel();
+			}
 		}
 		this.localuser.goToChannel(threadId);
 	}
