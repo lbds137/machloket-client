@@ -114,7 +114,11 @@ if (window.location.pathname.startsWith("/channels")) {
 				thisUser.lookingguild.createchannels();
 			}
 		},
-		{visible: () => thisUser.isAdmin()},
+		{
+			visible: function () {
+				return thisUser.lookingguild?.member.hasPermission("MANAGE_CHANNELS") || false;
+			},
+		},
 	);
 
 	menu.addButton(
@@ -124,10 +128,13 @@ if (window.location.pathname.startsWith("/channels")) {
 				thisUser.lookingguild.createcategory();
 			}
 		},
-		{visible: () => thisUser.isAdmin()},
+		{
+			visible: function () {
+				return thisUser.lookingguild?.member.hasPermission("MANAGE_CHANNELS") || false;
+			},
+		},
 	);
 	const channelw = document.getElementById("channelw");
-	console.log(channelw);
 	if (channelw)
 		channelw.addEventListener("keypress", (e) => {
 			if (e.ctrlKey || e.altKey || e.metaKey || e.metaKey) return;
