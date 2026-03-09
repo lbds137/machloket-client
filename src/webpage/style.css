@@ -2585,7 +2585,6 @@ span.instanceStatus {
 	}
 }
 .username {
-	margin-top: auto;
 	font-weight: bold;
 	word-break: break-all;
 	cursor: pointer;
@@ -2602,10 +2601,11 @@ span.instanceStatus {
 	width: 20px;
 	height: 20px;
 	object-fit: contain;
+	align-self: center;
 }
 .userwrap {
 	display: flex;
-	align-items: flex-end;
+	align-items: baseline;
 }
 .pinText {
 	cursor: pointer;
@@ -2626,7 +2626,6 @@ span.instanceStatus {
 .bot {
 	padding: 2px 5px;
 	margin-left: 4px;
-	vertical-align: 1px;
 	background: color-mix(in srgb, var(--accent-color) 75%, transparent) !important;
 	font-size: 0.75em !important;
 	font-weight: bold;
@@ -2635,6 +2634,7 @@ span.instanceStatus {
 	flex-grow: 0;
 	width: fit-content;
 	background-clip: border-box !important;
+	align-self: center;
 }
 .membererror {
 	display: inline-block;
@@ -2691,7 +2691,6 @@ input[type="search"]:read-only {
 .timestamp {
 	flex: none;
 	margin-left: 6px;
-	margin-bottom: 1px;
 	font-size: 0.75em;
 	color: var(--primary-text-soft);
 }
@@ -2741,7 +2740,7 @@ span .quote:last-of-type .quoteline {
 	margin-bottom: 4px;
 	font-size: 0.9em;
 	color: var(--reply-text);
-	align-items: center;
+	align-items: baseline;
 	gap: 4px;
 }
 .replyflex::before {
@@ -2764,13 +2763,13 @@ span .quote:last-of-type .quoteline {
 .replypfp {
 	height: 20px;
 	width: 20px;
+	align-self: center;
 }
 .replyflex .username {
 	flex: none;
 	max-width: calc(100% - 75px);
 }
 .replytext {
-	margin-top: auto;
 	cursor: pointer;
 }
 .replytext a {
