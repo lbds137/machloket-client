@@ -11,8 +11,13 @@
 	"2faCode": "2FA 코드:",
 	"404": {
 		"404": "오류:404 - 페이지를 찾을 수 없음",
+		"app": "앱으로",
+		"blog": "Fermi 블로그",
 		"home": "홈페이지",
 		"login": "로그인"
+	},
+	"onboarding": {
+		"title": "$1에 오신 것을 환영합니다!"
 	},
 	"DMs": {
 		"close": "DM 닫기",
@@ -24,6 +29,9 @@
 	"UrlGen": "봇 초대 생성기",
 	"accessibility": {
 		"name": "접근성"
+	},
+	"badge": {
+		"certified_moderator": "중재자"
 	},
 	"blankMessage": "빈 메시지",
 	"bot": "봇",
@@ -37,7 +45,7 @@
 		"makeInvite": "초대하기",
 		"markRead": "읽은 것으로 표시",
 		"name": "채널",
-		"name:": "이름:",
+		"name:": "채널 이름:",
 		"nsfw:": "NSFW:",
 		"permissions": "권한",
 		"selectCatName": "분류 이름",
@@ -52,7 +60,7 @@
 		"forum": "포럼"
 	},
 	"threads": {
-		"name": "이름:"
+		"name": "스레드 이름:"
 	},
 	"forum": {
 		"next": "다음",
@@ -71,6 +79,7 @@
 			"tagName": "태그 이름:"
 		}
 	},
+	"channelLink": "# $1",
 	"confirmGuildLeave": "$1 장소를 떠나시겠습니까",
 	"copymessageid": "메시지 ID 복사",
 	"delete": "삭제",
@@ -111,29 +120,37 @@
 		"all": "모두",
 		"banner:": "배너:",
 		"confirmLeave": "떠나시겠습니까?",
+		"createFromTemplate": "틀에서 길드 만들기",
+		"createNewTemplate": "새 틀 만들기",
 		"default": "기본값 ($1)",
 		"description:": "설명:",
 		"icon:": "아이콘:",
 		"loadingDiscovery": "불러오는 중...",
 		"makeInvite": "초대하기",
 		"markRead": "읽은 것으로 표시",
+		"memberCount": "$1명의 {{PLURAL:$1|회원}}",
 		"name:": "이름:",
 		"none": "없음",
 		"notifications": "알림",
 		"overview": "개요",
 		"region:": "지역:",
 		"roles": "역할",
-		"serverName": "서버 이름:",
+		"serverName": "길드 이름:",
 		"settings": "설정",
 		"settingsFor": "$1 설정",
 		"systemSelect:": "시스템 메시지 채널:",
+		"tempCreatedBy": "틀 만든이:",
+		"templateName": "틀 이름:",
+		"templateURL": "틀 링크: $1",
+		"templates": "틀",
 		"topic:": "주제:",
+		"viewTemplate": "틀 보기",
 		"yesDelete": "네, 확실합니다",
 		"yesLeave": "네, 확실합니다"
 	},
 	"hideBlockedMessages": "이 사용자를 차단하였습니다. 이 메시지를 숨기려면 클릭하세요",
 	"htmlPages": {
-		"addBot": "서버에 추가",
+		"addBot": "길드에 추가",
 		"alreadyHave": "계정이 이미 있습니까?",
 		"createAccount": "계정 만들기",
 		"dobField": "출생일:",
@@ -152,7 +169,7 @@
 	"instanceStats": {
 		"messages": "메시지: $1",
 		"name": "인스턴스 통계: $1",
-		"servers": "서버: $1",
+		"servers": "길드: $1",
 		"users": "등록된 사용자: $1"
 	},
 	"invite": {
@@ -245,14 +262,14 @@
 	"manageInstance": {
 		"AreYouSureStop": "이 인스턴스를 중지하시겠습니까?",
 		"TokenFormats": {
-			"URLs": "초대 URL"
+			"URLs": "초대 링크"
 		},
 		"clientURL": "클라이언트 링크:",
 		"copy": "복사",
 		"create": "만들기",
 		"format": "포맷:",
 		"length": "길이:",
-		"regType": "토큰 URL 유형 등록",
+		"regType": "토큰 링크 유형 등록",
 		"stop": "인스턴스 중지"
 	},
 	"media": {
@@ -276,38 +293,38 @@
 	"no": "아니요",
 	"permissions": {
 		"descriptions": {
-			"VIEW_AUDIT_LOG": "사용자가 감사 로그를 볼 수 있도록 허용합니다",
-			"MENTION_EVERYONE": "사용자가 모든 사람을 언급할 수 있도록 허용합니다",
-			"MANAGE_NICKNAMES": "사용자가 다른 회원의 닉네임을 변경할 수 있도록 허용합니다",
-			"MANAGE_MESSAGES": "사용자가 자신의 메시지가 아닌 것을 삭제할 수 있도록 허용합니다",
-			"MANAGE_THREADS": "사용자가 스레드를 삭제 및 보관하고 모든 개인 스레드를 볼 수 있도록 허용합니다.",
-			"MANAGE_CHANNELS": "사용자가 채널을 관리하고 편집할 수 있도록 허용합니다",
-			"MANAGE_ROLES": "사용자가 역할을 편집하고 관리할 수 있도록 허용합니다",
-			"MANAGE_EVENTS": "사용자가 이벤트를 편집하고 관리할 수 있도록 허용합니다",
-			"KICK_MEMBERS": "사용자가 길드에서 회원을 내보낼 수 있도록 허용합니다",
-			"BAN_MEMBERS": "사용자가 길드에서 회원을 금지할 수 있도록 허용합니다",
-			"MOVE_MEMBERS": "사용자가 음성 채널 간에 회원을 이동할 수 있도록 허용합니다",
-			"MUTE_MEMBERS": "사용자가 다른 회원을 조용히 하게 할 수 있도록 허용합니다",
-			"DEAFEN_MEMBERS": "사용자가 다른 회원의 소리를 듣지 못하게 할 수 있도록 허용합니다",
-			"CHANGE_NICKNAME": "사용자가 자신의 닉네임을 변경할 수 있도록 허용합니다",
-			"VIEW_CHANNEL": "사용자가 채널을 볼 수 있도록 허용합니다",
-			"READ_MESSAGE_HISTORY": "사용자가 메시지 기록을 읽을 수 있도록 허용합니다",
-			"ADD_REACTIONS": "사용자가 메시지에 반응을 추가할 수 있도록 허용합니다",
-			"SEND_MESSAGES": "사용자가 메시지를 보낼 수 있도록 허용합니다",
-			"SEND_MESSAGES_IN_THREADS": "사용자가 스레드에서 메시지를 보낼 수 있도록 허용합니다",
-			"USE_EXTERNAL_EMOJIS": "사용자가 외부 이모티콘을 사용할 수 있도록 허용합니다",
-			"USE_EXTERNAL_STICKERS": "사용자가 외부 스티커를 사용할 수 있도록 허용합니다",
-			"ATTACH_FILES": "사용자가 파일을 첨부할 수 있도록 허용합니다",
-			"CREATE_INSTANT_INVITE": "사용자가 길드 초대장을 만들 수 있도록 허용합니다",
-			"CREATE_PUBLIC_THREADS": "사용자가 공개 스레드를 만들 수 있도록 허용합니다",
-			"CREATE_PRIVATE_THREADS": "사용자가 개인 스레드를 만들 수 있도록 허용합니다",
-			"CONNECT": "사용자가 음성 채널에 연결할 수 있도록 허용합니다",
-			"SPEAK": "사용자가 음성 채널에서 말할 수 있도록 허용합니다",
-			"USE_VAD": "사용자가 간단히 말하는 것만으로 음성 채널에서 대화할 수 있도록 허용합니다.",
-			"STREAM": "사용자가 스트리밍할 수 있도록 허용합니다",
-			"REQUEST_TO_SPEAK": "사용자가 스테이지 채널에서 말할 수 있도록 허용합니다",
-			"USE_EMBEDDED_ACTIVITIES": "사용자가 임베디드 활동을 사용할 수 있도록 허용합니다",
-			"USE_APPLICATION_COMMANDS": "사용자가 애플리케이션 명령을 사용할 수 있도록 허용합니다"
+			"VIEW_AUDIT_LOG": "역할 회원이 감사 로그를 볼 수 있도록 허용합니다.",
+			"MENTION_EVERYONE": "역할 회원이 모든 사람을 언급할 수 있도록 허용합니다.",
+			"MANAGE_NICKNAMES": "역할 회원이 다른 회원의 닉네임을 변경할 수 있도록 허용합니다.",
+			"MANAGE_MESSAGES": "역할 회원이 자신의 메시지가 아닌 것을 삭제할 수 있도록 허용합니다.",
+			"MANAGE_THREADS": "역할 회원이 스레드를 삭제 및 보관하고 모든 개인 스레드를 볼 수 있도록 허용합니다.",
+			"MANAGE_CHANNELS": "역할 회원이 채널을 관리하고 편집할 수 있도록 허용합니다.",
+			"MANAGE_ROLES": "역할 회원이 역할을 편집하고 관리할 수 있도록 허용합니다.",
+			"MANAGE_EVENTS": "역할 회원이 이벤트를 편집하고 관리할 수 있도록 허용합니다.",
+			"KICK_MEMBERS": "역할 회원이 길드에서 회원을 내보낼 수 있도록 허용합니다.",
+			"BAN_MEMBERS": "역할 회원이 길드에서 회원을 금지할 수 있도록 허용합니다.",
+			"MOVE_MEMBERS": "역할 회원이 음성 채널 간에 회원을 이동할 수 있도록 허용합니다.",
+			"MUTE_MEMBERS": "역할 회원이 다른 회원을 조용히 하게 할 수 있도록 허용합니다.",
+			"DEAFEN_MEMBERS": "역할 회원이 다른 회원의 소리를 듣지 못하게 할 수 있도록 허용합니다. (회원의 소리를 듣지 못하게 하면 자동으로 음소거됩니다.)",
+			"CHANGE_NICKNAME": "역할 회원이 자신의 닉네임을 변경할 수 있도록 허용합니다.",
+			"VIEW_CHANNEL": "역할 회원이 채널을 볼 수 있도록 허용합니다.",
+			"READ_MESSAGE_HISTORY": "역할 회원이 메시지 기록을 읽을 수 있도록 허용합니다.",
+			"ADD_REACTIONS": "역할 회원이 메시지에 반응을 추가할 수 있도록 허용합니다.",
+			"SEND_MESSAGES": "역할 회원이 메시지를 보낼 수 있도록 허용합니다.",
+			"SEND_MESSAGES_IN_THREADS": "역할 회원이 스레드에서 메시지를 보낼 수 있도록 허용합니다.",
+			"USE_EXTERNAL_EMOJIS": "역할 회원이 외부 이모티콘을 사용할 수 있도록 허용합니다.",
+			"USE_EXTERNAL_STICKERS": "역할 회원이 외부 스티커를 사용할 수 있도록 허용합니다.",
+			"ATTACH_FILES": "역할 회원이 파일을 첨부할 수 있도록 허용합니다.",
+			"CREATE_INSTANT_INVITE": "역할 회원이 길드 초대장을 만들 수 있도록 허용합니다.",
+			"CREATE_PUBLIC_THREADS": "역할 회원이 공개 스레드를 만들 수 있도록 허용합니다.",
+			"CREATE_PRIVATE_THREADS": "역할 회원이 개인 스레드를 만들 수 있도록 허용합니다.",
+			"CONNECT": "역할 회원이 음성 채널에 연결할 수 있도록 허용합니다.",
+			"SPEAK": "역할 회원이 음성 채널에서 말할 수 있도록 허용합니다.",
+			"USE_VAD": "역할 회원이 간단히 말하는 것만으로 음성 채널에서 대화할 수 있도록 허용합니다. (비활성된 경우, Push-To-Talk 키를 눌러야 말할 수 있습니다.)",
+			"STREAM": "역할 회원이 음성 채널에 스트리밍할 수 있도록 허용합니다.",
+			"REQUEST_TO_SPEAK": "역할 회원이 스테이지 채널에서 말할 수 있도록 허용합니다.",
+			"USE_EMBEDDED_ACTIVITIES": "역할 회원이 임베디드 활동을 사용할 수 있도록 허용합니다.",
+			"USE_APPLICATION_COMMANDS": "역할 회원이 애플리케이션 명령을 사용할 수 있도록 허용합니다."
 		},
 		"readableNames": {
 			"ADD_REACTIONS": "반응 추가",
@@ -355,7 +372,7 @@
 	"reply": "답변",
 	"retrying": "다시 시도하는 중...",
 	"role": {
-		"color": "색",
+		"color": "첫 번째 색",
 		"confirmDelete": "'$1' 항목을 삭제하시겠습니까?",
 		"delete": "역할 삭제",
 		"displaySettings": "표시 설정",
@@ -387,7 +404,7 @@
 		"addRole": "역할 추가",
 		"block": "사용자 차단",
 		"copyId": "사용자 ID 복사",
-		"editServerProfile": "서버 프로필 편집",
+		"editServerProfile": "길드 프로필 편집",
 		"friendReq": "친구 요청",
 		"message": "사용자에게 메시지 보내기",
 		"offline": "오프라인",
@@ -401,11 +418,11 @@
 		"areYouSureDelete": "$1 항목을 삭제하시겠습니까?",
 		"avatar": "아바타",
 		"base": "웹훅",
-		"channel": "채널",
+		"channel": "Webhook을 채널로 출력:",
 		"copyURL": "웹훅 링크 복사",
 		"createdAt": "만든 날짜: $1",
 		"createdBy": "만든이:",
-		"name": "이름:",
+		"name": "Webhook 이름:",
 		"newWebHook": "새 웹훅",
 		"token": "웹혹 토큰: `$1`",
 		"type2": "채널 팔로워"

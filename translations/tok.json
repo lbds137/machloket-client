@@ -20,8 +20,13 @@
 	"bio": "lipu mi:",
 	"bot": "jan ilo",
 	"channel": {
-		"delete": "o weka poki toki",
-		"name:": "nimi:",
+		"createChannel": "o pali e tomo toki",
+		"delete": "o weka e tomo toki",
+		"name": "tomo toki",
+		"name:": "nimi pi tomo toki:",
+		"selectName": "nimi pi tomo toki",
+		"settings": "o ante e tomo toki",
+		"settingsFor": "o ante e tomo toki $1",
 		"text": "lipu",
 		"voice": "kalama"
 	},
@@ -32,6 +37,7 @@
 	"copyrawtext": "pali sin lipu",
 	"createAccount": "o pali e sijelo sin",
 	"delete": "o weka",
+	"deleteConfirm": "sina wile li sijelo weka?",
 	"edit": "o ante",
 	"emoji": {
 		"found": {
@@ -62,7 +68,7 @@
 		"delete": "o weka ma",
 		"description:": "lipu ma:",
 		"icon:": "sitelen lili:",
-		"leave": "o kama ma",
+		"leave": "o tawa ma",
 		"loadingDiscovery": "tenpo lon la ilo Pemi li kama...",
 		"name:": "nimi:",
 		"none": "weka"
@@ -81,8 +87,11 @@
 		"onlyYou": "toki ni li lon tawa sina taso"
 	},
 	"jankInfo": "toki pi ilo lukin",
+	"leaveGuild": "o tawa ma",
 	"localuser": {
 		"changeEmail": "o ante e nimi Email",
+		"deleteAccount": "weka sijelo",
+		"deleteAccountButton": "o weka sijelo",
 		"newEmail:": "nimi Email sin",
 		"newPassword:": "nimi open sin:",
 		"password:": "nimi open"
@@ -126,18 +135,25 @@
 		"save": "o pana e ante"
 	},
 	"sticker": {
+		"del": "o weka sitelen ko",
 		"image": "sitelen:",
 		"name": "nimi:",
-		"title": "sitelen suli",
-		"upload": "o pana e sitelen"
+		"title": "sitelen ko",
+		"upload": "o pana e sitelen ko"
 	},
 	"submit": "o pana",
+	"typing": "$2 {{PLURAL:$1|li}} kama toki",
 	"uploadFilesText": "o pana e lipu lon ni",
+	"user": {
+		"deleted": "sijelo weka"
+	},
 	"vc": {
 		"joinstream": "sitelen mute lukin",
-		"leavestream": "sitelen mute lukin weka"
+		"leavestream": "o tawa e sitelen tawa"
 	},
 	"webhooks": {
+		"areYouSureDelete": "sina wile li $1 weka?",
+		"deleteWebhook": "o weka",
 		"name": "nimi:"
 	}
 }

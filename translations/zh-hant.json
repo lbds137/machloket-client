@@ -21,6 +21,16 @@
 		"whatelse": "您認為應該還會發生什麼事？",
 		"whereever": "無論這在哪裡"
 	},
+	"onboarding": {
+		"name": "入門",
+		"disable": "停用入門功能",
+		"addChannel": "新增頻道",
+		"channel": "頻道：",
+		"desc": "描述：",
+		"deleteChannel": "從入門裡刪除頻道",
+		"enable": "啟用入門功能",
+		"title": "歡迎來到$1！"
+	},
 	"DMs": {
 		"add": "將某人添加到此私訊",
 		"close": "關閉私訊",
@@ -198,6 +208,7 @@
 	},
 	"confirmGuildLeave": "您確定您要離開$1",
 	"copyLink": "複製訊息連結",
+	"copyRegLink": "複製連結",
 	"copymessageid": "複製訊息 ID",
 	"copyrawtext": "複製原始文字",
 	"createAccount": "建立帳號",

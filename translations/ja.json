@@ -21,6 +21,16 @@
 		"whatelse": "他に何が起こるべきだと思いますか?",
 		"whereever": "どこでも"
 	},
+	"onboarding": {
+		"name": "オンボーディング",
+		"disable": "オンボーディングを無効化",
+		"addChannel": "チャンネルを追加",
+		"channel": "チャンネル:",
+		"desc": "説明:",
+		"deleteChannel": "オンボーディングからチャンネルを削除",
+		"enable": "オンボーディングを有効化",
+		"title": "$1へようこそ！"
+	},
 	"DMs": {
 		"add": "このDMに誰かを追加する",
 		"close": "DMを閉じる",
@@ -57,7 +67,9 @@
 		"name": "アクセシビリティ",
 		"playGif": "GIFを再生します:",
 		"playIcon": "アニメ絵アイコンを再生する:",
-		"roleColors": "ロールの色を無効にする"
+		"roleColors": "ロールの色を無効にする：",
+		"gradientColors": "色のグラデーションを無効にする：",
+		"decorations": "アバターの装飾を有効にする："
 	},
 	"accountNotStart": "アカウントを開始できません",
 	"add": "追加",
@@ -125,8 +137,8 @@
 		"markRead": "既読にする",
 		"mute": "チャンネルをミュート",
 		"name": "チャンネル",
-		"name:": "名前：",
-		"nsfw:": "NSFW(仕事場で見るには適さない)：",
+		"name:": "チャンネル名：",
+		"nsfw:": "NSFW(仕事場で見るには適さない)/成人向けコンテンツの警告：",
 		"permissions": "権限",
 		"selectCatName": "カテゴリ名",
 		"selectName": "チャンネル名",
@@ -147,7 +159,7 @@
 	"threads": {
 		"leave": "スレッドから退出",
 		"join": "スレッドに参加",
-		"name": "名前:",
+		"name": "スレッド名:",
 		"editTags": "タグを編集"
 	},
 	"forum": {
@@ -167,11 +179,18 @@
 				"recent": "新しい順で",
 				"old": "古い順で"
 			},
+			"tagMatch": {
+				"title": "タグの一致",
+				"some": "いくつかのタグと一致させる",
+				"all": "全てのタグと一致させる"
+			},
 			"name": "並び替え"
 		},
 		"errors": {
-			"tagsReq": "投稿にタグを必須にする"
+			"tagsReq": "投稿にタグを必須にする",
+			"requireText": "メッセージは空にできません"
 		},
+		"allTags": "全てのタグ",
 		"settings": {
 			"editTags": "タッグ編集",
 			"editTag": "タッグ編集",
@@ -189,32 +208,53 @@
 	},
 	"confirmGuildLeave": "$1から本当に退出しますか?",
 	"copyLink": "メッセージリンクをコピー",
+	"copyRegLink": "リンクをコピー",
 	"copymessageid": "メッセージIDをコピー",
 	"copyrawtext": "原文をコピー",
 	"createAccount": "アカウントを作成",
 	"delete": "削除",
 	"deleteConfirm": "メッセージを削除します。よろしいですか？",
 	"devSettings": {
+		"badUser": "過剰な情報を送信する不正な利用者オブジェクトのログ記録を有効にする：",
+		"cache": "Service Worker のキャッシュ マップ ファイルを有効にする：",
+		"cacheDesc": "どちらの方法でもマップ ファイルは読み込まれますが、これにより、新しい更新がロールアウトされたときにマップ ファイルが確実にキャッシュ内に存在するようになります。",
+		"captureTrace": "この設定は、Fermi にサーバーから _trace プロパティをキャプチャするように指示します。これを有効にすると、プログレッシブな JSON デコードが機能しなくなる可能性があります (再読み込みが必要になる場合があります)。",
+		"clearWellKnowns": ".well-known レコードを再取得する：",
 		"description": "これらは、SpacebarやFermiの開発者向け設定です。何をしているのか分からない場合は、これらの設定を変更しないでください。",
-		"gatewayComp": "ゲートウェイ圧縮を無効にする",
-		"name": "開発者設定"
+		"gatewayComp": "ゲートウェイ圧縮を無効にする：",
+		"reportSystem": "試験的な通報機能を有効にする：",
+		"logGateway": "受信したゲートウェイ イベントを記録します (ログレベル情報):",
+		"name": "開発者設定",
+		"traces": "トレースを公開："
 	},
 	"deviceManage": {
 		"city": "都市: $1",
 		"continent": "大陸: $1",
 		"country": "国: $1",
+		"curSes": "これは現在使用しているセッションです。他のメニューからログアウトする必要があります。",
+		"estimateWarn": "警告：この情報はすべて推測に過ぎず、間違っている可能性があります。",
+		"ip": "最後に確認されたIPアドレス：$1",
+		"last": "最後に使用したおおよその時期：$1",
 		"latitude": "緯度: $1",
 		"logout": "ログアウト",
 		"longitude": "経度: $1",
 		"manageDev": "デバイスを管理する",
 		"postal": "郵便番号: $1",
-		"region": "地域: $1"
+		"region": "地域: $1",
+		"title": "セッションの管理"
 	},
 	"discovery": "ディスコバリー",
 	"dms": "メッセージ",
 	"edit": "編集",
 	"emoji": {
 		"confirmDel": "絵文字を削除します。よろしいですか？",
+		"found": {
+			"not": "この絵文字はあなたのギルドのものではありません。この絵文字を使用するには、それをホストしているギルドに参加してください。",
+			"other": "この絵文字は他のギルドのものです。",
+			"private": "この絵文字を持つギルドが見つかりません",
+			"this": "この絵文字はこのギルドのものです。"
+		},
+		"from": "この絵文字は",
 		"image:": "画像:",
 		"join": "ギルドに参加する",
 		"name:": "名前:",
@@ -223,6 +263,7 @@
 		"upload": "絵文字をアップロードする"
 	},
 	"emojiSelect": "絵文字:",
+	"errorReconnect": "サーバーに接続できません。** $1 ** 秒後に再試行します...",
 	"favoriteGifs": "お気に入りのGIF",
 	"folder": {
 		"color": "フォルダの色:",
@@ -241,11 +282,14 @@
 		"blocked": "ブロック中",
 		"blockedusers": "ブロックされたユーザー:",
 		"bu": "ブロックされたユーザー",
+		"discnotfound": "識別子が見つかりません",
 		"friendlist": "友達リスト",
 		"friends": "友達",
 		"notfound": "ユーザーが見つかりません",
 		"online": "オンライン",
 		"online:": "オンライン友達:",
+		"pending": "保留中",
+		"pending:": "保留中のフレンド申請：",
 		"removeFriend": "友達を削除"
 	},
 	"goThere": "はい、行きましょう",
@@ -258,8 +302,12 @@
 	},
 	"guild": {
 		"COMMUNITY": "参加を申し込む",
+		"disableInvites": "招待を無効にする：",
 		"DISCOVERABLE": "ディスコバリー",
+		"INVITES_DISABLED": "招待のみ",
 		"adminMenu": {
+			"changePerms": "検索に関する権限を変更する",
+			"finding": "管理者を探す",
 			"ownName": "オーナー",
 			"owner": "オーナーを見つける",
 			"permission": "権限"
@@ -277,14 +325,20 @@
 		"confirmLeave": "退出します。よろしいですか？",
 		"copyId": "ギルドIDをコピー",
 		"create": "ゼロからギルドを作成",
-		"createFromTemplate": "テンプレートからギルド",
+		"createFromTemplate": "テンプレートからギルドを作成",
 		"createNewTemplate": "新しいテンプレートを作成",
 		"creating": "ギルドの作成",
 		"default": "デフォルト ( $1 )",
 		"defaultNoti": "ギルドの標準の通知設定",
 		"delete": "ギルドを削除",
+		"description:": "説明:",
+		"disoveryTitle": "ギルドを見つける ($1{{PLURAL:$1|エントリ}})",
 		"editingTemplate": "$1 を編集",
+		"emptytext": "なんと不思議なことでしょう、このギルドにはチャンネルがありません！？",
+		"emptytitle": "奇妙な場所",
 		"guilds": "ギルド",
+		"helpTips?": "ギルドに役立つヒントを送ってください！",
+		"howJoin": "どうすればギルドに参加できますか?",
 		"icon:": "アイコン：",
 		"invites": "招待",
 		"joinConfirm": "$1に参加しますか?",
@@ -292,6 +346,7 @@
 		"loadingDiscovery": "読み込み中...",
 		"makeInvite": "招待する",
 		"markRead": "既読にする",
+		"memberCount": "$1{{PLURAL:$1|人}}のメンバー",
 		"mute": "ミュートギルド",
 		"name:": "名前：",
 		"nameNoMatch": "名前が一致しません",
@@ -313,7 +368,13 @@
 		"stickWelcomeReact?": "ウェルカムメッセージにスタンプで返信するようメンバーに促します。",
 		"systemSelect:": "チャンネル",
 		"tempCreatedBy": "テンプレート作成者:",
-		"template": "テンプレート：",
+		"tempUseCount": "テンプレートは$1{{PLURAL:$1|回}}使用されています",
+		"template": "ギルド構築用テンプレートのリンク/コード:",
+		"templateDesc": "テンプレートの説明：",
+		"templateName": "テンプレート名：",
+		"templateNameShort": "テンプレート名は2文字以上である必要があります",
+		"templateURL": "テンプレートへのリンク： $1",
+		"templates": "テンプレート",
 		"yesDelete": "はい",
 		"yesLeave": "はい"
 	},
@@ -374,7 +435,7 @@
 		"2faEnable": "2FAを有効にする",
 		"PasswordsNoMatch": "パスワードが一致しません",
 		"TOSURL": "利用規約リンク:",
-		"accentColor": "アクセント色:",
+		"accentColor": "テーマごとの色指定：",
 		"accountSettings": "アカウント設定",
 		"deleteAccount": "アカウント削除"
 	},

@@ -575,7 +575,7 @@
 		"trustedDesc": "Lorsque vous cliquez sur un lien provenant de ces domaines, ils ne vous demanderont ***pas*** l'autorisation d'ouvrir le lien, contrairement aux autres liens. N'accordez cette autorisation qu'aux sites de confiance.",
 		"updateSettings": "Paramètres de mise à jour",
 		"updatesYay": "Mises à jour disponibles !",
-		"userSettings": "Paramètres utilisateur"
+		"userSettings": "Profil publique de l'utilisateur"
 	},
 	"login": {
 		"allGood": "OK",
