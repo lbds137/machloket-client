@@ -36,6 +36,16 @@
 		"whatelse": "Que pensez-vous qu'il devrait se passer d'autre ?",
 		"whereever": "Où que ce soit"
 	},
+	"onboarding": {
+		"name": "Introduction",
+		"disable": "Désactiver l'introduction",
+		"addChannel": "Ajouter un canal",
+		"channel": "Canal :",
+		"desc": "Description :",
+		"deleteChannel": "Supprimer le canal de l'introduction",
+		"enable": "Activer l'introduction",
+		"title": "Bienvenue sur $1 !"
+	},
 	"DMs": {
 		"add": "Ajouter une personne à ce MP",
 		"close": "Fermer le MP",
@@ -939,7 +949,7 @@
 		"areYouSureDelete": "Êtes-vous sûr·e de vouloir supprimer $1 ?",
 		"avatar": "Avatar",
 		"base": "Webhooks",
-		"channel": "Webhook raccorde au canal :",
+		"channel": "Canal de sortie du Webhook :",
 		"copyURL": "Copier le lien du Webhook",
 		"createdAt": "Créé le $1",
 		"createdBy": "Créé par :",
