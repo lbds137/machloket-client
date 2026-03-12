@@ -11,6 +11,12 @@
 		"login": "o kama lon sijelo"
 	},
 	"ok": "pona",
+	"accessibility": {
+		"gifSettings": {
+			"always": "lon tenpo ale",
+			"never": "lon tenpo ala"
+		}
+	},
 	"bio": "lipu mi:",
 	"bot": "jan ilo",
 	"channel": {

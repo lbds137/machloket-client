@@ -75,7 +75,7 @@ class Member extends SnowFlake {
 		if (this.banner) {
 			return (
 				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/banners/${
-					this.avatar
+					this.banner
 				}.${this.banner.startsWith("a_") ? "gif" : "png"}` +
 				new CDNParams({expectedSize: 96, animated: this.banner.startsWith("a_")})
 			);
