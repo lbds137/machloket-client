@@ -371,8 +371,8 @@ class Directory {
 
 export {Directory};
 
-const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-const iOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+const mobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+const iOS = /iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 export {mobile, iOS};
 
 const datalist = document.getElementById("instances");

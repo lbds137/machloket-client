@@ -3077,7 +3077,7 @@ class Channel extends SnowFlake {
 				id = this.lastreadmessageid;
 			} else if (this.lastreadmessageid && (id = this.findClosest(this.lastreadmessageid))) {
 			} else if (this.lastmessageid && this.messages.has(this.lastmessageid)) {
-				id = this.goBackIds(this.lastmessageid, 50);
+				id = this.lastmessageid;
 			}
 		}
 		if (!id) {
