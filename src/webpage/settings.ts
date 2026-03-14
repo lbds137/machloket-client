@@ -2107,12 +2107,14 @@ class Form implements OptionsElement<object> {
 			div.classList.add("suberror", "suberrora");
 			e.append(div);
 			element = div;
-			element.focus();
+            setTimeout((_) => {
+			    element.scrollIntoView(false);
+            }, 100);
 		} else {
 			element.classList.remove("suberror");
 			setTimeout((_) => {
 				element.classList.add("suberror");
-				element.focus();
+				element.scrollIntoView(false);
 			}, 100);
 		}
 		element.textContent = message;
