@@ -2719,6 +2719,8 @@ class Channel extends SnowFlake {
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "visible";
 		if (!mobile) {
 			(document.getElementById("typebox") as HTMLDivElement).focus();
+		} else {
+			(document.getElementById("typebox") as HTMLDivElement).blur();
 		}
 		if (getMessages) await this.putmessages();
 		await prom;
