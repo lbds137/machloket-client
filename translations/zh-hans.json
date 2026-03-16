@@ -283,6 +283,7 @@
 	"friends": {
 		"addfriend": "添加朋友",
 		"addfriendpromt": "通过用户名添加好友：",
+		"requestsent": "请求已发送！",
 		"all": "全部",
 		"all:": "全部好友：",
 		"blocked": "已封禁",
