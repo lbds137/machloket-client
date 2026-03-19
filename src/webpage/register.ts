@@ -20,6 +20,7 @@ export async function makeRegister(
 		{instance},
 	);
 	dialog.show(trasparentBg).parentElement!.style.zIndex = "200";
+	const invite = new URLSearchParams(window.location.search).get("invite");
 
 	const form = opt.addForm(
 		"",
@@ -37,7 +38,11 @@ export async function makeRegister(
 					return;
 				}
 				const redir = new URLSearchParams(window.location.search).get("goback");
-				if (redir && (!URL.canParse(redir) || new URL(redir).host === window.location.host)) {
+				if (
+					redir &&
+					(!URL.canParse(redir) || new URL(redir).host === window.location.host) &&
+					!invite
+				) {
 					window.location.href = redir;
 				} else {
 					window.location.href = "/channels/@me";
@@ -62,6 +67,7 @@ export async function makeRegister(
 	const user = form.addTextInput(I18n.htmlPages.userField(), "username");
 	const p1 = form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});
 	const p2 = form.addTextInput(I18n.htmlPages.pw2Field(), "password2", {password: true});
+
 	form.addDateInput(I18n.htmlPages.dobField(), "date_of_birth");
 	form.addPreprocessor((e) => {
 		if (p1.value !== p2.value) {
@@ -69,6 +75,8 @@ export async function makeRegister(
 		}
 		//@ts-expect-error it's there
 		delete e.password2;
+		//@ts-expect-error it's allowed
+		e.invite = invite;
 		if (!check.checked) throw new FormError(checkbox, I18n.register.tos());
 		//@ts-expect-error it's there
 		e.consent = check.checked;

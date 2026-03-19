@@ -108,12 +108,14 @@ if (window.location.pathname.startsWith("/invite"))
 						new URLSearchParams([
 							["goback", window.location.href],
 							["instance", well],
+							["invite", code],
 						]),
 					registerurl:
 						"/register?" +
 						new URLSearchParams([
 							["goback", window.location.href],
 							["instance", well],
+							["invite", code],
 						]),
 				},
 			).show();
