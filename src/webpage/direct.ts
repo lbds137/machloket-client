@@ -320,7 +320,7 @@ class Direct extends Guild {
 							const box = text.input.deref();
 							if (!box) return;
 							box.value = "";
-                            box.placeholder = I18n.friends.requestsent();
+							box.placeholder = I18n.friends.requestsent();
 						}
 					},
 					{
@@ -673,7 +673,8 @@ class Group extends Channel {
 	}
 	unreads() {
 		const sentdms = document.getElementById("sentdms") as HTMLDivElement; //Need to change sometime
-		const current = this.all.deref();
+		let current = this.all.deref();
+		if (!current || !document.body.contains(current)) current = undefined;
 		if (this.mentions) {
 			{
 				const noti = this.noti?.deref();
