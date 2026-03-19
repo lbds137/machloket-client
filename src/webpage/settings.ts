@@ -47,7 +47,7 @@ export class Buttons implements OptionsElement<unknown> {
 	}
 	htmlarea = new WeakRef(document.createElement("div"));
 	buttonTable = new WeakRef(document.createElement("div"));
-	generateHTML() {
+	generateHTML(hideButtons = false) {
 		const buttonList = document.createElement("div");
 		buttonList.classList.add("Buttons");
 		buttonList.classList.add(this.top ? "flexttb" : "flexltr");
@@ -57,9 +57,9 @@ export class Buttons implements OptionsElement<unknown> {
 		const buttonTable = this.generateButtons(htmlarea);
 		if (this.buttons[0]) {
 			this.generateHTMLArea(this.buttons[0][1], htmlarea);
-			htmlarea.classList.add("mobileHidden");
+			if (!hideButtons) htmlarea.classList.add("mobileHidden");
 		}
-		buttonList.append(buttonTable);
+		if (!hideButtons) buttonList.append(buttonTable);
 		buttonList.append(htmlarea);
 		this.htmlarea = new WeakRef(htmlarea);
 		this.buttonTable = new WeakRef(buttonTable);
@@ -1327,12 +1327,13 @@ class Options implements OptionsElement<void> {
 		div.append(container);
 		return div;
 	}
+
 	generateName(): (HTMLElement | string)[] {
 		const build: (HTMLElement | string)[] = [];
 		if (this.owner instanceof Buttons) {
 			const span = document.createElement("span");
 			span.classList.add("svg-intoMenu", "svgicon", "mobileback");
-			build.push(span);
+			if (!(this.owner instanceof Settings) || !this.owner.hideButtons) build.push(span);
 			span.onclick = () => {
 				const container = this.container.deref();
 				if (!container) return;
@@ -2107,9 +2108,9 @@ class Form implements OptionsElement<object> {
 			div.classList.add("suberror", "suberrora");
 			e.append(div);
 			element = div;
-            setTimeout((_) => {
-			    element.scrollIntoView(false);
-            }, 100);
+			setTimeout((_) => {
+				element.scrollIntoView(false);
+			}, 100);
 		} else {
 			element.classList.remove("suberror");
 			setTimeout((_) => {
@@ -2156,8 +2157,10 @@ class Settings extends Buttons {
 	static readonly Buttons = Buttons;
 	static readonly Options = Options;
 	html!: HTMLElement | null;
-	constructor(name: string) {
+	hideButtons: boolean;
+	constructor(name: string, hideButtons = false) {
 		super(name);
+		this.hideButtons = hideButtons;
 	}
 	addButton(name: string, {ltr = false, optName = name, noSubmit = false} = {}): Options {
 		const options = new Options(optName, this, {ltr, noSubmit});
@@ -2173,7 +2176,7 @@ class Settings extends Buttons {
 		title.classList.add("settingstitle");
 		background.append(title);
 
-		background.append(this.generateHTML());
+		background.append(this.generateHTML(this.hideButtons));
 
 		const exit = document.createElement("span");
 		exit.classList.add("exitsettings", "svgicon", "svg-x");

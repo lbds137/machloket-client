@@ -175,7 +175,7 @@ class Member extends SnowFlake {
 		});
 	}
 	showEditProfile() {
-		const settings = new Settings("");
+		const settings = new Settings("", true);
 		this.editProfile(settings.addButton(I18n.user.editServerProfile(), {ltr: true}));
 		settings.show();
 	}
