@@ -498,22 +498,31 @@ class Message extends SnowFlake {
 			this,
 			undefined,
 			(x) => {
-				//console.log(x,y);
+				//console.log(x);
+				if (x < -20) {
+					obj.style.translate = x + 20 + "px 0px";
+				} else obj.style.translate = 0 + "px";
+
 				if (!drag && x < 20) {
 					return;
 				}
+
 				drag = true;
 				this.channel.moveForDrag(Math.max(x, 0));
 			},
 			(x, y) => {
 				drag = false;
 				console.log(x, y);
+				obj.style.translate = 0 + "px";
 				this.channel.moveForDrag(-1);
 				if (x > 60) {
 					console.log("In here?");
 					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
 					toggle.checked = false;
 					console.log(toggle);
+				}
+				if (x < -40) {
+					this.channel.setReplying(this);
 				}
 			},
 		);
