@@ -975,7 +975,7 @@ class Message extends SnowFlake {
 						edit.textContent = I18n.message.edited();
 						const hover = new Hover(new Date(this.edited_timestamp).toString());
 						hover.addEvent(edit);
-						messagedwrap.append(edit);
+						messaged.append(edit);
 					}
 				}
 			}
