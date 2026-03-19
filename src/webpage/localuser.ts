@@ -3452,15 +3452,18 @@ class Localuser {
 
 			devSettings.addButtonInput("", I18n.devSettings.clearWellKnowns(), async () => {
 				const currentUserInfos = JSON.parse(localStorage.getItem("userinfos")!);
-				for (const user of Object.keys(currentUserInfos.users)) {
-					const key =
-						currentUserInfos.users[user].serverurls.value ??
-						currentUserInfos.users[user].serverurls.wellknown ??
-						currentUserInfos.users[user].serverurls.api;
-					currentUserInfos.users[user].serverurls = await getapiurls(key);
-					console.log(key, currentUserInfos.users[user].serverurls);
-					localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
-				}
+				await Promise.all(
+					Object.keys(currentUserInfos.users).map(async (user) => {
+						const key =
+							currentUserInfos.users[user].serverurls.value ??
+							currentUserInfos.users[user].serverurls.wellknown ??
+							currentUserInfos.users[user].serverurls.api;
+						currentUserInfos.users[user].serverurls = await getapiurls(key);
+						console.log(key, currentUserInfos.users[user].serverurls);
+						localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
+					}),
+				);
+
 				localStorage.removeItem("instanceinfo");
 				await SW.postMessage({
 					code: "clearCdnCache",

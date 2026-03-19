@@ -237,8 +237,6 @@ body {
 	}
 }
 .messageComps {
-	padding: 6px;
-	padding-left: 48px;
 	> .flexltr {
 		display: flex;
 		flex-wrap: wrap;
@@ -2049,7 +2047,8 @@ span.instanceStatus {
 	flex-shrink: 0;
 	margin-bottom: 4px;
 	transition: background 0.2s;
-	&.viewChannel, &.viewChannel:hover {
+	&.viewChannel,
+	&.viewChannel:hover {
 		background: var(--channel-selected);
 		color: var(--primary-text-prominent);
 		font-weight: bold;

@@ -834,6 +834,9 @@ class Message extends SnowFlake {
 			div.appendChild(replyline);
 		}
 		div.appendChild(build);
+		const text = document.createElement("div");
+		text.classList.add("commentrow", "flexttb");
+
 		const messageTypes = new Set([0, 19, 20]);
 		if (messageTypes.has(this.type) || this.attachments.length !== 0) {
 			const pfpRow = document.createElement("div");
@@ -856,8 +859,7 @@ class Message extends SnowFlake {
 			}
 			pfpRow.classList.add("pfprow");
 			build.appendChild(pfpRow);
-			const text = document.createElement("div");
-			text.classList.add("commentrow", "flexttb");
+
 			if (combine) {
 				const username = document.createElement("span");
 				username.classList.add("username", "ellipsis");
@@ -978,7 +980,7 @@ class Message extends SnowFlake {
 				}
 			}
 			text.appendChild(messagedwrap);
-			build.appendChild(text);
+
 			if (this.attachments.length) {
 				const attach = document.createElement("div");
 				attach.classList.add("flexltr", "attachments");
@@ -1119,6 +1121,7 @@ class Message extends SnowFlake {
 			text.append(time);
 			div.classList.add("topMessage");
 		}
+		build.appendChild(text);
 		const stickerArea = document.createElement("div");
 		stickerArea.classList.add("flexltr", "stickerMArea");
 		for (const sticker of this.stickers) {
@@ -1129,12 +1132,12 @@ class Message extends SnowFlake {
 			if (this.components && this.components.components.length) {
 				const cdiv = this.components.getHTML();
 				cdiv.classList.add("messageComps");
-				div.append(cdiv);
+				text.append(cdiv);
 
 				const ndiv = document.createElement("div");
 				ndiv.classList.add("compAppStatus");
 				this.interactionDiv = ndiv;
-				div.append(ndiv);
+				text.append(ndiv);
 			}
 			const reactions = document.createElement("div");
 			reactions.classList.add("flexltr", "reactiondiv");
