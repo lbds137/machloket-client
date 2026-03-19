@@ -5,6 +5,7 @@
 			"Asteralee",
 			"Beta16",
 			"Dream Indigo",
+			"FL2226",
 			"Nonloso10",
 			"Slow",
 			"Wheelygay"
@@ -25,6 +26,7 @@
 		"whereever": "Ovunque questo sia"
 	},
 	"onboarding": {
+		"name": "Inserimento",
 		"addChannel": "Aggiungi canale",
 		"channel": "Canale:",
 		"desc": "Descrizione:",
@@ -255,6 +257,7 @@
 	"friends": {
 		"addfriend": "Aggiungi amico",
 		"addfriendpromt": "Aggiungi amici tramite nome utente:",
+		"requestsent": "Richiesta inviata!",
 		"all": "Tutto",
 		"all:": "Tutti gli amici:",
 		"blocked": "Bloccato",
