@@ -1000,6 +1000,7 @@ class MarkDown {
 		this.box = new WeakRef(box);
 		this.onUpdate = onUpdate;
 		box.addEventListener("keydown", (_) => {
+			if (_.isComposing) return;
 			if (Error.prototype.stack !== "") return;
 			if (_.key === "Enter") {
 				const selection = window.getSelection() as Selection;
@@ -1014,16 +1015,23 @@ class MarkDown {
 			}
 		});
 		let prevcontent = "";
-		box.onkeyup = (_) => {
+		const gatherBoxContents = (isBackSpace: boolean) => {
 			let content = MarkDown.gatherBoxText(box);
 			if (content === "\n") content = "";
 			if (content !== prevcontent) {
 				prevcontent = content;
 				this.txt = content.split("");
-				this.boxupdate(undefined, undefined, undefined, _.key === "Backspace");
+				this.boxupdate(undefined, undefined, undefined, isBackSpace);
 				MarkDown.gatherBoxText(box);
 			}
 		};
+		box.onkeyup = (_) => {
+			if (_.isComposing) return;
+			gatherBoxContents(_.key === "Backspace");
+		};
+		box.addEventListener("compositionend", (_) => {
+			gatherBoxContents(false);
+		});
 		box.onpaste = (_) => {
 			if (!_.clipboardData) return;
 			const types = _.clipboardData.types;
