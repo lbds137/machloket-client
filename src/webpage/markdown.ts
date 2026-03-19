@@ -1354,7 +1354,7 @@ function saveCaretPosition(
 					if (node instanceof HTMLElement) {
 						crawlForText(node);
 					} else {
-						console.error(node, "This shouldn't happen");
+						build += node.textContent;
 					}
 				} else {
 					//console.error(node,"This shouldn't happen");
@@ -1372,6 +1372,7 @@ function saveCaretPosition(
 		}
 		len = Math.min(len, txtLengthFunc(context).length);
 		len += offset;
+
 		return function restore(backspace = false) {
 			if (!selection) return;
 			const pos = getTextNodeAtPosition(context, len, txtLengthFunc);
