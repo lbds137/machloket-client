@@ -3464,6 +3464,9 @@ class Channel extends SnowFlake {
 			this.hasPermission("MANAGE_CHANNELS")
 		)
 			return true;
+
+		if (this.rate_limit_per_user === 0) return true;
+
 		let canMessage = t + this.rate_limit_per_user * 1000;
 		return canMessage <= Date.now();
 	}
