@@ -1010,12 +1010,12 @@ class Message extends SnowFlake {
 			const messages = I18n.welcomeMessages("|||").split("\n");
 			const message = messages[Number(BigInt(this.id) % BigInt(messages.length))];
 			const [first, second] = message.split("|||");
-			const text = document.createElement("div");
-			build.appendChild(text);
+			const welcome = document.createElement("div");
+			text.appendChild(welcome);
 
 			const firstspan = document.createElement("span");
 			firstspan.textContent = first;
-			text.appendChild(firstspan);
+			welcome.appendChild(firstspan);
 
 			// TODO: settings how?
 			if (false) {
@@ -1050,24 +1050,24 @@ class Message extends SnowFlake {
 					full.show();
 				};
 
-				text.appendChild(img);
+				welcome.appendChild(img);
 			}
 
 			const username = document.createElement("span");
 			username.textContent = this.author.name;
 			//this.author.profileclick(username);
 			this.author.bind(username, this.guild);
-			text.appendChild(username);
+			welcome.appendChild(username);
 			username.classList.add("username");
 
 			const secondspan = document.createElement("span");
 			secondspan.textContent = second;
-			text.appendChild(secondspan);
+			welcome.appendChild(secondspan);
 
 			const time = document.createElement("span");
 			time.textContent = "  " + formatTime(new Date(this.timestamp));
 			time.classList.add("timestamp");
-			text.append(time);
+			welcome.append(time);
 			div.classList.add("topMessage");
 		} else if (this.type === 6) {
 			const text = document.createElement("div");
