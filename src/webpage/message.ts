@@ -341,6 +341,8 @@ class Message extends SnowFlake {
 		this.giveData(messagejson);
 		if (!dontStore) {
 			this.owner.messages.set(this.id, this);
+			if (messagejson.referenced_message)
+				this.localuser.giveMessage(messagejson.referenced_message);
 		}
 	}
 	reactionToggle(emoji: string | Emoji) {

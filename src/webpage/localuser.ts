@@ -440,6 +440,11 @@ class Localuser {
 		this.lookingguild = undefined;
 		this.channelfocus = undefined;
 	}
+	giveMessage(m: messagejson) {
+		const c = this.channelids.get(m.channel_id);
+		if (!c) return;
+		new Message(m, c);
+	}
 	unload(): void {
 		this.initialized = false;
 		this.outoffocus();

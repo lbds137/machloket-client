@@ -833,6 +833,7 @@ type messagejson = {
 	webhook?: webhookInfo;
 	sticker_items: stickerJson[];
 	message_reference?: string;
+	referenced_message?: messagejson;
 };
 
 export interface threadMetadata {
