@@ -17,6 +17,9 @@
 		"login": "로그인"
 	},
 	"onboarding": {
+		"addChannel": "채널 추가",
+		"channel": "채널:",
+		"desc": "설명:",
 		"title": "$1에 오신 것을 환영합니다!"
 	},
 	"DMs": {
@@ -81,6 +84,7 @@
 	},
 	"channelLink": "# $1",
 	"confirmGuildLeave": "$1 장소를 떠나시겠습니까",
+	"copyRegLink": "링크 복사",
 	"copymessageid": "메시지 ID 복사",
 	"delete": "삭제",
 	"deleteConfirm": "이것을 삭제하시겠습니까?",
@@ -373,6 +377,9 @@
 	"retrying": "다시 시도하는 중...",
 	"role": {
 		"color": "첫 번째 색",
+		"colors": {
+			"name": "컬러 스킴:"
+		},
 		"confirmDelete": "'$1' 항목을 삭제하시겠습니까?",
 		"delete": "역할 삭제",
 		"displaySettings": "표시 설정",

@@ -123,6 +123,7 @@
 		"name": "Numm vum Dossier:"
 	},
 	"friends": {
+		"requestsent": "Ufro ofgeschéckt!",
 		"blocked": "Gespaart",
 		"blockedusers": "Gespaarte Benotzer:",
 		"bu": "Gespaarte Benotzer",

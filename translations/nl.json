@@ -21,6 +21,16 @@
 		"whatelse": "Wat denkt u dat er nog meer moet gebeuren?",
 		"whereever": "Waar dit ook is"
 	},
+	"onboarding": {
+		"name": "Inwerken",
+		"disable": "Inwerken uitschakelen",
+		"addChannel": "Kanaal toevoegen",
+		"channel": "Kanaal:",
+		"desc": "Beschrijving:",
+		"deleteChannel": "Kanaal voor inwerken verwijderen",
+		"enable": "Inwerken inschakelen",
+		"title": "Welkom bij $1!"
+	},
 	"DMs": {
 		"add": "Iemand aan directe bericht toevoegen",
 		"close": "Directe bericht sluiten",
@@ -29,6 +39,7 @@
 		"name": "Directe berichten"
 	},
 	"ok": "Ok",
+	"dismiss": "Sluiten",
 	"UrlGen": "Bot-uitnodigingsgenerator",
 	"Voice": {
 		"status": {
@@ -56,7 +67,9 @@
 		"name": "Toegankelijkheid",
 		"playGif": "GIFs afspelen:",
 		"playIcon": "Geanimeerde pictogrammen afspelen:",
-		"roleColors": "Rolkleuren uitschakelen:"
+		"roleColors": "Rolkleuren uitschakelen:",
+		"gradientColors": "Kleurverloop uitschakelen:",
+		"decorations": "Avatarversieringen inschakelen:"
 	},
 	"accountNotStart": "Account kan niet worden gestart",
 	"add": "Toevoegen",
@@ -108,6 +121,9 @@
 	"botSettings": "Robot-instellingen",
 	"cancel": "Annuleren",
 	"channel": {
+		"SlowmodeCool": "Afkoeltijd voor langzame modus: $1",
+		"TimeOutCool": "Time-out bereikt na: $1",
+		"allowIcons": "Aangepaste kanaalpictogrammen toestaan",
 		"announcement": "Aankondigingen",
 		"copyId": "Kanaal-ID kopiëren",
 		"copyIdCat": "Categorie-ID kopiëren",
@@ -129,31 +145,59 @@
 		"selectType": "Selecteer kanaaltype",
 		"settings": "Instellingen",
 		"settingsFor": "Instellingen voor $1",
+		"slowmode": "Langzame modus:",
 		"text": "Tekst",
+		"timedOutUntil": "Time-out bereikt na: $1",
 		"topic:": "Onderwerp:",
 		"typebox": "Bericht in $1",
 		"unmute": "Dempen kanaal opheffen",
 		"voice": "Spraak",
+		"deleteThread": "Onderwerp verwijderen",
+		"hideThreads": "Verbergen na inactiviteit",
 		"forum": "Forum"
 	},
 	"threads": {
 		"leave": "Discussie verlaten",
 		"join": "Aan discussie meedoen",
-		"name": "Onderwerpnaam:"
+		"name": "Onderwerpnaam:",
+		"editTags": "Labels bewerken"
 	},
 	"forum": {
+		"creorsear": "Bericht aanmaken of zoeken",
 		"next": "Volgende",
 		"back": "Terug",
+		"newPost": "Nieuw bericht maken",
+		"post": "Plaatsen",
 		"sortOptions": {
 			"sortby": {
 				"title": "Sorteren op",
-				"recent": "Recent actief"
+				"recent": "Recent actief",
+				"posted": "Geplaatst op"
 			},
 			"sortOrder": {
 				"title": "Sorteervolgorde",
 				"recent": "Nieuwste eerst",
 				"old": "Oudste eerst"
-			}
+			},
+			"tagMatch": {
+				"title": "Labelmatching",
+				"some": "Sommige labels matchen",
+				"all": "Alle labels matchen"
+			},
+			"name": "Sorteeropties"
+		},
+		"errors": {
+			"tagsReq": "Labels zijn vereist",
+			"requireText": "Het bericht mag niet leeg zijn"
+		},
+		"allTags": "Alle labels",
+		"settings": {
+			"editTags": "Labels bewerken:",
+			"editTag": "Label bewerken",
+			"tagName": "Labelnaam:",
+			"moderated": "Alleen overlegmoderators mogen labels toepassen:",
+			"addTag": "Label toevoegen",
+			"delTag": "Label verwijderen"
 		}
 	},
 	"channelLink": "# $1",
@@ -164,6 +208,7 @@
 	},
 	"confirmGuildLeave": "Weet u zeker dat u $1 wilt verlaten?",
 	"copyLink": "Koppeling naar bericht kopiëren",
+	"copyRegLink": "Koppeling kopiëren",
 	"copymessageid": "Bericht-ID kopiëren",
 	"copyrawtext": "Ruwe tekst kopiëren",
 	"createAccount": "Account aanmaken",
@@ -171,7 +216,13 @@
 	"deleteConfirm": "Weet u zeker dat u dit wilt verwijderen?",
 	"devSettings": {
 		"badUser": "Logging voor slechte gebruikersobjecten inschakelen die te veel gegevens verzenden:",
+		"cache": "Cachefunctie voor kaartbestanden van de Service Worker inschakelen:",
+		"cacheDesc": "kaartbestanden worden hoe dan ook geladen; dit zorgt er alleen voor dat ze in de cache staan wanneer er een nieuwe update wordt uitgebracht.",
+		"captureTrace": "Deze instelling geeft Fermi de opdracht om _trace-eigenschappen van de server vast te leggen. Het inschakelen hiervan kan ertoe leiden dat progressieve JSON-decodering niet werkt; mogelijk is een herladen nodig.",
+		"clearWellKnowns": ".well-known-records opnieuw ophalen:",
 		"description": "Deze instellingen zijn bedoeld voor ontwikkelaars van Spacebar/Fermi. Als u niet weet wat u doet, kunt u deze instellingen beter niet wijzigen.",
+		"gatewayComp": "Gateway-compressie uitschakelen:",
+		"reportSystem": "Experimentele rapportagesysteem inschakelen:",
 		"logGateway": "Ontvangen gatewaygebeurtenissen loggen (logniveau info):",
 		"name": "Ontwikkelaarsinstellingen",
 		"traces": "Traces zichtbaar maken:"
@@ -180,8 +231,15 @@
 		"city": "Plaats: $1",
 		"continent": "Continent: $1",
 		"country": "Land: $1",
+		"curSes": "Dit is de huidige sessie, u moet afmelden via het andere menu",
+		"estimateWarn": "Waarschuwing: Al deze gegevens is slechts een inschatting en kunnen onjuist zijn.",
+		"ip": "Laatst bekende IP-adres: $1",
+		"last": "Ongeveer voor het laatst gebruikt: $1",
 		"latitude": "Breedtegraad: $1",
+		"logout": "Afmelden",
 		"longitude": "Lengtegraad: $1",
+		"manageDev": "Apparaat beheren",
+		"postal": "Postcode: $1",
 		"region": "Regio: $1",
 		"title": "Sessies beheren"
 	},
@@ -219,6 +277,7 @@
 	"friends": {
 		"addfriend": "Vriend toevoegen",
 		"addfriendpromt": "Vrienden toevoegen via gebruikersnaam:",
+		"requestsent": "Aanvraag verzonden!",
 		"all": "Alle",
 		"all:": "Alle vrienden:",
 		"blocked": "Geblokkeerd",
@@ -244,6 +303,7 @@
 	},
 	"guild": {
 		"COMMUNITY": "Lidmaatschap aanvragen",
+		"disableInvites": "Uitnodigingen uitschakelen:",
 		"DISCOVERABLE": "Ontdekking",
 		"INVITES_DISABLED": "Alleen op uitnodiging",
 		"adminMenu": {
@@ -253,6 +313,7 @@
 			"owner": "Zoek de eigenaar op",
 			"permission": "Machtigingen:"
 		},
+		"report": "Gilde rapporteren",
 		"admins": "Beheerders zoeken",
 		"all": "Alle",
 		"banReason": "Reden voor ban: $1",
@@ -304,6 +365,7 @@
 		"serverName": "Naam van het gilde:",
 		"settings": "Instellingen",
 		"settingsFor": "Instellingen voor $1",
+		"splash": "Ontdekkingssplash:",
 		"stickWelcomeReact?": "Laat leden van uw gilde met een sticker reageren wanneer iemand zich aansluit!",
 		"systemSelect:": "Systeemberichtenkanaal:",
 		"tempCreatedBy": "Sjabloon gemaakt door:",
@@ -316,6 +378,7 @@
 		"templates": "Sjablonen",
 		"templcateMetaDesc": "Met een sjabloon kunnen anderen dit gilde gebruiken als basis voor hun eigen gilden. De kanalen, rollen en instellingen van dit gilde worden gekopieerd, maar niet de berichten binnen het gilde, de robots of het gildepictogram.",
 		"topic:": "Onderwerp:",
+		"unknownRole": "@unknown-role",
 		"viewTemplate": "Sjabloon bekijken",
 		"yesDelete": "Ja, ik weet het zeker",
 		"yesLeave": "Ja, ik weet het zeker"
@@ -355,6 +418,13 @@
 	},
 	"incorrectURLS": "## Deze instantie heeft waarschijnlijk de verkeerde koppelingen verzonden.\n### Als u de eigenaar van de instantie bent, raadpleeg dan [hier](https://docs.spacebar.chat/setup/server/) onder *Verbinding maken vanaf externe machines* om het probleem op te lossen.\n Wilt u dat Fermi automatisch probeert deze fout te herstellen, zodat u verbinding kunt maken met de instantie?",
 	"instInfo": "Serverinformatie",
+	"instanceInfo": {
+		"contact": "Instantiebeheerders mailen",
+		"frontPage": "[Voorpagina]($1)",
+		"name": "Instantie-gegevens",
+		"publicUrl": "[Openbare koppeing]($1)",
+		"tosPage": "[Gebruiksvoorwaardenpagina]($1)"
+	},
 	"instanceStats": {
 		"members": "Leden: $1",
 		"messages": "Berichten: $1",
@@ -390,6 +460,7 @@
 		"maxUses": "Gebruikslimiet: $1",
 		"never": "Nooit",
 		"noAccount": "Maak een account aan om de uitnodiging te accepteren",
+		"notFound": "De uitnodiging kon niet gevonden worden",
 		"subtext": "bij $1 in $2",
 		"used": "$1 {{PLURAL:$1|keer}} gebruikt:"
 	},
@@ -461,13 +532,17 @@
 		"newPassword:": "Nieuw wachtwoord:",
 		"newUsername": "Nieuwe gebruikersnaam:",
 		"noToken": "Het token is niet bekend en kan dus helaas niet worden opgeslagen in localStorage",
+		"noUpdates": "Geen updates gevonden",
 		"notisound": "Meldingsgeluid:",
 		"oldPassword:": "Oud wachtwoord:",
 		"password:": "Wachtwoord",
 		"privacyPolcyURL": "Link privacybeleid:",
 		"appID": "Toepassing ID: $1",
+		"showSecret": "Clientgeheim weergeven",
+		"clientSecret": "Cliëntgeheim: $1",
 		"secret": "Geheim .",
 		"publicAvaliable": "De robot publiekelijk uitnodigbaar maken?",
+		"refreshPage": "Vernieuw de pagina om toe te passen",
 		"requireCode": "Codetoekenning vereisen om de robot uit te nodigen?",
 		"resetToken": "Token opnieuw instellen",
 		"saveToken": "Token lokaal opslaan",
@@ -540,18 +615,27 @@
 		"ban": "$1 uit $2 verbannen",
 		"kick": "$1 uit $2 zetten",
 		"nick:": "Bijnaam:",
-		"reason:": "Reden:"
+		"persist": "Alleen gebruiker verwijderen:",
+		"reason:": "Reden:",
+		"timeout": "Time-out $1",
+		"timeoutTime": "Time-outduur:"
 	},
 	"message": {
+		"messages": "$1 {{PLURAL:$1|bericht|berichten}} >",
+		"andMore": "$1 en meer!",
 		"attached": "bijlage verzonden",
 		"delete": "Bericht verwijderen",
+		"report": "Bericht rapporteren",
 		"deleted": "Verwijderd bericht",
 		"edit": "Bericht bewerken",
 		"edited": "(bewerkt)",
 		"fullMessage": "Volledig bericht:",
 		"pin": "$1 heeft een bericht vastgezet",
+		"thread": "$1 heeft een thread aangemaakt: $2",
+		"reactedWith": "Reageerde met $1",
 		"reactionAdd": "Reactie toevoegen",
 		"createThread": "Discussie aanmaken",
+		"threadOptions": "Thread-opties",
 		"reactions": "Reacties bekijken",
 		"reactionsTitle": "Reacties",
 		"retry": "Bericht met fout opnieuw verzenden",
@@ -562,7 +646,9 @@
 		"next": "Volgende",
 		"cancel": "Annuleren",
 		"submit": "Opslaan",
-		"blockUser": "Gebruiker blokkeren"
+		"blockUser": "Gebruiker blokkeren",
+		"timeout": "Timeout voor lid",
+		"summary": "Rapportsamenvatting:"
 	},
 	"messageLink": "Bericht in # $1",
 	"muteDuration": "Ontdempen in:",
@@ -756,7 +842,8 @@
 				"disabled": "Uit",
 				"enabled": "Aan",
 				"offlineOnly": "Alleen offline",
-				"title": "Service Worker-instelling"
+				"title": "Service Worker-instelling",
+				"unregistered": "Uitgeschakeld (inclusief mediacache)"
 			}
 		}
 	},
@@ -785,6 +872,7 @@
 	"unableToConnect": "Kan geen verbinding maken met de Spacebar-server. Probeer u af en weer aan te melden.",
 	"unableToPin": "Bericht kan niet worden vastgezet",
 	"unpinMessage": "Bericht losmaken",
+	"updateAv": "Updates beschikbaar",
 	"uploadBanner": "Banner uploaden:",
 	"uploadFilesText": "Upload hier uw bestanden!",
 	"uploadPfp": "Profielafbeelding uploaden:",
@@ -792,12 +880,16 @@
 	"useTemplateButton": "Sjabloon gebruiken",
 	"usedFermi": "verzonden via Fermi",
 	"user": {
+		"report": "Gebruiker rapporteren",
+		"deleted": "Gebruiker verwijderd",
+		"reportApp": "Toepassing rapporteren",
 		"addRole": "Rollen toevoegen",
 		"ban": "Lid verbannen",
 		"block": "Gebruiker blokkeren",
 		"confirmInstBan": "Weet u zeker dat u de server $1 wilt verbannen?",
 		"copyId": "Gebruikers-ID kopiëren",
 		"dnd": "Niet storen",
+		"editNick": "Bijnaam bewerken",
 		"editServerProfile": "Gildeprofiel bewerken",
 		"friendReq": "Vriendschapsverzoek",
 		"idle": "Inactief",
@@ -805,11 +897,19 @@
 		"invisible": "Onzichtbaar",
 		"kick": "Lid uitzetten",
 		"message": "Gebruiker bericht sturen",
+		"nick": {
+			"foe": "Vijandige bijnaam instellen",
+			"friend": "Vriendelijke bijnaam instellen",
+			"stalker": "Bijnaam van de aanvrager instellen",
+			"stalking": "Bijnaam van de gevraagde instellen"
+		},
 		"offline": "Offline",
 		"online": "Online",
 		"remove": "Gebruiker verwijderen",
 		"removeRole": "Rollen verwijderen",
 		"sendMessage": "Bericht sturen aan @$1",
+		"timeout": "Time-out voor lid",
+		"unTimeout": "Time-out voor lid verwijderen",
 		"unban": "$1 ontbannen",
 		"unblock": "Gebruiker deblokkeren"
 	},
@@ -823,6 +923,11 @@
 		"joinstream": "Uitzending bekijken",
 		"leavestream": "Uitzending verlaten",
 		"stopstream": "Uitzending stoppen"
+	},
+	"webauth": {
+		"addKey": "Sleutel toevoegen",
+		"keyname": "Sleutelnaam:",
+		"manage": "Beveiligingssleutels beheren"
 	},
 	"webhook": "WEBHOOK",
 	"webhooks": {
