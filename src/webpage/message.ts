@@ -1072,17 +1072,17 @@ class Message extends SnowFlake {
 			welcome.append(time);
 			div.classList.add("topMessage");
 		} else if (this.type === 6) {
-			const text = document.createElement("div");
-			build.appendChild(text);
+			const pinText = document.createElement("div");
+			text.appendChild(pinText);
 
 			const m = I18n.message.pin("||").split("||");
-			if (m.length === 2) text.append(m.shift() as string);
+			if (m.length === 2) pinText.append(m.shift() as string);
 
 			const username = document.createElement("span");
 			username.textContent = this.author.name;
 			//this.author.profileclick(username);
 			this.author.bind(username, this.guild);
-			text.appendChild(username);
+			pinText.appendChild(username);
 			username.classList.add("username");
 
 			const afterText = document.createElement("span");
@@ -1092,12 +1092,12 @@ class Message extends SnowFlake {
 				this.channel.infinite.focus(this.message_reference.message_id);
 			};
 			afterText.classList.add("pinText");
-			text.append(afterText);
+			pinText.append(afterText);
 
 			const time = document.createElement("span");
 			time.textContent = "  " + formatTime(new Date(this.timestamp));
 			time.classList.add("timestamp");
-			text.append(time);
+			pinText.append(time);
 			div.classList.add("topMessage");
 		} else if (this.type === 18) {
 			const text = document.createElement("div");
