@@ -317,8 +317,7 @@ body {
 	z-index: 2;
 	/* border: solid 2px #00000061; */
 
-	b {
-		width: 100%;
+	.noPins {
 		height: 1in;
 		display: flex;
 		align-items: center;
