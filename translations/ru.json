@@ -11,6 +11,7 @@
 			"Kaganer",
 			"Kareyac",
 			"Melted",
+			"Movses",
 			"Okras",
 			"Pacha Tchernof",
 			"StealthTheAB",
@@ -47,7 +48,7 @@
 			"always": "Всегда",
 			"never": "Никогда"
 		},
-		"playGif": "Воспроизвести GIF:",
+		"playGif": "Воспроизвести GIF-анимации:",
 		"roleColors": "Отключить цвета ролей"
 	},
 	"accountNotStart": "Не удаётся запустить учётную запись",

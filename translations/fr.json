@@ -8,6 +8,7 @@
 			"EmDashUser002",
 			"Gomoko",
 			"Goombiis",
+			"Lenchanteur",
 			"Mahabarata",
 			"McDutchie",
 			"Od1n",
@@ -292,6 +293,7 @@
 	"friends": {
 		"addfriend": "Ajouter un ami",
 		"addfriendpromt": "Ajouter des amis par nom d'utilisateur :",
+		"requestsent": "Demande envoyée!",
 		"all": "Tous",
 		"all:": "Tous les amis :",
 		"blocked": "Bloqué",

@@ -30,6 +30,14 @@
 	},
 	"ok": "확인",
 	"UrlGen": "봇 초대 생성기",
+	"Voice": {
+		"status": {
+			"waitingMainWS": "주요 WS를 기다리는 중",
+			"waitingURL": "음성 URL을 기다리는 중",
+			"wsAuth": "WS의 승인을 기다리는 중",
+			"wsOpen": "WS가 열리기를 기다리는 중"
+		}
+	},
 	"accessibility": {
 		"name": "접근성"
 	},
@@ -49,7 +57,7 @@
 		"markRead": "읽은 것으로 표시",
 		"name": "채널",
 		"name:": "채널 이름:",
-		"nsfw:": "NSFW:",
+		"nsfw:": "후방주의/성인용 콘텐츠 경고:",
 		"permissions": "권한",
 		"selectCatName": "분류 이름",
 		"selectName": "채널 이름",
@@ -79,7 +87,11 @@
 		},
 		"allTags": "모든 태그",
 		"settings": {
-			"tagName": "태그 이름:"
+			"editTags": "태그 편집:",
+			"editTag": "태그 편집",
+			"tagName": "태그 이름:",
+			"addTag": "태그 추가",
+			"delTag": "태그 삭제"
 		}
 	},
 	"channelLink": "# $1",
