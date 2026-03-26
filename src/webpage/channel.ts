@@ -796,7 +796,7 @@ class Channel extends SnowFlake {
 		}
 		if (this.pinnedMessages.length === 0) {
 			const b = document.createElement("b");
-			b.classList.add('noPins');
+			b.classList.add("noPins");
 			b.textContent = I18n.noPins();
 			div.append(b);
 			return;

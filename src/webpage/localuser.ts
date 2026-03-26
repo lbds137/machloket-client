@@ -1095,9 +1095,7 @@ class Localuser {
 	async joinVoice(channel: Channel) {
 		if (!this.voiceFactory) return;
 		if (!this.ws) return;
-		this.ws.send(
-			JSON.stringify(this.voiceFactory.joinVoice(channel.id, channel.guild.id, this.mute)),
-		);
+		this.voiceFactory.joinVoice(channel.id, channel.guild.id, this.mute);
 		return undefined;
 	}
 	regenVoiceIcons = () => {};
