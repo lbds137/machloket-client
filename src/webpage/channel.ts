@@ -1192,7 +1192,7 @@ class Channel extends SnowFlake {
 			console.log("tray! :3");
 			if (tray && tray.parentElement) {
 				const parent = tray.parentElement;
-				const pfp = Array.from(parent.children)[0];
+				const pfp = parent.children[0].children[0];
 				if (speaking) {
 					pfp.classList.add("speaking");
 				} else {
