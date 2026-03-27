@@ -445,6 +445,7 @@ body {
 }
 
 .buttonRow > * {
+	position: relative;
 	margin-right: 6px;
 	width: 54px;
 	height: 54px;
@@ -460,6 +461,25 @@ body {
 		width: 32px !important;
 		height: 32px !important;
 		background: var(--primary-text);
+	}
+}
+.muteOptDiv {
+	background: var(--secondary-hover);
+	position: absolute;
+	display: flex;
+	top: 34px;
+	left: 34px;
+	width: 16px !important;
+	height: 16px !important;
+	border: solid 3px var(--black);
+	border-radius: 100%;
+	align-items: center;
+	justify-content: center;
+	span {
+		width: 12px !important;
+		height: 12px !important;
+		background: white;
+		display: block;
 	}
 }
 .buttonRow {

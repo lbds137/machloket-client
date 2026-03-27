@@ -10,7 +10,7 @@ import {
 function forceVideo(video: HTMLVideoElement) {
 	video.controls = false;
 	//TODO loading?
-	video.poster;
+	video.classList.add("media-engine-video");
 	video.addEventListener("pause", () => {
 		video.play();
 	});
@@ -115,6 +115,7 @@ class VoiceFactory {
 		this.currentVoice = voice;
 		this.onJoin(voice);
 		this.sendVoiceState();
+		return voice;
 	}
 	leaveLive() {
 		const userid = this.settings.id;
@@ -822,26 +823,48 @@ a=rtcp-mux\r`;
 			console.error(e);
 		}
 	}
+	micContext = new AudioContext();
+	streamDest?: MediaStreamAudioDestinationNode;
+	micNode = this.micContext.createGain();
+	makeMicOuts() {
+		//if (this.streamDest) this.streamDest.disconnect(this.micNode);
+		this.streamDest = this.micContext.createMediaStreamDestination();
+		this.micNode.gain.setValueAtTime(1, this.micContext.currentTime);
+
+		if (!this.owner.mute) this.micNode.connect(this.streamDest);
+
+		return this.streamDest.stream;
+	}
+	async giveMicTrack(stream: MediaStream) {
+		/*
+		const audioStream = await ;
+
+		*/
+		if (this.micTrack) this.micTrack.stop();
+		this.micContext.resume();
+		const microphone = this.micContext.createMediaStreamSource(stream);
+		microphone.connect(this.micNode);
+		const [track] = stream.getAudioTracks();
+		this.micTrack = track;
+		track.enabled = true;
+	}
 	senders: Set<RTCRtpSender> = new Set();
 	recivers = new Set<RTCRtpReceiver>();
 	ssrcMap: Map<RTCRtpSender, number> = new Map();
 	speaking = false;
-	async setupMic(audioStream: MediaStream) {
-		const audioContext = new AudioContext();
-		const analyser = audioContext.createAnalyser();
-		const microphone = audioContext.createMediaStreamSource(audioStream);
-
+	async setupMic() {
+		const analyser = this.micContext.createAnalyser();
 		analyser.smoothingTimeConstant = 0;
 		analyser.fftSize = 32;
 
-		microphone.connect(analyser);
+		this.micNode.connect(analyser);
 		const array = new Float32Array(1);
 		const interval = setInterval(() => {
 			if (!this.ws) {
 				clearInterval(interval);
 			}
-			analyser.getFloatFrequencyData(array);
-			const value = array[0] + 65;
+			if (!this.owner.mute) analyser.getFloatFrequencyData(array);
+			const value = this.owner.mute ? -Infinity : array[0] + 65;
 			if (value < 0) {
 				if (this.speaking) {
 					this.speaking = false;
@@ -908,8 +931,11 @@ a=rtcp-mux\r`;
 		console.log(this.reciverMap);
 	}
 	updateMute() {
-		if (!this.micTrack) return;
-		this.micTrack.enabled = !this.owner.mute;
+		if (this.owner.mute) {
+			if (this.streamDest) this.micNode.disconnect(this.streamDest);
+		} else {
+			if (this.streamDest) this.micNode.connect(this.streamDest);
+		}
 		//this.pc?.setLocalDescription();
 		this.makeOp12();
 	}
@@ -1071,14 +1097,12 @@ a=rtcp-mux\r`;
 			console.log(this.recivers);
 		};
 		if (!this.settings.stream) {
-			const audioStream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
-			const [track] = audioStream.getAudioTracks();
-			this.setupMic(audioStream);
-			const sender = pc.addTransceiver(track);
+			const outStream = this.makeMicOuts();
+			/*
 
+			*/
+			const sender = pc.addTransceiver(outStream.getTracks()[0]);
 			this.mic = sender;
-			this.micTrack = track;
-			track.enabled = !this.owner.mute;
 			this.senders.add(sender.sender);
 			console.log(sender);
 		} else {
@@ -1354,6 +1378,7 @@ a=rtcp-mux\r`;
 			((this.owner.secure ? "wss://" : "ws://") + this.urlobj.url) as string,
 		);
 		this.ws = ws;
+		this.setupMic();
 		ws.onclose = () => {
 			this.leave();
 		};

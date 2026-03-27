@@ -1092,10 +1092,48 @@ class Localuser {
 	get currentVoice() {
 		return this.voiceFactory?.currentVoice;
 	}
+	async getAudioDeviceList() {
+		return (await navigator.mediaDevices.enumerateDevices()).filter(
+			(dev) => dev.kind === "audioinput",
+		);
+	}
+	async setNewDefualtDevice(id: string) {
+		const devices = await this.getAudioDeviceList();
+		const d = devices.find((_) => _.deviceId === id);
+		if (!d) return;
+		const device = await navigator.mediaDevices.getUserMedia({
+			audio: {
+				deviceId: {exact: d.deviceId},
+			},
+		});
+		if (!device) return;
+		await this.voiceFactory?.currentVoice?.giveMicTrack(device);
+		this.perminfo.localuser.defaultAudio = id;
+	}
+	getDefaultAudio() {
+		return this.perminfo.localuser.defaultAudio || "default";
+	}
 	async joinVoice(channel: Channel) {
 		if (!this.voiceFactory) return;
 		if (!this.ws) return;
-		this.voiceFactory.joinVoice(channel.id, channel.guild.id, this.mute);
+		const v = this.voiceFactory.joinVoice(channel.id, channel.guild.id, this.mute);
+		if (this.perminfo.localuser.defaultAudio) {
+			const devices = await this.getAudioDeviceList();
+			const d = devices.find((_) => _.deviceId === this.perminfo.localuser.defaultAudio);
+			if (d) {
+				navigator.mediaDevices
+					.getUserMedia({
+						audio: {
+							deviceId: {exact: d.deviceId},
+						},
+					})
+					.then((_) => v.giveMicTrack(_));
+				return;
+			}
+		}
+		const d = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+		this.perminfo.localuser.defaultAudio = d.getAudioTracks()[0]?.id;
+		v.giveMicTrack(d);
 		return undefined;
 	}
 	regenVoiceIcons = () => {};

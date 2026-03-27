@@ -1761,6 +1761,35 @@ class Channel extends SnowFlake {
 		};
 		mute.classList.add("muteVoiceIcon");
 
+		const muteOpt = document.createElement("div");
+		muteOpt.classList.add("muteOptDiv");
+		const mOptSpan = document.createElement("span");
+		mOptSpan.classList.add("svg-category");
+		muteOpt.append(mOptSpan);
+		mute.append(muteOpt);
+		muteOpt.onclick = async (e) => {
+			e.preventDefault();
+			e.stopImmediatePropagation();
+			const menu = new Contextmenu<void, void>("");
+			const mics = await this.localuser.getAudioDeviceList();
+			for (const mic of mics) {
+				menu.addButton(
+					mic.label,
+					() => {
+						this.localuser.setNewDefualtDevice(mic.deviceId);
+					},
+					{
+						icon: {
+							css:
+								mic.deviceId === this.localuser.getDefaultAudio() ? "svg-select" : "svg-noSelect",
+						},
+					},
+				);
+			}
+			const box = muteOpt.getBoundingClientRect();
+			menu.makemenu(box.left, box.top - 34 - window.innerHeight);
+		};
+
 		const updateCallIcon = () => {
 			cspan.classList.remove("svg-call", "svg-hangup");
 			cspan.classList.add(this.voice?.open ? "svg-hangup" : "svg-call");
