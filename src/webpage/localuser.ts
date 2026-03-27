@@ -1274,6 +1274,8 @@ class Localuser {
 		const channel = this.channelfocus;
 		if (!channel) return;
 		if (channel.voice && this.voiceAllowed) {
+			const div = document.getElementById("sideDiv") as HTMLDivElement;
+			div.textContent = "";
 			return;
 		}
 		if (guild.id === "@me" && (channel as Group).type === 1) {

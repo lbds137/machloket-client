@@ -1172,7 +1172,7 @@ class Channel extends SnowFlake {
 			}
 
 			this.updateVoiceUsers();
-			if (this.voice === this.localuser.currentVoice) {
+			if (this.voice === this.localuser.currentVoice && this.voice?.open) {
 				this.localuser.play?.play("join", this.localuser.getNotiVolume());
 			}
 		};
@@ -2605,7 +2605,7 @@ class Channel extends SnowFlake {
 
 		const voiceArea = document.getElementById("voiceArea") as HTMLElement;
 		voiceArea.innerHTML = "";
-		if (getMessages) {
+		if (getMessages && this.type !== 2) {
 			chatArea.style.removeProperty("display");
 		} else {
 			if (this.voiceMode === "VoiceOnly") {
@@ -2615,6 +2615,7 @@ class Channel extends SnowFlake {
 				getMessages = true;
 			}
 			this.setUpVoiceArea();
+			this.localuser.memberListUpdate();
 		}
 
 		const pinnedM = document.getElementById("pinnedMDiv");
