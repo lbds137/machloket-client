@@ -184,6 +184,44 @@ class ContextMenuText<x, y> implements menuPart<x, y> {
 		}
 	}
 }
+class ContextMenuSlider<x, y> implements menuPart<x, y> {
+	private visible?: (obj1: x, obj2: y) => boolean;
+	group?: string;
+	text: ContextButton<x, y>["text"];
+	slider: (obj1: x, obj2: y, slide: number) => unknown;
+	startVal?: (obj1: x, obj2: y) => number;
+	constructor(
+		text: ContextButton<x, y>["text"],
+		slider: (obj1: x, obj2: y, slide: number) => unknown,
+		visible?: (obj1: x, obj2: y) => boolean,
+		group?: string,
+		{startVal}: {startVal?: (obj1: x, obj2: y) => number} = {},
+	) {
+		this.visible = visible;
+		this.group = group;
+		this.text = text;
+		this.slider = slider;
+		this.startVal = startVal;
+	}
+	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement): void {
+		if (!this.visible || this.visible(obj1, obj2)) {
+			const sliderDiv = document.createElement("div");
+			sliderDiv.classList.add("flexttb");
+			const span = document.createElement("span");
+			span.textContent = typeof this.text == "string" ? this.text : this.text.call(obj1, obj2);
+			sliderDiv.append(span);
+
+			const slider = document.createElement("input");
+			slider.type = "range";
+			sliderDiv.append(slider);
+			slider.value = this.startVal?.(obj1, obj2) + "" || "100";
+			slider.oninput = () => {
+				this.slider(obj1, obj2, +slider.value);
+			};
+			menu.append(sliderDiv);
+		}
+	}
+}
 
 declare global {
 	interface HTMLElementEventMap {
@@ -270,6 +308,15 @@ class Contextmenu<x, y> {
 	}
 	addText(text: string, visible?: (obj1: x, obj2: y) => boolean, group?: string) {
 		this.buttons.push(new ContextMenuText(text, visible, group));
+	}
+	addSlider(
+		text: ContextButton<x, y>["text"],
+		slider: (obj1: x, obj2: y, val: number) => unknown,
+		visible?: (obj1: x, obj2: y) => boolean,
+		group?: string,
+		opts: {startVal?: (obj1: x, obj2: y) => number} = {},
+	) {
+		this.buttons.push(new ContextMenuSlider(text, slider, visible, group, opts));
 	}
 	addGroup(
 		group: string,

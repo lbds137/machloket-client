@@ -293,6 +293,28 @@ export type voiceStatusStr =
 	| "wsOpen"
 	| "wsAuth"
 	| "left";
+class UserVolume {
+	gain!: GainNode;
+	id: string;
+	set volume(vol: number) {
+		this.gain.gain.value = vol;
+	}
+	constructor(media: MediaStream, id: string) {
+		this.startAudio(media);
+		this.id = id;
+	}
+	async startAudio(media: MediaStream) {
+		const context = new AudioContext();
+		this.gain = context.createGain();
+		console.log(context);
+		await context.resume();
+		const ss = context.createMediaStreamSource(media);
+		console.log(media, ss);
+		new Audio().srcObject = media; //weird I know, but it's for chromium/webkit bug
+		ss.connect(this.gain);
+		this.gain.connect(context.destination);
+	}
+}
 class Voice {
 	private pstatus: voiceStatusStr = "notconnected";
 	public onSatusChange: (e: voiceStatusStr) => unknown = () => {};
@@ -1039,6 +1061,8 @@ a=rtcp-mux\r`;
 	}
 	onconnect = () => {};
 	streams = new Set<MediaStreamTrack>();
+	uVolMap = new Map<string, UserVolume>();
+	onUserVol: (uv: UserVolume) => unknown = () => {};
 	async startWebRTC() {
 		this.status = "makingOffer";
 		const pc = new RTCPeerConnection({
@@ -1085,14 +1109,10 @@ a=rtcp-mux\r`;
 			for (const track of media.getTracks()) {
 				console.log(track);
 			}
+			const a = new UserVolume(media, userId);
+			this.uVolMap.set(userId, a);
+			this.onUserVol(a);
 
-			const context = new AudioContext();
-			console.log(context);
-			await context.resume();
-			const ss = context.createMediaStreamSource(media);
-			console.log(media, ss);
-			new Audio().srcObject = media; //weird I know, but it's for chromium/webkit bug
-			ss.connect(context.destination);
 			this.recivers.add(e.receiver);
 			console.log(this.recivers);
 		};

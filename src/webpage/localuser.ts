@@ -1089,6 +1089,20 @@ class Localuser {
 		if (!document.hidden) reasons.push("foregrounded");
 		return reasons;
 	}
+	setUserAudio(id: string, vol: number) {
+		if (!this.perminfo.userAudio) this.perminfo.userAudio = {};
+		this.perminfo.userAudio[id] = vol;
+		const v = this.voiceFactory?.currentVoice;
+		if (v) {
+			const u = v.uVolMap.get(id);
+			if (u) u.volume = vol / 100;
+		}
+	}
+	getUserAudio(id: string) {
+		if (!this.perminfo.userAudio) this.perminfo.userAudio = {};
+
+		return (this.perminfo.userAudio[id] as number) ?? 100;
+	}
 	get currentVoice() {
 		return this.voiceFactory?.currentVoice;
 	}

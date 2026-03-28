@@ -24,7 +24,7 @@ import {
 import {MarkDown, saveCaretPosition} from "./markdown.js";
 import {Member} from "./member.js";
 import {Voice} from "./voice.js";
-import {User} from "./user.js";
+import {User, userVolMenu} from "./user.js";
 import {I18n} from "./i18n.js";
 import {mobile, createImg, safeImg} from "./utils/utils.js";
 import {webhookMenu} from "./webhooks.js";
@@ -1155,6 +1155,9 @@ class Channel extends SnowFlake {
 	}
 	async setUpVoice() {
 		if (!this.voice) return;
+		this.voice.onUserVol = (u) => {
+			u.volume = this.localuser.getUserAudio(u.id) / 100;
+		};
 		this.voice.onMemberChange = async (memb, joined) => {
 			console.log(memb, joined);
 			if (typeof memb !== "string") {
@@ -1226,6 +1229,7 @@ class Channel extends SnowFlake {
 				return [];
 			}
 			const div = document.createElement("div");
+			userVolMenu.bindContextmenu(div, this.localuser, member.id);
 			div.classList.add("voiceuser", "flexltr");
 			const span = document.createElement("span");
 			span.textContent = member.name;
@@ -1702,6 +1706,7 @@ class Channel extends SnowFlake {
 	async makeUserBox(user: User, users: HTMLElement) {
 		const memb = Member.resolveMember(user, this.guild);
 		const box = document.createElement("div");
+		userVolMenu.bindContextmenu(box, this.localuser, user.id);
 		box.onclick = () => {
 			this.makeBig(box);
 		};

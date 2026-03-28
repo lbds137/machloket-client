@@ -17,6 +17,20 @@ import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
 import {CDNParams} from "./utils/cdnParams.js";
+export const userVolMenu = new Contextmenu<Localuser, string>("user vol stacked", true);
+userVolMenu.addSlider(
+	() => I18n.Voice.userVol(),
+	(local, id, e) => {
+		local.setUserAudio(id, e);
+	},
+	undefined,
+	"default",
+	{
+		startVal: (local, id) => {
+			return local.getUserAudio(id);
+		},
+	},
+);
 class User extends SnowFlake {
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
