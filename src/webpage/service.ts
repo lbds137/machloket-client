@@ -31,6 +31,52 @@ async function downloadAllFiles() {
 
 	cachePath("", json);
 }
+let swStorage = {} as Record<string, number>;
+async function swStorageGet() {
+	return JSON.parse(
+		(await (await (await caches.open("save")).match("/save"))?.text()) || "{}",
+	) as Record<string, number>;
+}
+swStorageGet().then(async (_) => {
+	function pathToTime(str: string): number {
+		return swStorage[str] ?? 0;
+	}
+	swStorage = _;
+	if (Object.keys(_).length === 0) {
+		caches.delete("cdn");
+	} else {
+		const c = await caches.open("cdn");
+		let stuff = (await cacheSize("cdn")).sort((a, b) => pathToTime(b[2]) - pathToTime(a[2]));
+		let size = stuff.reduce((c, l) => c + l[0], 0);
+		while (size > 100000000) {
+			const thing = stuff.pop()!;
+			c.delete(thing[2]);
+			size -= thing[0];
+		}
+	}
+});
+async function swStorageSave() {
+	const c = await caches.open("save");
+	c.put("/save", new Response(JSON.stringify(swStorage)));
+}
+async function cacheSize(str: string) {
+	const c = await caches.open(str);
+	const keys = await c.keys();
+
+	const sum = (
+		await Promise.all(
+			keys.map((req) =>
+				c.match(req).then((res) =>
+					res!
+						.clone()
+						.blob()
+						.then((b) => [b.size, res!, res!.url] as const),
+				),
+			),
+		)
+	).sort((a, b) => b[0] - a[0]);
+	return sum;
+}
 async function getFromCache(request: URL) {
 	request = new URL(request, self.location.href);
 	const port = rMap.get(request.host);
@@ -38,6 +84,10 @@ async function getFromCache(request: URL) {
 		request.search = "";
 	}
 	const cache = await caches.open(port ? "cdn" : "cache");
+	if (port) {
+		swStorage[request + ""] = Date.now();
+		swStorageSave();
+	}
 	return cache.match(request);
 }
 async function putInCache(request: URL | string, response: Response) {
@@ -47,7 +97,10 @@ async function putInCache(request: URL | string, response: Response) {
 		request.search = "";
 	}
 	const cache = await caches.open(port ? "cdn" : "cache");
-
+	if (port) {
+		swStorage[request + ""] = Date.now();
+		swStorageSave();
+	}
 	try {
 		console.log(await cache.put(request, response));
 	} catch (error) {
