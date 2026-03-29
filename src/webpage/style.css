@@ -2658,7 +2658,7 @@ span.instanceStatus {
 	font-weight: bold;
 	color: var(--primary-text-prominent) !important;
 	border-radius: 4px;
-	flex-grow: 0;
+	flex: none;
 	width: fit-content;
 	background-clip: border-box !important;
 	align-self: center;
@@ -4351,7 +4351,7 @@ fieldset input[type="radio"] {
 	.pfprow {
 		width: 32px;
 	}
-	.pfprow .pfp {
+	.pfprow .pfpDiv {
 		height: 32px;
 		width: 32px;
 	}
