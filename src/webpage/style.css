@@ -4351,7 +4351,7 @@ fieldset input[type="radio"] {
 	.pfprow {
 		width: 32px;
 	}
-	.pfprow .pfpDiv, .pfprow .pfp {
+	.pfprow .pfpDiv {
 		height: 32px;
 		width: 32px;
 	}
