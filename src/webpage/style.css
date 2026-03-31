@@ -42,7 +42,7 @@ body {
 	user-select: none;
 	cursor: pointer;
 
-	.pfp {
+	.pfpDiv {
 		width: 0.5in !important;
 		height: 0.5in !important;
 		margin-right: 0.15in !important;
@@ -260,12 +260,9 @@ body {
 	margin-right: 4px;
 }
 .reactionUserList {
-	div {
-		margin: 3px;
-		.pfp {
-			width: 32px;
-			height: 32px;
-		}
+	.pfpDiv {
+		width: 32px;
+		height: 32px;
 	}
 	border-left: solid var(--secondary-bg) 2px;
 	padding-left: 6px;

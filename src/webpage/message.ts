@@ -305,7 +305,7 @@ class Message extends SnowFlake {
 					curSelect.classList.add("current");
 					if (!users) {
 						const f = await fetch(
-							`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reaction.emoji.name}?limit=3&type=0`,
+							`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reaction.emoji.name}?limit=50&type=0`,
 							{headers: this.headers},
 						);
 						users = ((await f.json()) as userjson[]).map((_) => new User(_, this.localuser));
