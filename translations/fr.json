@@ -11,6 +11,7 @@
 			"Lenchanteur",
 			"Mahabarata",
 			"McDutchie",
+			"Momo50WM",
 			"Od1n",
 			"Oh64",
 			"Pyschobbens",
@@ -58,6 +59,7 @@
 	"dismiss": "Ignorer",
 	"UrlGen": "Générateur d'invitations de bot",
 	"Voice": {
+		"userVol": "Volume d'utilisateurs :",
 		"status": {
 			"badWS": "Réponse incorrecte du WS",
 			"conectionFailed": "La connexion a échoué",
