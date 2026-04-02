@@ -560,7 +560,7 @@
 		"trustedDesc": "When you click on links sending you to these domain, you will ***not*** be prompted for permission to open like other links, only give this to domains you trust, such as 'https://fermi.chat'",
 		"updateSettings": "Update settings",
 		"updatesYay": "Updates found!",
-		"userSettings": "User settings"
+		"userSettings": "Your public profile"
 	},
 	"login": {
 		"allGood": "All good",
