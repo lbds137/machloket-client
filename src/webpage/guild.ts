@@ -269,7 +269,14 @@ class Guild extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.member.hasPermission("MANAGE_GUILD");
+					console.log("vis calc", this.member.roles);
+					return (
+						this.member.hasPermission("MANAGE_GUILD") ||
+						this.member.hasPermission("MANAGE_WEBHOOKS") ||
+						this.member.hasPermission("BAN_MEMBERS") ||
+						this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS") ||
+						this.member.hasPermission("MANAGE_ROLES")
+					);
 				},
 				icon: {
 					css: "svg-settings",
@@ -604,7 +611,7 @@ class Guild extends SnowFlake {
 			//TODO there are almost certainly more types. is Voice valid?
 			return new Set([0, 5]).has(e.type);
 		});
-		{
+		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const overview = settings.addButton(I18n.guild.overview());
 			const form = overview.addForm("", (_) => {}, {
 				headers: this.headers,
@@ -739,13 +746,15 @@ class Guild extends SnowFlake {
 			form.addTextInput(I18n.guild["region:"](), "region", {initText: region});
 		}
 		this.makeInviteMenu(settings.addButton(I18n.invite.inviteMaker()), textChannels);
-		const s1 = settings.addButton(I18n.guild.roles(), {optName: ""});
-		const permlist: [Role, Permissions][] = [];
-		for (const thing of this.roles) {
-			permlist.push([thing, thing.permissions]);
+		if (this.member.hasPermission("MANAGE_ROLES")) {
+			const s1 = settings.addButton(I18n.guild.roles(), {optName: ""});
+			const permlist: [Role, Permissions][] = [];
+			for (const thing of this.roles) {
+				permlist.push([thing, thing.permissions]);
+			}
+			s1.options.push(new RoleList(permlist, this, this.updateRolePermissions.bind(this), false));
 		}
-		s1.options.push(new RoleList(permlist, this, this.updateRolePermissions.bind(this), false));
-		{
+		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
 			const emoji = settings.addButton(I18n.emoji.title());
 			emoji.addButtonInput("", I18n.emoji.upload(), () => {
 				const popup = new Dialog(I18n.emoji.upload());
@@ -819,7 +828,7 @@ class Guild extends SnowFlake {
 			genDiv();
 			emoji.addHTMLArea(containdiv);
 		}
-		{
+		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const onboard = settings.addButton(I18n.onboarding.name());
 			const genOnboard = async () => {
 				this.welcomeScreen = await (
@@ -949,7 +958,7 @@ class Guild extends SnowFlake {
 			};
 			genOnboard();
 		}
-		{
+		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
 			const emoji = settings.addButton(I18n.sticker.title());
 			emoji.addButtonInput("", I18n.sticker.upload(), () => {
 				const popup = new Dialog(I18n.sticker.upload());
@@ -1059,50 +1068,56 @@ class Guild extends SnowFlake {
 			genDiv();
 			emoji.addHTMLArea(containdiv);
 		}
-		const inviteMenu = settings.addButton(I18n.guild.invites());
-		makeInviteMenu(inviteMenu, this, this.info.api + `/guilds/${this.id}/invites`);
+		if (this.member.hasPermission("MANAGE_GUILD")) {
+			const inviteMenu = settings.addButton(I18n.guild.invites());
+			makeInviteMenu(inviteMenu, this, this.info.api + `/guilds/${this.id}/invites`);
+		}
 
-		const banMenu = settings.addButton(I18n.guild.bans());
-		const makeBanMenu = () => {
-			const banDiv = document.createElement("div");
-			const bansp = ProgessiveDecodeJSON<banObj[]>(this.info.api + "/guilds/" + this.id + "/bans", {
-				headers: this.headers,
-			});
-			const createBanHTML = (ban: banObj) => {
-				const div = document.createElement("div");
-				div.classList.add("flexltr", "bandiv");
-				let src: string;
-				if (ban.user.avatar !== null) {
-					src =
-						`${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png` +
-						new CDNParams({expectedSize: 96});
-				} else {
-					const int = Number((BigInt(ban.user.id) >> 22n) % 6n);
-					src = `${this.info.cdn}/embed/avatars/${int}.png`;
-				}
-				const img = createImg(src);
-				img.classList.add("pfp");
-				const divUserRes = document.createElement("div");
-				divUserRes.classList.add("flexttb");
+		if (this.member.hasPermission("BAN_MEMBERS")) {
+			const banMenu = settings.addButton(I18n.guild.bans());
+			const makeBanMenu = () => {
+				const banDiv = document.createElement("div");
+				const bansp = ProgessiveDecodeJSON<banObj[]>(
+					this.info.api + "/guilds/" + this.id + "/bans",
+					{
+						headers: this.headers,
+					},
+				);
+				const createBanHTML = (ban: banObj) => {
+					const div = document.createElement("div");
+					div.classList.add("flexltr", "bandiv");
+					let src: string;
+					if (ban.user.avatar !== null) {
+						src =
+							`${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png` +
+							new CDNParams({expectedSize: 96});
+					} else {
+						const int = Number((BigInt(ban.user.id) >> 22n) % 6n);
+						src = `${this.info.cdn}/embed/avatars/${int}.png`;
+					}
+					const img = createImg(src);
+					img.classList.add("pfp");
+					const divUserRes = document.createElement("div");
+					divUserRes.classList.add("flexttb");
 
-				const username = document.createElement("span");
-				username.textContent = ban.user.username;
+					const username = document.createElement("span");
+					username.textContent = ban.user.username;
 
-				divUserRes.append(username);
-				if (ban.reason) {
-					const reason = document.createElement("span");
-					reason.innerText = ban.reason;
-					divUserRes.append(I18n.guild.banReason(ban.reason));
-				}
-				div.append(img, divUserRes);
-				div.onclick = async (_) => {
-					const opt = banMenu.addSubOptions(ban.user.username);
+					divUserRes.append(username);
+					if (ban.reason) {
+						const reason = document.createElement("span");
+						reason.innerText = ban.reason;
+						divUserRes.append(I18n.guild.banReason(ban.reason));
+					}
+					div.append(img, divUserRes);
+					div.onclick = async (_) => {
+						const opt = banMenu.addSubOptions(ban.user.username);
 
-					opt.addHTMLArea(img.cloneNode(true) as HTMLElement);
-					opt.addText(ban.user.username);
-					if (ban.reason) opt.addText(I18n.guild.banReason(ban.reason));
-					//FIXME the API sends back the wrong response, so I don't have this info
-					/*
+						opt.addHTMLArea(img.cloneNode(true) as HTMLElement);
+						opt.addText(ban.user.username);
+						if (ban.reason) opt.addText(I18n.guild.banReason(ban.reason));
+						//FIXME the API sends back the wrong response, so I don't have this info
+						/*
 					const moreInfo = (await (
 						await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + ban.user.id, {
 							headers: this.headers,
@@ -1111,203 +1126,208 @@ class Guild extends SnowFlake {
 					const userWhoBanned = await User.resolve(moreInfo.executor_id, this.localuser);
 					opt.addHTMLArea(userWhoBanned.createWidget(this));
 					//*/
-					opt.addButtonInput("", I18n.user.unban(ban.user.username), async () => {
-						bansArr = bansArr.filter((_) => _ !== ban);
+						opt.addButtonInput("", I18n.user.unban(ban.user.username), async () => {
+							bansArr = bansArr.filter((_) => _ !== ban);
 
-						await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + ban.user.id, {
-							headers: this.headers,
-							method: "DELETE",
+							await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + ban.user.id, {
+								headers: this.headers,
+								method: "DELETE",
+							});
+							loadPage(currentPage);
+							banMenu.returnFromSub();
 						});
-						loadPage(currentPage);
-						banMenu.returnFromSub();
-					});
+					};
+					return div;
 				};
-				return div;
-			};
-			let bansArr: banObj[] = [];
-			let onpage = 0;
-			async function loadArr() {
-				let bansArr2: banObj[] = [];
-				let waiting = false;
-				async function addHTML() {
-					if (waiting) return;
-					waiting = true;
-					await new Promise((res) => setTimeout(res, 0));
-					waiting = false;
-					banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
-					bansArr2 = [];
-				}
-				while (!(await bansp).done) {
-					const ban = await (await (await bansp).getNext()).getWhole();
-					bansArr.push(ban);
-					if (onpage < 50) {
-						bansArr2.push(ban);
-						addHTML();
-						onpage++;
-					} else {
-						next.disabled = false;
+				let bansArr: banObj[] = [];
+				let onpage = 0;
+				async function loadArr() {
+					let bansArr2: banObj[] = [];
+					let waiting = false;
+					async function addHTML() {
+						if (waiting) return;
+						waiting = true;
+						await new Promise((res) => setTimeout(res, 0));
+						waiting = false;
+						banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
+						bansArr2 = [];
+					}
+					while (!(await bansp).done) {
+						const ban = await (await (await bansp).getNext()).getWhole();
+						bansArr.push(ban);
+						if (onpage < 50) {
+							bansArr2.push(ban);
+							addHTML();
+							onpage++;
+						} else {
+							next.disabled = false;
+						}
 					}
 				}
-			}
-			let currentPage = 0;
-			function loadPage(page = 0) {
-				banDiv.innerHTML = "";
-				for (onpage = 0; onpage < 50; onpage++) {
-					const ban = bansArr[onpage + page * 50];
-					if (!ban) break;
-					banDiv.append(createBanHTML(ban));
+				let currentPage = 0;
+				function loadPage(page = 0) {
+					banDiv.innerHTML = "";
+					for (onpage = 0; onpage < 50; onpage++) {
+						const ban = bansArr[onpage + page * 50];
+						if (!ban) break;
+						banDiv.append(createBanHTML(ban));
+					}
+					if (onpage === 50 && bansArr[onpage + page * 50]) {
+						next.disabled = false;
+					} else {
+						next.disabled = true;
+					}
 				}
-				if (onpage === 50 && bansArr[onpage + page * 50]) {
+
+				const pageNav = document.createElement("div");
+				const back = document.createElement("button");
+				back.textContent = I18n.search.back();
+				back.disabled = !currentPage;
+				back.onclick = () => {
+					back.disabled = !(currentPage - 1);
 					next.disabled = false;
-				} else {
-					next.disabled = true;
-				}
-			}
+					loadPage(--currentPage);
+				};
 
-			const pageNav = document.createElement("div");
-			const back = document.createElement("button");
-			back.textContent = I18n.search.back();
-			back.disabled = !currentPage;
-			back.onclick = () => {
-				back.disabled = !(currentPage - 1);
-				next.disabled = false;
-				loadPage(--currentPage);
+				const next = document.createElement("button");
+				next.textContent = I18n.search.next();
+				next.disabled = true;
+				pageNav.append(back, next);
+				banMenu.addHTMLArea(pageNav);
+				next.onclick = () => {
+					loadPage(++currentPage);
+					back.disabled = false;
+				};
+
+				loadArr();
+				loadPage(currentPage);
+				return banDiv;
 			};
-
-			const next = document.createElement("button");
-			next.textContent = I18n.search.next();
-			next.disabled = true;
-			pageNav.append(back, next);
-			banMenu.addHTMLArea(pageNav);
-			next.onclick = () => {
-				loadPage(++currentPage);
-				back.disabled = false;
-			};
-
-			loadArr();
-			loadPage(currentPage);
-			return banDiv;
-		};
-		banMenu.addHTMLArea(makeBanMenu);
-		const widgetMenu = settings.addButton(I18n.widget());
-		(async () => {
-			const cur = (await (
-				await fetch(this.info.api + "/guilds/" + this.id + "/widget", {
+			banMenu.addHTMLArea(makeBanMenu);
+		}
+		if (this.member.hasPermission("MANAGE_GUILD")) {
+			const widgetMenu = settings.addButton(I18n.widget());
+			(async () => {
+				const cur = (await (
+					await fetch(this.info.api + "/guilds/" + this.id + "/widget", {
+						headers: this.headers,
+					})
+				).json()) as {
+					enabled: boolean;
+					channel_id?: null | string;
+				};
+				const form = widgetMenu.addForm("", () => {}, {
+					traditionalSubmit: true,
+					fetchURL: this.info.api + "/guilds/" + this.id + "/widget",
 					headers: this.headers,
-				})
-			).json()) as {
-				enabled: boolean;
-				channel_id?: null | string;
-			};
-			const form = widgetMenu.addForm("", () => {}, {
-				traditionalSubmit: true,
-				fetchURL: this.info.api + "/guilds/" + this.id + "/widget",
-				headers: this.headers,
-				method: "PATCH",
-			});
-			form.addCheckboxInput(I18n.widgetEnabled(), "enabled", {initState: cur.enabled});
-			const channels = this.channels.filter((_) => _.type !== 4);
-			form.addSelect(
-				I18n.channel.name(),
-				"channel_id",
-				channels.map((_) => _.name),
-				{
-					defaultIndex: channels.findIndex((_) => _.id == cur.channel_id),
-				},
-				channels.map((_) => _.id),
-			);
-		})();
-		const webhooks = settings.addButton(I18n.webhooks.base());
-		webhookMenu(this, this.info.api + `/guilds/${this.id}/webhooks`, webhooks);
-		const template = settings.addButton(I18n.guild.templates());
-		(async () => {
-			template.addText(I18n.guild.templcateMetaDesc());
-			const generateTemplateArea = (temp: templateSkim) => {
-				const div = document.createElement("div");
-				div.classList.add("flexltr", "templateMiniBox");
-				const code = document.createElement("span");
+					method: "PATCH",
+				});
+				form.addCheckboxInput(I18n.widgetEnabled(), "enabled", {initState: cur.enabled});
+				const channels = this.channels.filter((_) => _.type !== 4);
+				form.addSelect(
+					I18n.channel.name(),
+					"channel_id",
+					channels.map((_) => _.name),
+					{
+						defaultIndex: channels.findIndex((_) => _.id == cur.channel_id),
+					},
+					channels.map((_) => _.id),
+				);
+			})();
+		}
+		if (this.member.hasPermission("MANAGE_WEBHOOKS")) {
+			const webhooks = settings.addButton(I18n.webhooks.base());
+			webhookMenu(this, this.info.api + `/guilds/${this.id}/webhooks`, webhooks);
+			const template = settings.addButton(I18n.guild.templates());
+			(async () => {
+				template.addText(I18n.guild.templcateMetaDesc());
+				const generateTemplateArea = (temp: templateSkim) => {
+					const div = document.createElement("div");
+					div.classList.add("flexltr", "templateMiniBox");
+					const code = document.createElement("span");
 
-				code.textContent = temp.code + ` (${temp.name})`;
+					code.textContent = temp.code + ` (${temp.name})`;
 
-				const edit = document.createElement("button");
-				edit.textContent = I18n.edit();
-				edit.onclick = () => {
+					const edit = document.createElement("button");
+					edit.textContent = I18n.edit();
+					edit.onclick = () => {
+						const form = template.addSubForm(
+							I18n.guild.editingTemplate(temp.name),
+							(tempy) => {
+								const template = tempy as templateSkim;
+								temp.name = template.name;
+								temp.description = template.description;
+							},
+							{
+								fetchURL: this.info.api + "/guilds/" + this.id + "/templates/" + temp.code,
+								method: "PATCH",
+								headers: this.headers,
+							},
+						);
+						const search = new URLSearchParams([["instance", this.info.wellknown]]);
+						form.addMDText(
+							new MarkDown(
+								I18n.guild.templateURL(
+									window.location.origin + "/template/" + temp.code + "?" + search,
+								),
+								undefined,
+							),
+						);
+
+						const name = form.addTextInput(I18n.guild.templateName(), "name", {
+							initText: temp.name,
+						});
+						form.addMDInput(I18n.guild.templateDesc(), "description", {
+							initText: temp.description,
+						});
+						User.resolve(temp.creator_id, this.localuser).then((_) => {
+							form.addText(I18n.guild.tempCreatedBy());
+							form.addHTMLArea(_.createWidget(this));
+						});
+						form.addText(I18n.guild.tempUseCount((temp.usage_count || 0) + ""));
+						form.addPreprocessor(() => {
+							if (name.value.length < 2) {
+								throw new FormError(name, I18n.guild.templateNameShort());
+							}
+						});
+					};
+
+					div.append(code, edit);
+					template.addHTMLArea(div);
+				};
+				template.addButtonInput("", I18n.guild.createNewTemplate(), () => {
 					const form = template.addSubForm(
-						I18n.guild.editingTemplate(temp.name),
-						(tempy) => {
-							const template = tempy as templateSkim;
-							temp.name = template.name;
-							temp.description = template.description;
+						I18n.guild.createNewTemplate(),
+						(code) => {
+							template.returnFromSub();
+							generateTemplateArea(code as templateSkim);
 						},
 						{
-							fetchURL: this.info.api + "/guilds/" + this.id + "/templates/" + temp.code,
-							method: "PATCH",
+							fetchURL: this.info.api + "/guilds/" + this.id + "/templates",
+							method: "POST",
 							headers: this.headers,
 						},
 					);
-					const search = new URLSearchParams([["instance", this.info.wellknown]]);
-					form.addMDText(
-						new MarkDown(
-							I18n.guild.templateURL(
-								window.location.origin + "/template/" + temp.code + "?" + search,
-							),
-							undefined,
-						),
-					);
-
-					const name = form.addTextInput(I18n.guild.templateName(), "name", {
-						initText: temp.name,
-					});
-					form.addMDInput(I18n.guild.templateDesc(), "description", {
-						initText: temp.description,
-					});
-					User.resolve(temp.creator_id, this.localuser).then((_) => {
-						form.addText(I18n.guild.tempCreatedBy());
-						form.addHTMLArea(_.createWidget(this));
-					});
-					form.addText(I18n.guild.tempUseCount((temp.usage_count || 0) + ""));
+					form.addText(I18n.guild.templcateMetaDesc());
+					const name = form.addTextInput(I18n.guild.templateName(), "name");
+					form.addMDInput(I18n.guild.templateDesc(), "description");
 					form.addPreprocessor(() => {
 						if (name.value.length < 2) {
 							throw new FormError(name, I18n.guild.templateNameShort());
 						}
 					});
-				};
-
-				div.append(code, edit);
-				template.addHTMLArea(div);
-			};
-			template.addButtonInput("", I18n.guild.createNewTemplate(), () => {
-				const form = template.addSubForm(
-					I18n.guild.createNewTemplate(),
-					(code) => {
-						template.returnFromSub();
-						generateTemplateArea(code as templateSkim);
-					},
-					{
-						fetchURL: this.info.api + "/guilds/" + this.id + "/templates",
-						method: "POST",
-						headers: this.headers,
-					},
-				);
-				form.addText(I18n.guild.templcateMetaDesc());
-				const name = form.addTextInput(I18n.guild.templateName(), "name");
-				form.addMDInput(I18n.guild.templateDesc(), "description");
-				form.addPreprocessor(() => {
-					if (name.value.length < 2) {
-						throw new FormError(name, I18n.guild.templateNameShort());
-					}
 				});
-			});
-			const templates = (await (
-				await fetch(this.info.api + "/guilds/" + this.id + "/templates", {headers: this.headers})
-			).json()) as templateSkim[];
-			for (const temp of templates.reverse()) {
-				generateTemplateArea(temp);
-			}
-		})();
+				const templates = (await (
+					await fetch(this.info.api + "/guilds/" + this.id + "/templates", {headers: this.headers})
+				).json()) as templateSkim[];
+				for (const temp of templates.reverse()) {
+					generateTemplateArea(temp);
+				}
+			})();
+		}
 		let com = false;
 		if (this.properties.features.includes("COMMUNITY")) {
-			this.addCommunity(settings, textChannels);
+			if (this.member.hasPermission("MANAGE_GUILD")) this.addCommunity(settings, textChannels);
 			com = true;
 		}
 		settings.show();
