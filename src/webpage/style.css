@@ -1769,12 +1769,11 @@ span.instanceStatus {
 	user-select: none;
 }
 .servericon,
-#sentdms .pfp {
+#sentdms .pfpDiv {
 	height: 48px;
 	width: 48px;
 	margin-bottom: 8px;
 	border-radius: 50%;
-	overflow: hidden;
 	display: flex;
 	align-items: center;
 	justify-content: center;
