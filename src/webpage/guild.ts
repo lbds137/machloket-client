@@ -269,7 +269,6 @@ class Guild extends SnowFlake {
 			},
 			{
 				visible: function () {
-					console.log("vis calc", this.member.roles);
 					return (
 						this.member.hasPermission("MANAGE_GUILD") ||
 						this.member.hasPermission("MANAGE_WEBHOOKS") ||
