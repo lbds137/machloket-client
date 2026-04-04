@@ -1057,7 +1057,7 @@ class MarkDown {
 						tw.pop();
 						text = tw.join("");
 					}
-					const boxText = text + txt + end;
+					const boxText = text + txt + (end ?? "");
 					box.textContent = boxText;
 					const len = text.length + txt.length;
 					text = boxText;
