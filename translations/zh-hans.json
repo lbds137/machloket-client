@@ -48,6 +48,7 @@
 	"dismiss": "关闭",
 	"UrlGen": "机器人邀请生成器",
 	"Voice": {
+		"userVol": "用户数量：",
 		"status": {
 			"badWS": "WS 回应不佳",
 			"conectionFailed": "连接失败",
@@ -567,7 +568,7 @@
 		"trustedDesc": "当您点击链接跳转到这些域名时，系统***不会***像其他链接那样提示您授予打开权限，请仅对您信任的域名授予权限，例如<code>https://fermi.chat</code>。",
 		"updateSettings": "更新设置",
 		"updatesYay": "找到了更新！",
-		"userSettings": "用户设置"
+		"userSettings": "您的公开个人资料"
 	},
 	"login": {
 		"allGood": "一切顺利",

@@ -42,6 +42,7 @@
 	"dismiss": "Sluiten",
 	"UrlGen": "Bot-uitnodigingsgenerator",
 	"Voice": {
+		"userVol": "Gebruikersvolume:",
 		"status": {
 			"badWS": "Foute reactie van WS",
 			"conectionFailed": "Verbinding mislukt",
@@ -561,7 +562,7 @@
 		"trustedDesc": "Wanneer u via koppelingen op dit domein komt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan domeinen die u vertrouwt, zoals'https://fermi.chat'.",
 		"updateSettings": "Instellingen bijwerken",
 		"updatesYay": "Updates gevonden!",
-		"userSettings": "Gebruikersinstellingen"
+		"userSettings": "Uw publieke profiel"
 	},
 	"login": {
 		"allGood": "Alles goed",
