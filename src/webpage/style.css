@@ -4840,7 +4840,7 @@ img.error::after {
 		padding: 6px;
 		display: flex;
 		align-items: center;
-		img {
+		.pfpDiv {
 			margin-right: 12px;
 			width: 40px;
 			height: 40px;
