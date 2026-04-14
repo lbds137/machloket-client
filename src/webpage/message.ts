@@ -553,13 +553,30 @@ class Message extends SnowFlake {
 	}
 	messageevents(obj: HTMLDivElement) {
 		let drag = false;
+		let reply = false;
+		let scrolling = false;
+
 		Message.contextmenu.bindContextmenu(
 			obj,
 			this,
 			undefined,
-			(x) => {
+			(x: number, _: number, event: TouchEvent) => {
 				//console.log(x);
+				if (scrolling) {
+					return;
+				}
+				if (this.channel.infinite.scrolling && !drag && !reply) {
+					console.log("Scrolling");
+					scrolling = true;
+					return;
+				}
+
+				if (reply || drag) {
+					event.preventDefault();
+				}
+
 				if (x < -20) {
+					reply = true;
 					obj.style.translate = x + 20 + "px 0px";
 				} else obj.style.translate = 0 + "px";
 
@@ -570,11 +587,15 @@ class Message extends SnowFlake {
 				drag = true;
 				this.channel.moveForDrag(Math.max(x, 0));
 			},
-			(x, y) => {
-				drag = false;
+			(x: number, y: number) => {
 				console.log(x, y);
 				obj.style.translate = 0 + "px";
 				this.channel.moveForDrag(-1);
+
+				if (scrolling) {
+					return;
+				}
+				
 				if (x > 60) {
 					console.log("In here?");
 					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
@@ -584,6 +605,10 @@ class Message extends SnowFlake {
 				if (x < -40) {
 					this.channel.setReplying(this);
 				}
+
+				reply = false;
+				scrolling = false;
+				drag = false;
 			},
 		);
 		this.div = obj;

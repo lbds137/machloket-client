@@ -380,8 +380,8 @@ class Contextmenu<x, y> {
 		obj: HTMLElement,
 		addinfo: x,
 		other: y,
-		touchDrag: (x: number, y: number) => unknown = () => {},
-		touchEnd: (x: number, y: number) => unknown = () => {},
+		touchDrag: (x: number, y: number, event: TouchEvent) => unknown = () => {},
+		touchEnd: (x: number, y: number, event: TouchEvent) => unknown = () => {},
 		click: "right" | "left" = "right",
 	) {
 		const func = (event: MouseEvent) => {
@@ -446,16 +446,16 @@ class Contextmenu<x, y> {
 		);
 		let lastx = 0;
 		let lasty = 0;
-		obj.addEventListener("touchend", () => {
+		obj.addEventListener("touchend", (event: TouchEvent) => {
 			if (hold) {
 				clearTimeout(hold);
 			}
-			touchEnd(lastx, lasty);
+			touchEnd(lastx, lasty, event);
 		});
-		obj.addEventListener("touchmove", (event) => {
+		obj.addEventListener("touchmove", (event: TouchEvent) => {
 			lastx = event.touches[0].pageX - x;
 			lasty = event.touches[0].pageY - y;
-			touchDrag(lastx, lasty);
+			touchDrag(lastx, lasty, event);
 		});
 		return func;
 	}

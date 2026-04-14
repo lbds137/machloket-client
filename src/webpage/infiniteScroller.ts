@@ -77,6 +77,8 @@ class InfiniteScroller {
 	private backElm = new Map<string, string | undefined>();
 	private forElm = new Map<string, string | undefined>();
 	private weakElmId = new WeakMap<HTMLElement, string>();
+	
+	public scrolling: boolean = false;
 
 	get div() {
 		return this.weakDiv.deref();
@@ -182,6 +184,7 @@ class InfiniteScroller {
 		};
 		let last = 0;
 		root.addEventListener("scroll", async () => {
+			this.scrolling = true;
 			const now = Date.now();
 			const thisid = ++last;
 			if (now - time < 500) {
@@ -191,6 +194,7 @@ class InfiniteScroller {
 			time = now;
 			handleScroll();
 		});
+		root.addEventListener("scrollend", () => this.scrolling = false);
 	}
 
 	async getDiv(initialId: string, flash = false): Promise<HTMLDivElement> {

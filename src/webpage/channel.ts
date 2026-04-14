@@ -662,6 +662,9 @@ class Channel extends SnowFlake {
 			this.readbottom.bind(this),
 		);
 	}
+
+	scrolling: boolean = false;
+
 	last_pin_timestamp?: string;
 	member?: threadMember;
 
