@@ -877,7 +877,7 @@
     "uploadPfp": "上傳頭像：",
     "useTemplate": "使用$1作為模板",
     "useTemplateButton": "使用模板",
-    "usedFermo": "透過 Fermo 發送",
+    "usedClient": "透過 $1 發送",
     "user": {
         "report": "回報使用者",
         "deleted": "已刪除使用者",

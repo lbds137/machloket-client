@@ -808,7 +808,7 @@
     "uploadPfp": "Zmień awatar:",
     "useTemplate": "Użyj $1 jako szablonu",
     "useTemplateButton": "Użyj szablonu",
-    "usedFermo": "Użył Fermo",
+    "usedClient": "Użył $1",
     "user": {
         "report": "Zgłoś użytkownika",
         "reportApp": "Zgłoś aplikację",

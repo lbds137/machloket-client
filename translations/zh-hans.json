@@ -885,7 +885,7 @@
     "uploadPfp": "上传头像：",
     "useTemplate": "以$1为模板",
     "useTemplateButton": "使用模板",
-    "usedFermo": "通过Fermo发送",
+    "usedClient": "通过$1发送",
     "user": {
         "report": "举报用户",
         "deleted": "已删除的用户",

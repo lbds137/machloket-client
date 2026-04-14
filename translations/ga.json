@@ -876,7 +876,7 @@
     "uploadPfp": "Uaslódáil abhatár:",
     "useTemplate": "Úsáid $1 mar theimpléad",
     "useTemplateButton": "Úsáid teimpléad",
-    "usedFermo": "seolta trí Fermo",
+    "usedClient": "seolta trí $1",
     "user": {
         "report": "Tuairiscigh úsáideoir",
         "deleted": "Úsáideoir scriosta",

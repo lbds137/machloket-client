@@ -877,7 +877,7 @@
 	"uploadPfp": "Upload avatar:",
 	"useTemplate": "Use $1 as a template",
 	"useTemplateButton": "Use template",
-	"usedFermo": "sent via Fermo",
+	"usedClient": "sent via $1",
 	"user": {
 		"report":"Report user",
 		"deleted":"Deleted user",

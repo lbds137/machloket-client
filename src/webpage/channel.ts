@@ -37,6 +37,12 @@ import {Command} from "./interactions/commands.js";
 import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 
+async function createFermoNonce(): Promise<string> {
+	const Rev = await (await fetch("/getupdates")).text();
+	const shortRev = Rev.slice(0, 7);
+	return btoa(`fermo-${shortRev}|${Math.floor(Date.now() / 1000)}`);
+}
+
 class Channel extends SnowFlake {
 	editing!: Message | null;
 	type!: number;
@@ -3707,7 +3713,7 @@ class Channel extends SnowFlake {
 		if (attachments.length === 0) {
 			const body = {
 				content,
-				nonce: nonce || Math.floor(Math.random() * 1000000000) + "",
+				nonce: nonce || (await createFermoNonce()),
 				message_reference: undefined,
 				sticker_ids,
 				embeds,
@@ -3748,7 +3754,7 @@ class Channel extends SnowFlake {
 			const formData = new FormData();
 			const body = {
 				content,
-				nonce: nonce || Math.floor(Math.random() * 1000000000) + "",
+				nonce: nonce || (await createFermoNonce()),
 				message_reference: undefined,
 				sticker_ids,
 				embeds,

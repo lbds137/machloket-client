@@ -876,7 +876,7 @@
     "uploadPfp": "Enviar foto de perfil:",
     "useTemplate": "Usar $1 como modelo",
     "useTemplateButton": "Usar modelo",
-    "usedFermo": "Usou Fermo",
+    "usedClient": "Usou $1",
     "user": {
         "report": "Denunciar usuário",
         "reportApp": "Denunciar aplicativo",

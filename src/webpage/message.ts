@@ -26,6 +26,61 @@ import {Components} from "./interactions/compontents.js";
 import {ImagesDisplay} from "./disimg";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
+
+function decodeBase64Safe(value: string): string | undefined {
+	try {
+		return atob(value);
+	} catch {
+		return undefined;
+	}
+}
+
+function humanizeClientName(name: string): string {
+	return name
+		.replace(/[-_]+/g, " ")
+		.replace(/\b\w/g, (match) => match.toUpperCase())
+		.trim();
+}
+
+function isSafeClientName(name: string): boolean {
+	return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name);
+}
+
+function getClientLabelFromNonce(nonce?: string): string | undefined {
+	if (!nonce) return undefined;
+	if (/^\d{1,10}$/.test(nonce)) {
+		return "Fermi";
+	}
+	if (nonce.startsWith("pax-")) {
+		return "Pax";
+	}
+
+	const decoded = decodeBase64Safe(nonce);
+	if (!decoded) return undefined;
+
+	const parts = decoded.split("|");
+	const head = parts[0]?.trim() || "";
+	const second = parts[1]?.trim() || "";
+	if (!head || !isSafeClientName(head)) return undefined;
+
+	if (second.startsWith("hoshika-core-")) {
+		const prettyPlatform = head ? humanizeClientName(head) : undefined;
+		const core = second.slice("hoshika-core-".length);
+		if (core && prettyPlatform) return `${prettyPlatform} using Hoshika-core ${core}`;
+		if (core) return `Hoshika-core ${core}`;
+		return "Hoshika";
+	}
+
+	if (head.startsWith("fermo-")) {
+		return "Fermo";
+	}
+	if (head.startsWith("hoshi-")) {
+		const version = head.slice("hoshi-".length).split("|")[0];
+		return version ? `Hoshi ${version}` : "Hoshi";
+	}
+	return undefined;
+}
+
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];
@@ -270,11 +325,14 @@ class Message extends SnowFlake {
 
 		Message.contextmenu.addSeperator();
 		Message.contextmenu.addButton(
-			() => I18n.usedFermo(),
+			function (this: Message) {
+				const clientLabel = getClientLabelFromNonce(this.nonce)!;
+				return I18n.usedClient(clientLabel);
+			},
 			() => {},
 			{
 				visible: function () {
-					return !!this.nonce && this.nonce.length <= 9 && this.nonce.length !== 0;
+					return !!getClientLabelFromNonce(this.nonce);
 				},
 				enabled: () => false,
 			},

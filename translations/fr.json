@@ -896,7 +896,7 @@
     "uploadPfp": "Importer un avatar :",
     "useTemplate": "Utiliser $1 comme modèle",
     "useTemplateButton": "Utiliser le modèle",
-    "usedFermo": "envoyé via Fermo",
+    "usedClient": "envoyé via $1",
     "user": {
         "report": "Signaler l’utilisateur",
         "deleted": "Utilisateur supprimé",

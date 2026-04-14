@@ -879,7 +879,7 @@
     "uploadPfp": "Profielafbeelding uploaden:",
     "useTemplate": "$1 als sjabloon gebruiken",
     "useTemplateButton": "Sjabloon gebruiken",
-    "usedFermo": "verzonden via Fermo",
+    "usedClient": "verzonden via $1",
     "user": {
         "report": "Gebruiker rapporteren",
         "deleted": "Gebruiker verwijderd",

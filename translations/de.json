@@ -889,7 +889,7 @@
 	"uploadPfp": "Profilbild hochladen:",
 	"useTemplate": "Verwende $1 als Vorlage",
 	"useTemplateButton": "Vorlage verwenden",
-	"usedFermo": "gesendet über Fermo",
+	"usedClient": "gesendet über $1",
 	"user": {
 		"report": "Nutzer melden",
 		"deleted": "Gelöschter Benutzer",
