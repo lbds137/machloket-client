@@ -213,7 +213,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Client-Version: $1 \n\n[Tritt der offiziellen Fermo-Server bei]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Hilf, Fermo zu übersetzen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Hilf, Fermo zu entwickeln](https://github.com/oh64/Fermo)\n\n[Hilf, den Server zu pflegen, auf den Fermo angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
+	"clientDesc": "Client-Version: $1 \n\n[Tritt der offiziellen Fermo-Server bei]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Hilf, Fermo zu übersetzen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Hilf, Fermo zu entwickeln](https://github.com/oh64/Fermo)\n\n[Hilf, den Server zu pflegen, auf den Fermo angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
 	"commands": {
 		"errorNotValid": "$1 ist keine gültige Option für $2",
 		"required": "$1 ist ein notwendiger Teil dieses Befehls"

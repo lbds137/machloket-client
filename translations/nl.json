@@ -202,7 +202,7 @@
         }
     },
     "channelLink": "# $1",
-    "clientDesc": "Cliëntversie: $1 \n\n[Sluit u aan bij het officiële Fermo-gilde]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help Fermo te vertalen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help Fermo te maken](https://github.com/oh64/Fermo)\n\n[Help de server waar Fermo op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n\nBerekende rechten: $3",
+    "clientDesc": "Cliëntversie: $1 \n\n[Sluit u aan bij het officiële Fermo-gilde]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help Fermo te vertalen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help Fermo te maken](https://github.com/oh64/Fermo)\n\n[Help de server waar Fermo op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n\nBerekende rechten: $3",
     "commands": {
         "errorNotValid": "$1 is geen geldige keuze voor $2",
         "required": "$1 is een vereist onderdeel van deze opdracht"

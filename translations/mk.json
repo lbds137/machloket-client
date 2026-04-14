@@ -187,7 +187,7 @@
         }
     },
     "channelLink": "бр. $1",
-    "clientDesc": "Верзија на клиентот: $1\n\n[Придружете се на официјалниот еснаф на Ферми]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Да го преведеме Ферми](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Помагајте во создавањето на Ферми](https://github.com/oh64/Fermo)\n\n[Помагајте во одржувањето на опслужувачот на кој работи Ферми](https://github.com/spacebarchat/server)\n\n\nПресметани права: $3",
+    "clientDesc": "Верзија на клиентот: $1\n\n[Придружете се на официјалниот еснаф на Ферми]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Да го преведеме Ферми](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Помагајте во создавањето на Ферми](https://github.com/oh64/Fermo)\n\n[Помагајте во одржувањето на опслужувачот на кој работи Ферми](https://github.com/spacebarchat/server)\n\n\nПресметани права: $3",
     "commands": {
         "errorNotValid": "$1 не е важечки избор за $2",
         "required": "$1 е задолжителен дел од оваа наредба"

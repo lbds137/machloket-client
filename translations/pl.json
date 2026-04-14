@@ -138,7 +138,7 @@
         "voice": "Głosowy"
     },
     "channelLink": "# $1",
-    "clientDesc": "Wersja klienta: $1\n\n[Dołącz do oficjalnej gildii Fermo]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Pomóż w tłumaczeniu Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Pomóż w tworzeniu Fermo](https://github.com/oh64/Fermo)\n\n[Pomóż w utrzymaniu serwera, na którym opiera się Fermo](https://github.com/spacebarchat/server)\n\n\nObliczone uprawnienia: $3",
+    "clientDesc": "Wersja klienta: $1\n\n[Dołącz do oficjalnej gildii Fermo]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Pomóż w tłumaczeniu Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Pomóż w tworzeniu Fermo](https://github.com/oh64/Fermo)\n\n[Pomóż w utrzymaniu serwera, na którym opiera się Fermo](https://github.com/spacebarchat/server)\n\n\nObliczone uprawnienia: $3",
     "commands": {
         "errorNotValid": "$1 nie jest prawidłowym wyborem dla $2",
         "required": "$1 jest wymaganą częścią tej komendy"

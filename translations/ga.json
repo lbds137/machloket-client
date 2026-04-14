@@ -199,7 +199,7 @@
         }
     },
     "channelLink": "# $1",
-    "clientDesc": "Leagan cliant: $1\n\n[Bí páirteach i ngiúld oifigiúil Fermo]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Cabhraigh le Fermo a aistriú](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Cabhraigh le Fermo a chruthú](https://github.com/oh64/Fermo)\n\n[Cabhraigh leis an bhfreastalaí a bhfuil Fermo ag brath air a chothabháil](https://github.com/spacebarchat/server)\n\n\nCearta ríofa: $3",
+    "clientDesc": "Leagan cliant: $1\n\n[Bí páirteach i ngiúld oifigiúil Fermo]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Cabhraigh le Fermo a aistriú](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Cabhraigh le Fermo a chruthú](https://github.com/oh64/Fermo)\n\n[Cabhraigh leis an bhfreastalaí a bhfuil Fermo ag brath air a chothabháil](https://github.com/spacebarchat/server)\n\n\nCearta ríofa: $3",
     "commands": {
         "errorNotValid": "Ní rogha bhailí é $1 le haghaidh $2",
         "required": "Is cuid riachtanach den ordú seo é $1"

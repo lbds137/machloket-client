@@ -219,7 +219,7 @@
         }
     },
     "channelLink": "# $1",
-    "clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermo]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribuez au client Fermo](https://github.com/oh64/Fermo)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Fermo)](https://github.com/spacebarchat/server)\n\n\nDroits calculés : $3",
+    "clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermo]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribuez au client Fermo](https://github.com/oh64/Fermo)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Fermo)](https://github.com/spacebarchat/server)\n\n\nDroits calculés : $3",
     "commands": {
         "errorNotValid": "$1 n'est pas un choix valide pour $2",
         "required": "$1 est une partie requise de cette commande"

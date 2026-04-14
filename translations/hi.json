@@ -136,7 +136,7 @@
     "threads": {
         "name": "नाम:"
     },
-    "clientDesc": "क्लाइंट संस्करण: $1\n\n[आधिकारिक Fermo गिल्ड में शामिल हों]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Fermo का अनुवाद करने में सहायता करें](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermo के निर्माण में सहायता करें](https://github.com/oh64/Fermo)\n\n[Fermo जिस सर्वर पर निर्भर है उसके रखरखाव में सहायता करें](https://github.com/spacebarchat/server)\n\n\nगणना किए गए अधिकार: $3",
+    "clientDesc": "क्लाइंट संस्करण: $1\n\n[आधिकारिक Fermo गिल्ड में शामिल हों]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Fermo का अनुवाद करने में सहायता करें](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermo के निर्माण में सहायता करें](https://github.com/oh64/Fermo)\n\n[Fermo जिस सर्वर पर निर्भर है उसके रखरखाव में सहायता करें](https://github.com/spacebarchat/server)\n\n\nगणना किए गए अधिकार: $3",
     "commands": {
         "errorNotValid": "$1 $2 के लिए कोई मान्य विकल्प नहीं",
         "required": "$1 इस कमांड का एक अनिवार्य हिस्सा है"
