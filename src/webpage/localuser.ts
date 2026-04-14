@@ -3402,6 +3402,7 @@ class Localuser {
 				trusted.addHTMLArea(div);
 			}
 		}
+		/*
 		{
 			const blog = settings.addButton(I18n.blog.blog());
 			blog.addCheckboxInput(
@@ -3435,6 +3436,7 @@ class Localuser {
 				}
 			})();
 		}
+		*/
 		{
 			const devSettings = settings.addButton(I18n.devSettings.name(), {noSubmit: true});
 			devSettings.addText(I18n.devSettings.description());
