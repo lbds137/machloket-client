@@ -227,6 +227,15 @@ async function build() {
 
 	console.timeEnd("Building Service File");
 
+	console.time("Writing static host redirects");
+	await fs.writeFile(
+		path.join(__dirname, "dist", "webpage", "_redirects"),
+		`/channels/* /app 200
+/invite/* /invite 200
+/template/* /template 200`,
+	);
+	console.timeEnd("Writing static host redirects");
+
 	console.timeEnd("build");
 	console.log("");
 }
