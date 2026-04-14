@@ -303,7 +303,7 @@ class Localuser {
 		const prefs = await getPreferences();
 		const bstate = prefs.showBlogUpdates;
 		if (bstate === undefined) {
-			const pop = new Dialog("");
+			/*const pop = new Dialog("");
 			pop.options.addText(I18n.blog.wantUpdates());
 			const opts = pop.options.addOptions("", {ltr: true});
 			opts.addButtonInput("", I18n.yes(), async () => {
@@ -318,7 +318,10 @@ class Localuser {
 				this.queryBlog();
 				pop.hide();
 			});
-			pop.show();
+			pop.show();*/
+			prefs.showBlogUpdates = false;
+			await setPreferences(prefs);
+			return;
 		} else if (bstate) {
 			const post = (await this.getPosts()).items[0];
 			if (this.perminfo.localuser.mostRecent !== post.url) {
