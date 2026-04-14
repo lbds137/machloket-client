@@ -200,7 +200,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Client version: $1\n\n[Join the official Fermo guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermo](https://github.com/oh64/Fermo)\n\n[Help maintain the server Fermo relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermo.sovr.top/)\n\nCalculated rights: $3",
+	"clientDesc": "Client version: $1\n\n[Join the official Fermo guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermo](https://github.com/oh64/Fermo)\n\n[Help maintain the server Fermo relies on](https://github.com/spacebarchat/server)\n\nCalculated rights: $3",
 	"commands": {
 		"errorNotValid": "$1 is not a valid choice for $2",
 		"required": "$1 is a required part of this command"
