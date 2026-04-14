@@ -420,45 +420,43 @@ class Contextmenu<x, y> {
 			obj.addEventListener("click", func);
 		}
 		//NOTE not sure if this code is correct, seems fine at least for now
-		if (mobile) {
-			let hold: NodeJS.Timeout | undefined;
-			let x!: number;
-			let y!: number;
-			obj.addEventListener(
-				"touchstart",
-				(event: TouchEvent) => {
-					x = event.touches[0].pageX;
-					y = event.touches[0].pageY;
-					if (event.touches.length > 1) {
-						event.preventDefault();
-						event.stopImmediatePropagation();
+		let hold: NodeJS.Timeout | undefined;
+		let x!: number;
+		let y!: number;
+		obj.addEventListener(
+			"touchstart",
+			(event: TouchEvent) => {
+				x = event.touches[0].pageX;
+				y = event.touches[0].pageY;
+				if (event.touches.length > 1) {
+					event.preventDefault();
+					event.stopImmediatePropagation();
+					this.makemenu(event.touches[0].clientX, event.touches[0].clientY, addinfo, other);
+				} else {
+					//
+					event.stopImmediatePropagation();
+					hold = setTimeout(() => {
+						if (lastx ** 2 + lasty ** 2 > 10 ** 2) return;
 						this.makemenu(event.touches[0].clientX, event.touches[0].clientY, addinfo, other);
-					} else {
-						//
-						event.stopImmediatePropagation();
-						hold = setTimeout(() => {
-							if (lastx ** 2 + lasty ** 2 > 10 ** 2) return;
-							this.makemenu(event.touches[0].clientX, event.touches[0].clientY, addinfo, other);
-							console.log(obj);
-						}, 500);
-					}
-				},
-				{passive: false},
-			);
-			let lastx = 0;
-			let lasty = 0;
-			obj.addEventListener("touchend", () => {
-				if (hold) {
-					clearTimeout(hold);
+						console.log(obj);
+					}, 500);
 				}
-				touchEnd(lastx, lasty);
-			});
-			obj.addEventListener("touchmove", (event) => {
-				lastx = event.touches[0].pageX - x;
-				lasty = event.touches[0].pageY - y;
-				touchDrag(lastx, lasty);
-			});
-		}
+			},
+			{passive: false},
+		);
+		let lastx = 0;
+		let lasty = 0;
+		obj.addEventListener("touchend", () => {
+			if (hold) {
+				clearTimeout(hold);
+			}
+			touchEnd(lastx, lasty);
+		});
+		obj.addEventListener("touchmove", (event) => {
+			lastx = event.touches[0].pageX - x;
+			lasty = event.touches[0].pageY - y;
+			touchDrag(lastx, lasty);
+		});
 		return func;
 	}
 	static keepOnScreen(obj: HTMLElement) {
