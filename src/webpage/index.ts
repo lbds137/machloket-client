@@ -257,8 +257,11 @@ if (window.location.pathname.startsWith("/channels")) {
 			channel.editLast();
 			return;
 		}
-		channel.typingstart();
 
+		if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+			channel.typingstart();
+		}
+		
 		if (event.key === "Enter" && !event.shiftKey && window.innerWidth > 600) {
 			event.preventDefault();
 			await sendMessage(channel, content);
