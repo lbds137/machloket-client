@@ -1,5 +1,5 @@
-### How to statically host Fermi
-Fermi due to its service worker, will technically work without any of this, but here's what you need to keep in mind for statically hosting it.
+### How to statically host Fermo
+Fermo due to its service worker, will technically work without any of this, but here's what you need to keep in mind for statically hosting it.
 ### I will assume the following
 * `404.html` will be used for 404 responses
 * `index.html` will be used when in that directory
@@ -7,7 +7,7 @@ Fermi due to its service worker, will technically work without any of this, but 
 
 Here's the other thing you need to do:
 
-Firstly you'll need to build Fermi like normal and host out the `./dist/webpage` directory.
+Firstly you'll need to build Fermo like normal and host out the `./dist/webpage` directory.
 
 You need to make some rewrites, not redirects from these addresses:
 * `/channels/*` -> `/app.html`

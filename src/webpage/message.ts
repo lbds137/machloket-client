@@ -270,7 +270,7 @@ class Message extends SnowFlake {
 
 		Message.contextmenu.addSeperator();
 		Message.contextmenu.addButton(
-			() => I18n.usedFermi(),
+			() => I18n.usedFermo(),
 			() => {},
 			{
 				visible: function () {

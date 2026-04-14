@@ -15,7 +15,7 @@
 	"404": {
 		"404": "Errore: 404 - Pagina non trovata",
 		"app": "Vai all'app",
-		"blog": "Il blog Fermi",
+		"blog": "Il blog Fermo",
 		"home": "Pagina principale",
 		"listtitle": "Forse volevi andare in uno di questi",
 		"login": "Accedi",
@@ -111,10 +111,10 @@
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Aggiornamenti del blog:",
-		"desc": "Leggi o iscriviti al blog per ricevere aggiornamenti su Fermi!",
-		"fermi": "Blog di Fermi",
+		"desc": "Leggi o iscriviti al blog per ricevere aggiornamenti su Fermo!",
+		"fermo": "Blog di Fermo",
 		"gotoPost": "Vai a post",
-		"wantUpdates": "Vorresti ricevere aggiornamenti settimanali del blog riguardo lo stato di Fermi?"
+		"wantUpdates": "Vorresti ricevere aggiornamenti settimanali del blog riguardo lo stato di Fermo?"
 	},
 	"bot": "BOT",
 	"botGuilds": "I guild a cui il bot partecipa:",
@@ -190,7 +190,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Versione client: $1 \n\n[Unisciti alla gilda ufficiale di Fermi]($2/invite/USgYJo?instance=https%3A% 2F%2Fspacebar.chat)\n\n[Aiutaci a tradurre Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Aiuta a creare Fermi](https://github.com/MathMan05/Fermi)\n\n[Aiuta a gestire il server su cui si basa Fermi](https://github.com/spacebarchat/server)\n\n[Leggi il blog](https://blog.fermi.chat/)\n\nDiritti calcolati: $3",
+	"clientDesc": "Versione client: $1 \n\n[Unisciti alla gilda ufficiale di Fermo]($2/invite/USgYJo?instance=https%3A% 2F%2Fspacebar.chat)\n\n[Aiutaci a tradurre Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Aiuta a creare Fermo](https://github.com/oh64/Fermo)\n\n[Aiuta a gestire il server su cui si basa Fermo](https://github.com/spacebarchat/server)\n\n[Leggi il blog](https://blog.fermo.sovr.top/)\n\nDiritti calcolati: $3",
 	"commands": {
 		"errorNotValid": "$1 non è una scelta valida per $2",
 		"required": "$1 è una parte obbligatoria di questo comando"
@@ -204,7 +204,7 @@
 	"delete": "Cancella",
 	"deleteConfirm": "Sei sicuro di voler cancellare questo?",
 	"devSettings": {
-		"description": "Queste impostazioni sono riservate agli sviluppatori di Spacebar/Fermi, se non sapete cosa state facendo, vi preghiamo di non modificarle.",
+		"description": "Queste impostazioni sono riservate agli sviluppatori di Spacebar/Fermo, se non sapete cosa state facendo, vi preghiamo di non modificarle.",
 		"reportSystem": "Attiva sistema di segnalazione sperimentale:",
 		"name": "Impostazioni sviluppatore"
 	},
@@ -362,9 +362,9 @@
 	"htmlPages": {
 		"addBot": "Aggiungi alla gilda",
 		"alreadyHave": "Hai già un'utenza?",
-		"box1title": "Fermi è un client compatibile con Spacebar che punta a essere il migliore possibile, con numerose funzionalità, tra cui:",
+		"box1title": "Fermo è un client compatibile con Spacebar che punta a essere il migliore possibile, con numerose funzionalità, tra cui:",
 		"box3description": "Apprezziamo sempre un po' di aiuto, che si tratti di segnalazioni di bug, di codice o anche solo di segnalazioni di errori di battitura.",
-		"box3title": "Contribuisci a Fermi",
+		"box3title": "Contribuisci a Fermo",
 		"compatableInstances": "Istanze compatibili con Spacebar:",
 		"createAccount": "Registrati",
 		"dobField": "Data di nascita:",
@@ -372,7 +372,7 @@
 		"idpermissions": "Questo consentirà al bot di:",
 		"instanceField": "Instanza:",
 		"loaddesc": "Non dovrebbe volerci molto tempo",
-		"loadingText": "Fermi sta caricando",
+		"loadingText": "Fermo sta caricando",
 		"loginButton": "Accedi",
 		"noAccount": "Non hai un'utenza?",
 		"openClient": "Apri client",
@@ -380,10 +380,10 @@
 		"pwField": "Password:",
 		"switchaccounts": "Cambia utenza",
 		"trans": "Traduci",
-		"transDesc": "Puoi aiutarci a tradurre Fermi nella tua lingua!",
-		"transTitle": "Traduci Fermi",
+		"transDesc": "Puoi aiutarci a tradurre Fermo nella tua lingua!",
+		"transTitle": "Traduci Fermo",
 		"userField": "Nome utente:",
-		"welcomeJank": "Benvenuto a Fermi"
+		"welcomeJank": "Benvenuto a Fermo"
 	},
 	"instInfo": "Informazioni sull'istanza",
 	"instanceInfo": {
@@ -400,7 +400,7 @@
 	"interactions": {
 		"ephemeralDismiss": "Ignora messaggio",
 		"failed": "Interazione fallita",
-		"notImpl": "Fermi non ha ancora implementato il tipo di componente $1",
+		"notImpl": "Fermo non ha ancora implementato il tipo di componente $1",
 		"onlyYou": "Solo tu puoi vedere questo messaggio"
 	},
 	"invite": {
@@ -464,7 +464,7 @@
 		"deleteAccount": "Cancellazione utenza",
 		"deleteAccountButton": "Cancella utenza",
 		"install": "Installa",
-		"installJank": "Scarica Fermi",
+		"installJank": "Scarica Fermo",
 		"language": "Lingua:",
 		"manageBot": "Gestisci bot",
 		"manageInstance": "Gestisci istanza",
@@ -496,7 +496,7 @@
 		"tokenDisplay": "Token: $1",
 		"trace": "Tracciati",
 		"trusted": "Domini attendibili",
-		"trustedDesc": "Quando clicchi sui link che ti indirizzano a questi domini, ***NON*** ti verrà chiesto il permesso di aprire come per altri link, concedilo solo ai domini di cui ti fidi, come 'https://fermi.chat'",
+		"trustedDesc": "Quando clicchi sui link che ti indirizzano a questi domini, ***NON*** ti verrà chiesto il permesso di aprire come per altri link, concedilo solo ai domini di cui ti fidi, come 'https://fermo.sovr.top'",
 		"updateSettings": "Aggiorna impostazioni",
 		"updatesYay": "Aggiornamenti trovati!",
 		"userSettings": "Il tuo profilo pubblico"
@@ -517,7 +517,7 @@
 		"error": {
 			"cancel": "Annulla",
 			"cont": "Continua comunque",
-			"desc": "Fermi non è riuscito a disconnetterti, vuoi comunque rimuovere l'utenza?",
+			"desc": "Fermo non è riuscito a disconnetterti, vuoi comunque rimuovere l'utenza?",
 			"title": "Si è verificato un errore durante il tentativo di disconnetterti"
 		},
 		"logout": "Esci"

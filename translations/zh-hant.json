@@ -11,7 +11,7 @@
 	"404": {
 		"404": "錯誤代號：404--找不到頁面",
 		"app": "前往應用程式",
-		"blog": "Fermi 部落格",
+		"blog": "Fermo 部落格",
 		"home": "首頁",
 		"listtitle": "也許您是想去這些地方",
 		"login": "登入",
@@ -111,10 +111,10 @@
 	"blog": {
 		"blog": "部落格",
 		"blogUpdates": "部落格更新：",
-		"desc": "閱讀或訂閱部落格來獲得 Fermi 的最新資訊！",
-		"fermi": "Fermi 部落格",
+		"desc": "閱讀或訂閱部落格來獲得 Fermo 的最新資訊！",
+		"fermo": "Fermo 部落格",
 		"gotoPost": "前往文章",
-		"wantUpdates": "您想取得有關 Fermi 狀態的每週部落格更新嗎？"
+		"wantUpdates": "您想取得有關 Fermo 狀態的每週部落格更新嗎？"
 	},
 	"bot": "機器人",
 	"botGuilds": "公會機器人位於：",
@@ -201,7 +201,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "客戶端版本：$1 \n\n[加入 Fermi 官方公會]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[協助翻譯 Fermi]（https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc）\n\n[協助開發 Fermi]（https://github.com/MathMan05/Fermi）\n\n[協助維護 Fermi 所依賴的伺服器]（https://github.com/spacebarchat/server）\n\n[閱讀部落格]（https://blog.fermi.chat/）\n\n計算權限：$3",
+	"clientDesc": "客戶端版本：$1 \n\n[加入 Fermo 官方公會]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[協助翻譯 Fermo]（https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc）\n\n[協助開發 Fermo]（https://github.com/oh64/Fermo）\n\n[協助維護 Fermo 所依賴的伺服器]（https://github.com/spacebarchat/server）\n\n[閱讀部落格]（https://blog.fermo.sovr.top/）\n\n計算權限：$3",
 	"commands": {
 		"errorNotValid": "$1不是$2的有效選擇",
 		"required": "$1是此指令的必需部分"
@@ -218,9 +218,9 @@
 		"badUser": "啟用記錄發送過多資訊的惡意使用者對象：",
 		"cache": "啟用 Service Worker 快取映射檔：",
 		"cacheDesc": "映射檔案在任何情況都會載入，這樣是為了確保在新版本發佈時能已快取。",
-		"captureTrace": "此設定會指示 Fermi 從伺服器擷取 _trace 屬性，啟用此可能會導致漸進式 JSON 解碼無法運作（可能需要重新載入）。",
+		"captureTrace": "此設定會指示 Fermo 從伺服器擷取 _trace 屬性，啟用此可能會導致漸進式 JSON 解碼無法運作（可能需要重新載入）。",
 		"clearWellKnowns": "重新取得 .well-known 紀錄：",
-		"description": "這些是給 Spacebar/Fermi 的開發人員使用，若您不清楚用途，請不要變動這些設定。",
+		"description": "這些是給 Spacebar/Fermo 的開發人員使用，若您不清楚用途，請不要變動這些設定。",
 		"gatewayComp": "停用閘道器壓縮：",
 		"reportSystem": "啟用實驗性回報系統：",
 		"logGateway": "記錄接收到的閘道器事件（日誌等級資訊）：",
@@ -392,9 +392,9 @@
 		"addBot": "新增到公會",
 		"alreadyHave": "已經有帳號了嗎？",
 		"box1Items": "直接訊息傳遞|反應支援|邀請|帳號切換|使用者設定|開發者入口網站|機器人邀請|翻譯支援",
-		"box1title": "Fermi 是一款與 Spacebar 相容的客戶端，致力於盡所能提供多項功能，包括：",
+		"box1title": "Fermo 是一款與 Spacebar 相容的客戶端，致力於盡所能提供多項功能，包括：",
 		"box3description": "我們一向感謝任何協助，無論是錯誤報告、程式碼，或是指出一些拼字錯誤。",
-		"box3title": "為 Fermi 做出貢獻",
+		"box3title": "為 Fermo 做出貢獻",
 		"compatableInstances": "Spacebar 相容實例：",
 		"createAccount": "建立帳號",
 		"dobField": "出生日期：",
@@ -402,7 +402,7 @@
 		"idpermissions": "這將允許機器人：",
 		"instanceField": "實例：",
 		"loaddesc": "這應該不會花很長時間",
-		"loadingText": "Fermi 載入中",
+		"loadingText": "Fermo 載入中",
 		"loginButton": "登入",
 		"noAccount": "還沒有帳號？",
 		"openClient": "開啟客戶端",
@@ -410,12 +410,12 @@
 		"pwField": "密碼：",
 		"switchaccounts": "切換帳號",
 		"trans": "翻譯",
-		"transDesc": "您可以協助將 Fermi 翻譯成您自己的語言！",
-		"transTitle": "翻譯 Fermi",
+		"transDesc": "您可以協助將 Fermo 翻譯成您自己的語言！",
+		"transTitle": "翻譯 Fermo",
 		"userField": "使用者名稱：",
-		"welcomeJank": "歡迎來到 Fermi"
+		"welcomeJank": "歡迎來到 Fermo"
 	},
-	"incorrectURLS": "## 此實例可能發送了錯誤的連結。 \n### 如果您是實例擁有者，請參閱[此處]（https://docs.spacebar.chat/setup/server/）下的「從遠端電腦連線」來修正此問題。 \n 您想要 Fermi 自動嘗試修復此錯誤，以讓您連接到實例嗎？",
+	"incorrectURLS": "## 此實例可能發送了錯誤的連結。 \n### 如果您是實例擁有者，請參閱[此處]（https://docs.spacebar.chat/setup/server/）下的「從遠端電腦連線」來修正此問題。 \n 您想要 Fermo 自動嘗試修復此錯誤，以讓您連接到實例嗎？",
 	"instInfo": "實例資訊",
 	"instanceInfo": {
 		"contact": "電子郵件實例管理員",
@@ -435,7 +435,7 @@
 		"ephemeralDismiss": "忽略訊息",
 		"failed": "互動失敗",
 		"nonsence": "伺服器傳送的類型成分「$1」不存在",
-		"notImpl": "Fermi 尚不可執行類型成分「$1」",
+		"notImpl": "Fermo 尚不可執行類型成分「$1」",
 		"onlyYou": "僅有您才能查看此訊息",
 		"replyline": "開始互動",
 		"started": "處理互動…",
@@ -520,8 +520,8 @@
 		"disableConnection": "此連接已被伺服器端禁用",
 		"editingBot": "編輯機器人$1",
 		"install": "安裝",
-		"installDesc": "安裝 Fermi 後，您可以在其獨立的視窗中開啟，就像 Fermi 自己的應用程式一樣！您也可以像以前那樣在網頁瀏覽器中使用 Fermi，功能是相同的。",
-		"installJank": "安裝 Fermi",
+		"installDesc": "安裝 Fermo 後，您可以在其獨立的視窗中開啟，就像 Fermo 自己的應用程式一樣！您也可以像以前那樣在網頁瀏覽器中使用 Fermo，功能是相同的。",
+		"installJank": "安裝 Fermo",
 		"language": "語言：",
 		"manageBot": "管理機器人",
 		"manageInstance": "管理實例",
@@ -557,7 +557,7 @@
 		"tokenDisplay": "權杖：$1",
 		"trace": "軌跡",
 		"trusted": "信任網域",
-		"trustedDesc": "當您點擊導向這些網域的連結時，系統將『不會』像其他連結那樣要求您授權開啟。請僅將此權限授予您信任的網域，例如：'https://fermi.chat'",
+		"trustedDesc": "當您點擊導向這些網域的連結時，系統將『不會』像其他連結那樣要求您授權開啟。請僅將此權限授予您信任的網域，例如：'https://fermo.sovr.top'",
 		"updateSettings": "更新設定",
 		"updatesYay": "已找到更新！",
 		"userSettings": "使用者設定"
@@ -578,7 +578,7 @@
 		"error": {
 			"cancel": "取消",
 			"cont": "仍要繼續",
-			"desc": "Fermi 無法將您登出，您是否仍要移除該帳號？",
+			"desc": "Fermo 無法將您登出，您是否仍要移除該帳號？",
 			"title": "嘗試將您登出時發生錯誤"
 		},
 		"logout": "登出"
@@ -877,7 +877,7 @@
 	"uploadPfp": "上傳頭像：",
 	"useTemplate": "使用$1作為模板",
 	"useTemplateButton": "使用模板",
-	"usedFermi": "透過 Fermi 發送",
+	"usedFermo": "透過 Fermo 發送",
 	"user": {
 		"report": "回報使用者",
 		"deleted": "已刪除使用者",

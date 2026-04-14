@@ -11,7 +11,7 @@
 	"404": {
 		"404": "fout:404 - Pagina niet gevonden",
 		"app": "Naar de app",
-		"blog": "De Fermi-blog",
+		"blog": "De Fermo-blog",
 		"home": "Startpagina",
 		"listtitle": "Misschien wilde u naar een van deze plekken gaan",
 		"login": "Aanmelden",
@@ -112,10 +112,10 @@
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Actualiteiten:",
-		"desc": "Lees de blog of abonneer u erop voor nieuwtjes over Fermi!",
-		"fermi": "Blog van Fermi",
+		"desc": "Lees de blog of abonneer u erop voor nieuwtjes over Fermo!",
+		"fermo": "Blog van Fermo",
 		"gotoPost": "Naar het artikel",
-		"wantUpdates": "Wilt u wekelijks actualiteiten ontvangen over de ontwikkeling van Fermi?"
+		"wantUpdates": "Wilt u wekelijks actualiteiten ontvangen over de ontwikkeling van Fermo?"
 	},
 	"bot": "ROBOT",
 	"botGuilds": "Gilden waar de robot lid van is:",
@@ -202,7 +202,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Cliëntversie: $1 \n\n[Sluit u aan bij het officiële Fermi-gilde]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help Fermi te vertalen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help Fermi te maken](https://github.com/MathMan05/Fermi)\n\n[Help de server waar Fermi op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n[Lees het blog](https://blog.fermi.chat/)\n\nBerekende rechten: $3",
+	"clientDesc": "Cliëntversie: $1 \n\n[Sluit u aan bij het officiële Fermo-gilde]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help Fermo te vertalen](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help Fermo te maken](https://github.com/oh64/Fermo)\n\n[Help de server waar Fermo op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n[Lees het blog](https://blog.fermo.sovr.top/)\n\nBerekende rechten: $3",
 	"commands": {
 		"errorNotValid": "$1 is geen geldige keuze voor $2",
 		"required": "$1 is een vereist onderdeel van deze opdracht"
@@ -219,9 +219,9 @@
 		"badUser": "Logging voor slechte gebruikersobjecten inschakelen die te veel gegevens verzenden:",
 		"cache": "Cachefunctie voor kaartbestanden van de Service Worker inschakelen:",
 		"cacheDesc": "kaartbestanden worden hoe dan ook geladen; dit zorgt er alleen voor dat ze in de cache staan wanneer er een nieuwe update wordt uitgebracht.",
-		"captureTrace": "Deze instelling geeft Fermi de opdracht om _trace-eigenschappen van de server vast te leggen. Het inschakelen hiervan kan ertoe leiden dat progressieve JSON-decodering niet werkt; mogelijk is een herladen nodig.",
+		"captureTrace": "Deze instelling geeft Fermo de opdracht om _trace-eigenschappen van de server vast te leggen. Het inschakelen hiervan kan ertoe leiden dat progressieve JSON-decodering niet werkt; mogelijk is een herladen nodig.",
 		"clearWellKnowns": ".well-known-records opnieuw ophalen:",
-		"description": "Deze instellingen zijn bedoeld voor ontwikkelaars van Spacebar/Fermi. Als u niet weet wat u doet, kunt u deze instellingen beter niet wijzigen.",
+		"description": "Deze instellingen zijn bedoeld voor ontwikkelaars van Spacebar/Fermo. Als u niet weet wat u doet, kunt u deze instellingen beter niet wijzigen.",
 		"gatewayComp": "Gateway-compressie uitschakelen:",
 		"reportSystem": "Experimentele rapportagesysteem inschakelen:",
 		"logGateway": "Ontvangen gatewaygebeurtenissen loggen (logniveau info):",
@@ -394,9 +394,9 @@
 		"addBot": "Toevoegen aan gilde",
 		"alreadyHave": "Heeft u al een account?",
 		"box1Items": "Directe berichten|Ondersteuning voor reacties|Uitnodigingen|Van account wisselen|Gebruikersinstellingen|Ontwikkelaarsportaal|Robot-uitnodigingen|Ondersteuning voor vertaling",
-		"box1title": "Fermi is een Spacebar-compatibele cliënt die ernaar streeft om zo goed mogelijk te zijn met veel functies, waaronder:",
+		"box1title": "Fermo is een Spacebar-compatibele cliënt die ernaar streeft om zo goed mogelijk te zijn met veel functies, waaronder:",
 		"box3description": "We stellen hulp altijd op prijs, of het nu gaat om het melden van bugs, het bijdragen van code of het verbeteren van typefouten.",
-		"box3title": "Aan Fermi bijdragen",
+		"box3title": "Aan Fermo bijdragen",
 		"compatableInstances": "Spacebar-compatibele servers:",
 		"createAccount": "Account aanmaken",
 		"dobField": "Geboortedatum:",
@@ -404,7 +404,7 @@
 		"idpermissions": "Hiermee kan de robot:",
 		"instanceField": "Server:",
 		"loaddesc": "Dit zou niet lang moeten duren",
-		"loadingText": "Fermi wordt geladen",
+		"loadingText": "Fermo wordt geladen",
 		"loginButton": "Aanmelden",
 		"noAccount": "Nog geen account?",
 		"openClient": "Cliënt openen",
@@ -412,12 +412,12 @@
 		"pwField": "Wachtwoord:",
 		"switchaccounts": "Van account wisselen",
 		"trans": "Vertalen",
-		"transDesc": "U kunt helpen Fermi in uw eigen taal te vertalen!",
-		"transTitle": "Fermi vertalen",
+		"transDesc": "U kunt helpen Fermo in uw eigen taal te vertalen!",
+		"transTitle": "Fermo vertalen",
 		"userField": "Gebruikersnaam:",
-		"welcomeJank": "Welkom bij Fermi"
+		"welcomeJank": "Welkom bij Fermo"
 	},
-	"incorrectURLS": "## Deze instantie heeft waarschijnlijk de verkeerde koppelingen verzonden.\n### Als u de eigenaar van de instantie bent, raadpleeg dan [hier](https://docs.spacebar.chat/setup/server/) onder *Verbinding maken vanaf externe machines* om het probleem op te lossen.\n Wilt u dat Fermi automatisch probeert deze fout te herstellen, zodat u verbinding kunt maken met de instantie?",
+	"incorrectURLS": "## Deze instantie heeft waarschijnlijk de verkeerde koppelingen verzonden.\n### Als u de eigenaar van de instantie bent, raadpleeg dan [hier](https://docs.spacebar.chat/setup/server/) onder *Verbinding maken vanaf externe machines* om het probleem op te lossen.\n Wilt u dat Fermo automatisch probeert deze fout te herstellen, zodat u verbinding kunt maken met de instantie?",
 	"instInfo": "Serverinformatie",
 	"instanceInfo": {
 		"contact": "Instantiebeheerders mailen",
@@ -437,7 +437,7 @@
 		"ephemeralDismiss": "Bericht verwijderen",
 		"failed": "Interactie mislukt",
 		"nonsence": "De server heeft een component van het type $1 verzonden dat niet bestaat",
-		"notImpl": "Fermi ondersteunt componenttype $1 nog niet",
+		"notImpl": "Fermo ondersteunt componenttype $1 nog niet",
 		"onlyYou": "Alleen jij kunt dit bericht zien",
 		"replyline": "Interactie gestart",
 		"started": "Interactie verwerken...",
@@ -522,8 +522,8 @@
 		"disableConnection": "Deze verbinding is bij de server uitgeschakeld",
 		"editingBot": "Bewerken van de robot $1",
 		"install": "Installeren",
-		"installDesc": "Na installeren kunt u Fermi in een eigen venster openen en als aparte app gebruiken! U kunt Fermi ook gewoon in de webbrowser blijven gebruiken en dan werkt het precies hetzelfde.",
-		"installJank": "Fermi installeren",
+		"installDesc": "Na installeren kunt u Fermo in een eigen venster openen en als aparte app gebruiken! U kunt Fermo ook gewoon in de webbrowser blijven gebruiken en dan werkt het precies hetzelfde.",
+		"installJank": "Fermo installeren",
 		"language": "Taal:",
 		"manageBot": "Robot beheren",
 		"manageInstance": "Instantie beheren",
@@ -559,7 +559,7 @@
 		"tokenDisplay": "Token: $1",
 		"trace": "Sporen",
 		"trusted": "Vertrouwde domeinen",
-		"trustedDesc": "Wanneer u via koppelingen op dit domein komt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan domeinen die u vertrouwt, zoals'https://fermi.chat'.",
+		"trustedDesc": "Wanneer u via koppelingen op dit domein komt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan domeinen die u vertrouwt, zoals'https://fermo.sovr.top'.",
 		"updateSettings": "Instellingen bijwerken",
 		"updatesYay": "Updates gevonden!",
 		"userSettings": "Uw publieke profiel"
@@ -580,7 +580,7 @@
 		"error": {
 			"cancel": "Annuleren",
 			"cont": "Toch doorgaan",
-			"desc": "Fermi heeft u niet kunnen afmelden,\n wilt u het account toch verwijderen?",
+			"desc": "Fermo heeft u niet kunnen afmelden,\n wilt u het account toch verwijderen?",
 			"title": "Er is een fout opgetreden bij het afmelden"
 		},
 		"logout": "Afmelden"
@@ -879,7 +879,7 @@
 	"uploadPfp": "Profielafbeelding uploaden:",
 	"useTemplate": "$1 als sjabloon gebruiken",
 	"useTemplateButton": "Sjabloon gebruiken",
-	"usedFermi": "verzonden via Fermi",
+	"usedFermo": "verzonden via Fermo",
 	"user": {
 		"report": "Gebruiker rapporteren",
 		"deleted": "Gebruiker verwijderd",

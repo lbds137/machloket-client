@@ -1,5 +1,5 @@
-# Jank Audio format (Fermi does use this format, but it's still called Jank)
-This is a markdown file that will try to describe the Fermi client audio format in sufficient detail so people will know how this weird custom format works into the future.
+# Jank Audio format (Fermo does use this format, but it's still called Jank)
+This is a markdown file that will try to describe the Fermo client audio format in sufficient detail so people will know how this weird custom format works into the future.
 This is a byte-aligned format, which uses the sequence jasf in ASCI as a magic number at the start.
 
 The next 8 bits will decide how many voices this file has/will provide, if the value is 255 you'll instead have a 16 bit number that follows for how many voices there are, this *should* be unused, but I wouldn't be totally surprised if it did get used.

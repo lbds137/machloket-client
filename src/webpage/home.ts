@@ -22,7 +22,7 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 	})();
 	const recent = document.getElementById("recentBlog");
 	if (recent) {
-		fetch("https://blog.fermi.chat/feed_json_created.json")
+		fetch("https://blog.fermo.sovr.top/feed_json_created.json")
 			.then((_) => _.json())
 			.then(
 				(json: {

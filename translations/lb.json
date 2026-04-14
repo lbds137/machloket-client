@@ -7,7 +7,7 @@
 	"2faCode": "2FA-Code:",
 	"404": {
 		"404": "Feeler: 404 – Säit net fonnt",
-		"blog": "De Fermi-Blog",
+		"blog": "De Fermo-Blog",
 		"home": "Haaptsäit",
 		"login": "Aloggen"
 	},
@@ -46,7 +46,7 @@
 	"blankMessage": "Eidele Message",
 	"blog": {
 		"blog": "Blog",
-		"fermi": "Fermi-Blog"
+		"fermo": "Fermo-Blog"
 	},
 	"bot": "BOT",
 	"botSettings": "Bot-Astellungen",
@@ -177,8 +177,8 @@
 		"pw2Field": "Passwuert nach eng Kéier aginn:",
 		"pwField": "Passwuert:",
 		"trans": "Iwwersetzen",
-		"transDesc": "Dir kënnt dobäi hëllefe fir Fermi an Är eege Sprooch z'iwwersetzen!",
-		"transTitle": "Fermi iwwersetzen",
+		"transDesc": "Dir kënnt dobäi hëllefe fir Fermo an Är eege Sprooch z'iwwersetzen!",
+		"transTitle": "Fermo iwwersetzen",
 		"userField": "Benotzernumm:"
 	},
 	"instanceStats": {
@@ -227,7 +227,7 @@
 		"deleteAccountButton": "Kont läschen",
 		"description": "Beschreiwung:",
 		"install": "Installéieren",
-		"installJank": "Fermi installéieren",
+		"installJank": "Fermo installéieren",
 		"language": "Sprooch:",
 		"manageBot": "Bot geréieren",
 		"newEmail:": "Nei E-Mail",

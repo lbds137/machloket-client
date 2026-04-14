@@ -9,7 +9,7 @@
 	"404": {
 		"404": "404 Strona nie znaleziona",
 		"app": "Do aplikacji",
-		"blog": "Blog Fermi",
+		"blog": "Blog Fermo",
 		"home": "Strona główna",
 		"listtitle": "Może miałeś zamiar wybrać się do jednego z tych miejsc",
 		"login": "Zaloguj się",
@@ -95,10 +95,10 @@
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Aktualizacje bloga:",
-		"desc": "Przeczytaj lub subskrybuj blog, aby uzyskać informacje na temat Fermi!",
-		"fermi": "Blog Fermi",
+		"desc": "Przeczytaj lub subskrybuj blog, aby uzyskać informacje na temat Fermo!",
+		"fermo": "Blog Fermo",
 		"gotoPost": "Przejdź do postu",
-		"wantUpdates": "Czy chcesz otrzymywać cotygodniowe aktualizacje blogowe na temat stanu Fermi?"
+		"wantUpdates": "Czy chcesz otrzymywać cotygodniowe aktualizacje blogowe na temat stanu Fermo?"
 	},
 	"bot": "BOT",
 	"botGuilds": "Gildie, w których bot się znajduje:",
@@ -138,7 +138,7 @@
 		"voice": "Głosowy"
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Wersja klienta: $1\n\n[Dołącz do oficjalnej gildii Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Pomóż w tłumaczeniu Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Pomóż w tworzeniu Fermi](https://github.com/MathMan05/Fermi)\n\n[Pomóż w utrzymaniu serwera, na którym opiera się Fermi](https://github.com/spacebarchat/server)\n\n[Czytaj blog](https://blog.fermi.chat/)\n\nObliczone uprawnienia: $3",
+	"clientDesc": "Wersja klienta: $1\n\n[Dołącz do oficjalnej gildii Fermo]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Pomóż w tłumaczeniu Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Pomóż w tworzeniu Fermo](https://github.com/oh64/Fermo)\n\n[Pomóż w utrzymaniu serwera, na którym opiera się Fermo](https://github.com/spacebarchat/server)\n\n[Czytaj blog](https://blog.fermo.sovr.top/)\n\nObliczone uprawnienia: $3",
 	"commands": {
 		"errorNotValid": "$1 nie jest prawidłowym wyborem dla $2",
 		"required": "$1 jest wymaganą częścią tej komendy"
@@ -154,9 +154,9 @@
 		"badUser": "Włączono logowanie złych obiektów użytkowników, które wysyłają zbyt dużo informacji:",
 		"cache": "Włącz buforowanie plików map przy użyciu Service Workera:",
 		"cacheDesc": "pliki map zostaną załadowane w każdym razie, to tylko upewni się, że są w pamięci podręcznej, gdy pojawi się nowa aktualizacja.",
-		"captureTrace": "To ustawienie mówi Fermi aby przechwytywał właściwości _trace z serwera, włączenie tej opcji może spowodować, że progresywne dekodowanie JSON nie będzie działać (może to wymagać ponownego załadowania).",
+		"captureTrace": "To ustawienie mówi Fermo aby przechwytywał właściwości _trace z serwera, włączenie tej opcji może spowodować, że progresywne dekodowanie JSON nie będzie działać (może to wymagać ponownego załadowania).",
 		"clearWellKnowns": "Pobierz ponownie rekordy .well-known",
-		"description": "Są one przeznaczone dla programistów Spacebar/Fermi. Jeśli nie wiesz, co robisz, nie zmieniaj tych ustawień.",
+		"description": "Są one przeznaczone dla programistów Spacebar/Fermo. Jeśli nie wiesz, co robisz, nie zmieniaj tych ustawień.",
 		"gatewayComp": "Wyłącz kompresję bramy",
 		"reportSystem": "Włącz eksperymentalny system zgłaszania",
 		"logGateway": "Log odbieranych zdarzeń bramy (informacje na poziomie logów):",
@@ -327,9 +327,9 @@
 		"addBot": "Dodaj do gildii",
 		"alreadyHave": "Posiadasz już konto?",
 		"box1Items": "Wiadomości|Obsługa reakcji|Zaproszenia|Zmiana kont|Ustawienia użytkownika|Portal programisty|Zaproszenia botów|Obsługa tłumaczeń",
-		"box1title": "Fermi to klient kompatybilny z Spacebar, który stara się być tak dobry, jak to tylko możliwe, oferując wiele funkcji, w tym:",
+		"box1title": "Fermo to klient kompatybilny z Spacebar, który stara się być tak dobry, jak to tylko możliwe, oferując wiele funkcji, w tym:",
 		"box3description": "Zawsze doceniamy pomoc, niezależnie czy jest ona w postaci zgłoszeń błędów, kodu, czy nawet wskazania literówek.",
-		"box3title": "Współtwórz Fermi",
+		"box3title": "Współtwórz Fermo",
 		"compatableInstances": "Instancje kompatybilne z Spacebarem:",
 		"createAccount": "Utwórz konto",
 		"dobField": "Data urodzenia:",
@@ -337,7 +337,7 @@
 		"idpermissions": "Umożliwi to botowi:",
 		"instanceField": "Instancja:",
 		"loaddesc": "To nie powinno zająć dużo czasu",
-		"loadingText": "Fermi się ładuje",
+		"loadingText": "Fermo się ładuje",
 		"loginButton": "Zaloguj się",
 		"noAccount": "Nie masz konta?",
 		"openClient": "Otwórz klient",
@@ -345,12 +345,12 @@
 		"pwField": "Hasło:",
 		"switchaccounts": "Przełącz konta",
 		"trans": "Przetłumacz",
-		"transDesc": "Możesz pomóc w tłumaczeniu Fermi na swój język!",
-		"transTitle": "Przetłumacz Fermi",
+		"transDesc": "Możesz pomóc w tłumaczeniu Fermo na swój język!",
+		"transTitle": "Przetłumacz Fermo",
 		"userField": "Nazwa użytkownika:",
-		"welcomeJank": "Witaj w Fermi"
+		"welcomeJank": "Witaj w Fermo"
 	},
-	"incorrectURLS": "## Ta instancja prawdopodobnie wysłała niepoprawne adresy URL.\n### Jeśli jesteś właścicielem instancji proszę zapoznaj się z [tym](https://docs.spacebar.chat/setup/server/) pod *Connecting from remote machines* aby rozwiązać problem.\n Czy chcesz aby Fermi automatycznie spróbował naprawić ten błąd, aby umożliwić Ci połączenie się z instancją?",
+	"incorrectURLS": "## Ta instancja prawdopodobnie wysłała niepoprawne adresy URL.\n### Jeśli jesteś właścicielem instancji proszę zapoznaj się z [tym](https://docs.spacebar.chat/setup/server/) pod *Connecting from remote machines* aby rozwiązać problem.\n Czy chcesz aby Fermo automatycznie spróbował naprawić ten błąd, aby umożliwić Ci połączenie się z instancją?",
 	"instInfo": "Informacje o instancji",
 	"instanceInfo": {
 		"contact": "Wyślij maila do administratorów instancji",
@@ -370,7 +370,7 @@
 		"ephemeralDismiss": "Ukryj wiadomość",
 		"failed": "Interakcja nie powiodła się",
 		"nonsence": "Serwer wysłał komponent typu $1, który nie istnieje",
-		"notImpl": "Fermi nie zaimplementował jeszcze typu komponentu $1",
+		"notImpl": "Fermo nie zaimplementował jeszcze typu komponentu $1",
 		"onlyYou": "Tylko Ty możesz zobaczyć tę wiadomość",
 		"replyline": "Rozpoczęto interakcję",
 		"started": "Przetwarzanie interakcji...",
@@ -455,8 +455,8 @@
 		"disableConnection": "To połączenie zostało wyłączone po stronie serwera",
 		"editingBot": "Edytowanie bota $1",
 		"install": "Instaluj",
-		"installDesc": "Zainstalowanie Fermi pozwoli ci na otworzenie go w jego własnym oknie oraz będzie on działać jak osobna aplikacja! Możesz też po prostu korzystać z Fermi w przeglądarce, tak jak dotychczas, i będzie działać tak samo.",
-		"installJank": "Zainstaluj Fermi",
+		"installDesc": "Zainstalowanie Fermo pozwoli ci na otworzenie go w jego własnym oknie oraz będzie on działać jak osobna aplikacja! Możesz też po prostu korzystać z Fermo w przeglądarce, tak jak dotychczas, i będzie działać tak samo.",
+		"installJank": "Zainstaluj Fermo",
 		"language": "Język:",
 		"manageBot": "Zarządzaj botem",
 		"manageInstance": "Zarządzanie instancją",
@@ -513,7 +513,7 @@
 		"error": {
 			"cancel": "Anuluj",
 			"cont": "Kontynuuj mimo to",
-			"desc": "Fermi nie mógł cię wylogować\n Czy mimo wszystko chcesz usunąć konto?",
+			"desc": "Fermo nie mógł cię wylogować\n Czy mimo wszystko chcesz usunąć konto?",
 			"title": "Wystąpił błąd podczas próby wylogowania"
 		},
 		"logout": "Wyloguj się"
@@ -808,7 +808,7 @@
 	"uploadPfp": "Zmień awatar:",
 	"useTemplate": "Użyj $1 jako szablonu",
 	"useTemplateButton": "Użyj szablonu",
-	"usedFermi": "Użył Fermi",
+	"usedFermo": "Użył Fermo",
 	"user": {
 		"report": "Zgłoś użytkownika",
 		"reportApp": "Zgłoś aplikację",

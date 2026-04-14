@@ -11,7 +11,7 @@
 	"404": {
 		"404": "404 ページが見つかりません",
 		"app": "アプリへ",
-		"blog": "Fermi ブログ",
+		"blog": "Fermo ブログ",
 		"home": "ホームページ",
 		"listtitle": "お探しのページはこちらでしたか？",
 		"login": "ログイン",
@@ -111,10 +111,10 @@
 	"blog": {
 		"blog": "ブログ",
 		"blogUpdates": "ブログの更新:",
-		"desc": "Fermiの最新情報についてはブログを読むか、登録してください！",
-		"fermi": "Fermi ブログ",
+		"desc": "Fermoの最新情報についてはブログを読むか、登録してください！",
+		"fermo": "Fermo ブログ",
 		"gotoPost": "投稿へ移動",
-		"wantUpdates": "毎週更新されるFermiの状態に関する情報を受け取りませんか?"
+		"wantUpdates": "毎週更新されるFermoの状態に関する情報を受け取りませんか?"
 	},
 	"bot": "ボット",
 	"botGuilds": "ギルドのボットは次の場所にあります:",
@@ -201,7 +201,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "クライアント バージョン: $1 \n\n[Fermiの公式ギルドに参加する]( $2 /invite/USgYJo?instance=https %3A% 2F%2Fspacebar.chat)\n\n[Fermiの翻訳に協力する](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermiの開発に協力する](https://github.com/MathMan05/Fermi)\n\n[Fermiが依存するサーバーのメンテナンスに協力する](https://github.com/spacebarchat/server)\n\n[ブログを読む](https://blog.fermi.chat/)\n\n推定された権限: $3",
+	"clientDesc": "クライアント バージョン: $1 \n\n[Fermoの公式ギルドに参加する]( $2 /invite/USgYJo?instance=https %3A% 2F%2Fspacebar.chat)\n\n[Fermoの翻訳に協力する](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermoの開発に協力する](https://github.com/oh64/Fermo)\n\n[Fermoが依存するサーバーのメンテナンスに協力する](https://github.com/spacebarchat/server)\n\n[ブログを読む](https://blog.fermo.sovr.top/)\n\n推定された権限: $3",
 	"commands": {
 		"errorNotValid": "$1は$2に対する有効な選択肢ではありません",
 		"required": "$1はこのコマンドに必須の箇所です"
@@ -218,9 +218,9 @@
 		"badUser": "過剰な情報を送信する不正な利用者オブジェクトのログ記録を有効にする：",
 		"cache": "Service Worker のキャッシュ マップ ファイルを有効にする：",
 		"cacheDesc": "どちらの方法でもマップ ファイルは読み込まれますが、これにより、新しい更新がロールアウトされたときにマップ ファイルが確実にキャッシュ内に存在するようになります。",
-		"captureTrace": "この設定は、Fermi にサーバーから _trace プロパティをキャプチャするように指示します。これを有効にすると、プログレッシブな JSON デコードが機能しなくなる可能性があります (再読み込みが必要になる場合があります)。",
+		"captureTrace": "この設定は、Fermo にサーバーから _trace プロパティをキャプチャするように指示します。これを有効にすると、プログレッシブな JSON デコードが機能しなくなる可能性があります (再読み込みが必要になる場合があります)。",
 		"clearWellKnowns": ".well-known レコードを再取得する：",
-		"description": "これらは、SpacebarやFermiの開発者向け設定です。何をしているのか分からない場合は、これらの設定を変更しないでください。",
+		"description": "これらは、SpacebarやFermoの開発者向け設定です。何をしているのか分からない場合は、これらの設定を変更しないでください。",
 		"gatewayComp": "ゲートウェイ圧縮を無効にする：",
 		"reportSystem": "試験的な通報機能を有効にする：",
 		"logGateway": "受信したゲートウェイ イベントを記録します (ログレベル情報):",
@@ -384,16 +384,16 @@
 		"dobField": "生年月日：",
 		"emailField": "メールアドレス:",
 		"idpermissions": "このことでボットは:",
-		"loadingText": "Fermiが読み込まれています",
+		"loadingText": "Fermoが読み込まれています",
 		"loginButton": "ログイン",
 		"noAccount": "アカウントをお持ちではありませんか？",
 		"pw2Field": "パスワードをもう一度入力してください:",
 		"pwField": "パスワード：",
 		"switchaccounts": "アカウントを切り替える",
 		"trans": "翻訳する",
-		"transTitle": "Fermiを翻訳する",
+		"transTitle": "Fermoを翻訳する",
 		"userField": "ユーザー名:",
-		"welcomeJank": "Fermiへようこそ"
+		"welcomeJank": "Fermoへようこそ"
 	},
 	"instanceStats": {
 		"servers": "ギルド: $1",
@@ -443,7 +443,7 @@
 		"error": {
 			"cancel": "キャンセル",
 			"cont": "続行",
-			"desc": "Fermi からログアウトすることができませんでした。強制的にアカウントを除去しますか?",
+			"desc": "Fermo からログアウトすることができませんでした。強制的にアカウントを除去しますか?",
 			"title": "ログアウト中にエラーが発生しました"
 		},
 		"logout": "ログアウト"

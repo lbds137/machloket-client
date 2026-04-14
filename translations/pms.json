@@ -8,7 +8,7 @@
 	"404": {
 		"404": "404 Pàgina nen trovà",
 		"app": "Vers l'aplicassion",
-		"blog": "Lë scartari Fermi",
+		"blog": "Lë scartari Fermo",
 		"home": "Pàgina d'intrada",
 		"listtitle": "Peul desse ch'a vorìa andé ant un ëd costi pòst",
 		"login": "Intré ant ël sistema",
@@ -94,8 +94,8 @@
 	"blog": {
 		"blog": "Scartari",
 		"blogUpdates": "Agiornament a lë scartari:",
-		"desc": "Lese o abonesse a lë scartari për dj'agiornament su Fermi!",
-		"fermi": "Scartari ëd Fermi",
+		"desc": "Lese o abonesse a lë scartari për dj'agiornament su Fermo!",
+		"fermo": "Scartari ëd Fermo",
 		"gotoPost": "Andé a la publicassion"
 	},
 	"botGuilds": "Corporassion a le quaj a aparten ël trigomiro:",
@@ -145,8 +145,8 @@
 		"badUser": "Conession abilità për j'oget dij cativ utent ch'a mando tròpe anformassion:",
 		"cache": "Abilité ël servissi d'archivi ëd carte për ij travajeur dla memòria local:",
 		"cacheDesc": "j'archivi dle carte as cariëran an tuti ij cas, sòn a sigurërà mach che a son ant la memòria local cand a ven fòra un neuv agiornament.",
-		"captureTrace": "Cost paràmeter a dis a Fermi ëd ciapé dle propietà _pista dal servent. Soa abilitassion a podrìa fé nen marcé la decodificassion JSON progressiva (a podrìa essie damanca ëd carié torna)",
-		"description": "Costi a son për ij dësvlupador ëd Spacebar e Fermi. S'a sa nen lòn ch'a fa, për piasì ch'a fasa pa dij paciòch con costi paràmeter.",
+		"captureTrace": "Cost paràmeter a dis a Fermo ëd ciapé dle propietà _pista dal servent. Soa abilitassion a podrìa fé nen marcé la decodificassion JSON progressiva (a podrìa essie damanca ëd carié torna)",
+		"description": "Costi a son për ij dësvlupador ëd Spacebar e Fermo. S'a sa nen lòn ch'a fa, për piasì ch'a fasa pa dij paciòch con costi paràmeter.",
 		"gatewayComp": "Disabilité la compression ëd passarela",
 		"logGateway": "L'argistr a l'ha arseivù dj'eveniment ëd passarela (anformassion an sël livel ëd l'argistr):",
 		"name": "Gust dël dësvlupador",
@@ -162,14 +162,14 @@
 	"htmlPages": {
 		"addBot": "Gionté a la corporassion",
 		"alreadyHave": "Ha-lo già un cont?",
-		"box1title": "Fermi a l'é un client compatìbil con Spacebar ch'a sërca a esse mej ch'as peul con tante fonsionalità, dont:",
+		"box1title": "Fermo a l'é un client compatìbil con Spacebar ch'a sërca a esse mej ch'as peul con tante fonsionalità, dont:",
 		"createAccount": "Creé un cont",
 		"dobField": "Dàita ëd nassensa:",
 		"emailField": "Adrëssa eletrònica:",
 		"idpermissions": "Sòn a përmëttra al trigomiro ëd:",
 		"instanceField": "Istansa:",
 		"loaddesc": "A dovrìa nen vorèje tant",
-		"loadingText": "Fermi a l'é an camin ch'as caria",
+		"loadingText": "Fermo a l'é an camin ch'as caria",
 		"loginButton": "Rintré ant ël sistema",
 		"noAccount": "Ha-lo nen un cont?",
 		"openClient": "Duverté ël client",
@@ -177,13 +177,13 @@
 		"pwField": "Ciav:",
 		"switchaccounts": "Cangé 'd cont",
 		"userField": "Stranòm:",
-		"welcomeJank": "Bin-ëvnù an Fermi"
+		"welcomeJank": "Bin-ëvnù an Fermo"
 	},
 	"interactions": {
 		"ephemeralDismiss": "Scarté ël mëssagi",
 		"failed": "L'antërassion a l'ha falì",
 		"nonsence": "Ël servent a l'ha mandà un component ëd sòrt $1 ch'a esist pa",
-		"notImpl": "Fermi a l'ha ancor nen butà an euvra la sòrt ëd component$1",
+		"notImpl": "Fermo a l'ha ancor nen butà an euvra la sòrt ëd component$1",
 		"onlyYou": "Mach chiel a peul vëdde 's mëssagi",
 		"replyline": "Antërassion ancaminà",
 		"started": "Antërassion an tratament...",
@@ -194,7 +194,7 @@
 		"error": {
 			"cancel": "Anulé",
 			"cont": "Continué malgré tut",
-			"desc": "Fermi a l'ha nen podù felo seurte dal sistema,\n veul-lo malgré tut dëscancelé ël cont?",
+			"desc": "Fermo a l'ha nen podù felo seurte dal sistema,\n veul-lo malgré tut dëscancelé ël cont?",
 			"title": "A-i é staje n'eror an surtend dal sistema"
 		},
 		"logout": "Seurte dal sistema"
@@ -347,7 +347,7 @@
 	"unableToPin": "Impossìbil taché ël mëssagi an evidensa",
 	"uploadBanner": "Carié un tilèt:",
 	"uploadPfp": "Carié na fòto për ël profil:",
-	"usedFermi": "Fermi dovrà",
+	"usedFermo": "Fermo dovrà",
 	"userping": {
 		"resolving": "arzolussion ëd l'utent",
 		"unknown": "@dësconossù"

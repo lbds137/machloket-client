@@ -3,7 +3,7 @@
 	"404": {
 		"404": "error:404 - Page Not Found",
 		"app": "To the app",
-		"blog": "The Fermi blog",
+		"blog": "The Fermo blog",
 		"home": "Homepage",
 		"listtitle": "Maybe you meant to go to one of these places",
 		"login": "Login",
@@ -110,10 +110,10 @@
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Blog updates:",
-		"desc": "Read or subscribe to the blog for updates on Fermi!",
-		"fermi": "Fermi Blog",
+		"desc": "Read or subscribe to the blog for updates on Fermo!",
+		"fermo": "Fermo Blog",
 		"gotoPost": "Go to post",
-		"wantUpdates": "Would you like to get weekly blog updates on the state of Fermi?"
+		"wantUpdates": "Would you like to get weekly blog updates on the state of Fermo?"
 	},
 	"bot": "BOT",
 	"botGuilds": "Guilds bot is in:",
@@ -200,7 +200,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Client version: $1\n\n[Join the official Fermi guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermi](https://github.com/MathMan05/Fermi)\n\n[Help maintain the server Fermi relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermi.chat/)\n\nCalculated rights: $3",
+	"clientDesc": "Client version: $1\n\n[Join the official Fermo guild]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Help translate Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Help create Fermo](https://github.com/oh64/Fermo)\n\n[Help maintain the server Fermo relies on](https://github.com/spacebarchat/server)\n\n[Read the blog](https://blog.fermo.sovr.top/)\n\nCalculated rights: $3",
 	"commands": {
 		"errorNotValid": "$1 is not a valid choice for $2",
 		"required": "$1 is a required part of this command"
@@ -217,9 +217,9 @@
 		"badUser": "Enable logging of bad user objects that send too much information:",
 		"cache": "Enable Service Worker Caching map files:",
 		"cacheDesc": "map files will still load either way, this'll just make sure they're in cache when a new update rolls out.",
-		"captureTrace": "This setting tells Fermi to capture _trace properties from the server, enabling this may cause progressive JSON decoding to not work (might require a reload)",
+		"captureTrace": "This setting tells Fermo to capture _trace properties from the server, enabling this may cause progressive JSON decoding to not work (might require a reload)",
 		"clearWellKnowns": "Re-fetch .well-known records:",
-		"description": "These are for developers of Spacebar/Fermi, if you don't know what you're doing, please don't mess with these settings.",
+		"description": "These are for developers of Spacebar/Fermo, if you don't know what you're doing, please don't mess with these settings.",
 		"gatewayComp": "Disable Gateway compression:",
 		"reportSystem":"Enable experimental reporting system:",
 		"logGateway": "Log received gateway events (log level info):",
@@ -392,9 +392,9 @@
 		"addBot": "Add to guild",
 		"alreadyHave": "Already have an account?",
 		"box1Items": "Direct Messaging|Reactions support|Invites|Account switching|User settings|Developer portal|Bot invites|Translation support",
-		"box1title": "Fermi is a Spacebar-compatible client seeking to be as good as it can be with many features including:",
+		"box1title": "Fermo is a Spacebar-compatible client seeking to be as good as it can be with many features including:",
 		"box3description": "We always appreciate some help, whether that be in the form of bug reports, or code, or even just pointing out some typos.",
-		"box3title": "Contribute to Fermi",
+		"box3title": "Contribute to Fermo",
 		"compatableInstances": "Spacebar-compatible instances:",
 		"createAccount": "Create account",
 		"dobField": "Date of birth:",
@@ -402,7 +402,7 @@
 		"idpermissions": "This will allow the bot to:",
 		"instanceField": "Instance:",
 		"loaddesc": "This shouldn't take long",
-		"loadingText": "Fermi is loading",
+		"loadingText": "Fermo is loading",
 		"loginButton": "Login",
 		"noAccount": "Don't have an account?",
 		"openClient": "Open client",
@@ -410,12 +410,12 @@
 		"pwField": "Password:",
 		"switchaccounts": "Switch accounts",
 		"trans": "Translate",
-		"transDesc": "You can help translate Fermi into your own language!",
-		"transTitle": "Translate Fermi",
+		"transDesc": "You can help translate Fermo into your own language!",
+		"transTitle": "Translate Fermo",
 		"userField": "Username:",
-		"welcomeJank": "Welcome to Fermi"
+		"welcomeJank": "Welcome to Fermo"
 	},
-	"incorrectURLS": "## This instance has likely sent the incorrect links.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Fermi to automatically try to fix this error to let you connect to the instance?",
+	"incorrectURLS": "## This instance has likely sent the incorrect links.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Fermo to automatically try to fix this error to let you connect to the instance?",
 	"instInfo": "Instance information",
 	"instanceInfo": {
 		"contact": "Email instance admins",
@@ -435,7 +435,7 @@
 		"ephemeralDismiss": "Dismiss message",
 		"failed": "Interaction failed",
 		"nonsence": "The server sent a component of type $1 which does not exist",
-		"notImpl": "Fermi has not implemented component type $1 yet",
+		"notImpl": "Fermo has not implemented component type $1 yet",
 		"onlyYou": "Only you can see this message",
 		"replyline": "Started interaction",
 		"started": "Processing interaction...",
@@ -520,8 +520,8 @@
 		"disableConnection": "This connection has been disabled server-side",
 		"editingBot": "Editing bot $1",
 		"install": "Install",
-		"installDesc": "Installing Fermi will allow you to open it in its own window and act like its own app! You can also just continue to use Fermi in the web browser like you have been and it'll work the same.",
-		"installJank": "Install Fermi",
+		"installDesc": "Installing Fermo will allow you to open it in its own window and act like its own app! You can also just continue to use Fermo in the web browser like you have been and it'll work the same.",
+		"installJank": "Install Fermo",
 		"language": "Language:",
 		"manageBot": "Manage bot",
 		"manageInstance": "Manage instance",
@@ -557,7 +557,7 @@
 		"tokenDisplay": "Token: $1",
 		"trace": "Traces",
 		"trusted": "Trusted Domains",
-		"trustedDesc": "When you click on links sending you to these domain, you will ***not*** be prompted for permission to open like other links, only give this to domains you trust, such as 'https://fermi.chat'",
+		"trustedDesc": "When you click on links sending you to these domain, you will ***not*** be prompted for permission to open like other links, only give this to domains you trust, such as 'https://fermo.sovr.top'",
 		"updateSettings": "Update settings",
 		"updatesYay": "Updates found!",
 		"userSettings": "Your public profile"
@@ -578,7 +578,7 @@
 		"error": {
 			"cancel": "Cancel",
 			"cont": "Continue anyways",
-			"desc": "Fermi was unable to log you out,\n do you wish to remove the account anyways?",
+			"desc": "Fermo was unable to log you out,\n do you wish to remove the account anyways?",
 			"title": "An error occurred trying to log you out"
 		},
 		"logout": "Logout"
@@ -877,7 +877,7 @@
 	"uploadPfp": "Upload avatar:",
 	"useTemplate": "Use $1 as a template",
 	"useTemplateButton": "Use template",
-	"usedFermi": "sent via Fermi",
+	"usedFermo": "sent via Fermo",
 	"user": {
 		"report":"Report user",
 		"deleted":"Deleted user",

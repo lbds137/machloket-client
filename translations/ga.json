@@ -8,7 +8,7 @@
 	"404": {
 		"404": "earráid:404 - Leathanach Gan Aimsiú",
 		"app": "Chuig an aip",
-		"blog": "Blag Fermi",
+		"blog": "Blag Fermo",
 		"home": "Leathanach baile",
 		"listtitle": "B’fhéidir gur mian leat dul chuig ceann de na háiteanna seo",
 		"login": "Logáil Isteach",
@@ -109,10 +109,10 @@
 	"blog": {
 		"blog": "Blag",
 		"blogUpdates": "Nuashonruithe blag:",
-		"desc": "Léigh nó liostáil leis an mblag le haghaidh nuashonruithe ar Fermi!",
-		"fermi": "Blag Fermi",
+		"desc": "Léigh nó liostáil leis an mblag le haghaidh nuashonruithe ar Fermo!",
+		"fermo": "Blag Fermo",
 		"gotoPost": "Téigh go dtí an post",
-		"wantUpdates": "Ar mhaith leat nuashonruithe blag seachtainiúla a fháil ar staid Fermi?"
+		"wantUpdates": "Ar mhaith leat nuashonruithe blag seachtainiúla a fháil ar staid Fermo?"
 	},
 	"bot": "BOTA",
 	"botGuilds": "Tá bota na Guilds i:",
@@ -199,7 +199,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Leagan cliant: $1\n\n[Bí páirteach i ngiúld oifigiúil Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Cabhraigh le Fermi a aistriú](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Cabhraigh le Fermi a chruthú](https://github.com/MathMan05/Fermi)\n\n[Cabhraigh leis an bhfreastalaí a bhfuil Fermi ag brath air a chothabháil](https://github.com/spacebarchat/server)\n\n[Léigh an blag](https://blog.fermi.chat/)\n\nCearta ríofa: $3",
+	"clientDesc": "Leagan cliant: $1\n\n[Bí páirteach i ngiúld oifigiúil Fermo]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Cabhraigh le Fermo a aistriú](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc)\n\n[Cabhraigh le Fermo a chruthú](https://github.com/oh64/Fermo)\n\n[Cabhraigh leis an bhfreastalaí a bhfuil Fermo ag brath air a chothabháil](https://github.com/spacebarchat/server)\n\n[Léigh an blag](https://blog.fermo.sovr.top/)\n\nCearta ríofa: $3",
 	"commands": {
 		"errorNotValid": "Ní rogha bhailí é $1 le haghaidh $2",
 		"required": "Is cuid riachtanach den ordú seo é $1"
@@ -216,9 +216,9 @@
 		"badUser": "Cumasaigh logáil réada úsáideora lochtacha a sheolann an iomarca faisnéise:",
 		"cache": "Cumasaigh comhaid léarscáile Taisceála Oibrí Seirbhíse:",
 		"cacheDesc": "Lódálfaidh comhaid léarscáile fós ar aon nós, cinnteoidh sé seo go mbeidh siad sa taisce nuair a chuirtear nuashonrú nua amach.",
-		"captureTrace": "Insíonn an socrú seo do Fermi airíonna _trace a ghabháil ón bhfreastalaí, agus má chuireann tú seo ar siúl d’fhéadfadh sé nach n-oibreoidh díchódú forásach JSON (d’fhéadfadh athlódáil a bheith ag teastáil).",
+		"captureTrace": "Insíonn an socrú seo do Fermo airíonna _trace a ghabháil ón bhfreastalaí, agus má chuireann tú seo ar siúl d’fhéadfadh sé nach n-oibreoidh díchódú forásach JSON (d’fhéadfadh athlódáil a bheith ag teastáil).",
 		"clearWellKnowns": "Ath-aisghabh taifid .well-known:",
-		"description": "Tá siad seo do fhorbróirí Spacebar/Fermi, mura bhfuil a fhios agat cad atá á dhéanamh agat, ná cuir isteach ar na socruithe seo le do thoil.",
+		"description": "Tá siad seo do fhorbróirí Spacebar/Fermo, mura bhfuil a fhios agat cad atá á dhéanamh agat, ná cuir isteach ar na socruithe seo le do thoil.",
 		"gatewayComp": "Díchumasaigh comhbhrú Geata:",
 		"reportSystem": "Cumasaigh córas tuairiscithe turgnamhach:",
 		"logGateway": "Logáil imeachtaí geata a fuarthas (eolas ar leibhéal logála):",
@@ -391,9 +391,9 @@
 		"addBot": "Cuir leis an gild",
 		"alreadyHave": "An bhfuil cuntas agat cheana féin?",
 		"box1Items": "Teachtaireachtaí Díreacha|Tacaíocht imoibrithe|Cuirí|Athrú cuntais|Socruithe úsáideora|Tairseach forbróra|Cuirí bota|Tacaíocht aistriúcháin",
-		"box1title": "Is cliant atá comhoiriúnach leis an Spacebar é Fermi atá ag iarraidh a bheith chomh maith agus is féidir le go leor gnéithe lena n-áirítear:",
+		"box1title": "Is cliant atá comhoiriúnach leis an Spacebar é Fermo atá ag iarraidh a bheith chomh maith agus is féidir le go leor gnéithe lena n-áirítear:",
 		"box3description": "Cuirimid fáilte i gcónaí roimh chabhair, bíodh sé sin i bhfoirm tuairiscí fabht, nó cód, nó fiú trí roinnt clóscríobh a thabhairt ar aird.",
-		"box3title": "Cuir le Fermi",
+		"box3title": "Cuir le Fermo",
 		"compatableInstances": "Cásanna atá comhoiriúnach leis an spásbharra:",
 		"createAccount": "Cruthaigh cuntas",
 		"dobField": "Dáta breithe:",
@@ -401,7 +401,7 @@
 		"idpermissions": "Cuirfidh sé seo ar chumas an bhota:",
 		"instanceField": "Mar shampla:",
 		"loaddesc": "Níor cheart go dtógfadh sé seo i bhfad",
-		"loadingText": "Tá Fermi ag luchtú",
+		"loadingText": "Tá Fermo ag luchtú",
 		"loginButton": "Logáil Isteach",
 		"noAccount": "Nach bhfuil cuntas agat?",
 		"openClient": "Oscail cliant",
@@ -409,12 +409,12 @@
 		"pwField": "Pasfhocal:",
 		"switchaccounts": "Athraigh cuntais",
 		"trans": "Aistrigh",
-		"transDesc": "Is féidir leat cabhrú le Fermi a aistriú go do theanga féin!",
-		"transTitle": "Aistrigh Fermi",
+		"transDesc": "Is féidir leat cabhrú le Fermo a aistriú go do theanga féin!",
+		"transTitle": "Aistrigh Fermo",
 		"userField": "Ainm úsáideora:",
-		"welcomeJank": "Fáilte go Fermi"
+		"welcomeJank": "Fáilte go Fermo"
 	},
-	"incorrectURLS": "## Is dócha gur sheol an cás seo na naisc mhíchearta.\n### Más tusa úinéir an chás, féach [anseo](https://docs.spacebar.chat/setup/server/) faoi *Ag ceangal ó mheaisíní iargúlta* chun an fhadhb a cheartú.\nAr mhaith leat go ndéanfadh Fermi iarracht an earráid seo a shocrú go huathoibríoch chun ligean duit ceangal leis an gcás?",
+	"incorrectURLS": "## Is dócha gur sheol an cás seo na naisc mhíchearta.\n### Más tusa úinéir an chás, féach [anseo](https://docs.spacebar.chat/setup/server/) faoi *Ag ceangal ó mheaisíní iargúlta* chun an fhadhb a cheartú.\nAr mhaith leat go ndéanfadh Fermo iarracht an earráid seo a shocrú go huathoibríoch chun ligean duit ceangal leis an gcás?",
 	"instInfo": "Faisnéis faoi chás",
 	"instanceInfo": {
 		"contact": "Riarthóirí sampla ríomhphoist",
@@ -434,7 +434,7 @@
 		"ephemeralDismiss": "Ruaig an teachtaireacht",
 		"failed": "Theip ar an idirghníomhaíocht",
 		"nonsence": "Sheol an freastalaí comhpháirt de chineál $1 nach bhfuil ann",
-		"notImpl": "Níl cineál comhpháirte $1 curtha i bhfeidhm ag Fermi go fóill",
+		"notImpl": "Níl cineál comhpháirte $1 curtha i bhfeidhm ag Fermo go fóill",
 		"onlyYou": "Ní féidir ach leatsa an teachtaireacht seo a fheiceáil",
 		"replyline": "Idirghníomhaíocht tosaithe",
 		"started": "Ag próiseáil idirghníomhaíochta...",
@@ -519,8 +519,8 @@
 		"disableConnection": "Tá an nasc seo díchumasaithe ar thaobh an fhreastalaí",
 		"editingBot": "Bota eagarthóireachta $1",
 		"install": "Suiteáil",
-		"installDesc": "Trí Fermi a shuiteáil, beidh tú in ann é a oscailt ina fhuinneog féin agus gníomhú mar aip féin! Is féidir leat leanúint ar aghaidh ag úsáid Fermi sa bhrabhsálaí gréasáin mar a bhí tú agus oibreoidh sé mar an gcéanna.",
-		"installJank": "Suiteáil Fermi",
+		"installDesc": "Trí Fermo a shuiteáil, beidh tú in ann é a oscailt ina fhuinneog féin agus gníomhú mar aip féin! Is féidir leat leanúint ar aghaidh ag úsáid Fermo sa bhrabhsálaí gréasáin mar a bhí tú agus oibreoidh sé mar an gcéanna.",
+		"installJank": "Suiteáil Fermo",
 		"language": "Teanga:",
 		"manageBot": "Bainistigh an bota",
 		"manageInstance": "Bainistigh an cás",
@@ -556,7 +556,7 @@
 		"tokenDisplay": "Comhartha: $1",
 		"trace": "Rianta",
 		"trusted": "Fearainn Iontaofa",
-		"trustedDesc": "Nuair a chliceálann tú ar naisc a sheolann chuig na fearainn seo thú, ní iarrfar ort cead a thabhairt chun naisc a oscailt cosúil le naisc eile, tabhair cead seo ach do fhearainn a bhfuil muinín agat astu, amhail 'https://fermi.chat'",
+		"trustedDesc": "Nuair a chliceálann tú ar naisc a sheolann chuig na fearainn seo thú, ní iarrfar ort cead a thabhairt chun naisc a oscailt cosúil le naisc eile, tabhair cead seo ach do fhearainn a bhfuil muinín agat astu, amhail 'https://fermo.sovr.top'",
 		"updateSettings": "Nuashonraigh socruithe",
 		"updatesYay": "Nuashonruithe aimsithe!",
 		"userSettings": "Do phróifíl phoiblí"
@@ -577,7 +577,7 @@
 		"error": {
 			"cancel": "Cealaigh",
 			"cont": "Lean ar aghaidh ar aon nós",
-			"desc": "Ní raibh Fermi in ann tú a logáil amach,\nar mhaith leat an cuntas a bhaint ar aon nós?",
+			"desc": "Ní raibh Fermo in ann tú a logáil amach,\nar mhaith leat an cuntas a bhaint ar aon nós?",
 			"title": "Tharla earráid agus iarracht á déanamh tú a logáil amach"
 		},
 		"logout": "Logáil Amach"
@@ -876,7 +876,7 @@
 	"uploadPfp": "Uaslódáil abhatár:",
 	"useTemplate": "Úsáid $1 mar theimpléad",
 	"useTemplateButton": "Úsáid teimpléad",
-	"usedFermi": "seolta trí Fermi",
+	"usedFermo": "seolta trí Fermo",
 	"user": {
 		"report": "Tuairiscigh úsáideoir",
 		"deleted": "Úsáideoir scriosta",

@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, I only support the most up to date version of Fermi client, there are no stable releases, but this is planned for in the future
+Currently, I only support the most up to date version of Fermo client, there are no stable releases, but this is planned for in the future
 
 | Version | Supported          |
 | ------- | ------------------ |

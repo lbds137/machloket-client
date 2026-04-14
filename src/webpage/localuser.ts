@@ -509,7 +509,7 @@ class Localuser {
 								token: this.token,
 								capabilities: 16381,
 								properties: {
-									browser: "Fermi",
+									browser: "Fermo",
 									client_build_number: 0, //might update this eventually lol
 									release_channel: "Custom",
 									browser_user_agent: navigator.userAgent,
@@ -2371,7 +2371,7 @@ class Localuser {
 		});
 	}
 	async getPosts() {
-		return (await (await fetch("https://blog.fermi.chat/feed_json_created.json")).json()) as {
+		return (await (await fetch("https://blog.fermo.sovr.top/feed_json_created.json")).json()) as {
 			items: {
 				url: string;
 				title: string;
@@ -4772,7 +4772,7 @@ class Localuser {
 			(guildName ? " | " + guildName : "") +
 			" | " +
 			this.instancePing.name +
-			" | Fermi";
+			" | Fermo";
 	}
 	async instanceStats() {
 		const dialog = new Dialog("");

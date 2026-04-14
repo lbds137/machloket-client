@@ -121,7 +121,7 @@ async function tryToClose() {
 		}
 		portArr[0].postMessage({code: "close"});
 	} else {
-		throw new Error("No Fermi clients connected?");
+		throw new Error("No Fermo clients connected?");
 	}
 }
 function sendAll(message: messageFrom) {

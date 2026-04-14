@@ -28,7 +28,7 @@
 	"404": {
 		"404": "erreur:404 - Page introuvable",
 		"app": "Vers l'application",
-		"blog": "Le blog de Fermi",
+		"blog": "Le blog de Fermo",
 		"home": "Page d'accueil",
 		"listtitle": "Tu voulais peut-être aller dans un de ces endroits",
 		"login": "Se connecter",
@@ -129,10 +129,10 @@
 	"blog": {
 		"blog": "Blog",
 		"blogUpdates": "Actualités du blog :",
-		"desc": "Lisez ou abonnez-vous au blog pour rester informé des actualités de Fermi !",
-		"fermi": "Le blog sur Fermi",
+		"desc": "Lisez ou abonnez-vous au blog pour rester informé des actualités de Fermo !",
+		"fermo": "Le blog sur Fermo",
 		"gotoPost": "Aller à la publication",
-		"wantUpdates": "Souhaiteriez-vous recevoir des actualités hebdomadaires du blog à propos de l'état de Fermi ?"
+		"wantUpdates": "Souhaiteriez-vous recevoir des actualités hebdomadaires du blog à propos de l'état de Fermo ?"
 	},
 	"bot": "BOT",
 	"botGuilds": "Guildes où le bot est présent :",
@@ -219,7 +219,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermi]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermi](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribuez au client Fermi](https://github.com/MathMan05/Fermi)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Fermi)](https://github.com/spacebarchat/server)\n\n[Lisez le blog](https://blog.fermi.chat/)\n\nDroits calculés : $3",
+	"clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermo]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Contribuez au client Fermo](https://github.com/oh64/Fermo)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Fermo)](https://github.com/spacebarchat/server)\n\n[Lisez le blog](https://blog.fermo.sovr.top/)\n\nDroits calculés : $3",
 	"commands": {
 		"errorNotValid": "$1 n'est pas un choix valide pour $2",
 		"required": "$1 est une partie requise de cette commande"
@@ -236,9 +236,9 @@
 		"badUser": "Activer la journalisation des objets utilisateur incorrects qui envoient trop d’informations :",
 		"cache": "Activer les fichiers de mapping du cache du Service Worker",
 		"cacheDesc": "les fichiers de mapping seront toujours chargés, cela s'assurera juste qu'ils sont en cache quand une nouvelle mise à jour est disponible.",
-		"captureTrace": "Cette option indique à Fermi de capturer les propriétés _trace depuis le serveur. Son activation peut empêcher le décodage progressif du JSON de fonctionner (un rechargement peut être nécessaire).",
+		"captureTrace": "Cette option indique à Fermo de capturer les propriétés _trace depuis le serveur. Son activation peut empêcher le décodage progressif du JSON de fonctionner (un rechargement peut être nécessaire).",
 		"clearWellKnowns": "Re-charger les enregistrements .well-known",
-		"description": "Ces paramètres sont destinés aux développeurs de Spacebar/Fermi. Si vous ne savez pas ce que vous faites, ne les modifiez pas.",
+		"description": "Ces paramètres sont destinés aux développeurs de Spacebar/Fermo. Si vous ne savez pas ce que vous faites, ne les modifiez pas.",
 		"gatewayComp": "Désactiver la compression de la passerelle",
 		"reportSystem": "Activer le système de rapport expérimental",
 		"logGateway": "Journaliser les événements reçus par la passerelle (niveau de log : info)",
@@ -411,9 +411,9 @@
 		"addBot": "Ajouter à la guilde",
 		"alreadyHave": "Vous avez déjà un compte ?",
 		"box1Items": "Messagerie en direct|Prise en charge des réactions|Invitations|Changement de compte|Paramètres utilisateur|Portail des développeurs|Invitations de bots|Prise en charge des traductions",
-		"box1title": "Le client Fermi est un client compatible avec Spacebar qui cherche à être aussi bon que possible avec de nombreuses fonctionnalités, notamment :",
+		"box1title": "Le client Fermo est un client compatible avec Spacebar qui cherche à être aussi bon que possible avec de nombreuses fonctionnalités, notamment :",
 		"box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bugs, de code ou même simplement en signalant des fautes de frappe.",
-		"box3title": "Contribuer au client Fermi",
+		"box3title": "Contribuer au client Fermo",
 		"compatableInstances": "Instances compatibles avec Spacebar :",
 		"createAccount": "Créer un compte",
 		"dobField": "Date de naissance :",
@@ -421,7 +421,7 @@
 		"idpermissions": "Cela permettra au bot de :",
 		"instanceField": "Instance :",
 		"loaddesc": "Cela ne devrait pas prendre longtemps",
-		"loadingText": "Le client Fermi est en cours de chargement",
+		"loadingText": "Le client Fermo est en cours de chargement",
 		"loginButton": "Se connecter",
 		"noAccount": "Vous n'avez pas de compte ?",
 		"openClient": "Ouvrir le client",
@@ -429,12 +429,12 @@
 		"pwField": "Mot de passe :",
 		"switchaccounts": "Changer de compte",
 		"trans": "Traduire",
-		"transDesc": "Vous pouvez aider à traduire le client Fermi dans votre propre langue !",
-		"transTitle": "Traduire le client Fermi",
+		"transDesc": "Vous pouvez aider à traduire le client Fermo dans votre propre langue !",
+		"transTitle": "Traduire le client Fermo",
 		"userField": "Nom d’utilisateur :",
-		"welcomeJank": "Bienvenue dans le client Fermi"
+		"welcomeJank": "Bienvenue dans le client Fermo"
 	},
-	"incorrectURLS": "## Cette instance a probablement envoyé des liens incorrects.\n### Si vous êtes le propriétaire de l’instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Fermi tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l’instance ?",
+	"incorrectURLS": "## Cette instance a probablement envoyé des liens incorrects.\n### Si vous êtes le propriétaire de l’instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Fermo tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l’instance ?",
 	"instInfo": "Informations d’instance",
 	"instanceInfo": {
 		"contact": "Envoyer un e-mail aux administrateurs de l’instance",
@@ -454,7 +454,7 @@
 		"ephemeralDismiss": "Ignorer le message",
 		"failed": "L'interaction a échoué",
 		"nonsence": "Le serveur a envoyé un composant de type $1 qui n'existe pas",
-		"notImpl": "Fermi n'a pas encore implémenté le composant de type $1",
+		"notImpl": "Fermo n'a pas encore implémenté le composant de type $1",
 		"onlyYou": "Vous seul pouvez voir ce message",
 		"replyline": "Interaction commencée",
 		"started": "Traitement de l'interaction...",
@@ -539,8 +539,8 @@
 		"disableConnection": "Cette connexion a été désactivée côté serveur",
 		"editingBot": "Modifier le bot $1",
 		"install": "Installer",
-		"installDesc": "Installer le client Fermi vous permettra de l’ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Fermi dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
-		"installJank": "Installer le client Fermi",
+		"installDesc": "Installer le client Fermo vous permettra de l’ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Fermo dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
+		"installJank": "Installer le client Fermo",
 		"language": "Langue :",
 		"manageBot": "Gérer le bot",
 		"manageInstance": "Gérer l’instance",
@@ -549,7 +549,7 @@
 		"newEmail:": "Nouvel e-mail",
 		"newPassword:": "Nouveau mot de passe :",
 		"newUsername": "Nouveau nom d’utilisateur :",
-		"noToken": "Le jeton n'est pas connu par Fermi, impossible de le sauvegarder dans le stockage local.",
+		"noToken": "Le jeton n'est pas connu par Fermo, impossible de le sauvegarder dans le stockage local.",
 		"noUpdates": "Aucune mise à jour trouvée",
 		"notisound": "Son de notification :",
 		"oldPassword:": "Ancien mot de passe :",
@@ -597,7 +597,7 @@
 		"error": {
 			"cancel": "Annuler",
 			"cont": "Continuer quand même",
-			"desc": "Fermi n’a pas pu vous déconnecter,\n souhaitez-vous tout de même retirer le compte ?",
+			"desc": "Fermo n’a pas pu vous déconnecter,\n souhaitez-vous tout de même retirer le compte ?",
 			"title": "Une erreur s’est produite en essayant de vous déconnecter"
 		},
 		"logout": "Se déconnecter"
@@ -896,7 +896,7 @@
 	"uploadPfp": "Importer un avatar :",
 	"useTemplate": "Utiliser $1 comme modèle",
 	"useTemplateButton": "Utiliser le modèle",
-	"usedFermi": "envoyé via Fermi",
+	"usedFermo": "envoyé via Fermo",
 	"user": {
 		"report": "Signaler l’utilisateur",
 		"deleted": "Utilisateur supprimé",

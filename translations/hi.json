@@ -9,7 +9,7 @@
 	"404": {
 		"404": "404 पृष्ठ नहीं मिला",
 		"app": "ऐप पर",
-		"blog": "Fermi ब्लॉग",
+		"blog": "Fermo ब्लॉग",
 		"home": "मुखपृष्ठ",
 		"listtitle": "हो सकता है कि आप इनमें से किसी एक जगह पर जाना चाहते हों",
 		"login": "लॉग-इन करें",
@@ -136,7 +136,7 @@
 	"threads": {
 		"name": "नाम:"
 	},
-	"clientDesc": "क्लाइंट संस्करण: $1\n\n[आधिकारिक Fermi गिल्ड में शामिल हों]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Fermi का अनुवाद करने में सहायता करें](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermi के निर्माण में सहायता करें](https://github.com/MathMan05/Fermi)\n\n[Fermi जिस सर्वर पर निर्भर है उसके रखरखाव में सहायता करें](https://github.com/spacebarchat/server)\n\n[ब्लॉग पढ़ें](https://blog.fermi.chat/)\n\nगणना किए गए अधिकार: $3",
+	"clientDesc": "क्लाइंट संस्करण: $1\n\n[आधिकारिक Fermo गिल्ड में शामिल हों]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[Fermo का अनुवाद करने में सहायता करें](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermo के निर्माण में सहायता करें](https://github.com/oh64/Fermo)\n\n[Fermo जिस सर्वर पर निर्भर है उसके रखरखाव में सहायता करें](https://github.com/spacebarchat/server)\n\n[ब्लॉग पढ़ें](https://blog.fermo.sovr.top/)\n\nगणना किए गए अधिकार: $3",
 	"commands": {
 		"errorNotValid": "$1 $2 के लिए कोई मान्य विकल्प नहीं",
 		"required": "$1 इस कमांड का एक अनिवार्य हिस्सा है"

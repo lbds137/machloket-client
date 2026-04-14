@@ -86,8 +86,8 @@
 	"delete": "Sil",
 	"deleteConfirm": "Bunu silmek istediğinizden emin misiniz?",
 	"devSettings": {
-		"captureTrace": "Bu ayar, Fermi’ye sunucudan _trace özelliklerini yakalamasını söyler; bunu etkinleştirmek, aşamalı JSON çözümlemenin çalışmamasına neden olabilir ve yeniden yükleme gerektirebilir.",
-		"description": "Bunlar Spacebar/Fermi geliştiricileri içindir. Eğer ne yaptığınızı bilmiyorsanız lütfen bu ayarlarla oynamayın.",
+		"captureTrace": "Bu ayar, Fermo’ye sunucudan _trace özelliklerini yakalamasını söyler; bunu etkinleştirmek, aşamalı JSON çözümlemenin çalışmamasına neden olabilir ve yeniden yükleme gerektirebilir.",
+		"description": "Bunlar Spacebar/Fermo geliştiricileri içindir. Eğer ne yaptığınızı bilmiyorsanız lütfen bu ayarlarla oynamayın.",
 		"name": "Geliştirici Ayarları",
 		"traces": "İzleri ortaya çıkar:"
 	},
@@ -179,8 +179,8 @@
 		"pwField": "Parola:",
 		"switchaccounts": "Hesapları Değiştir",
 		"trans": "Çevir",
-		"transDesc": "Fermi'yi kendi dilinize çevirmeye yardım edebilirsiniz!",
-		"transTitle": "Fermi'yi Çevir",
+		"transDesc": "Fermo'yi kendi dilinize çevirmeye yardım edebilirsiniz!",
+		"transTitle": "Fermo'yi Çevir",
 		"userField": "Kullanıcı adı:",
 		"welcomeJank": "Jank Client'a Hoş Geldiniz"
 	},
@@ -256,8 +256,8 @@
 		"disableConnection": "Bu bağlantı sunucu tarafından devre dışı bırakıldı",
 		"editingBot": "Bot $1 düzenleniyor",
 		"install": "Yükle",
-		"installDesc": "Fermi'yi yüklemek onu farklı bir uygulama gibi açmanıza sağlayacaktır! Ayrıca Fermi'yi web tarayıcınızda kullanmaya devam edebilirsiniz ve aynı şekilde çalışacaktır.",
-		"installJank": "Fermi'yi yükle",
+		"installDesc": "Fermo'yi yüklemek onu farklı bir uygulama gibi açmanıza sağlayacaktır! Ayrıca Fermo'yi web tarayıcınızda kullanmaya devam edebilirsiniz ve aynı şekilde çalışacaktır.",
+		"installJank": "Fermo'yi yükle",
 		"language": "Dil:",
 		"manageBot": "Botu yönet",
 		"newDiscriminator": "Yeni ayırıcı:",
@@ -295,7 +295,7 @@
 		"error": {
 			"cancel": "İptal",
 			"cont": "Yine de devam et",
-			"desc": "Fermi sizi çıkış yaptıramadı,\n hesabı yine de kaldırmak istiyor musunuz?",
+			"desc": "Fermo sizi çıkış yaptıramadı,\n hesabı yine de kaldırmak istiyor musunuz?",
 			"title": "Oturumunuzu kapatmaya çalışırken bir hata oluştu"
 		},
 		"logout": "Oturumu kapat"

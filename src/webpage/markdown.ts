@@ -1179,7 +1179,7 @@ class MarkDown {
 		if (domains) {
 			return new Set(JSON.parse(domains) as string[]);
 		}
-		return new Set([location.host, "fermi.chat", "blog.fermi.chat"]);
+		return new Set([location.host, "fermo.sovr.top", "blog.fermo.sovr.top"]);
 	}
 	static saveTrusted(remove = false) {
 		if (!remove) {
