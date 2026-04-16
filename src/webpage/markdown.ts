@@ -1001,15 +1001,15 @@ class MarkDown {
 		this.onUpdate = onUpdate;
 		box.addEventListener("keydown", (_) => {
 			if (_.isComposing) return;
-			if (Error.prototype.stack !== "") return;
 			if (_.key === "Enter") {
 				const selection = window.getSelection() as Selection;
 				if (!selection) return;
 				const range = selection.getRangeAt(0);
-				const node = new Text("\n");
+				range.deleteContents();
+				const node = document.createTextNode("\n");
 				range.insertNode(node);
-				const g = node.nextSibling;
-				if (g) range.setStart(g, 0);
+				range.setStartAfter(node);
+				range.collapse(true);
 				_.preventDefault();
 				return;
 			}
@@ -1029,52 +1029,41 @@ class MarkDown {
 			if (_.isComposing) return;
 			gatherBoxContents(_.key === "Backspace");
 		};
+		box.addEventListener("input", () => gatherBoxContents(false));
 		box.addEventListener("compositionend", (_) => {
 			gatherBoxContents(false);
 		});
 		box.onpaste = (_) => {
 			if (!_.clipboardData) return;
-			const types = _.clipboardData.types;
-			console.log(types);
+			const types = Array.from(_.clipboardData.types);
 			if (types.includes("Files")) {
 				_.preventDefault();
 				return;
 			}
-			const selection = window.getSelection() as Selection;
-
+			let txt = "";
 			if (types.includes("text/html")) {
 				const data = _.clipboardData.getData("text/html");
 				const html = new DOMParser().parseFromString(data, "text/html");
-				const txt = MarkDown.gatherBoxText(html.body);
-				console.log(txt);
-				const rstr = selection.toString();
-				saveCaretPosition(box)?.();
-				const content = this.textContent;
-				if (content) {
-					const [_first, end] = content.split(text);
-					if (rstr) {
-						const tw = text.split(rstr);
-						tw.pop();
-						text = tw.join("");
-					}
-					const boxText = text + txt + (end ?? "");
-					box.textContent = boxText;
-					const len = text.length + txt.length;
-					text = boxText;
-					this.txt = text.split("");
-					this.boxupdate(len, false, 0);
-				} else {
-					box.textContent = txt;
-					text = txt;
-					this.txt = text.split("");
-					this.boxupdate(txt.length, false, 0);
-				}
-				_.preventDefault();
+				txt = MarkDown.gatherBoxText(html.body);
 			} else if (types.includes("text/plain")) {
-				//Allow the paste like normal
+				txt = _.clipboardData.getData("text/plain");
 			} else {
 				_.preventDefault();
+				return;
 			}
+			_.preventDefault();
+			const selection = window.getSelection();
+			if (!selection || !selection.rangeCount) return;
+			const range = selection.getRangeAt(0);
+			range.deleteContents();
+			const node = document.createTextNode(txt);
+			range.insertNode(node);
+			range.setStartAfter(node);
+			range.collapse(true);
+			selection.removeAllRanges();
+			selection.addRange(range);
+			this.txt = MarkDown.gatherBoxText(box).split("");
+			this.boxupdate(undefined, false, undefined);
 		};
 	}
 	customBox?: [(arg1: string) => HTMLElement, (arg1: HTMLElement) => string];
@@ -1380,7 +1369,6 @@ function saveCaretPosition(
 				pos.node instanceof Text &&
 				pos.node.textContent === "\n" &&
 				pos.node.nextSibling &&
-				Error.prototype.stack === "" &&
 				!backspace
 			) {
 				if (pos.node.nextSibling instanceof Text && pos.node.nextSibling.textContent === "\n") {
