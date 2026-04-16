@@ -1244,7 +1244,7 @@ textarea {
 }
 .forumButtonRow {
 	flex-shrink: 0;
-	mix-height: fit-content;
+	max-height: fit-content;
 	padding: 12px;
 	button {
 		margin-right: 10px;
