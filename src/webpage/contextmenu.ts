@@ -333,6 +333,7 @@ class Contextmenu<x, y> {
 		other: y,
 		keep: boolean | HTMLElement = false,
 		layered: LayeredEvent["menus"] = [],
+		align: "left" | "center" = "left",
 	) {
 		const div = document.createElement("div");
 		div.classList.add("contextmenu", "flexttb");
@@ -365,6 +366,12 @@ class Contextmenu<x, y> {
 		}
 
 		document.body.appendChild(div);
+		if (align === "center" && x > 0) {
+			const menuRect = div.getBoundingClientRect();
+			const centerLeft = Math.round(x - menuRect.width / 2);
+			div.style.left = `${Math.max(0, centerLeft)}px`;
+			div.style.removeProperty("right");
+		}
 		Contextmenu.keepOnScreen(div);
 
 		return this.div;

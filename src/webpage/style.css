@@ -1859,8 +1859,35 @@ span.instanceStatus {
 .channelflex {
 	flex: none;
 	width: 240px;
+	min-width: 180px;
+	max-width: 420px;
 	background: var(--channels-bg);
 	user-select: none;
+}
+#sidebarResize {
+	flex: none;
+	width: 0;
+	min-width: 0;
+	padding: 0 4px;
+	margin: 0 -4px;
+	cursor: col-resize;
+	background: transparent;
+	position: relative;
+	z-index: 5;
+	touch-action: none;
+	user-select: none;
+	transition: background 0.2s, padding 0.2s, margin 0.2s;
+}
+#sidebarResize:hover,
+#sidebarResize:focus-visible {
+	padding: 0 6px;
+	margin: 0 -6px;
+	background: rgba(255, 255, 255, 0.04);
+}
+@media screen and (max-width: 600px) {
+	#sidebarResize {
+		display: none;
+	}
 }
 .searchMeta {
 	position: relative;
@@ -2169,13 +2196,17 @@ span.instanceStatus {
 	justify-content: space-between;
 }
 #userinfo {
-	min-width: 50%;
+	flex: 1 1 auto;
+	min-width: 0;
 	padding: 0 6px;
 	gap: 6px;
 	cursor: pointer;
 }
 #userinfo:hover {
 	background: var(--dock-hover);
+}
+#user-actions {
+	flex: none;
 }
 #userpfp {
 	margin: 6px 0;

@@ -369,6 +369,51 @@ if (window.location.pathname.startsWith("/channels")) {
 		};
 		memberListToggle.checked = false;
 	}
+	const channelPanel = document.querySelector<HTMLDivElement>(".channelflex");
+	const sidebarResize = document.getElementById("sidebarResize");
+	const CHANNEL_WIDTH_KEY = "channelPanelWidth";
+	if (channelPanel) {
+		const storedWidth = localStorage.getItem(CHANNEL_WIDTH_KEY);
+		if (storedWidth) {
+			const width = Number(storedWidth);
+			if (!Number.isNaN(width)) {
+				const clamped = Math.max(180, Math.min(420, width));
+				channelPanel.style.width = `${clamped}px`;
+			}
+		}
+	}
+	if (sidebarResize && channelPanel) {
+		let dragging = false;
+		let pointerId: number | null = null;
+		const updateWidth = (pageX: number) => {
+			const rect = channelPanel.getBoundingClientRect();
+			const newWidth = Math.max(180, Math.min(420, pageX - rect.left));
+			channelPanel.style.width = `${newWidth}px`;
+			localStorage.setItem(CHANNEL_WIDTH_KEY, `${newWidth}`);
+		};
+		sidebarResize.addEventListener("pointerdown", (event) => {
+			dragging = true;
+			pointerId = event.pointerId;
+			sidebarResize.setPointerCapture(event.pointerId);
+			document.body.style.userSelect = "none";
+			document.body.style.cursor = "col-resize";
+			event.preventDefault();
+		});
+		document.addEventListener("pointermove", (event) => {
+			if (!dragging) return;
+			updateWidth(event.clientX);
+		});
+		document.addEventListener("pointerup", () => {
+			if (!dragging) return;
+			dragging = false;
+			if (pointerId !== null) {
+				sidebarResize.releasePointerCapture(pointerId);
+				pointerId = null;
+			}
+			document.body.style.userSelect = "";
+			document.body.style.cursor = "";
+		});
+	}
 	let dragendtimeout = setTimeout(() => {});
 	document.addEventListener("dragover", (e) => {
 		clearTimeout(dragendtimeout);
