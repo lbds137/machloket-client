@@ -935,6 +935,13 @@
 	"typing": "$2 {{PLURAL:$1|is|are}} typing",
 	"unableToConnect": "Unable to connect to the Spacebar server. Please try logging out and back in.",
 	"unableToPin": "Unable to pin message",
+	"connections":{
+		"since":"Member since: $1",
+		"display":"Display on profile: ",
+		"delete":"Delete Connection",
+		"sure":"Are you sure?",
+		"sureDesc":"If you remove this connection, you can't undo it"
+	},
 	"unpinMessage": "Unpin message",
 	"updateAv": "Updates available",
 	"uploadBanner": "Upload banner:",
