@@ -16,9 +16,109 @@ class ImagesDisplay {
 		this.weakbg = new WeakRef(e);
 	}
 	makeHTML(): HTMLElement {
+		const imageWrapper = document.createElement("div");
 		const image = this.files[this.index].getHTML(false, true);
-		image.classList.add("imgfit", "centeritem");
-		return image;
+		imageWrapper.classList.add("imgfit", "centeritem");
+		imageWrapper.appendChild(image);
+
+		let scale = 1;
+		let translateX = 0;
+		let translateY = 0;
+		let lastX = 0;
+		let lastY = 0;
+		let dragging = false;
+
+		const imageElement = imageWrapper.querySelector("img");
+		const updateTransform = () => {
+			if (!imageElement) return;
+			imageElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+		};
+
+		const reset = () => {
+			scale = 1;
+			translateX = 0;
+			translateY = 0;
+			updateTransform();
+		};
+
+		imageWrapper.onwheel = (event) => {
+			event.preventDefault();
+			const delta = Math.sign(event.deltaY) * -0.15;
+			const oldScale = scale;
+			scale = Math.max(0.5, Math.min(10, scale + delta));
+			if (!imageElement || scale === oldScale) return;
+			const rect = imageWrapper.getBoundingClientRect();
+			const offsetX = event.clientX - rect.left - rect.width / 2;
+			const offsetY = event.clientY - rect.top - rect.height / 2;
+			translateX -= offsetX * (scale / oldScale - 1);
+			translateY -= offsetY * (scale / oldScale - 1);
+			updateTransform();
+		};
+
+		imageWrapper.onpointerdown = (event) => {
+			if (event.button !== 0 || !imageElement) return;
+			event.preventDefault();
+			imageWrapper.setPointerCapture(event.pointerId);
+			dragging = true;
+			lastX = event.clientX;
+			lastY = event.clientY;
+			imageWrapper.classList.add("dragging");
+		};
+
+		let clickedAfterDrag = false;
+		const dragThreshold = 5;
+
+		imageWrapper.onpointermove = (event) => {
+			if (!dragging) return;
+			event.preventDefault();
+			const dx = event.clientX - lastX;
+			const dy = event.clientY - lastY;
+			if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+				clickedAfterDrag = true;
+			}
+			lastX = event.clientX;
+			lastY = event.clientY;
+			translateX += dx;
+			translateY += dy;
+			updateTransform();
+		};
+
+		imageWrapper.onpointerup = (event) => {
+			if (event.pointerId) {
+				imageWrapper.releasePointerCapture(event.pointerId);
+			}
+			dragging = false;
+			imageWrapper.classList.remove("dragging");
+		};
+
+		imageWrapper.onpointercancel = () => {
+			dragging = false;
+			imageWrapper.classList.remove("dragging");
+		};
+
+		imageWrapper.addEventListener("click", (event) => {
+			if (clickedAfterDrag) {
+				event.stopPropagation();
+				clickedAfterDrag = false;
+			}
+		});
+
+		imageWrapper.ondblclick = () => {
+			if (scale > 1) {
+				reset();
+			} else {
+				scale = 2;
+				updateTransform();
+			}
+		};
+
+		if (imageElement) {
+			imageElement.addEventListener("click", (e) => {
+				e.stopPropagation();
+			});
+		}
+
+		return imageWrapper;
 	}
 	show() {
 		this.background = document.createElement("div");
@@ -68,8 +168,10 @@ class ImagesDisplay {
 		}
 
 		this.background.appendChild(cur);
-		this.background.onclick = (_) => {
-			this.hide();
+		this.background.onclick = (event) => {
+			if (event.target === this.background || event.target === cur) {
+				this.hide();
+			}
 		};
 		this.background.onkeydown = (e) => {
 			if (e.key === "Escape") {

@@ -1,8 +1,6 @@
 {
 	"@metadata": {
-		"authors": [
-			"Volvox"
-		]
+		"authors": ["Volvox"]
 	},
 	"2faCode": "2FA-Code:",
 	"404": {

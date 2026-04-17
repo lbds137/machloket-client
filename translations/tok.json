@@ -1,11 +1,6 @@
 {
 	"@metadata": {
-		"authors": [
-			"Illyria",
-			"Ookap",
-			"Palinasin",
-			"Sylvie"
-		]
+		"authors": ["Illyria", "Ookap", "Palinasin", "Sylvie"]
 	},
 	"404": {
 		"login": "o kama lon sijelo"

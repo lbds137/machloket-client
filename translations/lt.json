@@ -1,9 +1,6 @@
 {
 	"@metadata": {
-		"authors": [
-			"McDutchie",
-			"Nokeoo"
-		]
+		"authors": ["McDutchie", "Nokeoo"]
 	},
 	"2faCode": "2FA kodas:",
 	"DMs": {

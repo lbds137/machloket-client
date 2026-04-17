@@ -1702,7 +1702,15 @@ class Localuser {
 					e.preventDefault();
 					e.stopImmediatePropagation();
 					const box = banner.getBoundingClientRect();
-					Guild.contextmenu.makemenu(box.left + box.width / 2, box.bottom + 5, guild, undefined, false, [], "center");
+					Guild.contextmenu.makemenu(
+						box.left + box.width / 2,
+						box.bottom + 5,
+						guild,
+						undefined,
+						false,
+						[],
+						"center",
+					);
 				};
 			} else {
 				banner.style.removeProperty("cursor");
