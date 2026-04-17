@@ -95,7 +95,10 @@ class File {
 				if (!animated || !this.owner || fullScreen) return;
 				const url = new URL(this.url).origin + new URL(this.url).pathname;
 				const span = document.createElement("span");
-				if (!url.startsWith(this.owner.localuser.info.cdn) || this.owner.localuser.favorites.hasGif(url)) {
+				if (
+					!url.startsWith(this.owner.localuser.info.cdn) ||
+					this.owner.localuser.favorites.hasGif(url)
+				) {
 					span.classList.add("svg-gifstar"); // I keep it to be able of unfavorite already favorited gifs
 				}
 				if (this.owner.localuser.favorites.hasGif(url)) {
