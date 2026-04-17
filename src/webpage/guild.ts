@@ -196,6 +196,15 @@ class Guild extends SnowFlake {
 	static contextmenu = new Contextmenu<Guild, undefined>("guild menu");
 	static setupcontextmenu() {
 		Guild.contextmenu.addButton(
+			() => I18n.guild.markRead(),
+			function (this: Guild) {
+				this.markAsRead();
+			},
+		);
+
+		Guild.contextmenu.addSeperator();
+
+		Guild.contextmenu.addButton(
 			() => I18n.guild.makeInvite(),
 			function (this: Guild) {
 				const d = new Dialog("");
@@ -207,14 +216,6 @@ class Guild extends SnowFlake {
 					return this.member.hasPermission("CREATE_INSTANT_INVITE");
 				},
 				color: "blue",
-			},
-		);
-		Guild.contextmenu.addSeperator();
-
-		Guild.contextmenu.addButton(
-			() => I18n.guild.markRead(),
-			function (this: Guild) {
-				this.markAsRead();
 			},
 		);
 
