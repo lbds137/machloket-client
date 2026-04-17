@@ -7,6 +7,49 @@ import {SnowFlake} from "./snowflake.js";
 import {User} from "./user.js";
 import {CDNParams} from "./utils/cdnParams.js";
 
+function getWebhookApiRoot(api: string) {
+	const trimmed = api.replace(/\/+$/, "");
+	try {
+		const url = new URL(trimmed);
+		const path = url.pathname.replace(/\/+$|^\/|\/$/g, "");
+		if (!path) {
+			url.pathname = "/api/v9";
+		} else if (/^api\/v\d+$/.test(path) || /^v\d+$/.test(path)) {
+			url.pathname = "/" + path;
+		} else if (/^api$/.test(path)) {
+			url.pathname = "/api/v9";
+		} else if (/^api\/v\d+\//.test(path) || /^v\d+\//.test(path)) {
+			url.pathname = "/" + path;
+		} else {
+			url.pathname = "/" + path + "/api/v9";
+		}
+		return url.toString().replace(/\/+$/, "");
+	} catch {
+		return trimmed + "/api/v9";
+	}
+}
+
+function normalizeWebhookUrl(hook: webhookType, api: string) {
+	const root = getWebhookApiRoot(api);
+	if (!hook.url) {
+		return `${root}/webhooks/${hook.id}/${hook.token}`;
+	}
+	try {
+		const url = new URL(hook.url, api);
+		const path = url.pathname.replace(/\/+$/, "");
+		if (/\/api(\/v\d+)?\/webhooks\/[^/]+\/[^/]+$/.test(path)) {
+			url.pathname = path;
+			return url.toString();
+		}
+		if (/\/webhooks\/[^/]+\/[^/]+$/.test(path)) {
+			const rootUrl = new URL(root);
+			rootUrl.pathname = rootUrl.pathname.replace(/\/+$/, "") + `/webhooks/${hook.id}/${hook.token}`;
+			return rootUrl.toString();
+		}
+	} catch {}
+	return `${root}/webhooks/${hook.id}/${hook.token}`;
+}
+
 async function webhookMenu(
 	guild: Guild,
 	hookURL: string,
@@ -67,7 +110,7 @@ async function webhookMenu(
 
 	const makeHook = (hook: webhookType) => {
 		//TODO remove once the server fixes this bug
-		hook.url ||= `${guild.info.api}/webhooks/${guild.id}/${hook.token}`;
+		hook.url = normalizeWebhookUrl(hook, guild.info.api);
 
 		const div = document.createElement("div");
 		div.classList.add("flexltr", "webhookArea");
