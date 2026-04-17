@@ -7,7 +7,8 @@
 	"scripts": {
 		"bunBuild": "bun build.ts",
 		"build": "node buildnode.js && node build.js",
-		"check": "prettier --write . && npx tsc -p tsconfig.json --noEmit",
+		"dev": "node dev-server.js",
+		"check": "npx tsc -p tsconfig.json --noEmit",
 		"start": "node dist/index.js"
 	},
 	"author": "MathMan05",
@@ -20,6 +21,7 @@
 		"@types/node": "^25.5.0",
 		"@types/node-fetch": "^2.6.13",
 		"husky": "9.1.7",
+		"lint-staged": "^16.4.0",
 		"prettier": "^3.7.4",
 		"typescript": "^5.9.3"
 	},
@@ -28,5 +30,8 @@
 		"printWidth": 100,
 		"semi": true,
 		"bracketSpacing": false
+	},
+	"lint-staged": {
+		"*.{js,ts,css,html,json,md}": "prettier --write"
 	}
 }
