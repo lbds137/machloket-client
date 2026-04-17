@@ -555,18 +555,24 @@ class Message extends SnowFlake {
 		let drag = false;
 		let reply = false;
 		let scrolling = false;
+		let gesture: "none" | "horizontal" | "vertical" = "none";
 
 		Message.contextmenu.bindContextmenu(
 			obj,
 			this,
 			undefined,
-			(x: number, _: number, event: TouchEvent) => {
-				//console.log(x);
+			(x: number, y: number, event: TouchEvent) => {
 				if (scrolling) {
 					return;
 				}
-				if (this.channel.infinite.scrolling && !drag && !reply) {
-					console.log("Scrolling");
+
+				const absX = Math.abs(x);
+				const absY = Math.abs(y);
+				if (gesture === "none" && (absX > 10 || absY > 10)) {
+					gesture = absX > absY ? "horizontal" : "vertical";
+				}
+
+				if (gesture === "vertical") {
 					scrolling = true;
 					return;
 				}
@@ -578,29 +584,33 @@ class Message extends SnowFlake {
 				if (x < -20) {
 					reply = true;
 					obj.style.translate = x + 20 + "px 0px";
-				} else obj.style.translate = 0 + "px";
-
-				if (!drag && x < 20) {
-					return;
+				} else {
+					obj.style.translate = "0px";
 				}
 
-				drag = true;
-				this.channel.moveForDrag(Math.max(x, 0));
+				if (!drag && x > 20) {
+					drag = true;
+				}
+
+				if (drag) {
+					this.channel.moveForDrag(Math.max(x, 0));
+				}
 			},
-			(x: number, y: number) => {
-				console.log(x, y);
-				obj.style.translate = 0 + "px";
+			(x: number) => {
+				obj.style.translate = "0px";
 				this.channel.moveForDrag(-1);
 
 				if (scrolling) {
+					scrolling = false;
+					gesture = "none";
+					drag = false;
+					reply = false;
 					return;
 				}
-				
+
 				if (x > 60) {
-					console.log("In here?");
 					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
 					toggle.checked = false;
-					console.log(toggle);
 				}
 				if (x < -40) {
 					this.channel.setReplying(this);
@@ -609,6 +619,7 @@ class Message extends SnowFlake {
 				reply = false;
 				scrolling = false;
 				drag = false;
+				gesture = "none";
 			},
 		);
 		this.div = obj;

@@ -1,4 +1,4 @@
-import {mobile, removeAni} from "./utils/utils.js";
+import {removeAni} from "./utils/utils.js";
 type iconJson =
 	| {
 			src: string;
@@ -452,11 +452,15 @@ class Contextmenu<x, y> {
 			}
 			touchEnd(lastx, lasty, event);
 		});
-		obj.addEventListener("touchmove", (event: TouchEvent) => {
-			lastx = event.touches[0].pageX - x;
-			lasty = event.touches[0].pageY - y;
-			touchDrag(lastx, lasty, event);
-		});
+		obj.addEventListener(
+			"touchmove",
+			(event: TouchEvent) => {
+				lastx = event.touches[0].pageX - x;
+				lasty = event.touches[0].pageY - y;
+				touchDrag(lastx, lasty, event);
+			},
+			{passive: false},
+		);
 		return func;
 	}
 	static keepOnScreen(obj: HTMLElement) {

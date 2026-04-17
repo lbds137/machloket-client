@@ -363,10 +363,87 @@ if (window.location.pathname.startsWith("/channels")) {
 	};
 	if (mobile) {
 		const channelWrapper = document.getElementById("channelw") as HTMLDivElement;
+		const channelList = document.querySelector<HTMLDivElement>(".channelflex");
 		channelWrapper.onclick = () => {
 			const toggle = document.getElementById("maintoggle") as HTMLInputElement;
 			toggle.checked = true;
 		};
+		let swipeGesture: "none" | "horizontal" | "vertical" = "none";
+		let swipeStartX = 0;
+		let swipeStartY = 0;
+		let swipeDeltaX = 0;
+		channelWrapper.addEventListener(
+			"touchstart",
+			(event) => {
+				if (event.touches.length !== 1) return;
+				swipeGesture = "none";
+				swipeStartX = event.touches[0].pageX;
+				swipeStartY = event.touches[0].pageY;
+				swipeDeltaX = 0;
+			},
+			{passive: true},
+		);
+		channelWrapper.addEventListener(
+			"touchmove",
+			(event) => {
+				if (event.touches.length !== 1) return;
+				const dx = event.touches[0].pageX - swipeStartX;
+				const dy = event.touches[0].pageY - swipeStartY;
+				if (swipeGesture === "none" && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+					swipeGesture = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+				}
+				if (swipeGesture === "horizontal") {
+					swipeDeltaX = dx;
+					event.preventDefault();
+				}
+			},
+			{passive: false},
+		);
+		channelWrapper.addEventListener("touchend", () => {
+			if (swipeGesture === "horizontal" && swipeDeltaX > 60) {
+				const toggle = document.getElementById("maintoggle") as HTMLInputElement;
+				toggle.checked = false;
+			}
+		});
+		if (channelList) {
+			let listGesture: "none" | "horizontal" | "vertical" = "none";
+			let listStartX = 0;
+			let listStartY = 0;
+			let listDeltaX = 0;
+			channelList.addEventListener(
+				"touchstart",
+				(event) => {
+					if (event.touches.length !== 1) return;
+					listGesture = "none";
+					listStartX = event.touches[0].pageX;
+					listStartY = event.touches[0].pageY;
+					listDeltaX = 0;
+				},
+				{passive: true},
+			);
+			channelList.addEventListener(
+				"touchmove",
+				(event) => {
+					if (event.touches.length !== 1) return;
+					const dx = event.touches[0].pageX - listStartX;
+					const dy = event.touches[0].pageY - listStartY;
+					if (listGesture === "none" && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+						listGesture = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+					}
+					if (listGesture === "horizontal") {
+						listDeltaX = dx;
+						event.preventDefault();
+					}
+				},
+				{passive: false},
+			);
+			channelList.addEventListener("touchend", () => {
+				if (listGesture === "horizontal" && listDeltaX < -60) {
+					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
+					toggle.checked = true;
+				}
+			});
+		}
 		memberListToggle.checked = false;
 	}
 	const channelPanel = document.querySelector<HTMLDivElement>(".channelflex");
