@@ -43,7 +43,8 @@ function normalizeWebhookUrl(hook: webhookType, api: string) {
 		}
 		if (/\/webhooks\/[^/]+\/[^/]+$/.test(path)) {
 			const rootUrl = new URL(root);
-			rootUrl.pathname = rootUrl.pathname.replace(/\/+$/, "") + `/webhooks/${hook.id}/${hook.token}`;
+			rootUrl.pathname =
+				rootUrl.pathname.replace(/\/+$/, "") + `/webhooks/${hook.id}/${hook.token}`;
 			return rootUrl.toString();
 		}
 	} catch {}
