@@ -3676,6 +3676,7 @@ ul {
 	justify-content: center;
 	position: relative;
 	cursor: grab;
+	touch-action: none;
 }
 
 .imgfit.dragging {

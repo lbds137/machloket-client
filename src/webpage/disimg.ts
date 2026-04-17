@@ -24,9 +24,12 @@ class ImagesDisplay {
 		let scale = 1;
 		let translateX = 0;
 		let translateY = 0;
-		let lastX = 0;
-		let lastY = 0;
 		let dragging = false;
+		let clickedAfterDrag = false;
+		const dragThreshold = 5;
+		const pointers = new Map<number, {x: number; y: number}>();
+		let initialDistance = 0;
+		let pinchStartScale = 1;
 
 		const imageElement = imageWrapper.querySelector("img");
 		const updateTransform = () => {
@@ -40,6 +43,9 @@ class ImagesDisplay {
 			translateY = 0;
 			updateTransform();
 		};
+
+		const getDistance = (a: {x: number; y: number}, b: {x: number; y: number}) =>
+			Math.hypot(a.x - b.x, a.y - b.y);
 
 		imageWrapper.onwheel = (event) => {
 			event.preventDefault();
@@ -56,43 +62,71 @@ class ImagesDisplay {
 		};
 
 		imageWrapper.onpointerdown = (event) => {
-			if (event.button !== 0 || !imageElement) return;
+			if (event.button !== 0 && event.pointerType !== "touch") return;
 			event.preventDefault();
+			pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
 			imageWrapper.setPointerCapture(event.pointerId);
-			dragging = true;
-			lastX = event.clientX;
-			lastY = event.clientY;
+			if (pointers.size === 1) {
+				dragging = true;
+			} else if (pointers.size === 2) {
+				dragging = false;
+				const [a, b] = Array.from(pointers.values());
+				initialDistance = getDistance(a, b);
+				pinchStartScale = scale;
+			}
 			imageWrapper.classList.add("dragging");
 		};
 
-		let clickedAfterDrag = false;
-		const dragThreshold = 5;
-
 		imageWrapper.onpointermove = (event) => {
-			if (!dragging) return;
+			if (!pointers.has(event.pointerId)) return;
 			event.preventDefault();
-			const dx = event.clientX - lastX;
-			const dy = event.clientY - lastY;
-			if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
-				clickedAfterDrag = true;
+			const previous = pointers.get(event.pointerId)!;
+			const dx = event.clientX - previous.x;
+			const dy = event.clientY - previous.y;
+			pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
+			if (pointers.size === 2) {
+				const [a, b] = Array.from(pointers.values());
+				const currentDistance = getDistance(a, b);
+				const newScale = Math.max(
+					0.5,
+					Math.min(10, pinchStartScale * (currentDistance / initialDistance)),
+				);
+				if (newScale !== scale && imageElement) {
+					const rect = imageWrapper.getBoundingClientRect();
+					const center = {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
+					const offsetX = center.x - rect.left - rect.width / 2;
+					const offsetY = center.y - rect.top - rect.height / 2;
+					translateX -= offsetX * (newScale / scale - 1);
+					translateY -= offsetY * (newScale / scale - 1);
+					scale = newScale;
+					updateTransform();
+				}
+			} else if (dragging) {
+				if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
+					clickedAfterDrag = true;
+				}
+				translateX += dx;
+				translateY += dy;
+				updateTransform();
 			}
-			lastX = event.clientX;
-			lastY = event.clientY;
-			translateX += dx;
-			translateY += dy;
-			updateTransform();
 		};
 
 		imageWrapper.onpointerup = (event) => {
 			if (event.pointerId) {
 				imageWrapper.releasePointerCapture(event.pointerId);
 			}
-			dragging = false;
+			pointers.delete(event.pointerId);
+			if (pointers.size === 1) {
+				dragging = true;
+			} else {
+				dragging = false;
+			}
 			imageWrapper.classList.remove("dragging");
 		};
 
 		imageWrapper.onpointercancel = () => {
 			dragging = false;
+			pointers.clear();
 			imageWrapper.classList.remove("dragging");
 		};
 
@@ -162,7 +196,7 @@ class ImagesDisplay {
 				if (e.key === "ArrowLeft") {
 					e.preventDefault();
 					e.stopImmediatePropagation();
-					right.click();
+					left.click();
 				}
 			});
 		}
