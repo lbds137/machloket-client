@@ -55,6 +55,17 @@
 		"markRead": "Marquer comme lu",
 		"name": "Messages privés"
 	},
+	"inbox": {
+		"unread": "Non lus",
+		"mentions": "Mentions",
+		"markAllAsRead": "Tout marquer comme lu",
+		"markAsRead": "Marquer comme lu",
+		"directMessage": "Message privé",
+		"noUnreadMentions": "Aucune mention non lue",
+		"noUnreadChannels": "Aucun canal non lu",
+		"openChannel": "Ouvrir le canal",
+		"mentionCount": "{{PLURAL:$1|$1 mention|$1 mentions}}"
+	},
 	"ok": "OK",
 	"dismiss": "Ignorer",
 	"UrlGen": "Générateur d'invitations de bot",

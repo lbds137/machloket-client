@@ -602,6 +602,13 @@ if (window.location.pathname.startsWith("/channels")) {
 		e.preventDefault();
 		e.stopImmediatePropagation();
 	};
+	const inboxM = document.getElementById("inboxM") as HTMLElement;
+	inboxM.onmousedown = (e) => e.stopImmediatePropagation();
+	inboxM.onclick = (e) => {
+		thisUser.inboxClick(inboxM.getBoundingClientRect());
+		e.preventDefault();
+		e.stopImmediatePropagation();
+	};
 	(document.getElementById("upload") as HTMLElement).onclick = () => {
 		const input = document.createElement("input");
 		input.type = "file";

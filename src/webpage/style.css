@@ -1111,6 +1111,10 @@ textarea {
 	margin-right: 0 !important;
 	mask-size: contain !important;
 }
+.svg-inbox {
+	mask: url(./icons/history.svg);
+	mask-size: contain !important;
+}
 .svg-frmessage {
 	mask: url(./icons/frmessage.svg);
 	mask-size: contain !important;
@@ -1309,6 +1313,133 @@ textarea {
 	width: 0.25in;
 	height: 0.25in;
 	cursor: pointer;
+}
+#inboxMDiv,
+#pinnedMDiv {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#inboxM {
+	width: 0.25in;
+	height: 0.25in;
+	cursor: pointer;
+}
+#inboxCount {
+	position: absolute;
+	top: -6px;
+	right: -6px;
+	min-width: 14px;
+	height: 14px;
+	padding: 0 4px;
+	border-radius: 999px;
+	background: var(--red);
+	color: white;
+	font-size: 10px;
+	font-weight: 700;
+	line-height: 14px;
+	text-align: center;
+	pointer-events: none;
+}
+.inboxMenu {
+	position: fixed;
+	width: min(92vw, 420px);
+	max-height: min(70vh, 620px);
+	padding: 8px;
+	gap: 8px;
+	overflow: hidden;
+	border-radius: 8px;
+	z-index: 130;
+}
+.inboxTabRow {
+	gap: 6px;
+	align-items: center;
+}
+.inboxTab {
+	border: 0;
+	background: transparent;
+	color: var(--primary-text-soft);
+	padding: 6px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: 700;
+}
+.inboxTab:hover {
+	background: var(--channel-hover);
+	color: var(--primary-text-prominent);
+}
+.inboxTab.active {
+	background: var(--channel-selected);
+	color: var(--primary-text-prominent);
+}
+.inboxMarkAll {
+	margin-left: auto;
+	border: 0;
+	background: transparent;
+	color: var(--blue);
+	padding: 6px 10px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-weight: 700;
+}
+.inboxMarkAll:hover {
+	background: var(--channel-hover);
+}
+.inboxList {
+	overflow-y: auto;
+	gap: 6px;
+	padding-right: 2px;
+}
+.inboxEmpty {
+	padding: 12px 8px;
+	color: var(--primary-text-soft);
+}
+.inboxItem {
+	padding: 8px;
+	border-radius: 8px;
+	cursor: pointer;
+	gap: 4px;
+	background: color-mix(in srgb, var(--secondary-bg), transparent 55%);
+}
+.inboxItem:hover {
+	background: var(--channel-hover);
+}
+.inboxItemTop {
+	align-items: center;
+	gap: 8px;
+}
+.inboxTitle {
+	font-weight: 700;
+	color: var(--primary-text-prominent);
+	min-width: 0;
+	flex: 1;
+}
+.inboxSubtitle {
+	font-size: 12px;
+	color: var(--primary-text-soft);
+}
+.inboxPreview {
+	font-size: 13px;
+	color: var(--primary-text-soft);
+}
+.inboxPreview .mentionMD,
+.inboxPreview a {
+	pointer-events: none;
+	cursor: inherit;
+}
+.inboxMark {
+	border: 0;
+	background: transparent;
+	color: var(--blue);
+	padding: 4px 6px;
+	border-radius: 6px;
+	cursor: pointer;
+	font-size: 12px;
+	flex: none;
+}
+.inboxMark:hover {
+	background: color-mix(in srgb, var(--blue), transparent 88%);
 }
 .unreadPin {
 	position: relative;

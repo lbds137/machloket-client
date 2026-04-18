@@ -53,11 +53,19 @@ import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSet
 import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {SnowFlake} from "./snowflake.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
 };
 type trace = [string, traceObj];
+type inboxTab = "unread" | "mentions";
+type inboxEntry = {
+	channel: Channel;
+	messageId?: string;
+	message?: Message;
+	isDm: boolean;
+};
 const wsCodesRetry = new Set([4000, 4001, 4002, 4003, 4005, 4007, 4008, 4009]);
 interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
@@ -269,6 +277,9 @@ class Localuser {
 		this.updateTranslations();
 	}
 	favorites!: Favorites;
+	inboxMenu?: HTMLDivElement;
+	inboxTab: inboxTab = "unread";
+	inboxBuildToken = 0;
 	readysup = false;
 	get voiceAllowed() {
 		return this.readysup;
@@ -1075,6 +1086,8 @@ class Localuser {
 				}
 			}
 			this.generateFavicon();
+			this.refreshInboxBadge();
+			this.refreshInboxMenu();
 		} else if (temp.op === 10) {
 			if (!this.ws) return;
 			console.log("heartbeat down");
@@ -2280,6 +2293,345 @@ class Localuser {
 			}
 			const html = this.guildhtml.get(thing.id);
 			thing.unreads(html);
+		}
+		this.refreshInboxBadge();
+		this.refreshInboxMenu();
+	}
+	private inboxChannels(tab: inboxTab) {
+		const dms = (this.guildids.get("@me") as Direct | undefined)?.channels || [];
+		const guildChannels = this.guilds
+			.filter((guild) => guild.id !== "@me")
+			.flatMap((guild) => guild.channels)
+			.filter((channel) => channel.visible);
+
+		const channels = [...dms, ...guildChannels].filter((channel) => {
+			if (tab === "mentions") {
+				return channel.mentions > 0;
+			}
+			return channel.hasunreads;
+		});
+
+		channels.sort((a, b) => {
+			const aDm = a.guild.id === "@me" ? 1 : 0;
+			const bDm = b.guild.id === "@me" ? 1 : 0;
+			if (aDm !== bDm) {
+				return bDm - aDm;
+			}
+			const aTime = this.inboxChannelTime(a);
+			const bTime = this.inboxChannelTime(b);
+			return bTime - aTime;
+		});
+
+		return channels;
+	}
+	private inboxChannelTime(channel: Channel) {
+		if (channel.lastmessage) {
+			return channel.lastmessage.getTimeStamp();
+		}
+		const messageId = channel.trueLastMessageid || channel.lastmessageid || "0";
+		return SnowFlake.stringToUnixTime(messageId);
+	}
+	private inboxPreview(message?: Message) {
+		if (!message) {
+			return undefined;
+		}
+		const raw = message.content.rawString.trim().replace(/\s+/g, " ");
+		if (!raw) {
+			return undefined;
+		}
+		const previewRaw = raw.length <= 120 ? raw : raw.slice(0, 117) + "...";
+		return new MarkDown(previewRaw, message.channel, {keep: true, stdsize: true}).makeHTML({
+			keep: true,
+			stdsize: true,
+		});
+	}
+	private inboxPreviewText(message?: Message) {
+		if (!message) {
+			return "";
+		}
+		const raw = message.content.rawString.trim().replace(/\s+/g, " ");
+		if (raw.length <= 120) {
+			return raw;
+		}
+		return raw.slice(0, 117) + "...";
+	}
+	private inboxTitle(channel: Channel) {
+		if (channel.guild.id !== "@me") {
+			return `#${channel.name}`;
+		}
+		if (channel instanceof Group && channel.type === 1 && channel.users[0]) {
+			return channel.users[0].name;
+		}
+		if (channel instanceof Group) {
+			return channel.getname();
+		}
+		return channel.name;
+	}
+	private inboxSubtitle(channel: Channel) {
+		if (channel.guild.id === "@me") {
+			return "Direct Message";
+		}
+		return channel.guild.properties.name;
+	}
+	private async inboxUnreadMessageId(channel: Channel): Promise<string | undefined> {
+		if (!channel.hasunreads) {
+			return undefined;
+		}
+		const lastRead = channel.lastreadmessageid;
+		let messageId: string | undefined;
+		if (lastRead && channel.idToNext.has(lastRead)) {
+			messageId = channel.idToNext.get(lastRead);
+		}
+		if (!messageId && lastRead && !lastRead.includes("fake")) {
+			await channel.grabAfter(lastRead);
+			messageId = channel.idToNext.get(lastRead);
+		}
+		if (!messageId) {
+			messageId = channel.lastmessageid || channel.trueLastMessageid;
+		}
+		return messageId;
+	}
+	private async inboxMentionMessageId(channel: Channel): Promise<string | undefined> {
+		if (!channel.mentions) {
+			return undefined;
+		}
+		let cursor = channel.lastreadmessageid || "0";
+		let scans = 0;
+
+		for (let i = 0; i < 3; i++) {
+			if (!channel.idToNext.has(cursor) && !cursor.includes("fake")) {
+				await channel.grabAfter(cursor);
+			}
+			let next = channel.idToNext.get(cursor);
+			while (next) {
+				scans++;
+				const message = channel.messages.get(next);
+				if (message?.mentionsuser(this.user)) {
+					return message.id;
+				}
+				cursor = next;
+				next = channel.idToNext.get(cursor);
+				if (scans > 250) {
+					break;
+				}
+			}
+			if (
+				scans > 250 ||
+				!channel.idToNext.has(cursor) ||
+				channel.idToNext.get(cursor) === undefined
+			) {
+				break;
+			}
+		}
+
+		if (channel.lastmessageid) {
+			const last = await channel.getmessage(channel.lastmessageid);
+			if (last?.mentionsuser(this.user)) {
+				return last.id;
+			}
+		}
+		return channel.lastmessageid || channel.trueLastMessageid;
+	}
+	private async buildInboxEntries(tab: inboxTab): Promise<inboxEntry[]> {
+		const channels = this.inboxChannels(tab);
+		const entries = await Promise.all(
+			channels.map(async (channel) => {
+				const messageId =
+					tab === "mentions"
+						? await this.inboxMentionMessageId(channel)
+						: await this.inboxUnreadMessageId(channel);
+				const message = messageId
+					? channel.messages.get(messageId) || (await channel.getmessage(messageId))
+					: undefined;
+				return {
+					channel,
+					messageId,
+					message,
+					isDm: channel.guild.id === "@me",
+				} satisfies inboxEntry;
+			}),
+		);
+		return entries;
+	}
+	private markChannelRead(channel: Channel) {
+		if ((!channel.hasunreads && channel.mentions === 0) || !channel.trueLastMessageid) {
+			return;
+		}
+		channel.mentions = 0;
+		fetch(
+			this.info.api + "/channels/" + channel.id + "/messages/" + channel.trueLastMessageid + "/ack",
+			{
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({}),
+			},
+		);
+		const next = channel.messages.get(
+			channel.idToNext.get(channel.lastreadmessageid as string) as string,
+		);
+		channel.lastreadmessageid = channel.trueLastMessageid;
+		channel.guild.unreads();
+		channel.unreads();
+		if (next) {
+			next.generateMessage();
+		}
+	}
+	private closeInboxMenu() {
+		if (!this.inboxMenu) return;
+		this.inboxMenu.remove();
+		if (Contextmenu.currentmenu === this.inboxMenu) {
+			Contextmenu.declareMenu();
+		}
+		this.inboxMenu = undefined;
+	}
+	refreshInboxBadge() {
+		const badge = document.getElementById("inboxCount") as HTMLSpanElement | null;
+		if (!badge) return;
+		const count = this.totalMentions();
+		if (!count) {
+			badge.hidden = true;
+			badge.textContent = "";
+			return;
+		}
+		badge.hidden = false;
+		badge.textContent = count > 99 ? "+99" : `${count}`;
+	}
+	refreshInboxMenu() {
+		if (!this.inboxMenu || !document.body.contains(this.inboxMenu)) {
+			this.inboxMenu = undefined;
+			return;
+		}
+		this.renderInboxMenu(this.inboxTab, this.inboxMenu);
+	}
+	async inboxClick(rect: DOMRect) {
+		if (this.inboxMenu && document.body.contains(this.inboxMenu)) {
+			this.closeInboxMenu();
+			return;
+		}
+
+		const menu = document.createElement("div");
+		menu.classList.add("flexttb", "contextmenu", "inboxMenu");
+		menu.style.top = `${rect.bottom + 8}px`;
+		menu.style.right = `${window.innerWidth - rect.right}px`;
+		document.body.append(menu);
+		Contextmenu.keepOnScreen(menu);
+		Contextmenu.declareMenu(menu);
+		this.inboxMenu = menu;
+		this.renderInboxMenu(this.inboxTab, menu);
+	}
+	private async renderInboxMenu(tab: inboxTab, menu: HTMLDivElement) {
+		const token = ++this.inboxBuildToken;
+		this.inboxTab = tab;
+		menu.innerHTML = "";
+
+		const tabRow = document.createElement("div");
+		tabRow.classList.add("flexltr", "inboxTabRow");
+
+		const unreadTab = document.createElement("button");
+		unreadTab.classList.add("inboxTab");
+		unreadTab.textContent = I18n.inbox.unread();
+		if (tab === "unread") unreadTab.classList.add("active");
+		unreadTab.onclick = (e) => {
+			e.stopImmediatePropagation();
+			this.renderInboxMenu("unread", menu);
+		};
+
+		const mentionsTab = document.createElement("button");
+		mentionsTab.classList.add("inboxTab");
+		mentionsTab.textContent = I18n.inbox.mentions();
+		if (tab === "mentions") mentionsTab.classList.add("active");
+		mentionsTab.onclick = (e) => {
+			e.stopImmediatePropagation();
+			this.renderInboxMenu("mentions", menu);
+		};
+
+		const markAll = document.createElement("button");
+		markAll.classList.add("inboxMarkAll");
+		markAll.textContent = I18n.inbox.markAllAsRead();
+		tabRow.append(unreadTab, mentionsTab, markAll);
+		menu.append(tabRow);
+
+		const list = document.createElement("div");
+		list.classList.add("flexttb", "inboxList");
+		const loading = document.createElement("span");
+		loading.classList.add("inboxEmpty");
+		loading.textContent = "Loading...";
+		list.append(loading);
+		menu.append(list);
+
+		const entries = await this.buildInboxEntries(tab);
+		if (token !== this.inboxBuildToken || this.inboxMenu !== menu) {
+			return;
+		}
+
+		markAll.disabled = entries.length === 0;
+		markAll.onclick = (event) => {
+			event.stopImmediatePropagation();
+			const unique = new Map(entries.map((entry) => [entry.channel.id, entry.channel]));
+			for (const channel of unique.values()) {
+				this.markChannelRead(channel);
+			}
+			this.refreshInboxBadge();
+			this.refreshInboxMenu();
+		};
+
+		list.innerHTML = "";
+		if (entries.length === 0) {
+			const empty = document.createElement("span");
+			empty.classList.add("inboxEmpty");
+			empty.textContent =
+				tab === "mentions" ? I18n.inbox.noUnreadMentions() : I18n.inbox.noUnreadChannels();
+			list.append(empty);
+			return;
+		}
+
+		for (const entry of entries) {
+			const row = document.createElement("div");
+			row.classList.add("flexttb", "inboxItem");
+
+			const top = document.createElement("div");
+			top.classList.add("flexltr", "inboxItemTop");
+
+			const title = document.createElement("span");
+			title.classList.add("inboxTitle", "ellipsis");
+			title.textContent = this.inboxTitle(entry.channel);
+
+			const mark = document.createElement("button");
+			mark.classList.add("inboxMark");
+			mark.textContent = I18n.inbox.markAsRead();
+			mark.onclick = (event) => {
+				event.stopImmediatePropagation();
+				this.markChannelRead(entry.channel);
+				this.refreshInboxBadge();
+				this.refreshInboxMenu();
+			};
+
+			top.append(title, mark);
+
+			const subtitle = document.createElement("span");
+			subtitle.classList.add("inboxSubtitle", "ellipsis");
+			let subtitleText = this.inboxSubtitle(entry.channel);
+			if (entry.channel.mentions > 0) {
+				subtitleText += ` • ${I18n.inbox.mentionCount(entry.channel.mentions + "")}`;
+			}
+			subtitle.textContent = subtitleText;
+
+			const preview = document.createElement("span");
+			preview.classList.add("inboxPreview", "ellipsis");
+			const previewHtml = this.inboxPreview(entry.message);
+			if (previewHtml) {
+				preview.append(previewHtml);
+			} else {
+				preview.textContent = this.inboxPreviewText(entry.message) || I18n.inbox.openChannel();
+			}
+
+			row.append(top, subtitle, preview);
+			row.onclick = async () => {
+				await this.goToChannel(entry.channel.id, true, entry.messageId);
+				this.closeInboxMenu();
+			};
+
+			list.append(row);
 		}
 	}
 	static favC = document.createElement("canvas");

@@ -36,6 +36,17 @@
 		"markRead": "Mark as read",
 		"name": "Direct Messages"
 	},
+	"inbox": {
+		"unread": "Unread",
+		"mentions": "Mentions",
+		"markAllAsRead": "Mark all as read",
+		"markAsRead": "Mark as read",
+		"directMessage": "Direct Message",
+		"noUnreadMentions": "No unread mentions",
+		"noUnreadChannels": "No unread channels",
+		"openChannel": "Open channel",
+		"mentionCount": "{{PLURAL:$1|$1 mention|$1 mentions}}"
+	},
 	"ok": "Ok",
 	"dismiss": "Dismiss",
 	"UrlGen": "Bot invite generator",
