@@ -862,6 +862,7 @@
 	},
 	"submit": "Submit",
 	"switchAccounts": "Switch accounts ⇌",
+	"addAccount": "Add accounts",
 	"todayAt": "Today at $1",
 	"trace": {
 		"totalTime": "$2: $1ms",

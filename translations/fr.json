@@ -881,6 +881,7 @@
 	},
 	"submit": "Soumettre",
 	"switchAccounts": "Changer de compte ⇌",
+	"addAccount": "Ajouter un compte",
 	"todayAt": "Aujourd'hui à $1",
 	"trace": {
 		"totalTime": "$2: $1ms",

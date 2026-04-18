@@ -1,7 +1,7 @@
 import {Contextmenu} from "../contextmenu";
 import {I18n} from "../i18n.js";
 import {Localuser} from "../localuser.js";
-import {createImg, Specialuser} from "./utils.js";
+import {createImg, getBulkInfo, Specialuser} from "./utils.js";
 await I18n.done;
 const menu = new Contextmenu<Specialuser, void>("");
 menu.addButton(
@@ -29,7 +29,7 @@ export class AccountSwitcher {
 			canHide = true,
 			loginurl = "/login",
 			registerurl = "/register",
-			loginText = () => I18n.switchAccounts(),
+			loginText = () => I18n.addAccount(),
 		} = {},
 	) {
 		this.filter = filter;
@@ -68,7 +68,27 @@ export class AccountSwitcher {
 				span.classList.add("serverURL");
 				userDiv.append(span);
 
-				userInfo.append(userDiv);
+				const logoutButton = document.createElement("button");
+				logoutButton.type = "button";
+				logoutButton.classList.add("logoutButton");
+				logoutButton.textContent = I18n.logout.logout();
+				logoutButton.addEventListener("click", async (e) => {
+					e.stopPropagation();
+					e.preventDefault();
+					if (await specialUser.logout()) {
+						userInfo.remove();
+						if (specialUser.uid === Localuser.users.currentuser) {
+							const info = getBulkInfo();
+							if (Object.keys(info.users).length > 0) {
+								window.location.href = "/channels/@me";
+							} else {
+								window.location.href = "/login";
+							}
+						}
+					}
+				});
+
+				userInfo.append(userDiv, logoutButton);
 				table.append(userInfo);
 				userInfo.addEventListener("contextmenu", (e) => {
 					if (this.canLogOut) {

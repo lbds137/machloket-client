@@ -3245,7 +3245,8 @@ img.bigembedimg {
 .profile {
 	position: absolute;
 	height: 350px;
-	width: 300px;
+	width: min(300px, 100%);
+	max-width: 100%;
 	max-height: 100svh;
 	background: var(--card-bg);
 	box-shadow:
@@ -3254,9 +3255,12 @@ img.bigembedimg {
 	border-radius: 8px;
 	overflow: hidden;
 	align-items: flex-start;
-	z-index: 3;
+	z-index: 10;
 	display: flex;
 	flex-direction: column;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 	&:not(.hypoprofile) {
 		animation-duration: 0.2s;
 		animation-name: fade-in;
@@ -3409,9 +3413,12 @@ img.bigembedimg {
 	color: var(--secondary-text);
 	border-radius: 8px;
 	box-sizing: border-box;
-	overflow-y: inherit;
+	overflow-y: auto;
 	padding-top: 30px;
 	z-index: 1;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	word-break: break-word;
 }
 .infosection h2,
 .infosection h3 {
@@ -3791,6 +3798,18 @@ fieldset input[type="radio"] {
 	height: 48px;
 	width: 48px;
 	margin-right: 8px;
+}
+.accountSwitcher .logoutButton {
+	margin-left: auto;
+	padding: 8px 12px;
+	border: 1px solid var(--primary-text-soft);
+	border-radius: 8px;
+	background: transparent;
+	color: var(--primary-text);
+	cursor: pointer;
+}
+.accountSwitcher .logoutButton:hover {
+	background: var(--primary-hover);
 }
 .serverURL {
 	font-size: 0.9em;
