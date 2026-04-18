@@ -4364,7 +4364,7 @@ fieldset input[type="radio"] {
 		left: 64px;
 	}
 	#mainarea {
-		left: 304px;
+		left: 315px;
 		width: 100svw;
 		width: 100vw;
 		background: var(--primary-bg);
@@ -4415,6 +4415,7 @@ fieldset input[type="radio"] {
 	#page.mobileMainOpen #mainarea,
 	#page:has(#maintoggle:checked) #mainarea {
 		left: 0;
+		right: 0;
 	}
 	#page.mobileMembersOpen #sideContainDiv:not(.hideSearchDiv),
 	#page.mobileMembersOpen #sideContainDiv.searchDiv:not(.hideSearchDiv),
