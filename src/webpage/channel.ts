@@ -2831,7 +2831,9 @@ class Channel extends SnowFlake {
 						build += ", ";
 					}
 					i++;
-					if (thing.nick) {
+					if (this.guild.id === "@me") {
+						build += thing.user.name;
+					} else if (thing.nick) {
 						build += thing.nick;
 					} else {
 						build += thing.user.username;
