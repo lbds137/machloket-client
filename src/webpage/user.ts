@@ -1147,6 +1147,31 @@ class User extends SnowFlake {
 			this.nameChange();
 		}
 	}
+	private addSelfProfileActions(userbody: HTMLDivElement, showSwitchAccount = true) {
+		if (this.localuser.user.id !== this.id) return;
+		const actionRow = document.createElement("div");
+		actionRow.classList.add("profileActions");
+		const addAction = (label: string, callback: () => void) => {
+			const button = document.createElement("button");
+			button.type = "button";
+			button.classList.add("profileActionButton");
+			button.textContent = label;
+			button.onclick = (event) => {
+				event.stopImmediatePropagation();
+				callback();
+			};
+			actionRow.append(button);
+		};
+		if (showSwitchAccount) {
+			addAction(I18n.switchAccounts(), () => Localuser.showAccountSwitcher(this.localuser));
+		}
+		addAction(I18n.user.editProfile(), () => this.localuser.showusersettings());
+		addAction(I18n.localuser.status(), () => Localuser.openStatusDialog(this.localuser));
+		addAction(I18n.user.copyId(), async () => {
+			await navigator.clipboard.writeText(this.id);
+		});
+		userbody.append(actionRow);
+	}
 	async fullProfile(guild: Guild | null | Member = null) {
 		console.log(guild);
 		const membres = (async () => {
@@ -1260,6 +1285,8 @@ class User extends SnowFlake {
 				pronounshtml.textContent = member.pronouns;
 			}
 		});
+
+		this.addSelfProfileActions(userbody, false);
 
 		const rule = document.createElement("hr");
 		userbody.appendChild(rule);
@@ -1529,6 +1556,8 @@ class User extends SnowFlake {
 				pronounshtml.textContent = member.pronouns;
 			}
 		});
+
+		this.addSelfProfileActions(userbody);
 
 		const rule = document.createElement("hr");
 		userbody.appendChild(rule);

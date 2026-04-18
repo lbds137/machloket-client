@@ -35,8 +35,18 @@ if (window.location.pathname.startsWith("/channels")) {
 	const userInfoElement = document.getElementById("userinfo") as HTMLDivElement;
 	userInfoElement.addEventListener("click", (event) => {
 		event.stopImmediatePropagation();
-		const rect = userInfoElement.getBoundingClientRect();
-		Localuser.userMenu.makemenu(rect.x, rect.top - 10 - window.innerHeight, thisUser);
+		if (thisUser) {
+			const rect = userInfoElement.getBoundingClientRect();
+			thisUser.user.buildprofile(Math.max(0, rect.left), Math.max(0, rect.top - 360));
+		}
+	});
+	userInfoElement.addEventListener("contextmenu", (event) => {
+		event.preventDefault();
+		event.stopImmediatePropagation();
+		if (thisUser) {
+			const rect = userInfoElement.getBoundingClientRect();
+			Localuser.userMenu.makemenu(rect.x, rect.top - 10 - window.innerHeight, thisUser);
+		}
 	});
 
 	const switchAccountsElement = document.getElementById("switchaccounts") as HTMLDivElement;

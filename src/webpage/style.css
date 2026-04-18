@@ -3301,6 +3301,25 @@ img.bigembedimg {
 	margin: 8px 0 0 8px;
 	cursor: pointer;
 }
+.profileActions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	width: 100%;
+	margin: 10px 0;
+}
+.profileActionButton {
+	padding: 8px 10px;
+	border: none;
+	border-radius: 8px;
+	background: var(--secondary-bg);
+	color: var(--primary-text);
+	cursor: pointer;
+	font-size: 13px;
+}
+.profileActionButton:hover {
+	background: var(--secondary-hover);
+}
 .statusDiv {
 	position: absolute;
 	right: 2px;
@@ -3390,7 +3409,7 @@ img.bigembedimg {
 	color: var(--secondary-text);
 	border-radius: 8px;
 	box-sizing: border-box;
-	overflow-y: auto;
+	overflow-y: inherit;
 	padding-top: 30px;
 	z-index: 1;
 }

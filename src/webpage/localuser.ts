@@ -137,6 +137,33 @@ class Localuser {
 
 		onswap?.(thisUser);
 	}
+	static openStatusDialog(user: Localuser) {
+		const d = new Dialog(I18n.localuser.status());
+		const opt = d.float.options;
+		const selection = ["online", "invisible", "dnd", "idle"] as const;
+		const smap = selection.map((key) => I18n.user[key]());
+		let index = selection.indexOf(user.status as "online" | "invisible" | "dnd" | "idle");
+		if (index === -1) {
+			index = 0;
+		}
+		opt
+			.addSelect("", () => {}, smap, {
+				defaultIndex: index,
+			})
+			.watchForChange(async (i) => {
+				const status = selection[i];
+				await fetch(user.info.api + "/users/@me/settings", {
+					body: JSON.stringify({
+						status,
+					}),
+					headers: user.headers,
+					method: "PATCH",
+				});
+				sessionStorage.setItem("status", status);
+				user.user.setstatus(status);
+			});
+		d.show();
+	}
 	static userMenu = this.generateUserMenu();
 	userResMap = new Map<string, Promise<User>>();
 	async getUser(id: string) {
@@ -183,31 +210,7 @@ class Localuser {
 		menu.addButton(
 			() => I18n.localuser.status(),
 			function () {
-				const d = new Dialog(I18n.localuser.status());
-				const opt = d.float.options;
-				const selection = ["online", "invisible", "dnd", "idle"] as const;
-				const smap = selection.map((_) => I18n.user[_]());
-				let index = selection.indexOf(this.status as "online" | "invisible" | "dnd" | "idle");
-				if (index === -1) {
-					index = 0;
-				}
-				opt
-					.addSelect("", () => {}, smap, {
-						defaultIndex: index,
-					})
-					.watchForChange(async (i) => {
-						const status = selection[i];
-						await fetch(this.info.api + "/users/@me/settings", {
-							body: JSON.stringify({
-								status,
-							}),
-							headers: this.headers,
-							method: "PATCH",
-						});
-						sessionStorage.setItem("status", status);
-						this.user.setstatus(status);
-					});
-				d.show();
+				Localuser.openStatusDialog(this);
 			},
 		);
 		menu.addButton(
