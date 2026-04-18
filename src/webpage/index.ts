@@ -353,21 +353,45 @@ if (window.location.pathname.startsWith("/channels")) {
 
 	(document.getElementById("settings") as HTMLImageElement).onclick = userSettings;
 	const memberListToggle = document.getElementById("memberlisttoggle") as HTMLInputElement;
+	const pageEl = document.getElementById("page") as HTMLDivElement | null;
 	memberListToggle.checked = !localStorage.getItem("memberNotChecked");
+	const updateMemberListClass = () => {
+		if (!pageEl) return;
+		pageEl.classList.toggle("mobileMembersOpen", memberListToggle.checked);
+	};
 	memberListToggle.onchange = () => {
 		if (!memberListToggle.checked) {
 			localStorage.setItem("memberNotChecked", "true");
 		} else {
 			localStorage.removeItem("memberNotChecked");
 		}
+		updateMemberListClass();
 	};
+	updateMemberListClass();
 	if (mobile) {
 		const channelWrapper = document.getElementById("channelw") as HTMLDivElement;
 		const channelList = document.querySelector<HTMLDivElement>(".channelflex");
-		channelWrapper.onclick = () => {
-			const toggle = document.getElementById("maintoggle") as HTMLInputElement;
-			toggle.checked = true;
+		const maintoggle = document.getElementById("maintoggle") as HTMLInputElement | null;
+		const updateMainClass = () => {
+			if (!pageEl || !maintoggle) return;
+			pageEl.classList.toggle("mobileMainOpen", maintoggle.checked);
 		};
+		if (maintoggle) {
+			maintoggle.onchange = updateMainClass;
+			updateMainClass();
+		}
+		let ignoreChannelWrapperClick = false;
+		channelWrapper.addEventListener("click", (event) => {
+			if (ignoreChannelWrapperClick) {
+				ignoreChannelWrapperClick = false;
+				event.preventDefault();
+				event.stopImmediatePropagation();
+				return;
+			}
+			if (!maintoggle) return;
+			maintoggle.checked = true;
+			updateMainClass();
+		});
 		let swipeGesture: "none" | "horizontal" | "vertical" = "none";
 		let swipeStartX = 0;
 		let swipeStartY = 0;
@@ -401,8 +425,10 @@ if (window.location.pathname.startsWith("/channels")) {
 		);
 		channelWrapper.addEventListener("touchend", () => {
 			if (swipeGesture === "horizontal" && swipeDeltaX > 60) {
-				const toggle = document.getElementById("maintoggle") as HTMLInputElement;
-				toggle.checked = false;
+				if (!maintoggle) return;
+				maintoggle.checked = false;
+				updateMainClass();
+				ignoreChannelWrapperClick = true;
 			}
 		});
 		if (channelList) {
@@ -441,10 +467,14 @@ if (window.location.pathname.startsWith("/channels")) {
 				if (listGesture === "horizontal" && listDeltaX < -60) {
 					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
 					toggle.checked = true;
+					if (pageEl) {
+						pageEl.classList.toggle("mobileMainOpen", true);
+					}
 				}
 			});
 		}
 		memberListToggle.checked = false;
+		updateMemberListClass();
 	}
 	const channelPanel = document.querySelector<HTMLDivElement>(".channelflex");
 	const sidebarResize = document.getElementById("sidebarResize");

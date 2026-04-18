@@ -10,6 +10,7 @@ body {
 }
 #page {
 	height: 100svh;
+	min-height: 100vh;
 	background: var(--primary-bg);
 }
 .emojiJoin {
@@ -4338,6 +4339,7 @@ fieldset input[type="radio"] {
 	#mainarea {
 		position: absolute;
 		height: 100svh;
+		min-height: 100vh;
 	}
 	.channelflex {
 		left: 64px;
@@ -4345,15 +4347,26 @@ fieldset input[type="radio"] {
 	#mainarea {
 		left: 304px;
 		width: 100svw;
+		width: 100vw;
 		background: var(--primary-bg);
 		transition: left 0.3s;
+		z-index: 1;
+	}
+	#page:has(#maintoggle:checked) .channelflex {
+		z-index: 0;
+	}
+	#page:has(#maintoggle:checked) #mainarea {
+		z-index: 2;
 	}
 	#sideContainDiv,
 	#sideContainDiv.searchDiv {
 		display: block;
 		right: -100svw;
+		right: -100vw;
 		margin-left: -100svw;
+		margin-left: -100vw;
 		width: 100svw;
+		width: 100vw;
 		transition: right 0.3s;
 		box-sizing: border-box;
 	}
@@ -4376,16 +4389,26 @@ fieldset input[type="radio"] {
 	.scroller {
 		pointer-events: none;
 	}
+	#page.mobileMainOpen .scroller,
 	#page:has(#maintoggle:checked) .scroller {
 		pointer-events: auto;
 	}
+	#page.mobileMainOpen #mainarea,
 	#page:has(#maintoggle:checked) #mainarea {
 		left: 0;
 	}
+	#page.mobileMembersOpen #sideContainDiv:not(.hideSearchDiv),
+	#page.mobileMembersOpen #sideContainDiv.searchDiv:not(.hideSearchDiv),
 	#page:has(#memberlisttoggle:checked) #sideContainDiv:not(.hideSearchDiv),
 	#sideContainDiv.searchDiv:not(.hideSearchDiv) {
 		right: 0;
 		overflow: auto;
+	}
+	#channels,
+	.scroller,
+	#sideContainDiv {
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
 	}
 	#page:has(#maintoggle:checked) #maintoggleicon {
 		rotate: 180deg;
