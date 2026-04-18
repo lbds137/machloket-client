@@ -611,6 +611,7 @@ class Message extends SnowFlake {
 				if (x > 60) {
 					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
 					toggle.checked = false;
+					toggle.dispatchEvent(new Event("change", {bubbles: true}));
 				}
 				if (x < -40) {
 					this.channel.setReplying(this);

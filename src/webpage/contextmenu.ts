@@ -1,4 +1,4 @@
-import {removeAni} from "./utils/utils.js";
+import {getViewportHeight, getViewportWidth, removeAni} from "./utils/utils.js";
 type iconJson =
 	| {
 			src: string;
@@ -464,9 +464,8 @@ class Contextmenu<x, y> {
 		return func;
 	}
 	static keepOnScreen(obj: HTMLElement) {
-		const html = document.documentElement.getBoundingClientRect();
-		const docheight = window.innerHeight;
-		const docwidth = html.width;
+		const docheight = getViewportHeight();
+		const docwidth = getViewportWidth();
 		const box = obj.getBoundingClientRect();
 		if (box.right > docwidth) {
 			obj.style.left = Math.floor(docwidth - box.width) + "px";

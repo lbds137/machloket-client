@@ -1,6 +1,6 @@
 import {Localuser} from "./localuser.js";
 import {Contextmenu} from "./contextmenu.js";
-import {mobile, Specialuser} from "./utils/utils.js";
+import {getViewportHeight, mobile, Specialuser} from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
 import {MarkDown} from "./markdown.js";
 import {Message} from "./message.js";
@@ -45,7 +45,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		event.stopImmediatePropagation();
 		if (thisUser) {
 			const rect = userInfoElement.getBoundingClientRect();
-			Localuser.userMenu.makemenu(rect.x, rect.top - 10 - window.innerHeight, thisUser);
+			Localuser.userMenu.makemenu(rect.x, rect.top - 10 - getViewportHeight(), thisUser);
 		}
 	});
 
@@ -380,11 +380,28 @@ if (window.location.pathname.startsWith("/channels")) {
 	updateMemberListClass();
 	if (mobile) {
 		const channelWrapper = document.getElementById("channelw") as HTMLDivElement;
+		const mainArea = document.getElementById("mainarea") as HTMLDivElement;
 		const channelList = document.querySelector<HTMLDivElement>(".channelflex");
 		const maintoggle = document.getElementById("maintoggle") as HTMLInputElement | null;
+		const updateViewportHeight = () => {
+			document.documentElement.style.setProperty(
+				"--app-height",
+				`${Math.round(getViewportHeight())}px`,
+			);
+		};
+		updateViewportHeight();
+		window.addEventListener("resize", updateViewportHeight, {passive: true});
+		window.addEventListener("orientationchange", updateViewportHeight, {passive: true});
+		window.visualViewport?.addEventListener("resize", updateViewportHeight, {passive: true});
+		window.visualViewport?.addEventListener("scroll", updateViewportHeight, {passive: true});
 		const updateMainClass = () => {
 			if (!pageEl || !maintoggle) return;
 			pageEl.classList.toggle("mobileMainOpen", maintoggle.checked);
+		};
+		const setMainOpen = (isOpen: boolean) => {
+			if (!maintoggle) return;
+			maintoggle.checked = isOpen;
+			updateMainClass();
 		};
 		if (maintoggle) {
 			maintoggle.onchange = updateMainClass;
@@ -399,14 +416,13 @@ if (window.location.pathname.startsWith("/channels")) {
 				return;
 			}
 			if (!maintoggle) return;
-			maintoggle.checked = true;
-			updateMainClass();
+			setMainOpen(true);
 		});
 		let swipeGesture: "none" | "horizontal" | "vertical" = "none";
 		let swipeStartX = 0;
 		let swipeStartY = 0;
 		let swipeDeltaX = 0;
-		channelWrapper.addEventListener(
+		mainArea.addEventListener(
 			"touchstart",
 			(event) => {
 				if (event.touches.length !== 1) return;
@@ -417,7 +433,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			},
 			{passive: true},
 		);
-		channelWrapper.addEventListener(
+		mainArea.addEventListener(
 			"touchmove",
 			(event) => {
 				if (event.touches.length !== 1) return;
@@ -433,11 +449,9 @@ if (window.location.pathname.startsWith("/channels")) {
 			},
 			{passive: false},
 		);
-		channelWrapper.addEventListener("touchend", () => {
-			if (swipeGesture === "horizontal" && swipeDeltaX > 60) {
-				if (!maintoggle) return;
-				maintoggle.checked = false;
-				updateMainClass();
+		mainArea.addEventListener("touchend", () => {
+			if (swipeGesture === "horizontal" && swipeDeltaX > 45) {
+				setMainOpen(false);
 				ignoreChannelWrapperClick = true;
 			}
 		});
@@ -474,12 +488,8 @@ if (window.location.pathname.startsWith("/channels")) {
 				{passive: false},
 			);
 			channelList.addEventListener("touchend", () => {
-				if (listGesture === "horizontal" && listDeltaX < -60) {
-					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
-					toggle.checked = true;
-					if (pageEl) {
-						pageEl.classList.toggle("mobileMainOpen", true);
-					}
+				if (listGesture === "horizontal" && listDeltaX < -45) {
+					setMainOpen(true);
 				}
 			});
 		}
@@ -490,12 +500,16 @@ if (window.location.pathname.startsWith("/channels")) {
 	const sidebarResize = document.getElementById("sidebarResize");
 	const CHANNEL_WIDTH_KEY = "channelPanelWidth";
 	if (channelPanel) {
-		const storedWidth = localStorage.getItem(CHANNEL_WIDTH_KEY);
-		if (storedWidth) {
-			const width = Number(storedWidth);
-			if (!Number.isNaN(width)) {
-				const clamped = Math.max(180, Math.min(420, width));
-				channelPanel.style.width = `${clamped}px`;
+		if (mobile) {
+			channelPanel.style.removeProperty("width");
+		} else {
+			const storedWidth = localStorage.getItem(CHANNEL_WIDTH_KEY);
+			if (storedWidth) {
+				const width = Number(storedWidth);
+				if (!Number.isNaN(width)) {
+					const clamped = Math.max(180, Math.min(420, width));
+					channelPanel.style.width = `${clamped}px`;
+				}
 			}
 		}
 	}

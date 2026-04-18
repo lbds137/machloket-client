@@ -26,7 +26,7 @@ import {Member} from "./member.js";
 import {Voice} from "./voice.js";
 import {User, userVolMenu} from "./user.js";
 import {I18n} from "./i18n.js";
-import {mobile, createImg, safeImg} from "./utils/utils.js";
+import {getViewportHeight, mobile, createImg, safeImg} from "./utils/utils.js";
 import {webhookMenu} from "./webhooks.js";
 import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
@@ -1802,7 +1802,7 @@ class Channel extends SnowFlake {
 				);
 			}
 			const box = muteOpt.getBoundingClientRect();
-			menu.makemenu(box.left, box.top - 34 - window.innerHeight);
+			menu.makemenu(box.left, box.top - 34 - getViewportHeight());
 		};
 
 		const updateCallIcon = () => {

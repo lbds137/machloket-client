@@ -379,6 +379,16 @@ const iOS =
 	(navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 export {mobile, iOS};
 
+export function getViewportHeight() {
+	return (
+		window.visualViewport?.height || document.documentElement.clientHeight || window.innerHeight
+	);
+}
+
+export function getViewportWidth() {
+	return window.visualViewport?.width || document.documentElement.clientWidth || window.innerWidth;
+}
+
 const datalist = document.getElementById("instances");
 console.warn(datalist);
 export const instancefetch = fetch("/instances.json")

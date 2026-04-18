@@ -2,7 +2,14 @@ import {Guild} from "./guild.js";
 import {Channel} from "./channel.js";
 import {Direct, Group} from "./direct.js";
 import {User} from "./user.js";
-import {createImg, getapiurls, getBulkUsers, installPGet, SW} from "./utils/utils.js";
+import {
+	createImg,
+	getapiurls,
+	getBulkUsers,
+	getViewportHeight,
+	installPGet,
+	SW,
+} from "./utils/utils.js";
 import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
 import {
 	channeljson,
@@ -3865,7 +3872,7 @@ class Localuser {
 	async makeStickerBox(rect: DOMRect) {
 		const sticker = await Sticker.stickerPicker(
 			-0 + rect.right - window.innerWidth,
-			-20 + rect.top - window.innerHeight,
+			-20 + rect.top - getViewportHeight(),
 			this,
 		);
 		this.favorites.addStickerFreq(sticker.id);
@@ -3894,7 +3901,7 @@ class Localuser {
 		}
 		const menu = document.createElement("div");
 		menu.classList.add("flexttb", "gifmenu");
-		menu.style.bottom = window.innerHeight - rect.top + 15 + "px";
+		menu.style.bottom = getViewportHeight() - rect.top + 15 + "px";
 		menu.style.right = window.innerWidth - rect.right + "px";
 		document.body.append(menu);
 		Contextmenu.keepOnScreen(menu);
@@ -4076,7 +4083,7 @@ class Localuser {
 
 		const emoji = await Emoji.emojiPicker(
 			-0 + rect.right - window.innerWidth,
-			-20 + rect.top - window.innerHeight,
+			-20 + rect.top - getViewportHeight(),
 			this,
 		);
 		this.favorites.addEmoji(emoji.id || (emoji.emoji as string));

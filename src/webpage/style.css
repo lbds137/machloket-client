@@ -8,9 +8,14 @@ body {
 	overflow: hidden; /* avoid "bounce" */
 	-webkit-text-size-adjust: 100%;
 }
+:root {
+	--app-height: 100svh;
+	--safe-top: env(safe-area-inset-top, 0px);
+	--safe-bottom: env(safe-area-inset-bottom, 0px);
+}
 #page {
-	height: 100svh;
-	min-height: 100vh;
+	height: var(--app-height);
+	min-height: var(--app-height);
 	background: var(--primary-bg);
 }
 .emojiJoin {
@@ -3600,14 +3605,19 @@ ul {
 	contain-intrinsic-width: AUTO 100px;
 	position: fixed;
 	top: 0;
-	height: 100%;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	height: var(--app-height);
 	width: 100%;
+	padding: calc(var(--safe-top) + 8px) 8px calc(var(--safe-bottom) + 8px);
 	background: color-mix(in srgb, var(--black) 75%, transparent);
 	backdrop-filter: blur(1px);
 	z-index: 102;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	box-sizing: border-box;
 
 	&:not(.menu) {
 		animation-name: bg-fade;
@@ -3740,8 +3750,9 @@ ul {
 }
 .nonimagecenter,
 .accountSwitcher {
-	max-height: 95svh;
+	max-height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 16px);
 	width: 500px;
+	max-width: calc(100vw - 16px);
 	padding: 6px;
 	margin: 0;
 	background: var(--secondary-bg);
@@ -3857,7 +3868,7 @@ fieldset input[type="radio"] {
 	margin: 8px;
 }
 .nonimagecenter:has(.guildy) {
-	max-height: unset;
+	max-height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 16px);
 	width: auto;
 }
 #typediv[style*="hidden"] {
@@ -4284,18 +4295,30 @@ fieldset input[type="radio"] {
 		0 0 1px var(--primary-text);
 	box-sizing: border-box;
 	z-index: 2;
-}
-.savediv button {
-	margin-left: 12px;
+	position: fixed;
+	inset: 0;
+	height: var(--app-height);
+	width: 100%;
 	background: var(--green);
 }
 .exitsettings {
 	position: absolute;
-	top: 11px;
+	top: calc(var(--safe-top) + 10px);
 	right: 12px;
-	height: 24px;
-	width: 24px;
+	height: 20px;
+	width: 20px;
+	box-sizing: border-box;
+	padding: 0;
+	border-radius: 4px;
 	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#loading > .centeritem {
+	max-height: 100%;
+	overflow-y: auto;
+	width: min(100%, 560px);
 }
 .exitsettings:hover {
 	background: var(--primary-text-prominent);
@@ -4353,6 +4376,20 @@ fieldset input[type="radio"] {
 }
 
 @media screen and (max-width: 600px) {
+	html,
+	body {
+		height: var(--app-height);
+		overflow: hidden;
+		overscroll-behavior: none;
+	}
+	.background {
+		align-items: flex-start;
+	}
+	body {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+	}
 	.searching {
 		position: absolute;
 		width: 100%;
@@ -4371,20 +4408,30 @@ fieldset input[type="radio"] {
 	#page {
 		display: block;
 		position: fixed;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		height: var(--app-height);
+		min-height: var(--app-height);
 	}
 	#servers,
 	.channelflex,
 	#mainarea {
 		position: absolute;
-		height: 100svh;
-		min-height: 100vh;
+		top: 0;
+		bottom: 0;
+		height: var(--app-height);
+		min-height: 0;
 	}
 	.channelflex {
 		left: 64px;
+		width: calc(78vw - 64px) !important;
+		min-width: 0;
+		max-width: none;
 	}
 	#mainarea {
-		left: 315px;
-		width: 100svw;
+		left: 78vw;
 		width: 100vw;
 		background: var(--primary-bg);
 		transition: left 0.3s;
@@ -4399,6 +4446,8 @@ fieldset input[type="radio"] {
 	#sideContainDiv,
 	#sideContainDiv.searchDiv {
 		display: block;
+		top: 0;
+		bottom: 0;
 		right: -100svw;
 		right: -100vw;
 		margin-left: -100svw;
@@ -4485,6 +4534,9 @@ fieldset input[type="radio"] {
 	#pasteimg {
 		padding-left: 12px;
 		padding-right: 12px;
+	}
+	#realbox {
+		padding-bottom: calc(12px + var(--safe-bottom));
 	}
 	#replybox {
 		margin-left: 12px;
