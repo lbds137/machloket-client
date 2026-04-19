@@ -1348,6 +1348,7 @@ class MarkDown {
 						this.saveTrusted();
 					});
 					full.show();
+					full.background.deref()!.style.zIndex = "300";
 				}
 			};
 		} else {
