@@ -1,6 +1,14 @@
 {
 	"@metadata": {
-		"authors": ["Eduardoaddad", "Erol", "Illyria", "S0rs immanis12", "Sixaxis", "YuriNikolai"]
+		"authors": [
+			"Bartomelow",
+			"Eduardoaddad",
+			"Erol",
+			"Illyria",
+			"S0rs immanis12",
+			"Sixaxis",
+			"YuriNikolai"
+		]
 	},
 	"2faCode": "Código 2FA:",
 	"404": {
@@ -555,7 +563,7 @@
 		"trustedDesc": "Esses domínios não vão te perguntar por permissão ao clicá-los como outros links, só permita links que você confia.",
 		"updateSettings": "Configurações de atualização",
 		"updatesYay": "Atualizações foram encontradas!",
-		"userSettings": "Configurações do Usuário"
+		"userSettings": "Seu perfil público"
 	},
 	"login": {
 		"allGood": "Tudo certo",

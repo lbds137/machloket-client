@@ -867,6 +867,13 @@
 	"typing": "Tá $2 {{PLURAL:$1|}} ag clóscríobh",
 	"unableToConnect": "Ní féidir ceangal leis an bhfreastalaí Spásbharra. Déan iarracht logáil amach agus isteach arís.",
 	"unableToPin": "Ní féidir an teachtaireacht a phionáil",
+	"connections": {
+		"since": "Ball ó: $1",
+		"display": "Taispeáin ar phróifíl:",
+		"delete": "Scrios an Ceangal",
+		"sure": "An bhfuil tú cinnte?",
+		"sureDesc": "Mura mbaintear an nasc seo, ní féidir leat é a chealú"
+	},
 	"unpinMessage": "Díphionáil teachtaireacht",
 	"updateAv": "Nuashonruithe ar fáil",
 	"uploadBanner": "Uaslódáil meirge:",
