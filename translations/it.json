@@ -190,7 +190,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "Versione client: $1 \n\n[Unisciti alla gilda ufficiale di Fermo]($2/invite/USgYJo?instance=https%3A% 2F%2Fspacebar.chat)\n\n[Aiutaci a tradurre Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Aiuta a creare Fermo](https://github.com/oh64/Fermo)\n\n[Aiuta a gestire il server su cui si basa Fermo](https://github.com/spacebarchat/server)\n\n\nDiritti calcolati: $3",
+	"clientDesc": "Versione client: $1 \n\n[Unisciti alla gilda ufficiale di Fermo]($2/invite/USgYJo?instance=https%3A% 2F%2Fspacebar.chat)\n\n[Aiutaci a tradurre Fermo](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Aiuta a creare Fermo](https://git.sovrahi.com/oh64/Fermo)\n\n[Aiuta a gestire il server su cui si basa Fermo](https://git.sovrahi.com/spacebarchat/server)\n\n\nDiritti calcolati: $3",
 	"commands": {
 		"errorNotValid": "$1 non è una scelta valida per $2",
 		"required": "$1 è una parte obbligatoria di questo comando"

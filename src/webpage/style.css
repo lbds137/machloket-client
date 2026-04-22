@@ -1718,6 +1718,16 @@ span.instanceStatus {
 	display: flex;
 	justify-content: space-between;
 }
+#openClient {
+	background-color: #5ca9ed;
+	padding: 10px;
+	border-radius: 20px;
+	color: black;
+	transition: border-radius 0.2s;
+}
+#openClient:hover {
+	border-radius: 10px;
+}
 
 /* Login/Invite */
 #logindiv,
