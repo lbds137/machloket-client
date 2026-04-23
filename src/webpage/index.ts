@@ -198,6 +198,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 		typebox.innerHTML = "";
 		typebox.markdown.txt = [];
+		channel.setDraft("");
 		try {
 			await new Promise<void>((mres, rej) =>
 				channel.sendMessage(
@@ -230,6 +231,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			typebox.textContent = content;
 			typebox.markdown.txt = content.split("");
 			typebox.markdown.boxupdate(Infinity);
+			channel.setDraft(content);
 		}
 		nonceMap.delete(channel.id);
 	}
@@ -282,6 +284,12 @@ if (window.location.pathname.startsWith("/channels")) {
 
 	typebox.markdown = markdown;
 	typebox.addEventListener("keyup", handleEnter);
+	const syncCurrentDraft = () => {
+		const channel = thisUser.channelfocus;
+		if (!channel || channel.curCommand) return;
+		channel.setDraft(MarkDown.gatherBoxText(typebox));
+	};
+	typebox.addEventListener("input", syncCurrentDraft);
 	typebox.addEventListener("keydown", (event) => {
 		if (event.isComposing) return;
 		thisUser.keydown(event);

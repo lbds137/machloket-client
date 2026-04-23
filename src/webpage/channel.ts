@@ -1948,12 +1948,42 @@ class Channel extends SnowFlake {
 	files: Blob[] = [];
 	htmls = new WeakMap<Blob, HTMLElement>();
 	textSave = "";
+	private static readonly DRAFT_STORAGE_KEY = "channelDraftsV1";
+	private get draftStorageId() {
+		return `${this.localuser.userinfo.uid}:${this.id}`;
+	}
+	private getStoredDraft() {
+		try {
+			const raw = localStorage.getItem(Channel.DRAFT_STORAGE_KEY);
+			if (!raw) return "";
+			const parsed = JSON.parse(raw) as {[key: string]: string};
+			return parsed[this.draftStorageId] || "";
+		} catch {
+			return "";
+		}
+	}
+	private setStoredDraft(content: string) {
+		try {
+			const raw = localStorage.getItem(Channel.DRAFT_STORAGE_KEY);
+			const parsed = (raw ? JSON.parse(raw) : {}) as {[key: string]: string};
+			if (content) {
+				parsed[this.draftStorageId] = content;
+			} else {
+				delete parsed[this.draftStorageId];
+			}
+			localStorage.setItem(Channel.DRAFT_STORAGE_KEY, JSON.stringify(parsed));
+		} catch {}
+	}
+	setDraft(content: string) {
+		this.textSave = content;
+		this.setStoredDraft(content);
+	}
 	collectBox() {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const [files, html] = this.localuser.fileExtange([], new WeakMap<Blob, HTMLElement>());
 		this.files = files;
 		this.htmls = html;
-		this.textSave = MarkDown.gatherBoxText(typebox);
+		this.setDraft(MarkDown.gatherBoxText(typebox));
 		typebox.textContent = "";
 	}
 	curCommand?: Command;
@@ -2628,10 +2658,15 @@ class Channel extends SnowFlake {
 		if (!this.curCommand && !this.isForum()) {
 			const md = typebox.markdown;
 			md.owner = this;
+			if (!this.textSave) {
+				this.textSave = this.getStoredDraft();
+			}
+			md.txt = this.textSave.split("");
 			typebox.textContent = this.textSave;
 			md.boxupdate(Infinity);
 		}
 		if (this.isForum()) {
+			typebox.markdown.txt = [];
 			typebox.textContent = "";
 		}
 		this.localuser.fileExtange(this.files, this.htmls);

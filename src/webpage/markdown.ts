@@ -1001,7 +1001,7 @@ class MarkDown {
 		this.onUpdate = onUpdate;
 		box.addEventListener("keydown", (_) => {
 			if (_.isComposing) return;
-			if (_.key === "Enter") {
+			if (_.key === "Enter" && !_.shiftKey) {
 				const selection = window.getSelection() as Selection;
 				if (!selection) return;
 				const range = selection.getRangeAt(0);
