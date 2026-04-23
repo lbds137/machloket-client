@@ -1168,7 +1168,22 @@ class MarkDown {
 		if (domains) {
 			return new Set(JSON.parse(domains) as string[]);
 		}
-		return new Set([location.host, "fermo.sovr.top", "blog.fermo.sovr.top"]);
+		return new Set([
+			location.host,
+			"*.sovr.top", // own and shortlink domain
+			"*.sovrahi.com", // Git domain
+		]);
+	}
+	static isTrustedHost(host: string) {
+		if (this.trustedDomains.has(host)) return true;
+		for (const domain of this.trustedDomains) {
+			if (domain.startsWith("*.") || domain.startsWith("*")) {
+				const normalized = domain.startsWith("*.") ? domain.slice(2) : domain.slice(1);
+				if (host === normalized) return true;
+				if (host.endsWith("." + normalized)) return true;
+			}
+		}
+		return false;
 	}
 	static saveTrusted(remove = false) {
 		if (!remove) {
@@ -1205,7 +1220,7 @@ class MarkDown {
 					}
 				}
 			}
-			if (elm instanceof HTMLAnchorElement && this.trustedDomains.has(Url.host)) {
+			if (elm instanceof HTMLAnchorElement && this.isTrustedHost(Url.host)) {
 				elm.href = url;
 				elm.target = "_blank";
 				return;
@@ -1226,7 +1241,7 @@ class MarkDown {
 						window.focus();
 					}
 				}
-				if (this.trustedDomains.has(Url.host)) {
+				if (this.isTrustedHost(Url.host)) {
 					open();
 				} else {
 					const full = new Dialog("");

@@ -3755,24 +3755,65 @@ class Localuser {
 		{
 			const trusted = settings.addButton(I18n.localuser.trusted());
 			trusted.addMDText(new MarkDown(I18n.localuser.trustedDesc()));
-			for (const thing of MarkDown.trustedDomains) {
+
+			const list = document.createElement("div");
+			list.classList.add("flexttb");
+
+			const createTrustedDomainRow = (domain: string) => {
 				const div = document.createElement("div");
 				div.classList.add("flexltr", "trustedDomain");
 
 				const name = document.createElement("span");
-				name.textContent = thing;
+				name.textContent = domain;
 
 				const remove = document.createElement("button");
 				remove.textContent = I18n.remove();
 				remove.onclick = () => {
 					MarkDown.saveTrusted();
-					MarkDown.trustedDomains.delete(thing);
+					MarkDown.trustedDomains.delete(domain);
 					MarkDown.saveTrusted(true);
 					div.remove();
 				};
 
 				div.append(name, remove);
-				trusted.addHTMLArea(div);
+				list.append(div);
+			};
+
+			const addRow = document.createElement("div");
+			addRow.classList.add("flexltr", "trustedDomainAdd");
+			const addInput = document.createElement("input");
+			addInput.type = "text";
+			addInput.placeholder = I18n.localuser.trustedDomainPlaceholder();
+			addInput.classList.add("trustedDomainInput");
+
+			const addButton = document.createElement("button");
+			addButton.textContent = I18n.add();
+			const addDomain = () => {
+				const domain = addInput.value.trim().toLowerCase();
+				if (!domain) return;
+				if (MarkDown.trustedDomains.has(domain)) {
+					addInput.value = "";
+					return;
+				}
+				MarkDown.trustedDomains.add(domain);
+				MarkDown.saveTrusted();
+				createTrustedDomainRow(domain);
+				addInput.value = "";
+			};
+			addButton.onclick = addDomain;
+			addInput.onkeydown = (event) => {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					addDomain();
+				}
+			};
+			addRow.append(addInput, addButton);
+
+			trusted.addHTMLArea(addRow);
+			trusted.addHTMLArea(list);
+
+			for (const thing of MarkDown.trustedDomains) {
+				createTrustedDomainRow(thing);
 			}
 		}
 		/*
