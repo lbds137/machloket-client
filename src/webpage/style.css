@@ -883,7 +883,6 @@ textarea {
 	mask-size: cover !important;
 	flex-shrink: 0;
 	cursor: pointer;
-
 	&:hover {
 		background: var(--black);
 	}
@@ -5070,6 +5069,11 @@ img.error::after {
 		}
 	}
 }
+.gifBox:hover {
+	.svg-gifstar {
+		top: 4px;
+	}
+}
 .gifBox {
 	img {
 		max-width: 196px;
@@ -5078,6 +5082,22 @@ img.error::after {
 	cursor: pointer;
 	position: absolute;
 	overflow: hidden;
+	.svg-gifstar {
+		mask: url(./icons/gifstar.svg);
+		mask-size: contain !important;
+		width: 24px;
+		height: 24px;
+		position: absolute;
+		top: -30px;
+		right: 5px;
+		transition: top 0.2s;
+		transition-timing-function: ease-in;
+		background: white;
+		cursor: pointer;
+		&.favorited {
+			background: yellow;
+		}
+	}
 }
 .emojiForm {
 	display: flex;

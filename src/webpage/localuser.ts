@@ -4297,6 +4297,28 @@ class Localuser {
 				img.height = gif.height / scale;
 				div.append(img);
 
+				const star = document.createElement("span");
+				star.classList.add("svg-gifstar");
+				if (this.favorites.hasGif(gif.src)) {
+					star.classList.add("favorited");
+				}
+				div.append(star);
+
+				star.onclick = (e) => {
+					e.stopImmediatePropagation();
+					if (this.favorites.hasGif(gif.src)) {
+						star.classList.remove("favorited");
+						this.favorites.unfavoriteGif(gif.src);
+					} else {
+						star.classList.add("favorited");
+						this.favorites.favoriteGif(gif.src, {
+							src: gif.src,
+							width: gif.width,
+							height: gif.height,
+						});
+					}
+				};
+
 				if (left <= right) {
 					div.style.top = left + "px";
 					left += Math.ceil(img.height) + 10;

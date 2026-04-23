@@ -2662,12 +2662,34 @@ class Channel extends SnowFlake {
 				this.textSave = this.getStoredDraft();
 			}
 			md.txt = this.textSave.split("");
-			typebox.textContent = this.textSave;
-			md.boxupdate(Infinity);
+			if (this.textSave) {
+				typebox.textContent = this.textSave;
+				md.boxupdate(Infinity);
+				setTimeout(() => {
+					const selection = window.getSelection();
+					if (selection && typebox.lastChild) {
+						const range = new Range();
+						let lastNode = typebox.lastChild;
+						while (lastNode.lastChild && !(lastNode instanceof Text)) {
+							lastNode = lastNode.lastChild;
+						}
+						if (lastNode instanceof Text) {
+							range.setStart(lastNode, lastNode.length);
+							range.setEnd(lastNode, lastNode.length);
+						} else {
+							range.setStartAfter(lastNode);
+							range.setEndAfter(lastNode);
+						}
+						selection.removeAllRanges();
+						selection.addRange(range);
+					}
+				}, 0);
+			} else {
+				md.boxupdate(Infinity);
+			}
 		}
 		if (this.isForum()) {
 			typebox.markdown.txt = [];
-			typebox.textContent = "";
 		}
 		this.localuser.fileExtange(this.files, this.htmls);
 
