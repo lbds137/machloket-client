@@ -81,16 +81,22 @@ class MarkDown {
 			const span = document.createElement("span");
 			span.classList.add("md-emoji", "bigemojiUni");
 
-			const matched = str.match(/^((<a?:[A-Za-z\d_]*:\d*>|([^\da-zA-Z <>])) *){1,3}$/u);
+			const matched = str.match(
+				/^((<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|([^\da-zA-Z <>])) *){1,3}$/u,
+			);
 			if (matched) {
-				const map = [...str.matchAll(/<a?:[A-Za-z\d_]*:\d*>|[^\da-zA-Z <>]+/gu).map(([_]) => _)];
+				const map = [
+					...str.matchAll(/<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|[^\da-zA-Z <>]+/gu).map(([_]) => _),
+				];
 				const seg = new Intl.Segmenter("en-US", {granularity: "grapheme"});
 				const invalid = map.find((str) => {
+					if (str.match(/^:[A-Za-z\d_]+:$/)) return false;
 					if (str.length > 10) return false;
 					if (Array.from(seg.segment(str)).length !== 1) return true;
 					return false;
 				});
 				if (!invalid) {
+					let hasInvalid = false;
 					for (const match of map) {
 						if (match.length > 10) {
 							const parts = match.match(/^<(a)?:\w+:(\d{10,30})>$/);
@@ -105,11 +111,28 @@ class MarkDown {
 
 								continue;
 							}
+						} else if (match.match(/^:[A-Za-z\d_]+:$/)) {
+							const emojiName = match.slice(1, -1);
+							let systemEmoji: {name: string; emoji: string} | undefined;
+							for (const group of Emoji.emojis) {
+								systemEmoji = group.emojis.find((e) => e.name === emojiName);
+								if (systemEmoji) break;
+							}
+							if (systemEmoji) {
+								const emoji = new Emoji({name: emojiName, emoji: systemEmoji.emoji}, undefined);
+								span.appendChild(emoji.getHTML(true, !keep));
+								continue;
+							}
 						} else {
 							span.append(match);
+							continue;
 						}
+						hasInvalid = true;
+						break;
 					}
-					return span;
+					if (!hasInvalid) {
+						return span;
+					}
 				}
 			}
 		}
@@ -874,6 +897,39 @@ class MarkDown {
 							{name: buildjoin, id: parts[2], animated: Boolean(parts[1])},
 							owner,
 						);
+						span.appendChild(emoji.getHTML(isEmojiOnly, !keep));
+
+						continue;
+					}
+				}
+			}
+
+			if (txt[i] === ":") {
+				const Emoji = MarkDown.emoji;
+				let found = false;
+				const build: string[] = [];
+				let j = i + 1;
+				for (; txt[j] !== void 0; j++) {
+					if (txt[j] === ":") {
+						found = true;
+						break;
+					}
+					build.push(txt[j]);
+				}
+
+				if (found && Emoji && build.length > 0) {
+					const emojiName = build.join("");
+					let systemEmoji: {name: string; emoji: string} | undefined;
+					for (const group of Emoji.emojis) {
+						systemEmoji = group.emojis.find((e) => e.name === emojiName);
+						if (systemEmoji) break;
+					}
+
+					if (systemEmoji) {
+						appendcurrent();
+						i = j;
+						const isEmojiOnly = txt.join("").trim() === `:${emojiName}:`.trim() && !stdsize;
+						const emoji = new Emoji({name: emojiName, emoji: systemEmoji.emoji}, undefined);
 						span.appendChild(emoji.getHTML(isEmojiOnly, !keep));
 
 						continue;
