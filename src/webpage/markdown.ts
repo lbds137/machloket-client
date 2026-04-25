@@ -604,6 +604,10 @@ class MarkDown {
 					}
 					build += char;
 				}
+				if (build.endsWith(".") && (j >= txt.length || txt[j] === " " || txt[j] === "\n")) {
+					build = build.slice(0, -1);
+					j--;
+				}
 				if (URL.canParse(build)) {
 					appendcurrent();
 					const a = document.createElement("a");
