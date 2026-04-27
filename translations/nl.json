@@ -867,6 +867,13 @@
 	"typing": "$2 {{PLURAL:$1|is|zijn}} aan het typen",
 	"unableToConnect": "Kan geen verbinding maken met de Spacebar-server. Probeer u af en weer aan te melden.",
 	"unableToPin": "Bericht kan niet worden vastgezet",
+	"connections": {
+		"since": "Lid sinds: $1",
+		"display": "Weergeven op profiel:",
+		"delete": "Verbinding verwijderen",
+		"sure": "Weet u het zeker?",
+		"sureDesc": "Als u deze verbinding verbreekt, kunt u dat niet meer ongedaan maken."
+	},
 	"unpinMessage": "Bericht losmaken",
 	"updateAv": "Updates beschikbaar",
 	"uploadBanner": "Banner uploaden:",
