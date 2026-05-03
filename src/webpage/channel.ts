@@ -1453,6 +1453,7 @@ class Channel extends SnowFlake {
 				this.replyingto = null;
 				replybox.innerHTML = "";
 				typebox.classList.remove("typeboxreplying");
+				typebox.blur();
 			};
 			replybox.classList.remove("hideReplyBox");
 			X.classList.add("cancelReply", "svgicon", "svg-x");

@@ -426,6 +426,19 @@ if (window.location.pathname.startsWith("/channels")) {
 			if (!maintoggle) return;
 			setMainOpen(true);
 		});
+		const scrollWrap = document.getElementById("scrollWrap") as HTMLElement;
+		if (scrollWrap) {
+			scrollWrap.addEventListener(
+				"click",
+				(event) => {
+					if (!maintoggle || maintoggle.checked) return;
+					event.stopImmediatePropagation();
+					event.preventDefault();
+					setMainOpen(true);
+				},
+				{capture: true},
+			);
+		}
 		let swipeGesture: "none" | "horizontal" | "vertical" = "none";
 		let swipeStartX = 0;
 		let swipeStartY = 0;

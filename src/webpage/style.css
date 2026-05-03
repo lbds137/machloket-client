@@ -4614,11 +4614,7 @@ fieldset input[type="radio"] {
 		rotate: -90deg;
 	}
 	.scroller {
-		pointer-events: none;
-	}
-	#page.mobileMainOpen .scroller,
-	#page:has(#maintoggle:checked) .scroller {
-		pointer-events: auto;
+		touch-action: pan-y;
 	}
 	#page.mobileMainOpen #mainarea,
 	#page:has(#maintoggle:checked) #mainarea {
