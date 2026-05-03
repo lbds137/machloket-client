@@ -3800,6 +3800,7 @@ class Channel extends SnowFlake {
 				body.nonce,
 				embeds,
 			);
+			await new Promise((resolve) => requestAnimationFrame(resolve));
 
 			try {
 				res.send((rbody = JSON.stringify(body)));
@@ -3852,6 +3853,7 @@ class Channel extends SnowFlake {
 				sticker_ids,
 				body.nonce,
 			);
+			await new Promise((resolve) => requestAnimationFrame(resolve));
 			try {
 				res.send((rbody = formData));
 			} catch {
