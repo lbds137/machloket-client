@@ -427,6 +427,12 @@ class User extends SnowFlake {
 				},
 			},
 		);
+		this.contextmenu.addButton(
+			() => I18n.user.viewProfile(),
+			function (this: User, m, e) {
+				this.buildprofile(e.clientX, e.clientY, m, 100000);
+			},
+		);
 
 		this.contextmenu.addSeperator();
 

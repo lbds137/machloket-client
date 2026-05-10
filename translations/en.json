@@ -983,7 +983,8 @@
 		"timeout": "Timeout member",
 		"unTimeout": "Remove timeout on member",
 		"unban": "Unban $1",
-		"unblock": "Unblock user"
+		"unblock": "Unblock user",
+		"viewProfile":"View profile"
 	},
 	"userping": {
 		"resolving": "resolving user",
