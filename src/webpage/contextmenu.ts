@@ -159,7 +159,10 @@ class Seperator<x, y> implements menuPart<x, y> {
 	}
 	makeContextHTML(obj1: x, obj2: y, menu: HTMLDivElement): void {
 		if (!this.visible || this.visible(obj1, obj2)) {
-			if (menu.children[menu.children.length - 1].tagName === "HR") {
+			if (
+				!menu.children[menu.children.length - 1] ||
+				menu.children[menu.children.length - 1].tagName === "HR"
+			) {
 				return;
 			}
 			menu.append(document.createElement("hr"));
@@ -303,6 +306,10 @@ class Contextmenu<x, y> {
 		this.buttons.push(button);
 		return button;
 	}
+	excluded = [] as string[];
+	excludeGroup(group: string) {
+		this.excluded.push(group);
+	}
 	addSeperator(visible?: (obj1: x, obj2: y) => boolean, group?: string) {
 		this.buttons.push(new Seperator(visible, group));
 	}
@@ -339,7 +346,10 @@ class Contextmenu<x, y> {
 		div.classList.add("contextmenu", "flexttb");
 		const processed = new WeakSet<menuPart<unknown, unknown>>();
 
+		const excluded = new Set(layered.flatMap((_) => _[0].excluded));
+
 		for (const button of this.buttons) {
+			if (excluded.has(button.group || "")) continue;
 			button.makeContextHTML(addinfo, other, div, layered, processed);
 		}
 		if (div.children[div.children.length - 1]?.tagName !== "HR") {

@@ -396,7 +396,7 @@ dmPermissions.setPermission("USE_VAD", 1);
 class Group extends Channel {
 	users: User[];
 	owner_id?: string;
-	static groupcontextmenu = new Contextmenu<Group, undefined>("channel menu");
+	static groupcontextmenu = new Contextmenu<Group, undefined>("channel menu", true);
 	static groupMenu = this.makeGroupMenu();
 	static makeGroupMenu() {
 		const menu = new Contextmenu<Group, User>("group menu", true);
@@ -427,9 +427,13 @@ class Group extends Channel {
 			function (this: Group) {
 				this.readbottom();
 			},
+			{
+				group: "dm",
+			},
 		);
+		this.groupcontextmenu.excludeGroup("dmPerson");
 
-		this.groupcontextmenu.addSeperator();
+		this.groupcontextmenu.addSeperator(undefined, "dm");
 
 		this.groupcontextmenu.addButton(
 			() => I18n.group.edit(),
@@ -450,6 +454,7 @@ class Group extends Channel {
 			},
 			{
 				color: "red",
+				group: "dm",
 			},
 		);
 
@@ -458,26 +463,20 @@ class Group extends Channel {
 			function (this: Group) {
 				this.addPerson();
 			},
-		);
-
-		this.groupcontextmenu.addSeperator();
-
-		this.groupcontextmenu.addButton(
-			() => I18n.user.copyId(),
-			function () {
-				navigator.clipboard.writeText(this.users[0].id);
-			},
 			{
-				visible: function () {
-					return this.type === 1;
-				},
+				group: "dm",
 			},
 		);
+
+		this.groupcontextmenu.addSeperator(undefined, "dm");
 
 		this.groupcontextmenu.addButton(
 			() => I18n.DMs.copyId(),
 			function (this: Group) {
 				navigator.clipboard.writeText(this.id);
+			},
+			{
+				group: "id",
 			},
 		);
 	}
@@ -593,6 +592,9 @@ class Group extends Channel {
 	createguildHTML() {
 		const div = document.createElement("div");
 		Group.groupcontextmenu.bindContextmenu(div, this, undefined);
+		if (this.type === 1 && this.users[0]) {
+			User.contextmenu.bindContextmenu(div, this.users[0], undefined);
+		}
 		this.html = new WeakRef(div);
 		div.classList.add("flexltr", "liststyle");
 		const myhtml = document.createElement("span");
