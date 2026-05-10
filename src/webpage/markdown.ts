@@ -1299,7 +1299,8 @@ class MarkDown {
 				if (channel) {
 					const message = isNaN(+path[2]) ? undefined : path[2];
 					elm.onmouseup = (_) => {
-						channel.getHTML(true, true, message);
+						if (message) channel.focus(message);
+						else channel.goToBottom();
 					};
 					if (message) {
 						return I18n.messageLink(channel.name);
