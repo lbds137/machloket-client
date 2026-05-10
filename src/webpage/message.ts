@@ -434,7 +434,9 @@ class Message extends SnowFlake {
 		if (emoji instanceof Emoji && !emoji.id && emoji.emoji) {
 			emoji = emoji.emoji;
 		}
-		let remove = !!this.reactions.find((_) => _.emoji.name === emoji)?.me;
+		let remove = !!this.reactions.find((_) =>
+			typeof emoji === "string" ? _.emoji.name === emoji : _.emoji.name === emoji.name,
+		)?.me;
 
 		let reactiontxt: string;
 		if (emoji instanceof Emoji) {
@@ -1711,14 +1713,14 @@ class Message extends SnowFlake {
 			reactdiv.append(reaction);
 
 			reaction.onclick = (_) => {
-				this.reactionToggle(thing.emoji.name);
+				this.reactionToggle(new Emoji(thing.emoji, this.guild));
 			};
 		}
 		func();
 	}
-	reactionAdd(data: {name: string}, member: Member | {id: string}) {
+	reactionAdd(data: {name: string; id?: string}, member: Member | {id: string}) {
 		for (const thing of this.reactions) {
-			if (thing.emoji.name === data.name) {
+			if (thing.emoji.name === data.name || thing.emoji.id === data.id) {
 				thing.count++;
 				if (member.id === this.localuser.user.id) {
 					thing.me = true;
