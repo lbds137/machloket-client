@@ -118,18 +118,28 @@ class Member extends SnowFlake {
 		return this.owner.headers;
 	}
 
-	updatepfp(file: Blob): void {
+	updatepfp(file: Blob | null): void {
 		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		reader.onload = () => {
+		if (file) {
+			reader.readAsDataURL(file);
+			reader.onload = () => {
+				fetch(this.info.api + `/guilds/${this.guild.id}/members/${this.id}/`, {
+					method: "PATCH",
+					headers: this.headers,
+					body: JSON.stringify({
+						avatar: reader.result,
+					}),
+				});
+			};
+		} else {
 			fetch(this.info.api + `/guilds/${this.guild.id}/members/${this.id}/`, {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify({
-					avatar: reader.result,
+					avatar: null,
 				}),
 			});
-		};
+		}
 	}
 	updatebanner(file: Blob | null): void {
 		if (file) {
@@ -201,7 +211,7 @@ class Member extends SnowFlake {
 	editProfile(options: Options) {
 		if (this.hasPermission("CHANGE_NICKNAME")) {
 			const hypotheticalProfile = document.createElement("div");
-			let file: undefined | File | null;
+			let file: undefined | File | null = undefined;
 			let newpronouns: string | undefined;
 			let newbio: string | undefined;
 			let nick: string | undefined;
@@ -228,14 +238,14 @@ class Member extends SnowFlake {
 				regen();
 			});
 
-			const finput = settingsLeft.addFileInput(
+			const finput = settingsLeft.addImageInput(
 				I18n.uploadPfp(),
 				(_) => {
-					if (file) {
+					if (file !== undefined) {
 						this.updatepfp(file);
 					}
 				},
-				{clear: true},
+				{clear: true, initImg: this.avatar ? this.getpfpsrc() : undefined},
 			);
 			finput.watchForChange((_) => {
 				if (!_) {
@@ -250,18 +260,24 @@ class Member extends SnowFlake {
 					const blob = URL.createObjectURL(file);
 					hypomember.avatar = blob;
 					hypomember.hypotheticalpfp = true;
+					console.log(hypomember.getpfpsrc());
 					regen();
 				}
 			});
 			let bfile: undefined | File | null;
-			const binput = settingsLeft.addFileInput(
+			const binput = settingsLeft.addImageInput(
 				I18n.uploadBanner(),
 				(_) => {
 					if (bfile !== undefined) {
 						this.updatebanner(bfile);
 					}
 				},
-				{clear: true},
+				{
+					clear: true,
+					width: 96 * 3,
+					initImg: this.banner ? this.getBannerUrl() : "",
+					objectFit: "cover",
+				},
 			);
 			binput.watchForChange((_) => {
 				if (!_) {

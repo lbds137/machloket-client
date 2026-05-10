@@ -2938,18 +2938,28 @@ class Localuser {
 		if (!channel) return;
 		channel.typingStart(typing);
 	}
-	updatepfp(file: Blob): void {
-		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		reader.onload = () => {
+	updatepfp(file: Blob | null): void {
+		if (file) {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => {
+				fetch(this.info.api + "/users/@me", {
+					method: "PATCH",
+					headers: this.headers,
+					body: JSON.stringify({
+						avatar: reader.result,
+					}),
+				});
+			};
+		} else {
 			fetch(this.info.api + "/users/@me", {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify({
-					avatar: reader.result,
+					avatar: null,
 				}),
 			});
-		};
+		}
 	}
 	updatebanner(file: Blob | null): void {
 		if (file) {
@@ -3034,7 +3044,7 @@ class Localuser {
 			const finput = settingsLeft.addImageInput(
 				I18n.uploadPfp(),
 				(_) => {
-					if (file) {
+					if (file !== undefined) {
 						this.updatepfp(file);
 					}
 				},

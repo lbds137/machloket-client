@@ -927,7 +927,7 @@ class User extends SnowFlake {
 		return has;
 	}
 	buildstatuspfp(guild: Guild | void | Member | null | Channel): HTMLDivElement {
-		const isChannel = !!(guild && "guild" in guild);
+		const isChannel = !!(guild && "guild" in guild && !(guild instanceof Member));
 		const div = this.buildpfp(isChannel ? guild.guild : guild);
 
 		const status = document.createElement("div");
