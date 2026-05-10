@@ -2844,6 +2844,7 @@ class Channel extends SnowFlake {
 			(document.getElementById("typebox") as HTMLDivElement).blur();
 		}
 		if (getMessages) await this.putmessages();
+
 		await prom;
 		if (id !== Channel.genid) {
 			return;
@@ -3186,6 +3187,7 @@ class Channel extends SnowFlake {
 	}
 	infinitefocus = false;
 	async tryfocusinfinate(id: string | void, flash = false) {
+		const gid = ++Channel.genid;
 		if (typeof id === "string" && !this.messages.has(id)) await this.getmessage(id);
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
@@ -3227,7 +3229,11 @@ class Channel extends SnowFlake {
 			elm.remove();
 			console.warn("rouge element detected and removed");
 		}
-		messages.append(await this.infinite.getDiv(id, flash));
+		const div = await this.infinite.getDiv(id, flash);
+		if (gid !== Channel.genid) {
+			return;
+		}
+		messages.append(div);
 		/*
 		await this.infinite.watchForChange().then(async (_) => {
 			//await new Promise(resolve => setTimeout(resolve, 0));
