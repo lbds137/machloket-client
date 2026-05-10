@@ -2117,7 +2117,7 @@ class Guild extends SnowFlake {
 		});
 
 		form.addSelect(I18n.channel.selectType(), "type", options, {radio: true}, [0, 5, 2, 15]);
-		form.addTextInput(I18n.channel.selectName(), "name");
+		form.addTextInput(I18n.channel.selectName(), "name", {spaceReplace: "_"});
 		channelselect.show();
 	}
 	createcategory() {
