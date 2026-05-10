@@ -911,6 +911,14 @@ class Localuser {
 			this.handleTrace(e.trace);
 		});
 	}
+	relChangeUpdateMap = new Map<string, (() => void)[]>();
+	async relationChange(id: string): Promise<void> {
+		const arr = this.relChangeUpdateMap.get(id) || [];
+		const {promise, resolve} = Promise.withResolvers<void>();
+		arr.push(resolve);
+		this.relChangeUpdateMap.set(id, arr);
+		return promise;
+	}
 	conectionChange = () => {};
 	async handleEvent(temp: wsjson) {
 		if (temp.d._trace) this.handleTrace(temp.d._trace);
@@ -1191,6 +1199,11 @@ class Localuser {
 						const me = this.guildids.get("@me");
 						if (!me) return;
 						me.unreads();
+						const arr = this.relChangeUpdateMap.get(user.id);
+						if (arr) {
+							arr.forEach((_) => _());
+							this.relChangeUpdateMap.delete(user.id);
+						}
 					})();
 					break;
 				}
@@ -1199,6 +1212,11 @@ class Localuser {
 					if (!user) return;
 					user.removeRelation();
 					this.relationshipsUpdate();
+					const arr = this.relChangeUpdateMap.get(user.id);
+					if (arr) {
+						arr.forEach((_) => _());
+						this.relChangeUpdateMap.delete(user.id);
+					}
 					break;
 				}
 				case "PRESENCE_UPDATE": {

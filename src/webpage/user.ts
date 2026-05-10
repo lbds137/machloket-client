@@ -315,6 +315,7 @@ class User extends SnowFlake {
 		return;
 	}
 	async changeRelationship(type: 0 | 1 | 2 | 3 | 4 | 5) {
+		const relChange = this.localuser.relationChange(this.id);
 		if (type !== 0) {
 			await fetch(`${this.info.api}/users/@me/relationships/${this.id}`, {
 				method: "PUT",
@@ -329,7 +330,7 @@ class User extends SnowFlake {
 				headers: this.owner.headers,
 			});
 		}
-		this.relationshipType = type;
+		await relChange;
 	}
 	static setUpContextMenu(): void {
 		this.contextmenu.addButton(
@@ -1892,6 +1893,44 @@ class User extends SnowFlake {
 		div.appendChild(userbody);
 		const usernamehtml = document.createElement("h2");
 		usernamehtml.textContent = this.username;
+
+		const friendDiv = document.createElement("div");
+		friendDiv.classList.add("friendProf");
+
+		const friendSpan = document.createElement("span");
+		friendSpan.classList.add("svgicon");
+		const updateIcon = () => {
+			friendSpan.classList.remove("svg-addfriend", "svg-waitfriend");
+			console.log(this.relationshipType);
+			if (this.relationshipType === 0 || this.relationshipType === 3) {
+				friendSpan.classList.add("svg-addfriend");
+			} else if (this.relationshipType === 4) {
+				friendSpan.classList.add("svg-waitfriend");
+			} else {
+				friendSpan.classList.add("svg-hasfriend");
+			}
+		};
+		if (this !== this.localuser.user && !this.bot) {
+			friendDiv.append(friendSpan);
+			div.append(friendDiv);
+			updateIcon();
+			const queForUpdates = async () => {
+				while (document.body.contains(friendDiv)) {
+					updateIcon();
+					await this.localuser.relationChange(this.id);
+				}
+			};
+			setTimeout(queForUpdates, 100);
+			friendDiv.onclick = async () => {
+				if (this.relationshipType === 0 || this.relationshipType === 3) {
+					await this.changeRelationship(1);
+				} else if (this.relationshipType === 4) {
+					//nothing
+				} else {
+					await this.changeRelationship(4);
+				}
+			};
+		}
 
 		userbody.appendChild(usernamehtml);
 		if (this.bot) {
