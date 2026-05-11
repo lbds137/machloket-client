@@ -813,7 +813,7 @@ class MarkDown {
 						break;
 					}
 				}
-				const parts = build.join("").match(/^<t:([0-9]{1,16})(:([tTdDfFR]))?>$/);
+				const parts = build.join("").match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
 
 				if (found && parts) {
 					appendcurrent();
@@ -883,6 +883,19 @@ class MarkDown {
 						else if (parts[3] === "R")
 							//TODO make this a little less bad
 							time = MarkDown.relTime(new Date(Number.parseInt(parts[1]) * 1000));
+						else if (parts[3] === "S")
+							time =
+								dateInput.toLocaleString(void 0, {
+									day: "numeric",
+									month: "numeric",
+									year: "numeric",
+								}) +
+								" " +
+								dateInput.toLocaleString(void 0, {
+									hour: "2-digit",
+									minute: "2-digit",
+									second: "2-digit",
+								});
 					}
 
 					const timeElem = document.createElement("span");
