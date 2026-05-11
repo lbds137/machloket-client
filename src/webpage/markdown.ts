@@ -813,15 +813,12 @@ class MarkDown {
 						break;
 					}
 				}
+				const parts = build.join("").match(/^<t:([0-9]{1,16})(:([tTdDfFR]))?>$/);
 
-				if (found) {
+				if (found && parts) {
 					appendcurrent();
 					i = j;
-					const parts = build.join("").match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
-					if (!parts) {
-						current.textContent += build.join("");
-						continue;
-					}
+
 					const dateInput = new Date(Number.parseInt(parts[1]) * 1000);
 					let time = "";
 					if (Number.isNaN(dateInput.getTime())) time = build.join("");
