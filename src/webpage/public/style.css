@@ -1427,7 +1427,11 @@ textarea {
 	mask: url(./icons/voicensfw.svg);
 	mask-size: contain !important;
 }
-
+.markdown-timestamp {
+	background: #00000038;
+	padding: 2px;
+	border-radius: 2px;
+}
 .svgicon {
 	& {
 		display: block;
