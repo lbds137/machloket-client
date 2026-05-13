@@ -1,4 +1,4 @@
 {
-  "name": "fermo",
-  "pages_build_output_dir": "dist/webpage"
+	"name": "fermo",
+	"pages_build_output_dir": "dist/webpage"
 }
