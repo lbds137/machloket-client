@@ -246,7 +246,7 @@ body {
 .sessionDiv {
 	padding: 8px;
 	border-radius: 4px;
-	background: #00040;
+	background: #0040;
 	cursor: pointer;
 }
 
@@ -256,7 +256,7 @@ body {
 	justify-content: space-between;
 	padding: 8px;
 	border-radius: 4px;
-	background: #00026;
+	background: #0026;
 }
 
 .ephemeralDiv {
@@ -771,11 +771,11 @@ audio::-webkit-media-controls-panel {
 		margin: 5px;
 		padding: 10px;
 		text-align: center;
-		background: #00029;
+		background: #0029;
 	}
 
 	&.selected {
-		background: #00050;
+		background: #0050;
 	}
 }
 
@@ -916,7 +916,7 @@ textarea {
 	> div {
 		&:hover {
 			padding: 5px;
-			background-color: #00061;
+			background-color: #0061;
 		}
 
 		p {
@@ -1506,14 +1506,14 @@ textarea {
 	}
 
 	.selected {
-		background: #fff5e;
+		background: #ff5e;
 	}
 }
 
 .forumTag {
 	padding: 3px;
 	border-radius: 12px;
-	background: #fff21;
+	background: #ff21;
 	cursor: pointer;
 }
 
@@ -1567,7 +1567,7 @@ textarea {
 	height: 3px;
 	margin: 6px;
 	border-radius: 100%;
-	background: #000de;
+	background: #00de;
 }
 
 .forumSearch {
@@ -1902,7 +1902,7 @@ textarea {
 		justify-content: center;
 		width: 100%;
 		height: 100%;
-		background: #00070;
+		background: #0070;
 	}
 
 	&[hidden] {
@@ -3211,7 +3211,7 @@ span.instanceStatus {
 	top: 5px;
 	left: 2px;
 	font-size: 12px;
-	color: #fffb8;
+	color: #ffb8;
 }
 
 .messagediv:hover {
@@ -3960,12 +3960,12 @@ img.bigembedimg {
 		margin-bottom: 10px;
 		padding: 0.05in;
 		border-radius: 0.075in;
-		background: #00020;
+		background: #0020;
 		cursor: pointer;
 	}
 
 	.topMessage:hover {
-		background: #00050;
+		background: #0050;
 	}
 }
 
@@ -4674,7 +4674,7 @@ ul {
 }
 
 .centeritem.profile {
-	width: 80%;
+	width: 70%;
 	height: 80%;
 }
 
@@ -4971,7 +4971,7 @@ fieldset input[type="radio"] {
 	margin: 2px;
 	padding: 2px;
 	border-radius: 4px;
-	background: #00036;
+	background: #0036;
 	cursor: pointer;
 }
 
@@ -5800,7 +5800,7 @@ fieldset input[type="radio"] {
 		padding: 0.06in 0.1in;
 		border: solid 1px var(--black);
 		border-radius: 0.1in;
-		background: #00030;
+		background: #0030;
 	}
 }
 
@@ -5821,7 +5821,7 @@ fieldset input[type="radio"] {
 		margin-top: 4px;
 		padding: 6px;
 		border-radius: 0.05in;
-		background: #00042;
+		background: #0042;
 		cursor: pointer;
 	}
 }
@@ -5885,7 +5885,7 @@ fieldset input[type="radio"] {
 	padding: 0.07in;
 	border: solid 1px var(--black);
 	border-radius: 1in;
-	background: #00045;
+	background: #0045;
 	transition: background 0.2s;
 }
 
@@ -6345,7 +6345,7 @@ img.error::after {
 		padding: 6px;
 		min-width: 300px;
 		border-radius: 4px;
-		background: #00063;
+		background: #0063;
 	}
 
 	::before {
