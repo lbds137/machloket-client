@@ -1,6 +1,7 @@
 {
 	"@metadata": {
 		"authors": [
+			"Aquasen",
 			"Asteralee",
 			"Bananax47",
 			"Codeurluce",
@@ -961,7 +962,8 @@
 		"timeout": "Exclure temporairement le membre",
 		"unTimeout": "Révoquer l'exclusion du membre",
 		"unban": "Lever le bannissement de $1",
-		"unblock": "Débloquer"
+		"unblock": "Débloquer",
+		"viewProfile": "Afficher le profil"
 	},
 	"userping": {
 		"resolving": "résolution de l'utilisateur",

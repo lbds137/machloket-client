@@ -914,7 +914,8 @@
 		"timeout": "Ball ama scoir",
 		"unTimeout": "Bain an t-am scoir ar bhall",
 		"unban": "Díchosc $1",
-		"unblock": "Díchoisc úsáideoir"
+		"unblock": "Díchoisc úsáideoir",
+		"viewProfile": "Féach ar phróifíl"
 	},
 	"userping": {
 		"resolving": "úsáideoir a réiteach",

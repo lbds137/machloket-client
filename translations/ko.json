@@ -7,7 +7,8 @@
 			"Tensama0415",
 			"Tensama0415",
 			"YeBoy371",
-			"Ykhwong"
+			"Ykhwong",
+			"解浪"
 		]
 	},
 	"2faCode": "2단계 인증 코드:",
@@ -494,7 +495,8 @@
 		"offline": "오프라인",
 		"online": "온라인",
 		"removeRole": "역할 제거",
-		"unblock": "사용자 차단 해제"
+		"unblock": "사용자 차단 해제",
+		"viewProfile": "프로필 보기"
 	},
 	"webhook": "웹훅",
 	"webhooks": {
