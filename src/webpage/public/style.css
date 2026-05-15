@@ -3633,7 +3633,9 @@ input[type="search"]:read-only {
 		background: var(--spoiler-hover);
 	}
 }
-
+.unspoiled {
+	background: var(--spoiler-unspoiled);
+}
 .quote {
 	display: inline-block;
 	position: relative;
