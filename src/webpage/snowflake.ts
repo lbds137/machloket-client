@@ -13,5 +13,8 @@ abstract class SnowFlake {
 			throw new Error(`The ID is corrupted, it's ${str} when it should be some number.`);
 		}
 	}
+	static DateToID(date: Date) {
+		return ((BigInt(+date) - 1420070400000n) << 22n).toString();
+	}
 }
 export {SnowFlake};

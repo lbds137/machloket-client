@@ -239,7 +239,42 @@ body {
 	display: flex;
 	min-height: 0;
 }
+.amsCont {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
 
+	.addbg {
+		background: #0000006e;
+		padding: 4px;
+		border-radius: 6px;
+		height: 16px;
+		width: 16px;
+		cursor: pointer;
+	}
+	.svg-plus {
+		width: 16px;
+		height: 16px;
+	}
+}
+.amsElm {
+	height: 18px;
+	background: #00000061;
+	border-radius: 4px;
+	margin: 4px;
+	padding: 4px;
+	width: fit-content;
+	cursor: pointer;
+	align-items: center;
+
+	.svg-plainx {
+		margin-left: 10px;
+		width: 14px;
+		height: 14px;
+		cursor: pointer;
+	}
+}
 .sessionDiv {
 	padding: 8px;
 	border-radius: 4px;
@@ -289,6 +324,24 @@ body {
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+}
+.reses {
+	span {
+		background: #0000007a;
+		margin: 3px;
+		padding: 3px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
+}
+.reses {
+	span {
+		background: #0000007a;
+		margin: 3px;
+		padding: 3px;
+		border-radius: 4px;
+		cursor: pointer;
+	}
 }
 .actConnectionDiv {
 	background: #0000005c;
@@ -6741,4 +6794,17 @@ img.error::after {
 	max-height: 400px;
 	max-width: 400px;
 	border-radius: 3px;
+}
+.amsBox {
+	position: absolute;
+	z-index: 10000;
+	padding: 5px;
+	background: var(--primary-bg);
+	box-shadow: 0px 0px 3px 1px black;
+	border-radius: 6px;
+	&.removeElm {
+		animation-duration: 0.2s;
+		animation-name: context-fade-out;
+		animation-timing-function: ease-out;
+	}
 }

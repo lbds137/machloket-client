@@ -211,6 +211,21 @@ class TextInput implements OptionsElement<string> {
 	}
 }
 class DateInput extends TextInput {
+	dateValue: Date | null;
+	constructor(
+		label: string,
+		onSubmit: (str: string) => void,
+		owner: Options,
+		{initText = "" as string | Date} = {},
+	) {
+		let initDate: DateInput["dateValue"] = null;
+		if (initText instanceof Date) {
+			initDate = initText;
+			initText = "";
+		}
+		super(label, onSubmit, owner, {initText});
+		this.dateValue = initDate;
+	}
 	generateHTML(): HTMLDivElement {
 		const div = document.createElement("div");
 		const span = document.createElement("span");
@@ -219,10 +234,19 @@ class DateInput extends TextInput {
 		const input = document.createElement("input");
 		input.value = this.value;
 		input.type = "date";
+		if (this.dateValue) input.valueAsDate = this.dateValue;
 		input.oninput = this.onChange.bind(this);
 		this.input = new WeakRef(input);
 		div.append(input);
 		return div;
+	}
+	onChange() {
+		const input = this.input.deref();
+		if (input) {
+			const value = input.valueAsDate;
+			this.dateValue = value;
+		}
+		super.onChange();
 	}
 }
 class SettingsMDText implements OptionsElement<void> {
@@ -445,7 +469,134 @@ export class ColorInput implements OptionsElement<string> {
 		this.onSubmit(this.colorContent);
 	}
 }
+interface searchRes {
+	value: string;
+	name: string;
+}
+class AsyncMultiSelect implements OptionsElement<string[]> {
+	readonly label: string;
+	readonly owner: Options;
+	readonly onSubmit: (str: string[]) => void;
+	select!: WeakRef<HTMLSelectElement>;
+	searchFunc: (term: string, cur: string[]) => Promise<searchRes[]> | searchRes[];
+	value = [] as string[];
+	nmap = [] as string[];
+	constructor(
+		label: string,
+		onSubmit: (str: string[]) => void,
+		selections: AsyncMultiSelect["searchFunc"],
+		owner: Options,
+		{defaultValues = []}: {defaultValues: searchRes[]} = {defaultValues: []},
+	) {
+		this.label = label;
+		this.value = defaultValues.map((_) => _.value);
+		this.nmap = defaultValues.map((_) => _.name);
+		this.owner = owner;
+		this.onSubmit = onSubmit;
+		this.searchFunc = selections;
+	}
+	generateHTML() {
+		const div = document.createElement("div");
+		const span = document.createElement("span");
+		span.textContent = this.label;
+		div.append(span);
+		const s = document.createElement("div");
+		s.classList.add("amsCont");
+		const genArea = () => {
+			s.textContent = "";
+			let i = 0;
+			for (const name of this.nmap) {
+				const si = i++;
+				const elm = document.createElement("div");
+				elm.classList.add("amsElm", "flexltr");
 
+				const x = document.createElement("span");
+				x.classList.add("svgicon", "svg-plainx");
+				x.onclick = () => {
+					this.value.splice(si, 1);
+					this.nmap.splice(si, 1);
+					genArea();
+					this.onchange(this.value);
+				};
+				const nspan = document.createElement("span");
+				nspan.textContent = name;
+
+				elm.append(nspan, x);
+
+				s.append(elm);
+			}
+			const addbg = document.createElement("div");
+			addbg.classList.add("addbg");
+			const add = document.createElement("span");
+			add.classList.add("svgicon", "svg-plus");
+			addbg.append(add);
+			s.append(addbg);
+			add.onclick = (e) => {
+				this.popUpSearchBox(e.x, e.y, () => {
+					genArea();
+					this.onchange(this.value);
+				});
+			};
+		};
+		genArea();
+		div.append(s);
+		return div;
+	}
+	async popUpSearchBox(x: number, y: number, done: () => void) {
+		const searchBox = document.createElement("div");
+		searchBox.style.top = y + "px";
+		searchBox.style.left = x + "px";
+		searchBox.classList.add("amsBox");
+		const input = document.createElement("input");
+		input.type = "text";
+
+		const reses = document.createElement("div");
+		reses.classList.add("flexttb", "reses");
+		searchBox.append(input, reses);
+		let opts = [] as searchRes[];
+		const search = async () => {
+			const res = await this.searchFunc(input.value || "", this.value);
+			reses.textContent = "";
+			opts = res;
+			for (const opt of opts) {
+				const span = document.createElement("span");
+				span.textContent = opt.name;
+				span.onmousedown = () => {
+					removeAni(searchBox);
+					this.value.push(opt.value);
+					this.nmap.push(opt.name);
+					done();
+				};
+				reses.append(span);
+			}
+			input.onblur = async () => {
+				removeAni(searchBox);
+			};
+		};
+
+		input.onkeyup = (e) => {
+			if (e.key === "Enter" && opts[0]) {
+				removeAni(searchBox);
+				this.value.push(opts[0].value);
+				this.nmap.push(opts[0].name);
+				done();
+			} else {
+				search();
+			}
+		};
+
+		search();
+		document.body.append(searchBox);
+		input.focus();
+	}
+	submit() {
+		this.onSubmit(this.value);
+	}
+	onchange: (str: string[]) => void = (_) => {};
+	watchForChange(func: (str: string[]) => void) {
+		this.onchange = func;
+	}
+}
 class SelectInput implements OptionsElement<number> {
 	readonly label: string;
 	readonly owner: Options;
@@ -902,6 +1053,7 @@ class Dialog {
 		this.float = new Float(name, {ltr, noSubmit});
 		this.above = goAbove;
 	}
+	onhide = () => {};
 	show(hideOnClick = true) {
 		const background = document.createElement("div");
 		background.classList.add("background");
@@ -916,6 +1068,7 @@ class Dialog {
 		background.onclick = (_) => {
 			if (hideOnClick && _.target === background) {
 				removeAni(background);
+				this.onhide();
 			}
 		};
 		background.tabIndex = 0;
@@ -923,6 +1076,7 @@ class Dialog {
 		background.onkeydown = (e) => {
 			if (e.key === "Escape" && hideOnClick) {
 				removeAni(background);
+				this.onhide();
 			}
 		};
 		return center;
@@ -1216,6 +1370,19 @@ class Options implements OptionsElement<void> {
 		this.generate(select);
 		return select;
 	}
+	addAsyncMultiSelect(
+		label: string,
+		onSubmit: (str: string[]) => void,
+		selections: AsyncMultiSelect["searchFunc"],
+		{defaultValues = [] as searchRes[]} = {},
+	) {
+		const select = new AsyncMultiSelect(label, onSubmit, selections, this, {
+			defaultValues,
+		});
+		this.options.push(select);
+		this.generate(select);
+		return select;
+	}
 	addImageInput(
 		label: string,
 		onSubmit: (files: FileList | null) => void,
@@ -1232,7 +1399,11 @@ class Options implements OptionsElement<void> {
 		this.generate(FI);
 		return FI;
 	}
-	addDateInput(label: string, onSubmit: (str: string) => void, {initText = ""} = {}) {
+	addDateInput(
+		label: string,
+		onSubmit: (str: string | undefined) => void,
+		{initText = "" as string | Date} = {},
+	) {
 		const textInput = new DateInput(label, onSubmit, this, {
 			initText,
 		});

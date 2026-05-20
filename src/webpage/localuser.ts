@@ -5096,7 +5096,7 @@ class Localuser {
 	MDFindChannel(name: string, original: string, box: HTMLDivElement, typebox: MarkDown) {
 		const maybe: [number, Channel][] = [];
 		if (this.lookingguild && this.lookingguild.id !== "@me") {
-			for (const channel of this.lookingguild.channels) {
+			for (const channel of this.lookingguild.channels.filter((_) => _.visible)) {
 				const confidence = channel.similar(name);
 				if (confidence > 0) {
 					maybe.push([confidence, channel]);
@@ -5276,13 +5276,19 @@ class Localuser {
 		const sideDiv = document.getElementById("sideDiv");
 		const sideContainDiv = document.getElementById("sideContainDiv");
 		if (!sideDiv || !sideContainDiv) return;
+		let authorIds = [] as string[];
+		let mentionIds = [] as string[];
+		let channels = [] as Channel[];
 		const genPage = (page: number) => {
 			p.set("offset", page * 50 + "");
 			const guildSearch = this.lookingguild?.id !== "@me";
 			fetch(
 				this.info.api +
 					`${guildSearch ? `/guilds/${this.lookingguild?.id}` : `/channels/${this.channelfocus?.id}`}/messages/search/?` +
-					p.toString(),
+					p.toString() +
+					(authorIds.length ? authorIds.map((_) => `&author_id=${_}`).join("") : "") +
+					(mentionIds.length ? mentionIds.map((_) => `&mentions=${_}`).join("") : "") +
+					(channels.length ? channels.map((_) => `&channel_id=${_.id}`).join("") : ""),
 				{
 					headers: this.headers,
 				},
@@ -5314,6 +5320,141 @@ class Localuser {
 					const sortBar = document.createElement("div");
 					sortBar.classList.add("flexltr", "sortBar");
 
+					const settingsB = document.createElement("button");
+					settingsB.textContent = I18n.search.settings();
+					settingsB.onclick = () => {
+						const d = new Dialog(I18n.search.settings());
+						const opt = d.options;
+						const b = p.get("max_id");
+						const before = opt.addDateInput(I18n.search.before(), () => {}, {
+							initText: b ? new Date(SnowFlake.stringToUnixTime(b)) : undefined,
+						});
+						before.onchange = (_) => {
+							if (before.dateValue) p.set("max_id", SnowFlake.DateToID(before.dateValue));
+							else p.delete("max_id");
+							console.log([...p.entries()], before.dateValue);
+						};
+
+						const a = p.get("min_id");
+						const after = opt.addDateInput(I18n.search.after(), () => {}, {
+							initText: a ? new Date(SnowFlake.stringToUnixTime(a)) : undefined,
+						});
+						after.onchange = (_) => {
+							if (after.dateValue) p.set("min_id", SnowFlake.DateToID(after.dateValue));
+							else p.delete("min_id");
+							console.log([...p.entries()], after.dateValue);
+						};
+						opt.addCheckboxInput(I18n.search.includensfw(), () => {}, {
+							initState: p.get("include_nsfw") !== "false",
+						}).onchange = (s) => {
+							if (s) p.delete("include_nsfw");
+							else p.set("include_nsfw", "false");
+						};
+						const userSearch = async (name: string, ids: string[]) => {
+							const g = this.lookingguild;
+							if (!g) return [];
+							g.searchMembers(8, name);
+							const members = [] as [User | Member, number][];
+							if (g.id === "@me") {
+								const dirrect = this.channelfocus as Group;
+
+								for (const user of dirrect.users) {
+									const rank = user.compare(name);
+									if (rank > 0) {
+										members.push([user, rank]);
+									}
+								}
+							} else {
+								for (const member of g.members) {
+									const rank = member.compare(name);
+									if (rank > 0) {
+										members.push([member, rank]);
+									}
+								}
+							}
+							const idSet = new Set(ids);
+							members.sort((a, b) => b[1] - a[1]);
+
+							return members
+								.filter((_) => !idSet.has(_[0].id))
+								.slice(0, 5)
+								.map(([_]) => {
+									return {value: _.id, name: _.name};
+								});
+						};
+						opt.addAsyncMultiSelect(I18n.search.authors(), () => {}, userSearch, {
+							defaultValues: authorIds
+								.map((id) => {
+									const g = this.lookingguild;
+									if (!g || g.id === "@me") {
+										return this.userMap.get(id);
+									} else {
+										return [...g.members].find(({id: d}) => d === id);
+									}
+								})
+								.filter((_) => _ !== undefined)
+								.map((_) => ({value: _.id, name: _.name})),
+						}).onchange = (values: string[]) => {
+							authorIds = values;
+						};
+
+						opt.addAsyncMultiSelect(I18n.search.mentions(), () => {}, userSearch, {
+							defaultValues: mentionIds
+								.map((id) => {
+									const g = this.lookingguild;
+									if (!g || g.id === "@me") {
+										return this.userMap.get(id);
+									} else {
+										return [...g.members].find(({id: d}) => d === id);
+									}
+								})
+								.filter((_) => _ !== undefined)
+								.map((_) => ({value: _.id, name: _.name})),
+						}).onchange = (values: string[]) => {
+							mentionIds = values;
+						};
+						if (this.lookingguild?.id !== "@me")
+							opt.addAsyncMultiSelect(
+								I18n.search.channels(),
+								() => {},
+								async (name, ids) => {
+									const g = this.lookingguild;
+									if (!g) return [];
+									const c = g.channels.filter((_) => _.visible);
+
+									const maybe: [number, Channel][] = [];
+
+									for (const channel of c) {
+										const confidence = channel.similar(name);
+										if (confidence > 0) {
+											maybe.push([confidence, channel]);
+										}
+									}
+
+									maybe.sort((a, b) => b[0] - a[0]);
+									const idSet = new Set(ids);
+
+									return maybe
+										.filter((_) => !idSet.has(_[1].id))
+										.slice(0, 5)
+										.map(([_r, _]) => {
+											return {value: _.id, name: _.name};
+										});
+								},
+								{
+									defaultValues: channels.map((_) => ({name: _.name, value: _.id})),
+								},
+							).onchange = (values: string[]) => {
+								const g = this.lookingguild;
+								if (!g) return;
+								channels = values.map((id) => g.getChannel(id)).filter((_) => _ !== undefined);
+							};
+						d.onhide = () => {
+							genPage(0);
+						};
+						d.show();
+					};
+
 					const newB = document.createElement("button");
 					const old = document.createElement("button");
 					[newB.textContent, old.textContent] = [I18n.search.new(), I18n.search.old()];
@@ -5336,7 +5477,7 @@ class Localuser {
 					const spaceElm = document.createElement("div");
 					spaceElm.classList.add("spaceElm");
 
-					sortBar.append(I18n.search.page(page + 1 + ""), spaceElm, newB, old);
+					sortBar.append(I18n.search.page(page + 1 + ""), spaceElm, settingsB, newB, old);
 
 					sideDiv.append(sortBar);
 

@@ -877,7 +877,14 @@
 		"nofind": "There seems to be no messages that match your search, maybe trying broadening your search to try and find what you want",
 		"old": "Old",
 		"page": "Page $1",
-		"search": "Search"
+		"search": "Search",
+		"settings":"Search Settings",
+		"before":"Before:",
+		"after":"After:",
+		"includensfw":"Include NSFW:",
+		"authors":"Authors:",
+		"mentions":"Mentions:",
+		"channels":"Channels:"
 	},
 	"searchGifs": "Search $1",
 	"settings": {
