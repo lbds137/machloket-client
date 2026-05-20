@@ -5417,7 +5417,7 @@ class Localuser {
 							opt.addAsyncMultiSelect(
 								I18n.search.channels(),
 								() => {},
-								async (name, ids) => {
+								(name, ids) => {
 									const g = this.lookingguild;
 									if (!g) return [];
 									const c = g.channels.filter((_) => _.visible);
