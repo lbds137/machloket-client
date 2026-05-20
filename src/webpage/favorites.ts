@@ -122,9 +122,7 @@ export class Favorites {
 		this.gifs = deapClone(store.current.gifs);
 		this.emojiFrecency = deapClone(store.current.emojiFrecency);
 		this.emojiReactionFrecency = deapClone(store.current.emojiReactionFrecency);
-		//TODO remove this eventually
-		delete this.emojiReactionFrecency["undefined"];
-		delete store.current.emojiReactionFrecency["undefined"];
+
 		this.guildAndChannelFrecency = deapClone(store.current.guildAndChannelFrecency);
 	}
 	saveLocal() {
@@ -184,6 +182,11 @@ export class Favorites {
 			headers: this.headers,
 		});
 		const res: {settings: Partial<favandfreq>} = await (await sat).json();
+		//TODO remove this eventually
+		delete this.emojiReactionFrecency["undefined"];
+		delete this.store.current.emojiReactionFrecency["undefined"];
+		if (res.settings.emojiReactionFrecency)
+			delete res.settings.emojiReactionFrecency.emojis["undefined"];
 		this.saveDifs(res.settings, save);
 	}
 	async setup() {
