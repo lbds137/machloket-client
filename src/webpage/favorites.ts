@@ -124,6 +124,7 @@ export class Favorites {
 		this.emojiReactionFrecency = deapClone(store.current.emojiReactionFrecency);
 		//TODO remove this eventually
 		delete this.emojiReactionFrecency["undefined"];
+		delete store.current.emojiReactionFrecency["undefined"];
 		this.guildAndChannelFrecency = deapClone(store.current.guildAndChannelFrecency);
 	}
 	saveLocal() {
