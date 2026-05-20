@@ -5143,8 +5143,8 @@ fieldset input[type="radio"] {
 	height: 100%;
 	padding: 10px;
 }
-
-#discovery-guild-content {
+.discovery-guild-content {
+	flex: 1;
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
 	flex: 1;

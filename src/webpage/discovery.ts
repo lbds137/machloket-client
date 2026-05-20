@@ -92,7 +92,6 @@ export class Discovery {
 
 		const content = document.createElement("div");
 		content.classList.add("flexttb", "guildy", "messagecontainer");
-		content.textContent = I18n.guild.loadingDiscovery();
 
 		scrollWrap.append(content);
 
@@ -100,79 +99,120 @@ export class Discovery {
 		guildsButton.textContent = I18n.guild.guilds();
 		guildsButton.classList.add("discoverButton", "selected");
 		channels.append(guildsButton);
+		const guilds = document.createElement("div");
+		guilds.classList.add("discovery-guild-content");
 
-		const res = await fetch(this.info.api + "/discoverable-guilds?limit=50", {
-			headers: this.headers,
-		});
-		const json = await res.json();
-		console.log([...json.guilds], json.guilds);
-
-		content.innerHTML = "";
 		const title = document.createElement("h2");
-		title.textContent = I18n.guild.disoveryTitle(json.guilds.length + "");
 		content.appendChild(title);
 
-		const guilds = document.createElement("div");
-		guilds.id = "discovery-guild-content";
+		const buttonRow = document.createElement("div");
+		buttonRow.classList.add("flexltr");
 
-		json.guilds.forEach((guild: guildjson["properties"]) => {
-			const content = document.createElement("div");
+		const render = async (offset = 0) => {
+			guilds.textContent = I18n.guild.loadingDiscovery();
+			const limit = 50;
+			const res = await fetch(
+				`${this.info.api}/discoverable-guilds?limit=${limit}&offset=${offset}`,
+				{
+					headers: this.headers,
+				},
+			);
 
-			this.context.bindContextmenu(content, guild.id, () => {
-				const div = document.createElement("div");
-				div.classList.add("flexltr");
+			const json = (await res.json()) as {guilds: guildjson["properties"][]; total: number};
+			console.log([...json.guilds], json.guilds);
+			guilds.textContent = "";
+
+			title.textContent = I18n.guild.disoveryTitle(json.total + "");
+
+			content.appendChild(guilds);
+
+			json.guilds.forEach((guild) => {
+				const content = document.createElement("div");
+
+				this.context.bindContextmenu(content, guild.id, () => {
+					const div = document.createElement("div");
+					div.classList.add("flexltr");
+					const img = this.getIconURL(guild);
+					img.classList.add("icon");
+					img.crossOrigin = "anonymous";
+
+					img.alt = "";
+					div.appendChild(img);
+
+					const name = document.createElement("h3");
+					name.textContent = guild.name;
+					div.appendChild(name);
+					return div;
+				});
+				content.classList.add("discovery-guild");
+				const banner = this.getBannerURL(guild);
+				if (banner) {
+					banner.classList.add("banner");
+					banner.crossOrigin = "anonymous";
+					banner.alt = "";
+					content.appendChild(banner);
+				}
+
+				const nameContainer = document.createElement("div");
+				nameContainer.classList.add("flex");
 				const img = this.getIconURL(guild);
 				img.classList.add("icon");
 				img.crossOrigin = "anonymous";
 
 				img.alt = "";
-				div.appendChild(img);
+				nameContainer.appendChild(img);
 
 				const name = document.createElement("h3");
 				name.textContent = guild.name;
-				div.appendChild(name);
-				return div;
+				nameContainer.appendChild(name);
+				content.appendChild(nameContainer);
+				const desc = document.createElement("p");
+				desc.textContent = guild.description;
+				content.appendChild(desc);
+
+				content.addEventListener("click", async () => {
+					let guildObj = this.localuser.guildids.get(guild.id);
+					if (guildObj) {
+						guildObj.loadGuild();
+						guildObj.loadChannel();
+						return;
+					}
+					if (await this.confirmJoin(guild)) {
+						await this.join(guild);
+					}
+				});
+				guilds.appendChild(content);
 			});
-			content.classList.add("discovery-guild");
-			const banner = this.getBannerURL(guild);
-			if (banner) {
-				banner.classList.add("banner");
-				banner.crossOrigin = "anonymous";
-				banner.alt = "";
-				content.appendChild(banner);
+
+			let switching = false;
+
+			buttonRow.textContent = "";
+
+			if (offset !== 0) {
+				const back = document.createElement("button");
+				back.textContent = I18n.search.back();
+				buttonRow.append(back);
+				back.onclick = () => {
+					if (switching) return;
+					switching = true;
+					render(offset - limit);
+				};
 			}
+			//TODO once https://codeberg.org/MelodyChat/Harmony/pulls/77 is merged this should be reverted to a < only, the === case means there is no more, though right now server side logic is incorrect.
+			if (offset + json.guilds.length <= json.total) {
+				const next = document.createElement("button");
+				next.textContent = I18n.search.next();
+				buttonRow.append(next);
+				next.onclick = () => {
+					if (switching) return;
+					switching = true;
+					render(offset + limit);
+				};
+			}
+			content.append(buttonRow);
+		};
 
-			const nameContainer = document.createElement("div");
-			nameContainer.classList.add("flex");
-			const img = this.getIconURL(guild);
-			img.classList.add("icon");
-			img.crossOrigin = "anonymous";
-
-			img.alt = "";
-			nameContainer.appendChild(img);
-
-			const name = document.createElement("h3");
-			name.textContent = guild.name;
-			nameContainer.appendChild(name);
-			content.appendChild(nameContainer);
-			const desc = document.createElement("p");
-			desc.textContent = guild.description;
-			content.appendChild(desc);
-
-			content.addEventListener("click", async () => {
-				let guildObj = this.localuser.guildids.get(guild.id);
-				if (guildObj) {
-					guildObj.loadGuild();
-					guildObj.loadChannel();
-					return;
-				}
-				if (await this.confirmJoin(guild)) {
-					await this.join(guild);
-				}
-			});
-			guilds.appendChild(content);
-		});
-		content.appendChild(guilds);
+		render();
 	}
 	getIconURL(guild: guildjson["properties"]) {
 		return createImg(
