@@ -5278,9 +5278,15 @@ class Localuser {
 		if (!sideDiv || !sideContainDiv) return;
 		const genPage = (page: number) => {
 			p.set("offset", page * 50 + "");
-			fetch(this.info.api + `/guilds/${this.lookingguild?.id}/messages/search/?` + p.toString(), {
-				headers: this.headers,
-			})
+			const guildSearch = this.lookingguild?.id !== "@me";
+			fetch(
+				this.info.api +
+					`${guildSearch ? `/guilds/${this.lookingguild?.id}` : `/channels/${this.channelfocus?.id}`}/messages/search/?` +
+					p.toString(),
+				{
+					headers: this.headers,
+				},
+			)
 				.then((_) => _.json())
 				.then((json: {messages: [messagejson][]; total_results: number}) => {
 					if (this.curSearch !== searchy) {
