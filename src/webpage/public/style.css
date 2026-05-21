@@ -239,6 +239,12 @@ body {
 	display: flex;
 	min-height: 0;
 }
+.pollRes {
+	padding-left: 50px;
+}
+.pollRes {
+	padding-left: 50px;
+}
 .amsCont {
 	display: flex;
 	flex-direction: row;
@@ -332,6 +338,72 @@ body {
 		padding: 3px;
 		border-radius: 4px;
 		cursor: pointer;
+	}
+}
+.pollBody {
+	background: #00000059;
+	padding: 10px;
+	border-radius: 4px;
+	margin-top: 2px;
+	margin-left: 52px;
+	h3 {
+		margin-bottom: 10px;
+	}
+}
+.answerArea {
+	--bg: #0000004a;
+	background: var(--bg);
+	margin-top: 3px;
+	padding: 12px;
+	cursor: pointer;
+	position: relative;
+
+	input {
+		margin-left: auto;
+		cursor: pointer;
+	}
+}
+.pollAnsM {
+	.svg-delete {
+		width: 20px;
+		cursor: pointer;
+		margin-left: 6px;
+	}
+	.flexltr {
+		align-items: center;
+	}
+}
+.pollBody {
+	background: #00000059;
+	padding: 10px;
+	border-radius: 4px;
+	margin-top: 2px;
+	margin-left: 52px;
+	h3 {
+		margin-bottom: 10px;
+	}
+}
+.answerArea {
+	--bg: #0000004a;
+	background: var(--bg);
+	margin-top: 3px;
+	padding: 12px;
+	cursor: pointer;
+	position: relative;
+
+	input {
+		margin-left: auto;
+		cursor: pointer;
+	}
+}
+.pollAnsM {
+	.svg-delete {
+		width: 20px;
+		cursor: pointer;
+		margin-left: 6px;
+	}
+	.flexltr {
+		align-items: center;
 	}
 }
 .reses {
@@ -3556,7 +3628,9 @@ span.instanceStatus {
 	background-clip: text, border-box;
 	cursor: pointer;
 }
-
+.pollText {
+	margin: 0px 4px;
+}
 .roleIcon {
 	display: inline-block;
 	align-self: center;
@@ -3940,7 +4014,17 @@ span .quote:last-of-type .quoteline {
 		line-height: 20px;
 	}
 }
-
+.countpollspan {
+	position: absolute;
+	right: 40px;
+}
+.pollresembed {
+	margin-left: 50px;
+	margin-top: 6px;
+	button {
+		margin-left: auto;
+	}
+}
 .linkembed {
 	margin-top: 4px;
 }
