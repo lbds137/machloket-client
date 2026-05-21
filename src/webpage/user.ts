@@ -754,6 +754,9 @@ class User extends SnowFlake {
 	}
 
 	buildpfp(guild: Guild | void | Member | null, hoverElm: void | HTMLElement): HTMLDivElement {
+		const pfpWrapper = document.createElement("div");
+		pfpWrapper.classList.add("pfpWrapper");
+
 		const div = document.createElement("div");
 		div.classList.add("pfpDiv");
 		hoverElm ??= div;
@@ -784,7 +787,8 @@ class User extends SnowFlake {
 			div.append(dec);
 		}
 		div.append(pfp);
-		return div;
+		pfpWrapper.append(div);
+		return pfpWrapper;
 	}
 	createWidget(guild?: Guild) {
 		guild = this.localuser.guildids.get("@me") as Guild;

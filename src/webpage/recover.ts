@@ -53,7 +53,9 @@ function makeMenu1() {
 				makeMenu2(email.value);
 			} else if ("captcha_sitekey" in e && typeof e.captcha_sitekey === "string") {
 				if (area) {
-					eval("hcaptcha.reset()");
+					const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}})
+						.hcaptcha;
+					hc?.reset?.();
 				} else {
 					area = document.createElement("div");
 					opt.addHTMLArea(area);

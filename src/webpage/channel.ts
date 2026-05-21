@@ -31,7 +31,6 @@ import {webhookMenu} from "./webhooks.js";
 import {File} from "./file.js";
 import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
-import {Direct} from "./direct.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
 import {Tag} from "./tag.js";
@@ -2644,8 +2643,10 @@ class Channel extends SnowFlake {
 			this.guild.loadChannel();
 			return;
 		}
-		if (this.owner instanceof Direct) {
-			this.owner.freindDiv?.classList.remove("viewChannel");
+		if (this.guild_id === "@me") {
+			(this.owner as Guild & {freindDiv?: HTMLDivElement}).freindDiv?.classList.remove(
+				"viewChannel",
+			);
 		}
 		if (this.localuser.channelfocus) {
 			this.localuser.channelfocus.collectBox();

@@ -1498,7 +1498,9 @@ class Captcha implements OptionsElement<string> {
 				if (Captcha.hcaptcha) {
 					this.div.append(Captcha.hcaptcha);
 					Captcha.hcaptcha.setAttribute("data-sitekey", captcha_sitekey);
-					eval("hcaptcha.reset()");
+						const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}})
+							.hcaptcha;
+						hc?.reset?.();
 					return Captcha.waitForCaptcha(captcha_service);
 				} else {
 					const capt = document.createElement("div");

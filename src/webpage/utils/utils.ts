@@ -1,5 +1,4 @@
 import {I18n} from "../i18n.js";
-import {MarkDown} from "../markdown.js";
 import {Dialog} from "../settings.js";
 import {fix} from "./cssMagic.js";
 import {messageFrom, messageTo} from "./serviceType.js";
@@ -7,6 +6,7 @@ import {isLoopback, trimTrailingSlashes} from "./netUtils";
 import {getLocalSettings, ServiceWorkerMode, setLocalSettings} from "./storage/localSettings";
 import {getPreferences} from "./storage/userPreferences";
 import {getDeveloperSettings} from "./storage/devSettings";
+import {MarkDown} from "../markdown.js";
 
 fix();
 const apiDoms = new Set<string>();
@@ -533,7 +533,7 @@ export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
  */
 async function checkURLs(wellknown: string, urls: InstanceUrls) {
 	if (isLoopback(urls.api) !== isLoopback(wellknown)) {
-		return new Promise<InstanceUrls | null>((res) => {
+		return new Promise<InstanceUrls | null>(async (res) => {
 			const menu = new Dialog("");
 			const options = menu.float.options;
 			options.addMDText(new MarkDown(I18n.incorrectURLS(), undefined));
@@ -1088,8 +1088,9 @@ export function installPGet() {
 }
 
 export function getInstances() {
-	return instances;
+	return instances ?? [];
 }
+
 export function getStringURLMapPair() {
 	return [stringURLMap, stringURLsMap] as const;
 }

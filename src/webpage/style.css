@@ -61,7 +61,7 @@ body {
 		user-select: none;
 	}
 
-	.pfpDiv {
+	.pfpWrapper {
 		width: 0.5in !important;
 		height: 0.5in !important;
 		margin-right: 0.15in !important;
@@ -128,16 +128,13 @@ body {
 }
 
 .adminList {
-	& {
-		width: 95%;
-		margin-bottom: 6px;
-		padding: 6px;
-		border-radius: 10px;
-		background: var(--secondary-bg);
-		cursor: pointer;
-	}
-
-	.pfpDiv {
+	width: 95%;
+	background: var(--secondary-bg);
+	padding: 6px;
+	margin-bottom: 6px;
+	border-radius: 10px;
+	cursor: pointer;
+	.pfpWrapper {
 		width: 48px;
 		height: 48px;
 	}
@@ -346,7 +343,7 @@ body {
 }
 
 .reactionUserList {
-	.pfpDiv {
+	.pfpWrapper {
 		width: 32px;
 		height: 32px;
 	}
@@ -528,21 +525,18 @@ body {
 }
 
 .voiceUsers > * {
-	& {
-		display: flex;
-		position: relative;
-		align-items: center;
-		justify-content: center;
-		box-sizing: border-box;
-		width: 340px;
-		margin: 8px;
-		border-radius: 8px;
-		background: var(--accent_color, var(--primary-bg));
-		cursor: pointer;
-		aspect-ratio: 3/2;
-	}
-
-	.pfpDiv {
+	background: var(--accent_color, var(--primary-bg));
+	border-radius: 8px;
+	position: relative;
+	box-sizing: border-box;
+	margin: 8px;
+	width: 340px;
+	aspect-ratio: 3/2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	.pfpWrapper {
 		width: 60px;
 		height: 60px;
 		cursor: unset;
@@ -999,13 +993,23 @@ textarea {
 }
 
 /* Icons */
-
-.pfpDiv {
-	position: relative;
+.pfpWrapper {
+	display: flex;
+    position: relative;
+    background: none !important;
+    aspect-ratio: 1;
 	width: 32px;
 	height: 32px;
-	background: none !important;
-	aspect-ratio: 1;
+}
+.pfpDiv {
+	overflow: hidden;
+	position: relative;
+	display: flex;
+	width: inherit;
+	height: 100%;
+	border-radius: 50%;
+	justify-content: center;
+    align-items: center;
 }
 
 .pfp,
@@ -2327,7 +2331,11 @@ span.instanceStatus {
 }
 
 .servericon,
-#sentdms .pfpDiv {
+#sentdms .pfpWrapper {
+	height: 48px;
+	width: 48px;
+	margin-bottom: 8px;
+	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -2683,17 +2691,14 @@ span.instanceStatus {
 }
 
 .voiceuser {
-	& {
-		align-items: center;
-		margin-bottom: 2px;
-		margin-left: 32px;
-		padding: 4px 4px;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		cursor: pointer;
-	}
-
-	.pfpDiv {
+	margin-left: 32px;
+	padding: 4px 4px;
+	border-radius: 4px;
+	margin-bottom: 2px;
+	font-size: 0.9rem;
+	align-items: center;
+	cursor: pointer;
+	.pfpWrapper {
 		width: 20px;
 		height: 20px;
 		margin-right: 4px;
@@ -3335,8 +3340,8 @@ span.instanceStatus {
 	width: 40px;
 	margin: 2px 12px 0 0;
 }
-
-.pfprow .pfpDiv {
+.pfprow .pfpWrapper {
+	height: 40px;
 	width: 40px;
 	height: 40px;
 }
@@ -4156,14 +4161,14 @@ img.bigembedimg {
 	margin-bottom: 8px;
 	min-height: 350px;
 }
-
-.profile > .pfpDiv {
+.profile > .pfpWrapper {
+	position: absolute;
 	z-index: 2;
 	position: absolute;
 	top: 20px;
 }
-
-.profile .pfpDiv {
+.profile .pfpWrapper {
+	height: 64px;
 	width: 64px;
 	height: 64px;
 	margin: 8px 0 0 8px;
@@ -5605,8 +5610,8 @@ fieldset input[type="radio"] {
 	.pfprow {
 		width: 32px;
 	}
-
-	.pfprow .pfpDiv {
+	.pfprow .pfpWrapper {
+		height: 32px;
 		width: 32px;
 		height: 32px;
 	}
@@ -6218,13 +6223,11 @@ img.error::after {
 
 .friendGroupSelect {
 	> div {
-		& {
-			display: flex;
-			align-items: center;
-			padding: 6px;
-		}
-
-		.pfpDiv {
+		padding: 6px;
+		display: flex;
+		align-items: center;
+		.pfpWrapper {
+			margin-right: 12px;
 			width: 40px;
 			height: 40px;
 			margin-right: 12px;

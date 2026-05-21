@@ -210,7 +210,7 @@ class Sticker extends SnowFlake {
 
 			if (guild.properties.icon) {
 				const img = document.createElement("img");
-				img.classList.add("pfp", "servericon", "emoji-server");
+				img.classList.add("servericon", "emoji-server");
 				img.crossOrigin = "anonymous";
 				img.src =
 					localuser.info.cdn +

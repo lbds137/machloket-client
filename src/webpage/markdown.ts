@@ -1,18 +1,27 @@
 import {Localuser} from "./localuser.js";
 import {Channel} from "./channel.js";
 import {Emoji} from "./emoji.js";
-import {Guild} from "./guild.js";
+import type { Guild } from "./guild.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
-const linkMenu = new Contextmenu<string, void>("copyLink", true);
-linkMenu.addButton(
-	() => I18n.copyRegLink(),
-	function () {
-		navigator.clipboard.writeText(this);
-	},
-	{group: "copyLink"},
-);
+
+let linkMenu: Contextmenu<string, void> | undefined;
+
+function getLinkMenu() {
+	if (!linkMenu) {
+		linkMenu = new Contextmenu<string, void>("copyLink", true);
+		linkMenu.addButton(
+			() => I18n.copyRegLink(),
+			function () {
+				navigator.clipboard.writeText(this);
+			},
+			{group: "copyLink"},
+		);
+	}
+	return linkMenu;
+}
+
 class MarkDown {
 	static emoji?: typeof Emoji;
 	txt: string[];
@@ -611,7 +620,7 @@ class MarkDown {
 				if (URL.canParse(build)) {
 					appendcurrent();
 					const a = document.createElement("a");
-					linkMenu.bindContextmenu(a, build);
+					getLinkMenu().bindContextmenu(a, build);
 					//a.href=build;
 
 					a.textContent = build;
@@ -769,7 +778,7 @@ class MarkDown {
 							} else {
 								appendcurrent();
 								const a = document.createElement("a");
-								linkMenu.bindContextmenu(a, build);
+								getLinkMenu().bindContextmenu(a, build);
 								if (!stdsize) {
 									const text = MarkDown.safeLink(a, build, this.localuser);
 									if (text) {
