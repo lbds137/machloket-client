@@ -825,7 +825,14 @@
 		"nofind": "Er zijn er geen berichten gevonden met uw zoekopdracht. Misschien vind u wat u zoekt als u de zoekopdracht verbreedt.",
 		"old": "Oud",
 		"page": "Pagina $1",
-		"search": "Zoeken"
+		"search": "Zoeken",
+		"settings": "Zoekinstellingen",
+		"before": "Vóór:",
+		"after": "Na:",
+		"includensfw": "NSFW opnemen:",
+		"authors": "Auterurs:",
+		"mentions": "Vermeldingen:",
+		"channels": "Kanalen:"
 	},
 	"searchGifs": "Zoeken in $1",
 	"settings": {
