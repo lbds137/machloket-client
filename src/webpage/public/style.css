@@ -3755,19 +3755,24 @@ input[type="search"]:read-only {
 		background: transparent;
 		color: inherit;
 	}
-	.quote {
+	pre, .quote {
 		background: var(--spoiler-bg);
+		color: var(--spoiler-bg);
 	}
 }
 
 .spoiler:hover {
 	color: var(--spoiler-hover);
-	.quote {
+	pre, .quote {
 		background: var(--spoiler-hover);
+		color: var(--spoiler-hover);
 	}
 }
 .unspoiled {
 	background: var(--spoiler-unspoiled);
+	.quote {
+		background: var(--spoiler-unspoiled);
+	}
 }
 .quote {
 	display: inline-block;

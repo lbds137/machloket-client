@@ -174,7 +174,7 @@ body {
 	--code-bg: var(--secondary-bg);
 	--code-text: var(--secondary-text);
 	--spoiler-hover: color-mix(in srgb, var(--spoiler-bg), var(--primary-text-soft) 10%);
-	--spoiler-unspoiled: color-mix(in srgb, var(--primary-text-soft) 15%, transparent);
+	--spoiler-unspoiled: color-mix(in srgb, var(--primary-text-soft) 15%, var(--primary-bg));
 	--quote-line: color-mix(in srgb, var(--primary-text-soft), transparent);
 	--reply-line: color-mix(in srgb, var(--primary-text-soft) 20%, transparent);
 	--reply-text: var(--primary-text-soft);
