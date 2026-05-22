@@ -247,11 +247,19 @@ class Emoji {
 	}
 	static grabEmoji() {
 		fetch("/emoji.bin")
-			.then((e) => {
-				return e.arrayBuffer();
+			.then(async (res) => {
+				if (!res.ok) {
+					throw new Error("Failed to fetch emoji.bin");
+				}
+				const buffer = await res.arrayBuffer();
+				if (buffer.byteLength < 2) {
+					throw new Error("emoji.bin is invalid or empty");
+				}
+				Emoji.decodeEmojiList(buffer);
 			})
-			.then((e) => {
-				Emoji.decodeEmojiList(e);
+			.catch((err) => {
+				console.error("Unable to load emoji list", err);
+				this.emojis = [];
 			});
 	}
 	static getEmojiFromIDOrString(idOrString: string, localuser: Localuser) {

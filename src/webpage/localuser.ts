@@ -3735,7 +3735,16 @@ class Localuser {
 			jankInfo.addHTMLArea(img);
 			img.width = 128;
 			img.height = 128;
-			const ver = await (await fetch("/getupdates")).text();
+			let ver = "dev";
+			try {
+				const response = await fetch("/getupdates", {cache: "no-store"});
+				if (response.ok) {
+					const text = (await response.text()).trim();
+					if (text && !text.toLowerCase().startsWith("<!doctype html") && !text.includes("<html")) {
+						ver = text;
+					}
+				}
+			} catch {}
 			jankInfo.addMDText(
 				new MarkDown(
 					I18n.clientDesc(ver, window.location.origin, this.rights.allow + ""),

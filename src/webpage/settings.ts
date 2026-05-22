@@ -2,6 +2,7 @@ import {
 	checkInstance,
 	getInstances,
 	getStringURLMapPair,
+	isInstanceListLoaded,
 	instancefetch,
 	InstanceInfo,
 	removeAni,
@@ -964,7 +965,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		const json = getInstances();
 
 		const [stringURLMap, stringURLsMap] = getStringURLMapPair();
-		if (!json) {
+		if (!isInstanceListLoaded()) {
 			instancefetch.then(this.genDataList.bind(this));
 			return;
 		}

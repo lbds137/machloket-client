@@ -16,7 +16,7 @@ function generateLangs() {
   
   for (const file of files) {
     const content = JSON.parse(readFileSync(resolve(translationsDir, file), "utf-8"));
-    langs[file] = { readableName: content.readableName };
+    langs[file] = content.readableName;
     writeFileSync(resolve(outputDir, file), JSON.stringify(content, null, 2));
   }
 
@@ -72,6 +72,16 @@ function generateBuildFiles() {
     }
   }
 
+  // Preserve legacy build behavior for files fetched directly at runtime.
+  const runtimeStaticFiles = ["emoji.bin", "instances.json", "manifest.json"];
+  for (const file of runtimeStaticFiles) {
+    const srcPath = resolve(srcDir, file);
+    const distPath = resolve(distDir, file);
+    if (existsSync(srcPath)) {
+      cpSync(srcPath, distPath);
+    }
+  }
+
   const srcTranslationsDir = resolve(srcDir, "translations");
   const distTranslationsDir = resolve(distDir, "translations");
   if (existsSync(srcTranslationsDir)) {
@@ -112,6 +122,7 @@ const buildPlugin = () => ({
     generateLangs();
   },
   configureServer(server) {
+    generateLangs();
     server.middlewares.use(async (req, res, next) => {
       const path = req.url || "";
       

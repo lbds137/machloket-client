@@ -29,6 +29,7 @@ let instances:
 			};
 	  }[]
 	| null = null;
+let instancesLoaded = false;
 await setTheme();
 export async function setTheme(theme?: string) {
 	const prefs = await getPreferences();
@@ -392,7 +393,12 @@ export function getViewportWidth() {
 const datalist = document.getElementById("instances");
 console.warn(datalist);
 export const instancefetch = fetch("/instances.json")
-	.then((res) => res.json())
+	.then(async (res) => {
+		if (!res.ok) {
+			throw new Error("Failed to fetch instances.json");
+		}
+		return await res.json();
+	})
 	.then(
 		async (
 			json: {
@@ -415,6 +421,11 @@ export const instancefetch = fetch("/instances.json")
 		) => {
 			await I18n.done;
 			instances = json;
+			instancesLoaded = true;
+		},
+		() => {
+			instances = [];
+			instancesLoaded = true;
 		},
 	);
 const stringURLMap = new Map<string, string>();
@@ -1089,6 +1100,10 @@ export function installPGet() {
 
 export function getInstances() {
 	return instances ?? [];
+}
+
+export function isInstanceListLoaded() {
+	return instancesLoaded;
 }
 
 export function getStringURLMapPair() {
