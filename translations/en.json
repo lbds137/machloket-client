@@ -336,6 +336,8 @@
 		"banner:": "Banner:",
 		"bans": "Bans",
 		"boostMessage?": "Send a message when someone boosts your guild!",
+		"banId":"Ban by ID",
+		"idSel":"ID:",
 		"community": "Community",
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"confirmLeave": "Are you sure you want to leave?",
