@@ -105,6 +105,10 @@ body {
 	div {
 		margin-left: 8px;
 	}
+	.pfp {
+		width: 32px;
+		height: 32px;
+	}
 }
 
 .templateMiniBox {
