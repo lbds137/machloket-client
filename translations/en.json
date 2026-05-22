@@ -827,7 +827,8 @@
 		"mut": "Mutual guilds",
 		"mutFriends": "Mutual friends",
 		"permInfo": "Permissions",
-		"userInfo": "User info"
+		"userInfo": "User info",
+		"notes":"User notes"
 	},
 	"profileColor": "Profile color",
 	"pronouns": "Pronouns:",

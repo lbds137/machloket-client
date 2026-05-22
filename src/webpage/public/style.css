@@ -607,7 +607,9 @@ body {
 	padding: 0;
 	border: 0;
 }
-
+.userNote {
+	max-width: 100% !important;
+}
 #player {
 	& {
 		flex-grow: 0;
