@@ -1002,7 +1002,6 @@ textarea {
 	height: 32px;
 }
 .pfpDiv {
-	overflow: hidden;
 	position: relative;
 	display: flex;
 	width: inherit;
