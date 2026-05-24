@@ -63,6 +63,7 @@ export async function makeLogin(
 			instance,
 		},
 	);
+	opt.deleteElm(picker as never);
 	dialog.show(trasparentBg).parentElement!.style.zIndex = "200";
 
 	const form = opt.addForm(
@@ -105,6 +106,14 @@ export async function makeLogin(
 	const button = form.button.deref();
 	picker.giveButton(button);
 	button?.classList.add("createAccount");
+	opt.addHTMLArea(() => {
+		const details = document.createElement("details");
+		details.classList.add("loginAdvanced");
+		const summary = document.createElement("summary");
+		summary.textContent = "Advanced";
+		details.append(summary, picker.generateHTML());
+		return details;
+	});
 
 	const email = form.addTextInput(I18n.htmlPages.emailField(), "login");
 	const password = form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});

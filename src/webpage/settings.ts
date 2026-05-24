@@ -927,6 +927,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		div.append(verify);
 
 		const input = this.input;
+		input.value = this.instance || new URLSearchParams(window.location.search).get("instance") || "spacebar.chat";
 		input.readOnly = !!new URLSearchParams(window.location.search).get("instance");
 		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
@@ -972,7 +973,9 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 
 		if (json.length !== 0) {
 			let name =
-				this.picker?.instance || new URLSearchParams(window.location.search).get("instance");
+				this.picker?.instance ||
+				new URLSearchParams(window.location.search).get("instance") ||
+				"spacebar.chat";
 			if (!name) {
 				const l = localStorage.getItem("instanceinfo");
 				if (l) {
@@ -2111,12 +2114,12 @@ class Form implements OptionsElement<object> {
 			div.classList.add("suberror", "suberrora");
 			e.append(div);
 			element = div;
-			setTimeout((_) => {
+			setTimeout(() => {
 				element.scrollIntoView(false);
 			}, 100);
 		} else {
 			element.classList.remove("suberror");
-			setTimeout((_) => {
+			setTimeout(() => {
 				element.classList.add("suberror");
 				element.scrollIntoView(false);
 			}, 100);
