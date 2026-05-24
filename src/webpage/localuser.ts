@@ -2899,6 +2899,9 @@ class Localuser {
 				);
 			}
 			{
+				const soundNames = this.play?.tracks.length
+					? this.play.tracks
+					: await Play.soundNamesPromise;
 				const initArea = (index: number) => {
 					if (index === sounds.length - 1) {
 						const input = document.createElement("input");
@@ -2929,7 +2932,7 @@ class Localuser {
 						area.innerHTML = "";
 					}
 				};
-				const sounds = [...(this.play?.tracks || []), I18n.localuser.customSound()];
+				const sounds = [...soundNames, I18n.localuser.customSound()];
 				const initIndex = sounds.indexOf(this.getNotificationSound());
 				const select = tas.addSelect(
 					I18n.localuser.notisound(),

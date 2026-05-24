@@ -238,12 +238,14 @@ class Emoji {
 					emoji,
 				});
 			}
-			build.push({
-				name,
-				emojis,
-			});
+			if (emojis.length > 0) {
+				build.push({
+					name,
+					emojis,
+				});
+			}
 		}
-		this.emojis = build;
+		this.emojis = build.filter((group) => group.emojis.length > 0);
 	}
 	static grabEmoji() {
 		fetch(new URL("./emoji.bin", import.meta.url).href)
@@ -312,7 +314,7 @@ class Emoji {
 		topBar.classList.add("flexltr", "emojiHeading");
 
 		const title = document.createElement("h2");
-		title.textContent = Emoji.emojis[0].name;
+		title.textContent = Emoji.emojis[0]?.name || I18n.recentEmoji();
 		title.classList.add("emojiTitle");
 		topBar.append(title);
 
@@ -470,8 +472,9 @@ class Emoji {
 		}
 
 		for (const thing of Emoji.emojis) {
+			if (!thing.emojis.length) continue;
 			const select = document.createElement("div");
-			select.textContent = thing.emojis[0].emoji;
+			select.textContent = thing.emojis[0]?.emoji || "🙂";
 			select.classList.add("emojiSelect");
 			selection.append(select);
 			const clickEvent = () => {

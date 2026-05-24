@@ -1,11 +1,18 @@
+import {Play as JasfPlay} from "./worklet/play.js";
+
 export class Play {
 	buffer: ArrayBuffer;
 	worklet!: AudioWorkletNode;
 	audioContext: AudioContext;
 	tracks: string[] = [];
 	onload = () => {};
+	static soundNamesPromise = fetch("/audio/sounds.jasf")
+		.then((res) => res.arrayBuffer())
+		.then((buffer) => [...JasfPlay.parseBin(buffer).audios.keys()])
+		.catch(() => [] as string[]);
 	constructor(buffer: ArrayBuffer) {
 		this.buffer = buffer;
+		this.tracks = [...JasfPlay.parseBin(buffer).audios.keys()];
 		this.audioContext = new AudioContext();
 		this.audioContext.audioWorklet.addModule(new URL("./worklet/worklet.ts", import.meta.url).href).then((_) => {
 			this.worklet = new AudioWorkletNode(this.audioContext, "audio");
