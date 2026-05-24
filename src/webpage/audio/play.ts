@@ -1,3 +1,5 @@
+import workletUrl from "./worklet/worklet.ts?url";
+
 export class Play {
 	buffer: ArrayBuffer;
 	worklet!: AudioWorkletNode;
@@ -7,7 +9,7 @@ export class Play {
 	constructor(buffer: ArrayBuffer) {
 		this.buffer = buffer;
 		this.audioContext = new AudioContext();
-		this.audioContext.audioWorklet.addModule("/audio/worklet/worklet.js").then((_) => {
+		this.audioContext.audioWorklet.addModule(workletUrl).then((_) => {
 			this.worklet = new AudioWorkletNode(this.audioContext, "audio");
 			this.worklet.connect(this.audioContext.destination);
 
