@@ -246,7 +246,7 @@ class Emoji {
 		this.emojis = build;
 	}
 	static grabEmoji() {
-		fetch("/emoji.bin")
+		fetch(new URL("./emoji.bin", import.meta.url).href)
 			.then(async (res) => {
 				if (!res.ok) {
 					throw new Error("Failed to fetch emoji.bin");

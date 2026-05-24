@@ -19,8 +19,8 @@ let instances:
 			url?: string;
 			display?: boolean;
 			online?: boolean;
-			uptime: {alltime: number; daytime: number; weektime: number};
-			urls: {
+			uptime?: {alltime: number; daytime: number; weektime: number};
+			urls?: {
 				wellknown: string;
 				api: string;
 				cdn: string;
@@ -392,35 +392,45 @@ export function getViewportWidth() {
 
 const datalist = document.getElementById("instances");
 console.warn(datalist);
-export const instancefetch = fetch("/instances.json")
+const catalogInstancesUrl = "https://spacebar-explorer.sovr.top/api/catalog/instances";
+type CatalogInstance = {
+	id: string;
+	name: string;
+	tags?: string[];
+	short?: string;
+	description?: string;
+	icon?: string;
+	images?: string[];
+	level?: number;
+	link?: string;
+};
+function normalizeCatalogInstance(instance: CatalogInstance) {
+	const image = instance.icon || instance.images?.[0];
+	return {
+		name: instance.name,
+		description: instance.short,
+		descriptionLong: instance.description,
+		image: image ? new URL(image, catalogInstancesUrl).href : undefined,
+		url: instance.link,
+		display: !instance.tags?.includes("hidden"),
+		online: undefined,
+		uptime: undefined,
+		urls: undefined,
+	};
+}
+export const instancefetch = fetch(catalogInstancesUrl)
 	.then(async (res) => {
 		if (!res.ok) {
-			throw new Error("Failed to fetch instances.json");
+			throw new Error("Failed to fetch instance catalog");
 		}
-		return await res.json();
+		return (await res.json()) as CatalogInstance[];
 	})
 	.then(
 		async (
-			json: {
-				name: string;
-				description?: string;
-				descriptionLong?: string;
-				image?: string;
-				url?: string;
-				display?: boolean;
-				online?: boolean;
-				uptime: {alltime: number; daytime: number; weektime: number};
-				urls: {
-					wellknown: string;
-					api: string;
-					cdn: string;
-					gateway: string;
-					login?: string;
-				};
-			}[],
+		json: CatalogInstance[],
 		) => {
 			await I18n.done;
-			instances = json;
+			instances = json.map(normalizeCatalogInstance);
 			instancesLoaded = true;
 		},
 		() => {

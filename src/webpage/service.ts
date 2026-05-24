@@ -5,7 +5,7 @@ async function deleteoldcache() {
 }
 type files = {[key: string]: string | files};
 async function getAllFiles() {
-	const files = await fetch("/files.json", {cache: "no-store"});
+	const files = await fetch(new URL("./files.json", import.meta.url).href, {cache: "no-store"});
 	const json: files = await files.json();
 	return json;
 }
@@ -212,10 +212,6 @@ async function getfile(req: Request): Promise<Response> {
 	}
 
 	let path = toPath(req.url);
-	if (path === "/instances.json") {
-		//TODO the client shouldn't really even fetch this, it should just ask the SW for it
-		return await fetch(path);
-	}
 	if (path === "/getupdates" || path === "/files.json") {
 		const response = await fetch(new Request(req, {cache: "no-store"}));
 		return response;

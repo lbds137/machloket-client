@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
-import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, cpSync, lstatSync } from "fs";
+import { readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync } from "fs";
 import { execSync } from "child_process";
 
 function generateLangs() {
@@ -54,66 +54,14 @@ function generateBuildFiles() {
 /template/* /template 200`
   );
 
-  if (existsSync(resolve(srcDir, "robots.txt"))) {
-    const robotsPath = resolve(distDir, "robots.txt");
-    cpSync(resolve(srcDir, "robots.txt"), robotsPath);
-    if (normalizedUrl) {
-      const robots = readFileSync(robotsPath, "utf-8") + `\n\nSitemap: ${normalizedUrl}/sitemap.xml`;
-      writeFileSync(robotsPath, robots);
-    }
-  }
-
-  if (existsSync(resolve(srcDir, "sitemap.xml"))) {
-    const sitemapPath = resolve(distDir, "sitemap.xml");
-    cpSync(resolve(srcDir, "sitemap.xml"), sitemapPath);
-    if (normalizedUrl) {
-      const sitemap = readFileSync(sitemapPath, "utf-8").replaceAll("$$$", normalizedUrl);
-      writeFileSync(sitemapPath, sitemap);
-    }
-  }
-
-  // Preserve legacy build behavior for files fetched directly at runtime.
-  const runtimeStaticFiles = ["emoji.bin", "instances.json", "manifest.json"];
-  for (const file of runtimeStaticFiles) {
+  const legacyRuntimeFiles = ["emoji.bin", "manifest.json"];
+  for (const file of legacyRuntimeFiles) {
     const srcPath = resolve(srcDir, file);
     const distPath = resolve(distDir, file);
     if (existsSync(srcPath)) {
-      cpSync(srcPath, distPath);
+      writeFileSync(distPath, readFileSync(srcPath));
     }
   }
-
-  const srcTranslationsDir = resolve(srcDir, "translations");
-  const distTranslationsDir = resolve(distDir, "translations");
-  if (existsSync(srcTranslationsDir)) {
-    if (!existsSync(distTranslationsDir)) {
-      mkdirSync(distTranslationsDir, { recursive: true });
-    }
-    const transFiles = readdirSync(srcTranslationsDir);
-    for (const file of transFiles) {
-      cpSync(resolve(srcTranslationsDir, file), resolve(distTranslationsDir, file));
-    }
-  }
-
-  function crawlDir(dir) {
-    const dirs = readdirSync(dir);
-    const m = dirs.map(file => {
-      const idir = resolve(dir, file);
-      const stats = lstatSync(idir);
-      if (stats.isDirectory()) {
-        return [file, crawlDir(idir)];
-      } else {
-        if (file.startsWith(".")) return [file, undefined];
-        return [file, file];
-      }
-    });
-    const obj = {};
-    m.forEach(_ => { if (_[1]) obj[_[0]] = _[1]; });
-    return obj;
-  }
-  
-  const dir = crawlDir(distDir);
-  dir["files.json"] = "files.json";
-  writeFileSync(resolve(distDir, "files.json"), JSON.stringify(dir));
 }
 
 const buildPlugin = () => ({

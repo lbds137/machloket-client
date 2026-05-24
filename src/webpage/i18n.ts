@@ -1,5 +1,5 @@
 //@ts-ignore
-import {langs} from "/translations/langs.js";
+import {langs} from "./translations/langs.js";
 const langmap = new Map<string, string>();
 for (const lang of Object.keys(langs) as string[]) {
 	langmap.set(lang, langs[lang]);
@@ -24,11 +24,11 @@ class I18n {
 			}
 		}
 
-		const json = (await (await fetch("/translations/" + lang + ".json")).json()) as translation;
+		const json = (await (await fetch(new URL(`./translations/${lang}.json`, import.meta.url).href)).json()) as translation;
 		const translations: translation[] = [];
 		translations.push(json);
 		if (lang !== "en") {
-			translations.push((await (await fetch("/translations/en.json")).json()) as translation);
+			translations.push((await (await fetch(new URL(`./translations/en.json`, import.meta.url).href)).json()) as translation);
 		}
 		const en = translations.find(
 			(_) => (_["@metadata"] as translation)?.locale === "en",

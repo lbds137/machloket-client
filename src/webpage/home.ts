@@ -1,6 +1,41 @@
 import {I18n} from "./i18n.js";
 import {makeRegister} from "./register.js";
 import {mobile} from "./utils/utils.js";
+
+type PingHistory = {
+	rows?: {status: string | number; created_at?: string}[];
+	graph?: {points?: {status: string | number}[]};
+};
+
+function isSuccessStatus(status: string | number) {
+	return String(status).startsWith("2");
+}
+
+function computeUptime(entries: {status: string | number; created_at?: string}[]) {
+	if (entries.length === 0) return null;
+	const success = entries.filter((entry) => isSuccessStatus(entry.status)).length;
+	return Math.round((success / entries.length) * 100);
+}
+
+async function loadInstanceUptime(instanceId: string) {
+	const response = await fetch(
+		`https://spacebar-explorer.sovr.top/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,
+	);
+	if (!response.ok) return null;
+	const data = (await response.json()) as PingHistory;
+	const rows = data.rows ?? [];
+	const all = computeUptime((data.graph?.points ?? rows) as {status: string | number}[]);
+	const now = Date.now();
+	const week = computeUptime(
+		rows.filter((row) => row.created_at && Date.parse(row.created_at) >= now - 7 * 24 * 60 * 60 * 1000),
+	);
+	const day = computeUptime(
+		rows.filter((row) => row.created_at && Date.parse(row.created_at) >= now - 24 * 60 * 60 * 1000),
+	);
+	if (all === null || week === null || day === null) return null;
+	return {all, week, day};
+}
+
 if (window.location.pathname === "/" || window.location.pathname.startsWith("/index")) {
 	console.log(mobile);
 	const serverbox = document.getElementById("instancebox") as HTMLDivElement;
@@ -43,26 +78,21 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 			);
 	}
 	*/
-	fetch("/instances.json")
+	fetch("https://spacebar-explorer.sovr.top/api/catalog/instances")
 		.then((_) => _.json())
 		.then(
 			async (
 				json: {
+					id: string;
 					name: string;
+					tags?: string[];
+					short?: string;
 					description?: string;
-					descriptionLong?: string;
-					image?: string;
-					url?: string;
 					display?: boolean;
-					online?: boolean;
-					uptime: {alltime: number; daytime: number; weektime: number};
-					urls: {
-						wellknown: string;
-						api: string;
-						cdn: string;
-						gateway: string;
-						login?: string;
-					};
+					icon?: string;
+					images?: string[];
+					level?: number;
+					link?: string;
 				}[],
 			) => {
 				await I18n.done;
@@ -73,10 +103,11 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 					}
 					const div = document.createElement("div");
 					div.classList.add("flexltr", "instance");
-					if (instance.image) {
+					const image = instance.icon || instance.images?.[0];
+					if (image) {
 						const img = document.createElement("img");
 						img.alt = I18n.home.icon(instance.name);
-						img.src = instance.image;
+						img.src = new URL(image, "https://spacebar-explorer.sovr.top").href;
 						div.append(img);
 					}
 					const statbox = document.createElement("div");
@@ -87,43 +118,43 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 						textbox.classList.add("flexttb", "instancetextbox");
 						const title = document.createElement("h2");
 						title.innerText = instance.name;
-						if (instance.online !== undefined) {
-							const status = document.createElement("span");
-							status.innerText = instance.online ? "Online" : "Offline";
-							status.classList.add("instanceStatus");
-							title.append(status);
-						}
 						textbox.append(title);
-						if (instance.description || instance.descriptionLong) {
+						if (instance.short || instance.description) {
 							const p = document.createElement("p");
-							if (instance.descriptionLong) {
-								p.innerText = instance.descriptionLong;
-							} else if (instance.description) {
+							if (instance.description) {
 								p.innerText = instance.description;
+							} else if (instance.short) {
+								p.innerText = instance.short;
 							}
 							textbox.append(p);
 						}
 						statbox.append(textbox);
 					}
-					if (instance.uptime) {
-						const stats = document.createElement("div");
-						stats.classList.add("flexltr");
-						const span = document.createElement("span");
-						span.innerText = I18n.home.uptimeStats(
-							Math.round(instance.uptime.alltime * 100) + "",
-							Math.round(instance.uptime.weektime * 100) + "",
-							Math.round(instance.uptime.daytime * 100) + "",
-						);
-						stats.append(span);
-						statbox.append(stats);
-					}
+						{
+							const stats = document.createElement("div");
+							stats.classList.add("flexltr");
+							const span = document.createElement("span");
+							stats.append(span);
+							statbox.append(stats);
+							loadInstanceUptime(instance.id)
+								.then((uptime) => {
+									if (!uptime) {
+										stats.remove();
+										return;
+									}
+									span.innerText = I18n.home.uptimeStats(
+										uptime.all + "",
+										uptime.week + "",
+										uptime.day + "",
+									);
+								})
+								.catch(() => {
+									stats.remove();
+								});
+						}
 					div.append(statbox);
 					div.onclick = (_) => {
-						if (instance.online !== false) {
-							makeRegister(true, instance.name);
-						} else {
-							alert(I18n.home.warnOffiline());
-						}
+						makeRegister(true, instance.name);
 					};
 					serverbox.append(div);
 				}
@@ -136,7 +167,7 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 		const left = slides.getElementsByClassName("leftArrow").item(0) as HTMLElement;
 		const right = slides.getElementsByClassName("rightArrow").item(0) as HTMLElement;
 		let index = 0;
-		let timeout: NodeJS.Timeout | undefined = setTimeout(() => {});
+		let timeout: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {});
 		function slideShow() {
 			let cleared = false;
 			if (timeout !== undefined) {
