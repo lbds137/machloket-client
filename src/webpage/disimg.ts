@@ -32,8 +32,25 @@ class ImagesDisplay {
 		let pinchStartScale = 1;
 
 		const imageElement = imageWrapper.querySelector("img");
+		let baseWidth = 0;
+		let baseHeight = 0;
+		const refreshBaseSize = () => {
+			if (!imageElement) return;
+			const rect = imageElement.getBoundingClientRect();
+			baseWidth = rect.width;
+			baseHeight = rect.height;
+		};
+		const clampTranslate = () => {
+			if (!baseWidth || !baseHeight) return;
+			const rect = imageWrapper.getBoundingClientRect();
+			const maxX = Math.max(0, (baseWidth * scale - rect.width) / 2);
+			const maxY = Math.max(0, (baseHeight * scale - rect.height) / 2);
+			translateX = Math.min(maxX, Math.max(-maxX, translateX));
+			translateY = Math.min(maxY, Math.max(-maxY, translateY));
+		};
 		const updateTransform = () => {
 			if (!imageElement) return;
+			clampTranslate();
 			imageElement.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
 		};
 
@@ -41,6 +58,7 @@ class ImagesDisplay {
 			scale = 1;
 			translateX = 0;
 			translateY = 0;
+			refreshBaseSize();
 			updateTransform();
 		};
 
@@ -150,6 +168,12 @@ class ImagesDisplay {
 			imageElement.addEventListener("click", (e) => {
 				e.stopPropagation();
 			});
+			imageElement.addEventListener("load", () => {
+				reset();
+			});
+			if (imageElement.complete) {
+				reset();
+			}
 		}
 
 		return imageWrapper;
@@ -157,7 +181,14 @@ class ImagesDisplay {
 	show() {
 		this.background = document.createElement("div");
 		this.background.classList.add("background");
+		const close = document.createElement("span");
+		close.classList.add("imgClose", "svgicon", "svg-x");
+		close.onclick = (event) => {
+			event.stopImmediatePropagation();
+			this.hide();
+		};
 		let cur = this.makeHTML();
+		this.background.appendChild(close);
 		if (this.files.length !== 1) {
 			const right = document.createElement("span");
 			right.classList.add("rightArrow", "svg-intoMenu");

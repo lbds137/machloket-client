@@ -4653,8 +4653,10 @@ ul {
 	position: relative;
 	align-items: center;
 	justify-content: center;
+	box-sizing: border-box;
 	width: 100vw;
-	height: 100vh;
+	height: var(--app-height);
+	padding: calc(var(--safe-top) + 12px) 12px calc(var(--safe-bottom) + 12px);
 	overflow: hidden;
 	cursor: grab;
 	touch-action: none;
@@ -4669,12 +4671,27 @@ ul {
 	flex-shrink: 0;
 	width: auto;
 	height: auto;
-	max-height: 100%;
-	max-width: 100%;
+	max-height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 24px);
+	max-width: calc(100vw - 24px);
 	transition: none;
 	transform-origin: center center;
 	user-select: none;
 	touch-action: none;
+}
+
+.imgClose {
+	z-index: 6;
+	position: fixed;
+	top: calc(var(--safe-top) + 12px);
+	right: 12px;
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow:
+		0 0 12px var(--shadow),
+		0 0 1px var(--primary-text);
+	cursor: pointer;
 }
 
 .centeritem.profile {
