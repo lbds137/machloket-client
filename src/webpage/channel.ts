@@ -841,6 +841,10 @@ class Channel extends SnowFlake {
 			return false;
 		}
 		if (this.mentions) return true;
+		const readState = this.guild.localuser.ready?.d.read_state;
+		if (!this.lastreadmessageid && readState && !readState.partial) {
+			return false;
+		}
 		let lastreadmessage = SnowFlake.stringToUnixTime(this.lastreadmessageid || "0");
 		if (this.guild.member) {
 			const joinedAt = new Date(this.guild.member.joined_at).getTime();
