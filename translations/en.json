@@ -129,6 +129,9 @@
 	"bot": "BOT",
 	"botGuilds": "Guilds bot is in:",
 	"botSettings": "Bot Settings",
+	"botExplorerTitle": "Spacebar Explorer",
+	"botExplorerLink": "Open on Spacebar Explorer",
+	"botExplorerMaintainer": "Maintainer: $1",
 	"cancel": "Cancel",
 	"channel": {
 		"SlowmodeCool": "Slowmode cooldown: $1",
