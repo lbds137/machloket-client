@@ -23,6 +23,10 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_OP_CLIENT_ID: ${{ vars.VITE_OP_CLIENT_ID }}
+          VITE_OP_API_URL: ${{ vars.VITE_OP_API_URL }}
+          VITE_OP_REPLAY_SAMPLE_RATE: ${{ vars.VITE_OP_REPLAY_SAMPLE_RATE }}
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy ./dist/webpage --branch=main --commit-dirty=true
