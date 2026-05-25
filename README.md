@@ -16,7 +16,8 @@ If there are any issues please report them either here, or to me dirrectly on sp
 
 ## Adding instances to the dropdown
 
-Please see [this](./InstanceInfo.md) for how to add an instance to the dropdown picker.
+Fermo use the spacebar explorer instance list to the dropdown picker.
+https://git.sovrahi.com/oh64/spacebar-explorer
 
 ## How to statically host Fermo
 
