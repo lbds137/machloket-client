@@ -814,7 +814,11 @@ class MarkDown {
 					i = j;
 					const parts = build
 						.join("")
-						.match(/^<t:([0-9]{1,16})(:([tTdDfFR]))?>$/) as RegExpMatchArray;
+						.match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
+					if (!parts) {
+						current.textContent += build.join("");
+						continue;
+					}
 					const dateInput = new Date(Number.parseInt(parts[1]) * 1000);
 					let time = "";
 					if (Number.isNaN(dateInput.getTime())) time = build.join("");
@@ -863,6 +867,15 @@ class MarkDown {
 							});
 						else if (parts[3] === "T")
 							time = dateInput.toLocaleString(void 0, {
+								hour: "2-digit",
+								minute: "2-digit",
+								second: "2-digit",
+							});
+						else if (parts[3] === "S")
+							time = dateInput.toLocaleString(void 0, {
+								year: "numeric",
+								month: "2-digit",
+								day: "2-digit",
 								hour: "2-digit",
 								minute: "2-digit",
 								second: "2-digit",
@@ -985,7 +998,9 @@ class MarkDown {
 				if (partsFound === 2) {
 					appendcurrent();
 
-					const parts = build.join("").match(/^\[(.+)\]\(<?(https?:.+?)>?( ('|").+('|"))?\)$/);
+					const parts = build
+						.join("")
+						.match(/^\[(.+)\]\(<?(https?:[^)\s]+?)>?(?:\s+(?:"([^"]+)"|'([^']+)'|([^\)]+)))?\)$/);
 					if (parts) {
 						const linkElem = document.createElement("a");
 
@@ -997,8 +1012,8 @@ class MarkDown {
 								linkElem.target = "_blank";
 								linkElem.rel = "noopener noreferrer";
 							}
-							linkElem.title =
-								(parts[3] ? parts[3].substring(2, parts[3].length - 1) + "\n\n" : "") + parts[2];
+							const title = parts[3] || parts[4] || parts[5];
+							linkElem.title = (title ? title + "\n\n" : "") + parts[2];
 							span.appendChild(linkElem);
 
 							continue;

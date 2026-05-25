@@ -503,12 +503,12 @@ export async function getInstanceInfo(str: string): Promise<InstanceInfo | null>
 	});
 
 	if (stringURLMap.has(str)) {
-		console.error("OOH WE GOT STRING->URL MAP ENTRY FOR", str, "!!!!", stringURLMap.get(str));
+		console.warn("OOH WE GOT STRING->URL MAP ENTRY FOR", str, "!!!!", stringURLMap.get(str));
 		return (await getapiurls(stringURLMap.get(str)!)) as InstanceInfo;
 	}
 
 	if (stringURLsMap.has(str)) {
-		console.error(
+		console.warn(
 			"WE GOT URL->INSTANCE MAP ENTRY FOR ",
 			str,
 			"!!!!!!!!!!11",

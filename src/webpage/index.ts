@@ -18,7 +18,7 @@ import "./oauth2/auth.js";
 import "./audio/page.js";
 import "./404.js";
 import {Channel} from "./channel.js";
-import {initOpenpanel, trackOpenpanel} from "./utils/openpanel.js";
+import {initOpenpanel, installOpenpanelErrorTracking, trackOpenpanel} from "./utils/openpanel.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -30,6 +30,7 @@ if (window.location.pathname.startsWith("/channels")) {
 	let templateID = new URLSearchParams(window.location.search).get("templateID");
 	await I18n.done;
 	Localuser.loadFont();
+	installOpenpanelErrorTracking();
 
 	I18n.translatePage();
 

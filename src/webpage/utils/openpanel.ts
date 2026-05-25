@@ -18,6 +18,7 @@ const replaySampleRate = Number(import.meta.env.VITE_OP_REPLAY_SAMPLE_RATE ?? "0
 
 let op: OpenPanelInstance | null = null;
 let replaySampled = false;
+let errorTrackingInstalled = false;
 
 function canInitOpenpanel(): boolean {
 	return Boolean(clientId && apiUrl);
@@ -71,4 +72,30 @@ export function identifyOpenpanel(identity: OpenPanelIdentity): void {
 export function clearOpenpanel(): void {
 	op?.clear?.();
 	op = null;
+}
+
+export function installOpenpanelErrorTracking(): void {
+	if (errorTrackingInstalled) return;
+	errorTrackingInstalled = true;
+	window.addEventListener("error", (event) => {
+		const err = event.error;
+		if (!(err instanceof Error)) return;
+		trackOpenpanel("error_spotted", {
+			name: err.name,
+			message: err.message,
+			stack: err.stack,
+			filename: event.filename,
+			lineno: event.lineno,
+			colno: event.colno,
+		});
+	});
+	window.addEventListener("unhandledrejection", (event) => {
+		const reason = event.reason;
+		if (!(reason instanceof Error)) return;
+		trackOpenpanel("error_spotted", {
+			name: reason.name,
+			message: reason.message,
+			stack: reason.stack,
+		});
+	});
 }
