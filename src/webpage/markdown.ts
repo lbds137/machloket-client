@@ -175,7 +175,7 @@ class MarkDown {
 				let element: HTMLElement = document.createElement("span");
 				let keepys = "";
 
-				if (txt[i + 1] === "#") {
+				if (!keep && txt[i + 1] === "#") {
 					if (txt[i + 2] === "#") {
 						if (txt[i + 3] === "#" && txt[i + 4]?.match(isSpace)) {
 							element = document.createElement("h3");
@@ -1371,90 +1371,17 @@ function saveCaretPosition(
 	computedLength: void | number = undefined,
 ) {
 	const selection = window.getSelection() as Selection;
-	if (!selection) return;
+	if (!selection || selection.rangeCount === 0) return;
 	try {
 		const range = selection.getRangeAt(0);
-
-		let base = selection.anchorNode as Node;
-		range.setStart(base, 0);
-		let baseString: string;
-		let i = 0;
-		const index = selection.focusOffset;
-
-		for (const thing of Array.from(base.childNodes)) {
-			if (i === index) {
-				base = thing;
-				break;
-			}
-			i++;
-		}
-		const prev = base.previousSibling;
-		let len = 0;
-		if ((!prev || prev instanceof HTMLBRElement) && base instanceof HTMLBRElement) {
-			len--;
-		}
-		if (
-			!(base instanceof Text) &&
-			!(
-				base instanceof HTMLSpanElement &&
-				base.className === "" &&
-				base.children.length == 0 &&
-				!(base instanceof HTMLBRElement)
-			)
-		) {
-			if (base instanceof HTMLElement) {
-				baseString = txtLengthFunc(base);
-			} else {
-				baseString = base.textContent || "";
-			}
-		} else {
-			baseString = selection.toString();
-		}
-		range.setStart(context, 0);
-
-		let build = "";
-		//I think this is working now :3
-		function crawlForText(context: Node) {
-			//@ts-ignore
-			const children = [...context.childNodes];
-			if (children.length === 1 && children[0] instanceof Text) {
-				if (selection.containsNode(context, false)) {
-					build += txtLengthFunc(context as HTMLElement);
-				} else if (selection.containsNode(context, true)) {
-					if (context.contains(base) || context === base || base.contains(context)) {
-						build += baseString;
-					} else {
-						build += context.textContent;
-					}
-				} else {
-					console.error(context);
-				}
-				return;
-			}
-			for (const node of children as Node[]) {
-				if (selection.containsNode(node, false)) {
-					if (node instanceof HTMLElement) {
-						build += txtLengthFunc(node);
-					} else {
-						build += node.textContent;
-					}
-				} else if (selection.containsNode(node, true)) {
-					if (node instanceof HTMLElement) {
-						crawlForText(node);
-					} else {
-						build += node.textContent;
-					}
-				} else {
-					//console.error(node,"This shouldn't happen");
-				}
-			}
-		}
-		crawlForText(context);
-		if (baseString === "\n") {
-			build += baseString;
-		}
+		const preRange = range.cloneRange();
+		preRange.selectNodeContents(context);
+		preRange.setEnd(range.endContainer, range.endOffset);
+		const container = document.createElement("div");
+		container.append(preRange.cloneContents());
+		const build = txtLengthFunc(container);
 		text = build;
-		len += build.length;
+		let len = build.length;
 		if (computedLength !== undefined) {
 			len = computedLength;
 		}

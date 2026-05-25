@@ -441,6 +441,7 @@ body {
 			transition: background 0.1s;
 			cursor: pointer;
 		}
+		padding: 5px;
 	}
 
 	span.selected {
