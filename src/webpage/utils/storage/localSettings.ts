@@ -18,6 +18,7 @@ export const ServiceWorkerModeValues = [
 
 export class LocalSettings {
 	serviceWorkerMode: ServiceWorkerMode = ServiceWorkerMode.Unregistered;
+	openpanelEnabled: boolean = true;
 	constructor(init?: Partial<LocalSettings>) {
 		Object.assign(this, init);
 	}

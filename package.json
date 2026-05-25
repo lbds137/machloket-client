@@ -12,6 +12,7 @@
 	"author": "MathMan05",
 	"license": "AGPL-3.0",
 	"dependencies": {
+		"@openpanel/sdk": "^1.0.0",
 		"@swc/core": "1.11.24",
 		"vite": "^8.0.12"
 	},

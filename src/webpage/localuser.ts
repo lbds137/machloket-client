@@ -50,7 +50,15 @@ import {
 	ThemeOption,
 } from "./utils/storage/userPreferences";
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
-import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
+import {getLocalSettings, ServiceWorkerModeValues, setLocalSettings} from "./utils/storage/localSettings.js";
+import {
+	clearOpenpanel,
+	getOpenpanelReplaySampleRate,
+	identifyOpenpanel,
+	initOpenpanel,
+	isOpenpanelConfigured,
+	trackOpenpanel,
+} from "./utils/openpanel.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SnowFlake} from "./snowflake.js";
@@ -512,6 +520,7 @@ class Localuser {
 			returny = res;
 			ws.addEventListener("open", (_event) => {
 				console.log("WebSocket connected");
+				trackOpenpanel("ws_connected", {resume});
 				if (resume) {
 					ws.send(
 						JSON.stringify({
@@ -626,6 +635,7 @@ class Localuser {
 		ws.addEventListener("close", async (event) => {
 			this.ws = undefined;
 			console.log("WebSocket closed with code " + event.code);
+			trackOpenpanel("ws_disconnected", {code: event.code});
 			if (
 				(event.code > 1000 && event.code < 1016 && this.errorBackoff === 0) ||
 				(wsCodesRetry.has(event.code) && this.errorBackoff === 0)
@@ -1637,6 +1647,10 @@ class Localuser {
 			const guild = channel.guild;
 			guild.loadGuild();
 			await guild.loadChannel(channelid, addstate, messageid);
+			trackOpenpanel("channel_view", {
+				channel_id: channelid,
+				guild_id: guild.id,
+			});
 		} else {
 			this.gotoid = channelid;
 			return new Promise<void>((res) => (this.gotoRes = res));
@@ -1671,6 +1685,10 @@ class Localuser {
 		(document.getElementById("username") as HTMLSpanElement).textContent = this.user.username;
 		(document.getElementById("userpfp") as HTMLImageElement).src = this.user.getpfpsrc();
 		(document.getElementById("status") as HTMLSpanElement).textContent = this.status;
+		identifyOpenpanel({
+			profileId: this.user.id,
+			firstName: this.user.username,
+		});
 	}
 	isAdmin(): boolean {
 		if (this.lookingguild) {
@@ -3754,6 +3772,26 @@ class Localuser {
 					undefined,
 				),
 			);
+			if (isOpenpanelConfigured()) {
+				jankInfo.addHR();
+				jankInfo.addTitle(I18n.localuser.openpanelTitle());
+				jankInfo.addText(I18n.localuser.openpanelDesc());
+				const replayPercent = Math.round(getOpenpanelReplaySampleRate() * 100);
+				jankInfo.addText(I18n.localuser.openpanelReplay(replayPercent + ""));
+				jankInfo.addCheckboxInput(
+					I18n.localuser.openpanelToggle(),
+					(enabled) => {
+						localSettings.openpanelEnabled = enabled;
+						setLocalSettings(localSettings);
+						if (enabled) {
+							initOpenpanel(true);
+						} else {
+							clearOpenpanel();
+						}
+					},
+					{initState: localSettings.openpanelEnabled !== false},
+				);
+			}
 		})();
 		const installP = installPGet();
 		if (installP) {

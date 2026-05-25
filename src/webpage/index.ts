@@ -18,6 +18,7 @@ import "./oauth2/auth.js";
 import "./audio/page.js";
 import "./404.js";
 import {Channel} from "./channel.js";
+import {initOpenpanel, trackOpenpanel} from "./utils/openpanel.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -105,6 +106,8 @@ if (window.location.pathname.startsWith("/channels")) {
 			loading.classList.remove("loading");
 			loaddesc.textContent = I18n.loaded();
 			console.log("done loading");
+			initOpenpanel();
+			trackOpenpanel("app_loaded", {template_id: templateID || undefined});
 			if (templateID) {
 				thisUser.passTemplateID(templateID);
 			}
@@ -212,6 +215,10 @@ if (window.location.pathname.startsWith("/channels")) {
 					},
 					(res) => {
 						if (res === "Ok") {
+							trackOpenpanel("message_sent", {
+								channel_id: channel.id,
+								guild_id: channel.guild.id,
+							});
 							mres();
 						} else {
 							rej();
