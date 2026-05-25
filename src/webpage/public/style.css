@@ -4330,6 +4330,33 @@ img.bigembedimg {
 	color: var(--secondary-text-soft);
 }
 
+.explorerInfo {
+	margin-top: 8px;
+	padding: 10px;
+	border: 1px solid var(--secondary-hover);
+	border-left: 4px solid var(--accent_color);
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--card-bg) 70%, var(--secondary-bg));
+	box-shadow: inset 0 0 0 1px var(--secondary-bg);
+}
+
+.explorerInfo h4 {
+	margin: 0 0 6px;
+	font-size: 0.95em;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--secondary-text-soft);
+}
+
+.explorerInfo p {
+	margin: 4px 0;
+}
+
+.explorerInfo a {
+	color: var(--link);
+	font-weight: 600;
+}
+
 .rolesbox {
 	flex-wrap: wrap;
 	gap: 2px;

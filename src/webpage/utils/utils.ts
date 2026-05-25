@@ -438,6 +438,38 @@ export const instancefetch = fetch(catalogInstancesUrl)
 			instancesLoaded = true;
 		},
 	);
+
+const catalogBotsUrl = "https://spacebar-explorer.sovr.top/api/catalog/bots";
+type CatalogBot = {
+	id: string;
+	name: string;
+	maintainer?: string;
+	maintainer_link?: string;
+	maintainer_image?: string;
+	tags?: string[];
+	short?: string;
+	description?: string;
+};
+export const botCatalogFetch = fetch(catalogBotsUrl)
+	.then(async (res) => {
+		if (!res.ok) {
+			throw new Error("Failed to fetch bot catalog");
+		}
+		return (await res.json()) as CatalogBot[];
+	})
+	.catch(() => {
+		return [] as CatalogBot[];
+	});
+
+export async function getExplorerBotByUsername(username: string): Promise<CatalogBot | undefined> {
+	const bots = await botCatalogFetch;
+	return bots.find((bot) => bot.name.toLowerCase() === username.toLowerCase());
+}
+
+export function getExplorerBotUrl(botId: string): string {
+	return new URL(`/bots/${encodeURIComponent(botId)}`, "https://spacebar-explorer.sovr.top").href;
+}
+
 const stringURLMap = new Map<string, string>();
 
 const stringURLsMap = new Map<
