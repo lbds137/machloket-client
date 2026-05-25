@@ -5344,12 +5344,12 @@ fieldset input[type="radio"] {
 .savediv {
 	z-index: 2;
 	position: fixed;
-	right: 50%;
+	left: 50%;
 	bottom: 24px;
 	align-items: center;
 	box-sizing: border-box;
-	width: 100%;
-	height: var(--app-height);
+	width: min(720px, calc(100% - 32px));
+	height: auto;
 	padding: 16px !important;
 	border-radius: 8px !important;
 	font-size: 1.2em;
@@ -5360,8 +5360,7 @@ fieldset input[type="radio"] {
 	box-shadow:
 		0 0 24px var(--shadow),
 		0 0 1px var(--primary-text);
-	transform: translateX(50%);
-	inset: 0;
+	transform: translateX(-50%);
 }
 
 .exitsettings {
