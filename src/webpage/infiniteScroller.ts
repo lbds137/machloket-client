@@ -102,10 +102,12 @@ class InfiniteScroller {
 		this.reachesBottom = reachesBottom;
 	}
 	observer: IntersectionObserver = new IntersectionObserver(console.log);
+	private observerReady = false;
 
 	private heightMap = new WeakMap<HTMLElement, number>();
 	private createObserver(root: HTMLDivElement) {
 		const scroller = root.children[0];
+		this.observerReady = true;
 		function sorted() {
 			return Array.from(scroller.children).filter((_) => visable.has(_)) as HTMLElement[];
 		}
@@ -198,6 +200,21 @@ class InfiniteScroller {
 	}
 
 	async getDiv(initialId: string, flash = false): Promise<HTMLDivElement> {
+		if (this.div) {
+			if (!this.div.classList.contains("scroller")) {
+				this.div.classList.add("scroller");
+			}
+			if (!this.div.children.length) {
+				const scroll = document.createElement("div");
+				this.div.append(scroll);
+			}
+			if (!this.observerReady) {
+				this.createObserver(this.div);
+			}
+			await this.focus(initialId, flash, true);
+			return this.div;
+		}
+
 		const div = document.createElement("div");
 		div.classList.add("scroller");
 		this.div = div;
