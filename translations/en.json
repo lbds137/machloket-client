@@ -582,6 +582,7 @@
 		"allGood": "All good",
 		"checking": "Checking instance",
 		"enterPAgain": "Enter new password again:",
+		"explorerNotice": "If you have created an account on the explorer, log in with the same credentials. These are the Spacebar credentials, they are global to all clients, no need to create a new account.",
 		"invalid": "Invalid instance, try again",
 		"login": "Login",
 		"newPassword": "New password:",

@@ -597,6 +597,7 @@
 		"allGood": "OK",
 		"checking": "Vérification de l'instance",
 		"enterPAgain": "Entrez à nouveau le mot de passe :",
+		"explorerNotice": "Si vous avez cree un compte sur l'explorer, connectez-vous avec les memes identifiants. Ce sont ceux de Spacebar, ils sont globaux a tous les clients, pas besoin de recreer un compte.",
 		"invalid": "Instance invalide, réessayez",
 		"login": "Se connecter",
 		"newPassword": "Nouveau mot de passe :",

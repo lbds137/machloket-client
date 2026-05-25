@@ -54,6 +54,12 @@ export async function makeLogin(
 	const dialog = new Dialog("");
 	const opt = dialog.options;
 	opt.addTitle(I18n.login.login());
+	opt.addHTMLArea(() => {
+		const notice = document.createElement("div");
+		notice.classList.add("verify");
+		notice.textContent = I18n.login.explorerNotice();
+		return notice;
+	});
 	const picker = opt.addInstancePicker(
 		(info) => {
 			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/login";
