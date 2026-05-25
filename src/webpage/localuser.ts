@@ -150,12 +150,17 @@ class Localuser {
 
 		thisUser.initwebsocket().then(async () => {
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
-			thisUser.loaduser();
-			await thisUser.init();
-			loading.classList.add("doneloading");
-			loaddesc.textContent = I18n.loaded();
-			loading.classList.remove("loading");
-			console.log("done loading");
+			try {
+				thisUser.loaduser();
+				await thisUser.init();
+				loaddesc.textContent = I18n.loaded();
+				console.log("done loading");
+			} catch (e) {
+				console.error(e);
+			} finally {
+				loading.classList.add("doneloading");
+				loading.classList.remove("loading");
+			}
 		});
 
 		onswap?.(thisUser);
@@ -2698,10 +2703,20 @@ class Localuser {
 			favicon.href = c.toDataURL("image/x-icon");
 		};
 		if (Localuser.favImg.complete) {
+			if (Localuser.favImg.naturalWidth === 0) {
+				const favicon = document.getElementById("favicon") as HTMLLinkElement;
+				favicon.href = "/favicon.ico";
+				return;
+			}
 			make();
+			return;
 		}
 		Localuser.favImg.onload = () => {
 			make();
+		};
+		Localuser.favImg.onerror = () => {
+			const favicon = document.getElementById("favicon") as HTMLLinkElement;
+			favicon.href = "/favicon.ico";
 		};
 	}
 	totalMentions() {

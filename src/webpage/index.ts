@@ -98,19 +98,24 @@ if (window.location.pathname.startsWith("/channels")) {
 
 		regSwap(thisUser);
 		thisUser.initwebsocket().then(async () => {
-			thisUser.loaduser();
-			console.warn("huh");
-			await thisUser.init();
-			console.warn("huh2");
 			const loading = document.getElementById("loading") as HTMLDivElement;
-			loading.classList.add("doneloading");
-			loading.classList.remove("loading");
-			loaddesc.textContent = I18n.loaded();
-			console.log("done loading");
-			initOpenpanel();
-			trackOpenpanel("app_loaded", {template_id: templateID || undefined});
-			if (templateID) {
-				thisUser.passTemplateID(templateID);
+			try {
+				thisUser.loaduser();
+				console.warn("huh");
+				await thisUser.init();
+				console.warn("huh2");
+				loaddesc.textContent = I18n.loaded();
+				console.log("done loading");
+				initOpenpanel();
+				trackOpenpanel("app_loaded", {template_id: templateID || undefined});
+				if (templateID) {
+					thisUser.passTemplateID(templateID);
+				}
+			} catch (e) {
+				console.error(e);
+			} finally {
+				loading.classList.add("doneloading");
+				loading.classList.remove("loading");
 			}
 		});
 	} catch (e) {
