@@ -7,6 +7,7 @@ type OpenPanelInstance = InstanceType<typeof OpenPanel>;
 type OpenPanelIdentity = {
 	profileId: string;
 	firstName?: string;
+	avatar?: string;
 	properties?: Record<string, unknown>;
 };
 

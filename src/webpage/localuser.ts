@@ -1688,9 +1688,7 @@ class Localuser {
 		identifyOpenpanel({
 			profileId: this.user.id,
 			firstName: this.user.username,
-			properties: {
-				avatar: this.user.getpfpsrc(),
-			},
+			avatar: this.user.getpfpsrc(),
 		});
 	}
 	isAdmin(): boolean {
@@ -4547,7 +4545,6 @@ class Localuser {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const p = saveCaretPosition(typebox);
 		if (!p) return;
-		const original = MarkDown.getText();
 
 		const emoji = await Emoji.emojiPicker(
 			-0 + rect.right - window.innerWidth,
@@ -4557,14 +4554,12 @@ class Localuser {
 		this.favorites.addEmoji(emoji.id || (emoji.emoji as string));
 		p();
 		const md = typebox.markdown;
-		this.MDReplace(
-			emoji.id
-				? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>`
-				: (emoji.emoji as string),
-			original,
-			md,
-			null,
-		);
+		const insert = emoji.id
+			? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>`
+			: (emoji.emoji as string);
+		const caret = Math.max(0, Math.min(MarkDown.getCaretLength(), md.rawString.length));
+		md.txt = (md.rawString.slice(0, caret) + insert + md.rawString.slice(caret)).split("");
+		md.boxupdate(insert.length, false, caret);
 	}
 	MDReplace(
 		replacewith: string,
@@ -4572,23 +4567,43 @@ class Localuser {
 		typebox: MarkDown,
 		start: RegExp | null = this.autofillregex,
 	) {
-		let raw = typebox.rawString;
-		let empty = raw.length === 0;
-		raw = original !== "" ? raw.split(original)[1] : raw;
-		if (raw === undefined && !empty) return;
-		if (empty) {
-			raw = "";
-		}
-		raw = (start ? original.replace(start, "") : original) + " " + replacewith + raw;
+		const raw = typebox.rawString;
+		const empty = raw.length === 0;
+		let prefix = original;
+		let suffix = "";
 
-		typebox.txt = raw.split("");
+		if (empty) {
+			prefix = "";
+			suffix = "";
+		} else if (original === "") {
+			suffix = raw;
+		} else if (raw.startsWith(original)) {
+			suffix = raw.slice(original.length);
+		} else {
+			const caret = MarkDown.getCaretLength();
+			if (Number.isInteger(caret) && caret >= 0 && caret <= raw.length) {
+				prefix = raw.slice(0, caret);
+				suffix = raw.slice(caret);
+			} else {
+				const idx = raw.lastIndexOf(original);
+				if (idx >= 0) {
+					prefix = raw.slice(0, idx + original.length);
+					suffix = raw.slice(idx + original.length);
+				} else {
+					return;
+				}
+			}
+		}
+
+		const base = start ? prefix.replace(start, "") : prefix;
+		const spacer = base === "" || /\s$/.test(base) ? "" : " ";
+		const next = base + spacer + replacewith + suffix;
+
+		typebox.txt = next.split("");
 		const match = start ? original.match(start) : true;
 		if (match) {
-			typebox.boxupdate(
-				replacewith.length - (match === true ? 0 : match[0].length) + 1,
-				false,
-				original.length,
-			);
+			const offset = replacewith.length - (match === true ? 0 : match[0].length) + spacer.length;
+			typebox.boxupdate(offset, false, prefix.length);
 		}
 	}
 	fileExtange!: (
@@ -5294,11 +5309,11 @@ class Localuser {
 		return url;
 	}
 
-	refreshTimeOut?: NodeJS.Timeout;
+	refreshTimeOut?: number;
 	urlsToRefresh: [string, (arg: string) => void][] = [];
 	refreshURL(url: string): Promise<string> {
 		if (!this.refreshTimeOut) {
-			this.refreshTimeOut = setTimeout(async () => {
+			this.refreshTimeOut = window.setTimeout(async () => {
 				const refreshes = this.urlsToRefresh;
 				this.urlsToRefresh = [];
 				delete this.refreshTimeOut;

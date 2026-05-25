@@ -76,6 +76,9 @@ class MarkDown {
 	static getText() {
 		return text;
 	}
+	static getCaretLength() {
+		return caretLength;
+	}
 	makeHTML({keep = this.keep, stdsize = this.stdsize} = {}) {
 		return this.markdown(this.txt, {keep, stdsize});
 	}
@@ -1363,6 +1366,7 @@ class MarkDown {
 
 //solution from https://stackoverflow.com/questions/4576694/saving-and-restoring-caret-position-for-contenteditable-div
 let text = "";
+let caretLength = 0;
 let formatted = false;
 function saveCaretPosition(
 	context: HTMLElement,
@@ -1387,6 +1391,7 @@ function saveCaretPosition(
 		}
 		len = Math.min(len, txtLengthFunc(context).length);
 		len += offset;
+		caretLength = len;
 
 		return function restore(backspace = false) {
 			if (!selection) return;
