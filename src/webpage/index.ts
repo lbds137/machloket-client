@@ -466,10 +466,12 @@ if (window.location.pathname.startsWith("/channels")) {
 			"touchmove",
 			(event) => {
 				if (event.touches.length !== 1) return;
+				const target = event.target as HTMLElement | null;
+				if (target?.closest(".scroller")) return;
 				const dx = event.touches[0].pageX - swipeStartX;
 				const dy = event.touches[0].pageY - swipeStartY;
-				if (swipeGesture === "none" && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
-					swipeGesture = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+				if (swipeGesture === "none" && (Math.abs(dx) > 16 || Math.abs(dy) > 16)) {
+					swipeGesture = Math.abs(dx) > Math.abs(dy) * 1.5 ? "horizontal" : "vertical";
 				}
 				if (swipeGesture === "horizontal") {
 					swipeDeltaX = dx;
@@ -504,10 +506,12 @@ if (window.location.pathname.startsWith("/channels")) {
 				"touchmove",
 				(event) => {
 					if (event.touches.length !== 1) return;
+					const target = event.target as HTMLElement | null;
+					if (target?.closest(".scroller")) return;
 					const dx = event.touches[0].pageX - listStartX;
 					const dy = event.touches[0].pageY - listStartY;
-					if (listGesture === "none" && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
-						listGesture = Math.abs(dx) > Math.abs(dy) ? "horizontal" : "vertical";
+					if (listGesture === "none" && (Math.abs(dx) > 16 || Math.abs(dy) > 16)) {
+						listGesture = Math.abs(dx) > Math.abs(dy) * 1.5 ? "horizontal" : "vertical";
 					}
 					if (listGesture === "horizontal") {
 						listDeltaX = dx;

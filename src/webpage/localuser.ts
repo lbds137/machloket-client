@@ -1688,6 +1688,9 @@ class Localuser {
 		identifyOpenpanel({
 			profileId: this.user.id,
 			firstName: this.user.username,
+			properties: {
+				avatar: this.user.getpfpsrc(),
+			},
 		});
 	}
 	isAdmin(): boolean {
