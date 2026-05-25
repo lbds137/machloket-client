@@ -101,21 +101,20 @@ if (window.location.pathname.startsWith("/channels")) {
 			const loading = document.getElementById("loading") as HTMLDivElement;
 			try {
 				thisUser.loaduser();
-				console.warn("huh");
-				await thisUser.init();
-				console.warn("huh2");
 				loaddesc.textContent = I18n.loaded();
-				console.log("done loading");
+				loading.classList.add("doneloading");
+				loading.classList.remove("loading");
 				initOpenpanel();
 				trackOpenpanel("app_loaded", {template_id: templateID || undefined});
 				if (templateID) {
 					thisUser.passTemplateID(templateID);
 				}
+				console.warn("huh");
+				await thisUser.init();
+				console.warn("huh2");
+				console.log("done loading");
 			} catch (e) {
 				console.error(e);
-			} finally {
-				loading.classList.add("doneloading");
-				loading.classList.remove("loading");
 			}
 		});
 	} catch (e) {

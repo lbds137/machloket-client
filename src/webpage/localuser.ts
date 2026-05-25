@@ -152,14 +152,13 @@ class Localuser {
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			try {
 				thisUser.loaduser();
-				await thisUser.init();
 				loaddesc.textContent = I18n.loaded();
+				loading.classList.add("doneloading");
+				loading.classList.remove("loading");
+				await thisUser.init();
 				console.log("done loading");
 			} catch (e) {
 				console.error(e);
-			} finally {
-				loading.classList.add("doneloading");
-				loading.classList.remove("loading");
 			}
 		});
 
@@ -717,14 +716,11 @@ class Localuser {
 							console.log("FINE ME");
 							this.loaduser();
 							await this.init();
-							const loading = document.getElementById("loading") as HTMLElement;
-							loading.classList.add("doneloading");
-							loading.classList.remove("loading");
 							loaddesc.textContent = I18n.loaded();
 							console.log("done loading");
 						});
 					},
-					200 + this.errorBackoff * 2800,
+					Math.round((0.2 + this.errorBackoff * 2.8) * 1000),
 				);
 			} else loaddesc.textContent = I18n.unableToConnect();
 		});
