@@ -248,7 +248,8 @@ class Emoji {
 		this.emojis = build.filter((group) => group.emojis.length > 0);
 	}
 	static grabEmoji() {
-		fetch(new URL("./emoji.bin", import.meta.url).href)
+		const emojiUrl = new URL("emoji.bin", window.location.origin);
+		fetch(emojiUrl.href)
 			.then(async (res) => {
 				if (!res.ok) {
 					throw new Error("Failed to fetch emoji.bin");
