@@ -16,9 +16,24 @@ export const ServiceWorkerModeValues = [
 	ServiceWorkerMode.Enabled,
 ];
 
+export const enum OpenPanelAnalyticsMode {
+	Default = "default",
+	ErrorSending = "errorSending",
+	JustPing = "justPing",
+	Disabled = "disabled",
+}
+
+export const OpenPanelAnalyticsModeValues = [
+	OpenPanelAnalyticsMode.Default,
+	OpenPanelAnalyticsMode.ErrorSending,
+	OpenPanelAnalyticsMode.JustPing,
+	OpenPanelAnalyticsMode.Disabled,
+];
+
 export class LocalSettings {
 	serviceWorkerMode: ServiceWorkerMode = ServiceWorkerMode.Unregistered;
 	openpanelEnabled: boolean = true;
+	openpanelAnalyticsMode?: OpenPanelAnalyticsMode;
 	constructor(init?: Partial<LocalSettings>) {
 		Object.assign(this, init);
 	}
@@ -41,6 +56,13 @@ function migrateOldSettings() {
 	if (oldSWMode !== null) {
 		settings.serviceWorkerMode = oldSWMode as ServiceWorkerMode;
 		localStorage.removeItem("SWMode");
+		mod = true;
+	}
+
+	const legacyOpenpanelEnabled = localStorage.getItem("openpanelEnabled");
+	if (legacyOpenpanelEnabled !== null) {
+		settings.openpanelEnabled = legacyOpenpanelEnabled === "true";
+		localStorage.removeItem("openpanelEnabled");
 		mod = true;
 	}
 

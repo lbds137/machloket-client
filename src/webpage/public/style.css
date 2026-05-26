@@ -4778,6 +4778,47 @@ ul {
 	height: 100%;
 }
 
+.openpanelPromptDialog {
+	width: min(820px, calc(100vw - 32px));
+	max-width: 820px;
+	padding: 20px;
+}
+
+.openpanelPromptBody {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: 100%;
+}
+
+.openpanelTrackingWidget {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+}
+
+.openpanelTrackingWidget br {
+	display: none;
+}
+
+.openpanelTrackingWidget strong {
+	min-height: 1.4em;
+	display: block;
+	font-size: 1.05rem;
+}
+
+.openpanelTrackingWidget p {
+	min-height: 4.5em;
+	margin: 0;
+	line-height: 1.45;
+	color: var(--primary-text-soft);
+}
+
+.openpanelTrackingWidget input[type="range"] {
+	width: 100%;
+}
+
 fieldset {
 	margin-bottom: 4px;
 	border-color: var(--primary-text-soft);
@@ -5747,6 +5788,20 @@ fieldset input[type="radio"] {
 	.accountSwitcher {
 		width: 94%;
 		min-width: unset;
+	}
+
+	.openpanelPromptDialog {
+		width: 94%;
+		max-width: unset;
+		padding: 16px;
+	}
+
+	.openpanelPromptBody {
+		gap: 14px;
+	}
+
+	.openpanelTrackingWidget p {
+		min-height: 5.5em;
 	}
 
 	.Buttons {

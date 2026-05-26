@@ -18,7 +18,7 @@ import "./oauth2/auth.js";
 import "./audio/page.js";
 import "./404.js";
 import {Channel} from "./channel.js";
-import {initOpenpanel, installOpenpanelErrorTracking, trackOpenpanel} from "./utils/openpanel.js";
+import {initOpenpanel, installOpenpanelErrorTracking, sendOpenpanelAnalytics} from "./utils/openpanel.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -97,6 +97,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 
 		regSwap(thisUser);
+		const startupStarted = performance.now();
 		thisUser.initwebsocket().then(async () => {
 			const loading = document.getElementById("loading") as HTMLDivElement;
 			try {
@@ -104,14 +105,22 @@ if (window.location.pathname.startsWith("/channels")) {
 				loaddesc.textContent = I18n.loaded();
 				loading.classList.add("doneloading");
 				loading.classList.remove("loading");
+				await Localuser.showOpenpanelAnalyticsPrompt();
 				initOpenpanel();
-				trackOpenpanel("app_loaded", {template_id: templateID || undefined});
+				thisUser.identifyOpenpanelUser();
+				sendOpenpanelAnalytics("app_loaded", {
+					startup_ms: Math.round(performance.now() - startupStarted),
+				});
 				if (templateID) {
 					thisUser.passTemplateID(templateID);
 				}
 				console.warn("huh");
 				await thisUser.init();
 				console.warn("huh2");
+				sendOpenpanelAnalytics("initial_channel_loaded", {
+					startup_ms: Math.round(performance.now() - startupStarted),
+					route: window.location.pathname.startsWith("/channels") ? "channel" : "home",
+				});
 				console.log("done loading");
 			} catch (e) {
 				console.error(e);
@@ -220,9 +229,10 @@ if (window.location.pathname.startsWith("/channels")) {
 					},
 					(res) => {
 						if (res === "Ok") {
-							trackOpenpanel("message_sent", {
-								channel_id: channel.id,
-								guild_id: channel.guild.id,
+							sendOpenpanelAnalytics("message_sent", {
+								attachment_count: attachments.length,
+								has_reply: Boolean(replyingTo),
+								sent_from: channel.guild.id === "@me" ? "dm" : "guild",
 							});
 							mres();
 						} else {

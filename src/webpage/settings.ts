@@ -325,15 +325,24 @@ class ButtonInput implements OptionsElement<void> {
 	readonly label: string;
 	readonly owner: Options;
 	readonly onClick: () => void;
-	textContent: string;
+	private _textContent: string;
 	value!: void;
 	constructor(label: string, textContent: string, onClick: () => void, owner: Options, {} = {}) {
 		this.label = label;
 		this.owner = owner;
 		this.onClick = onClick;
-		this.textContent = textContent;
+		this._textContent = textContent;
 	}
 	buttonHtml?: HTMLButtonElement;
+	get textContent() {
+		return this._textContent;
+	}
+	set textContent(textContent: string) {
+		this._textContent = textContent;
+		if (this.buttonHtml) {
+			this.buttonHtml.textContent = textContent;
+		}
+	}
 	generateHTML(): HTMLDivElement {
 		const div = document.createElement("div");
 		if (this.label) {
@@ -343,7 +352,7 @@ class ButtonInput implements OptionsElement<void> {
 			div.append(span);
 		}
 		const button = document.createElement("button");
-		button.textContent = this.textContent;
+		button.textContent = this._textContent;
 		button.onclick = this.onClickEvent.bind(this);
 		this.buttonHtml = button;
 		div.append(button);

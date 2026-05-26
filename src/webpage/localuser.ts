@@ -50,14 +50,20 @@ import {
 	ThemeOption,
 } from "./utils/storage/userPreferences";
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
-import {getLocalSettings, ServiceWorkerModeValues, setLocalSettings} from "./utils/storage/localSettings.js";
+import {
+	getLocalSettings,
+	OpenPanelAnalyticsMode,
+	OpenPanelAnalyticsModeValues,
+	ServiceWorkerModeValues,
+	setLocalSettings,
+} from "./utils/storage/localSettings.js";
 import {
 	clearOpenpanel,
-	getOpenpanelReplaySampleRate,
 	identifyOpenpanel,
 	initOpenpanel,
 	isOpenpanelConfigured,
-	trackOpenpanel,
+	sendOpenpanelAnalytics,
+	sendOpenpanelAnalyticsModeChange,
 } from "./utils/openpanel.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
@@ -80,6 +86,139 @@ interface CustomHTMLDivElement extends HTMLDivElement {
 }
 
 MarkDown.emoji = Emoji;
+
+type OpenpanelAnalyticsWidget = {
+	element: HTMLElement;
+	getMode: () => OpenPanelAnalyticsMode;
+	setDisabled: (disabled: boolean) => void;
+};
+
+function getOpenpanelAnalyticsModeText(mode: OpenPanelAnalyticsMode): [string, string] {
+	switch (mode) {
+		case OpenPanelAnalyticsMode.Default:
+			return [I18n.localuser.openpanelModeDefaultTitle(), I18n.localuser.openpanelModeDefaultDesc()];
+		case OpenPanelAnalyticsMode.ErrorSending:
+			return [
+				I18n.localuser.openpanelModeErrorSendingTitle(),
+				I18n.localuser.openpanelModeErrorSendingDesc(),
+			];
+		case OpenPanelAnalyticsMode.JustPing:
+			return [I18n.localuser.openpanelModeJustPingTitle(), I18n.localuser.openpanelModeJustPingDesc()];
+		case OpenPanelAnalyticsMode.Disabled:
+			return [I18n.localuser.openpanelModeDisableTitle(), I18n.localuser.openpanelModeDisableDesc()];
+	}
+}
+
+function makeOpenpanelAnalyticsWidget(
+	initialMode: OpenPanelAnalyticsMode = OpenPanelAnalyticsMode.Default,
+	onChange: (mode: OpenPanelAnalyticsMode) => void,
+): OpenpanelAnalyticsWidget {
+	let currentMode = initialMode;
+	const root = document.createElement("div");
+	root.classList.add("openpanelAnalyticsWidget");
+
+	const title = document.createElement("strong");
+	title.style.display = "block";
+	root.append(title);
+
+	root.append(document.createElement("br"));
+
+	const slider = document.createElement("input");
+	slider.type = "range";
+	slider.min = "0";
+	const maxIndex = OpenPanelAnalyticsModeValues.length - 1;
+	slider.max = String(maxIndex);
+	slider.step = "1";
+	slider.value = String(maxIndex - OpenPanelAnalyticsModeValues.indexOf(currentMode));
+	root.append(slider);
+
+	const description = document.createElement("p");
+	root.append(description);
+
+	const sync = (mode: OpenPanelAnalyticsMode) => {
+		currentMode = mode;
+		slider.value = String(maxIndex - OpenPanelAnalyticsModeValues.indexOf(mode));
+		const [modeTitle, modeDescription] = getOpenpanelAnalyticsModeText(mode);
+		title.textContent = modeTitle;
+		description.textContent = modeDescription;
+	};
+
+	slider.oninput = () => {
+		const mode = OpenPanelAnalyticsModeValues[maxIndex - Number(slider.value)] || OpenPanelAnalyticsMode.Default;
+		sync(mode);
+		onChange(mode);
+		try {
+			root.dispatchEvent(new CustomEvent("openpanel:modechange", {detail: {mode}}));
+			document.dispatchEvent(new CustomEvent("openpanel:modechange", {detail: {mode}}));
+		} catch {}
+	};
+
+	sync(currentMode);
+	return {
+		element: root,
+		getMode: () => currentMode,
+		setDisabled: (disabled: boolean) => {
+			root.classList.toggle("disabled", disabled);
+			try {
+				root.dispatchEvent(new CustomEvent("openpanel:widgetdisabled", {detail: {disabled}}));
+			} catch {}
+		},
+	};
+}
+
+async function showOpenpanelAnalyticsPrompt(): Promise<void> {
+	const localSettings = getLocalSettings();
+	if (localSettings.openpanelEnabled === false || localSettings.openpanelAnalyticsMode !== undefined) return;
+	if (!isOpenpanelConfigured()) return;
+
+	await new Promise<void>((resolve) => {
+		const dialog = new Dialog(I18n.localuser.openpanelPromptTitle(), {noSubmit: true});
+		const container = document.createElement("div");
+		container.classList.add("openpanelPromptBody");
+
+		const intro = document.createElement("p");
+		intro.textContent = I18n.localuser.openpanelPromptDesc();
+		container.append(intro);
+
+		const privacy = document.createElement("p");
+		privacy.textContent = I18n.localuser.openpanelPromptPrivacy();
+		container.append(privacy);
+
+		let selectedMode = OpenPanelAnalyticsMode.Default;
+		const widget = makeOpenpanelAnalyticsWidget(selectedMode, (mode) => {
+			selectedMode = mode;
+		});
+		container.append(widget.element);
+
+		dialog.options.addHTMLArea(container);
+		
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			localSettings.openpanelAnalyticsMode = selectedMode;
+			setLocalSettings(localSettings);
+			if (localSettings.openpanelEnabled !== false) {
+				initOpenpanel(true);
+			}
+			document.dispatchEvent(new CustomEvent("openpanel:modechange", {detail: {mode: selectedMode}}));
+			document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: localSettings.openpanelEnabled}}));
+			dialog.hide();
+			resolve();
+		};
+		dialog.options.addButtonInput("", I18n.ok(), finish);
+		const center = dialog.show(false);
+		center.classList.add("openpanelPromptDialog");
+		const background = center.parentElement as HTMLDivElement;
+		background.addEventListener("click", (event) => {
+			if (event.target === background) finish();
+		});
+		background.addEventListener("keydown", (event) => {
+			if (event.key === "Escape") finish();
+		});
+	});
+}
+
 class Localuser {
 	badges = new Map<
 		string,
@@ -133,6 +272,9 @@ class Localuser {
 		this.userinfo.localuserStore = e;
 	}
 	static users = getBulkUsers();
+	static async showOpenpanelAnalyticsPrompt() {
+		await showOpenpanelAnalyticsPrompt();
+	}
 	static async showAccountSwitcher(thisUser?: Localuser) {
 		const specialUser = await new AccountSwitcher().show();
 
@@ -156,6 +298,8 @@ class Localuser {
 				loading.classList.add("doneloading");
 				loading.classList.remove("loading");
 				await thisUser.init();
+				await showOpenpanelAnalyticsPrompt();
+				thisUser.identifyOpenpanelUser();
 				console.log("done loading");
 			} catch (e) {
 				console.error(e);
@@ -524,7 +668,7 @@ class Localuser {
 			returny = res;
 			ws.addEventListener("open", (_event) => {
 				console.log("WebSocket connected");
-				trackOpenpanel("ws_connected", {resume});
+				sendOpenpanelAnalytics("ws_connected", {resume});
 				if (resume) {
 					ws.send(
 						JSON.stringify({
@@ -639,7 +783,7 @@ class Localuser {
 		ws.addEventListener("close", async (event) => {
 			this.ws = undefined;
 			console.log("WebSocket closed with code " + event.code);
-			trackOpenpanel("ws_disconnected", {code: event.code});
+			sendOpenpanelAnalytics("ws_disconnected", {code: event.code});
 			if (
 				(event.code > 1000 && event.code < 1016 && this.errorBackoff === 0) ||
 				(wsCodesRetry.has(event.code) && this.errorBackoff === 0)
@@ -1646,11 +1790,13 @@ class Localuser {
 		const channel = this.channelids.get(channelid);
 		if (channel) {
 			const guild = channel.guild;
+			const started = performance.now();
 			guild.loadGuild();
 			await guild.loadChannel(channelid, addstate, messageid);
-			trackOpenpanel("channel_view", {
-				channel_id: channelid,
-				guild_id: guild.id,
+			sendOpenpanelAnalytics("channel_view", {
+				kind: guild.id === "@me" ? "dm" : "guild",
+				with_message: Boolean(messageid),
+				load_ms: Math.round(performance.now() - started),
 			});
 		} else {
 			this.gotoid = channelid;
@@ -1682,15 +1828,21 @@ class Localuser {
 			this.channelfocus = this.channelids.get(location[5]);
 		}
 	}
-	loaduser(): void {
-		(document.getElementById("username") as HTMLSpanElement).textContent = this.user.username;
-		(document.getElementById("userpfp") as HTMLImageElement).src = this.user.getpfpsrc();
-		(document.getElementById("status") as HTMLSpanElement).textContent = this.status;
+	identifyOpenpanelUser(trackingMode = getLocalSettings().openpanelAnalyticsMode): void {
 		identifyOpenpanel({
 			profileId: this.user.id,
 			firstName: this.user.username,
 			avatar: this.user.getpfpsrc(),
+			properties: {
+				analytics_mode: trackingMode,
+			},
 		});
+	}
+	loaduser(): void {
+		(document.getElementById("username") as HTMLSpanElement).textContent = this.user.username;
+		(document.getElementById("userpfp") as HTMLImageElement).src = this.user.getpfpsrc();
+		(document.getElementById("status") as HTMLSpanElement).textContent = this.status;
+		this.identifyOpenpanelUser();
 	}
 	isAdmin(): boolean {
 		if (this.lookingguild) {
@@ -3788,21 +3940,38 @@ class Localuser {
 				jankInfo.addHR();
 				jankInfo.addTitle(I18n.localuser.openpanelTitle());
 				jankInfo.addText(I18n.localuser.openpanelDesc());
-				const replayPercent = Math.round(getOpenpanelReplaySampleRate() * 100);
-				jankInfo.addText(I18n.localuser.openpanelReplay(replayPercent + ""));
-				jankInfo.addCheckboxInput(
-					I18n.localuser.openpanelToggle(),
-					(enabled) => {
-						localSettings.openpanelEnabled = enabled;
-						setLocalSettings(localSettings);
-						if (enabled) {
-							initOpenpanel(true);
-						} else {
+				const analyticsWidget = makeOpenpanelAnalyticsWidget(
+					localSettings.openpanelAnalyticsMode || OpenPanelAnalyticsMode.Default,
+					(mode) => {
+						const prevEnabled = localSettings.openpanelEnabled !== false;
+						const previousMode = prevEnabled
+							? localSettings.openpanelAnalyticsMode
+							: OpenPanelAnalyticsMode.Disabled;
+						if (mode === OpenPanelAnalyticsMode.Disabled) {
+							this.identifyOpenpanelUser(mode);
+							sendOpenpanelAnalyticsModeChange(previousMode, mode);
+							localSettings.openpanelAnalyticsMode = mode;
+							document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: false}}));
+							localSettings.openpanelEnabled = false;
+							setLocalSettings(localSettings);
+							analyticsWidget.setDisabled(false);
 							clearOpenpanel();
+							return;
 						}
+						localSettings.openpanelAnalyticsMode = mode;
+						localSettings.openpanelEnabled = true;
+						setLocalSettings(localSettings);
+						analyticsWidget.setDisabled(false);
+						if (!prevEnabled) {
+							document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: true}}));
+						}
+						initOpenpanel(true);
+						this.identifyOpenpanelUser();
+						sendOpenpanelAnalyticsModeChange(previousMode, mode);
 					},
-					{initState: localSettings.openpanelEnabled !== false},
 				);
+				analyticsWidget.setDisabled(localSettings.openpanelEnabled === false);
+				jankInfo.addHTMLArea(analyticsWidget.element);
 			}
 		})();
 		const installP = installPGet();
