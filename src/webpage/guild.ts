@@ -607,6 +607,14 @@ class Guild extends SnowFlake {
 	welcomeScreen?: welcomeScreen;
 	generateSettings() {
 		const settings = new Settings(I18n.guild.settingsFor(this.properties.name));
+		const sectionLabel = (path: string, fallback: string) => {
+			try {
+				return I18n.getTranslation(path);
+			} catch {
+				return fallback;
+			}
+		};
+		settings.addSection(sectionLabel("settingsCategories.guild.general", "General"));
 		const textChannels = this.channels.filter((e) => {
 			//TODO there are almost certainly more types. is Voice valid?
 			return new Set([0, 5]).has(e.type);
@@ -745,6 +753,7 @@ class Guild extends SnowFlake {
 			}
 			form.addTextInput(I18n.guild["region:"](), "region", {initText: region});
 		}
+		settings.addSection(sectionLabel("settingsCategories.guild.moderation", "Moderation"));
 		this.makeInviteMenu(settings.addButton(I18n.invite.inviteMaker()), textChannels);
 		if (this.member.hasPermission("MANAGE_ROLES")) {
 			const s1 = settings.addButton(I18n.guild.roles(), {optName: ""});
@@ -958,6 +967,7 @@ class Guild extends SnowFlake {
 			};
 			genOnboard();
 		}
+		settings.addSection(sectionLabel("settingsCategories.guild.media", "Media"));
 		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
 			const emoji = settings.addButton(I18n.sticker.title());
 			emoji.addButtonInput("", I18n.sticker.upload(), () => {
@@ -1205,6 +1215,7 @@ class Guild extends SnowFlake {
 			};
 			banMenu.addHTMLArea(makeBanMenu);
 		}
+		settings.addSection(sectionLabel("settingsCategories.guild.community", "Community"));
 		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const widgetMenu = settings.addButton(I18n.widget());
 			(async () => {
@@ -1235,6 +1246,7 @@ class Guild extends SnowFlake {
 				);
 			})();
 		}
+		settings.addSection(sectionLabel("settingsCategories.guild.integrations", "Integrations"));
 		if (this.member.hasPermission("MANAGE_WEBHOOKS")) {
 			const webhooks = settings.addButton(I18n.webhooks.base());
 			webhookMenu(this, this.info.api + `/guilds/${this.id}/webhooks`, webhooks);

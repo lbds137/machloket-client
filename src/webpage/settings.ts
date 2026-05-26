@@ -23,6 +23,7 @@ interface OptionsElement<x> {
 export class Buttons implements OptionsElement<unknown> {
 	readonly name: string;
 	readonly buttons: [string, Options | string][];
+	readonly sectionHeaders = new Map<number, string>();
 	readonly buttonMap = new Map<Options | string, HTMLElement>();
 	buttonList!: HTMLDivElement;
 	warndiv!: HTMLElement;
@@ -45,6 +46,14 @@ export class Buttons implements OptionsElement<unknown> {
 		const buttonTable = this.buttonTable.deref();
 		if (buttonTable && htmlarea) buttonTable.append(this.makeButtonHTML(button, htmlarea));
 		return thing;
+	}
+	addSection(name: string) {
+		const index = this.buttons.length;
+		this.sectionHeaders.set(index, name);
+		const buttonTable = this.buttonTable.deref();
+		if (buttonTable) {
+			buttonTable.append(this.makeSectionHeaderHTML(name));
+		}
 	}
 	htmlarea = new WeakRef(document.createElement("div"));
 	buttonTable = new WeakRef(document.createElement("div"));
@@ -80,13 +89,27 @@ export class Buttons implements OptionsElement<unknown> {
 		};
 		return button;
 	}
+	makeSectionHeaderHTML(text: string) {
+		const header = document.createElement("div");
+		header.classList.add("SettingsGroupHeader");
+		header.textContent = text;
+		return header;
+	}
 	generateButtons(optionsArea: HTMLElement) {
 		const buttonTable = document.createElement("div");
 		buttonTable.classList.add("settingbuttons");
+		if (this.sectionHeaders.size) {
+			buttonTable.classList.add("groupedSettings");
+		}
 		if (this.top) {
 			buttonTable.classList.add("flexltr");
 		}
-		for (const thing of this.buttons) {
+		for (let i = 0; i < this.buttons.length; i++) {
+			const section = this.sectionHeaders.get(i);
+			if (section) {
+				buttonTable.append(this.makeSectionHeaderHTML(section));
+			}
+			const thing = this.buttons[i];
 			buttonTable.append(this.makeButtonHTML(thing, optionsArea));
 		}
 		return buttonTable;

@@ -2948,6 +2948,14 @@ class Localuser {
 		const prefs = await getPreferences();
 		const localSettings = getLocalSettings();
 		const settings = new Settings(I18n.localuser.settings());
+		const sectionLabel = (path: string, fallback: string) => {
+			try {
+				return I18n.getTranslation(path);
+			} catch {
+				return fallback;
+			}
+		};
+		settings.addSection(sectionLabel("settingsCategories.user.profileAppearance", "Profile & Appearance"));
 		{
 			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
 				ltr: true,
@@ -3201,6 +3209,7 @@ class Localuser {
 				);
 			}
 		}
+		settings.addSection(sectionLabel("settingsCategories.user.accountSecurity", "Account & Security"));
 		{
 			const update = settings.addButton(I18n.localuser.updateSettings());
 			let index = ServiceWorkerModeValues.indexOf(localSettings.serviceWorkerMode);
@@ -3553,6 +3562,9 @@ class Localuser {
 				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateIcons)},
 			);
 		}
+		settings.addSection(
+			sectionLabel("settingsCategories.user.connectionsDeveloper", "Connections & Developer"),
+		);
 		{
 			const connections = settings.addButton(I18n.localuser.connections());
 			const connectionContainer = document.createElement("div");
@@ -3923,6 +3935,7 @@ class Localuser {
 			}
 		}
 		(async () => {
+			settings.addSection(sectionLabel("settingsCategories.user.appInstanceInfo", "App & Instance Info"));
 			const jankInfo = settings.addButton(I18n.jankInfo());
 			const img = document.createElement("img");
 			img.src = new URL("./logo.svg", import.meta.url).href;

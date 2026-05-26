@@ -1021,6 +1021,8 @@ textarea {
 	cursor: pointer;
 	user-select: none;
 	object-fit: cover;
+	max-height: 50px;
+  	max-width: 50px;
 }
 
 .leftArrow {
@@ -5114,6 +5116,39 @@ fieldset input[type="radio"] {
 	color: var(--primary-text-soft);
 	background: transparent;
 	transition: background 0.1s;
+}
+
+.SettingsGroupHeader {
+	margin: 14px 4px 6px;
+	padding: 6px 10px;
+	font-size: 0.68rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--primary-text-soft);
+	opacity: 0.92;
+	border-top: 1px solid var(--shadow);
+	border-bottom: 1px solid color-mix(in srgb, var(--shadow) 70%, transparent);
+	background: color-mix(in srgb, var(--secondary-bg) 35%, transparent);
+	border-radius: 6px;
+	pointer-events: none;
+	user-select: none;
+}
+
+.groupedSettings .SettingsGroupHeader:first-child {
+	margin-top: 2px;
+}
+
+.groupedSettings {
+	padding-left: 14px;
+	padding-right: 8px;
+}
+
+.groupedSettings .SettingsButton {
+	width: calc(100% - 18px);
+	margin-left: 18px;
+	padding: 8px 10px;
+	border-radius: 6px;
 }
 
 .infosection {

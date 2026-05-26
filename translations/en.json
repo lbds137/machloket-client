@@ -878,6 +878,21 @@
 			}
 		}
 	},
+	"settingsCategories": {
+		"user": {
+			"profileAppearance": "Profile & Appearance",
+			"accountSecurity": "Account & Security",
+			"connectionsDeveloper": "Connections & Developer",
+			"appInstanceInfo": "App & Instance Info"
+		},
+		"guild": {
+			"general": "General",
+			"moderation": "Moderation",
+			"media": "Media",
+			"community": "Community",
+			"integrations": "Integrations"
+		}
+	},
 	"showBlockedMessages": "You have this user blocked, click to see the $1 blocked {{PLURAL:$1|message|messages}}.",
 	"spoiler": "Spoiler",
 	"sticker": {
