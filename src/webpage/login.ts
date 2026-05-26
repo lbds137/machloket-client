@@ -1,6 +1,6 @@
 import {InstanceInfo, adduser, Specialuser} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
-import {Dialog, FormError} from "./settings.js";
+import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
 import {trimTrailingSlashes} from "./utils/netUtils";
 function generateRecArea(recover = document.getElementById("recover")) {
@@ -53,6 +53,17 @@ export async function makeLogin(
 ) {
 	const dialog = new Dialog("");
 	const opt = dialog.options;
+	let form: Form;
+	let rec: HTMLDivElement;
+	let pendingInstance: InstanceInfo | undefined;
+	const applyInstance = (info: InstanceInfo) => {
+		if (!form || !rec) {
+			pendingInstance = info;
+			return;
+		}
+		form.fetchURL = trimTrailingSlashes(info.api) + "/auth/login";
+		recover(info, rec);
+	};
 	opt.addTitle(I18n.login.login());
 	opt.addHTMLArea(() => {
 		const notice = document.createElement("div");
@@ -61,10 +72,7 @@ export async function makeLogin(
 		return notice;
 	});
 	const picker = opt.addInstancePicker(
-		(info) => {
-			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/login";
-			recover(info, rec);
-		},
+		applyInstance,
 		{
 			instance,
 		},
@@ -72,7 +80,7 @@ export async function makeLogin(
 	opt.deleteElm(picker as never);
 	dialog.show(trasparentBg).parentElement!.style.zIndex = "200";
 
-	const form = opt.addForm(
+	form = opt.addForm(
 		"",
 		(res) => {
 			if ("token" in res && typeof res.token == "string") {
@@ -120,6 +128,14 @@ export async function makeLogin(
 		details.append(summary, picker.generateHTML());
 		return details;
 	});
+	opt.addHTMLArea(() => {
+		const status = document.createElement("div");
+		status.classList.add("verify", "loginInstanceStatus");
+		const label = document.createElement("span");
+		label.textContent = I18n.htmlPages.instanceField() + " ";
+		status.append(label, picker.verify);
+		return status;
+	});
 
 	const email = form.addTextInput(I18n.htmlPages.emailField(), "login");
 	const password = form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});
@@ -130,9 +146,13 @@ export async function makeLogin(
 		makeRegister(trasparentBg, "", handle);
 	};
 	a.textContent = I18n.htmlPages.noAccount();
-	const rec = document.createElement("div");
+	rec = document.createElement("div");
 	form.addHTMLArea(rec);
 	form.addHTMLArea(a);
+	if (pendingInstance) {
+		applyInstance(pendingInstance);
+		pendingInstance = undefined;
+	}
 }
 await I18n.done;
 if (window.location.pathname.startsWith("/login")) {
