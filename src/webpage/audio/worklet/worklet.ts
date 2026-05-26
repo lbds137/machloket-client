@@ -1,13 +1,37 @@
-import {Audio} from "./audio";
-import {mixAudio} from "./mixAudio";
-import {Play} from "./play";
-let plays: [[number], string, number][] = [];
-class TestProcessor extends AudioWorkletProcessor implements AudioWorkletProcessorImpl {
-	play?: Play;
+import {mixAudio} from "./mixAudio.js";
+import {Play} from "./play.js";
+import type {Audio} from "./audio.js";
+
+declare const sampleRate: number;
+declare function registerProcessor(name: string, processorCtor: typeof AudioWorkletProcessor): void;
+type WorkletMessageEvent = {data: unknown};
+interface WorkletMessagePort {
+	onmessage: ((event: WorkletMessageEvent) => void) | null;
+	postMessage(data: unknown): void;
+}
+declare class AudioWorkletProcessor {
+	readonly port: WorkletMessagePort;
+	constructor();
+}
+
+type SendMessage =
+	| {name: "bin"; bin: ArrayBuffer}
+	| {name: "getTracks"}
+	| {name: "start"; data: {name: string; volume: number}}
+	| {name: "clear"};
+
+type RecvMessage = {name: "tracks"; tracks: string[]};
+type PlayEntry = [[number], string, number];
+type ResolvedPlayEntry = [[number], Audio, number];
+
+let plays: PlayEntry[] = [];
+
+class TestProcessor extends AudioWorkletProcessor {
+	play?: ReturnType<typeof Play.parseBin>;
 	constructor() {
 		super();
 		this.port.onmessage = (e) => {
-			const message = e.data as sendMessage;
+			const message = e.data as SendMessage;
 			switch (message.name) {
 				case "bin":
 					this.play = Play.parseBin(message.bin);
@@ -27,7 +51,8 @@ class TestProcessor extends AudioWorkletProcessor implements AudioWorkletProcess
 			}
 		};
 	}
-	postMessage(message: recvMessage) {
+
+	postMessage(message: RecvMessage) {
 		this.port.postMessage(message);
 	}
 
@@ -38,8 +63,8 @@ class TestProcessor extends AudioWorkletProcessor implements AudioWorkletProcess
 	) {
 		const output = outputs[0];
 		const mplays = plays
-			.map((_) => [_[0], this.play?.audios.get(_[1]), _[2]] as const)
-			.filter((play) => play[1]) as [[number], Audio, number][];
+			.map((play) => [play[0], this.play?.audios.get(play[1]), play[2]] as const)
+			.filter((play): play is ResolvedPlayEntry => Boolean(play[1]));
 		if (!mplays.length) return true;
 		const channel = output[0];
 
