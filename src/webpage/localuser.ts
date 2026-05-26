@@ -1837,6 +1837,15 @@ class Localuser {
 				analytics_mode: trackingMode,
 			},
 		});
+		const loading = document.getElementById("loading");
+		const loaddesc = document.getElementById("load-desc");
+		if (loading) {
+			loading.classList.add("doneloading");
+			loading.classList.remove("loading");
+		}
+		if (loaddesc) {
+			loaddesc.textContent = I18n.loaded();
+		}
 	}
 	loaduser(): void {
 		(document.getElementById("username") as HTMLSpanElement).textContent = this.user.username;
