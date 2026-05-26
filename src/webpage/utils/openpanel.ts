@@ -22,6 +22,8 @@ let replaySampled = false;
 let errorTrackingInstalled = false;
 let sessionOpenTracked = false;
 let unloadTrackingInstalled = false;
+let fermoVersion = "dev";
+let fermoVersionPromise: Promise<string> | null = null;
 
 function canInitOpenpanel(): boolean {
 	return Boolean(clientId && apiUrl);
@@ -46,6 +48,34 @@ function canTrackErrorEvents() {
 function canTrackSessionEvents() {
 	return getTrackingMode() !== undefined;
 }
+
+function loadFermoVersion(): Promise<string> {
+	if (fermoVersionPromise) return fermoVersionPromise;
+	fermoVersionPromise = fetch("/getupdates", {cache: "no-store"})
+		.then(async (response) => {
+			let version = "dev";
+			if (response.ok) {
+				const text = (await response.text()).trim();
+				if (text && !text.toLowerCase().startsWith("<!doctype html") && !text.includes("<html")) {
+					version = text;
+				}
+			}
+			fermoVersion = version;
+			if (op?.setGlobalProperties) {
+				op.setGlobalProperties({
+					app_origin: window.location.origin,
+					replay_sampled: replaySampled,
+					analytics_mode: getTrackingMode(),
+					fermo_version: fermoVersion,
+				});
+			}
+			return version;
+		})
+		.catch(() => fermoVersion);
+	return fermoVersionPromise;
+}
+
+void loadFermoVersion();
 
 export function isOpenpanelConfigured(): boolean {
 	return canInitOpenpanel();
@@ -76,6 +106,7 @@ export function initOpenpanel(force = false): OpenPanelInstance | null {
 			app_origin: window.location.origin,
 			replay_sampled: replaySampled,
 			analytics_mode: settings.openpanelAnalyticsMode,
+			fermo_version: fermoVersion,
 		});
 	}
 	if (!sessionOpenTracked && canTrackSessionEvents()) {

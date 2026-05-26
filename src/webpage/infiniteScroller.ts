@@ -404,7 +404,6 @@ class InfiniteScroller {
 				break;
 			}
 			if (this.backElm.has(bottom) && this.curElms.has(bottom)) {
-				if (limit === 75) console.error("patchy?");
 				bottom = this.backElm.get(bottom);
 			} else if (count > limit) {
 				break;

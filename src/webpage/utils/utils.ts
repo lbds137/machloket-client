@@ -845,12 +845,16 @@ export function createImg(
 				staticImgMap.set(
 					src,
 					new Promise(async (res) => {
-						const c = new OffscreenCanvas(img.naturalWidth, img.naturalHeight);
-						const ctx = c.getContext("2d");
-						if (!ctx) return;
-						ctx.drawImage(img, 0, 0);
-						const blob = await c.convertToBlob();
-						res(URL.createObjectURL(blob));
+						try {
+							const c = new OffscreenCanvas(img.naturalWidth, img.naturalHeight);
+							const ctx = c.getContext("2d");
+							if (!ctx) return res(src ?? "");
+							ctx.drawImage(img, 0, 0);
+							const blob = await c.convertToBlob();
+							res(URL.createObjectURL(blob));
+						} catch {
+							res(src ?? "");
+						}
 					}),
 				);
 				staticsrc = (await staticImgMap.get(src)) as string;
