@@ -1,0 +1,32 @@
+{
+	"api.rory.server.spacebar.chat": {
+		"1440078027854000171": {
+			"Fermo dev": {
+				"important": true,
+				"description": "This person right here is making Fermo working for you",
+				"image": "<:hoshi:1487915185988005557>"
+			}
+		}, 
+        "1473817196843727050": {
+            "kind person": {
+                "important": false,
+                "description": "This person has been identified as a friend and has earned this title <3",
+                "image": "❤️"
+            }
+        }, 
+        "1295340736129393876": {
+            "Pax Queen": {
+                "important": false,
+                "description": "A queen among spacebar users",
+                "image": "<:PaxLight:1507677645654927467>"
+            }
+        },
+        "1463215684113658613": {
+            "silly": {
+                "important": false,
+                "description": "very silly",
+                "image": "<:sillycarfullhd:1463165519095521460>"
+            }
+        }
+	}
+}

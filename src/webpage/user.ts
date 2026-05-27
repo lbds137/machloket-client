@@ -8,6 +8,7 @@ import {highMemberJSON, presencejson, relationJson, userjson, webhookInfo} from 
 import {Role} from "./role.js";
 import {Search} from "./search.js";
 import {I18n} from "./i18n.js";
+import {Emoji} from "./emoji.js";
 import {Hover} from "./hover.js";
 import {Dialog, Float, Options} from "./settings.js";
 import {createImg, removeAni, safeImg, getExplorerBotByUsername, getExplorerBotUrl} from "./utils/utils.js";
@@ -17,6 +18,22 @@ import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {trimTrailingSlashes} from "./utils/netUtils.js";
+
+type customBadgeDefinition = {
+	important?: boolean;
+	description?: string;
+	image: string;
+};
+
+type customBadgeEntry = {
+	name: string;
+	important: boolean;
+	description: string;
+	image: string;
+};
+
+type customBadgeFile = Record<string, Record<string, Record<string, customBadgeDefinition>>>;
 export const userVolMenu = new Contextmenu<Localuser, string>("user vol stacked", true);
 userVolMenu.addSlider(
 	() => I18n.Voice.userVol(),
@@ -32,6 +49,8 @@ userVolMenu.addSlider(
 	},
 );
 class User extends SnowFlake {
+	private static customBadgeSource: Promise<customBadgeFile | null> | null = null;
+	private static customBadgeCache = new Map<string, customBadgeEntry[]>();
 	owner: Localuser;
 	hypotheticalpfp!: boolean;
 	avatar!: string | null;
@@ -1225,7 +1244,219 @@ class User extends SnowFlake {
 		userbody.appendChild(explorerInfo);
 	}
 
+	private static async loadCustomBadgeFile(): Promise<customBadgeFile | null> {
+		if (!this.customBadgeSource) {
+			this.customBadgeSource = fetch("/custom-badges.json", {cache: "no-store"})
+				.then(async (response) => {
+					if (!response.ok) return null;
+					return (await response.json()) as customBadgeFile;
+				})
+				.catch(() => null);
+		}
+		return this.customBadgeSource;
+	}
+
+	private static normalizeBadgeKey(value: string): string {
+		const trimmed = trimTrailingSlashes(value.trim());
+		if (URL.canParse(trimmed)) {
+			return new URL(trimmed).host;
+		}
+		return trimmed.replace(/^https?:\/\//, "").replace(/\/+$/, "");
+	}
+
+	private closeCustomBadgeMenus() {
+		if (Contextmenu.currentmenu && Contextmenu.currentmenu.classList.contains("customBadgeMenu")) {
+			while (
+				Contextmenu.currentmenu &&
+				Contextmenu.currentmenu.classList.contains("customBadgeMenu")
+			) {
+				Contextmenu.declareMenu();
+			}
+		}
+	}
+
+	private attachCustomBadgeMenuCloser(container: HTMLElement) {
+		container.addEventListener(
+			"click",
+			(event) => {
+				if (Contextmenu.currentmenu && Contextmenu.currentmenu.classList.contains("customBadgeMenu")) {
+					if (!Contextmenu.currentmenu.contains(event.target as Node)) {
+						this.closeCustomBadgeMenus();
+					}
+				}
+			},
+			true,
+		);
+	}
+
+	renderCustomBadgeImage(image: string): HTMLElement {
+		const normalized = image.trim();
+		if (URL.canParse(normalized)) {
+			return createImg(
+				normalized,
+				undefined,
+				undefined,
+				"icon",
+			);
+		}
+
+		const customEmoji = normalized.match(/^<(a)?:\w+:(\d{10,30})>$/);
+		if (customEmoji && customEmoji[2]) {
+			return new Emoji(
+				{name: normalized, id: customEmoji[2], animated: Boolean(customEmoji[1])},
+				this.localuser,
+			).getHTML(false, false);
+		}
+
+		const colonEmoji = normalized.match(/^:([A-Za-z\d_]+):$/);
+		if (colonEmoji) {
+			for (const group of Emoji.emojis) {
+				const systemEmoji = group.emojis.find((emoji) => emoji.name === colonEmoji[1]);
+				if (systemEmoji) {
+					return new Emoji({name: colonEmoji[1], emoji: systemEmoji.emoji}, undefined).getHTML(
+						false,
+						false,
+					);
+				}
+			}
+		}
+
+		return new Emoji({name: normalized, emoji: normalized}, undefined).getHTML(false, false);
+
+	}
+
+	private createCustomBadgeNode(
+		badge: customBadgeEntry,
+		openMenu: (badge: customBadgeEntry, event: MouseEvent) => void,
+	): HTMLButtonElement {
+		const button = document.createElement("button");
+		button.type = "button";
+		button.classList.add("badge", "customBadge");
+		if (badge.important) {
+			button.classList.add("importantBadge");
+		}
+		const icon = this.renderCustomBadgeImage(badge.image);
+		button.append(icon);
+		const hover = new Hover(badge.name);
+		hover.addEvent(button);
+		button.addEventListener("click", (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			event.stopImmediatePropagation();
+			openMenu(badge, event);
+		});
+		button.addEventListener("pointerdown", (event) => {
+			event.stopPropagation();
+		});
+		button.addEventListener("mousedown", (event) => {
+			event.stopPropagation();
+		});
+		return button;
+	}
+
+	spawnCustomBadgeMenu(badge: customBadgeEntry, _event?: MouseEvent) {
+		this.closeCustomBadgeMenus();
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "customBadgeMenu");
+		div.style.zIndex = "1000";
+		if (_event) {
+			div.style.top = `${_event.clientY}px`;
+			div.style.left = `${_event.clientX}px`;
+		}
+		div.onclick = (event) => event.stopPropagation();
+		div.onmousedown = (event) => event.stopPropagation();
+
+		const title = document.createElement("strong");
+		title.textContent = badge.name;
+		div.appendChild(title);
+
+		const imageRow = document.createElement("div");
+		imageRow.classList.add("flexltr", "customBadgeMenuTop");
+		imageRow.append(this.renderCustomBadgeImage(badge.image));
+
+		const text = document.createElement("div");
+		text.classList.add("flexttb");
+
+		const description = document.createElement("span");
+		description.textContent = badge.description || badge.name;
+		text.appendChild(description);
+
+		const notice = document.createElement("span");
+		notice.classList.add("customBadgeNotice");
+		notice.textContent = I18n.badge.customBadgeNotice();
+		text.appendChild(notice);
+
+		imageRow.appendChild(text);
+		div.appendChild(imageRow);
+
+		document.body.append(div);
+		Contextmenu.keepOnScreen(div);
+		Contextmenu.declareMenu(div, true);
+	}
+
+	async getCustomBadges(importantOnly = false): Promise<customBadgeEntry[]> {
+		const source = await User.loadCustomBadgeFile();
+		if (!source) return [];
+
+		const cacheKey = `${User.normalizeBadgeKey(this.info.wellknown)}:${this.id}:${importantOnly}`;
+		const cached = User.customBadgeCache.get(cacheKey);
+		if (cached) return cached;
+
+		const candidates = [
+			this.info.wellknown,
+			this.info.api,
+			new URL(this.info.api).origin,
+			window.location.origin,
+		]
+			.map((value) => User.normalizeBadgeKey(value))
+			.filter((value, index, all) => all.indexOf(value) === index);
+
+		let instanceBadges: Record<string, Record<string, customBadgeDefinition>> | undefined;
+		for (const candidate of candidates) {
+			instanceBadges = source[candidate];
+			if (instanceBadges) break;
+		}
+		if (!instanceBadges) {
+			User.customBadgeCache.set(cacheKey, []);
+			return [];
+		}
+
+		const badges = Object.entries(instanceBadges)
+			.flatMap(([userId, badgeMap]) => {
+				if (userId !== this.id) return [];
+				return Object.entries(badgeMap)
+					.filter(([, badge]) => !importantOnly || !!badge.important)
+					.map(([name, badge]) => ({
+						name,
+						important: !!badge.important,
+						description: badge.description || name,
+						image: badge.image,
+					}));
+			})
+			.filter((badge) => badge.image.trim() !== "");
+
+		User.customBadgeCache.set(cacheKey, badges);
+		return badges;
+	}
+
+	private async appendCustomBadges(container: HTMLElement, importantOnly = false) {
+		const badges = await this.getCustomBadges(importantOnly);
+		if (!badges.length) return;
+		const badgeGroup = document.createElement("div");
+		badgeGroup.classList.add("customBadges");
+		if (importantOnly) {
+			badgeGroup.classList.add("importantBadges");
+		}
+		for (const badge of badges) {
+			badgeGroup.append(
+				this.createCustomBadgeNode(badge, (entry, event) => this.spawnCustomBadgeMenu(entry, event)),
+			);
+		}
+		container.appendChild(badgeGroup);
+	}
+
 	async fullProfile(guild: Guild | null | Member = null) {
+		this.closeCustomBadgeMenus();
 		console.log(guild);
 		const membres = (async () => {
 			if (!guild) return;
@@ -1240,10 +1471,16 @@ class User extends SnowFlake {
 		const background = document.createElement("div");
 		background.classList.add("background");
 		background.onclick = () => {
+			this.closeCustomBadgeMenus();
 			removeAni(background);
 		};
 		const div = document.createElement("div");
-		div.onclick = (e) => e.stopImmediatePropagation();
+		div.onclick = (event) => {
+			if (Contextmenu.currentmenu && Contextmenu.currentmenu.classList.contains("customBadgeMenu")) {
+				this.closeCustomBadgeMenus();
+			}
+			event.stopImmediatePropagation();
+		};
 		div.classList.add("centeritem", "profile");
 
 		if (this.accent_color) {
@@ -1322,6 +1559,7 @@ class User extends SnowFlake {
 		}
 
 		userbody.appendChild(badgediv);
+		this.appendCustomBadges(badgediv);
 		const discrimatorhtml = document.createElement("h3");
 		discrimatorhtml.classList.add("tag");
 		discrimatorhtml.textContent = `${this.username}#${this.discriminator}`;
@@ -1493,6 +1731,7 @@ class User extends SnowFlake {
 		guild: Guild | null | Member = null,
 		zIndex = -1,
 	): Promise<HTMLDivElement> {
+		this.closeCustomBadgeMenus();
 		const membres = (async () => {
 			if (!guild) return;
 			let member: Member | undefined;
@@ -1535,6 +1774,7 @@ class User extends SnowFlake {
 			this.setstatus("online");
 			div.classList.add("hypoprofile", "profile", "flexttb");
 		}
+		this.attachCustomBadgeMenuCloser(div);
 		const badgediv = document.createElement("div");
 		badgediv.classList.add("badges");
 		(async () => {
@@ -1595,6 +1835,7 @@ class User extends SnowFlake {
 			usernamehtml.appendChild(username);
 		}
 		userbody.appendChild(badgediv);
+		this.appendCustomBadges(badgediv);
 		const discrimatorhtml = document.createElement("h3");
 		discrimatorhtml.classList.add("tag");
 		discrimatorhtml.textContent = `${this.username}#${this.discriminator}`;
@@ -1671,6 +1912,7 @@ class User extends SnowFlake {
 		}
 
 		if (x !== -1) {
+			this.attachCustomBadgeMenuCloser(div);
 			Contextmenu.declareMenu(div);
 			document.body.appendChild(div);
 			Contextmenu.keepOnScreen(div);

@@ -833,6 +833,29 @@ class Message extends SnowFlake {
 		}
 
 		div.classList.remove("zeroheight");
+		const appendImportantCustomBadges = (anchor: HTMLElement) => {
+			const badgeStrip = document.createElement("span");
+			badgeStrip.classList.add("messageCustomBadges");
+			anchor.after(badgeStrip);
+			void this.author.getCustomBadges(true).then((badges) => {
+				if (!badges.length) {
+					badgeStrip.remove();
+					return;
+				}
+				for (const badge of badges) {
+					const chip = document.createElement("span");
+					chip.classList.add("messageCustomBadge");
+					new Hover(badge.name).addEvent(chip);
+					chip.onclick = (event) => {
+						event.preventDefault();
+						event.stopImmediatePropagation();
+						this.author.spawnCustomBadgeMenu(badge, event);
+					};
+					chip.append(this.author.renderCustomBadgeImage(badge.image));
+					badgeStrip.append(chip);
+				}
+			});
+		};
 		if (this.author.relationshipType === 2) {
 			if (ignoredblock) {
 				if (premessage?.author !== this.author) {
@@ -1018,6 +1041,7 @@ class Message extends SnowFlake {
 					}
 				});
 				text.appendChild(userwrap);
+				appendImportantCustomBadges(username);
 			} else {
 				div.classList.remove("topMessage");
 			}
@@ -1156,6 +1180,7 @@ class Message extends SnowFlake {
 			this.author.bind(username, this.guild);
 			welcome.appendChild(username);
 			username.classList.add("username");
+			appendImportantCustomBadges(username);
 
 			const secondspan = document.createElement("span");
 			secondspan.textContent = second;
@@ -1179,6 +1204,7 @@ class Message extends SnowFlake {
 			this.author.bind(username, this.guild);
 			pinText.appendChild(username);
 			username.classList.add("username");
+			appendImportantCustomBadges(username);
 
 			const afterText = document.createElement("span");
 			afterText.textContent = m[0];
@@ -1207,6 +1233,7 @@ class Message extends SnowFlake {
 			this.author.bind(username, this.guild);
 			text.appendChild(username);
 			username.classList.add("username");
+			appendImportantCustomBadges(username);
 			const midText = m[0].split("???");
 
 			const afterText = document.createElement("span");

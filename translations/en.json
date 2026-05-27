@@ -92,6 +92,7 @@
 		"application_guild_subscription": "has Premium",
 		"automod": "uses AutoMod",
 		"bot_commands": "supports commands",
+		"customBadgeNotice": "Custom Fermo badge. It is not managed by Spacebar or this instance's team.",
 		"bug_hunter_level_1": "Bug hunter level 1",
 		"bug_hunter_level_2": "Bug hunter level 2",
 		"certified_moderator": "Moderator",

@@ -4293,6 +4293,116 @@ img.bigembedimg {
 	}
 }
 
+.customBadges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 6px;
+	align-items: center;
+}
+
+.customBadge {
+	display: inline-flex;
+	width: 22px;
+	height: 22px;
+	padding: 0;
+	box-sizing: border-box;
+	flex: none;
+	background: color-mix(in srgb, var(--secondary-bg) 75%, transparent);
+	color: inherit;
+	font: inherit;
+	justify-content: center;
+	align-items: center;
+}
+
+.customBadge img,
+.customBadge .md-emoji,
+.messageCustomBadge img,
+.messageCustomBadge .md-emoji {
+	display: block;
+	margin: auto;
+	width: 16px;
+	height: 16px;
+	object-fit: contain;
+}
+
+.customBadge .md-emoji,
+.messageCustomBadge .md-emoji {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	line-height: 1;
+	font-size: 16px;
+	text-align: center;
+}
+
+.customBadgeEmoji {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 1rem;
+	line-height: 1;
+	min-width: 18px;
+	min-height: 18px;
+}
+
+.customBadgeMenu {
+	position: fixed;
+	z-index: 100;
+	max-width: 280px;
+	gap: 8px;
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--divider);
+	background: var(--secondary-bg);
+	box-shadow: 0 10px 30px color-mix(in srgb, var(--black) 40%, transparent);
+}
+
+.customBadgeMenuTop {
+	gap: 8px;
+	align-items: flex-start;
+}
+
+.customBadgeMenuTop img,
+.customBadgeMenuTop .customBadgeEmoji {
+	width: 24px;
+	height: 24px;
+	font-size: 1.2rem;
+}
+
+.customBadgeNotice {
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+	margin-top: 6px;
+}
+
+.messageCustomBadges {
+	display: inline-flex;
+	flex-wrap: wrap;
+	gap: 3px;
+	margin-left: 6px;
+	vertical-align: middle;
+}
+
+.messageCustomBadge {
+	display: inline-flex;
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	line-height: 0;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--divider);
+	border-radius: 6px;
+	background: color-mix(in srgb, var(--secondary-bg) 80%, transparent);
+}
+
+.messageCustomBadge img {
+	width: 14px;
+	height: 14px;
+	object-fit: contain;
+}
+
 .infosection {
 	z-index: 1;
 	flex: 1;
