@@ -27,6 +27,48 @@
                 "description": "very silly",
                 "image": "<:sillycarfullhd:1463165519095521460>"
             }
+        },
+        "1006598230156341276": {
+            "Main spacebar maintainer": {
+                "important": true,
+                "description": "This person maintains Spacebar (the server that Fermo uses), without this person, Fermo wouldn't be able to do anything.",
+                "image": "<a:1803kuromi20:1444515631118282917>"
+            }
+        },
+        "1509032860338082504": {
+            "Bloop": {
+                "important": false,
+                "description": "bleep",
+                "image": "🫧"
+            }
+        },
+        "1409245382839637933": {
+            "mAlice": {
+                "important": false,
+                "description": "mAlice corrupted him",
+                "image": "https://cdn.rory.server.spacebar.chat/avatars/1424052860590715207/561138aeedfc0c7272035cb5ba5752cf.png"
+            }
+        },
+        "1502033307862302499": {
+            "ode to joy": {
+                "important": false,
+                "description": "ode to joy",
+                "image": "<a:catflaming:1472699105324807163>"
+            }
+        },
+        "1472473381897925470": {
+            "egg": {
+                "important": false,
+                "description": "warning: may cause egg-related thoughts",
+                "image": "🥚"
+            }
+        },
+        "1463807063380531637": {
+            "Honkai Star Rail": {
+                "important": false,
+                "description": "Evanescia",
+                "image": "<:sillycarbars:1463165501169066069>"
+            }
         }
 	}
 }
