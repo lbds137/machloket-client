@@ -16,7 +16,7 @@
         }, 
         "1295340736129393876": {
             "Pax Queen": {
-                "important": false,
+                "important": true,
                 "description": "A queen among spacebar users",
                 "image": "<:PaxLight:1507677645654927467>"
             }
@@ -38,7 +38,7 @@
         "1509032860338082504": {
             "Bloop": {
                 "important": false,
-                "description": "bleep",
+                "description": "Bleep",
                 "image": "🫧"
             }
         },
