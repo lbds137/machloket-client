@@ -236,7 +236,7 @@
 		"gatewayComp": "Disable Gateway compression:",
 		"reportSystem": "Enable experimental reporting system:",
 		"logGateway": "Log received gateway events (log level info):",
-		"name": "Developer Settings",
+		"name": "Developer settings",
 		"traces": "Expose traces:"
 	},
 	"deviceManage": {
