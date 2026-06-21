@@ -19,7 +19,7 @@ function computeUptime(entries: {status: string | number; created_at?: string}[]
 
 async function loadInstanceUptime(instanceId: string) {
 	const response = await fetch(
-		`https://spacebar-explorer.sovr.top/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,
+		`https://sbar.top/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,
 	);
 	if (!response.ok) return null;
 	const data = (await response.json()) as PingHistory;
@@ -78,7 +78,7 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 			);
 	}
 	*/
-	fetch("https://spacebar-explorer.sovr.top/api/catalog/instances")
+	fetch("https://sbar.top/api/catalog/instances")
 		.then((_) => _.json())
 		.then(
 			async (
@@ -107,7 +107,7 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 					if (image) {
 						const img = document.createElement("img");
 						img.alt = I18n.home.icon(instance.name);
-						img.src = new URL(image, "https://spacebar-explorer.sovr.top").href;
+						img.src = new URL(image, "https://sbar.top").href;
 						div.append(img);
 					}
 					const statbox = document.createElement("div");
