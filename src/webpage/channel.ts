@@ -2926,61 +2926,18 @@ class Channel extends SnowFlake {
 		AutoTranslationService.onChannelFocused(this);
 		//loading.classList.remove("loading");
 	}
-	typingmap: Map<Member, number> = new Map();
-
-	private memberjsonFromUser(user: User, guildId: string): memberjson {
-		return {
-			id: user.id,
-			user: user.tojson(),
-			guild_id: guildId,
-			guild: guildId === "@me" ? null : {id: guildId},
-			roles: [],
-			joined_at: "",
-			premium_since: "",
-			deaf: false,
-			mute: false,
-			pending: false,
-		};
-	}
-
-	private async resolveTypingMember(typing: startTypingjson): Promise<Member | undefined> {
-		if (typing.d.member) {
-			return Member.new(typing.d.member, this.guild);
-		}
-
-		const userId = typing.d.user_id;
-		const guildId = typing.d.guild_id ?? this.guild.id;
-
-		const existing = await this.localuser.getMember(userId, guildId);
-		if (existing) return existing;
-
-		const channelUsers = (this as Channel & {users?: User[]}).users;
-		const channelUser = channelUsers?.find((user) => user.id === userId);
-		if (channelUser) {
-			return Member.new(this.memberjsonFromUser(channelUser, guildId), this.guild);
-		}
-
-		const cachedUser = this.localuser.userMap.get(userId);
-		if (cachedUser) {
-			return Member.new(this.memberjsonFromUser(cachedUser, guildId), this.guild);
-		}
-
-		try {
-			const user = await User.resolve(userId, this.localuser);
-			return Member.new(this.memberjsonFromUser(user, guildId), this.guild);
-		} catch {
-			return undefined;
-		}
-	}
-
+	typingmap: Map<Member | User, number> = new Map();
 	async typingStart(typing: startTypingjson): Promise<void> {
-		const memb = await this.resolveTypingMember(typing);
+		const memb = typing.d.member
+			? await Member.new(typing.d.member, this.guild)
+			: await this.localuser.getUser(typing.d.user_id);
 		if (!memb) return;
 		this.typingmap.set(memb, Date.now());
-		memb.user.statusChange();
+		const user = memb instanceof User ? memb : memb.user;
+		user.statusChange();
 		setTimeout(() => {
 			this.rendertyping();
-			memb.user.statusChange();
+			user.statusChange();
 		}, 10000);
 		if (memb.id === this.localuser.user.id) {
 			console.log("you is typing");
