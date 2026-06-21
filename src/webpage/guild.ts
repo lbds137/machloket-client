@@ -60,8 +60,8 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 
 			opt.addMDText(
 				new MarkDown(
-					window.location.origin +
-						"/invite/" +
+					"https://sbar.top" +
+						"/i/" +
 						invite.code +
 						"?" +
 						new URLSearchParams([["instance", guild.info.wellknown]]),
