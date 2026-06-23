@@ -410,6 +410,11 @@ type userjson = {
 		asset: string;
 		sku_id: string;
 	} | null;
+	display_name_styles?: {
+		colors?: number[];
+		font_id?: number;
+		effect_id?: number;
+	};
 };
 type memberjson = {
 	index?: number;
