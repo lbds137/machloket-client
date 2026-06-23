@@ -1259,6 +1259,7 @@ class MarkDown {
 			location.host,
 			"*.sovr.top", // own and shortlink domain
 			"*.sovrahi.com", // Git domain
+			"*.sbar.top", // invite
 		]);
 	}
 	static isTrustedHost(host: string) {

@@ -5301,6 +5301,7 @@ class Localuser {
 				display: "swap",
 			});
 			await font.load();
+			//@ts-ignore
 			document.fonts.add(font);
 			this.font = font;
 
