@@ -27,7 +27,9 @@ async function loadInstanceUptime(instanceId: string) {
 	const all = computeUptime((data.graph?.points ?? rows) as {status: string | number}[]);
 	const now = Date.now();
 	const week = computeUptime(
-		rows.filter((row) => row.created_at && Date.parse(row.created_at) >= now - 7 * 24 * 60 * 60 * 1000),
+		rows.filter(
+			(row) => row.created_at && Date.parse(row.created_at) >= now - 7 * 24 * 60 * 60 * 1000,
+		),
 	);
 	const day = computeUptime(
 		rows.filter((row) => row.created_at && Date.parse(row.created_at) >= now - 24 * 60 * 60 * 1000),
@@ -130,28 +132,28 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 						}
 						statbox.append(textbox);
 					}
-						{
-							const stats = document.createElement("div");
-							stats.classList.add("flexltr");
-							const span = document.createElement("span");
-							stats.append(span);
-							statbox.append(stats);
-							loadInstanceUptime(instance.id)
-								.then((uptime) => {
-									if (!uptime) {
-										stats.remove();
-										return;
-									}
-									span.innerText = I18n.home.uptimeStats(
-										uptime.all + "",
-										uptime.week + "",
-										uptime.day + "",
-									);
-								})
-								.catch(() => {
+					{
+						const stats = document.createElement("div");
+						stats.classList.add("flexltr");
+						const span = document.createElement("span");
+						stats.append(span);
+						statbox.append(stats);
+						loadInstanceUptime(instance.id)
+							.then((uptime) => {
+								if (!uptime) {
 									stats.remove();
-								});
-						}
+									return;
+								}
+								span.innerText = I18n.home.uptimeStats(
+									uptime.all + "",
+									uptime.week + "",
+									uptime.day + "",
+								);
+							})
+							.catch(() => {
+								stats.remove();
+							});
+					}
 					div.append(statbox);
 					div.onclick = (_) => {
 						makeRegister(true, instance.name);

@@ -959,7 +959,10 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		div.append(verify);
 
 		const input = this.input;
-		input.value = this.instance || new URLSearchParams(window.location.search).get("instance") || "spacebar.chat";
+		input.value =
+			this.instance ||
+			new URLSearchParams(window.location.search).get("instance") ||
+			"spacebar.chat";
 		input.readOnly = !!new URLSearchParams(window.location.search).get("instance");
 		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
@@ -1534,9 +1537,8 @@ class Captcha implements OptionsElement<string> {
 				if (Captcha.hcaptcha) {
 					this.div.append(Captcha.hcaptcha);
 					Captcha.hcaptcha.setAttribute("data-sitekey", captcha_sitekey);
-						const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}})
-							.hcaptcha;
-						hc?.reset?.();
+					const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}}).hcaptcha;
+					hc?.reset?.();
 					return Captcha.waitForCaptcha(captcha_service);
 				} else {
 					const capt = document.createElement("div");

@@ -996,9 +996,9 @@ textarea {
 /* Icons */
 .pfpWrapper {
 	display: flex;
-    position: relative;
-    background: none !important;
-    aspect-ratio: 1;
+	position: relative;
+	background: none !important;
+	aspect-ratio: 1;
 	width: 32px;
 	height: 32px;
 }
@@ -1009,7 +1009,7 @@ textarea {
 	height: 100%;
 	border-radius: 50%;
 	justify-content: center;
-    align-items: center;
+	align-items: center;
 }
 
 .pfp,
@@ -1022,7 +1022,7 @@ textarea {
 	user-select: none;
 	object-fit: cover;
 	max-height: 50px;
-  	max-width: 50px;
+	max-width: 50px;
 }
 
 .leftArrow {

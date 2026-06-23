@@ -397,7 +397,7 @@ class Member extends SnowFlake {
 		}
 
 		if (!memberjson.id && memberjson.user?.id) {
-			memberjson = { ...memberjson, id: memberjson.user.id };
+			memberjson = {...memberjson, id: memberjson.user.id};
 		}
 
 		let user: User;

@@ -24,11 +24,17 @@ class I18n {
 			}
 		}
 
-		const json = (await (await fetch(new URL(`./translations/${lang}.json`, import.meta.url).href)).json()) as translation;
+		const json = (await (
+			await fetch(new URL(`./translations/${lang}.json`, import.meta.url).href)
+		).json()) as translation;
 		const translations: translation[] = [];
 		translations.push(json);
 		if (lang !== "en") {
-			translations.push((await (await fetch(new URL(`./translations/en.json`, import.meta.url).href)).json()) as translation);
+			translations.push(
+				(await (
+					await fetch(new URL(`./translations/en.json`, import.meta.url).href)
+				).json()) as translation,
+			);
 		}
 		const en = translations.find(
 			(_) => (_["@metadata"] as translation)?.locale === "en",

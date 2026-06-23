@@ -6,62 +6,62 @@
 				"description": "This person right here is making Fermo working for you",
 				"image": "<:hoshi:1487915185988005557>"
 			}
-		}, 
-        "1473817196843727050": {
-            "kind person": {
-                "important": false,
-                "description": "This person has been identified as a friend and has earned this title <3",
-                "image": "❤️"
-            }
-        }, 
-        "1295340736129393876": {
-            "Pax Queen": {
-                "important": true,
-                "description": "A queen among spacebar users",
-                "image": "<:PaxLight:1507677645654927467>"
-            }
-        },
-        "1463215684113658613": {
-            "silly": {
-                "important": false,
-                "description": "very silly",
-                "image": "<:sillycarfullhd:1463165519095521460>"
-            }
-        },
-        "1006598230156341276": {
-            "Main spacebar maintainer": {
-                "important": true,
-                "description": "This person maintains Spacebar (the server that Fermo uses), without this person, Fermo wouldn't be able to do anything.",
-                "image": "<a:1803kuromi20:1444515631118282917>"
-            }
-        },
-        "1509032860338082504": {
-            "Bloop": {
-                "important": false,
-                "description": "Bleep",
-                "image": "🫧"
-            }
-        },
-        "1502033307862302499": {
-            "ode to joy": {
-                "important": false,
-                "description": "ode to joy",
-                "image": "<a:catflaming:1472699105324807163>"
-            }
-        },
-        "1472473381897925470": {
-            "egg": {
-                "important": false,
-                "description": "warning: may cause egg-related thoughts",
-                "image": "🥚"
-            }
-        },
-        "1463807063380531637": {
-            "Honkai Star Rail": {
-                "important": false,
-                "description": "Evanescia",
-                "image": "<:sillycarbars:1463165501169066069>"
-            }
-        }
+		},
+		"1473817196843727050": {
+			"kind person": {
+				"important": false,
+				"description": "This person has been identified as a friend and has earned this title <3",
+				"image": "❤️"
+			}
+		},
+		"1295340736129393876": {
+			"Pax Queen": {
+				"important": true,
+				"description": "A queen among spacebar users",
+				"image": "<:PaxLight:1507677645654927467>"
+			}
+		},
+		"1463215684113658613": {
+			"silly": {
+				"important": false,
+				"description": "very silly",
+				"image": "<:sillycarfullhd:1463165519095521460>"
+			}
+		},
+		"1006598230156341276": {
+			"Main spacebar maintainer": {
+				"important": true,
+				"description": "This person maintains Spacebar (the server that Fermo uses), without this person, Fermo wouldn't be able to do anything.",
+				"image": "<a:1803kuromi20:1444515631118282917>"
+			}
+		},
+		"1509032860338082504": {
+			"Bloop": {
+				"important": false,
+				"description": "Bleep",
+				"image": "🫧"
+			}
+		},
+		"1502033307862302499": {
+			"ode to joy": {
+				"important": false,
+				"description": "ode to joy",
+				"image": "<a:catflaming:1472699105324807163>"
+			}
+		},
+		"1472473381897925470": {
+			"egg": {
+				"important": false,
+				"description": "warning: may cause egg-related thoughts",
+				"image": "🥚"
+			}
+		},
+		"1463807063380531637": {
+			"Honkai Star Rail": {
+				"important": false,
+				"description": "Evanescia",
+				"image": "<:sillycarbars:1463165501169066069>"
+			}
+		}
 	}
 }

@@ -426,9 +426,7 @@ export const instancefetch = fetch(catalogInstancesUrl)
 		return (await res.json()) as CatalogInstance[];
 	})
 	.then(
-		async (
-		json: CatalogInstance[],
-		) => {
+		async (json: CatalogInstance[]) => {
 			await I18n.done;
 			instances = json.map(normalizeCatalogInstance);
 			instancesLoaded = true;

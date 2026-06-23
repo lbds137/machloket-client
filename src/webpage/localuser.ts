@@ -96,16 +96,25 @@ type OpenpanelAnalyticsWidget = {
 function getOpenpanelAnalyticsModeText(mode: OpenPanelAnalyticsMode): [string, string] {
 	switch (mode) {
 		case OpenPanelAnalyticsMode.Default:
-			return [I18n.localuser.openpanelModeDefaultTitle(), I18n.localuser.openpanelModeDefaultDesc()];
+			return [
+				I18n.localuser.openpanelModeDefaultTitle(),
+				I18n.localuser.openpanelModeDefaultDesc(),
+			];
 		case OpenPanelAnalyticsMode.ErrorSending:
 			return [
 				I18n.localuser.openpanelModeErrorSendingTitle(),
 				I18n.localuser.openpanelModeErrorSendingDesc(),
 			];
 		case OpenPanelAnalyticsMode.JustPing:
-			return [I18n.localuser.openpanelModeJustPingTitle(), I18n.localuser.openpanelModeJustPingDesc()];
+			return [
+				I18n.localuser.openpanelModeJustPingTitle(),
+				I18n.localuser.openpanelModeJustPingDesc(),
+			];
 		case OpenPanelAnalyticsMode.Disabled:
-			return [I18n.localuser.openpanelModeDisableTitle(), I18n.localuser.openpanelModeDisableDesc()];
+			return [
+				I18n.localuser.openpanelModeDisableTitle(),
+				I18n.localuser.openpanelModeDisableDesc(),
+			];
 	}
 }
 
@@ -144,7 +153,9 @@ function makeOpenpanelAnalyticsWidget(
 	};
 
 	slider.oninput = () => {
-		const mode = OpenPanelAnalyticsModeValues[maxIndex - Number(slider.value)] || OpenPanelAnalyticsMode.Default;
+		const mode =
+			OpenPanelAnalyticsModeValues[maxIndex - Number(slider.value)] ||
+			OpenPanelAnalyticsMode.Default;
 		sync(mode);
 		onChange(mode);
 		try {
@@ -168,7 +179,11 @@ function makeOpenpanelAnalyticsWidget(
 
 async function showOpenpanelAnalyticsPrompt(): Promise<void> {
 	const localSettings = getLocalSettings();
-	if (localSettings.openpanelEnabled === false || localSettings.openpanelAnalyticsMode !== undefined) return;
+	if (
+		localSettings.openpanelEnabled === false ||
+		localSettings.openpanelAnalyticsMode !== undefined
+	)
+		return;
 	if (!isOpenpanelConfigured()) return;
 
 	await new Promise<void>((resolve) => {
@@ -191,7 +206,7 @@ async function showOpenpanelAnalyticsPrompt(): Promise<void> {
 		container.append(widget.element);
 
 		dialog.options.addHTMLArea(container);
-		
+
 		let done = false;
 		const finish = () => {
 			if (done) return;
@@ -201,8 +216,12 @@ async function showOpenpanelAnalyticsPrompt(): Promise<void> {
 			if (localSettings.openpanelEnabled !== false) {
 				initOpenpanel(true);
 			}
-			document.dispatchEvent(new CustomEvent("openpanel:modechange", {detail: {mode: selectedMode}}));
-			document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: localSettings.openpanelEnabled}}));
+			document.dispatchEvent(
+				new CustomEvent("openpanel:modechange", {detail: {mode: selectedMode}}),
+			);
+			document.dispatchEvent(
+				new CustomEvent("openpanel:enabled", {detail: {enabled: localSettings.openpanelEnabled}}),
+			);
 			dialog.hide();
 			resolve();
 		};
@@ -2955,7 +2974,9 @@ class Localuser {
 				return fallback;
 			}
 		};
-		settings.addSection(sectionLabel("settingsCategories.user.profileAppearance", "Profile & Appearance"));
+		settings.addSection(
+			sectionLabel("settingsCategories.user.profileAppearance", "Profile & Appearance"),
+		);
 		{
 			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
 				ltr: true,
@@ -3209,7 +3230,9 @@ class Localuser {
 				);
 			}
 		}
-		settings.addSection(sectionLabel("settingsCategories.user.accountSecurity", "Account & Security"));
+		settings.addSection(
+			sectionLabel("settingsCategories.user.accountSecurity", "Account & Security"),
+		);
 		{
 			const update = settings.addButton(I18n.localuser.updateSettings());
 			let index = ServiceWorkerModeValues.indexOf(localSettings.serviceWorkerMode);
@@ -3935,7 +3958,9 @@ class Localuser {
 			}
 		}
 		(async () => {
-			settings.addSection(sectionLabel("settingsCategories.user.appInstanceInfo", "App & Instance Info"));
+			settings.addSection(
+				sectionLabel("settingsCategories.user.appInstanceInfo", "App & Instance Info"),
+			);
 			const jankInfo = settings.addButton(I18n.jankInfo());
 			const img = document.createElement("img");
 			img.src = new URL("./logo.svg", import.meta.url).href;
@@ -3973,7 +3998,9 @@ class Localuser {
 							this.identifyOpenpanelUser(mode);
 							sendOpenpanelAnalyticsModeChange(previousMode, mode);
 							localSettings.openpanelAnalyticsMode = mode;
-							document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: false}}));
+							document.dispatchEvent(
+								new CustomEvent("openpanel:enabled", {detail: {enabled: false}}),
+							);
 							localSettings.openpanelEnabled = false;
 							setLocalSettings(localSettings);
 							analyticsWidget.setDisabled(false);
@@ -3985,7 +4012,9 @@ class Localuser {
 						setLocalSettings(localSettings);
 						analyticsWidget.setDisabled(false);
 						if (!prevEnabled) {
-							document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: true}}));
+							document.dispatchEvent(
+								new CustomEvent("openpanel:enabled", {detail: {enabled: true}}),
+							);
 						}
 						initOpenpanel(true);
 						this.identifyOpenpanelUser();

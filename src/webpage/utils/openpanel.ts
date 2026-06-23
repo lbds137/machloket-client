@@ -87,7 +87,11 @@ export function getOpenpanelReplaySampleRate(): number {
 
 export function initOpenpanel(force = false): OpenPanelInstance | null {
 	const settings = getLocalSettings();
-	if (!canInitOpenpanel() || settings.openpanelEnabled === false || settings.openpanelAnalyticsMode === undefined) {
+	if (
+		!canInitOpenpanel() ||
+		settings.openpanelEnabled === false ||
+		settings.openpanelAnalyticsMode === undefined
+	) {
 		return null;
 	}
 	if (op && !force) {

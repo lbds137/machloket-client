@@ -1,7 +1,7 @@
 import {Localuser} from "./localuser.js";
 import {Channel} from "./channel.js";
 import {Emoji} from "./emoji.js";
-import type { Guild } from "./guild.js";
+import type {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
@@ -815,9 +815,7 @@ class MarkDown {
 				if (found) {
 					appendcurrent();
 					i = j;
-					const parts = build
-						.join("")
-						.match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
+					const parts = build.join("").match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
 					if (!parts) {
 						current.textContent += build.join("");
 						continue;

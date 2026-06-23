@@ -18,7 +18,11 @@ import "./oauth2/auth.js";
 import "./audio/page.js";
 import "./404.js";
 import {Channel} from "./channel.js";
-import {initOpenpanel, installOpenpanelErrorTracking, sendOpenpanelAnalytics} from "./utils/openpanel.js";
+import {
+	initOpenpanel,
+	installOpenpanelErrorTracking,
+	sendOpenpanelAnalytics,
+} from "./utils/openpanel.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";

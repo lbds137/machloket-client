@@ -11,7 +11,13 @@ import {I18n} from "./i18n.js";
 import {Emoji} from "./emoji.js";
 import {Hover} from "./hover.js";
 import {Dialog, Float, Options} from "./settings.js";
-import {createImg, removeAni, safeImg, getExplorerBotByUsername, getExplorerBotUrl} from "./utils/utils.js";
+import {
+	createImg,
+	removeAni,
+	safeImg,
+	getExplorerBotByUsername,
+	getExplorerBotUrl,
+} from "./utils/utils.js";
 import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
@@ -797,10 +803,11 @@ class User extends SnowFlake {
 		if (this.avatar_decoration_data?.asset && this.localuser.perminfo.user.decorations) {
 			const asset = this.avatar_decoration_data.asset;
 			const isAnimated = asset.startsWith("a_");
-			
-			const decUrl = this.info.cdn +
+
+			const decUrl =
+				this.info.cdn +
 				`/avatar-decoration-presets/${asset}.png` +
-				new CDNParams({ expectedSize: 96, animated: isAnimated });
+				new CDNParams({expectedSize: 96, animated: isAnimated});
 
 			const dec = createImg(decUrl, undefined, hoverElm);
 			dec.classList.add("avDec");
@@ -936,6 +943,7 @@ class User extends SnowFlake {
 			}
 			(this as any)[key] = (json as any)[key];
 		}
+		this.bio ??= new MarkDown("", this.localuser);
 		if ("rights" in this) {
 			if (
 				this === this.localuser.user &&
@@ -1281,7 +1289,10 @@ class User extends SnowFlake {
 		container.addEventListener(
 			"click",
 			(event) => {
-				if (Contextmenu.currentmenu && Contextmenu.currentmenu.classList.contains("customBadgeMenu")) {
+				if (
+					Contextmenu.currentmenu &&
+					Contextmenu.currentmenu.classList.contains("customBadgeMenu")
+				) {
 					if (!Contextmenu.currentmenu.contains(event.target as Node)) {
 						this.closeCustomBadgeMenus();
 					}
@@ -1294,12 +1305,7 @@ class User extends SnowFlake {
 	renderCustomBadgeImage(image: string): HTMLElement {
 		const normalized = image.trim();
 		if (URL.canParse(normalized)) {
-			return createImg(
-				normalized,
-				undefined,
-				undefined,
-				"icon",
-			);
+			return createImg(normalized, undefined, undefined, "icon");
 		}
 
 		const customEmoji = normalized.match(/^<(a)?:\w+:(\d{10,30})>$/);
@@ -1324,7 +1330,6 @@ class User extends SnowFlake {
 		}
 
 		return new Emoji({name: normalized, emoji: normalized}, undefined).getHTML(false, false);
-
 	}
 
 	private createCustomBadgeNode(
@@ -1451,7 +1456,9 @@ class User extends SnowFlake {
 		}
 		for (const badge of badges) {
 			badgeGroup.append(
-				this.createCustomBadgeNode(badge, (entry, event) => this.spawnCustomBadgeMenu(entry, event)),
+				this.createCustomBadgeNode(badge, (entry, event) =>
+					this.spawnCustomBadgeMenu(entry, event),
+				),
 			);
 		}
 		container.appendChild(badgeGroup);
@@ -1478,7 +1485,10 @@ class User extends SnowFlake {
 		};
 		const div = document.createElement("div");
 		div.onclick = (event) => {
-			if (Contextmenu.currentmenu && Contextmenu.currentmenu.classList.contains("customBadgeMenu")) {
+			if (
+				Contextmenu.currentmenu &&
+				Contextmenu.currentmenu.classList.contains("customBadgeMenu")
+			) {
 				this.closeCustomBadgeMenus();
 			}
 			event.stopImmediatePropagation();

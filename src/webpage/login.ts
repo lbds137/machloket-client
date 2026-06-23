@@ -71,12 +71,9 @@ export async function makeLogin(
 		notice.textContent = I18n.login.explorerNotice();
 		return notice;
 	});
-	const picker = opt.addInstancePicker(
-		applyInstance,
-		{
-			instance,
-		},
-	);
+	const picker = opt.addInstancePicker(applyInstance, {
+		instance,
+	});
 	opt.deleteElm(picker as never);
 	dialog.show(trasparentBg).parentElement!.style.zIndex = "200";
 
