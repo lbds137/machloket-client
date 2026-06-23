@@ -5,6 +5,7 @@ import type {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
+import {normalizeInviteLink} from "./utils/inviteUtils.js";
 
 let linkMenu: Contextmenu<string, void> | undefined;
 
@@ -621,6 +622,7 @@ class MarkDown {
 					j--;
 				}
 				if (URL.canParse(build)) {
+					build = normalizeInviteLink(build);
 					appendcurrent();
 					const a = document.createElement("a");
 					getLinkMenu().bindContextmenu(a, build);

@@ -5292,24 +5292,24 @@ class Localuser {
 
 		const realname = this.fonts.find((_) => _[1] === fontName)?.[0];
 		if (!realname) {
-			document.documentElement.style.removeProperty('--emoji-font');
+			document.documentElement.style.removeProperty("--emoji-font");
 			return;
 		}
 
 		try {
 			const font = new FontFace("emojiFont", `url("/emoji/${realname}")`, {
-				display: 'swap'
+				display: "swap",
 			});
 			await font.load();
 			document.fonts.add(font);
 			this.font = font;
 
 			document.documentElement.style.setProperty(
-				'--emoji-font', 
-				'"emojiFont", "Segoe UI Emoji", system-ui'
+				"--emoji-font",
+				'"emojiFont", "Segoe UI Emoji", system-ui',
 			);
 		} catch (e) {
-			document.documentElement.style.removeProperty('--emoji-font');
+			document.documentElement.style.removeProperty("--emoji-font");
 		}
 	}
 	static get fonts() {
