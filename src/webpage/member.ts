@@ -389,12 +389,24 @@ class Member extends SnowFlake {
 		return this.owner.info;
 	}
 	static async new(memberjson: memberjson, owner: Guild): Promise<Member | undefined> {
+		const memberId = memberjson.id || memberjson.user?.id;
+		if (!memberId) {
+			console.error("[Member.new] ID missing in memberjson");
+			console.dir(memberjson);
+			return undefined;
+		}
+
+		if (!memberjson.id && memberjson.user?.id) {
+			memberjson = { ...memberjson, id: memberjson.user.id };
+		}
+
 		let user: User;
-		if (owner.localuser.userMap.has(memberjson.id)) {
+
+		if (owner.localuser.userMap.has(memberId)) {
 			if (memberjson.user) {
 				new User(memberjson.user, owner.localuser);
 			}
-			user = owner.localuser.userMap.get(memberjson.id) as User;
+			user = owner.localuser.userMap.get(memberId) as User;
 		} else if (memberjson.user) {
 			user = new User(memberjson.user, owner.localuser);
 		} else {

@@ -794,14 +794,15 @@ class User extends SnowFlake {
 				}
 			})();
 		}
-		if (this.avatar_decoration_data && this.localuser.perminfo.user.decorations) {
-			const dec = createImg(
-				this.info.cdn +
-					`/avatar-decoration-presets/${this.avatar_decoration_data.asset}.png` +
-					new CDNParams({expectedSize: 96}),
-				void 0,
-				hoverElm,
-			);
+		if (this.avatar_decoration_data?.asset && this.localuser.perminfo.user.decorations) {
+			const asset = this.avatar_decoration_data.asset;
+			const isAnimated = asset.startsWith("a_");
+			
+			const decUrl = this.info.cdn +
+				`/avatar-decoration-presets/${asset}.png` +
+				new CDNParams({ expectedSize: 96, animated: isAnimated });
+
+			const dec = createImg(decUrl, undefined, hoverElm);
 			dec.classList.add("avDec");
 			div.append(dec);
 		}
@@ -926,7 +927,8 @@ class User extends SnowFlake {
 		}
 		for (const key of Object.keys(json)) {
 			if (key === "bio") {
-				this.bio = new MarkDown(json[key], this.localuser);
+				const bioText = json[key] == null ? "" : String(json[key]);
+				this.bio = new MarkDown(bioText, this.localuser);
 				continue;
 			}
 			if (key === "id") {
@@ -1859,7 +1861,7 @@ class User extends SnowFlake {
 
 		const rule = document.createElement("hr");
 		userbody.appendChild(rule);
-		const biohtml = this.bio.makeHTML();
+		const biohtml = this.bio ? this.bio.makeHTML() : document.createElement("p");
 		userbody.appendChild(biohtml);
 
 		membres.then((member) => {
