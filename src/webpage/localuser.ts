@@ -3210,7 +3210,7 @@ class Localuser {
 						}
 
 						await setPreferences(prefs);
-						Localuser.loadFont();
+						await Localuser.loadFont();
 					},
 					options.map((font) => font[1]),
 					{
@@ -5291,15 +5291,25 @@ class Localuser {
 		}
 
 		const realname = this.fonts.find((_) => _[1] === fontName)?.[0];
-		if (realname) {
-			const font = new FontFace("emojiFont", `url("/emoji/${realname}")`);
+		if (!realname) {
+			document.documentElement.style.removeProperty('--emoji-font');
+			return;
+		}
+
+		try {
+			const font = new FontFace("emojiFont", `url("/emoji/${realname}")`, {
+				display: 'swap'
+			});
 			await font.load();
-			console.error("Loaded font:", fontName, "/", realname);
-			//TODO see when/if this can be removed
-			//@ts-ignore this is stupid. it's been here since 2020
 			document.fonts.add(font);
-			console.log(font);
 			this.font = font;
+
+			document.documentElement.style.setProperty(
+				'--emoji-font', 
+				'"emojiFont", "Segoe UI Emoji", system-ui'
+			);
+		} catch (e) {
+			document.documentElement.style.removeProperty('--emoji-font');
 		}
 	}
 	static get fonts() {
@@ -5307,7 +5317,7 @@ class Localuser {
 			["NotoColorEmoji-Regular.ttf", "Noto Color Emoji"],
 			["OpenMoji-color-glyf_colr_0.woff2", "OpenMoji"],
 			["Twemoji-16.0.1.ttf", "Twemoji"],
-			["BlobmojiCompat.ttf", "Blobmoji"],
+			//["BlobmojiCompat.ttf", "Blobmoji"],
 		] as const;
 	}
 	getMemberMap = new Map<string, Promise<Member | undefined>>();

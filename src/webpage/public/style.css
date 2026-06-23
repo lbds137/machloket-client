@@ -4326,6 +4326,10 @@ img.bigembedimg {
 	object-fit: contain;
 }
 
+.md-emoji {
+    font-family: var(--emoji-font, "Segoe UI Emoji", system-ui) !important;
+}
+
 .customBadge .md-emoji,
 .messageCustomBadge .md-emoji {
 	display: flex;

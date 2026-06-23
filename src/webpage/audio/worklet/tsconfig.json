@@ -26,6 +26,7 @@
 		"useDefineForClassFields": true,
 		"resolvePackageJsonImports": true,
 		"skipLibCheck": true,
+		"rootDir": ".",
 		"outDir": "./dist"
 	}
 }

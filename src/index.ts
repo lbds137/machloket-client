@@ -85,6 +85,11 @@ function guessMime(str: string) {
 		case "jpeg":
 		case "webp":
 			return "image/" + ext;
+		case "ttf":
+            return "font/ttf";
+        case "woff":
+        case "woff2":
+            return "font/woff2";
 		default:
 			return "text/plain";
 	}
