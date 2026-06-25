@@ -4707,7 +4707,6 @@ class Localuser {
 			);
 		};
 		const debouncedSearch = debounce(searchBox, 350);
-		let last = "";
 		search.onkeyup = () => {
 			debouncedSearch();
 		};
