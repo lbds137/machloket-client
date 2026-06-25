@@ -1565,10 +1565,7 @@ class Message extends SnowFlake {
 					container.classList.add("messageTranslateButton");
 					const icon = document.createElement("span");
 					icon.classList.add("svg-translate", "svgicon");
-					const label = document.createElement("span");
-					label.classList.add("translateLabel");
-					label.textContent = I18n.message.translate();
-					container.append(icon, label);
+					container.append(icon);
 					buttons.append(container);
 					container.onclick = (event) => {
 						event.preventDefault();
