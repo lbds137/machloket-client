@@ -14,8 +14,63 @@ type OpenPanelIdentity = {
 type OpenPanelTrackProps = Record<string, unknown>;
 
 const clientId = import.meta.env.VITE_OP_CLIENT_ID as string | undefined;
-const apiUrl = import.meta.env.VITE_OP_API_URL as string | undefined;
+const apiUrl = import.meta.env.VITE_OP_API_URL?.replace(/\/+$/, "");
 const replaySampleRate = Number(import.meta.env.VITE_OP_REPLAY_SAMPLE_RATE ?? "0");
+
+type OpenpanelApiClient = {
+	maxRetries: number;
+	initialRetryDelay: number;
+	resolveHeaders(): Promise<Record<string, string>>;
+};
+
+function parseOpenpanelResponse(text: string): Record<string, unknown> | null {
+	try {
+		return JSON.parse(text) as Record<string, unknown>;
+	} catch {
+		return null;
+	}
+}
+
+function hardenOpenpanelClient(inst: OpenPanelInstance): void {
+	const api = inst.api as unknown as OpenpanelApiClient & {
+		post(
+			url: string,
+			body: unknown,
+			opts: RequestInit,
+			retry: number,
+		): Promise<Record<string, unknown> | null>;
+	};
+
+	api.post = async (url, body, opts, retry) => {
+		try {
+			const response = await fetch(url, {
+				method: "POST",
+				headers: await api.resolveHeaders(),
+				body: body ? JSON.stringify(body ?? {}) : undefined,
+				keepalive: true,
+				...opts,
+			});
+			if (response.status === 401) return null;
+			if (response.status !== 200 && response.status !== 202) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+			const text = await response.text();
+			if (!text) return null;
+			return parseOpenpanelResponse(text);
+		} catch {
+			if (retry < api.maxRetries) {
+				const delay = api.initialRetryDelay * 2 ** retry;
+				await new Promise((resolve) => setTimeout(resolve, delay));
+				return api.post(url, body, opts, retry + 1);
+			}
+			return null;
+		}
+	};
+}
+
+function safeOpenpanelCall(promise: Promise<unknown> | undefined | void): void {
+	void Promise.resolve(promise).catch(() => {});
+}
 
 let op: OpenPanelInstance | null = null;
 let replaySampled = false;
@@ -105,6 +160,7 @@ export function initOpenpanel(force = false): OpenPanelInstance | null {
 		replaySampled,
 	} as Record<string, unknown>;
 	op = new OpenPanel(options as unknown as ConstructorParameters<typeof OpenPanel>[0]);
+	hardenOpenpanelClient(op);
 	if (op.setGlobalProperties) {
 		op.setGlobalProperties({
 			app_origin: window.location.origin,
@@ -115,19 +171,21 @@ export function initOpenpanel(force = false): OpenPanelInstance | null {
 	}
 	if (!sessionOpenTracked && canTrackSessionEvents()) {
 		sessionOpenTracked = true;
-		op.track("session_open", {
-			mode: settings.openpanelAnalyticsMode,
-		});
+		safeOpenpanelCall(
+			op.track("session_open", {
+				mode: settings.openpanelAnalyticsMode,
+			}),
+		);
 	}
 	if (!unloadTrackingInstalled) {
 		unloadTrackingInstalled = true;
 		window.addEventListener("beforeunload", () => {
 			if (!op || !canTrackSessionEvents() || !sessionOpenTracked) return;
-			try {
+			safeOpenpanelCall(
 				op.track("session_close", {
 					mode: getTrackingMode(),
-				});
-			} catch {}
+				}),
+			);
 		});
 	}
 	return op;
@@ -137,21 +195,21 @@ export function sendOpenpanelAnalytics(event: string, props: OpenPanelTrackProps
 	if (!canTrackFeatureEvents()) return;
 	const inst = initOpenpanel();
 	if (!inst) return;
-	inst.track(event, props);
+	safeOpenpanelCall(inst.track(event, props));
 }
 
 export function sendOpenpanelError(event: string, props: OpenPanelTrackProps = {}): void {
 	if (!canTrackErrorEvents()) return;
 	const inst = initOpenpanel();
 	if (!inst) return;
-	inst.track(event, props);
+	safeOpenpanelCall(inst.track(event, props));
 }
 
 export function sendOpenpanelSession(event: string, props: OpenPanelTrackProps = {}): void {
 	if (!canTrackSessionEvents()) return;
 	const inst = initOpenpanel();
 	if (!inst) return;
-	inst.track(event, props);
+	safeOpenpanelCall(inst.track(event, props));
 }
 
 export function sendOpenpanelAnalyticsModeChange(
@@ -168,16 +226,16 @@ export function identifyOpenpanel(identity: OpenPanelIdentity): void {
 	if (!canTrackFeatureEvents()) return;
 	const inst = initOpenpanel();
 	if (!inst) return;
-	inst.identify(identity);
+	safeOpenpanelCall(inst.identify(identity));
 }
 
 export function clearOpenpanel(): void {
 	if (op && canTrackSessionEvents() && sessionOpenTracked) {
-		try {
+		safeOpenpanelCall(
 			op.track("session_close", {
 				mode: getTrackingMode(),
-			});
-		} catch {}
+			}),
+		);
 	}
 	sessionOpenTracked = false;
 	op?.clear?.();

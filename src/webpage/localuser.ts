@@ -1835,16 +1835,17 @@ class Localuser {
 		}
 	}
 	async init() {
-		const location = window.location.href.split("/");
+		const parts = window.location.href.split("/");
 		this.buildservers();
 		this.generateFavicon();
-		if (location[3] === "channels") {
-			const guild = this.loadGuild(location[4]);
+		if (parts[3] === "channels") {
+			const guild = this.loadGuild(parts[4]);
 			if (!guild) {
 				return;
 			}
-			await guild.loadChannel(location[5], true, location[6]);
-			this.channelfocus = this.channelids.get(location[5]);
+			const messageId = parts[6]?.split("?")[0]?.split("#")[0];
+			await guild.loadChannel(parts[5], true, messageId);
+			this.channelfocus = this.channelids.get(parts[5]);
 		}
 	}
 	identifyOpenpanelUser(trackingMode = getLocalSettings().openpanelAnalyticsMode): void {

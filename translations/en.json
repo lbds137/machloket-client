@@ -671,7 +671,24 @@
 		"reactions": "View reactions",
 		"reactionsTitle": "Reactions",
 		"retry": "Resend errored message",
+		"translate": "Translate",
 		"viewrest": "View rest"
+	},
+	"translation": {
+		"confirmTitle": "Translate message",
+		"confirmText": "The full message text will be sent to Sovrahi for translation.\nNo other data is sent.\nDo you want to continue?",
+		"agree": "Agree",
+		"cancel": "Cancel",
+		"translated": "Translated",
+		"capVerificationNeeded": "Cap verification is required to continue translating.",
+		"hideTranslation": "Hide translation",
+		"showTranslation": "Show translation",
+		"loading": "Translating...",
+		"errorAuth": "Authentication failed. Please try again.",
+		"errorUnexpected": "Translation failed. Please try again later.",
+		"errorRateLimited": "Translation rate limit reached. Please try again later.",
+		"capError": "Cap verification failed. Please try again.",
+		"capTimeout": "Cap verification timed out. Please try again."
 	},
 	"report": {
 		"back": "Back",

@@ -1310,6 +1310,11 @@ textarea {
 	mask-size: contain !important;
 }
 
+.svg-translate {
+	mask: url(./icons/translate.svg);
+	mask-size: contain !important;
+}
+
 .svg-explore {
 	mask: url(./icons/explore.svg);
 	mask-size: contain !important;
@@ -3278,12 +3283,71 @@ span.instanceStatus {
 	cursor: pointer;
 }
 
-.messageButtons button span,
-.controls button span {
+.messageButtons button span.svgicon,
+.controls button span.svgicon {
 	display: block;
 	width: 16px;
 	height: 16px;
 	background: var(--secondary-text-soft);
+}
+
+.messageTranslateButton {
+	display: flex !important;
+	align-items: center;
+	gap: 4px;
+	padding: 6px 8px !important;
+}
+
+.messageTranslateButton .translateLabel {
+	font-size: 12px;
+	line-height: 1;
+	color: var(--secondary-text-soft);
+	white-space: nowrap;
+}
+
+.messageTranslation {
+	margin-top: 6px;
+	padding: 8px 10px;
+	border-radius: 4px;
+	background: color-mix(in srgb, var(--secondary-bg) 85%, var(--primary-text-soft));
+	font-style: italic;
+	color: var(--secondary-text);
+}
+
+.messageTranslationHeader {
+	align-items: center;
+	gap: 8px;
+	font-size: 0.85em;
+	font-style: normal;
+}
+
+.messageTranslationContent {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.messageTranslationToggle {
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--accent-color, #5865f2);
+	cursor: pointer;
+	font-size: 0.85em;
+}
+
+.messageTranslationToggle:hover {
+	text-decoration: underline;
+}
+
+.sovrahiCapContainer {
+	min-width: 280px;
+	min-height: 120px;
+}
+
+.sovrahiCapFrame {
+	width: 100%;
+	min-height: 120px;
+	border: none;
 }
 
 .messageButtons button:hover,
