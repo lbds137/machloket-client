@@ -121,7 +121,11 @@ function cleanOAuthParamsFromUrl(): void {
 	}
 	if (!changed) return;
 	const cleaned = params.toString();
-	history.replaceState(history.state, "", window.location.pathname + (cleaned ? `?${cleaned}` : ""));
+	history.replaceState(
+		history.state,
+		"",
+		window.location.pathname + (cleaned ? `?${cleaned}` : ""),
+	);
 }
 
 function readAuth(): StoredAuth | null {
@@ -539,7 +543,9 @@ export class SovrahiService {
 			const widgetUrl = challenge?.widget_url;
 			const scriptUrl =
 				challenge?.script_url ||
-				(capApiEndpoint.endsWith(".js") ? capApiEndpoint : `${capApiEndpoint.replace(/\/$/, "")}/widget.js`);
+				(capApiEndpoint.endsWith(".js")
+					? capApiEndpoint
+					: `${capApiEndpoint.replace(/\/$/, "")}/widget.js`);
 
 			if (widgetUrl) {
 				const iframe = document.createElement("iframe");
@@ -563,7 +569,11 @@ export class SovrahiService {
 					const payload = typeof data === "string" ? {token: data} : data;
 					const capToken = payload.capToken || payload.cap_token || payload.token;
 					if (!capToken) return;
-					if (payload.type && payload.type !== "sovrahi-cap-token" && payload.type !== "cap-token") {
+					if (
+						payload.type &&
+						payload.type !== "sovrahi-cap-token" &&
+						payload.type !== "cap-token"
+					) {
 						return;
 					}
 					cleanup();

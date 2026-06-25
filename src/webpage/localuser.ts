@@ -9,10 +9,10 @@ import {
 	getViewportHeight,
 	installPGet,
 	SW,
-	getBulkInfo, 
-	setTheme, 
-	Specialuser, 
-	debounce
+	getBulkInfo,
+	setTheme,
+	Specialuser,
+	debounce,
 } from "./utils/utils.js";
 import {
 	channeljson,
