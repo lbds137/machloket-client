@@ -9,8 +9,11 @@ import {
 	getViewportHeight,
 	installPGet,
 	SW,
+	getBulkInfo, 
+	setTheme, 
+	Specialuser, 
+	debounce
 } from "./utils/utils.js";
-import {getBulkInfo, setTheme, Specialuser} from "./utils/utils.js";
 import {
 	channeljson,
 	expSessionJson,
@@ -4703,13 +4706,10 @@ class Localuser {
 				}),
 			);
 		};
+		const debouncedSearch = debounce(searchBox, 350);
 		let last = "";
 		search.onkeyup = () => {
-			if (last === search.value) {
-				return;
-			}
-			last = search.value;
-			searchBox();
+			debouncedSearch();
 		};
 		search.classList.add("searchGifBar");
 		//TODO fix this once we swap over
