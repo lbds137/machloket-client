@@ -682,7 +682,6 @@
 		"translated": "Translated",
 		"capVerificationNeeded": "Cap verification is required to continue translating.",
 		"hideTranslation": "Hide translation",
-		"showTranslation": "Show translation",
 		"loading": "Translating...",
 		"errorAuth": "Authentication failed. Please try again.",
 		"errorUnexpected": "Translation failed. Please try again later.",

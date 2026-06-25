@@ -1560,7 +1560,7 @@ class Message extends SnowFlake {
 						this.channel.setReplying(this);
 					};
 				}
-				if (this.canTranslate()) {
+				if (this.canTranslate() && !this.translation?.hidden) {
 					const container = document.createElement("button");
 					container.classList.add("messageTranslateButton");
 					const icon = document.createElement("span");
@@ -1578,10 +1578,7 @@ class Message extends SnowFlake {
 					container.classList.add("messageTranslateButton");
 					const icon = document.createElement("span");
 					icon.classList.add("svg-translate", "svgicon");
-					const label = document.createElement("span");
-					label.classList.add("translateLabel");
-					label.textContent = I18n.translation.showTranslation();
-					container.append(icon, label);
+					container.append(icon);
 					buttons.append(container);
 					container.onclick = (event) => {
 						event.preventDefault();
