@@ -858,13 +858,16 @@ class Channel extends SnowFlake {
 	}
 
 	hasPermission(name: string, member = this.guild.member): boolean {
+		if (!member) {
+			return false;
+		}
 		if (member.isAdmin()) {
 			return true;
 		}
 		if (this.isThread() && this.parent) {
 			return this.parent.hasPermission(name, member);
 		}
-		if (this.guild.member.commuicationDisabledLeft()) {
+		if (this.guild.member?.commuicationDisabledLeft()) {
 			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 			if (!allowSet.has(name)) {
 				return false;

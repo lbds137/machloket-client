@@ -1969,7 +1969,7 @@ class Guild extends SnowFlake {
 		return build;
 	}
 	isAdmin() {
-		return this.member.isAdmin();
+		return this.member?.isAdmin() ?? false;
 	}
 	async markAsRead() {
 		const build: {

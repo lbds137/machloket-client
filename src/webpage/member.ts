@@ -708,7 +708,7 @@ class Member extends SnowFlake {
 		if (this.isAdmin() && adminOver) {
 			return true;
 		}
-		if (this.guild.member.commuicationDisabledLeft()) {
+		if (this.guild.member?.commuicationDisabledLeft()) {
 			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 			if (!allowSet.has(name)) {
 				return false;
