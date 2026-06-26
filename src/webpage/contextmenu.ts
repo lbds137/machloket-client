@@ -245,7 +245,7 @@ class LayeredEvent extends CustomEvent<unknown> {
 			const pop = this.primary || menus.pop();
 			if (!pop) return;
 			const [menu, addinfo, other] = pop;
-			menu.makemenu(mouse.clientX, mouse.clientY, addinfo, other, undefined, menus, this.side);
+			menu.makemenu(mouse.clientX, mouse.clientY, addinfo, other, undefined, menus, "left", this.side);
 		});
 	}
 }
@@ -343,6 +343,7 @@ class Contextmenu<x, y> {
 		keep: boolean | HTMLElement = false,
 		layered: LayeredEvent["menus"] = [],
 		align: "left" | "center" = "left",
+		side: "top" | "bottom" = "top",
 	) {
 		if (side === "bottom") {
 			y = y - window.innerHeight;
