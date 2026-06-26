@@ -245,7 +245,16 @@ class LayeredEvent extends CustomEvent<unknown> {
 			const pop = this.primary || menus.pop();
 			if (!pop) return;
 			const [menu, addinfo, other] = pop;
-			menu.makemenu(mouse.clientX, mouse.clientY, addinfo, other, undefined, menus, "left", this.side);
+			menu.makemenu(
+				mouse.clientX,
+				mouse.clientY,
+				addinfo,
+				other,
+				undefined,
+				menus,
+				"left",
+				this.side,
+			);
 		});
 	}
 }

@@ -198,7 +198,6 @@ export class Discovery {
 					render(offset - limit);
 				};
 			}
-			//TODO once https://codeberg.org/MelodyChat/Harmony/pulls/77 is merged this should be reverted to a < only, the === case means there is no more, though right now server side logic is incorrect.
 			if (offset + json.guilds.length <= json.total) {
 				const next = document.createElement("button");
 				next.textContent = I18n.search.next();

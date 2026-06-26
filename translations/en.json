@@ -228,7 +228,7 @@
 	"createAccount": "Create Account",
 	"delete": "Delete",
 	"deleteConfirm": "Are you sure you want to delete this?",
-	"deleteConfirmPoll":"Are you sure you want to end the poll early?",
+	"deleteConfirmPoll": "Are you sure you want to end the poll early?",
 	"devSettings": {
 		"badUser": "Enable logging of bad user objects that send too much information:",
 		"cache": "Enable Service Worker Caching map files:",
@@ -336,8 +336,8 @@
 		"banner:": "Banner:",
 		"bans": "Bans",
 		"boostMessage?": "Send a message when someone boosts your guild!",
-		"banId":"Ban by ID",
-		"idSel":"ID:",
+		"banId": "Ban by ID",
+		"idSel": "ID:",
 		"community": "Community",
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"confirmLeave": "Are you sure you want to leave?",
@@ -660,8 +660,8 @@
 		"andMore": "$1, and more!",
 		"attached": "sent an attachment",
 		"delete": "Delete message",
-		"endPoll":"End poll",
-		"report":"Report message",
+		"endPoll": "End poll",
+		"report": "Report message",
 		"deleted": "Deleted message",
 		"edit": "Edit message",
 		"edited": "(edited)",
@@ -676,7 +676,7 @@
 		"reactionsTitle": "Reactions",
 		"retry": "Resend errored message",
 		"viewrest": "View rest",
-		"pollRes":"$1's poll $2 has closed."
+		"pollRes": "$1's poll $2 has closed."
 	},
 	"translation": {
 		"confirmTitle": "Translate message",
@@ -830,7 +830,7 @@
 		"mutFriends": "Mutual friends",
 		"permInfo": "Permissions",
 		"userInfo": "User info",
-		"notes":"User notes"
+		"notes": "User notes"
 	},
 	"profileColor": "Profile color",
 	"pronouns": "Pronouns:",
@@ -875,28 +875,28 @@
 		"roleFileIcon": "Role icon:",
 		"roles": "Roles"
 	},
-	"upload":"Upload files",
-	"makePoll":"Make poll",
-	"poll":{
-		"question":"Question:",
-		"answers":"Answers:",
-		"newAnswer":"New Answer",
-		"duration":"Duration:",
-		"durCount":{
-			"1":"1 hour",
-			"4":"4 hours",
-			"8":"8 hours",
-			"24":"24 hours",
-			"72":"3 days",
-			"168":"7 days",
-			"336":"14 days"
+	"upload": "Upload files",
+	"makePoll": "Make poll",
+	"poll": {
+		"question": "Question:",
+		"answers": "Answers:",
+		"newAnswer": "New Answer",
+		"duration": "Duration:",
+		"durCount": {
+			"1": "1 hour",
+			"4": "4 hours",
+			"8": "8 hours",
+			"24": "24 hours",
+			"72": "3 days",
+			"168": "7 days",
+			"336": "14 days"
 		},
-		"mult":"Allow multiple answers:",
-		"expires":"Expires: $1",
-		"tie":"It was a tie!",
-		"winningAnswer":"Winning answer: $1%",
-		"view":"View poll",
-		"count":"$1 {{PLURAL:$1|vote|votes}} $2%"
+		"mult": "Allow multiple answers:",
+		"expires": "Expires: $1",
+		"tie": "It was a tie!",
+		"winningAnswer": "Winning answer: $1%",
+		"view": "View poll",
+		"count": "$1 {{PLURAL:$1|vote|votes}} $2%"
 	},
 	"search": {
 		"back": "Back",
@@ -906,13 +906,13 @@
 		"old": "Old",
 		"page": "Page $1",
 		"search": "Search",
-		"settings":"Search Settings",
-		"before":"Before:",
-		"after":"After:",
-		"includensfw":"Include NSFW:",
-		"authors":"Authors:",
-		"mentions":"Mentions:",
-		"channels":"Channels:"
+		"settings": "Search Settings",
+		"before": "Before:",
+		"after": "After:",
+		"includensfw": "Include NSFW:",
+		"authors": "Authors:",
+		"mentions": "Mentions:",
+		"channels": "Channels:"
 	},
 	"searchGifs": "Search $1",
 	"settings": {
@@ -970,12 +970,12 @@
 	"typing": "$2 {{PLURAL:$1|is|are}} typing",
 	"unableToConnect": "Unable to connect to the Spacebar server. Please try logging out and back in.",
 	"unableToPin": "Unable to pin message",
-	"connections":{
-		"since":"Member since: $1",
-		"display":"Display on profile: ",
-		"delete":"Delete Connection",
-		"sure":"Are you sure?",
-		"sureDesc":"If you remove this connection, you can't undo it"
+	"connections": {
+		"since": "Member since: $1",
+		"display": "Display on profile: ",
+		"delete": "Delete Connection",
+		"sure": "Are you sure?",
+		"sureDesc": "If you remove this connection, you can't undo it"
 	},
 	"unpinMessage": "Unpin message",
 	"updateAv": "Updates available",
@@ -1019,7 +1019,7 @@
 		"unTimeout": "Remove timeout on member",
 		"unban": "Unban $1",
 		"unblock": "Unblock user",
-		"viewProfile":"View profile"
+		"viewProfile": "View profile"
 	},
 	"userping": {
 		"resolving": "resolving user",
