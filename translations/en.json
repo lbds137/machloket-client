@@ -675,6 +675,7 @@
 		"reactions": "View reactions",
 		"reactionsTitle": "Reactions",
 		"retry": "Resend errored message",
+		"translate": "Translate",
 		"viewrest": "View rest",
 		"pollRes": "$1's poll $2 has closed."
 	},
