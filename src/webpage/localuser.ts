@@ -5280,6 +5280,11 @@ class Localuser {
 	makePoll() {
 		const d = new Dialog(I18n.makePoll());
 		const opt = d.options;
+		const warning = document.createElement("div");
+		warning.style.color = "#ff4444";
+		warning.style.fontSize = "0.9rem";
+		warning.textContent = I18n.poll.warning();
+		opt.addHTMLArea(warning);
 		const q = opt.addTextInput(I18n.poll.question(), () => {});
 		opt.addText(I18n.poll.answers());
 		const ansField = document.createElement("div");

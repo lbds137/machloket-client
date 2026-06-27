@@ -880,6 +880,7 @@
 	"makePoll": "Make poll",
 	"poll": {
 		"question": "Question:",
+		"warning": "Warning: Polls are supported by only a minority of clients, so it's possible that some people won't be able to see or respond to them.",
 		"answers": "Answers:",
 		"newAnswer": "New Answer",
 		"duration": "Duration:",
