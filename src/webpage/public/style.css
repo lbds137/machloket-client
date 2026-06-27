@@ -1171,8 +1171,6 @@ textarea {
 	cursor: pointer;
 	user-select: none;
 	object-fit: cover;
-	max-height: 50px;
-	max-width: 50px;
 }
 
 .leftArrow {
@@ -1495,6 +1493,11 @@ textarea {
 	cursor: pointer;
 	mask: url(./icons/upload.svg);
 	mask-size: contain !important;
+	transition: transform 0.2s ease;
+}
+
+.svg-upload:hover {
+	transform: rotate(45deg);
 }
 
 .svg-x {
@@ -1969,6 +1972,11 @@ textarea {
 	height: 0.2in;
 	margin-left: 6px;
 	cursor: pointer;
+	transition: transform 0.2s ease;
+}
+
+#stickerTB:hover {
+	transform: translateY(2px);
 }
 
 #emojiTB {
@@ -1977,6 +1985,11 @@ textarea {
 	height: 0.2in;
 	margin-left: 6px;
 	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+#emojiTB:hover {
+	background: #ffd700;
 }
 
 #gifTB {
@@ -1985,6 +1998,11 @@ textarea {
 	height: 0.2in;
 	cursor: pointer;
 	mask-size: 0.2in 0.2in;
+	transition: transform 0.2s ease;
+}
+
+#gifTB:hover {
+	transform: scale(0.8);
 }
 
 .selectarrow {
@@ -3038,10 +3056,12 @@ span.instanceStatus {
 	padding: 0 6px;
 	min-width: 0;
 	cursor: pointer;
+	transition: transform 0.2s ease, background 0.2s ease;
 }
 
 #userinfo:hover {
 	background: var(--dock-hover);
+	transform: scale(1.05);
 }
 
 #user-actions {
@@ -3079,6 +3099,11 @@ span.instanceStatus {
 	height: 22px;
 	margin: 6px;
 	background: var(--user-info-text);
+	transition: transform 0.2s;
+}
+
+#settings:hover {
+	transform: rotate(105deg);
 }
 
 /* Message Area */
@@ -3936,7 +3961,7 @@ span .quote:last-of-type .quoteline {
 }
 
 .mentionMD {
-	z-index: 1;
+	z-index: 0;
 	position: relative;
 	padding: 1px 2px;
 	border-radius: 4px;
@@ -6626,30 +6651,36 @@ img.error::after {
 
 .gifBox:hover {
 	.svg-gifstar {
+		opacity: 1;
+		pointer-events: auto;
 		top: 4px;
 	}
 }
 
 .gifBox {
+	display: inline-block;
+	position: absolute;
+
 	img {
 		max-width: 196px;
 		border-radius: 4px;
+		display: block;
 	}
 
 	.svg-gifstar {
 		& {
 			position: absolute;
 			top: -30px;
-			right: 5px;
+			right: 8px;
 			width: 24px;
 			height: 24px;
-			overflow: hidden;
 			background: white;
-			transition: top 0.2s;
 			cursor: pointer;
 			mask: url(./icons/gifstar.svg);
 			mask-size: contain !important;
-			transition-timing-function: ease-in;
+			transition: all 0.25s ease-in;
+			opacity: 0;
+			pointer-events: none;
 		}
 
 		&.favorited {
