@@ -1,3 +1,5 @@
+import type {NotificationSoundConfig} from "../notificationSound.js";
+
 // Async in order to account for maybe some day Spacebar supporting account data...
 export const enum AnimateTristateValue {
 	Always = "always",
@@ -34,6 +36,10 @@ export class UserPreferences {
 	theme: ThemeOption = ThemeOption.Dark;
 	accentColor: string = "#5865F2";
 	emojiFont?: string;
+
+	notificationSound: string = "Default";
+	notificationVolume: number = 75;
+	customNotificationSounds: NotificationSoundConfig[] = [];
 
 	constructor(init?: Partial<UserPreferences>) {
 		Object.assign(this, init);
@@ -93,6 +99,26 @@ async function migrateOldPreferences(): Promise<void> {
 		prefs.emojiFont = oldEmojiFont;
 		localStorage.removeItem("emoji-font");
 		mod = true;
+	}
+
+	const userinfosRaw = localStorage.getItem("userinfos");
+	if (userinfosRaw) {
+		try {
+			const userinfos = JSON.parse(userinfosRaw) as {
+				preferences?: {notisound?: string; volume?: number};
+			};
+			if (userinfos.preferences?.volume !== undefined && prefs.notificationVolume === 75) {
+				prefs.notificationVolume = userinfos.preferences.volume;
+				mod = true;
+			}
+			if (userinfos.preferences?.notisound !== undefined && prefs.notificationSound === "Default") {
+				const oldSound = userinfos.preferences.notisound;
+				prefs.notificationSound = oldSound === "custom" ? "Default" : "Default";
+				mod = true;
+			}
+		} catch {
+			// ignore malformed userinfos
+		}
 	}
 
 	if (mod) {

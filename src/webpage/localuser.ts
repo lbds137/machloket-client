@@ -39,7 +39,7 @@ import {Role} from "./role.js";
 import {VoiceFactory, voiceStatusStr} from "./voice.js";
 import {I18n, langmap} from "./i18n.js";
 import {Emoji} from "./emoji.js";
-import {Play} from "./audio/play.js";
+import {BUILTIN_NOTIFICATION_SOUNDS, NotificationSoundManager} from "./utils/notificationSound.js";
 import {Message} from "./message.js";
 import {badgeArr} from "./Dbadges.js";
 import {Rights} from "./rights.js";
@@ -284,7 +284,6 @@ class Localuser {
 	channelids: Map<string, Channel> = new Map();
 	readonly userMap: Map<string, User> = new Map();
 	voiceFactory?: VoiceFactory;
-	play?: Play;
 	instancePing = {
 		name: "Unknown",
 	};
@@ -418,10 +417,6 @@ class Localuser {
 	}
 	onswap?: (l: Localuser) => void;
 	constructor(userinfo: Specialuser | -1) {
-		Play.playURL("/audio/sounds.jasf").then((_) => {
-			this.play = _;
-		});
-
 		//TODO get rid of this garbage
 		if (userinfo === -1) {
 			this.rights = new Rights("");
@@ -3176,68 +3171,116 @@ class Localuser {
 				);
 			}
 			{
-				const soundNames = this.play?.tracks.length
-					? this.play.tracks
-					: await Play.soundNamesPromise;
-				const initArea = (index: number) => {
-					if (index === sounds.length - 1) {
-						const input = document.createElement("input");
-						input.type = "file";
-						input.accept = "audio/*";
-						input.addEventListener("change", () => {
-							if (input.files?.length === 1) {
-								const file = input.files[0];
-
-								let reader = new FileReader();
-								reader.onload = () => {
-									let dataUrl = reader.result;
-									if (typeof dataUrl !== "string") return;
-									this.perminfo.sound = {};
-									try {
-										this.perminfo.sound.cSound = dataUrl;
-										console.log(this.perminfo.sound.cSound);
-										this.playSound("custom");
-									} catch (_) {
-										alert(I18n.localuser.soundTooLarge());
-									}
-								};
-								reader.readAsDataURL(file);
-							}
-						});
-						area.append(input);
-					} else {
-						area.innerHTML = "";
-					}
-				};
-				const sounds = [...soundNames, I18n.localuser.customSound()];
-				const initIndex = sounds.indexOf(this.getNotificationSound());
+				tas.addTitle(sectionLabel("localuser.notificationSoundSection", "Notification sound"));
+				const getSoundNames = () =>
+					NotificationSoundManager.getAvailableSounds(prefs).map((s) => s.name);
+				let soundNames = getSoundNames();
+				let selectedIndex = Math.max(0, soundNames.indexOf(prefs.notificationSound));
 				const select = tas.addSelect(
 					I18n.localuser.notisound(),
-					(index) => {
-						this.setNotificationSound(sounds[index]);
+					async (index) => {
+						prefs.notificationSound = soundNames[index];
+						await setPreferences(prefs);
 					},
-					sounds,
-					{defaultIndex: initIndex},
+					soundNames,
+					{defaultIndex: selectedIndex},
 				);
-				select.watchForChange((index) => {
-					initArea(index);
-					this.playSound(sounds[index]);
+				select.watchForChange(async (index) => {
+					prefs.notificationSound = soundNames[index];
+					await setPreferences(prefs);
+					const sounds = NotificationSoundManager.getAvailableSounds(prefs);
+					await NotificationSoundManager.play(sounds[index], prefs.notificationVolume);
 				});
-				const input = document.createElement("input");
-				input.type = "range";
-				input.value = this.getNotiVolume() + "";
-				input.min = "0";
-				input.max = "100";
-				input.onchange = () => {
-					this.setNotificationVolume(+input.value);
-					this.playSound(sounds[select.index]);
+				const volumeInput = document.createElement("input");
+				volumeInput.type = "range";
+				volumeInput.value = prefs.notificationVolume + "";
+				volumeInput.min = "0";
+				volumeInput.max = "100";
+				volumeInput.onchange = async () => {
+					prefs.notificationVolume = +volumeInput.value;
+					await setPreferences(prefs);
+					void NotificationSoundManager.playFromPreferences(prefs);
 				};
-
-				const area = document.createElement("div");
-				initArea(initIndex);
-				tas.addHTMLArea(area);
 				tas.addText(I18n.notiVolume());
-				tas.addHTMLArea(input);
+				tas.addHTMLArea(volumeInput);
+				tas.addButtonInput("", sectionLabel("localuser.addNewSound", "Add a new sound"), () => {
+					const d = new Dialog(sectionLabel("localuser.addNewSound", "Add a new sound"));
+					let soundFile: File | null = null;
+					let soundName = "";
+					const fileInput = d.options.addFileInput(
+						sectionLabel("localuser.soundFile", "Audio file :"),
+						() => {},
+					);
+					fileInput.watchForChange((files) => {
+						soundFile = files?.[0] ?? null;
+					});
+					const nameInput = d.options.addTextInput(
+						sectionLabel("localuser.soundName", "Sound Name :"),
+						() => {},
+						{
+							initText: "",
+						},
+					);
+					nameInput.watchForChange((name) => {
+						soundName = name;
+					});
+					d.options.addButtonInput("", I18n.add(), async () => {
+						if (!soundFile || !soundName.trim()) return;
+						if (!NotificationSoundManager.isAcceptedAudioFile(soundFile)) {
+							alert(
+								sectionLabel(
+									"localuser.invalidSoundFormat",
+									"Please import an MP3, OGG or WebM file",
+								),
+							);
+							return;
+						}
+						try {
+							const dataUrl = await NotificationSoundManager.readFileAsDataUrl(soundFile);
+							if (dataUrl.length > 4_000_000) {
+								alert(I18n.localuser.soundTooLarge());
+								return;
+							}
+							const trimmedName = soundName.trim();
+							if (
+								BUILTIN_NOTIFICATION_SOUNDS.some((s) => s.name === trimmedName) ||
+								prefs.customNotificationSounds.some((s) => s.name === trimmedName)
+							) {
+								alert(
+									sectionLabel("localuser.soundNameTaken", "A sound with this name already exists"),
+								);
+								return;
+							}
+							prefs.customNotificationSounds.push({
+								name: trimmedName,
+								type: "single",
+								path: dataUrl,
+							});
+							prefs.notificationSound = trimmedName;
+							await setPreferences(prefs);
+							soundNames = getSoundNames();
+							selectedIndex = soundNames.indexOf(trimmedName);
+							const selectEl = select.select?.deref();
+							if (selectEl) {
+								selectEl.innerHTML = "";
+								for (const name of soundNames) {
+									const opt = document.createElement("option");
+									opt.textContent = name;
+									selectEl.append(opt);
+								}
+								selectEl.selectedIndex = selectedIndex;
+								select.index = selectedIndex;
+							}
+							void NotificationSoundManager.playFromPreferences(prefs);
+							d.hide();
+						} catch {
+							alert(I18n.localuser.soundTooLarge());
+						}
+					});
+					const center = d.show();
+					const fileEl = center.querySelector('input[type="file"]') as HTMLInputElement | null;
+					if (fileEl) fileEl.accept = ".mp3,.ogg,.webm,audio/*";
+				});
 			}
 
 			{
@@ -5957,40 +6000,6 @@ class Localuser {
 		return new Promise((res) => {
 			this.urlsToRefresh.push([url, res]);
 		});
-	}
-	getNotiVolume(): number {
-		const userinfos = getBulkInfo();
-		return userinfos.preferences.volume ?? 20;
-	}
-	setNotificationVolume(volume: number) {
-		const userinfos = getBulkInfo();
-		userinfos.preferences.volume = volume;
-		localStorage.setItem("userinfos", JSON.stringify(userinfos));
-	}
-	setNotificationSound(sound: string) {
-		const userinfos = getBulkInfo();
-		userinfos.preferences.notisound = sound;
-		localStorage.setItem("userinfos", JSON.stringify(userinfos));
-	}
-	playSound(name = this.getNotificationSound()) {
-		const volume = this.getNotiVolume();
-		if (this.play) {
-			const voice = this.play.tracks.includes(name);
-			if (voice) {
-				this.play.play(name, volume);
-			} else if (this.perminfo.sound && this.perminfo.sound.cSound) {
-				const audio = document.createElement("audio");
-				audio.volume = volume / 100;
-				audio.src = this.perminfo.sound.cSound;
-				audio.play().catch();
-			}
-		} else {
-			console.error("play object is missing");
-		}
-	}
-	getNotificationSound() {
-		const userinfos = getBulkInfo();
-		return userinfos.preferences.notisound;
 	}
 }
 export {Localuser};

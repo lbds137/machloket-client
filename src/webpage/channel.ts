@@ -36,6 +36,7 @@ import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
 import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {NotificationSoundManager} from "./utils/notificationSound.js";
 
 async function createFermoNonce(): Promise<string> {
 	const Rev = await (await fetch("/getupdates")).text();
@@ -1191,9 +1192,6 @@ class Channel extends SnowFlake {
 			}
 
 			this.updateVoiceUsers();
-			if (this.voice === this.localuser.currentVoice && this.voice?.open) {
-				this.localuser.play?.play("join", this.localuser.getNotiVolume());
-			}
 		};
 		this.voice.onUserChange = (user, change) => {
 			this.boxChange(user, change);
@@ -4002,10 +4000,10 @@ class Channel extends SnowFlake {
 			return;
 		}
 
-		if (this.localuser.play) {
-			this.localuser.playSound();
-		} else {
-			console.warn("no play 3:");
+		try {
+			void NotificationSoundManager.playFromPreferences();
+		} catch (e) {
+			console.error("Failed to play notification sound:", e);
 		}
 		if ("Notification" in window && Notification.permission === "granted") {
 			NotificationHandler.sendMessageNotification(message);

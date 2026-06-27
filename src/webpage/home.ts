@@ -1,6 +1,7 @@
 import {I18n} from "./i18n.js";
 import {makeRegister} from "./register.js";
 import {mobile} from "./utils/utils.js";
+import {NotificationSoundManager} from "./utils/notificationSound.js";
 
 type PingHistory = {
 	rows?: {status: string | number; created_at?: string}[];
@@ -16,6 +17,11 @@ function computeUptime(entries: {status: string | number; created_at?: string}[]
 	const success = entries.filter((entry) => isSuccessStatus(entry.status)).length;
 	return Math.round((success / entries.length) * 100);
 }
+
+NotificationSoundManager.preload().catch((e) => {
+	console.error("Failed to preload notification sounds:", e);
+});
+
 
 async function loadInstanceUptime(instanceId: string) {
 	const response = await fetch(
