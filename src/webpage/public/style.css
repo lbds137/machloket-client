@@ -3441,7 +3441,7 @@ span.instanceStatus {
 
 .messagediv {
 	position: relative;
-	transition: all 0.1s;
+	transition: background 0.1s;
 }
 
 .messagediv:not(.topMessage):hover::after {

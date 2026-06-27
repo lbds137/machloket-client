@@ -1108,8 +1108,31 @@ class MarkDown {
 	giveBox(box: HTMLDivElement, onUpdate: (upto: string, pre: boolean) => unknown = () => {}) {
 		this.box = new WeakRef(box);
 		this.onUpdate = onUpdate;
+		let prevcontent = "";
+		let deadKeyPending = false;
+		const gatherBoxContents = (isBackSpace: boolean) => {
+			let content = MarkDown.gatherBoxText(box);
+			if (content === "\n") content = "";
+			if (content !== prevcontent) {
+				prevcontent = content;
+				this.txt = content.split("");
+				this.boxupdate(undefined, undefined, undefined, isBackSpace);
+				MarkDown.gatherBoxText(box);
+			}
+		};
+		const scheduleGather = (isBackSpace = false) => {
+			requestAnimationFrame(() => gatherBoxContents(isBackSpace));
+		};
 		box.addEventListener("keydown", (_) => {
 			if (_.isComposing) return;
+			if (_.key === "Dead") {
+				deadKeyPending = true;
+				return;
+			}
+			if (deadKeyPending) {
+				deadKeyPending = false;
+				scheduleGather();
+			}
 			if (_.key === "Enter" && !_.shiftKey) {
 				const selection = window.getSelection() as Selection;
 				if (!selection) return;
@@ -1123,24 +1146,20 @@ class MarkDown {
 				return;
 			}
 		});
-		let prevcontent = "";
-		const gatherBoxContents = (isBackSpace: boolean) => {
-			let content = MarkDown.gatherBoxText(box);
-			if (content === "\n") content = "";
-			if (content !== prevcontent) {
-				prevcontent = content;
-				this.txt = content.split("");
-				this.boxupdate(undefined, undefined, undefined, isBackSpace);
-				MarkDown.gatherBoxText(box);
-			}
-		};
 		box.onkeyup = (_) => {
-			if (_.isComposing) return;
+			if (_.isComposing || _.key === "Dead" || deadKeyPending) return;
 			gatherBoxContents(_.key === "Backspace");
 		};
-		box.addEventListener("input", () => gatherBoxContents(false));
-		box.addEventListener("compositionend", (_) => {
+		box.addEventListener("input", (e) => {
+			if ((e as InputEvent).isComposing || deadKeyPending) return;
 			gatherBoxContents(false);
+		});
+		box.addEventListener("compositionend", () => {
+			deadKeyPending = false;
+			gatherBoxContents(false);
+		});
+		box.addEventListener("blur", () => {
+			deadKeyPending = false;
 		});
 		box.onpaste = (_) => {
 			if (!_.clipboardData) return;
