@@ -13,7 +13,7 @@ export const CHANGELOG_VERSION = 1;
  * Markdown changelog content. Images are supported via ![alt](src):
  * - Remote: ![Screenshot](https://example.com/image.png)
  * - Public: ![Logo](/logo.svg)
- * - Bundled: ![Preview](./changelog/preview.png) -> place files in src/webpage/public/changelog/
+ * - Bundled: ![Preview](./changelog/preview.png) -> place files in src/webpage/public/assets/changelog/
  */
 export const CHANGELOG_CONTENT = `# Fermooo update!
 
