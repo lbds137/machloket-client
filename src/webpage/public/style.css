@@ -1493,7 +1493,7 @@ textarea {
 	cursor: pointer;
 	mask: url(./icons/upload.svg);
 	mask-size: contain !important;
-	transition: transform 0.2s ease;
+	transition: all 0.2s ease;
 }
 
 .svg-upload:hover {
@@ -1978,6 +1978,10 @@ textarea {
 #stickerTB:hover {
 	transform: translateY(2px);
 }
+#stickerTB:active {
+	transform: scale(0.90);
+}
+
 
 #emojiTB {
 	flex-shrink: 0;
@@ -1985,11 +1989,14 @@ textarea {
 	height: 0.2in;
 	margin-left: 6px;
 	cursor: pointer;
-	transition: background 0.2s ease;
+	transition: all 0.2s ease;
 }
 
 #emojiTB:hover {
 	background: #ffd700;
+}
+#emojiTB:active {
+	transform: scale(0.90);
 }
 
 #gifTB {
@@ -2944,7 +2951,11 @@ span.instanceStatus {
 		color: transparent;
 		background-image: var(--userbg, linear-gradient(var(--primary-text)));
 		background-clip: text, border-box;
+		transition: all 0.2s ease;
 	}
+}
+.memberListStyle:active {
+	transform: scale(0.95);
 }
 
 .liststyle .statusDiv {
@@ -3056,12 +3067,16 @@ span.instanceStatus {
 	padding: 0 6px;
 	min-width: 0;
 	cursor: pointer;
-	transition: transform 0.2s ease, background 0.2s ease;
+	transition: all 0.2s ease;
 }
 
 #userinfo:hover {
 	background: var(--dock-hover);
 	transform: scale(1.05);
+}
+
+#userinfo:active {
+	transform: scale(0.95);
 }
 
 #user-actions {
@@ -3210,6 +3225,11 @@ span.instanceStatus {
 	cursor: pointer;
 	user-select: none;
 	object-fit: contain;
+	transition: all 0.1s ease-in-out;
+}
+
+.messageimg:active {
+	transform: scale(0.95);
 }
 
 .attachments .messageimg {
@@ -4005,6 +4025,7 @@ span .quote:last-of-type .quoteline {
 	color: var(--secondary-text);
 	background: var(--reaction-bg);
 	cursor: pointer;
+	transition: all 0.1s ease-in-out;
 }
 
 .reaction p {
@@ -4013,6 +4034,11 @@ span .quote:last-of-type .quoteline {
 
 .reaction:hover {
 	border-color: color-mix(in srgb, var(--primary-text-soft), transparent);
+	transform: scale(1.05);
+}
+
+.reaction:active {
+	transform: scale(0.95);
 }
 
 .reaction.meReacted {
@@ -4895,10 +4921,12 @@ ul {
 	font-size: 28px;
 	line-height: 28px;
 	cursor: pointer;
+	transition: all 0.2s;
 }
 
 .emojiSelect:hover {
 	background: var(--secondary-hover);
+	transform: scale(1.2);
 }
 
 .emoji-server,
