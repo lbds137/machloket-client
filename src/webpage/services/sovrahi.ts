@@ -26,7 +26,9 @@ type CachedTranslation = {
 	text: string;
 	sourceLang: string;
 	targetLang: string;
+	sourceText: string;
 	cachedAt: number;
+	hidden?: boolean;
 };
 
 type TranslateRequest = {
@@ -46,6 +48,18 @@ type RateLimitedResponse = {
 	cap_api_endpoint?: string;
 	message?: string;
 };
+
+type AbuseResponse = {
+	requires_keycloak?: boolean;
+	message?: string;
+};
+
+export class SovrahiRequiresKeycloakError extends Error {
+	constructor() {
+		super(I18n.translation.authRequiredText());
+		this.name = "SovrahiRequiresKeycloakError";
+	}
+}
 
 type CapChallengeResponse = {
 	site_key?: string;
@@ -228,12 +242,22 @@ export class SovrahiService {
 		return auth.expiresAt > Date.now() + 30_000;
 	}
 
-	static getCachedTranslation(messageId: string, targetLang: string): CachedTranslation | null {
+	static getCachedTranslation(
+		messageId: string,
+		targetLang: string,
+		sourceText?: string,
+	): CachedTranslation | null {
 		const cache = readTranslationCache();
-		const entry = cache[cacheKey(messageId, targetLang)];
+		const key = cacheKey(messageId, targetLang);
+		const entry = cache[key];
 		if (!entry) return null;
 		if (Date.now() - entry.cachedAt > CACHE_TTL_MS) {
-			delete cache[cacheKey(messageId, targetLang)];
+			delete cache[key];
+			writeTranslationCache(cache);
+			return null;
+		}
+		if (sourceText !== undefined && entry.sourceText !== sourceText) {
+			delete cache[key];
 			writeTranslationCache(cache);
 			return null;
 		}
@@ -245,15 +269,42 @@ export class SovrahiService {
 		targetLang: string,
 		text: string,
 		sourceLang: string,
+		sourceText: string,
+		hidden = false,
 	): void {
 		const cache = readTranslationCache();
-		cache[cacheKey(messageId, targetLang)] = {
+		const key = cacheKey(messageId, targetLang);
+		cache[key] = {
 			text,
 			sourceLang,
 			targetLang,
+			sourceText,
 			cachedAt: Date.now(),
+			hidden,
 		};
 		writeTranslationCache(cache);
+	}
+
+	static setTranslationHidden(messageId: string, targetLang: string, hidden: boolean): void {
+		const cache = readTranslationCache();
+		const key = cacheKey(messageId, targetLang);
+		const entry = cache[key];
+		if (!entry) return;
+		entry.hidden = hidden;
+		writeTranslationCache(cache);
+	}
+
+	static invalidateTranslation(messageId: string): void {
+		const cache = readTranslationCache();
+		const prefix = `${messageId}:`;
+		let changed = false;
+		for (const key of Object.keys(cache)) {
+			if (key.startsWith(prefix)) {
+				delete cache[key];
+				changed = true;
+			}
+		}
+		if (changed) writeTranslationCache(cache);
 	}
 
 	static async startAuthRedirect(
@@ -427,20 +478,30 @@ export class SovrahiService {
 			return {text: cached.text, sourceLang: cached.sourceLang, fromCache: true};
 		}
 
-		const token = await this.refreshTokenIfNeeded();
+		let token: string | undefined;
+		if (this.hasValidToken()) {
+			try {
+				token = await this.refreshTokenIfNeeded();
+			} catch {
+				clearAuth();
+			}
+		}
+
 		return this.requestTranslation(messageId, request, token);
 	}
 
 	private static async requestTranslation(
 		messageId: string,
 		request: TranslateRequest,
-		token: string,
+		token?: string,
 		capToken?: string,
 	): Promise<TranslateResult> {
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
 		};
+		if (token) {
+			headers.Authorization = `Bearer ${token}`;
+		}
 		if (capToken) {
 			headers["X-Cap-Token"] = capToken;
 		}
@@ -465,18 +526,35 @@ export class SovrahiService {
 			throw new Error(I18n.translation.errorRateLimited());
 		}
 
+		if (response.status === 403) {
+			const json = (await response.json().catch(() => ({}))) as AbuseResponse;
+			if (json.requires_keycloak) {
+				throw new SovrahiRequiresKeycloakError();
+			}
+			throw new Error(json.message || I18n.translation.errorUnexpected());
+		}
+
 		if (!response.ok) {
 			const json = (await response.json().catch(() => ({}))) as {message?: string};
 			if (response.status === 401) {
-				clearAuth();
-				throw new Error(I18n.translation.errorAuth());
+				if (token) {
+					clearAuth();
+					return this.requestTranslation(messageId, request, undefined, capToken);
+				}
+				throw new SovrahiRequiresKeycloakError();
 			}
 			throw new Error(json.message || I18n.translation.errorUnexpected());
 		}
 
 		const json = (await response.json()) as Record<string, unknown>;
 		const parsed = parseTranslateResponse(json);
-		this.cacheTranslation(messageId, request.targetLang, parsed.text, parsed.sourceLang);
+		this.cacheTranslation(
+			messageId,
+			request.targetLang,
+			parsed.text,
+			parsed.sourceLang,
+			request.text,
+		);
 		return {...parsed, fromCache: false};
 	}
 
@@ -618,4 +696,21 @@ export class SovrahiService {
 			throw new Error(I18n.translation.capError());
 		}
 	}
+}
+
+export function showAuthRequiredDialog(onConnect: () => void): void {
+	const dialog = new Dialog(I18n.translation.authRequiredTitle(), {noSubmit: true});
+	const body = document.createElement("p");
+	body.style.whiteSpace = "pre-line";
+	body.textContent = I18n.translation.authRequiredText();
+	dialog.options.addHTMLArea(body);
+	dialog.options.addButtonInput("", I18n.translation.authConnect(), () => {
+		dialog.hide();
+		onConnect();
+	});
+	dialog.options.addButtonInput("", I18n.translation.cancel(), () => {
+		dialog.hide();
+	});
+	const center = dialog.show(false);
+	center.classList.add("sovrahiAuthDialog");
 }

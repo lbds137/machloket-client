@@ -3547,7 +3547,6 @@ span.instanceStatus {
 }
 
 .messageTranslationContent {
-	white-space: pre-wrap;
 	word-break: break-word;
 }
 
@@ -3562,6 +3561,45 @@ span.instanceStatus {
 
 .messageTranslationToggle:hover {
 	text-decoration: underline;
+}
+
+.messageTranslationAttribution {
+	font-size: 0.8em;
+	color: var(--secondary-text-soft);
+}
+
+.messageTranslationAttributionLink {
+	color: var(--link, var(--accent-color, #5865f2));
+	text-decoration: underline;
+}
+
+.messageTranslationAttributionLink:hover {
+	text-decoration: none;
+}
+
+.changelogBody {
+	max-width: 480px;
+	max-height: 60vh;
+	overflow-y: auto;
+}
+
+.changelogContent {
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.changelogImage {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin: 8px 0;
+	border-radius: 4px;
+}
+
+.background.changelogBackdrop {
+	background: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 }
 
 .sovrahiCapContainer {
@@ -4264,6 +4302,10 @@ img.bigembedimg {
 	box-sizing: border-box;
 	overflow: auto;
 	overflow-y: auto;
+}
+
+#sideDiv .sideDivProfile {
+	width: 100%;
 }
 
 #page:has(#memberlisttoggle:checked) #sideContainDiv {

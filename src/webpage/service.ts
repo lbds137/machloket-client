@@ -192,6 +192,14 @@ function toPath(url: string): string {
 	const Url = new URL(url);
 	return toPathNoDefault(url) || Url.pathname;
 }
+function cacheLookupKey(req: Request): string {
+	const url = new URL(req.url);
+	const path = toPath(req.url);
+	if (path.endsWith(".css") || path.endsWith(".woff2")) {
+		return url.pathname + url.search;
+	}
+	return path;
+}
 let fails = 0;
 async function getfile(req: Request): Promise<Response> {
 	checkCache();
@@ -211,21 +219,22 @@ async function getfile(req: Request): Promise<Response> {
 		return response;
 	}
 
-	let path = toPath(req.url);
+	const path = toPath(req.url);
 	if (path === "/getupdates" || path === "/files.json") {
 		const response = await fetch(new Request(req, {cache: "no-store"}));
 		return response;
 	}
-	console.log("Getting path: " + path);
-	const responseFromCache = await caches.match(path);
+	const cacheKey = cacheLookupKey(req);
+	console.log("Getting path: " + cacheKey);
+	const responseFromCache = await caches.match(cacheKey);
 	if (responseFromCache) {
 		console.log("cache hit");
 		return responseFromCache;
 	}
 	try {
-		const responseFromNetwork = await fetch(path);
+		const responseFromNetwork = await fetch(req.url);
 		if (responseFromNetwork.ok) {
-			await putInCache(path, responseFromNetwork.clone());
+			await putInCache(cacheKey, responseFromNetwork.clone());
 		}
 		return responseFromNetwork;
 	} catch (e) {

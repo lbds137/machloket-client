@@ -23,6 +23,7 @@ import {
 	installOpenpanelErrorTracking,
 	sendOpenpanelAnalytics,
 } from "./utils/openpanel.js";
+import {showChangelogPopup} from "./changelog.js";
 import {SovrahiService} from "./services/sovrahi.js";
 
 if (window.location.pathname === "/app") {
@@ -118,6 +119,7 @@ if (window.location.pathname.startsWith("/channels")) {
 				sendOpenpanelAnalytics("app_loaded", {
 					startup_ms: Math.round(performance.now() - startupStarted),
 				});
+				showChangelogPopup();
 				if (templateID) {
 					thisUser.passTemplateID(templateID);
 				}

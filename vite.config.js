@@ -1,6 +1,13 @@
 import {defineConfig} from "vite";
 import {resolve} from "path";
-import {readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync} from "fs";
+import {
+	readFileSync,
+	readdirSync,
+	writeFileSync,
+	mkdirSync,
+	existsSync,
+	statSync,
+} from "fs";
 import {execSync} from "child_process";
 
 function generateLangs() {
@@ -26,28 +33,71 @@ function generateLangs() {
 	);
 }
 
+function getBuildVersion() {
+	const ver = process.env.VER;
+	if (ver) return ver.trim();
+	try {
+		return execSync("git rev-parse HEAD", {encoding: "utf-8"}).trim();
+	} catch {
+		return "dev";
+	}
+}
+
+function listFilesRecursive(dir) {
+	/** @type {string[]} */
+	const files = [];
+	for (const entry of readdirSync(dir)) {
+		const fullPath = resolve(dir, entry);
+		if (statSync(fullPath).isDirectory()) {
+			files.push(...listFilesRecursive(fullPath));
+		} else {
+			files.push(fullPath);
+		}
+	}
+	return files;
+}
+
+// Is is really meh meh but yk yk
+function patchStylesheetCacheBusting(distDir, version) {
+	const cacheVersion = version.slice(0, 12);
+	const versionedStylesheets = new Set(["/style.css", "/themes.css"]);
+	const bustScript = `<script>(function(){var v="${cacheVersion}";document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){var h=l.getAttribute("href");if(!h) return;var u=new URL(h,location.href);if(!["/style.css","/themes.css"].includes(u.pathname))return;if(u.searchParams.get("v")===v)return;u.searchParams.set("v",v);l.setAttribute("href",u.pathname+u.search);});})();</script>`;
+	for (const file of listFilesRecursive(distDir)) {
+		if (!file.endsWith(".html")) continue;
+		let html = readFileSync(file, "utf-8");
+		let changed = false;
+		html = html.replace(/href="([^"]+\.css(?:\?[^"]*)?)"/g, (match, href) => {
+			let pathname = href;
+			try {
+				pathname = new URL(href, "http://localhost").pathname;
+			} catch {
+				pathname = href.split("?")[0];
+			}
+			if (!versionedStylesheets.has(pathname)) return match;
+			changed = true;
+			return `href="${pathname}?v=${cacheVersion}"`;
+		});
+		if (!html.includes("fermoStylesheetBust")) {
+			const patched = html.replace(
+				/(<link href="\/(?:style|themes)\.css[^"]*" rel="stylesheet"[^>]*>)/,
+				`${bustScript}<!--fermoStylesheetBust-->\n$1`,
+			);
+			if (patched !== html) {
+				html = patched;
+				changed = true;
+			}
+		}
+		if (changed) writeFileSync(file, html);
+	}
+}
+
 function generateBuildFiles() {
 	const distDir = resolve(__dirname, "dist/webpage");
 	const srcDir = resolve(__dirname, "src/webpage");
-	const ver = process.env.VER;
-	const urlRaw = process.env.URL;
-	const normalizedUrl =
-		urlRaw && URL.canParse(urlRaw)
-			? urlRaw.endsWith("/")
-				? urlRaw.slice(0, -1)
-				: urlRaw
-			: undefined;
+	const revision = getBuildVersion();
 
-	if (ver) {
-		writeFileSync(resolve(distDir, "getupdates"), ver);
-	} else {
-		try {
-			const revision = execSync("git rev-parse HEAD", {encoding: "utf-8"}).trim();
-			writeFileSync(resolve(distDir, "getupdates"), revision);
-		} catch {
-			writeFileSync(resolve(distDir, "getupdates"), "dev");
-		}
-	}
+	writeFileSync(resolve(distDir, "getupdates"), revision);
+	patchStylesheetCacheBusting(distDir, revision);
 
 	writeFileSync(
 		resolve(distDir, "_redirects"),

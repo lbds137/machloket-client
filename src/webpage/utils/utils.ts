@@ -980,8 +980,11 @@ export class SW {
 		this.postMessage({code: "isDev", dev: getDeveloperSettings().cacheSourceMaps});
 		this.captureEvent("updates", (update, stop) => {
 			this.needsUpdate ||= update.updates;
-			if (update) {
+			if (update.updates) {
 				stop();
+				void import("./assetCache.js").then(({refreshStylesheetsForUpdate}) =>
+					refreshStylesheetsForUpdate(),
+				);
 				const updateIcon = document.getElementById("updateIcon");
 				if (updateIcon) {
 					updateIcon.hidden = false;

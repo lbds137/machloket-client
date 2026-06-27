@@ -46,6 +46,7 @@ import {Rights} from "./rights.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Sticker} from "./sticker.js";
 import {Hover} from "./hover.js";
+import {showChangelogPopup} from "./changelog.js";
 import {AccountSwitcher} from "./utils/switcher.js";
 import {Favorites} from "./favorites.js";
 import {
@@ -1566,9 +1567,17 @@ class Localuser {
 			div.textContent = "";
 			return;
 		}
-		if (guild.id === "@me" && (channel as Group).type === 1) {
+		if (guild.id === "@me" && channel instanceof Group && channel.type === 1 && channel.users[0]) {
 			const div = document.getElementById("sideDiv") as HTMLDivElement;
 			div.textContent = "";
+			/*div.innerHTML = "";
+			const dmUser = channel.users[0];
+			void dmUser.buildprofile(-1, -1).then((profile) => {
+				if (this.channelfocus !== channel) return;
+				div.innerHTML = "";
+				profile.classList.add("sideDivProfile");
+				div.append(profile);
+			});*/
 			return;
 		}
 
@@ -4188,6 +4197,9 @@ class Localuser {
 					undefined,
 				),
 			);
+			jankInfo.addButtonInput("", I18n.changelog.viewButton(), () => {
+				showChangelogPopup({force: true});
+			});
 			if (isOpenpanelConfigured()) {
 				jankInfo.addHR();
 				jankInfo.addTitle(I18n.localuser.openpanelTitle());

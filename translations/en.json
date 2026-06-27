@@ -691,6 +691,10 @@
 		"agree": "Agree",
 		"cancel": "Cancel",
 		"translated": "Translated",
+		"translatedByPrefix": "Translated by ",
+		"authRequiredTitle": "Sign in required",
+		"authRequiredText": "You've reached the anonymous translation limit. Sign in with Sovrahi to continue translating messages.",
+		"authConnect": "Sign in",
 		"capVerificationNeeded": "Cap verification is required to continue translating.",
 		"hideTranslation": "Hide translation",
 		"loading": "Translating...",
@@ -699,6 +703,11 @@
 		"errorRateLimited": "Translation rate limit reached. Please try again later.",
 		"capError": "Cap verification failed. Please try again.",
 		"capTimeout": "Cap verification timed out. Please try again."
+	},
+	"changelog": {
+		"title": "What's new",
+		"ok": "OK",
+		"viewButton": "View changelog"
 	},
 	"report": {
 		"back": "Back",

@@ -32,6 +32,8 @@ import {
 	hasTranslationConsent,
 	isExternalFeaturesEnabled,
 	setTranslationConsent,
+	showAuthRequiredDialog,
+	SovrahiRequiresKeycloakError,
 	SovrahiService,
 } from "./services/sovrahi.js";
 
@@ -493,7 +495,13 @@ class Message extends SnowFlake {
 				}
 				continue;
 			} else if (thing === "content") {
-				this.content = new MarkDown(messagejson[thing] || "", this.channel);
+				const newContent = messagejson[thing] || "";
+				const previousContent = this.content?.rawString;
+				this.content = new MarkDown(newContent, this.channel);
+				if (previousContent !== undefined && previousContent !== newContent) {
+					SovrahiService.invalidateTranslation(this.id);
+					this.translation = undefined;
+				}
 				continue;
 			} else if (thing === "id") {
 				continue;
@@ -597,11 +605,6 @@ class Message extends SnowFlake {
 			return;
 		}
 
-		if (!SovrahiService.hasValidToken()) {
-			await SovrahiService.startAuthRedirect(this.guild.id, this.channel.id, this.id);
-			return;
-		}
-
 		this.translation = {
 			text: this.translation?.text || "",
 			sourceLang: this.translation?.sourceLang || "auto",
@@ -624,23 +627,27 @@ class Message extends SnowFlake {
 			};
 		} catch (error) {
 			this.translation = undefined;
-			const message = error instanceof Error ? error.message : I18n.translation.errorUnexpected();
-			if (message === I18n.translation.errorAuth()) {
-				await SovrahiService.startAuthRedirect(this.guild.id, this.channel.id, this.id);
+			if (error instanceof SovrahiRequiresKeycloakError) {
+				showAuthRequiredDialog(() => {
+					void SovrahiService.startAuthRedirect(this.guild.id, this.channel.id, this.id);
+				});
+				this.generateMessage();
 				return;
 			}
+			const message = error instanceof Error ? error.message : I18n.translation.errorUnexpected();
 			alert(message);
 		}
 
 		this.generateMessage();
 	}
 	loadCachedTranslation() {
-		const cached = SovrahiService.getCachedTranslation(this.id, I18n.lang);
+		const sourceText = this.content?.rawString || "";
+		const cached = SovrahiService.getCachedTranslation(this.id, I18n.lang, sourceText);
 		if (!cached || this.translation) return;
 		this.translation = {
 			text: cached.text,
 			sourceLang: cached.sourceLang,
-			hidden: false,
+			hidden: cached.hidden ?? false,
 			loading: false,
 		};
 	}
@@ -665,6 +672,18 @@ class Message extends SnowFlake {
 			label.textContent = I18n.translation.translated();
 			header.append(label);
 
+			const attribution = document.createElement("span");
+			attribution.classList.add("messageTranslationAttribution");
+			attribution.append(document.createTextNode(I18n.translation.translatedByPrefix()));
+			const sovrahiLink = document.createElement("a");
+			sovrahiLink.href = "https://sovrahi.com";
+			sovrahiLink.target = "_blank";
+			sovrahiLink.rel = "noopener noreferrer";
+			sovrahiLink.classList.add("messageTranslationAttributionLink");
+			sovrahiLink.textContent = "sovrahi.com";
+			attribution.append(sovrahiLink);
+			header.append(attribution);
+
 			const hide = document.createElement("button");
 			hide.classList.add("messageTranslationToggle");
 			hide.textContent = I18n.translation.hideTranslation();
@@ -673,6 +692,7 @@ class Message extends SnowFlake {
 				event.stopImmediatePropagation();
 				if (!this.translation) return;
 				this.translation.hidden = true;
+				SovrahiService.setTranslationHidden(this.id, I18n.lang, true);
 				this.generateMessage();
 			};
 			header.append(hide);
@@ -683,7 +703,8 @@ class Message extends SnowFlake {
 		if (!this.translation.loading) {
 			const content = document.createElement("div");
 			content.classList.add("messageTranslationContent");
-			content.textContent = this.translation.text;
+			const translationMd = new MarkDown(this.translation.text, this.channel);
+			content.append(translationMd.makeHTML());
 			box.append(content);
 		}
 
@@ -1809,6 +1830,7 @@ class Message extends SnowFlake {
 						event.stopImmediatePropagation();
 						if (!this.translation) return;
 						this.translation.hidden = false;
+						SovrahiService.setTranslationHidden(this.id, I18n.lang, false);
 						this.generateMessage();
 					};
 				}
