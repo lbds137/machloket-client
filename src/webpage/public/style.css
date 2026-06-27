@@ -3441,6 +3441,7 @@ span.instanceStatus {
 
 .messagediv {
 	position: relative;
+	transition: all 0.1s;
 }
 
 .messagediv:not(.topMessage):hover::after {
@@ -4243,14 +4244,18 @@ img.bigembedimg {
 /* Sidebar */
 
 #sideContainDiv {
-	display: none;
+	display: flex;
 	z-index: 4;
-	flex: none;
 	flex-direction: column;
 	justify-content: space-between;
-	width: 240px;
-	padding: 16px 8px;
+	width: 0;
+	min-width: 0;
+	padding: 0;
 	background: var(--sidebar-bg);
+	opacity: 0;
+	transform: translateX(20px);
+	transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: -4px 0 12px rgba(0, 0, 0, 0.3);
 }
 
 #sideDiv {
@@ -4262,7 +4267,10 @@ img.bigembedimg {
 }
 
 #page:has(#memberlisttoggle:checked) #sideContainDiv {
-	display: flex;
+	padding: 16px 16px 8px 8px;
+	min-width: 250px;
+	opacity: 1;
+	transform: translateX(0);
 }
 
 #sideContainDiv.searchDiv {
