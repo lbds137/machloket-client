@@ -5,7 +5,7 @@ import {Dialog} from "./settings.js";
 const CHANGELOG_STORAGE_KEY = "fermoChangelogVersion";
 const CHANGELOG_IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
-/** Increment this when updating CHANGELOG_CONTENT to show the popup again. */
+/* Increment this when updating CHANGELOG_CONTENT to show the popup again. */
 export const CHANGELOG_VERSION = 1;
 
 /**
