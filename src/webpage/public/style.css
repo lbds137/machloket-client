@@ -328,6 +328,7 @@ body {
 #chatArea {
 	display: flex;
 	min-width: 40%;
+	max-width: 100%;
 }
 
 .flexttb {
