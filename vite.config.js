@@ -1,13 +1,6 @@
 import {defineConfig} from "vite";
 import {resolve} from "path";
-import {
-	readFileSync,
-	readdirSync,
-	writeFileSync,
-	mkdirSync,
-	existsSync,
-	statSync,
-} from "fs";
+import {readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, statSync} from "fs";
 import {execSync} from "child_process";
 
 function generateLangs() {

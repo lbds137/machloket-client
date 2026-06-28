@@ -5,6 +5,7 @@ import {Localuser} from "./localuser.js";
 import {Permissions} from "./permissions.js";
 import {Dialog, Float, Settings} from "./settings.js";
 import {Role, RoleList} from "./role.js";
+import {AutoTranslationService} from "./services/autoTranslation.js";
 import {InfiniteScroller} from "./infiniteScroller.js";
 import {SnowFlake} from "./snowflake.js";
 import {
@@ -662,6 +663,9 @@ class Channel extends SnowFlake {
 			},
 			this.readbottom.bind(this),
 		);
+		this.infinite.onVisibilityChange = (_id, visible) => {
+			if (visible) AutoTranslationService.onMessageVisible(this, _id);
+		};
 	}
 
 	scrolling: boolean = false;
@@ -2830,6 +2834,9 @@ class Channel extends SnowFlake {
 		(document.getElementById("gifTB") as HTMLElement).style.display = this.canMessage
 			? "block"
 			: "none";
+		(document.getElementById("translateTB") as HTMLElement).style.display = this.canMessage
+			? "block"
+			: "none";
 		(document.getElementById("stickerTB") as HTMLElement).style.display = this.canMessage
 			? "block"
 			: "none";
@@ -2854,11 +2861,58 @@ class Channel extends SnowFlake {
 		this.makereplybox();
 
 		if (getMessages) await this.buildmessages(aroundMessage);
+		AutoTranslationService.onChannelFocused(this);
 		//loading.classList.remove("loading");
 	}
 	typingmap: Map<Member, number> = new Map();
+
+	private memberjsonFromUser(user: User, guildId: string): memberjson {
+		return {
+			id: user.id,
+			user: user.tojson(),
+			guild_id: guildId,
+			guild: guildId === "@me" ? null : {id: guildId},
+			roles: [],
+			joined_at: "",
+			premium_since: "",
+			deaf: false,
+			mute: false,
+			pending: false,
+		};
+	}
+
+	private async resolveTypingMember(typing: startTypingjson): Promise<Member | undefined> {
+		if (typing.d.member) {
+			return Member.new(typing.d.member, this.guild);
+		}
+
+		const userId = typing.d.user_id;
+		const guildId = typing.d.guild_id ?? this.guild.id;
+
+		const existing = await this.localuser.getMember(userId, guildId);
+		if (existing) return existing;
+
+		const channelUsers = (this as Channel & {users?: User[]}).users;
+		const channelUser = channelUsers?.find((user) => user.id === userId);
+		if (channelUser) {
+			return Member.new(this.memberjsonFromUser(channelUser, guildId), this.guild);
+		}
+
+		const cachedUser = this.localuser.userMap.get(userId);
+		if (cachedUser) {
+			return Member.new(this.memberjsonFromUser(cachedUser, guildId), this.guild);
+		}
+
+		try {
+			const user = await User.resolve(userId, this.localuser);
+			return Member.new(this.memberjsonFromUser(user, guildId), this.guild);
+		} catch {
+			return undefined;
+		}
+	}
+
 	async typingStart(typing: startTypingjson): Promise<void> {
-		const memb = await Member.new(typing.d.member!, this.guild);
+		const memb = await this.resolveTypingMember(typing);
 		if (!memb) return;
 		this.typingmap.set(memb, Date.now());
 		memb.user.statusChange();
@@ -3957,6 +4011,9 @@ class Channel extends SnowFlake {
 				await this.tryfocusinfinate();
 			}
 			await this.infinite.addedBottom();
+			if (AutoTranslationService.isEnabled()) {
+				AutoTranslationService.scheduleChannel(this);
+			}
 		}
 
 		if (messagez.author === this.localuser.user) {

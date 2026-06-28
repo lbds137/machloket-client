@@ -77,8 +77,10 @@ class InfiniteScroller {
 	private backElm = new Map<string, string | undefined>();
 	private forElm = new Map<string, string | undefined>();
 	private weakElmId = new WeakMap<HTMLElement, string>();
+	private visibleElements = new Set<Element>();
 
 	public scrolling: boolean = false;
+	onVisibilityChange?: (id: string, visible: boolean) => void;
 
 	get div() {
 		return this.weakDiv.deref();
@@ -108,9 +110,11 @@ class InfiniteScroller {
 	private createObserver(root: HTMLDivElement) {
 		const scroller = root.children[0];
 		this.observerReady = true;
-		function sorted() {
-			return Array.from(scroller.children).filter((_) => visable.has(_)) as HTMLElement[];
-		}
+		const sorted = () => {
+			return Array.from(scroller.children).filter((_) =>
+				this.visibleElements.has(_),
+			) as HTMLElement[];
+		};
 		if ("ResizeObserver" in globalThis) {
 			let height = 0;
 			new ResizeObserver((e) => {
@@ -139,20 +143,22 @@ class InfiniteScroller {
 					})
 				: undefined;
 		//TODO maybe a workarround?
-		const visable = new Set<Element>();
 		this.observer = new IntersectionObserver(
 			(obvs) => {
 				for (const obv of obvs) {
 					if (obv.target instanceof HTMLElement) {
 						if (obv.isIntersecting) {
-							visable.add(obv.target);
+							this.visibleElements.add(obv.target);
 							re?.observe(obv.target);
 						} else {
-							visable.delete(obv.target);
+							this.visibleElements.delete(obv.target);
 							re?.unobserve(obv.target);
 						}
 
 						this.heightMap.set(obv.target, obv.boundingClientRect.height);
+
+						const id = this.weakElmId.get(obv.target);
+						if (id) this.onVisibilityChange?.(id, obv.isIntersecting);
 					}
 				}
 				for (const obv of obvs) {
@@ -185,8 +191,17 @@ class InfiniteScroller {
 			}
 		};
 		let last = 0;
+		let scrollIdleTimer: ReturnType<typeof setTimeout> | undefined;
+		const markScrollIdle = () => {
+			if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+			scrollIdleTimer = setTimeout(() => {
+				this.scrolling = false;
+				scrollIdleTimer = undefined;
+			}, 700);
+		};
 		root.addEventListener("scroll", async () => {
 			this.scrolling = true;
+			markScrollIdle();
 			const now = Date.now();
 			const thisid = ++last;
 			if (now - time < 500) {
@@ -196,7 +211,10 @@ class InfiniteScroller {
 			time = now;
 			handleScroll();
 		});
-		root.addEventListener("scrollend", () => (this.scrolling = false));
+		root.addEventListener("scrollend", () => {
+			if (scrollIdleTimer) clearTimeout(scrollIdleTimer);
+			this.scrolling = false;
+		});
 	}
 
 	async getDiv(initialId: string, flash = false): Promise<HTMLDivElement> {
@@ -501,6 +519,15 @@ class InfiniteScroller {
 			this.div.remove();
 		}
 		this.clearElms();
+	}
+
+	getVisibleIds(): string[] {
+		const ids: string[] = [];
+		for (const elm of this.visibleElements) {
+			const id = this.weakElmId.get(elm as HTMLElement);
+			if (id) ids.push(id);
+		}
+		return ids;
 	}
 }
 

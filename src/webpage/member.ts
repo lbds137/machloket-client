@@ -404,7 +404,10 @@ class Member extends SnowFlake {
 	get info() {
 		return this.owner.info;
 	}
-	static async new(memberjson: memberjson, owner: Guild): Promise<Member | undefined> {
+	static async new(memberjson: memberjson | undefined, owner: Guild): Promise<Member | undefined> {
+		if (!memberjson) {
+			return undefined;
+		}
 		const memberId = memberjson.id || memberjson.user?.id;
 		if (!memberId) {
 			console.error("[Member.new] ID missing in memberjson");

@@ -1,6 +1,7 @@
 import {I18n} from "../i18n.js";
 import {Dialog} from "../settings.js";
 import {getLocalSettings} from "../utils/storage/localSettings.js";
+import {solveCapChallenge} from "./cap.js";
 
 const AUTH_REALM = "https://auth.sovrahi.com/realms/so";
 const AUTH_ENDPOINT = `${AUTH_REALM}/protocol/openid-connect/auth`;
@@ -34,6 +35,7 @@ type CachedTranslation = {
 type TranslateRequest = {
 	text: string;
 	targetLang: string;
+	sourceText?: string;
 	capToken?: string;
 };
 
@@ -46,7 +48,31 @@ type TranslateResult = {
 type RateLimitedResponse = {
 	error: "rate_limited";
 	cap_api_endpoint?: string;
+	cap_endpoint?: string;
+	cap_required?: boolean;
 	message?: string;
+	instructions?: string;
+	requires_keycloak?: boolean;
+};
+
+function requiresKeycloakAuth(json: {requires_keycloak?: boolean}): boolean {
+	return json.requires_keycloak === true;
+}
+
+function getCapEndpoint(json: RateLimitedResponse): string | undefined {
+	return json.cap_endpoint;
+}
+
+export type BatchTranslateItem = {
+	messageId: string;
+	text: string;
+	sourceText?: string;
+};
+
+export type BatchTranslateResultItem = {
+	messageId: string;
+	text: string;
+	sourceLang: string;
 };
 
 type AbuseResponse = {
@@ -58,35 +84,6 @@ export class SovrahiRequiresKeycloakError extends Error {
 	constructor() {
 		super(I18n.translation.authRequiredText());
 		this.name = "SovrahiRequiresKeycloakError";
-	}
-}
-
-type CapChallengeResponse = {
-	site_key?: string;
-	challenge?: string;
-	script_url?: string;
-	widget_url?: string;
-	token?: string;
-};
-
-type CapGlobal = {
-	render?: (
-		container: HTMLElement,
-		options: {
-			siteKey?: string;
-			challenge?: string;
-			endpoint?: string;
-			onSuccess?: (token: string) => void;
-			onError?: (error: Error) => void;
-		},
-	) => void;
-	solve?: (endpoint: string) => Promise<string>;
-};
-
-declare global {
-	interface Window {
-		SovrahiCap?: CapGlobal;
-		Cap?: CapGlobal;
 	}
 }
 
@@ -195,31 +192,167 @@ function parseJwtExpiry(token: string): number {
 	}
 }
 
+function extractSourceLang(entry: Record<string, unknown>): string {
+	const detected = entry.detectedLanguage;
+	if (detected && typeof detected === "object") {
+		const lang = (detected as {language?: string}).language;
+		if (typeof lang === "string") return lang;
+	}
+	const directSource = entry.detectedSourceLanguage ?? entry.source_language ?? entry.source;
+	if (typeof directSource === "string") return directSource;
+	return "auto";
+}
+
+function parseTranslationEntry(
+	entry: Record<string, unknown>,
+	fallbackText?: string,
+): {text: string; sourceLang: string} {
+	const text = entry.translatedText ?? entry.text ?? fallbackText;
+	if (typeof text !== "string") {
+		throw new Error(I18n.translation.errorUnexpected());
+	}
+	return {text, sourceLang: extractSourceLang(entry)};
+}
+
 function parseTranslateResponse(json: Record<string, unknown>): {text: string; sourceLang: string} {
+	const batchTranslations = json.translations as Array<Record<string, unknown>> | undefined;
+	if (batchTranslations?.length === 1) {
+		return parseTranslationEntry(batchTranslations[0]);
+	}
+
 	const directText = json.translatedText ?? json.translation ?? json.text;
-	const directSource = json.detectedSourceLanguage ?? json.source_language ?? json.source;
 	if (typeof directText === "string") {
-		return {
-			text: directText,
-			sourceLang: typeof directSource === "string" ? directSource : "auto",
-		};
+		return {text: directText, sourceLang: extractSourceLang(json)};
 	}
 
 	const data = json.data as Record<string, unknown> | undefined;
-	const translations = data?.translations as Array<Record<string, unknown>> | undefined;
-	if (translations?.[0]) {
-		const first = translations[0];
-		const text = first.translatedText ?? first.text;
-		const sourceLang = first.detectedSourceLanguage ?? first.source;
-		if (typeof text === "string") {
-			return {
-				text,
-				sourceLang: typeof sourceLang === "string" ? sourceLang : "auto",
-			};
-		}
+	const dataTranslations = data?.translations as Array<Record<string, unknown>> | undefined;
+	if (dataTranslations?.[0]) {
+		return parseTranslationEntry(dataTranslations[0]);
 	}
 
 	throw new Error(I18n.translation.errorUnexpected());
+}
+
+function parseBatchTranslateResponse(
+	json: Record<string, unknown>,
+	count: number,
+	sourceTexts?: string[],
+): Array<{text: string; sourceLang: string}> {
+	const translations = (json.translations ??
+		(json.data as Record<string, unknown> | undefined)?.translations) as
+		| Array<Record<string, unknown>>
+		| undefined;
+
+	if (translations?.length) {
+		const hasIndex = translations.some((entry) => typeof entry.index === "number");
+		if (hasIndex) {
+			const ordered: Array<{text: string; sourceLang: string} | undefined> = new Array(count);
+			for (const entry of translations) {
+				if (typeof entry.index !== "number" || entry.index < 0 || entry.index >= count) {
+					throw new Error(I18n.translation.errorUnexpected());
+				}
+				ordered[entry.index] = parseTranslationEntry(entry, sourceTexts?.[entry.index]);
+			}
+			if (ordered.some((entry) => entry === undefined)) {
+				throw new Error(I18n.translation.errorUnexpected());
+			}
+			return ordered as Array<{text: string; sourceLang: string}>;
+		}
+		return translations.map((entry, index) =>
+			parseTranslationEntry(entry, sourceTexts?.[index]),
+		);
+	}
+
+	const directText = json.translatedText;
+	const directSources = json.detectedSourceLanguages ?? json.detectedSourceLanguage;
+	if (Array.isArray(directText)) {
+		return directText.map((text, index) => ({
+			text: typeof text === "string" ? text : "",
+			sourceLang:
+				Array.isArray(directSources) && typeof directSources[index] === "string"
+					? (directSources[index] as string)
+					: typeof directSources === "string"
+						? directSources
+						: "auto",
+		}));
+	}
+
+	if (count === 1) {
+		return [parseTranslateResponse(json)];
+	}
+
+	throw new Error(I18n.translation.errorUnexpected());
+}
+
+async function handleRateLimitedResponse(
+	json: RateLimitedResponse,
+	retry: (capToken?: string) => Promise<unknown>,
+): Promise<unknown> {
+	if (requiresKeycloakAuth(json)) {
+		throw new SovrahiRequiresKeycloakError();
+	}
+
+	const capEndpoint = getCapEndpoint(json);
+	if (capEndpoint || json.cap_required) {
+		if (!capEndpoint) {
+			throw new Error(json.message || I18n.translation.errorRateLimited());
+		}
+		const solvedCapToken = await solveCapChallenge(capEndpoint);
+		return retry(solvedCapToken);
+	}
+
+	throw new Error(json.message || I18n.translation.errorRateLimited());
+}
+
+function parseChannelPath(): {guildId: string; channelId: string; messageId: string} {
+	const parts = window.location.pathname.split("/");
+	return {
+		guildId: parts[2] || "@me",
+		channelId: parts[3] || "",
+		messageId: parts[4] || "0",
+	};
+}
+
+async function handleTranslationResponseJson(
+	json: Record<string, unknown>,
+	retry: (capToken?: string) => Promise<unknown>,
+): Promise<void> {
+	if (json.error === "rate_limited") {
+		await handleRateLimitedResponse(json as RateLimitedResponse, retry);
+		return;
+	}
+	if (requiresKeycloakAuth(json as RateLimitedResponse)) {
+		throw new SovrahiRequiresKeycloakError();
+	}
+}
+
+let authPromptOpen = false;
+
+export type SovrahiAuthContext = {
+	guildId?: string;
+	channelId?: string;
+	messageId?: string;
+};
+
+export function promptSovrahiAuth(context?: SovrahiAuthContext): void {
+	if (authPromptOpen) return;
+	authPromptOpen = true;
+
+	const path = parseChannelPath();
+	const guildId = context?.guildId || path.guildId;
+	const channelId = context?.channelId || path.channelId;
+	const messageId = context?.messageId || path.messageId;
+
+	showAuthRequiredDialog(
+		() => {
+			authPromptOpen = false;
+			void SovrahiService.startAuthRedirect(guildId, channelId, messageId);
+		},
+		() => {
+			authPromptOpen = false;
+		},
+	);
 }
 
 export function isExternalFeaturesEnabled(): boolean {
@@ -469,11 +602,163 @@ export class SovrahiService {
 		return messageId;
 	}
 
+	static async translateText(text: string, targetLang: string): Promise<TranslateResult> {
+		return this.requestTranslation(
+			`__text__:${Date.now()}`,
+			{text, targetLang},
+			undefined,
+			undefined,
+			true,
+		);
+	}
+
+	static buildTranslationBatches(
+		items: BatchTranslateItem[],
+		{maxCount = 5, maxChars = 3000} = {},
+	): BatchTranslateItem[][] {
+		const batches: BatchTranslateItem[][] = [];
+		let current: BatchTranslateItem[] = [];
+		let charCount = 0;
+
+		for (const item of items) {
+			if (item.text.length > maxChars) {
+				if (current.length) {
+					batches.push(current);
+					current = [];
+					charCount = 0;
+				}
+				batches.push([item]);
+				continue;
+			}
+			if (
+				current.length >= maxCount ||
+				(charCount > 0 && charCount + item.text.length > maxChars)
+			) {
+				batches.push(current);
+				current = [];
+				charCount = 0;
+			}
+			current.push(item);
+			charCount += item.text.length;
+		}
+		if (current.length) batches.push(current);
+		return batches;
+	}
+
+	static async translateMessagesBatch(
+		items: BatchTranslateItem[],
+		targetLang: string,
+	): Promise<BatchTranslateResultItem[]> {
+		if (!items.length) return [];
+
+		const cached: BatchTranslateResultItem[] = [];
+		const toFetch: BatchTranslateItem[] = [];
+		for (const item of items) {
+			const hit = this.getCachedTranslation(
+				item.messageId,
+				targetLang,
+				item.sourceText ?? item.text,
+			);
+			if (hit) {
+				cached.push({messageId: item.messageId, text: hit.text, sourceLang: hit.sourceLang});
+			} else {
+				toFetch.push(item);
+			}
+		}
+		if (!toFetch.length) return cached;
+
+		let token: string | undefined;
+		if (this.hasValidToken()) {
+			try {
+				token = await this.refreshTokenIfNeeded();
+			} catch {
+				clearAuth();
+			}
+		}
+
+		const fetched = await this.requestBatchTranslation(toFetch, targetLang, token);
+		return [...cached, ...fetched];
+	}
+
+	private static async requestBatchTranslation(
+		items: BatchTranslateItem[],
+		targetLang: string,
+		token?: string,
+		capToken?: string,
+	): Promise<BatchTranslateResultItem[]> {
+		const headers: Record<string, string> = {
+			"Content-Type": "application/json",
+		};
+		if (token) {
+			headers.Authorization = `Bearer ${token}`;
+		}
+		if (capToken) {
+			headers["X-Cap-Token"] = capToken;
+		}
+
+		const texts = items.map((item) => item.text);
+		const response = await fetch(TRANSLATE_ENDPOINT, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({
+				q: texts,
+				source: "auto",
+				target: targetLang,
+				format: "text",
+			}),
+		});
+
+		if (!response.ok) {
+			const json = (await response.json().catch(() => ({}))) as RateLimitedResponse & AbuseResponse;
+			if (json.error === "rate_limited") {
+				return (await handleRateLimitedResponse(json, (newCapToken) =>
+					this.requestBatchTranslation(items, targetLang, token, newCapToken),
+				)) as BatchTranslateResultItem[];
+			}
+			if (response.status === 401) {
+				if (token) {
+					clearAuth();
+					return this.requestBatchTranslation(items, targetLang, undefined, capToken);
+				}
+				throw new SovrahiRequiresKeycloakError();
+			}
+			if (requiresKeycloakAuth(json)) {
+				throw new SovrahiRequiresKeycloakError();
+			}
+			throw new Error(json.message || I18n.translation.errorUnexpected());
+		}
+
+		const json = (await response.json()) as Record<string, unknown>;
+		await handleTranslationResponseJson(json, (newCapToken) =>
+			this.requestBatchTranslation(items, targetLang, token, newCapToken),
+		);
+		const parsed = parseBatchTranslateResponse(
+			json,
+			items.length,
+			items.map((item) => item.text),
+		);
+		if (parsed.length !== items.length) {
+			throw new Error(I18n.translation.errorUnexpected());
+		}
+
+		const results: BatchTranslateResultItem[] = [];
+		for (let i = 0; i < items.length; i++) {
+			const item = items[i];
+			const translation = parsed[i];
+			results.push({
+				messageId: item.messageId,
+				text: translation.text,
+				sourceLang: translation.sourceLang,
+			});
+		}
+		return results;
+	}
+
 	static async translateMessage(
 		messageId: string,
 		request: TranslateRequest,
 	): Promise<TranslateResult> {
-		const cached = this.getCachedTranslation(messageId, request.targetLang);
+		const cached = this.getCachedTranslation(messageId, request.targetLang, request.sourceText);
 		if (cached) {
 			return {text: cached.text, sourceLang: cached.sourceLang, fromCache: true};
 		}
@@ -495,6 +780,7 @@ export class SovrahiService {
 		request: TranslateRequest,
 		token?: string,
 		capToken?: string,
+		skipCache = false,
 	): Promise<TranslateResult> {
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
@@ -517,188 +803,45 @@ export class SovrahiService {
 			}),
 		});
 
-		if (response.status === 429) {
-			const json = (await response.json().catch(() => ({}))) as RateLimitedResponse;
-			if (json.error === "rate_limited" && json.cap_api_endpoint) {
-				const solvedCapToken = await this.solveCapChallenge(json.cap_api_endpoint);
-				return this.requestTranslation(messageId, request, token, solvedCapToken);
-			}
-			throw new Error(I18n.translation.errorRateLimited());
-		}
-
-		if (response.status === 403) {
-			const json = (await response.json().catch(() => ({}))) as AbuseResponse;
-			if (json.requires_keycloak) {
-				throw new SovrahiRequiresKeycloakError();
-			}
-			throw new Error(json.message || I18n.translation.errorUnexpected());
-		}
-
 		if (!response.ok) {
-			const json = (await response.json().catch(() => ({}))) as {message?: string};
+			const json = (await response.json().catch(() => ({}))) as RateLimitedResponse & AbuseResponse;
+			if (json.error === "rate_limited") {
+				return (await handleRateLimitedResponse(json, (newCapToken) =>
+					this.requestTranslation(messageId, request, token, newCapToken, skipCache),
+				)) as TranslateResult;
+			}
 			if (response.status === 401) {
 				if (token) {
 					clearAuth();
-					return this.requestTranslation(messageId, request, undefined, capToken);
+					return this.requestTranslation(messageId, request, undefined, capToken, skipCache);
 				}
+				throw new SovrahiRequiresKeycloakError();
+			}
+			if (requiresKeycloakAuth(json)) {
 				throw new SovrahiRequiresKeycloakError();
 			}
 			throw new Error(json.message || I18n.translation.errorUnexpected());
 		}
 
 		const json = (await response.json()) as Record<string, unknown>;
-		const parsed = parseTranslateResponse(json);
-		this.cacheTranslation(
-			messageId,
-			request.targetLang,
-			parsed.text,
-			parsed.sourceLang,
-			request.text,
+		await handleTranslationResponseJson(json, (newCapToken) =>
+			this.requestTranslation(messageId, request, token, newCapToken, skipCache),
 		);
-		return {...parsed, fromCache: false};
-	}
-
-	private static loadScript(url: string): Promise<void> {
-		return new Promise((resolve, reject) => {
-			const existing = document.querySelector(`script[data-sovrahi-cap="${url}"]`);
-			if (existing) {
-				resolve();
-				return;
-			}
-			const script = document.createElement("script");
-			script.src = url;
-			script.async = true;
-			script.dataset.sovrahiCap = url;
-			script.onload = () => resolve();
-			script.onerror = () => reject(new Error(I18n.translation.capError()));
-			document.head.append(script);
-		});
-	}
-
-	private static getCapApi(): CapGlobal | undefined {
-		return window.SovrahiCap || window.Cap;
-	}
-
-	static async solveCapChallenge(capApiEndpoint: string): Promise<string> {
-		const dialog = new Dialog(I18n.translation.capVerificationNeeded(), {noSubmit: true});
-		const container = document.createElement("div");
-		container.classList.add("sovrahiCapContainer");
-
-		const status = document.createElement("p");
-		status.textContent = I18n.translation.capVerificationNeeded();
-		container.append(status);
-
-		dialog.options.addHTMLArea(container);
-		const center = dialog.show(false);
-		center.classList.add("sovrahiCapDialog");
-		const background = center.parentElement as HTMLDivElement | null;
-
-		try {
-			let challenge: CapChallengeResponse | undefined;
-			try {
-				const challengeResponse = await fetch(capApiEndpoint, {
-					method: "GET",
-					headers: {Accept: "application/json"},
-				});
-				if (challengeResponse.ok) {
-					challenge = (await challengeResponse.json()) as CapChallengeResponse;
-					if (challenge.token) {
-						dialog.hide();
-						return challenge.token;
-					}
-				}
-			} catch {
-				// fall back
-			}
-
-			const capApi = this.getCapApi();
-			if (capApi?.solve) {
-				const token = await capApi.solve(capApiEndpoint);
-				dialog.hide();
-				return token;
-			}
-
-			const widgetUrl = challenge?.widget_url;
-			const scriptUrl =
-				challenge?.script_url ||
-				(capApiEndpoint.endsWith(".js")
-					? capApiEndpoint
-					: `${capApiEndpoint.replace(/\/$/, "")}/widget.js`);
-
-			if (widgetUrl) {
-				const iframe = document.createElement("iframe");
-				iframe.src = widgetUrl;
-				iframe.classList.add("sovrahiCapFrame");
-				container.append(iframe);
-			} else {
-				await this.loadScript(scriptUrl).catch(() => undefined);
-			}
-
-			const token = await new Promise<string>((resolve, reject) => {
-				const timeout = window.setTimeout(() => {
-					cleanup();
-					reject(new Error(I18n.translation.capTimeout()));
-				}, 120_000);
-
-				const onMessage = (event: MessageEvent) => {
-					const data = event.data as
-						| {type?: string; token?: string; cap_token?: string; capToken?: string}
-						| string;
-					const payload = typeof data === "string" ? {token: data} : data;
-					const capToken = payload.capToken || payload.cap_token || payload.token;
-					if (!capToken) return;
-					if (
-						payload.type &&
-						payload.type !== "sovrahi-cap-token" &&
-						payload.type !== "cap-token"
-					) {
-						return;
-					}
-					cleanup();
-					resolve(capToken);
-				};
-
-				const cleanup = () => {
-					window.clearTimeout(timeout);
-					window.removeEventListener("message", onMessage);
-				};
-
-				window.addEventListener("message", onMessage);
-
-				const cap = this.getCapApi();
-				if (cap?.render) {
-					cap.render(container, {
-						siteKey: challenge?.site_key,
-						challenge: challenge?.challenge,
-						endpoint: capApiEndpoint,
-						onSuccess: (capToken) => {
-							cleanup();
-							resolve(capToken);
-						},
-						onError: (error) => {
-							cleanup();
-							reject(error);
-						},
-					});
-				}
-			});
-
-			dialog.hide();
-			return token;
-		} catch (error) {
-			dialog.hide();
-			if (background) {
-				background.onclick = null;
-			}
-			if (error instanceof Error) {
-				throw error;
-			}
-			throw new Error(I18n.translation.capError());
+		const parsed = parseTranslateResponse(json);
+		if (!skipCache) {
+			this.cacheTranslation(
+				messageId,
+				request.targetLang,
+				parsed.text,
+				parsed.sourceLang,
+				request.sourceText ?? request.text,
+			);
 		}
+		return {...parsed, fromCache: false};
 	}
 }
 
-export function showAuthRequiredDialog(onConnect: () => void): void {
+export function showAuthRequiredDialog(onConnect: () => void, onCancel?: () => void): void {
 	const dialog = new Dialog(I18n.translation.authRequiredTitle(), {noSubmit: true});
 	const body = document.createElement("p");
 	body.style.whiteSpace = "pre-line";
@@ -710,7 +853,13 @@ export function showAuthRequiredDialog(onConnect: () => void): void {
 	});
 	dialog.options.addButtonInput("", I18n.translation.cancel(), () => {
 		dialog.hide();
+		onCancel?.();
 	});
 	const center = dialog.show(false);
 	center.classList.add("sovrahiAuthDialog");
+	const background = center.parentElement;
+	if (background) {
+		background.classList.remove("solidBackground");
+		background.classList.add("changelogBackdrop");
+	}
 }

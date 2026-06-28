@@ -24,6 +24,8 @@ import {
 	sendOpenpanelAnalytics,
 } from "./utils/openpanel.js";
 import {showChangelogPopup} from "./changelog.js";
+import {AutoTranslationService} from "./services/autoTranslation.js";
+import {TranslationService} from "./services/translation.js";
 import {SovrahiService} from "./services/sovrahi.js";
 
 if (window.location.pathname === "/app") {
@@ -35,6 +37,7 @@ export interface CustomHTMLDivElement extends HTMLDivElement {
 if (window.location.pathname.startsWith("/channels")) {
 	let templateID = new URLSearchParams(window.location.search).get("templateID");
 	await I18n.done;
+	await AutoTranslationService.refreshTargetLang();
 	await SovrahiService.handleAuthCallback();
 	let pendingTranslateMessageId = SovrahiService.consumePendingTranslateMessageId();
 	Localuser.loadFont();
@@ -724,6 +727,33 @@ if (window.location.pathname.startsWith("/channels")) {
 		e.stopImmediatePropagation();
 		thisUser.makeGifBox(gifTB.getBoundingClientRect());
 	};
+
+	const translateTB = document.getElementById("translateTB") as HTMLElement;
+	translateTB.onmousedown = (e) => e.stopImmediatePropagation();
+	translateTB.onclick = (e) => {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		void TranslationService.translateTypingBox(thisUser.channelfocus);
+	};
+
+	const autoTranslateBtn = document.getElementById("autoTranslateBtn") as HTMLElement;
+	autoTranslateBtn.onmousedown = (e) => e.stopImmediatePropagation();
+	AutoTranslationService.bindButton(autoTranslateBtn, () => thisUser.channelfocus);
+	autoTranslateBtn.onclick = (e) => {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		if (AutoTranslationService.isBlocked()) {
+			AutoTranslationService.promptReconnect();
+			return;
+		}
+		void AutoTranslationService.toggle();
+	};
+	const autoTranslateDiv = document.getElementById("autoTranslateDiv") || autoTranslateBtn;
+	new Hover(() =>
+		AutoTranslationService.isBlocked()
+			? I18n.translation.autoTranslateBlocked()
+			: I18n.translation.autoTranslate(),
+	).addEvent(autoTranslateDiv);
 
 	const stickerTB = document.getElementById("stickerTB") as HTMLElement;
 	stickerTB.onmousedown = (e) => e.stopImmediatePropagation();

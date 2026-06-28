@@ -51,7 +51,10 @@ export class NotificationSoundManager {
 
 	static async preload(prefs?: UserPreferences) {
 		const sounds = prefs ? this.getAvailableSounds(prefs) : BUILTIN_NOTIFICATION_SOUNDS;
-        console.log("Preloading notification sounds:", sounds.map(s => s.name));
+		console.log(
+			"Preloading notification sounds:",
+			sounds.map((s) => s.name),
+		);
 		await Promise.all(
 			sounds.flatMap((sound) => {
 				switch (sound.type) {

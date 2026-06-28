@@ -38,6 +38,12 @@ import {Bot} from "./bot.js";
 import {Role} from "./role.js";
 import {VoiceFactory, voiceStatusStr} from "./voice.js";
 import {I18n, langmap} from "./i18n.js";
+import {AutoTranslationService} from "./services/autoTranslation.js";
+import {
+	getTranslateLanguages,
+	getTranslationLang,
+	setTranslationLang,
+} from "./services/translation.js";
 import {Emoji} from "./emoji.js";
 import {BUILTIN_NOTIFICATION_SOUNDS, NotificationSoundManager} from "./utils/notificationSound.js";
 import {Message} from "./message.js";
@@ -3632,6 +3638,30 @@ class Localuser {
 					[...langmap.values()],
 					{defaultIndex: I18n.options().indexOf(I18n.lang)},
 				);
+
+				void getTranslateLanguages().then((languages) => {
+					const names = languages.map((lang) => lang.name);
+					const saveTranslationLang = (index: number) => {
+						const code = languages[index]?.code;
+						if (!code) return;
+						void setTranslationLang(code).then(() => {
+							void AutoTranslationService.refreshTargetLang();
+						});
+					};
+					void getTranslationLang().then((currentLang) => {
+						const foundIndex = currentLang
+							? languages.findIndex((lang) => lang.code === currentLang)
+							: -1;
+						const defaultIndex = foundIndex === -1 ? 0 : foundIndex;
+						const select = security.addSelect(
+							I18n.translation.translationLanguage(),
+							saveTranslationLang,
+							names,
+							{defaultIndex},
+						);
+						select.watchForChange(saveTranslationLang);
+					});
+				});
 
 				{
 					security.addButtonInput("", I18n.logout.logout(), async () => {

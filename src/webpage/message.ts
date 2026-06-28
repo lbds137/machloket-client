@@ -28,14 +28,15 @@ import {Components} from "./interactions/compontents.js";
 import {ImagesDisplay} from "./disimg";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
+import {AutoTranslationService} from "./services/autoTranslation.js";
 import {
-	hasTranslationConsent,
-	isExternalFeaturesEnabled,
-	setTranslationConsent,
-	showAuthRequiredDialog,
-	SovrahiRequiresKeycloakError,
-	SovrahiService,
-} from "./services/sovrahi.js";
+	getActiveTranslationLang,
+	handleTranslationError,
+	resolveTranslationTargetLang,
+	showConsentDialog,
+	TranslationService,
+} from "./services/translation.js";
+import {hasTranslationConsent, SovrahiService} from "./services/sovrahi.js";
 
 function decodeBase64Safe(value: string): string | undefined {
 	try {
@@ -136,6 +137,7 @@ class Message extends SnowFlake {
 	translation?: {
 		text: string;
 		sourceLang: string;
+		targetLang: string;
 		hidden: boolean;
 		loading: boolean;
 	};
@@ -573,11 +575,23 @@ class Message extends SnowFlake {
 		return this.channel.hasPermission("MANAGE_MESSAGES") || this.author === this.localuser.user;
 	}
 	canTranslate() {
-		if (!isExternalFeaturesEnabled()) return false;
+		if (!TranslationService.canTranslateContent(this.content?.rawString)) return false;
 		if (this.ephemeral) return false;
-		if (!this.content?.rawString?.trim()) return false;
 		if (this.translation?.loading) return false;
 		if (this.translation && !this.translation.hidden) return false;
+		return true;
+	}
+	canAutoTranslate(targetLang: string) {
+		if (!TranslationService.canTranslateContent(this.content?.rawString)) return false;
+		if (this.ephemeral) return false;
+		if (this.translation?.loading) return false;
+		if (
+			this.translation &&
+			!this.translation.hidden &&
+			this.translation.targetLang === targetLang
+		) {
+			return false;
+		}
 		return true;
 	}
 	showTranslateConfirmation() {
@@ -585,68 +599,84 @@ class Message extends SnowFlake {
 			void this.performTranslate();
 			return;
 		}
-		const dialog = new Dialog(I18n.translation.confirmTitle(), {noSubmit: true});
-		const body = document.createElement("p");
-		body.style.whiteSpace = "pre-line";
-		body.textContent = I18n.translation.confirmText();
-		dialog.options.addHTMLArea(body);
-		dialog.options.addButtonInput("", I18n.translation.agree(), () => {
-			setTranslationConsent();
-			dialog.hide();
-			void this.performTranslate();
+		void showConsentDialog().then((consented) => {
+			if (consented) void this.performTranslate();
 		});
-		dialog.options.addButtonInput("", I18n.translation.cancel(), () => {
-			dialog.hide();
-		});
-		dialog.show();
 	}
-	async performTranslate() {
-		if (!isExternalFeaturesEnabled() || !this.content?.rawString?.trim() || this.ephemeral) {
-			return;
-		}
-
+	markTranslationLoading(targetLang: string) {
 		this.translation = {
-			text: this.translation?.text || "",
-			sourceLang: this.translation?.sourceLang || "auto",
+			text: "",
+			sourceLang: "auto",
+			targetLang,
 			hidden: false,
 			loading: true,
 		};
 		this.generateMessage();
+	}
 
-		try {
-			const result = await SovrahiService.translateMessage(this.id, {
-				text: this.content.rawString,
-				targetLang: I18n.lang,
-			});
-
-			this.translation = {
-				text: result.text,
-				sourceLang: result.sourceLang,
-				hidden: false,
-				loading: false,
-			};
-		} catch (error) {
+	clearTranslationLoading() {
+		if (this.translation?.loading) {
 			this.translation = undefined;
-			if (error instanceof SovrahiRequiresKeycloakError) {
-				showAuthRequiredDialog(() => {
-					void SovrahiService.startAuthRedirect(this.guild.id, this.channel.id, this.id);
-				});
-				this.generateMessage();
-				return;
-			}
-			const message = error instanceof Error ? error.message : I18n.translation.errorUnexpected();
-			alert(message);
+			this.generateMessage();
 		}
+	}
 
+	applyTranslation(text: string, sourceLang: string, targetLang: string) {
+		this.translation = {
+			text,
+			sourceLang,
+			targetLang,
+			hidden: false,
+			loading: false,
+		};
 		this.generateMessage();
 	}
-	loadCachedTranslation() {
+
+	hideTranslation(): void {
+		if (!this.translation || this.translation.hidden) return;
+		this.translation.hidden = true;
+		SovrahiService.setTranslationHidden(this.id, this.translation.targetLang, true);
+		this.generateMessage();
+	}
+
+	async performTranslate() {
+		if (!TranslationService.canTranslateContent(this.content?.rawString) || this.ephemeral) {
+			return;
+		}
+
+		const targetLang = await resolveTranslationTargetLang();
+		if (!targetLang) return;
+
+		const raw = this.content.rawString;
+		const needsLoading = !TranslationService.isCodeOnly(raw);
+		const cached = SovrahiService.getCachedTranslation(this.id, targetLang, raw);
+
+		if (needsLoading && !cached) {
+			this.markTranslationLoading(targetLang);
+		}
+
+		try {
+			const outcome = await TranslationService.translateContent(raw, targetLang, {
+				cacheId: this.id,
+			});
+			this.applyTranslation(outcome.text, outcome.sourceLang, targetLang);
+		} catch (error) {
+			this.clearTranslationLoading();
+			handleTranslationError(error, {
+				channel: this.channel,
+				messageId: this.id,
+				onAuthRequired: () => AutoTranslationService.onAuthRequired(this.channel, this.id),
+			});
+		}
+	}
+	loadCachedTranslation(targetLang = I18n.lang) {
 		const sourceText = this.content?.rawString || "";
-		const cached = SovrahiService.getCachedTranslation(this.id, I18n.lang, sourceText);
+		const cached = SovrahiService.getCachedTranslation(this.id, targetLang, sourceText);
 		if (!cached || this.translation) return;
 		this.translation = {
 			text: cached.text,
 			sourceLang: cached.sourceLang,
+			targetLang,
 			hidden: cached.hidden ?? false,
 			loading: false,
 		};
@@ -690,10 +720,7 @@ class Message extends SnowFlake {
 			hide.onclick = (event) => {
 				event.preventDefault();
 				event.stopImmediatePropagation();
-				if (!this.translation) return;
-				this.translation.hidden = true;
-				SovrahiService.setTranslationHidden(this.id, I18n.lang, true);
-				this.generateMessage();
+				this.hideTranslation();
 			};
 			header.append(hide);
 		}
@@ -1341,7 +1368,12 @@ class Message extends SnowFlake {
 				}
 				messagedwrap.appendChild(embeds);
 			}
-			this.loadCachedTranslation();
+			const targetLang = AutoTranslationService.isEnabled()
+				? AutoTranslationService.getTargetLang()
+				: getActiveTranslationLang();
+			if (targetLang) {
+				this.loadCachedTranslation(targetLang);
+			}
 			this.renderTranslation(messagedwrap);
 			//
 		} else if (this.type === 7) {
@@ -1830,7 +1862,7 @@ class Message extends SnowFlake {
 						event.stopImmediatePropagation();
 						if (!this.translation) return;
 						this.translation.hidden = false;
-						SovrahiService.setTranslationHidden(this.id, I18n.lang, false);
+						SovrahiService.setTranslationHidden(this.id, this.translation.targetLang, false);
 						this.generateMessage();
 					};
 				}

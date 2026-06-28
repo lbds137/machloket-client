@@ -1983,7 +1983,8 @@ textarea {
 	transform: scale(0.9);
 }
 
-#emojiTB {
+#emojiTB,
+#translateTB {
 	flex-shrink: 0;
 	width: 0.2in;
 	height: 0.2in;
@@ -2008,8 +2009,75 @@ textarea {
 	transition: transform 0.2s ease;
 }
 
-#gifTB:hover {
+#gifTB:hover,
+#translateTB:hover {
 	transform: scale(0.8);
+}
+
+#translationStatusDiv {
+	display: flex;
+	align-items: center;
+	max-width: 180px;
+	padding: 0 6px;
+	font-size: 0.8rem;
+	color: var(--secondary-text);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#translationStatusDiv.verifying {
+	color: var(--text);
+}
+
+#translationStatusLabel {
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+#autoTranslateDiv {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	padding: 0 4px;
+}
+
+#autoTranslateBtn {
+	width: 20px;
+	height: 20px;
+	opacity: 0.7;
+	transition:
+		opacity 0.2s ease,
+		background-color 0.2s ease;
+}
+
+#autoTranslateBtn:hover {
+	opacity: 1;
+}
+
+#autoTranslateBtn.active {
+	opacity: 1;
+	background-color: var(--accent-color, #5865f2);
+}
+
+#autoTranslateBtn.blocked {
+	opacity: 1;
+	background-color: var(--red, #ed4245);
+}
+
+#autoTranslateBtn.verifying {
+	opacity: 1;
+	animation: cap-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes cap-pulse {
+	0%,
+	100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
+	}
 }
 
 .selectarrow {
@@ -3603,15 +3671,8 @@ span.instanceStatus {
 	-webkit-backdrop-filter: none;
 }
 
-.sovrahiCapContainer {
-	min-width: 280px;
-	min-height: 120px;
-}
-
-.sovrahiCapFrame {
-	width: 100%;
-	min-height: 120px;
-	border: none;
+.sovrahiAuthDialog {
+	box-shadow: 0 8px 32px color-mix(in srgb, var(--black) 25%, transparent);
 }
 
 .messageButtons button:hover,

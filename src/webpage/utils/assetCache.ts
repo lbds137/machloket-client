@@ -16,7 +16,9 @@ export async function fetchFermoVersion(): Promise<string> {
 
 export function applyStylesheetCacheBust(version: string): void {
 	const shortVersion = version.slice(0, 12);
-	for (const link of Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'))) {
+	for (const link of Array.from(
+		document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]'),
+	)) {
 		const href = link.getAttribute("href");
 		if (!href) continue;
 		const url = new URL(href, window.location.href);

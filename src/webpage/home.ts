@@ -22,7 +22,6 @@ NotificationSoundManager.preload().catch((e) => {
 	console.error("Failed to preload notification sounds:", e);
 });
 
-
 async function loadInstanceUptime(instanceId: string) {
 	const response = await fetch(
 		`https://sbar.top/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,

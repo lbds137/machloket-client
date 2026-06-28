@@ -24,7 +24,6 @@ class File {
 		this.height = fileJSON.height;
 		this.url = fileJSON.url;
 		this.proxy_url = fileJSON.proxy_url;
-		this.content_type = fileJSON.content_type;
 		this.size = fileJSON.size;
 	}
 	getHTML(temp: boolean = false, fullScreen = false, OSpoiler = false): HTMLElement {

@@ -28,6 +28,8 @@ export const ThemeOptionValues = [
 export class UserPreferences {
 	showBlogUpdates?: boolean;
 	locale: string = navigator.language || "en";
+	translationLang?: string;
+	typingTranslationLang?: string;
 
 	// render settings
 	animateIcons: AnimateTristateValue = AnimateTristateValue.OnlyOnHover;
