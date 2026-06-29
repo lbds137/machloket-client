@@ -2018,7 +2018,6 @@ textarea {
 	display: flex;
 	align-items: center;
 	max-width: 180px;
-	padding: 0 6px;
 	font-size: 0.8rem;
 	color: var(--secondary-text);
 	white-space: nowrap;
@@ -2028,6 +2027,7 @@ textarea {
 
 #translationStatusDiv.verifying {
 	color: var(--text);
+	padding: 0 6px;
 }
 
 #translationStatusLabel {
