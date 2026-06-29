@@ -259,9 +259,7 @@ function parseBatchTranslateResponse(
 			}
 			return ordered as Array<{text: string; sourceLang: string}>;
 		}
-		return translations.map((entry, index) =>
-			parseTranslationEntry(entry, sourceTexts?.[index]),
-		);
+		return translations.map((entry, index) => parseTranslationEntry(entry, sourceTexts?.[index]));
 	}
 
 	const directText = json.translatedText;

@@ -10,7 +10,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Float, FormError} from "./settings.js";
 import {Discovery} from "./discovery.js";
-import {createImg} from "./utils/utils.js";
+import {createImg, mobile} from "./utils/utils.js";
 import {CDNParams} from "./utils/cdnParams.js";
 
 class Direct extends Guild {
@@ -141,6 +141,7 @@ class Direct extends Guild {
 		this.localuser.getSidePannel();
 
 		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
+		Channel.clearScrollWrapLeaks();
 		for (const thing of Array.from(messages.getElementsByClassName("messagecontainer"))) {
 			thing.remove();
 		}
@@ -172,146 +173,14 @@ class Direct extends Guild {
 			div.append(icons);
 			return div;
 		}
-		{
-			const online = document.createElement("button");
-			online.textContent = I18n.friends.online();
-			channelTopic.append(online);
-			const genOnline = () => {
-				this.localuser.relationshipsUpdate = genOnline;
-				checkVoid();
-				container.innerHTML = "";
-				container.append(I18n.friends["online:"]());
-				for (const user of this.localuser.inrelation) {
-					if (user.relationshipType === 1 && user.online) {
-						const buttonc = document.createElement("div");
-						const button1 = document.createElement("span");
-						button1.classList.add("svg-frmessage", "svgicon");
-						buttonc.append(button1);
-						buttonc.classList.add("friendlyButton");
-						buttonc.onclick = (e) => {
-							e.stopImmediatePropagation();
-							user.opendm();
-						};
-						container.append(genuserstrip(user, buttonc));
-					}
-				}
-			};
-			online.onclick = genOnline;
-			genOnline();
-		}
-		{
-			const all = document.createElement("button");
-			all.textContent = I18n.friends.all();
-			const genAll = () => {
-				this.localuser.relationshipsUpdate = genAll;
-				checkVoid();
-				container.innerHTML = "";
-				container.append(I18n.friends["all:"]());
-				for (const user of this.localuser.inrelation) {
-					if (user.relationshipType === 1) {
-						const buttonc = document.createElement("div");
-						const button1 = document.createElement("span");
-						button1.classList.add("svg-frmessage", "svgicon");
-						buttonc.append(button1);
-						buttonc.classList.add("friendlyButton");
-						buttonc.onclick = (e) => {
-							e.stopImmediatePropagation();
-							user.opendm();
-						};
-						container.append(genuserstrip(user, buttonc));
-					}
-				}
-			};
-			all.onclick = genAll;
-			channelTopic.append(all);
-		}
-		{
-			const pending = document.createElement("button");
-			pending.textContent = I18n.friends.pending();
-			const genPending = () => {
-				this.localuser.relationshipsUpdate = genPending;
-				checkVoid();
-				container.innerHTML = "";
-				container.append(I18n.friends["pending:"]());
-				for (const user of this.localuser.inrelation) {
-					if (user.relationshipType === 3 || user.relationshipType === 4) {
-						const buttons = document.createElement("div");
-						buttons.classList.add("flexltr");
-						const buttonc = document.createElement("div");
-						const button1 = document.createElement("span");
-						button1.classList.add("svgicon", "svg-x");
-						if (user.relationshipType === 3) {
-							const buttonc = document.createElement("div");
-							const button2 = document.createElement("span");
-							button2.classList.add("svgicon", "svg-x");
-							button2.classList.add("svg-addfriend");
-							buttonc.append(button2);
-							buttonc.classList.add("friendlyButton");
-							buttonc.append(button2);
-							buttons.append(buttonc);
-							buttonc.onclick = (e) => {
-								e.stopImmediatePropagation();
-								user.changeRelationship(1);
-								outerDiv.remove();
-							};
-						}
-						buttonc.append(button1);
-						buttonc.classList.add("friendlyButton");
-						buttonc.onclick = (e) => {
-							e.stopImmediatePropagation();
-							user.changeRelationship(0);
-							outerDiv.remove();
-						};
-						buttons.append(buttonc);
-						const outerDiv = genuserstrip(user, buttons);
-						container.append(outerDiv);
-					}
-				}
-			};
-			pending.onclick = genPending;
-			channelTopic.append(pending);
-		}
-		{
-			const blocked = document.createElement("button");
-			blocked.textContent = I18n.friends.blocked();
-
-			const genBlocked = () => {
-				this.localuser.relationshipsUpdate = genBlocked;
-				checkVoid();
-				container.innerHTML = "";
-				container.append(I18n.friends.blockedusers());
-				for (const user of this.localuser.inrelation) {
-					if (user.relationshipType === 2) {
-						const buttonc = document.createElement("div");
-						const button1 = document.createElement("span");
-						button1.classList.add("svg-x", "svgicon");
-						buttonc.append(button1);
-						buttonc.classList.add("friendlyButton");
-						buttonc.onclick = (e) => {
-							user.changeRelationship(0);
-							e.stopImmediatePropagation();
-							outerDiv.remove();
-						};
-						const outerDiv = genuserstrip(user, buttonc);
-						container.append(outerDiv);
-					}
-				}
-			};
-			blocked.onclick = genBlocked;
-			channelTopic.append(blocked);
-		}
-		{
-			const add = document.createElement("button");
-			add.textContent = I18n.friends.addfriend();
-			add.onclick = () => {
-				this.localuser.relationshipsUpdate = () => {};
-				container.innerHTML = "";
+		const openAddFriend = () => {
+			this.localuser.relationshipsUpdate = () => {};
+			container.innerHTML = "";
+			const mount = (parent: HTMLElement) => {
 				const float = new Float("");
-				const options = float.options;
-				const form = options.addForm(
+				const form = float.options.addForm(
 					"",
 					(e: any) => {
-						console.log(e);
 						if (e.code === 404) {
 							throw new FormError(text, I18n.friends.notfound());
 						} else if (e.code === 400) {
@@ -338,9 +207,160 @@ class Direct extends Guild {
 						throw new FormError(text, I18n.friends.discnotfound());
 					}
 				});
-				container.append(float.generateHTML());
+				parent.append(float.generateHTML());
 			};
-			channelTopic.append(add);
+			if (mobile) {
+				const d = new Dialog(I18n.friends.addfriend());
+				mount(d.show());
+			} else {
+				mount(container);
+			}
+		};
+
+		const genOnline = () => {
+			this.localuser.relationshipsUpdate = genOnline;
+			checkVoid();
+			container.innerHTML = "";
+			container.append(I18n.friends["online:"]());
+			for (const user of this.localuser.inrelation) {
+				if (user.relationshipType === 1 && user.online) {
+					const buttonc = document.createElement("div");
+					const button1 = document.createElement("span");
+					button1.classList.add("svg-frmessage", "svgicon");
+					buttonc.append(button1);
+					buttonc.classList.add("friendlyButton");
+					buttonc.onclick = (e) => {
+						e.stopImmediatePropagation();
+						user.opendm();
+					};
+					container.append(genuserstrip(user, buttonc));
+				}
+			}
+		};
+		const genAll = () => {
+			this.localuser.relationshipsUpdate = genAll;
+			checkVoid();
+			container.innerHTML = "";
+			container.append(I18n.friends["all:"]());
+			for (const user of this.localuser.inrelation) {
+				if (user.relationshipType === 1) {
+					const buttonc = document.createElement("div");
+					const button1 = document.createElement("span");
+					button1.classList.add("svg-frmessage", "svgicon");
+					buttonc.append(button1);
+					buttonc.classList.add("friendlyButton");
+					buttonc.onclick = (e) => {
+						e.stopImmediatePropagation();
+						user.opendm();
+					};
+					container.append(genuserstrip(user, buttonc));
+				}
+			}
+		};
+		const genPending = () => {
+			this.localuser.relationshipsUpdate = genPending;
+			checkVoid();
+			container.innerHTML = "";
+			container.append(I18n.friends["pending:"]());
+			for (const user of this.localuser.inrelation) {
+				if (user.relationshipType === 3 || user.relationshipType === 4) {
+					const buttons = document.createElement("div");
+					buttons.classList.add("flexltr");
+					const buttonc = document.createElement("div");
+					const button1 = document.createElement("span");
+					button1.classList.add("svgicon", "svg-x");
+					if (user.relationshipType === 3) {
+						const buttonc = document.createElement("div");
+						const button2 = document.createElement("span");
+						button2.classList.add("svgicon", "svg-x");
+						button2.classList.add("svg-addfriend");
+						buttonc.append(button2);
+						buttonc.classList.add("friendlyButton");
+						buttonc.append(button2);
+						buttons.append(buttonc);
+						buttonc.onclick = (e) => {
+							e.stopImmediatePropagation();
+							user.changeRelationship(1);
+							outerDiv.remove();
+						};
+					}
+					buttonc.append(button1);
+					buttonc.classList.add("friendlyButton");
+					buttonc.onclick = (e) => {
+						e.stopImmediatePropagation();
+						user.changeRelationship(0);
+						outerDiv.remove();
+					};
+					buttons.append(buttonc);
+					const outerDiv = genuserstrip(user, buttons);
+					container.append(outerDiv);
+				}
+			}
+		};
+		const genBlocked = () => {
+			this.localuser.relationshipsUpdate = genBlocked;
+			checkVoid();
+			container.innerHTML = "";
+			container.append(I18n.friends.blockedusers());
+			for (const user of this.localuser.inrelation) {
+				if (user.relationshipType === 2) {
+					const buttonc = document.createElement("div");
+					const button1 = document.createElement("span");
+					button1.classList.add("svg-x", "svgicon");
+					buttonc.append(button1);
+					buttonc.classList.add("friendlyButton");
+					buttonc.onclick = (e) => {
+						user.changeRelationship(0);
+						e.stopImmediatePropagation();
+						outerDiv.remove();
+					};
+					const outerDiv = genuserstrip(user, buttonc);
+					container.append(outerDiv);
+				}
+			}
+		};
+
+		const friendTabs = [
+			{label: I18n.friends.online(), activate: genOnline},
+			{label: I18n.friends.all(), activate: genAll},
+			{label: I18n.friends.pending(), activate: genPending},
+			{label: I18n.friends.blocked(), activate: genBlocked},
+			{label: I18n.friends.addfriend(), activate: openAddFriend},
+		];
+
+		if (mobile) {
+			channelTopic.classList.add("friendListTopic");
+			const menuBtn = document.createElement("button");
+			menuBtn.classList.add("friendListMenuBtn");
+			let activeTab = 0;
+			const syncMenuLabel = () => {
+				menuBtn.textContent = friendTabs[activeTab].label;
+			};
+			menuBtn.onclick = () => {
+				const d = new Dialog(I18n.friends.friendlist());
+				for (let i = 0; i < friendTabs.length; i++) {
+					const tab = friendTabs[i];
+					d.options.addButtonInput("", tab.label, () => {
+						activeTab = i;
+						syncMenuLabel();
+						tab.activate();
+						d.hide();
+					});
+				}
+				d.show();
+			};
+			channelTopic.append(menuBtn);
+			syncMenuLabel();
+			friendTabs[0].activate();
+		} else {
+			channelTopic.classList.remove("friendListTopic");
+			for (const tab of friendTabs) {
+				const btn = document.createElement("button");
+				btn.textContent = tab.label;
+				btn.onclick = tab.activate;
+				channelTopic.append(btn);
+			}
+			genOnline();
 		}
 	}
 	get mentions() {

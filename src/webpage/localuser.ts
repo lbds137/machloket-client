@@ -585,6 +585,10 @@ class Localuser {
 		}
 
 		this.status = this.ready.d.user_settings.status;
+		if (this.channelfocus) {
+			void this.channelfocus.infinite.delete();
+		}
+		Channel.clearScrollWrapLeaks();
 		this.channelfocus = undefined;
 		this.lookingguild = undefined;
 		this.guildhtml = new Map();

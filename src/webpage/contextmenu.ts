@@ -492,12 +492,25 @@ class Contextmenu<x, y> {
 	static keepOnScreen(obj: HTMLElement) {
 		const docheight = getViewportHeight();
 		const docwidth = getViewportWidth();
+		const margin = 8;
 		const box = obj.getBoundingClientRect();
 		if (box.right > docwidth) {
-			obj.style.left = Math.floor(docwidth - box.width) + "px";
+			obj.style.left = Math.max(margin, Math.floor(docwidth - box.width - margin)) + "px";
+			obj.style.removeProperty("right");
 		}
 		if (box.bottom > docheight) {
-			obj.style.top = Math.floor(docheight - box.height) + "px";
+			obj.style.top = Math.max(margin, Math.floor(docheight - box.height - margin)) + "px";
+			obj.style.removeProperty("bottom");
+		}
+		const top = obj.getBoundingClientRect().top;
+		if (top < margin) {
+			obj.style.top = margin + "px";
+			obj.style.removeProperty("bottom");
+		}
+		const maxHeight = docheight - margin * 2;
+		if (obj.getBoundingClientRect().height > maxHeight) {
+			obj.style.maxHeight = maxHeight + "px";
+			obj.style.overflowY = "auto";
 		}
 	}
 }

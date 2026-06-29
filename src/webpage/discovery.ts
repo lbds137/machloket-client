@@ -65,6 +65,9 @@ export class Discovery {
 		}
 
 		this.localuser.lookingguild = undefined;
+		if (this.localuser.channelfocus) {
+			void this.localuser.channelfocus.infinite.delete();
+		}
 		this.localuser.channelfocus = undefined;
 
 		const loading = document.getElementById("loadingdiv") as HTMLDivElement;

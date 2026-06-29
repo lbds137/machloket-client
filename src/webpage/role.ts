@@ -674,7 +674,7 @@ class RoleList extends Buttons {
 				}
 			}
 			button.onclick = (_) => {
-				html.classList.remove("mobileHidden");
+				//html.classList.remove("mobileHidden");
 				this.generateHTMLArea(thing[1], html);
 				if (this.warndiv) {
 					this.warndiv.remove();

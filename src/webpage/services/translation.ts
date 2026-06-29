@@ -178,12 +178,9 @@ export function showLanguagePickerDialog(
 				const index = languages.findIndex((lang) => lang.code === defaultCode);
 				if (index !== -1) selectedIndex = index;
 			}
-			const select = dialog.options.addSelect(
-				I18n.translation.targetLanguage(),
-				() => {},
-				names,
-				{defaultIndex: selectedIndex},
-			);
+			const select = dialog.options.addSelect(I18n.translation.targetLanguage(), () => {}, names, {
+				defaultIndex: selectedIndex,
+			});
 			select.watchForChange((index) => {
 				selectedIndex = index;
 			});

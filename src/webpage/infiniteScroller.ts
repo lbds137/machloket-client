@@ -518,7 +518,9 @@ class InfiniteScroller {
 		if (this.div) {
 			this.div.remove();
 		}
-		this.clearElms();
+		await this.clearElms();
+		this.weakDiv = new WeakRef(document.createElement("div"));
+		this.observerReady = false;
 	}
 
 	getVisibleIds(): string[] {

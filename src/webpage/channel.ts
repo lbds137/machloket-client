@@ -67,9 +67,9 @@ class Channel extends SnowFlake {
 	set lastreadmessageid(id: string | undefined) {
 		const cur = this.lastreadmessageidint;
 		this.lastreadmessageidint = id;
+		if (!this.isChatViewActive()) return;
 		const m = this.messages.get(this.idToNext.get(cur as string) as string);
 		if (m) {
-			console.log(m);
 			m.generateMessage();
 		}
 		const m2 = this.messages.get(this.idToNext.get(id as string) as string);
@@ -87,6 +87,30 @@ class Channel extends SnowFlake {
 	message_notifications: number = 3;
 	allthewayup!: boolean;
 	static contextmenu = new Contextmenu<Channel, undefined>("channel menu");
+
+	static clearScrollWrapLeaks() {
+		const messages = document.getElementById("scrollWrap");
+		if (!messages) return;
+		for (const elm of Array.from(messages.getElementsByClassName("scroller"))) {
+			elm.remove();
+		}
+	}
+
+	isChatViewActive(): boolean {
+		if (this.localuser.channelfocus !== this) return false;
+		const div = this.infinite.div;
+		if (!div?.isConnected) return false;
+		if (mobile) {
+			const maintoggle = document.getElementById("maintoggle") as HTMLInputElement | null;
+			if (maintoggle && !maintoggle.checked) return false;
+		}
+		return true;
+	}
+
+	private onReachedBottom() {
+		if (!this.isChatViewActive()) return;
+		this.readbottom();
+	}
 	replyingto!: Message | null;
 	infinite!: InfiniteScroller;
 	idToPrev: Map<string, string | undefined>;
@@ -661,7 +685,7 @@ class Channel extends SnowFlake {
 				}
 				return false;
 			},
-			this.readbottom.bind(this),
+			this.onReachedBottom.bind(this),
 		);
 		this.infinite.onVisibilityChange = (_id, visible) => {
 			if (visible) AutoTranslationService.onMessageVisible(this, _id);
@@ -1554,11 +1578,7 @@ class Channel extends SnowFlake {
 		for (const thing of messageContainers) {
 			thing.remove();
 		}
-		const elements = Array.from(messages.getElementsByClassName("scroller"));
-		for (const elm of elements) {
-			elm.remove();
-			console.warn("rouge element detected and removed");
-		}
+		Channel.clearScrollWrapLeaks();
 		const div = document.getElementById("sideDiv") as HTMLDivElement;
 		div.innerHTML = "";
 		const float = new Float("");
@@ -3280,11 +3300,7 @@ class Channel extends SnowFlake {
 		if (this.localuser.channelfocus !== this) {
 			return;
 		}
-		const elements = Array.from(messages.getElementsByClassName("scroller"));
-		for (const elm of elements) {
-			elm.remove();
-			console.warn("rouge element detected and removed");
-		}
+		Channel.clearScrollWrapLeaks();
 		const div = await this.infinite.getDiv(id, flash);
 		if (gid !== Channel.genid) {
 			return;
@@ -4000,7 +4016,7 @@ class Channel extends SnowFlake {
 		}
 		this.setLastMessageId(messagez.id);
 
-		if (this.infinite.atBottom()) {
+		if (this.isChatViewActive() && this.infinite.atBottom()) {
 			this.lastreadmessageid = messagez.id;
 		}
 

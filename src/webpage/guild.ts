@@ -2044,6 +2044,7 @@ class Guild extends SnowFlake {
 		}
 		this.prevchannel = undefined;
 		this.localuser.channelfocus = undefined;
+		Channel.clearScrollWrapLeaks();
 		const replybox = document.getElementById("replybox") as HTMLElement;
 		const typebox = document.getElementById("typebox") as HTMLElement;
 		replybox.classList.add("hideReplyBox");
@@ -2072,6 +2073,7 @@ class Guild extends SnowFlake {
 		this.localuser.getSidePannel();
 
 		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
+		Channel.clearScrollWrapLeaks();
 		for (const thing of Array.from(messages.getElementsByClassName("messagecontainer"))) {
 			thing.remove();
 		}

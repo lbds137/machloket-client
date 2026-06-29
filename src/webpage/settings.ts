@@ -67,7 +67,7 @@ export class Buttons implements OptionsElement<unknown> {
 		const buttonTable = this.generateButtons(htmlarea);
 		if (this.buttons[0]) {
 			this.generateHTMLArea(this.buttons[0][1], htmlarea);
-			if (!hideButtons) htmlarea.classList.add("mobileHidden");
+			//if (!hideButtons) htmlarea.classList.add("mobileHidden");
 		}
 		if (!hideButtons) buttonList.append(buttonTable);
 		buttonList.append(htmlarea);
@@ -1060,7 +1060,7 @@ class Dialog {
 		if (this.above) background.style.zIndex = "200";
 		if (!hideOnClick) background.classList.add("solidBackground");
 		const center = this.float.generateHTML();
-		center.classList.add("centeritem", "nonimagecenter");
+		center.classList.add("centeritem", "nonimagecenter", "dialogModal");
 		center.classList.remove("titlediv");
 		background.append(center);
 		document.body.append(background);
@@ -1550,7 +1550,7 @@ class Options implements OptionsElement<void> {
 		const build: (HTMLElement | string)[] = [];
 		if (this.owner instanceof Buttons) {
 			const span = document.createElement("span");
-			span.classList.add("svg-intoMenu", "svgicon", "mobileback");
+			//span.classList.add("svg-intoMenu", "svgicon", "mobileback");
 			if (!(this.owner instanceof Settings) || !this.owner.hideButtons) build.push(span);
 			span.onclick = () => {
 				const container = this.container.deref();
