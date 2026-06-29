@@ -588,9 +588,9 @@ body {
 			padding: 0.075in 0.05in;
 			border-radius: 0.03in;
 			transition: background 0.1s;
-			cursor: pointer;
 		}
 		padding: 5px;
+		cursor: pointer;
 	}
 
 	span.selected {
@@ -1167,6 +1167,7 @@ textarea {
 .replypfp {
 	display: block;
 	width: 100%;
+	max-width: 100px;
 	height: 100%;
 	border-radius: 50%;
 	cursor: pointer;
@@ -3757,7 +3758,7 @@ span.instanceStatus {
 .fileinputdiv > div {
 	& {
 		width: 64px;
-		height: 64px;
+		max-height: 128px;
 		border-radius: 16px;
 		background: var(--secondary-bg);
 		cursor: pointer;
@@ -3766,7 +3767,7 @@ span.instanceStatus {
 
 	img {
 		width: 64px;
-		height: 64px;
+		max-height: 128px;
 		border-radius: 16px;
 		object-fit: contain;
 	}
@@ -4704,6 +4705,7 @@ img.bigembedimg {
 	width: 100%;
 	height: 100px;
 	object-fit: cover;
+	box-shadow: inset 0 -40px 30px -10px var(--accent_color);
 }
 
 .badge {
@@ -6503,6 +6505,7 @@ fieldset input[type="radio"] {
 	display: flex;
 	position: relative;
 	flex-direction: row;
+	overflow-y: auto;
 }
 
 .friendcontainer {

@@ -393,7 +393,7 @@ export class TranslationService {
 				? original
 				: I18n.translation.typingResult(outcome.text, original);
 			typebox.textContent = display;
-			typebox.markdown.txt = display.split("");
+			typebox.markdown.txt = display;
 			typebox.markdown.boxupdate(Infinity);
 			channel.textSave = display;
 		} catch (error) {

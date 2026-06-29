@@ -5036,7 +5036,7 @@ class Localuser {
 			? `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>`
 			: (emoji.emoji as string);
 		const caret = Math.max(0, Math.min(MarkDown.getCaretLength(), md.rawString.length));
-		md.txt = (md.rawString.slice(0, caret) + insert + md.rawString.slice(caret)).split("");
+		md.txt = md.rawString.slice(0, caret) + insert + md.rawString.slice(caret);
 		md.boxupdate(insert.length, false, caret);
 	}
 	MDReplace(
@@ -5077,7 +5077,7 @@ class Localuser {
 		const spacer = base === "" || /\s$/.test(base) ? "" : " ";
 		const next = base + spacer + replacewith + suffix;
 
-		typebox.txt = next.split("");
+		typebox.txt = next;
 		const match = start ? original.match(start) : true;
 		if (match) {
 			const offset = replacewith.length - (match === true ? 0 : match[0].length) + spacer.length;

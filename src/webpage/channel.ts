@@ -2693,7 +2693,7 @@ class Channel extends SnowFlake {
 			if (!this.textSave) {
 				this.textSave = this.getStoredDraft();
 			}
-			md.txt = this.textSave.split("");
+			md.txt = this.textSave;
 			if (this.textSave) {
 				typebox.textContent = this.textSave;
 				md.boxupdate(Infinity);
@@ -2721,7 +2721,7 @@ class Channel extends SnowFlake {
 			}
 		}
 		if (this.isForum()) {
-			typebox.markdown.txt = [];
+			typebox.markdown.txt = "";
 		}
 		this.localuser.fileExtange(this.files, this.htmls);
 

@@ -7,6 +7,15 @@ import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
 import {normalizeInviteLink} from "./utils/inviteUtils.js";
 
+const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
+const BULLET_CHARS = new Set("*+- ");
+const LINK_END_CHARS = new Set("\\<>|[] \n(){}");
+const NUMBERS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
+const ANGLE_INVALID = new Set([">", "<"]);
+const ALLOWED_PROTOCOLS = new Set(["https:", "http:"]);
+const SPACE_RE = /^\s$/;
+const GRAPHEME_SEG = new Intl.Segmenter("en-US", {granularity: "grapheme"});
+
 let linkMenu: Contextmenu<string, void> | undefined;
 
 function getLinkMenu() {
@@ -25,7 +34,7 @@ function getLinkMenu() {
 
 class MarkDown {
 	static emoji?: typeof Emoji;
-	txt: string[];
+	txt: string;
 	keep: boolean;
 	stdsize: boolean;
 	owner: Localuser | Channel | void;
@@ -35,14 +44,7 @@ class MarkDown {
 		owner: MarkDown["owner"],
 		{keep = false, stdsize = false} = {},
 	) {
-		if (typeof text === typeof "") {
-			this.txt = (text as string).split("");
-		} else {
-			this.txt = text as string[];
-		}
-		if (this.txt === undefined) {
-			this.txt = [];
-		}
+		this.txt = typeof text === "string" ? text : text.join("");
 		if (owner) {
 			this.info = owner.info;
 		}
@@ -69,7 +71,7 @@ class MarkDown {
 		return null;
 	}
 	get rawString() {
-		return this.txt.join("");
+		return this.txt;
 	}
 	get textContent() {
 		return this.makeHTML().textContent;
@@ -83,29 +85,35 @@ class MarkDown {
 	makeHTML({keep = this.keep, stdsize = this.stdsize} = {}) {
 		return this.markdown(this.txt, {keep, stdsize});
 	}
-	markdown(text: string | string[], {keep = false, stdsize = false} = {}) {
-		if (!keep && !stdsize) {
-			let str: string;
-			if (text instanceof Array) {
-				str = text.join("");
-			} else {
-				str = text;
+	static _emojiMap: Map<string, {name: string; emoji: string}> | null = null;
+	static getEmoji(name: string): {name: string; emoji: string} | undefined {
+		if (!this._emojiMap && this.emoji) {
+			this._emojiMap = new Map();
+			for (const group of this.emoji.emojis) {
+				for (const e of group.emojis) {
+					this._emojiMap.set(e.name, e);
+				}
 			}
+		}
+		return this._emojiMap?.get(name);
+	}
+	markdown(text: string | string[], {keep = false, stdsize = false} = {}) {
+		const txt = typeof text === "string" ? text : text.join("");
+		if (!keep && !stdsize) {
 			const span = document.createElement("span");
 			span.classList.add("md-emoji", "bigemojiUni");
 
-			const matched = str.match(
+			const matched = txt.match(
 				/^((<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|([^\da-zA-Z <>])) *){1,3}$/u,
 			);
 			if (matched) {
 				const map = [
-					...str.matchAll(/<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|[^\da-zA-Z <>]+/gu).map(([_]) => _),
+					...txt.matchAll(/<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|[^\da-zA-Z <>]+/gu).map(([_]) => _),
 				];
-				const seg = new Intl.Segmenter("en-US", {granularity: "grapheme"});
 				const invalid = map.find((str) => {
 					if (str.match(/^:[A-Za-z\d_]+:$/)) return false;
 					if (str.length > 10) return false;
-					if (Array.from(seg.segment(str)).length !== 1) return true;
+					if (Array.from(GRAPHEME_SEG.segment(str)).length !== 1) return true;
 					return false;
 				});
 				if (!invalid) {
@@ -121,16 +129,11 @@ class MarkDown {
 									owner,
 								);
 								span.appendChild(emoji.getHTML(true, !keep));
-
 								continue;
 							}
 						} else if (match.match(/^:[A-Za-z\d_]+:$/)) {
 							const emojiName = match.slice(1, -1);
-							let systemEmoji: {name: string; emoji: string} | undefined;
-							for (const group of Emoji.emojis) {
-								systemEmoji = group.emojis.find((e) => e.name === emojiName);
-								if (systemEmoji) break;
-							}
+							const systemEmoji = MarkDown.getEmoji(emojiName);
 							if (systemEmoji) {
 								const emoji = new Emoji({name: emojiName, emoji: systemEmoji.emoji}, undefined);
 								span.appendChild(emoji.getHTML(true, !keep));
@@ -149,15 +152,6 @@ class MarkDown {
 				}
 			}
 		}
-		let txt: string[];
-		if (typeof text === typeof "") {
-			txt = (text as string).split("");
-		} else {
-			txt = text as string[];
-		}
-		if (txt === undefined) {
-			txt = [];
-		}
 		const span = document.createElement("span");
 		let current = document.createElement("span");
 		function appendcurrent() {
@@ -167,10 +161,10 @@ class MarkDown {
 			}
 		}
 		function getCurLast(): Node | undefined {
-			return Array.from(span.childNodes).at(-1);
+			const nodes = span.childNodes;
+			return nodes[nodes.length - 1];
 		}
 		for (let i = 0; i < txt.length; i++) {
-			const isSpace = /^\s$/;
 			if (txt[i] === "\n" || i === 0) {
 				let first = i === 0;
 				if (first) {
@@ -181,22 +175,22 @@ class MarkDown {
 
 				if (!keep && txt[i + 1] === "#") {
 					if (txt[i + 2] === "#") {
-						if (txt[i + 3] === "#" && txt[i + 4]?.match(isSpace)) {
+						if (txt[i + 3] === "#" && txt[i + 4]?.match(SPACE_RE)) {
 							element = document.createElement("h3");
 							keepys = "### ";
 							i += 5;
-						} else if (txt[i + 3]?.match(isSpace)) {
+						} else if (txt[i + 3]?.match(SPACE_RE)) {
 							element = document.createElement("h2");
 							element.classList.add("h2md");
 							keepys = "## ";
 							i += 4;
 						}
-					} else if (txt[i + 2]?.match(isSpace)) {
+					} else if (txt[i + 2]?.match(SPACE_RE)) {
 						element = document.createElement("h1");
 						keepys = "# ";
 						i += 3;
 					}
-				} else if (txt[i + 1] === ">" && txt[i + 2]?.match(isSpace)) {
+				} else if (txt[i + 1] === ">" && txt[i + 2]?.match(SPACE_RE)) {
 					element = document.createElement("div");
 					const line = document.createElement("div");
 					line.classList.add("quoteline");
@@ -204,7 +198,7 @@ class MarkDown {
 					element.classList.add("quote");
 					keepys = "> ";
 					i += 3;
-				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3]?.match(isSpace)) {
+				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3]?.match(SPACE_RE)) {
 					element = document.createElement("small");
 					keepys = "-# ";
 					i += 4;
@@ -214,10 +208,9 @@ class MarkDown {
 					if (!first && !stdsize) {
 						span.appendChild(document.createElement("br"));
 					}
-					const build: string[] = [];
-					for (; txt[i] !== "\n" && txt[i] !== undefined; i++) {
-						build.push(txt[i]);
-					}
+					const start = i;
+					for (; i < txt.length && txt[i] !== "\n"; i++) {}
+					const build = txt.slice(start, i);
 					try {
 						if (stdsize) {
 							element = document.createElement("span");
@@ -232,8 +225,7 @@ class MarkDown {
 						continue;
 					}
 				}
-				const bullet = new Set("*+- ");
-				if (bullet.has(txt[i + 1])) {
+				if (BULLET_CHARS.has(txt[i + 1])) {
 					let list = document.createElement("ul");
 					let depth = 0;
 					while (true) {
@@ -248,10 +240,9 @@ class MarkDown {
 						j++;
 						const match = build.match(/( *)[+*-] $/);
 						if (match) {
-							const arr: string[] = [];
-							for (; txt[j] && txt[j] !== "\n"; j++) {
-								arr.push(txt[j]);
-							}
+							const start = j;
+							for (; j < txt.length && txt[j] !== "\n"; j++) {}
+							const arr = txt.slice(start, j);
 							i = j;
 							const line = this.markdown(arr);
 							if (keep) {
@@ -306,8 +297,7 @@ class MarkDown {
 				}
 			}
 			if (txt[i] === "\\") {
-				const chatset = new Set("\\`{}[]()<>*_#+-.!|@".split(""));
-				if (chatset.has(txt[i + 1])) {
+				if (ESCAPE_CHARS.has(txt[i + 1])) {
 					if (keep) {
 						current.textContent += txt[i];
 					}
@@ -403,16 +393,16 @@ class MarkDown {
 						count++;
 					}
 				}
-				let build: string[] = [];
+				let build = "";
 				let find = 0;
 				let j = i + count;
 				for (; txt[j] !== undefined && find !== count; j++) {
 					if (txt[j] === "*") {
 						find++;
 					} else {
-						build.push(txt[j]);
+						build += txt[j];
 						if (find !== 0) {
-							build = build.concat(new Array(find).fill("*"));
+							build += "*".repeat(find);
 							find = 0;
 						}
 					}
@@ -468,16 +458,16 @@ class MarkDown {
 						count++;
 					}
 				}
-				let build: string[] = [];
+				let build = "";
 				let find = 0;
 				let j = i + count;
 				for (; txt[j] !== undefined && find !== count; j++) {
 					if (txt[j] === "_") {
 						find++;
 					} else {
-						build.push(txt[j]);
+						build += txt[j];
 						if (find !== 0) {
-							build = build.concat(new Array(find).fill("_"));
+							build += "_".repeat(find);
 							find = 0;
 						}
 					}
@@ -529,16 +519,16 @@ class MarkDown {
 
 			if (txt[i] === "~" && txt[i + 1] === "~") {
 				const count = 2;
-				let build: string[] = [];
+				let build = "";
 				let find = 0;
 				let j = i + 2;
 				for (; txt[j] !== undefined && find !== count; j++) {
 					if (txt[j] === "~") {
 						find++;
 					} else {
-						build.push(txt[j]);
+						build += txt[j];
 						if (find !== 0) {
-							build = build.concat(new Array(find).fill("~"));
+							build += "~".repeat(find);
 							find = 0;
 						}
 					}
@@ -563,16 +553,16 @@ class MarkDown {
 			}
 			if (txt[i] === "|" && txt[i + 1] === "|") {
 				const count = 2;
-				let build: string[] = [];
+				let build = "";
 				let find = 0;
 				let j = i + 2;
 				for (; txt[j] !== undefined && find !== count; j++) {
 					if (txt[j] === "|") {
 						find++;
 					} else {
-						build.push(txt[j]);
+						build += txt[j];
 						if (find !== 0) {
-							build = build.concat(new Array(find).fill("~"));
+							build += "|".repeat(find);
 							find = 0;
 						}
 					}
@@ -609,10 +599,9 @@ class MarkDown {
 			) {
 				let build = "http";
 				let j = i + 4;
-				const endchars = new Set("\\<>|[] \n(){}");
 				for (; txt[j] !== undefined; j++) {
 					const char = txt[j];
-					if (endchars.has(char)) {
+					if (LINK_END_CHARS.has(char)) {
 						break;
 					}
 					build += char;
@@ -681,10 +670,9 @@ class MarkDown {
 					let id = "";
 					const role = txt[i + 1] === "@" && txt[i + 2] === "&";
 					let j = i + 2 + +role;
-					const numbers = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 					for (; txt[j] !== undefined; j++) {
 						const char = txt[j];
-						if (!numbers.has(char)) {
+						if (!NUMBERS.has(char)) {
 							break;
 						}
 						id += char;
@@ -764,18 +752,16 @@ class MarkDown {
 				} else {
 					let j = i + 1;
 					let build = "";
-					const invalid = new Set([">", "<"]);
 					for (; txt[j] !== undefined; j++) {
 						const char = txt[j];
-						if (invalid.has(char)) {
+						if (ANGLE_INVALID.has(char)) {
 							break;
 						}
 						build += char;
 					}
 					if (URL.canParse(build) && txt[j] === ">") {
 						const url = new URL(build);
-						const allowedprotocols = new Set(["https:", "http:"]);
-						if (allowedprotocols.has(url.protocol)) {
+						if (ALLOWED_PROTOCOLS.has(url.protocol)) {
 							i = j;
 
 							if (keep) {
@@ -803,17 +789,17 @@ class MarkDown {
 			}
 			if (txt[i] === "<" && txt[i + 1] === "t" && txt[i + 2] === ":") {
 				let found = false;
-				const build = ["<", "t", ":"];
+				let build = "<t:";
 				let j = i + 3;
 				for (; txt[j] !== void 0; j++) {
-					build.push(txt[j]);
+					build += txt[j];
 
 					if (txt[j] === ">") {
 						found = true;
 						break;
 					}
 				}
-				const parts = build.join("").match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
+				const parts = build.match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
 
 				if (found && parts) {
 					appendcurrent();
@@ -821,7 +807,7 @@ class MarkDown {
 
 					const dateInput = new Date(Number.parseInt(parts[1]) * 1000);
 					let time = "";
-					if (Number.isNaN(dateInput.getTime())) time = build.join("");
+					if (Number.isNaN(dateInput.getTime())) time = build;
 					else {
 						if (parts[3] === "d")
 							time = dateInput.toLocaleString(void 0, {
@@ -899,7 +885,7 @@ class MarkDown {
 					}
 
 					const timeElem = document.createElement("span");
-					timeElem.setAttribute("real", build.join(""));
+					timeElem.setAttribute("real", build);
 					timeElem.contentEditable = "false";
 					timeElem.classList.add("markdown-timestamp");
 					timeElem.textContent = time;
@@ -914,10 +900,10 @@ class MarkDown {
 			) {
 				const Emoji = MarkDown.emoji;
 				let found = false;
-				const build = txt[i + 1] === "a" ? ["<", "a", ":"] : ["<", ":"];
-				let j = i + build.length;
+				let build = txt[i + 1] === "a" ? "<a:" : "<:";
+				let j = i + (txt[i + 1] === "a" ? 3 : 2);
 				for (; txt[j] !== void 0; j++) {
-					build.push(txt[j]);
+					build += txt[j];
 
 					if (txt[j] === ">") {
 						found = true;
@@ -926,16 +912,15 @@ class MarkDown {
 				}
 
 				if (found && Emoji) {
-					const buildjoin = build.join("");
-					const parts = buildjoin.match(/^<(a)?:\w+:(\d{10,30})>$/);
+					const parts = build.match(/^<(a)?:\w+:(\d{10,30})>$/);
 					if (parts && parts[2]) {
 						appendcurrent();
 						i = j;
-						const isEmojiOnly = txt.join("").trim() === buildjoin.trim() && !stdsize;
+						const isEmojiOnly = txt.trim() === build.trim() && !stdsize;
 						const owner = this.channel ? this.channel.guild : this.localuser;
 						if (!owner) continue;
 						const emoji = new Emoji(
-							{name: buildjoin, id: parts[2], animated: Boolean(parts[1])},
+							{name: build, id: parts[2], animated: Boolean(parts[1])},
 							owner,
 						);
 						span.appendChild(emoji.getHTML(isEmojiOnly, !keep));
@@ -948,28 +933,24 @@ class MarkDown {
 			if (txt[i] === ":") {
 				const Emoji = MarkDown.emoji;
 				let found = false;
-				const build: string[] = [];
+				let build = "";
 				let j = i + 1;
 				for (; txt[j] !== void 0; j++) {
 					if (txt[j] === ":") {
 						found = true;
 						break;
 					}
-					build.push(txt[j]);
+					build += txt[j];
 				}
 
 				if (found && Emoji && build.length > 0) {
-					const emojiName = build.join("");
-					let systemEmoji: {name: string; emoji: string} | undefined;
-					for (const group of Emoji.emojis) {
-						systemEmoji = group.emojis.find((e) => e.name === emojiName);
-						if (systemEmoji) break;
-					}
+					const emojiName = build;
+					const systemEmoji = MarkDown.getEmoji(emojiName);
 
 					if (systemEmoji) {
 						appendcurrent();
 						i = j;
-						const isEmojiOnly = txt.join("").trim() === `:${emojiName}:`.trim() && !stdsize;
+						const isEmojiOnly = txt.trim() === `:${emojiName}:` && !stdsize;
 						const emoji = new Emoji({name: emojiName, emoji: systemEmoji.emoji}, undefined);
 						span.appendChild(emoji.getHTML(isEmojiOnly, !keep));
 
@@ -981,9 +962,9 @@ class MarkDown {
 			if (txt[i] == "[" && !keep) {
 				let partsFound = 0;
 				let j = i + 1;
-				const build = ["["];
+				let build = "[";
 				for (; txt[j] !== void 0; j++) {
-					build.push(txt[j]);
+					build += txt[j];
 
 					if (partsFound === 0 && txt[j] === "]") {
 						if (
@@ -1014,7 +995,6 @@ class MarkDown {
 					appendcurrent();
 
 					const parts = build
-						.join("")
 						.match(/^\[(.+)\]\(<?(https?:[^)\s]+?)>?(?:\s+(?:"([^"]+)"|'([^']+)'|([^\)]+)))?\)$/);
 					if (parts) {
 						const linkElem = document.createElement("a");
@@ -1115,7 +1095,7 @@ class MarkDown {
 			if (content === "\n") content = "";
 			if (content !== prevcontent) {
 				prevcontent = content;
-				this.txt = content.split("");
+				this.txt = content;
 				this.boxupdate(undefined, undefined, undefined, isBackSpace);
 				MarkDown.gatherBoxText(box);
 			}
@@ -1190,7 +1170,7 @@ class MarkDown {
 			range.collapse(true);
 			selection.removeAllRanges();
 			selection.addRange(range);
-			this.txt = MarkDown.gatherBoxText(box).split("");
+			this.txt = MarkDown.gatherBoxText(box);
 			this.boxupdate(undefined, false, undefined);
 		};
 	}
@@ -1239,7 +1219,7 @@ class MarkDown {
 				html.childNodes[0].childNodes[0];
 			//console.log(box.cloneNode(true), html.cloneNode(true));
 			//TODO this may be slow, may want to check in on this in the future if it is
-			if ((!box.hasChildNodes() || html.isEqualNode(Array.from(box.childNodes)[0])) && allowLazy) {
+			if ((!box.hasChildNodes() || html.isEqualNode(box.childNodes[0])) && allowLazy) {
 				//console.log("no replace needed");
 			} else {
 				if (
@@ -1275,8 +1255,8 @@ class MarkDown {
 			formatted = false;
 		}
 		let build = "";
-		const arr = Array.from(element.childNodes);
-		for (const thing of arr) {
+		for (let _gi = 0; _gi < element.childNodes.length; _gi++) {
+			const thing = element.childNodes[_gi];
 			if (thing instanceof Text) {
 				const text = thing.textContent;
 				build += text;
@@ -1495,7 +1475,8 @@ function getTextNodeAtPosition(
 	}
 
 	let lastElm: Node = root;
-	for (const node of root.childNodes as unknown as Node[]) {
+	for (let _gi = 0; _gi < root.childNodes.length; _gi++) {
+		const node = root.childNodes[_gi];
 		lastElm = node;
 		let len: number;
 		if (node instanceof HTMLElement) {
@@ -1509,7 +1490,7 @@ function getTextNodeAtPosition(
 				let nodey = node;
 				let bad = false;
 				while (nodey.childNodes.length) {
-					nodey = Array.from(nodey.childNodes).at(-1) as ChildNode;
+					nodey = nodey.childNodes[nodey.childNodes.length - 1] as ChildNode;
 					if (nodey instanceof HTMLElement && nodey.contentEditable === "false") {
 						bad = true;
 						break;

@@ -232,7 +232,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
 		}
 		typebox.innerHTML = "";
-		typebox.markdown.txt = [];
+		typebox.markdown.txt = "";
 		channel.setDraft("");
 		try {
 			await new Promise<void>((mres, rej) =>
@@ -269,7 +269,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			channel.replyingto = replyingTo;
 			channel.makereplybox();
 			typebox.textContent = content;
-			typebox.markdown.txt = content.split("");
+			typebox.markdown.txt = content;
 			typebox.markdown.boxupdate(Infinity);
 			channel.setDraft(content);
 		}
@@ -368,7 +368,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		};
 		searchX.onclick = () => {
 			if (searchX.classList.contains("svg-plainx")) {
-				markdown.txt = [];
+				markdown.txt = "";
 				searchBox.innerHTML = "";
 				searchX.classList.add("svg-search");
 				searchBox.parentElement!.classList.remove("searching");
