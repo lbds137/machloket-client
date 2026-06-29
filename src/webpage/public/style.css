@@ -3784,9 +3784,12 @@ span.instanceStatus {
 	font-weight: bold;
 	word-break: break-all;
 	color: transparent;
-	background-image: var(--userbg, linear-gradient(var(--primary-text), var(--primary-text)));
-	background-clip: text, border-box;
 	cursor: pointer;
+	background-image: var(--userbg, linear-gradient(var(--primary-text), var(--primary-text)));
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	color: transparent;
 }
 .pollText {
 	margin: 0px 4px;
