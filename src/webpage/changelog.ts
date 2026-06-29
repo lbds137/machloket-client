@@ -6,7 +6,7 @@ const CHANGELOG_STORAGE_KEY = "fermoChangelogVersion";
 const CHANGELOG_IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
 /* Increment this when updating CHANGELOG_CONTENT to show the popup again. */
-export const CHANGELOG_VERSION = 1;
+export const CHANGELOG_VERSION = 2;
 
 /**
  * Yo dev. here a smalli guidy
@@ -17,7 +17,8 @@ export const CHANGELOG_VERSION = 1;
  */
 export const CHANGELOG_CONTENT = `# Fermooo update!
 
-## Free message translation!!!!!
+# the translation system is more powerful than ever!
+![translate2](./changelog/2-translate.webp)
 ![translate](./changelog/1-translate.webp)
 
 ## Some animations and more visual improvements soon
