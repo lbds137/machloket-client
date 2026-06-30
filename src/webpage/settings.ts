@@ -86,6 +86,9 @@ export class Buttons implements OptionsElement<unknown> {
 			if (this.warndiv) {
 				this.warndiv.remove();
 			}
+			if (window.innerWidth <= 600) {
+				optionsArea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+			}
 		};
 		return button;
 	}

@@ -6439,11 +6439,13 @@ fieldset input[type="radio"] {
 	.settingbuttons {
 		z-index: 1;
 		width: 100%;
+		flex: none;
+		overflow: visible;
 	}
 
 	.settingsHTMLArea {
-		height: 100%;
-		transition: transform 0.2s;
+		flex: none;
+		overflow: visible;
 	}
 
 	.nonimagecenter .settingbuttons {
@@ -6840,6 +6842,7 @@ img.error::after {
 		max-width: 196px;
 		border-radius: 4px;
 		display: block;
+		cursor: pointer;
 	}
 
 	.svg-gifstar {
