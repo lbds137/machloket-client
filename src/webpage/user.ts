@@ -1761,6 +1761,23 @@ class User extends SnowFlake {
 
 						const box = document.createElement("div");
 						box.classList.add("mutGuildBox", "flexltr");
+						box.style.cursor = "pointer";
+
+						box.onclick = async (e) => {
+							e.stopImmediatePropagation();
+							e.preventDefault();
+
+							const resolvedMember = await Member.resolveMember(this, guild);
+							const hasGuildProfile = resolvedMember && resolvedMember.nick;
+
+							removeAni(background);
+							this.localuser.loadGuild(guild.id);
+							guild.loadChannel();
+
+							if (hasGuildProfile && resolvedMember) {
+								this.fullProfile(resolvedMember);
+							}
+						};
 
 						const info = document.createElement("div");
 						info.classList.add("flexttb");
