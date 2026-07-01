@@ -2628,7 +2628,15 @@ span.instanceStatus {
 }
 
 .serveropen .servericon .svg-home {
-	background: var(--button-hover);
+  background: repeating-linear-gradient(
+    to bottom,
+    #e60000 0% 16.66%,
+    #ff8c00 16.66% 33.33%,
+    #ffe600 33.33% 50%,
+    #00cc00 50% 66.66%,
+    #0066ff 66.66% 83.33%,
+    #8b00ff 83.33% 100%
+  ) !important;
 }
 
 .home .svgicon {
