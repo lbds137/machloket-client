@@ -456,7 +456,7 @@
 		"noAccount": "建立帳號來接受邀請",
 		"notFound": "找不到邀請",
 		"subtext": "到$2裡的$1",
-		"used": "使用過 $1 {{PLURAL:$1|次}}："
+		"used": "使用過 $1"
 	},
 	"inviteOptions": {
 		"12h": "12 小時",

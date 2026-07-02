@@ -457,8 +457,7 @@
 		"never": "Nooit",
 		"noAccount": "Maak een account aan om de uitnodiging te accepteren",
 		"notFound": "De uitnodiging kon niet gevonden worden",
-		"subtext": "bij $1 in $2",
-		"used": "$1 {{PLURAL:$1|keer}} gebruikt:"
+		"subtext": "bij $1 in $2"
 	},
 	"inviteOptions": {
 		"12h": "12 uur",

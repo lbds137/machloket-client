@@ -479,7 +479,7 @@
 		"noAccount": "Create an account to accept the invite",
 		"notFound": "Invite could not be found",
 		"subtext": "to $1 in $2",
-		"used": "Used $1 time{{PLURAL:$1||s}}:"
+		"used": "Used $1"
 	},
 	"inviteOptions": {
 		"12h": "12 Hours",
@@ -947,6 +947,7 @@
 		"img": "Upload image",
 		"save": "Save changes",
 		"unsaved": "Careful, you have unsaved changes",
+		"showAll": "Show all $1",
 		"updates": {
 			"serviceWorkerMode": {
 				"disabled": "Off",
@@ -961,13 +962,15 @@
 		"user": {
 			"profileAppearance": "Profile & Appearance",
 			"accountSecurity": "Account & Security",
-			"connectionsDeveloper": "Connections & Developer",
-			"appInstanceInfo": "App & Instance Info"
+			"application": "Application",
+			"developerOptions": "Developer Options",
+			"instanceInfo": "Instance Info"
 		},
 		"guild": {
 			"general": "General",
-			"moderation": "Moderation",
-			"media": "Media",
+			"roles": "Roles",
+			"bans": "Bans",
+			"expressions": "Expressions",
 			"community": "Community",
 			"integrations": "Integrations"
 		}

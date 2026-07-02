@@ -492,7 +492,7 @@ class Contextmenu<x, y> {
 	static keepOnScreen(obj: HTMLElement) {
 		const docheight = getViewportHeight();
 		const docwidth = getViewportWidth();
-		const margin = 8;
+		const margin = 0;
 		const box = obj.getBoundingClientRect();
 		if (box.right > docwidth) {
 			obj.style.left = Math.max(margin, Math.floor(docwidth - box.width - margin)) + "px";

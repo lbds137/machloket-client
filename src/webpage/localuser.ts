@@ -3349,332 +3349,6 @@ class Localuser {
 				);
 			}
 		}
-		settings.addSection(
-			sectionLabel("settingsCategories.user.accountSecurity", "Account & Security"),
-		);
-		{
-			const update = settings.addButton(I18n.localuser.updateSettings());
-			let index = ServiceWorkerModeValues.indexOf(localSettings.serviceWorkerMode);
-			if (index === -1) {
-				index = 2;
-			}
-			const sw = update.addSelect(
-				I18n.settings.updates.serviceWorkerMode.title(),
-				() => {},
-				ServiceWorkerModeValues.map((e) => I18n.settings.updates.serviceWorkerMode[e]()),
-				{
-					defaultIndex: index,
-				},
-			);
-			sw.onchange = (e) => {
-				SW.setMode(ServiceWorkerModeValues[e]);
-			};
-			update.addButtonInput("", I18n.localuser.CheckUpdate(), async () => {
-				const update = await SW.checkUpdates();
-				const text = update ? I18n.localuser.updatesYay() : I18n.localuser.noUpdates();
-				const d = new Dialog("");
-				d.options.addTitle(text);
-				if (update) {
-					d.options.addButtonInput("", I18n.localuser.refreshPage(), () => {
-						window.location.reload();
-					});
-				}
-				d.show();
-			});
-			update.addButtonInput("", I18n.localuser.clearCache(), () => {
-				SW.forceClear();
-			});
-		}
-		{
-			const security = settings.addButton(I18n.localuser.accountSettings());
-			const genSecurity = () => {
-				security.removeAll();
-				if (this.mfa_enabled) {
-					security.addButtonInput("", I18n.localuser["2faDisable"](), () => {
-						const form = security.addSubForm(
-							I18n.localuser["2faDisable"](),
-							(_: any) => {
-								if (_.message) {
-									switch (_.code) {
-										case 60008:
-											form.error("code", I18n.localuser.badCode());
-											break;
-									}
-								} else {
-									this.mfa_enabled = false;
-									security.returnFromSub();
-									genSecurity();
-								}
-							},
-							{
-								fetchURL: this.info.api + "/users/@me/mfa/totp/disable",
-								headers: this.headers,
-							},
-						);
-						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
-					});
-				} else {
-					security.addButtonInput("", I18n.localuser["2faEnable"](), async () => {
-						let secret = "";
-						for (let i = 0; i < 18; i++) {
-							secret += "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[Math.floor(Math.random() * 32)];
-						}
-						const form = security.addSubForm(
-							I18n.localuser.setUp2fa(),
-							(_: any) => {
-								if (_.message) {
-									switch (_.code) {
-										case 60008:
-											form.error("code", I18n.localuser.badCode());
-											break;
-										case 400:
-											form.error("password", I18n.localuser.badPassword());
-											break;
-									}
-								} else {
-									genSecurity();
-									this.mfa_enabled = true;
-									security.returnFromSub();
-								}
-							},
-							{
-								fetchURL: this.info.api + "/users/@me/mfa/totp/enable/",
-								headers: this.headers,
-							},
-						);
-						form.addTitle(I18n.localuser.setUp2faInstruction());
-						form.addText(I18n.localuser["2faCodeGive"](secret));
-						form.addTextInput(I18n.localuser["password:"](), "password", {
-							required: true,
-							password: true,
-						});
-						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
-						form.setValue("secret", secret);
-					});
-				}
-				{
-					security.addButtonInput("", I18n.webauth.manage(), () => {
-						const keyMenu = security.addSubOptions("Manage Keys");
-						const addKey = (key: {name: string; id: string}) => {
-							keyMenu.addButtonInput("", key.name, () => {
-								const opt = keyMenu.addSubOptions(key.name);
-								const button = opt.addButtonInput("", I18n.delete(), async () => {
-									await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
-										headers: this.headers,
-										method: "DELETE",
-									});
-									keyMenu.returnFromSub();
-									keyMenu.deleteElm(button);
-								});
-							});
-						};
-						keyMenu.addButtonInput("", I18n.webauth.addKey(), () => {
-							const form = keyMenu.addSubForm(
-								I18n.webauth.addKey(),
-								async (obj) => {
-									const body = obj as {ticket: string; challenge: string};
-									const challenge = JSON.parse(body.challenge)
-										.publicKey as PublicKeyCredentialCreationOptionsJSON;
-									console.log(challenge.challenge);
-									challenge.challenge = challenge.challenge
-										.split("=")[0]
-										.replaceAll("+", "-")
-										.replaceAll("/", "_");
-									console.log(challenge.challenge);
-									const options = PublicKeyCredential.parseCreationOptionsFromJSON(challenge);
-									const credential = (await navigator.credentials.create({
-										publicKey: options,
-									})) as unknown as {
-										rawId: ArrayBuffer;
-										response: {
-											attestationObject: ArrayBuffer;
-											clientDataJSON: ArrayBuffer;
-										};
-									};
-									if (!credential) return;
-									function toBase64(buf: ArrayBuffer) {
-										return btoa(String.fromCharCode(...new Uint8Array(buf)));
-									}
-									const res = {
-										rawId: toBase64(credential.rawId),
-										response: {
-											clientDataJSON: toBase64(credential.response.clientDataJSON),
-											attestationObject: toBase64(credential.response.attestationObject),
-										},
-									};
-									const key = await (
-										await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
-											headers: this.headers,
-											method: "POST",
-											body: JSON.stringify({
-												ticket: body.ticket,
-												credential: JSON.stringify(res),
-												name: name.value,
-											}),
-										})
-									).json();
-									addKey(key);
-									keyMenu.returnFromSub();
-								},
-								{
-									fetchURL: this.info.api + "/users/@me/mfa/webauthn/credentials",
-									method: "POST",
-									headers: this.headers,
-									tfaCheck: false,
-								},
-							);
-							form.addTextInput(I18n.htmlPages.pwField(), "password", {
-								password: true,
-							});
-							const name = form.options.addTextInput(I18n.webauth.keyname(), () => {}, {
-								initText: "Key",
-							});
-						});
-						fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
-							headers: this.headers,
-						})
-							.then((_) => _.json())
-							.then((keys: {id: string; name: string}[]) => {
-								for (const key of keys) {
-									addKey(key);
-								}
-							});
-					});
-				}
-				security.addButtonInput("", I18n.localuser.changeDiscriminator(), () => {
-					const form = security.addSubForm(
-						I18n.localuser.changeDiscriminator(),
-						(_) => {
-							security.returnFromSub();
-						},
-						{
-							fetchURL: this.info.api + "/users/@me/",
-							headers: this.headers,
-							method: "PATCH",
-						},
-					);
-					form.addTextInput(I18n.localuser.newDiscriminator(), "discriminator");
-				});
-				security.addButtonInput("", I18n.localuser.changeEmail(), () => {
-					const form = security.addSubForm(
-						I18n.localuser.changeEmail(),
-						(_) => {
-							security.returnFromSub();
-						},
-						{
-							fetchURL: this.info.api + "/users/@me/",
-							headers: this.headers,
-							method: "PATCH",
-						},
-					);
-					form.addTextInput(I18n.localuser["password:"](), "password", {
-						password: true,
-					});
-					if (this.mfa_enabled) {
-						form.addTextInput(I18n.localuser["2faCode:"](), "code");
-					}
-					form.addTextInput(I18n.localuser["newEmail:"](), "email");
-				});
-				security.addButtonInput("", I18n.localuser.changeUsername(), () => {
-					const form = security.addSubForm(
-						I18n.localuser.changeUsername(),
-						(_) => {
-							security.returnFromSub();
-						},
-						{
-							fetchURL: this.info.api + "/users/@me/",
-							headers: this.headers,
-							method: "PATCH",
-						},
-					);
-					form.addTextInput(I18n.localuser["password:"](), "password", {
-						password: true,
-					});
-					if (this.mfa_enabled) {
-						form.addTextInput(I18n.localuser["2faCode:"](), "code");
-					}
-					form.addTextInput(I18n.localuser.newUsername(), "username");
-				});
-				security.addButtonInput("", I18n.localuser.changePassword(), () => {
-					const form = security.addSubForm(
-						I18n.localuser.changePassword(),
-						(_) => {
-							security.returnFromSub();
-						},
-						{
-							fetchURL: this.info.api + "/users/@me/",
-							headers: this.headers,
-							method: "PATCH",
-						},
-					);
-					form.addTextInput(I18n.localuser["oldPassword:"](), "password", {
-						password: true,
-					});
-					if (this.mfa_enabled) {
-						form.addTextInput(I18n.localuser["2faCode:"](), "code");
-					}
-					let in1 = "";
-					let in2 = "";
-					form
-						.addTextInput(I18n.localuser["newPassword:"](), "", {password: true})
-						.watchForChange((text) => {
-							in1 = text;
-						});
-					const copy = form.addTextInput("New password again:", "", {password: true});
-					copy.watchForChange((text) => {
-						in2 = text;
-					});
-					form.setValue("new_password", () => {
-						if (in1 === in2) {
-							return in1;
-						} else {
-							throw new FormError(copy, I18n.localuser.PasswordsNoMatch());
-						}
-					});
-				});
-
-				security.addSelect(
-					I18n.localuser.language(),
-					(e) => {
-						I18n.setLanguage(I18n.options()[e]);
-						this.updateTranslations();
-					},
-					[...langmap.values()],
-					{defaultIndex: I18n.options().indexOf(I18n.lang)},
-				);
-
-				void getTranslateLanguages().then((languages) => {
-					const names = languages.map((lang) => lang.name);
-					const saveTranslationLang = (index: number) => {
-						const code = languages[index]?.code;
-						if (!code) return;
-						void setTranslationLang(code).then(() => {
-							void AutoTranslationService.refreshTargetLang();
-						});
-					};
-					void getTranslationLang().then((currentLang) => {
-						const foundIndex = currentLang
-							? languages.findIndex((lang) => lang.code === currentLang)
-							: -1;
-						const defaultIndex = foundIndex === -1 ? 0 : foundIndex;
-						const select = security.addSelect(
-							I18n.translation.translationLanguage(),
-							saveTranslationLang,
-							names,
-							{defaultIndex},
-						);
-						select.watchForChange(saveTranslationLang);
-					});
-				});
-
-				{
-					security.addButtonInput("", I18n.logout.logout(), async () => {
-						if (await this.userinfo.logout()) window.location.href = "/";
-					});
-				}
-			};
-			genSecurity();
-		}
 		{
 			const accessibility = settings.addButton(I18n.accessibility.name());
 			accessibility.addCheckboxInput(
@@ -3728,9 +3402,268 @@ class Localuser {
 				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateIcons)},
 			);
 		}
+
 		settings.addSection(
-			sectionLabel("settingsCategories.user.connectionsDeveloper", "Connections & Developer"),
+			sectionLabel("settingsCategories.user.accountSecurity", "Account & Security"),
 		);
+		{
+			const security = settings.addButton(I18n.localuser.accountSettings());
+			const genSecurity = () => {
+				security.removeAll();
+				const grid = document.createElement("div");
+				grid.classList.add("settingsBtnGrid");
+				security.addHTMLArea(grid);
+				const addToGrid = (label: string, onClick: () => void) => {
+					const btn = document.createElement("button");
+					btn.className = "settingsGridBtn";
+					btn.textContent = label;
+					btn.onclick = onClick;
+					grid.append(btn);
+				};
+				if (this.mfa_enabled) {
+					addToGrid(I18n.localuser["2faDisable"](), () => {
+						const form = security.addSubForm(
+							I18n.localuser["2faDisable"](),
+							(_: any) => {
+								if (_.message) {
+									switch (_.code) {
+										case 60008:
+											form.error("code", I18n.localuser.badCode());
+											break;
+									}
+								} else {
+									this.mfa_enabled = false;
+									security.returnFromSub();
+									genSecurity();
+								}
+							},
+							{
+								fetchURL: this.info.api + "/users/@me/mfa/totp/disable",
+								headers: this.headers,
+							},
+						);
+						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
+					});
+				} else {
+					addToGrid(I18n.localuser["2faEnable"](), async () => {
+						let secret = "";
+						for (let i = 0; i < 18; i++) {
+							secret += "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[Math.floor(Math.random() * 32)];
+						}
+						const form = security.addSubForm(
+							I18n.localuser.setUp2fa(),
+							(_: any) => {
+								if (_.message) {
+									switch (_.code) {
+										case 60008:
+											form.error("code", I18n.localuser.badCode());
+											break;
+										case 400:
+											form.error("password", I18n.localuser.badPassword());
+											break;
+									}
+								} else {
+									genSecurity();
+									this.mfa_enabled = true;
+									security.returnFromSub();
+								}
+							},
+							{
+								fetchURL: this.info.api + "/users/@me/mfa/totp/enable/",
+								headers: this.headers,
+							},
+						);
+						form.addTitle(I18n.localuser.setUp2faInstruction());
+						form.addText(I18n.localuser["2faCodeGive"](secret));
+						form.addTextInput(I18n.localuser["password:"](), "password", {
+							required: true,
+							password: true,
+						});
+						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
+						form.setValue("secret", secret);
+					});
+				}
+				addToGrid(I18n.webauth.manage(), () => {
+					const keyMenu = security.addSubOptions("Manage Keys");
+					const addKey = (key: {name: string; id: string}) => {
+						keyMenu.addButtonInput("", key.name, () => {
+							const opt = keyMenu.addSubOptions(key.name);
+							const button = opt.addButtonInput("", I18n.delete(), async () => {
+								await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
+									headers: this.headers,
+									method: "DELETE",
+								});
+								keyMenu.returnFromSub();
+								keyMenu.deleteElm(button);
+							});
+						});
+					};
+					keyMenu.addButtonInput("", I18n.webauth.addKey(), () => {
+						const form = keyMenu.addSubForm(
+							I18n.webauth.addKey(),
+							async (obj) => {
+								const body = obj as {ticket: string; challenge: string};
+								const challenge = JSON.parse(body.challenge)
+									.publicKey as PublicKeyCredentialCreationOptionsJSON;
+								console.log(challenge.challenge);
+								challenge.challenge = challenge.challenge
+									.split("=")[0]
+									.replaceAll("+", "-")
+									.replaceAll("/", "_");
+								console.log(challenge.challenge);
+								const options = PublicKeyCredential.parseCreationOptionsFromJSON(challenge);
+								const credential = (await navigator.credentials.create({
+									publicKey: options,
+								})) as unknown as {
+									rawId: ArrayBuffer;
+									response: {
+										attestationObject: ArrayBuffer;
+										clientDataJSON: ArrayBuffer;
+									};
+								};
+								if (!credential) return;
+								function toBase64(buf: ArrayBuffer) {
+									return btoa(String.fromCharCode(...new Uint8Array(buf)));
+								}
+								const res = {
+									rawId: toBase64(credential.rawId),
+									response: {
+										clientDataJSON: toBase64(credential.response.clientDataJSON),
+										attestationObject: toBase64(credential.response.attestationObject),
+									},
+								};
+								const key = await (
+									await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+										headers: this.headers,
+										method: "POST",
+										body: JSON.stringify({
+											ticket: body.ticket,
+											credential: JSON.stringify(res),
+											name: name.value,
+										}),
+									})
+								).json();
+								addKey(key);
+								keyMenu.returnFromSub();
+							},
+							{
+								fetchURL: this.info.api + "/users/@me/mfa/webauthn/credentials",
+								method: "POST",
+								headers: this.headers,
+								tfaCheck: false,
+							},
+						);
+						form.addTextInput(I18n.htmlPages.pwField(), "password", {
+							password: true,
+						});
+						const name = form.options.addTextInput(I18n.webauth.keyname(), () => {}, {
+							initText: "Key",
+						});
+					});
+					fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+						headers: this.headers,
+					})
+						.then((_) => _.json())
+						.then((keys: {id: string; name: string}[]) => {
+							for (const key of keys) {
+								addKey(key);
+							}
+						});
+				});
+				addToGrid(I18n.localuser.changeDiscriminator(), () => {
+					const form = security.addSubForm(
+						I18n.localuser.changeDiscriminator(),
+						(_) => {
+							security.returnFromSub();
+						},
+						{
+							fetchURL: this.info.api + "/users/@me/",
+							headers: this.headers,
+							method: "PATCH",
+						},
+					);
+					form.addTextInput(I18n.localuser.newDiscriminator(), "discriminator");
+				});
+				addToGrid(I18n.localuser.changeEmail(), () => {
+					const form = security.addSubForm(
+						I18n.localuser.changeEmail(),
+						(_) => {
+							security.returnFromSub();
+						},
+						{
+							fetchURL: this.info.api + "/users/@me/",
+							headers: this.headers,
+							method: "PATCH",
+						},
+					);
+					form.addTextInput(I18n.localuser["password:"](), "password", {
+						password: true,
+					});
+					if (this.mfa_enabled) {
+						form.addTextInput(I18n.localuser["2faCode:"](), "code");
+					}
+					form.addTextInput(I18n.localuser["newEmail:"](), "email");
+				});
+				addToGrid(I18n.localuser.changeUsername(), () => {
+					const form = security.addSubForm(
+						I18n.localuser.changeUsername(),
+						(_) => {
+							security.returnFromSub();
+						},
+						{
+							fetchURL: this.info.api + "/users/@me/",
+							headers: this.headers,
+							method: "PATCH",
+						},
+					);
+					form.addTextInput(I18n.localuser["password:"](), "password", {
+						password: true,
+					});
+					if (this.mfa_enabled) {
+						form.addTextInput(I18n.localuser["2faCode:"](), "code");
+					}
+					form.addTextInput(I18n.localuser.newUsername(), "username");
+				});
+				addToGrid(I18n.localuser.changePassword(), () => {
+					const form = security.addSubForm(
+						I18n.localuser.changePassword(),
+						(_) => {
+							security.returnFromSub();
+						},
+						{
+							fetchURL: this.info.api + "/users/@me/",
+							headers: this.headers,
+							method: "PATCH",
+						},
+					);
+					form.addTextInput(I18n.localuser["oldPassword:"](), "password", {
+						password: true,
+					});
+					if (this.mfa_enabled) {
+						form.addTextInput(I18n.localuser["2faCode:"](), "code");
+					}
+					let in1 = "";
+					let in2 = "";
+					form
+						.addTextInput(I18n.localuser["newPassword:"](), "", {password: true})
+						.watchForChange((text) => {
+							in1 = text;
+						});
+					const copy = form.addTextInput("New password again:", "", {password: true});
+					copy.watchForChange((text) => {
+						in2 = text;
+					});
+					form.setValue("new_password", () => {
+						if (in1 === in2) {
+							return in1;
+						} else {
+							throw new FormError(copy, I18n.localuser.PasswordsNoMatch());
+						}
+					});
+				});
+			};
+			genSecurity();
+		}
 		{
 			const connections = settings.addButton(I18n.localuser.connections());
 			const connectionContainer = document.createElement("div");
@@ -3874,6 +3807,290 @@ class Localuser {
 			connections.addHR();
 			connections.addHTMLArea(actConDivCont);
 		}
+
+		{
+			const manageSessions = settings.addButton(I18n.deviceManage.title());
+			(async () => {
+				const json = (await (
+					await fetch(this.info.api + "/auth/sessions?extended=true", {headers: this.headers})
+				).json()) as {user_sessions: expSessionJson[]};
+				const sorted = json.user_sessions.sort(
+					(a, b) => +new Date(b.last_seen) - +new Date(a.last_seen),
+				);
+				const showAllBtn = document.createElement("button");
+				showAllBtn.textContent = I18n.settings.showAll(" ( " + sorted.length + " )");
+				showAllBtn.classList.add("sessionShowAll");
+				const renderSessions = (all: boolean) => {
+					manageSessions.removeAll();
+					if (all) showAllBtn.remove();
+					const toShow = all ? sorted : sorted.slice(0, 10);
+					for (const session of toShow) {
+						const div = document.createElement("div");
+						div.classList.add("flexltr", "sessionDiv");
+
+						const info = document.createElement("div");
+						info.classList.add("flexttb");
+						div.append(info);
+
+						let line2 = "";
+						const last = session.last_seen_location_info;
+						if (last) {
+							line2 += last.country_name;
+							if (last.region) line2 += ", " + last.region;
+							if (last.city) line2 += ", " + last.city;
+						}
+						if (line2) {
+							line2 += " • ";
+						}
+						const format = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
+						const time = (Date.now() - +new Date(session.last_seen)) / 1000;
+						if (time < 60) {
+							line2 += format.format(-Math.floor(time), "seconds");
+						} else if (time < 60 * 60) {
+							line2 += format.format(-Math.floor(time / 60), "minutes");
+						} else if (time < 60 * 60 * 24) {
+							line2 += format.format(-Math.floor(time / 60 / 60), "hours");
+						} else if (time < 60 * 60 * 24 * 7) {
+							line2 += format.format(-Math.floor(time / 60 / 60 / 24), "days");
+						} else if (time < 60 * 60 * 24 * 365) {
+							line2 += format.format(-Math.floor(time / 60 / 60 / 24 / 7), "weeks");
+						} else {
+							line2 += format.format(-Math.floor(time / 60 / 60 / 24 / 365), "years");
+						}
+						const loc = document.createElement("span");
+						loc.textContent = line2;
+						info.append(loc);
+						const r = manageSessions.addHTMLArea(div);
+						div.onclick = () => {
+							const sub = manageSessions.addSubOptions(I18n.deviceManage.manageDev());
+							sub.addText(I18n.deviceManage.ip(session.last_seen_ip));
+							sub.addText(I18n.deviceManage.last(session.approx_last_used_time));
+							if (last) {
+								sub.addText(I18n.deviceManage.estimateWarn());
+								sub.addText(I18n.deviceManage.continent(last.continent_name));
+								sub.addText(I18n.deviceManage.country(last.country_name));
+								if (last.region) sub.addText(I18n.deviceManage.region(last.region));
+								if (last.city) sub.addText(I18n.deviceManage.city(last.city));
+								if (last.postal) sub.addText(I18n.deviceManage.postal(last.postal));
+								sub.addText(I18n.deviceManage.longitude(last.longitude + ""));
+								sub.addText(I18n.deviceManage.latitude(last.latitude + ""));
+							}
+							if (session.id !== this.session_id) {
+								sub.addButtonInput("", I18n.deviceManage.logout(), () => {
+									div.remove();
+									r.html = document.createElement("div");
+									manageSessions.returnFromSub();
+									fetch(this.info.api + "/auth/sessions/logout", {
+										method: "POST",
+										headers: this.headers,
+										body: JSON.stringify({
+											session_id_hashes: [session.id_hash],
+										}),
+									});
+								});
+							} else sub.addText(I18n.deviceManage.curSes());
+						};
+					}
+					if (!all && sorted.length > 10) {
+						manageSessions.addHTMLArea(showAllBtn);
+					}
+				};
+				renderSessions(false);
+				showAllBtn.onclick = () => {
+					renderSessions(true);
+				};
+			})();
+		}
+
+		{
+			const deleteAccount = settings.addButton(I18n.localuser.deleteAccount()).addForm(
+				"",
+				(e) => {
+					if ("message" in e) {
+						if (typeof e.message === "string") {
+							throw new FormError(password, e.message);
+						}
+					} else {
+						this.userinfo.remove();
+						window.location.href = "/";
+					}
+				},
+				{
+					headers: this.headers,
+					method: "POST",
+					fetchURL: this.info.api + "/users/@me/delete/",
+					traditionalSubmit: false,
+					submitText: I18n.localuser.deleteAccountButton(),
+				},
+			);
+			const shrek = deleteAccount.addTextInput(
+				I18n.localuser.areYouSureDelete(I18n.localuser.sillyDeleteConfirmPhrase()),
+				"shrek",
+			);
+			const password = deleteAccount.addTextInput(I18n.localuser["password:"](), "password", {
+				password: true,
+			});
+			deleteAccount.addPreprocessor((obj) => {
+				if ("shrek" in obj) {
+					if (obj.shrek !== I18n.localuser.sillyDeleteConfirmPhrase()) {
+						throw new FormError(shrek, I18n.localuser.mustTypePhrase());
+					}
+					delete obj.shrek;
+				} else {
+					throw new FormError(shrek, I18n.localuser.mustTypePhrase());
+				}
+			});
+		}
+
+		settings.addSection(sectionLabel("settingsCategories.user.application", "Application"));
+		{
+			const langRegion = settings.addButton(I18n.localuser.language());
+			langRegion.addSelect(
+				I18n.localuser.language(),
+				(e) => {
+					I18n.setLanguage(I18n.options()[e]);
+					this.updateTranslations();
+				},
+				[...langmap.values()],
+				{defaultIndex: I18n.options().indexOf(I18n.lang)},
+			);
+
+			void getTranslateLanguages().then((languages) => {
+				const names = languages.map((lang) => lang.name);
+				const saveTranslationLang = (index: number) => {
+					const code = languages[index]?.code;
+					if (!code) return;
+					void setTranslationLang(code).then(() => {
+						void AutoTranslationService.refreshTargetLang();
+					});
+				};
+				void getTranslationLang().then((currentLang) => {
+					const foundIndex = currentLang
+						? languages.findIndex((lang) => lang.code === currentLang)
+						: -1;
+					const defaultIndex = foundIndex === -1 ? 0 : foundIndex;
+					const select = langRegion.addSelect(
+						I18n.translation.translationLanguage(),
+						saveTranslationLang,
+						names,
+						{defaultIndex},
+					);
+					select.watchForChange(saveTranslationLang);
+				});
+			});
+		}
+		{
+			const update = settings.addButton(I18n.localuser.updateSettings());
+			let index = ServiceWorkerModeValues.indexOf(localSettings.serviceWorkerMode);
+			if (index === -1) {
+				index = 2;
+			}
+			const sw = update.addSelect(
+				I18n.settings.updates.serviceWorkerMode.title(),
+				() => {},
+				ServiceWorkerModeValues.map((e) => I18n.settings.updates.serviceWorkerMode[e]()),
+				{
+					defaultIndex: index,
+				},
+			);
+			sw.onchange = (e) => {
+				SW.setMode(ServiceWorkerModeValues[e]);
+			};
+			update.addButtonInput("", I18n.localuser.CheckUpdate(), async () => {
+				const update = await SW.checkUpdates();
+				const text = update ? I18n.localuser.updatesYay() : I18n.localuser.noUpdates();
+				const d = new Dialog("");
+				d.options.addTitle(text);
+				if (update) {
+					d.options.addButtonInput("", I18n.localuser.refreshPage(), () => {
+						window.location.reload();
+					});
+				}
+				d.show();
+			});
+			update.addButtonInput("", I18n.localuser.clearCache(), () => {
+				SW.forceClear();
+			});
+		}
+
+		const installP = installPGet();
+		if (installP) {
+			const c = settings.addButton(I18n.localuser.install());
+			c.addText(I18n.localuser.installDesc());
+			c.addButtonInput("", I18n.localuser.installJank(), async () => {
+				//@ts-expect-error have to do this :3
+				await installP.prompt();
+			});
+		}
+
+		{
+			const trusted = settings.addButton(I18n.localuser.trusted());
+			trusted.addMDText(new MarkDown(I18n.localuser.trustedDesc()));
+
+			const list = document.createElement("div");
+			list.classList.add("flexttb");
+
+			const createTrustedDomainRow = (domain: string) => {
+				const div = document.createElement("div");
+				div.classList.add("flexltr", "trustedDomain");
+
+				const name = document.createElement("span");
+				name.textContent = domain;
+
+				const remove = document.createElement("button");
+				remove.textContent = I18n.remove();
+				remove.onclick = () => {
+					MarkDown.saveTrusted();
+					MarkDown.trustedDomains.delete(domain);
+					MarkDown.saveTrusted(true);
+					div.remove();
+				};
+
+				div.append(name, remove);
+				list.append(div);
+			};
+
+			const addRow = document.createElement("div");
+			addRow.classList.add("flexltr", "trustedDomainAdd");
+			const addInput = document.createElement("input");
+			addInput.type = "text";
+			addInput.placeholder = I18n.localuser.trustedDomainPlaceholder();
+			addInput.classList.add("trustedDomainInput");
+
+			const addButton = document.createElement("button");
+			addButton.textContent = I18n.add();
+			const addDomain = () => {
+				const domain = addInput.value.trim().toLowerCase();
+				if (!domain) return;
+				if (MarkDown.trustedDomains.has(domain)) {
+					addInput.value = "";
+					return;
+				}
+				MarkDown.trustedDomains.add(domain);
+				MarkDown.saveTrusted();
+				createTrustedDomainRow(domain);
+				addInput.value = "";
+			};
+			addButton.onclick = addDomain;
+			addInput.onkeydown = (event) => {
+				if (event.key === "Enter") {
+					event.preventDefault();
+					addDomain();
+				}
+			};
+			addRow.append(addInput, addButton);
+
+			trusted.addHTMLArea(addRow);
+			trusted.addHTMLArea(list);
+
+			for (const thing of MarkDown.trustedDomains) {
+				createTrustedDomainRow(thing);
+			}
+		}
+
+		settings.addSection(
+			sectionLabel("settingsCategories.user.developerOptions", "Developer Options"),
+		);
 		{
 			const devPortal = settings.addButton(I18n.localuser.devPortal());
 
@@ -3960,122 +4177,268 @@ class Localuser {
 		}
 
 		{
-			const manageSessions = settings.addButton(I18n.deviceManage.title());
-			(async () => {
-				const json = (await (
-					await fetch(this.info.api + "/auth/sessions?extended=true", {headers: this.headers})
-				).json()) as {user_sessions: expSessionJson[]};
-				for (const session of json.user_sessions.sort(
-					(a, b) => +new Date(a.last_seen) - +new Date(b.last_seen),
-				)) {
-					const div = document.createElement("div");
-					div.classList.add("flexltr", "sessionDiv");
+			const devSettings = settings.addButton(I18n.devSettings.name(), {noSubmit: true});
+			devSettings.addText(I18n.devSettings.description());
+			devSettings.addHR();
+			const box1 = devSettings.addCheckboxInput(I18n.devSettings.logGateway(), () => {}, {
+				initState: getDeveloperSettings().gatewayLogging,
+			});
+			box1.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.gatewayLogging = e;
+				setDeveloperSettings(settings);
+			};
 
-					const info = document.createElement("div");
-					info.classList.add("flexttb");
-					div.append(info);
+			const box2 = devSettings.addCheckboxInput(I18n.devSettings.badUser(), () => {}, {
+				initState: getDeveloperSettings().logBannedFields,
+			});
+			box2.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.logBannedFields = e;
+				setDeveloperSettings(settings);
+			};
 
-					let line2 = "";
-					const last = session.last_seen_location_info;
-					if (last) {
-						line2 += last.country_name;
-						if (last.region) line2 += ", " + last.region;
-						if (last.city) line2 += ", " + last.city;
-					}
-					if (line2) {
-						line2 += " • ";
-					}
-					const format = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
-					const time = (Date.now() - +new Date(session.last_seen)) / 1000;
-					if (time < 60) {
-						line2 += format.format(-Math.floor(time), "seconds");
-					} else if (time < 60 * 60) {
-						line2 += format.format(-Math.floor(time / 60), "minutes");
-					} else if (time < 60 * 60 * 24) {
-						line2 += format.format(-Math.floor(time / 60 / 60), "hours");
-					} else if (time < 60 * 60 * 24 * 7) {
-						line2 += format.format(-Math.floor(time / 60 / 60 / 24), "days");
-					} else if (time < 60 * 60 * 24 * 365) {
-						line2 += format.format(-Math.floor(time / 60 / 60 / 24 / 7), "weeks");
-					} else {
-						line2 += format.format(-Math.floor(time / 60 / 60 / 24 / 365), "years");
-					}
-					const loc = document.createElement("span");
-					loc.textContent = line2;
-					info.append(loc);
-					const r = manageSessions.addHTMLArea(div);
-					div.onclick = () => {
-						const sub = manageSessions.addSubOptions(I18n.deviceManage.manageDev());
-						sub.addText(I18n.deviceManage.ip(session.last_seen_ip));
-						sub.addText(I18n.deviceManage.last(session.approx_last_used_time));
-						if (last) {
-							sub.addText(I18n.deviceManage.estimateWarn());
-							sub.addText(I18n.deviceManage.continent(last.continent_name));
-							sub.addText(I18n.deviceManage.country(last.country_name));
-							if (last.region) sub.addText(I18n.deviceManage.region(last.region));
-							if (last.city) sub.addText(I18n.deviceManage.city(last.city));
-							if (last.postal) sub.addText(I18n.deviceManage.postal(last.postal));
-							sub.addText(I18n.deviceManage.longitude(last.longitude + ""));
-							sub.addText(I18n.deviceManage.latitude(last.latitude + ""));
-						}
-						if (session.id !== this.session_id) {
-							sub.addButtonInput("", I18n.deviceManage.logout(), () => {
-								div.remove();
-								r.html = document.createElement("div");
-								manageSessions.returnFromSub();
-								fetch(this.info.api + "/auth/sessions/logout", {
-									method: "POST",
-									headers: this.headers,
-									body: JSON.stringify({
-										session_id_hashes: [session.id_hash],
-									}),
-								});
-							});
-						} else sub.addText(I18n.deviceManage.curSes());
-					};
-				}
-			})();
+			const box3 = devSettings.addCheckboxInput(I18n.devSettings.traces(), () => {}, {
+				initState: getDeveloperSettings().showTraces,
+			});
+			box3.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.showTraces = e;
+				setDeveloperSettings(settings);
+			};
+
+			const box4 = devSettings.addCheckboxInput(I18n.devSettings.cache(), () => {}, {
+				initState: getDeveloperSettings().cacheSourceMaps,
+			});
+			box4.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.cacheSourceMaps = e;
+				setDeveloperSettings(settings);
+				SW.postMessage({code: "isDev", dev: e});
+			};
+			devSettings.addText(I18n.devSettings.cacheDesc());
+
+			const box5 = devSettings.addCheckboxInput(I18n.devSettings.captureTrace(), () => {}, {
+				initState: getDeveloperSettings().interceptApiTraces,
+			});
+			box5.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.interceptApiTraces = e;
+				setDeveloperSettings(settings);
+				SW.traceInit();
+			};
+
+			const box6 = devSettings.addCheckboxInput(I18n.devSettings.gatewayComp(), () => {}, {
+				initState: getDeveloperSettings().gatewayCompression,
+			});
+			box6.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.gatewayCompression = e;
+				setDeveloperSettings(settings);
+				SW.traceInit();
+			};
+
+			const box7 = devSettings.addCheckboxInput(I18n.devSettings.reportSystem(), () => {}, {
+				initState: getDeveloperSettings().reportSystem,
+			});
+			box7.onchange = (e) => {
+				const settings = getDeveloperSettings();
+				settings.reportSystem = e;
+				setDeveloperSettings(settings);
+				SW.traceInit();
+			};
+
+			devSettings.addButtonInput("", I18n.devSettings.clearWellKnowns(), async () => {
+				const currentUserInfos = JSON.parse(localStorage.getItem("userinfos")!);
+				await Promise.all(
+					Object.keys(currentUserInfos.users).map(async (user) => {
+						const key =
+							currentUserInfos.users[user].serverurls.value ??
+							currentUserInfos.users[user].serverurls.wellknown ??
+							currentUserInfos.users[user].serverurls.api;
+						currentUserInfos.users[user].serverurls = await getapiurls(key);
+						console.log(key, currentUserInfos.users[user].serverurls);
+						localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
+					}),
+				);
+
+				localStorage.removeItem("instanceinfo");
+				await SW.postMessage({
+					code: "clearCdnCache",
+				});
+
+				// @ts-ignore - chromium is smelly for not supporting the `forceGet` option (aka skip cache)
+				window.location.reload(true);
+			});
 		}
 
-		{
-			const deleteAccount = settings.addButton(I18n.localuser.deleteAccount()).addForm(
+		if (this.trace.length && getDeveloperSettings().showTraces) {
+			const traces = settings.addButton(I18n.localuser.trace(), {
+				noSubmit: true,
+			});
+			const traceArr = this.trace;
+
+			const sel = traces.addSelect(
 				"",
-				(e) => {
-					if ("message" in e) {
-						if (typeof e.message === "string") {
-							throw new FormError(password, e.message);
-						}
-					} else {
-						this.userinfo.remove();
-						window.location.href = "/";
-					}
-				},
+				() => {},
+				this.trace.map((_) =>
+					I18n.trace.traces(
+						_.trace[0],
+						_.trace[1].micros / 1000 + "",
+						_.time.getHours() + ":" + _.time.getMinutes(),
+					),
+				),
+			);
+			function generateTraceHTML(trace: trace, indent: number): HTMLElement {
+				const div = document.createElement("div");
+				div.classList.add("traceDiv", "flexttb");
+
+				const head = document.createElement("div");
+				div.append(head);
+
+				const title = document.createElement("h3");
+				title.textContent = I18n.trace.totalTime(trace[1].micros / 1000 + "", trace[0]);
+				const indents = document.createElement("span");
+				indents.classList.add("visually-hidden");
+				indents.textContent = "  ".repeat(indent);
+				title.prepend(indents);
+				head.append(title);
+
+				if (!trace[1].calls) return div;
+
+				let objs: {name: string; val: traceObj}[] = [];
 				{
-					headers: this.headers,
-					method: "POST",
-					fetchURL: this.info.api + "/users/@me/delete/",
-					traditionalSubmit: false,
-					submitText: I18n.localuser.deleteAccountButton(),
-				},
-			);
-			const shrek = deleteAccount.addTextInput(
-				I18n.localuser.areYouSureDelete(I18n.localuser.sillyDeleteConfirmPhrase()),
-				"shrek",
-			);
-			const password = deleteAccount.addTextInput(I18n.localuser["password:"](), "password", {
-				password: true,
-			});
-			deleteAccount.addPreprocessor((obj) => {
-				if ("shrek" in obj) {
-					if (obj.shrek !== I18n.localuser.sillyDeleteConfirmPhrase()) {
-						throw new FormError(shrek, I18n.localuser.mustTypePhrase());
+					const names = trace[1].calls.filter((_) => typeof _ === "string");
+					const vals = trace[1].calls.filter((_) => _ instanceof Object);
+					let i = 0;
+					for (const name of names) {
+						const val = vals[i];
+						objs.push({name, val});
+						i++;
 					}
-					delete obj.shrek;
-				} else {
-					throw new FormError(shrek, I18n.localuser.mustTypePhrase());
 				}
+
+				const bars = document.createElement("div");
+				bars.classList.add("flexltr", "traceBars");
+
+				const colors = ["red", "orange", "yellow", "lime", "blue", "indigo", "violet"];
+				let i = 0;
+				for (const thing of objs) {
+					const bar = document.createElement("div");
+					bar.style.setProperty(
+						"flex-grow",
+						Math.ceil((thing.val.micros / trace[1].micros) * 1000) + "",
+					);
+					bar.style.setProperty("background", colors[i % colors.length]);
+					bars.append(bar);
+					new Hover(I18n.trace.totalTime(thing.val.micros / 1000 + "", thing.name)).addEvent(bar);
+					i++;
+				}
+				const body = document.createElement("div");
+				div.append(body);
+				head.append(bars);
+				let dropped = false;
+				head.onclick = () => {
+					if (!trace[1].calls) return;
+					if (dropped) {
+						dropped = false;
+						body.innerHTML = "";
+						return;
+					}
+
+					let i = 0;
+					for (const obj of objs) {
+						body.append(generateTraceHTML([obj.name, obj.val], indent + 1));
+						i++;
+					}
+					dropped = true;
+				};
+
+				div.classList.add("dropDownTrace");
+				head.classList.add("traceHead");
+				return div;
+			}
+			const blank = document.createElement("div");
+			traces.addHTMLArea(blank);
+			const updateInfo = () => {
+				const trace = traceArr[sel.index];
+				blank.innerHTML = "";
+				blank.append(generateTraceHTML(trace.trace, 0));
+			};
+			sel.onchange = () => {
+				updateInfo();
+			};
+			updateInfo();
+		}
+
+		settings.addSection(sectionLabel("settingsCategories.user.instanceInfo", "Instance Info"));
+		{
+			const jankInfo = settings.addButton(I18n.jankInfo());
+			const img = document.createElement("img");
+			img.src = new URL("./logo.svg", import.meta.url).href;
+			jankInfo.addHTMLArea(img);
+			img.width = 128;
+			img.height = 128;
+			let ver = "dev";
+			try {
+				const response = await fetch("/getupdates", {cache: "no-store"});
+				if (response.ok) {
+					const text = (await response.text()).trim();
+					if (text && !text.toLowerCase().startsWith("<!doctype html") && !text.includes("<html")) {
+						ver = text;
+					}
+				}
+			} catch {}
+			jankInfo.addMDText(
+				new MarkDown(
+					I18n.clientDesc(ver, window.location.origin, this.rights.allow + ""),
+					undefined,
+				),
+			);
+			jankInfo.addButtonInput("", I18n.changelog.viewButton(), () => {
+				showChangelogPopup({force: true});
 			});
 		}
+
+		if (isOpenpanelConfigured()) {
+			const openpanelOpts = settings.addButton(I18n.localuser.openpanelTitle());
+			openpanelOpts.addText(I18n.localuser.openpanelDesc());
+			const analyticsWidget = makeOpenpanelAnalyticsWidget(
+				localSettings.openpanelAnalyticsMode || OpenPanelAnalyticsMode.Default,
+				(mode) => {
+					const prevEnabled = localSettings.openpanelEnabled !== false;
+					const previousMode = prevEnabled
+						? localSettings.openpanelAnalyticsMode
+						: OpenPanelAnalyticsMode.Disabled;
+					if (mode === OpenPanelAnalyticsMode.Disabled) {
+						this.identifyOpenpanelUser(mode);
+						sendOpenpanelAnalyticsModeChange(previousMode, mode);
+						localSettings.openpanelAnalyticsMode = mode;
+						document.dispatchEvent(
+							new CustomEvent("openpanel:enabled", {detail: {enabled: false}}),
+						);
+						localSettings.openpanelEnabled = false;
+						setLocalSettings(localSettings);
+						analyticsWidget.setDisabled(false);
+						clearOpenpanel();
+						return;
+					}
+					localSettings.openpanelAnalyticsMode = mode;
+					localSettings.openpanelEnabled = true;
+					setLocalSettings(localSettings);
+					analyticsWidget.setDisabled(false);
+					if (!prevEnabled) {
+						document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: true}}));
+					}
+					initOpenpanel(true);
+					this.identifyOpenpanelUser();
+					sendOpenpanelAnalyticsModeChange(previousMode, mode);
+				},
+			);
+			analyticsWidget.setDisabled(localSettings.openpanelEnabled === false);
+			openpanelOpts.addHTMLArea(analyticsWidget.element);
+		}
+
 		if (
 			this.rights.hasPermission("OPERATOR") ||
 			this.rights.hasPermission("CREATE_REGISTRATION_TOKENS")
@@ -4205,378 +4568,7 @@ class Localuser {
 				});
 			}
 		}
-		(async () => {
-			settings.addSection(
-				sectionLabel("settingsCategories.user.appInstanceInfo", "App & Instance Info"),
-			);
-			const jankInfo = settings.addButton(I18n.jankInfo());
-			const img = document.createElement("img");
-			img.src = new URL("./logo.svg", import.meta.url).href;
-			jankInfo.addHTMLArea(img);
-			img.width = 128;
-			img.height = 128;
-			let ver = "dev";
-			try {
-				const response = await fetch("/getupdates", {cache: "no-store"});
-				if (response.ok) {
-					const text = (await response.text()).trim();
-					if (text && !text.toLowerCase().startsWith("<!doctype html") && !text.includes("<html")) {
-						ver = text;
-					}
-				}
-			} catch {}
-			jankInfo.addMDText(
-				new MarkDown(
-					I18n.clientDesc(ver, window.location.origin, this.rights.allow + ""),
-					undefined,
-				),
-			);
-			jankInfo.addButtonInput("", I18n.changelog.viewButton(), () => {
-				showChangelogPopup({force: true});
-			});
-			if (isOpenpanelConfigured()) {
-				jankInfo.addHR();
-				jankInfo.addTitle(I18n.localuser.openpanelTitle());
-				jankInfo.addText(I18n.localuser.openpanelDesc());
-				const analyticsWidget = makeOpenpanelAnalyticsWidget(
-					localSettings.openpanelAnalyticsMode || OpenPanelAnalyticsMode.Default,
-					(mode) => {
-						const prevEnabled = localSettings.openpanelEnabled !== false;
-						const previousMode = prevEnabled
-							? localSettings.openpanelAnalyticsMode
-							: OpenPanelAnalyticsMode.Disabled;
-						if (mode === OpenPanelAnalyticsMode.Disabled) {
-							this.identifyOpenpanelUser(mode);
-							sendOpenpanelAnalyticsModeChange(previousMode, mode);
-							localSettings.openpanelAnalyticsMode = mode;
-							document.dispatchEvent(
-								new CustomEvent("openpanel:enabled", {detail: {enabled: false}}),
-							);
-							localSettings.openpanelEnabled = false;
-							setLocalSettings(localSettings);
-							analyticsWidget.setDisabled(false);
-							clearOpenpanel();
-							return;
-						}
-						localSettings.openpanelAnalyticsMode = mode;
-						localSettings.openpanelEnabled = true;
-						setLocalSettings(localSettings);
-						analyticsWidget.setDisabled(false);
-						if (!prevEnabled) {
-							document.dispatchEvent(
-								new CustomEvent("openpanel:enabled", {detail: {enabled: true}}),
-							);
-						}
-						initOpenpanel(true);
-						this.identifyOpenpanelUser();
-						sendOpenpanelAnalyticsModeChange(previousMode, mode);
-					},
-				);
-				analyticsWidget.setDisabled(localSettings.openpanelEnabled === false);
-				jankInfo.addHTMLArea(analyticsWidget.element);
-			}
-		})();
-		const installP = installPGet();
-		if (installP) {
-			const c = settings.addButton(I18n.localuser.install());
-			c.addText(I18n.localuser.installDesc());
-			c.addButtonInput("", I18n.localuser.installJank(), async () => {
-				//@ts-expect-error have to do this :3
-				await installP.prompt();
-			});
-		}
-		{
-			const trusted = settings.addButton(I18n.localuser.trusted());
-			trusted.addMDText(new MarkDown(I18n.localuser.trustedDesc()));
 
-			const list = document.createElement("div");
-			list.classList.add("flexttb");
-
-			const createTrustedDomainRow = (domain: string) => {
-				const div = document.createElement("div");
-				div.classList.add("flexltr", "trustedDomain");
-
-				const name = document.createElement("span");
-				name.textContent = domain;
-
-				const remove = document.createElement("button");
-				remove.textContent = I18n.remove();
-				remove.onclick = () => {
-					MarkDown.saveTrusted();
-					MarkDown.trustedDomains.delete(domain);
-					MarkDown.saveTrusted(true);
-					div.remove();
-				};
-
-				div.append(name, remove);
-				list.append(div);
-			};
-
-			const addRow = document.createElement("div");
-			addRow.classList.add("flexltr", "trustedDomainAdd");
-			const addInput = document.createElement("input");
-			addInput.type = "text";
-			addInput.placeholder = I18n.localuser.trustedDomainPlaceholder();
-			addInput.classList.add("trustedDomainInput");
-
-			const addButton = document.createElement("button");
-			addButton.textContent = I18n.add();
-			const addDomain = () => {
-				const domain = addInput.value.trim().toLowerCase();
-				if (!domain) return;
-				if (MarkDown.trustedDomains.has(domain)) {
-					addInput.value = "";
-					return;
-				}
-				MarkDown.trustedDomains.add(domain);
-				MarkDown.saveTrusted();
-				createTrustedDomainRow(domain);
-				addInput.value = "";
-			};
-			addButton.onclick = addDomain;
-			addInput.onkeydown = (event) => {
-				if (event.key === "Enter") {
-					event.preventDefault();
-					addDomain();
-				}
-			};
-			addRow.append(addInput, addButton);
-
-			trusted.addHTMLArea(addRow);
-			trusted.addHTMLArea(list);
-
-			for (const thing of MarkDown.trustedDomains) {
-				createTrustedDomainRow(thing);
-			}
-		}
-		/*
-		{
-			const blog = settings.addButton(I18n.blog.blog());
-			blog.addCheckboxInput(
-				I18n.blog.blogUpdates(),
-				async (check) => {
-					prefs.showBlogUpdates = check;
-					await setPreferences(prefs);
-				},
-				{initState: prefs.showBlogUpdates},
-			);
-			(async () => {
-				const posts = await this.getPosts();
-				for (const post of posts.items) {
-					const div = document.createElement("div");
-					div.classList.add("flexltr", "blogDiv");
-					if (post.image) {
-						//TODO handle this case, no blog posts currently do this
-					}
-					const titleStuff = document.createElement("div");
-					titleStuff.classList.add("flexttb");
-
-					const h2 = document.createElement("h2");
-					h2.textContent = post.title;
-
-					const p = document.createElement("p");
-					p.textContent = post.content_html;
-					titleStuff.append(h2, p);
-					div.append(titleStuff);
-					blog.addHTMLArea(div);
-					MarkDown.safeLink(div, post.url);
-				}
-			})();
-		}
-		*/
-		{
-			const devSettings = settings.addButton(I18n.devSettings.name(), {noSubmit: true});
-			devSettings.addText(I18n.devSettings.description());
-			devSettings.addHR();
-			const box1 = devSettings.addCheckboxInput(I18n.devSettings.logGateway(), () => {}, {
-				initState: getDeveloperSettings().gatewayLogging,
-			});
-			box1.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.gatewayLogging = e;
-				setDeveloperSettings(settings);
-			};
-
-			const box2 = devSettings.addCheckboxInput(I18n.devSettings.badUser(), () => {}, {
-				initState: getDeveloperSettings().logBannedFields,
-			});
-			box2.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.logBannedFields = e;
-				setDeveloperSettings(settings);
-			};
-
-			const box3 = devSettings.addCheckboxInput(I18n.devSettings.traces(), () => {}, {
-				initState: getDeveloperSettings().showTraces,
-			});
-			box3.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.showTraces = e;
-				setDeveloperSettings(settings);
-			};
-
-			const box4 = devSettings.addCheckboxInput(I18n.devSettings.cache(), () => {}, {
-				initState: getDeveloperSettings().cacheSourceMaps,
-			});
-			box4.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.cacheSourceMaps = e;
-				setDeveloperSettings(settings);
-				SW.postMessage({code: "isDev", dev: e});
-			};
-			devSettings.addText(I18n.devSettings.cacheDesc());
-
-			const box5 = devSettings.addCheckboxInput(I18n.devSettings.captureTrace(), () => {}, {
-				initState: getDeveloperSettings().interceptApiTraces,
-			});
-			box5.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.interceptApiTraces = e;
-				setDeveloperSettings(settings);
-				SW.traceInit();
-			};
-
-			const box6 = devSettings.addCheckboxInput(I18n.devSettings.gatewayComp(), () => {}, {
-				initState: getDeveloperSettings().gatewayCompression,
-			});
-			box6.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.gatewayCompression = e;
-				setDeveloperSettings(settings);
-				SW.traceInit();
-			};
-
-			const box7 = devSettings.addCheckboxInput(I18n.devSettings.reportSystem(), () => {}, {
-				initState: getDeveloperSettings().reportSystem,
-			});
-			box7.onchange = (e) => {
-				const settings = getDeveloperSettings();
-				settings.reportSystem = e;
-				setDeveloperSettings(settings);
-				SW.traceInit();
-			};
-
-			devSettings.addButtonInput("", I18n.devSettings.clearWellKnowns(), async () => {
-				const currentUserInfos = JSON.parse(localStorage.getItem("userinfos")!);
-				await Promise.all(
-					Object.keys(currentUserInfos.users).map(async (user) => {
-						const key =
-							currentUserInfos.users[user].serverurls.value ??
-							currentUserInfos.users[user].serverurls.wellknown ??
-							currentUserInfos.users[user].serverurls.api;
-						currentUserInfos.users[user].serverurls = await getapiurls(key);
-						console.log(key, currentUserInfos.users[user].serverurls);
-						localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
-					}),
-				);
-
-				localStorage.removeItem("instanceinfo");
-				await SW.postMessage({
-					code: "clearCdnCache",
-				});
-
-				// @ts-ignore - chromium is smelly for not supporting the `forceGet` option (aka skip cache)
-				window.location.reload(true);
-			});
-		}
-		if (this.trace.length && getDeveloperSettings().showTraces) {
-			const traces = settings.addButton(I18n.localuser.trace(), {
-				noSubmit: true,
-			});
-			const traceArr = this.trace;
-
-			const sel = traces.addSelect(
-				"",
-				() => {},
-				this.trace.map((_) =>
-					I18n.trace.traces(
-						_.trace[0],
-						_.trace[1].micros / 1000 + "",
-						_.time.getHours() + ":" + _.time.getMinutes(),
-					),
-				),
-			);
-			function generateTraceHTML(trace: trace, indent: number): HTMLElement {
-				const div = document.createElement("div");
-				div.classList.add("traceDiv", "flexttb");
-
-				const head = document.createElement("div");
-				div.append(head);
-
-				const title = document.createElement("h3");
-				title.textContent = I18n.trace.totalTime(trace[1].micros / 1000 + "", trace[0]);
-				const indents = document.createElement("span");
-				indents.classList.add("visually-hidden");
-				indents.textContent = "  ".repeat(indent);
-				title.prepend(indents);
-				head.append(title);
-
-				if (!trace[1].calls) return div;
-
-				let objs: {name: string; val: traceObj}[] = [];
-				{
-					const names = trace[1].calls.filter((_) => typeof _ === "string");
-					const vals = trace[1].calls.filter((_) => _ instanceof Object);
-					let i = 0;
-					for (const name of names) {
-						const val = vals[i];
-						objs.push({name, val});
-						i++;
-					}
-				}
-
-				const bars = document.createElement("div");
-				bars.classList.add("flexltr", "traceBars");
-
-				const colors = ["red", "orange", "yellow", "lime", "blue", "indigo", "violet"];
-				let i = 0;
-				for (const thing of objs) {
-					const bar = document.createElement("div");
-					bar.style.setProperty(
-						"flex-grow",
-						Math.ceil((thing.val.micros / trace[1].micros) * 1000) + "",
-					);
-					bar.style.setProperty("background", colors[i % colors.length]);
-					bars.append(bar);
-					new Hover(I18n.trace.totalTime(thing.val.micros / 1000 + "", thing.name)).addEvent(bar);
-					i++;
-				}
-				const body = document.createElement("div");
-				div.append(body);
-				head.append(bars);
-				let dropped = false;
-				head.onclick = () => {
-					if (!trace[1].calls) return;
-					if (dropped) {
-						dropped = false;
-						body.innerHTML = "";
-						return;
-					}
-
-					let i = 0;
-					for (const obj of objs) {
-						body.append(generateTraceHTML([obj.name, obj.val], indent + 1));
-						i++;
-					}
-					dropped = true;
-				};
-
-				div.classList.add("dropDownTrace");
-				head.classList.add("traceHead");
-				return div;
-			}
-			const blank = document.createElement("div");
-			traces.addHTMLArea(blank);
-			const updateInfo = () => {
-				const trace = traceArr[sel.index];
-				blank.innerHTML = "";
-				blank.append(generateTraceHTML(trace.trace, 0));
-			};
-			sel.onchange = () => {
-				updateInfo();
-			};
-			updateInfo();
-		}
 		{
 			const instanceInfo = settings.addButton(I18n.instanceInfo.name());
 			fetch(this.info.api + "/policies/instance/")

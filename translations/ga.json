@@ -458,7 +458,7 @@
 		"noAccount": "Cruthaigh cuntas chun glacadh leis an gcuireadh",
 		"notFound": "Níorbh fhéidir an cuireadh a aimsiú",
 		"subtext": "go $1 i $2",
-		"used": "Úsáidte $1{{PLURAL:$1|uair}}:"
+		"used": "Úsáidte $1"
 	},
 	"inviteOptions": {
 		"12h": "12 Uair an Chloig",

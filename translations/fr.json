@@ -493,7 +493,7 @@
 		"noAccount": "Créez un compte pour accepter l'invitation",
 		"notFound": "Invitation introuvable",
 		"subtext": "à $1 sur $2",
-		"used": "Utilisée $1 fois{{PLURAL:$1|}} :"
+		"used": "Utilisée $1"
 	},
 	"inviteOptions": {
 		"12h": "12 heures",

@@ -13,7 +13,6 @@ import {Localuser} from "./localuser.js";
 import {MarkDown} from "./markdown.js";
 
 interface OptionsElement<x> {
-	//
 	generateHTML(): HTMLElement;
 	submit: () => void;
 	readonly watchForChange: (func: (arg1: x) => void) => void;
@@ -22,7 +21,7 @@ interface OptionsElement<x> {
 //future me stuff
 export class Buttons implements OptionsElement<unknown> {
 	readonly name: string;
-	readonly buttons: [string, Options | string][];
+	readonly buttons: [string, Options | string, string?][];
 	readonly sectionHeaders = new Map<number, string>();
 	readonly buttonMap = new Map<Options | string, HTMLElement>();
 	buttonList!: HTMLDivElement;
@@ -30,29 +29,33 @@ export class Buttons implements OptionsElement<unknown> {
 	value: unknown;
 	top = false;
 	titles = true;
+	_sectionContentDiv: HTMLElement | null = null;
+	_activeSection: string | null = null;
 	constructor(name: string, {top = false, titles = true} = {}) {
 		this.top = top;
 		this.buttons = [];
 		this.name = name;
 		this.titles = titles;
 	}
-	add(name: string, thing?: Options | undefined) {
+	add(name: string, thing?: Options | undefined, icon?: string) {
 		if (!thing) {
 			thing = new Options(this.titles ? name : "", this);
 		}
-		const button = [name, thing] as [string, string | Options];
+		const button = [name, thing, icon] as [string, string | Options, string?];
 		this.buttons.push(button);
 		const htmlarea = this.htmlarea.deref();
 		const buttonTable = this.buttonTable.deref();
-		if (buttonTable && htmlarea) buttonTable.append(this.makeButtonHTML(button, htmlarea));
+		if (buttonTable && htmlarea && !this.sectionHeaders.size) {
+			buttonTable.append(this.makeButtonHTML(button, htmlarea));
+		}
 		return thing;
 	}
 	addSection(name: string) {
 		const index = this.buttons.length;
 		this.sectionHeaders.set(index, name);
 		const buttonTable = this.buttonTable.deref();
-		if (buttonTable) {
-			buttonTable.append(this.makeSectionHeaderHTML(name));
+		if (buttonTable && this.sectionHeaders.size <= 1) {
+			buttonTable.innerHTML = "";
 		}
 	}
 	htmlarea = new WeakRef(document.createElement("div"));
@@ -65,21 +68,32 @@ export class Buttons implements OptionsElement<unknown> {
 		const htmlarea = document.createElement("div");
 		htmlarea.classList.add("flexgrow", "settingsHTMLArea");
 		const buttonTable = this.generateButtons(htmlarea);
+		this.htmlarea = new WeakRef(htmlarea);
+		this.buttonTable = new WeakRef(buttonTable);
 		if (this.buttons[0]) {
-			this.generateHTMLArea(this.buttons[0][1], htmlarea);
-			//if (!hideButtons) htmlarea.classList.add("mobileHidden");
+			if (this.sectionHeaders.size) {
+				const firstSection = this._sectionNames()[0];
+				if (firstSection) this._renderSection(firstSection, htmlarea);
+			} else {
+				this.generateHTMLArea(this.buttons[0][1], htmlarea);
+			}
 		}
 		if (!hideButtons) buttonList.append(buttonTable);
 		buttonList.append(htmlarea);
-		this.htmlarea = new WeakRef(htmlarea);
-		this.buttonTable = new WeakRef(buttonTable);
 		return buttonList;
 	}
-	makeButtonHTML(buttond: [string, string | Options], optionsArea: HTMLElement) {
+	makeButtonHTML(buttond: [string, string | Options, string?], optionsArea: HTMLElement) {
 		const button = document.createElement("button");
 		this.buttonMap.set(buttond[1], button);
 		button.classList.add("SettingsButton");
-		button.textContent = buttond[0];
+		if (buttond[2]) {
+			const icon = document.createElement("span");
+			icon.classList.add("svgicon", buttond[2], "sbtn-icon");
+			button.append(icon);
+		}
+		const label = document.createElement("span");
+		label.textContent = buttond[0];
+		button.append(label);
 		button.onclick = (_) => {
 			this.generateHTMLArea(buttond[1], optionsArea);
 			optionsArea.classList.remove("mobileHidden");
@@ -87,16 +101,108 @@ export class Buttons implements OptionsElement<unknown> {
 				this.warndiv.remove();
 			}
 			if (window.innerWidth <= 600) {
-				optionsArea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+				optionsArea.scrollIntoView({behavior: "smooth", block: "nearest"});
 			}
 		};
 		return button;
 	}
 	makeSectionHeaderHTML(text: string) {
-		const header = document.createElement("div");
-		header.classList.add("SettingsGroupHeader");
+		const header = document.createElement("button");
+		header.classList.add("SettingsButton", "sectionHeader");
 		header.textContent = text;
+		header.dataset.section = text;
 		return header;
+	}
+	_sectionNames(): string[] {
+		const names: string[] = [];
+		for (const [, name] of this.sectionHeaders) {
+			if (!names.includes(name)) names.push(name);
+		}
+		return names;
+	}
+	_sectionButtons(sectionName: string): [string, Options | string, string?][] {
+		const result: [string, Options | string, string?][] = [];
+		let startIdx = -1;
+		let endIdx = this.buttons.length;
+		for (const [idx, name] of this.sectionHeaders) {
+			if (name === sectionName) {
+				startIdx = idx;
+			} else if (startIdx >= 0) {
+				endIdx = idx;
+				break;
+			}
+		}
+		for (let i = startIdx; i < endIdx && i < this.buttons.length; i++) {
+			result.push(this.buttons[i]);
+		}
+		return result;
+	}
+	_addAllCardLinks(sidebar: HTMLElement, optionsArea: HTMLElement) {
+		const sections = this._sectionNames();
+		for (const sectionName of sections) {
+			const header = sidebar.querySelector<HTMLElement>(
+				`.sectionHeader[data-section="${sectionName}"]`,
+			);
+			if (!header) continue;
+			const buttons = this._sectionButtons(sectionName);
+			let insertAfter: HTMLElement | null = header;
+			for (const btn of buttons) {
+				const [name] = btn;
+				const cardId = "card-" + name.replace(/\s+/g, "-").toLowerCase();
+				const link = document.createElement("button");
+				link.classList.add("SettingsButton", "cardLink");
+				link.dataset.section = sectionName;
+				const label = document.createElement("span");
+				label.textContent = name;
+				link.append(label);
+				link.onclick = () => {
+					if (this._activeSection !== sectionName) {
+						sidebar
+							.querySelectorAll(".sectionHeader")
+							.forEach((el) => el.classList.remove("activeSetting"));
+						header.classList.add("activeSetting");
+						this._renderSection(sectionName, optionsArea);
+					}
+					requestAnimationFrame(() => {
+						document.getElementById(cardId)?.scrollIntoView({behavior: "smooth", block: "start"});
+					});
+				};
+				if (insertAfter) {
+					insertAfter.insertAdjacentElement("afterend", link);
+					insertAfter = link;
+				}
+			}
+		}
+	}
+	_renderSection(sectionName: string, htmlarea: HTMLElement) {
+		const buttons = this._sectionButtons(sectionName);
+		if (!buttons.length) return;
+
+		this._activeSection = sectionName;
+		htmlarea.innerHTML = "";
+
+		const titlediv = document.createElement("div");
+		titlediv.classList.add("titlediv", "flexttb");
+
+		const grid = document.createElement("div");
+		grid.classList.add("settingsGrid");
+
+		for (const btn of buttons) {
+			const [name, thing] = btn;
+			if (thing instanceof Options) {
+				thing.subOptions = undefined;
+				const cardId = "card-" + name.replace(/\s+/g, "-").toLowerCase();
+				const card = document.createElement("div");
+				card.classList.add("settingsCard");
+				card.id = cardId;
+				if (thing.ltr || (thing as any)._fullWidth) card.classList.add("settingsCardWide");
+				card.append(thing.generateHTML());
+				grid.append(card);
+			}
+		}
+
+		titlediv.append(grid);
+		htmlarea.append(titlediv);
 	}
 	generateButtons(optionsArea: HTMLElement) {
 		const buttonTable = document.createElement("div");
@@ -107,15 +213,70 @@ export class Buttons implements OptionsElement<unknown> {
 		if (this.top) {
 			buttonTable.classList.add("flexltr");
 		}
-		for (let i = 0; i < this.buttons.length; i++) {
-			const section = this.sectionHeaders.get(i);
-			if (section) {
-				buttonTable.append(this.makeSectionHeaderHTML(section));
-			}
-			const thing = this.buttons[i];
-			buttonTable.append(this.makeButtonHTML(thing, optionsArea));
+		if (this.sectionHeaders.size) {
+			const fb = document.createElement("a");
+			fb.textContent = "Give feedback about this design";
+			fb.href = "https://forms.sovr.top/index.php/861742?lang=en";
+			fb.target = "_blank";
+			fb.rel = "noopener noreferrer";
+			fb.classList.add("settingsFeedback");
+			buttonTable.append(fb);
 		}
+		if (this.sectionHeaders.size) {
+			const sections = this._sectionNames();
+			for (const name of sections) {
+				const header = this.makeSectionHeaderHTML(name);
+				header.onclick = () => {
+					if (this._activeSection === name) return;
+					buttonTable
+						.querySelectorAll(".sectionHeader")
+						.forEach((el) => el.classList.remove("activeSetting"));
+					header.classList.add("activeSetting");
+					if (this.warndiv) this.warndiv.remove();
+					this._renderSection(name, optionsArea);
+					if (window.innerWidth <= 600) {
+						optionsArea.scrollIntoView({behavior: "smooth", block: "nearest"});
+					}
+				};
+				buttonTable.append(header);
+			}
+			if (sections[0]) {
+				buttonTable.querySelector(".sectionHeader")?.classList.add("activeSetting");
+			}
+			this._addAllCardLinks(buttonTable, optionsArea);
+		} else {
+			for (let i = 0; i < this.buttons.length; i++) {
+				const thing = this.buttons[i];
+				buttonTable.append(this.makeButtonHTML(thing, optionsArea));
+			}
+		}
+		this._initKeyboardNav(buttonTable);
 		return buttonTable;
+	}
+	private _initKeyboardNav(container: HTMLElement) {
+		container.addEventListener("keydown", (e) => {
+			const navItems = container.querySelectorAll<HTMLElement>(".SettingsButton");
+			if (!navItems.length) return;
+			const current = container.querySelector<HTMLElement>(".activeSetting") || navItems[0];
+			let idx = Array.from(navItems).indexOf(current);
+			if (e.key === "ArrowDown") {
+				e.preventDefault();
+				idx = (idx + 1) % navItems.length;
+			} else if (e.key === "ArrowUp") {
+				e.preventDefault();
+				idx = (idx - 1 + navItems.length) % navItems.length;
+			} else if (e.key === "Home") {
+				e.preventDefault();
+				idx = 0;
+			} else if (e.key === "End") {
+				e.preventDefault();
+				idx = navItems.length - 1;
+			} else {
+				return;
+			}
+			navItems[idx].focus();
+			navItems[idx].click();
+		});
 	}
 	handleString(str: string): HTMLElement {
 		const div = document.createElement("span");
@@ -2392,9 +2553,25 @@ class Settings extends Buttons {
 		super(name);
 		this.hideButtons = hideButtons;
 	}
-	addButton(name: string, {ltr = false, optName = name, noSubmit = false} = {}): Options {
+	addButton(
+		name: string,
+		{
+			ltr = false,
+			optName = name,
+			noSubmit = false,
+			icon,
+			fullWidth,
+		}: {
+			ltr?: boolean;
+			optName?: string;
+			noSubmit?: boolean;
+			icon?: string;
+			fullWidth?: boolean;
+		} = {},
+	): Options {
 		const options = new Options(optName, this, {ltr, noSubmit});
-		this.add(name, options);
+		(options as any)._fullWidth = fullWidth;
+		this.add(name, options, icon);
 		return options;
 	}
 	show() {

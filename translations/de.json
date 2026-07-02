@@ -473,7 +473,7 @@
 		"noAccount": "Erstelle ein Benutzerkonto, um die Einladung anzunehmen",
 		"notFound": "Einladung nicht gefunden",
 		"subtext": "zu $1 in $2",
-		"used": "Einmal{{PLURAL:$1||$1-mal}} verwendet:"
+		"used": "Einmal $1"
 	},
 	"inviteOptions": {
 		"12h": "12 Stunden",

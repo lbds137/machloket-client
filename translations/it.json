@@ -422,7 +422,7 @@
 		"never": "Mai",
 		"noAccount": "Crea un'utenza per accettare l'invito",
 		"notFound": "Impossibile trovare l'invito",
-		"used": "Usato $1 {{PLURAL:$1|volta|volte}}:"
+		"used": "Usato $1"
 	},
 	"inviteOptions": {
 		"12h": "12 ore",

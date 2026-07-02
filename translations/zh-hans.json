@@ -469,7 +469,7 @@
 		"noAccount": "创建账号以接受邀请",
 		"notFound": "找不到邀请",
 		"subtext": "到$2里的$1",
-		"used": "使用了$1{{PLURAL:$1|次}}："
+		"used": "使用了$1"
 	},
 	"inviteOptions": {
 		"12h": "12 小时",

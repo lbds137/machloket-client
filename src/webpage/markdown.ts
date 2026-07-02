@@ -994,8 +994,9 @@ class MarkDown {
 				if (partsFound === 2) {
 					appendcurrent();
 
-					const parts = build
-						.match(/^\[(.+)\]\(<?(https?:[^)\s]+?)>?(?:\s+(?:"([^"]+)"|'([^']+)'|([^\)]+)))?\)$/);
+					const parts = build.match(
+						/^\[(.+)\]\(<?(https?:[^)\s]+?)>?(?:\s+(?:"([^"]+)"|'([^']+)'|([^\)]+)))?\)$/,
+					);
 					if (parts) {
 						const linkElem = document.createElement("a");
 

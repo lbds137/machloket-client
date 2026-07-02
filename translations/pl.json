@@ -392,8 +392,7 @@
 		"never": "Nigdy",
 		"noAccount": "Utwórz konto, aby przyjąć zaproszenie",
 		"notFound": "Nie znaleziono zaproszenia",
-		"subtext": "do $1 w $2",
-		"used": "Użyte $1 {{PLURAL:$1|raz|razy}}"
+		"subtext": "do $1 w $2"
 	},
 	"inviteOptions": {
 		"12h": "12 godzin",

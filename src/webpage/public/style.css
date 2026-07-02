@@ -829,6 +829,7 @@ h2:empty {
 	-webkit-box-orient: vertical;
 	line-clamp: 1;
 	-webkit-line-clamp: 1;
+	font-weight: bold;
 }
 
 a,
@@ -955,8 +956,10 @@ input::file-selector-button:active {
 }
 
 button:disabled {
+	opacity: 0.4;
 	color: var(--button-disabled-text);
 	cursor: not-allowed;
+	pointer-events: none;
 }
 
 .selectspan {
@@ -1103,14 +1106,44 @@ textarea {
 	box-sizing: border-box;
 	width: 100%;
 	margin-top: 4px;
-	padding: 8px 12px;
+	padding: 10px 12px;
 	max-width: 100%;
-	border: none;
-	border-radius: 4px;
+	border: 1px solid transparent;
+	border-radius: 8px;
 	font-family: var(--font);
-	font-size: 1rem;
+	font-size: 0.95rem;
+	line-height: 1.5;
 	color: var(--secondary-text);
 	background: var(--text-input-bg);
+	transition: border-color 0.15s ease;
+}
+
+.settingsCard input[type="text"],
+.settingsCard input[type="password"],
+.settingsCard input[type="search"],
+.settingsCard input[type="date"],
+.settingsCard textarea,
+.settingsCard select {
+	border: 1px solid color-mix(in srgb, var(--shadow) 40%, transparent);
+	background: var(--primary-bg);
+}
+
+.settingsCard input[type="text"]:focus,
+.settingsCard input[type="password"]:focus,
+.settingsCard input[type="search"]:focus,
+.settingsCard input[type="date"]:focus,
+.settingsCard textarea:focus,
+.settingsCard select:focus {
+	border-color: var(--accent-color, var(--primary-text));
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="date"]:focus,
+textarea:focus {
+	border-color: var(--accent-color, var(--primary-text));
+	outline: none;
 }
 
 ::-webkit-calendar-picker-indicator {
@@ -2628,15 +2661,15 @@ span.instanceStatus {
 }
 
 .serveropen .servericon .svg-home {
-  background: repeating-linear-gradient(
-    to bottom,
-    #e60000 0% 16.66%,
-    #ff8c00 16.66% 33.33%,
-    #ffe600 33.33% 50%,
-    #00cc00 50% 66.66%,
-    #0066ff 66.66% 83.33%,
-    #8b00ff 83.33% 100%
-  ) !important;
+	background: repeating-linear-gradient(
+		to bottom,
+		#e60000 0% 16.66%,
+		#ff8c00 16.66% 33.33%,
+		#ffe600 33.33% 50%,
+		#00cc00 50% 66.66%,
+		#0066ff 66.66% 83.33%,
+		#8b00ff 83.33% 100%
+	) !important;
 }
 
 .home .svgicon {
@@ -3797,7 +3830,6 @@ span.instanceStatus {
 	position: relative;
 	font-weight: bold;
 	word-break: break-all;
-	color: transparent;
 	cursor: pointer;
 	background-image: var(--userbg, linear-gradient(var(--primary-text), var(--primary-text)));
 	-webkit-background-clip: text;
@@ -5172,11 +5204,24 @@ ul {
 @keyframes fade-in-back-settings {
 	0% {
 		opacity: 0;
-		transform: scale(1.1);
+		transform: scale(1.08);
 	}
 
 	100% {
 		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+@keyframes settings-panel-in {
+	0% {
+		opacity: 0;
+		transform: translateY(4px);
+	}
+
+	100% {
+		opacity: 1;
+		transform: translateY(0);
 	}
 }
 
@@ -5541,20 +5586,47 @@ fieldset input[type="radio"] {
 }
 
 .settingstitle {
-	/* pointer-events: none; */
-
 	display: flex;
+	position: sticky;
+	top: 0;
+	z-index: 1;
 	flex: none;
 	flex-wrap: wrap;
 	align-items: center;
-	gap: 0 6px;
+	gap: 8px;
 	box-sizing: border-box;
 	width: 100%;
-	padding: 8px 16px;
+	padding: 8px 24px;
 	min-height: 48px;
 	border-bottom: 2px solid var(--shadow);
 	background: var(--settings-header-bg);
 	user-select: none;
+}
+
+.settingsFeedback {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 0 8px;
+	padding: 10px 16px;
+	font-size: 0.9rem;
+	font-weight: 700;
+	color: var(--primary-text-soft);
+	text-decoration: none;
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--secondary-bg) 35%, transparent);
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.settingsFeedback:hover {
+	color: var(--primary-text-prominent);
+	background: color-mix(in srgb, var(--secondary-bg) 55%, transparent);
+}
+
+.inviteUsed {
+	font-weight: 600;
 }
 
 .Buttons {
@@ -5573,6 +5645,123 @@ fieldset input[type="radio"] {
 		width: auto;
 		border-radius: 3px 3px 1px 1px;
 	}
+}
+
+.settingsGrid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+	padding: 16px 0;
+}
+
+.settingsCard {
+	background: var(--secondary-bg);
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.settingsCardWide {
+	grid-column: 1 / -1;
+}
+
+.settingsCardWide > .titlediv > .flexltr.flexspace {
+	display: flex;
+	flex-direction: row;
+	gap: 20px;
+}
+
+@media screen and (max-width: 1000px) {
+	.settingsCardWide > .titlediv > .flexltr.flexspace {
+		flex-wrap: wrap;
+	}
+}
+
+.settingsCardWide > .titlediv > .flexltr > .optionElement {
+	flex: 1 1 300px;
+	min-width: 200px;
+	margin: 0 !important;
+	padding: 0;
+	background: none;
+	border: none;
+	overflow: visible;
+}
+
+.settingsCard > .titlediv > h2.settingstitle {
+	position: static;
+	padding: 16px 20px 4px;
+	min-height: unset;
+	font-size: 1.05rem;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	border-bottom: none;
+	background: none;
+}
+
+.settingsCard > .titlediv {
+	gap: 0;
+}
+
+.settingsCard > .titlediv > .flexspace {
+	padding: 12px 20px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.settingsCard > .titlediv > .flexspace > .optionElement {
+	margin: 0;
+	margin-top: 16px;
+}
+
+.settingsCard > .titlediv > .flexspace > .flexltr {
+	margin: 0;
+	margin-top: 16px;
+	gap: 12px;
+}
+
+.settingsCard > .titlediv > .flexspace > :first-child {
+	margin-top: 0;
+}
+
+@media screen and (max-width: 800px) {
+	.settingsGrid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+		padding: 12px 0;
+	}
+}
+
+.sectionHeader {
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-transform: none;
+	letter-spacing: normal;
+	pointer-events: auto;
+}
+
+.sectionHeader.activeSetting::before {
+	content: none;
+}
+
+.cardLink {
+	padding: 4px 16px 4px 24px !important;
+	font-size: 0.8rem !important;
+	font-weight: 400 !important;
+	color: var(--primary-text-soft);
+	opacity: 0.8;
+}
+
+.cardLink:hover {
+	opacity: 1;
+	color: var(--primary-text-prominent);
+	background: color-mix(in srgb, var(--settings-panel-hover) 50%, transparent) !important;
+	transform: none !important;
+}
+
+.cardLink::before {
+	content: "->";
+	margin-right: 4px;
+	opacity: 0.4;
 }
 
 .reportMenu {
@@ -5639,12 +5828,21 @@ fieldset input[type="radio"] {
 .settingbuttons {
 	flex: none;
 	box-sizing: border-box;
-	width: 192px;
-	padding: 6px;
+	padding: 8px;
 	border-right: 2px solid var(--shadow);
 	border-left: 2px solid transparent;
 	overflow-y: auto;
+	overscroll-behavior: contain;
 	background: var(--settings-panel-bg);
+}
+
+.settingbuttons::-webkit-scrollbar {
+	width: 4px;
+}
+
+.settingbuttons::-webkit-scrollbar-thumb {
+	border-radius: 4px;
+	background: var(--shadow);
 }
 
 .roleButtonStyle {
@@ -5658,45 +5856,80 @@ fieldset input[type="radio"] {
 
 .SettingsButton {
 	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 8px;
 	width: 100%;
-	padding: 8px 12px;
+	padding: 8px 16px;
 	border: none;
+	border-radius: 8px;
+	font-size: 0.9rem;
+	font-weight: 500;
+	line-height: 1.6;
 	color: var(--primary-text-soft);
 	background: transparent;
-	transition: background 0.1s;
+	cursor: pointer;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease,
+		transform 0.1s ease;
+}
+
+.SettingsButton:active {
+	transform: scale(0.97);
+}
+
+.SettingsButton .sbtn-icon {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	opacity: 0.7;
+	transition: opacity 0.15s ease;
+}
+
+.SettingsButton:hover .sbtn-icon {
+	opacity: 1;
+}
+
+.activeSetting .sbtn-icon {
+	opacity: 1;
 }
 
 .SettingsGroupHeader {
-	margin: 14px 4px 6px;
-	padding: 6px 10px;
-	font-size: 0.68rem;
-	font-weight: 700;
-	letter-spacing: 0.08em;
+	margin: 16px 8px 8px;
+	padding: 6px 8px;
+	font-size: 0.65rem;
+	font-weight: 800;
+	letter-spacing: 0.1em;
 	text-transform: uppercase;
 	color: var(--primary-text-soft);
-	opacity: 0.92;
 	border-top: 1px solid var(--shadow);
-	border-bottom: 1px solid color-mix(in srgb, var(--shadow) 70%, transparent);
-	background: color-mix(in srgb, var(--secondary-bg) 35%, transparent);
+	background: color-mix(in srgb, var(--secondary-bg) 25%, transparent);
 	border-radius: 6px;
 	pointer-events: none;
 	user-select: none;
 }
 
 .groupedSettings .SettingsGroupHeader:first-child {
-	margin-top: 2px;
+	margin-top: 4px;
 }
 
 .groupedSettings {
-	padding-left: 14px;
+	padding-left: 8px;
 	padding-right: 8px;
 }
 
 .groupedSettings .SettingsButton {
-	width: calc(100% - 18px);
-	margin-left: 18px;
-	padding: 8px 10px;
+	width: calc(100% - 16px);
+	margin-left: 16px;
+	padding: 8px 16px;
 	border-radius: 6px;
+	font-size: initial;
+}
+
+.groupedSettings .groupedSettings {
+	padding-left: 0;
+	padding-right: 0;
 }
 
 .infosection {
@@ -5707,6 +5940,7 @@ fieldset input[type="radio"] {
 
 .activeSetting {
 	background: var(--secondary-hover);
+	color: var(--primary-text-prominent);
 }
 
 .SettingsButton:hover {
@@ -5715,7 +5949,12 @@ fieldset input[type="radio"] {
 }
 
 .activeSetting:hover {
-	background: color-mix(in srgb, var(--secondary-bg) 40%, transparent);
+	background: color-mix(in srgb, var(--secondary-bg) 35%, transparent);
+}
+
+.SettingsButton:focus-visible {
+	outline: 2px solid var(--accent-color, var(--primary-text));
+	outline-offset: -2px;
 }
 
 .addrole {
@@ -5775,6 +6014,10 @@ fieldset input[type="radio"] {
 	padding-bottom: 32px;
 }
 
+.flexspace > .flexltr {
+	gap: 12px;
+}
+
 .flexspace:has(.flexspace) {
 	padding-bottom: 0;
 }
@@ -5813,6 +6056,100 @@ fieldset input[type="radio"] {
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.emojiGrid {
+	gap: 6px;
+}
+
+.emojiOption {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 8px;
+	border: 1px solid color-mix(in srgb, var(--shadow) 30%, transparent);
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--primary-bg) 40%, transparent);
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		background 0.15s ease;
+	position: relative;
+	width: 72px;
+}
+
+.emojiOption:hover {
+	border-color: color-mix(in srgb, var(--accent-color, var(--primary-text)) 30%, transparent);
+	background: color-mix(in srgb, var(--primary-bg) 60%, transparent);
+	z-index: 1;
+}
+
+.emojiOption:has(.emojiNameInput) {
+	z-index: 3;
+}
+
+.emojiGridImg {
+	width: 32px !important;
+	height: 32px !important;
+	object-fit: contain;
+}
+
+.emojiGridName {
+	display: block;
+	width: 100%;
+	font-size: 0.7rem;
+	color: var(--primary-text-soft);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	text-align: center;
+	cursor: text;
+	padding: 1px 3px;
+	border-radius: 3px;
+	box-sizing: border-box;
+	transition: background 0.1s ease;
+}
+
+.emojiGridName:hover {
+	background: color-mix(in srgb, var(--primary-bg) 50%, transparent);
+}
+
+.emojiNameInput {
+	width: 100%;
+	padding: 1px 3px;
+	border: 1px solid color-mix(in srgb, var(--accent-color, var(--primary-text)) 40%, transparent);
+	border-radius: 3px;
+	font-size: 0.7rem;
+	font-family: var(--font);
+	color: var(--primary-text);
+	background: var(--primary-bg);
+	text-align: center;
+	box-sizing: border-box;
+	position: relative;
+	z-index: 2;
+}
+
+.emojiGridDel {
+	position: absolute;
+	top: 2px;
+	right: 2px;
+	width: 14px;
+	height: 14px;
+	padding: 2px;
+	border-radius: 3px;
+	background: var(--primary-text-soft);
+	opacity: 0;
+	transition: opacity 0.15s ease;
+}
+
+.emojiOption:hover .emojiGridDel {
+	opacity: 0.6;
+}
+
+.emojiGridDel:hover {
+	opacity: 1 !important;
 }
 
 .webhookpfppreview {
@@ -5930,7 +6267,11 @@ fieldset input[type="radio"] {
 .optionElement input[type="text"],
 .optionElement textarea,
 .optionElement .fileinputdiv {
-	max-width: 500px;
+	max-width: 480px;
+}
+
+.optionElement select {
+	max-width: 480px;
 }
 .connection-container {
 	display: flex;
@@ -5960,7 +6301,8 @@ fieldset input[type="radio"] {
 	margin-left: 6px;
 }
 
-#app-list-container div:hover {
+#app-list-container div:hover,
+.connection-container div:hover:not(.disabled) {
 	border: 1.5px solid color-mix(in srgb, var(--secondary-text), transparent);
 }
 
@@ -5993,23 +6335,96 @@ fieldset input[type="radio"] {
 	cursor: not-allowed;
 }
 
+.settingsBtnGrid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	margin-top: 12px;
+}
+
+.settingsGridBtn {
+	padding: 10px 14px;
+	border: 1px solid color-mix(in srgb, var(--shadow) 30%, transparent);
+	border-radius: 8px;
+	font-size: 0.85rem;
+	font-weight: 600;
+	text-align: left;
+	color: var(--primary-text);
+	background: color-mix(in srgb, var(--primary-bg) 40%, transparent);
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		background 0.15s ease;
+}
+
+.settingsGridBtn:hover {
+	border-color: color-mix(in srgb, var(--accent-color, var(--primary-text)) 30%, transparent);
+	background: color-mix(in srgb, var(--primary-bg) 60%, transparent);
+}
+
+.inviteGrid {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 8px;
+}
+
+.inviteCard {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 10px 14px;
+	border: 1px solid color-mix(in srgb, var(--shadow) 30%, transparent);
+	border-radius: 8px;
+	background: color-mix(in srgb, var(--primary-bg) 40%, transparent);
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		background 0.15s ease;
+	min-width: 140px;
+}
+
+.inviteCard:hover {
+	border-color: color-mix(in srgb, var(--accent-color, var(--primary-text)) 25%, transparent);
+	background: color-mix(in srgb, var(--primary-bg) 60%, transparent);
+}
+
+.inviteCode {
+	font-family: monospace;
+	font-size: 0.85rem;
+	color: var(--primary-text-prominent);
+}
+
+.inviteUsed {
+	font-size: 0.75rem;
+	color: var(--primary-text-soft);
+}
+
+.inviteChannel {
+	font-size: 0.75rem;
+	color: var(--secondary-text-soft);
+}
+
 .inlinelabel {
 	margin-right: 4px;
 }
 
 .setting {
 	padding: 16px;
-	border-radius: 4px;
+	border-radius: 8px;
 	color: var(--secondary-text);
 	background: var(--secondary-bg);
 }
 
 .settingsname {
-	font-size: 1.15rem;
+	font-size: 1.25rem;
+	font-weight: 700;
+	line-height: 1.4;
 }
 
 .setting p {
-	font-size: 0.9em;
+	font-size: 0.85em;
+	line-height: 1.5;
 	color: var(--secondary-text-soft);
 }
 
@@ -6062,14 +6477,25 @@ fieldset input[type="radio"] {
 	position: absolute;
 	top: calc(var(--safe-top) + 10px);
 	right: 12px;
+	z-index: 10;
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
-	width: 20px;
-	height: 20px;
-	padding: 0;
-	border-radius: 4px;
+	width: 28px;
+	height: 28px;
+	padding: 5px;
+	border: none;
+	border-radius: 6px;
 	cursor: pointer;
+	transition: transform 0.15s ease;
+}
+
+.exitsettings:hover {
+	transform: scale(1.2);
+}
+
+.exitsettings:active {
+	transform: scale(0.95);
 }
 
 #loading > .centeritem {
@@ -6090,10 +6516,6 @@ fieldset input[type="radio"] {
 }
 
 @media screen and (max-width: 1000px) {
-	.accountSwitcher {
-		top: 0;
-	}
-
 	#sideContainDiv {
 		position: relative;
 		margin-left: -256px;
@@ -6396,6 +6818,7 @@ fieldset input[type="radio"] {
 	.savediv,
 	.nonimagecenter:not(.dialogModal),
 	.accountSwitcher {
+		top: 0;
 		width: 94%;
 		min-width: unset;
 		margin-top: 80%;
@@ -6480,6 +6903,7 @@ fieldset input[type="radio"] {
 
 	.mobileHidden {
 		transform: translate(100%, 0px);
+		transition: transform 0.25s ease-in-out;
 	}
 
 	.outerTypeBox:not(.noConent) {
@@ -6516,6 +6940,15 @@ fieldset input[type="radio"] {
 	position: relative;
 	flex-direction: row;
 	overflow-y: auto;
+}
+
+.settingsHTMLArea > .titlediv {
+	animation: settings-panel-in 0.15s ease-out;
+	width: 100%;
+	min-width: 0;
+	margin: 0 auto;
+	padding: 0 16px;
+	box-sizing: border-box;
 }
 
 .friendcontainer {
@@ -6661,10 +7094,6 @@ fieldset input[type="radio"] {
 	input {
 		width: 2in !important;
 		height: 0.3in;
-	}
-
-	.bigemoji {
-		padding-right: 0.5in;
 	}
 }
 

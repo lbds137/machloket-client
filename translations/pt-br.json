@@ -464,7 +464,7 @@
 		"noAccount": "Crie uma conta para aceitar o convite",
 		"notFound": "Convite não pôde ser encontrado",
 		"subtext": "para $1 em $2",
-		"used": "Usado $1 {{PLURAL:$1|vez|vezes}}"
+		"used": "Usado $1"
 	},
 	"inviteOptions": {
 		"12h": "12 Horas",

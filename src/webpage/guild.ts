@@ -38,23 +38,34 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
+	invDiv.classList.add("inviteGrid");
 	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
 		headers: guild.headers,
 	});
 	const createInviteHTML = (invite: invitejson) => {
 		const div = document.createElement("div");
-		div.classList.add("templateMiniBox");
-
-		const edit = document.createElement("button");
-		edit.textContent = I18n.edit();
+		div.classList.add("inviteCard");
 
 		const code = document.createElement("span");
+		code.classList.add("inviteCode");
 		code.textContent = invite.code;
 
 		const used = document.createElement("span");
-		used.textContent = I18n.invite.used(invite.uses + "");
+		used.classList.add("inviteUsed");
+		const maxTxt = invite.max_uses ? "/" + invite.max_uses : "";
+		used.textContent = invite.uses + maxTxt;
 
-		edit.onclick = () => {
+		const channel = guild.channels.find((_) => _.id == invite.channel_id);
+		if (channel) {
+			const ch = document.createElement("span");
+			ch.classList.add("inviteChannel");
+			ch.textContent = "#" + channel.name;
+			div.append(ch);
+		}
+
+		div.append(code, used);
+
+		div.onclick = () => {
 			const opt = inviteMenu.addSubOptions(invite.code);
 			const inviter = new User(invite.inviter, guild.localuser);
 
@@ -69,10 +80,9 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 				),
 			);
 
-			opt.addText(I18n.invite.used(invite.uses + ""));
+			opt.addText(I18n.invite.used(invite.uses + (invite.max_uses ? "/" + invite.max_uses : "")));
 			if (invite.max_uses !== 0) opt.addText(I18n.invite.maxUses(invite.max_uses + ""));
 
-			const channel = guild.channels.find((_) => _.id == invite.channel_id);
 			if (channel) {
 				opt.addText(I18n.invite.forChannel(channel.name));
 			}
@@ -99,79 +109,43 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 				) {
 					invsArr = invsArr.filter((_) => _ !== invite);
 					inviteMenu.returnFromSub();
-					loadPage(currentPage);
+					renderInvites(allShown);
 				}
 			});
 		};
 
-		div.append(used, code, edit);
 		return div;
 	};
 	let invsArr: invitejson[] = [];
-	let onpage = 0;
+	let allShown = false;
+	const showAllBtn = document.createElement("button");
+	showAllBtn.classList.add("sessionShowAll");
 
 	async function loadArr() {
-		let invsArr2: invitejson[] = [];
-		let waiting = false;
-		async function addHTML() {
-			if (waiting) return;
-			waiting = true;
-			await new Promise((res) => setTimeout(res, 0));
-			waiting = false;
-			invDiv.append(...invsArr2.map((inv) => createInviteHTML(inv)));
-			invsArr2 = [];
-		}
 		while (!(await bansp).done) {
 			const inv = await (await (await bansp).getNext()).getWhole();
 			invsArr.push(inv);
-			if (onpage < 50) {
-				invsArr2.push(inv);
-				addHTML();
-				onpage++;
-			} else {
-				next.disabled = false;
-			}
 		}
+		invsArr.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+		renderInvites(false);
 	}
 
-	let currentPage = 0;
-	function loadPage(page = 0) {
+	function renderInvites(all: boolean) {
+		allShown = all;
 		invDiv.innerHTML = "";
-		for (onpage = 0; onpage < 50; onpage++) {
-			const inv = invsArr[onpage + page * 50];
-			if (!inv) break;
+		const toShow = all ? invsArr : invsArr.slice(0, 10);
+		for (const inv of toShow) {
 			invDiv.append(createInviteHTML(inv));
 		}
-		if (onpage === 50 && invsArr[onpage + page * 50]) {
-			next.disabled = false;
-		} else {
-			next.disabled = true;
-		}
+		invDiv.style.display = invsArr.length ? "" : "none";
+		showAllBtn.textContent = all ? "" : I18n.settings.showAll(" ( " + invsArr.length + " )");
+		showAllBtn.style.display = !all && invsArr.length > 10 ? "" : "none";
 	}
 
-	const pageNav = document.createElement("div");
-	const back = document.createElement("button");
-	back.textContent = I18n.search.back();
-	back.disabled = !currentPage;
-	back.onclick = () => {
-		back.disabled = !(currentPage - 1);
-		next.disabled = false;
-		loadPage(--currentPage);
-	};
-
-	const next = document.createElement("button");
-	next.textContent = I18n.search.next();
-	next.disabled = true;
-	pageNav.append(back, next);
-	inviteMenu.addHTMLArea(pageNav);
-	next.onclick = () => {
-		loadPage(++currentPage);
-		back.disabled = false;
-	};
-
 	loadArr();
-	loadPage(currentPage);
 	inviteMenu.addHTMLArea(invDiv);
+	showAllBtn.onclick = () => renderInvites(true);
+	inviteMenu.addHTMLArea(showAllBtn);
 }
 class Guild extends SnowFlake {
 	owner!: Localuser;
@@ -753,338 +727,28 @@ class Guild extends SnowFlake {
 			}
 			form.addTextInput(I18n.guild["region:"](), "region", {initText: region});
 		}
-		settings.addSection(sectionLabel("settingsCategories.guild.moderation", "Moderation"));
 		this.makeInviteMenu(settings.addButton(I18n.invite.inviteMaker()), textChannels);
+		if (this.member.hasPermission("MANAGE_GUILD")) {
+			const inviteMenu = settings.addButton(I18n.guild.invites());
+			makeInviteMenu(inviteMenu, this, this.info.api + `/guilds/${this.id}/invites`);
+		}
+		let com = false;
+		if (this.properties.features.includes("COMMUNITY")) {
+			if (this.member.hasPermission("MANAGE_GUILD")) this.addCommunity(settings, textChannels);
+			com = true;
+		}
+		settings.addSection(sectionLabel("settingsCategories.guild.roles", "Roles"));
 		if (this.member.hasPermission("MANAGE_ROLES")) {
-			const s1 = settings.addButton(I18n.guild.roles(), {optName: ""});
+			const s1 = settings.addButton(I18n.guild.roles(), {optName: "", fullWidth: true});
 			const permlist: [Role, Permissions][] = [];
 			for (const thing of this.roles) {
 				permlist.push([thing, thing.permissions]);
 			}
 			s1.options.push(new RoleList(permlist, this, this.updateRolePermissions.bind(this), false));
 		}
-		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
-			const emoji = settings.addButton(I18n.emoji.title());
-			emoji.addButtonInput("", I18n.emoji.upload(), () => {
-				const popup = new Dialog(I18n.emoji.upload());
-				const form = popup.options.addForm(
-					"",
-					() => {
-						popup.hide();
-					},
-					{
-						fetchURL: `${this.info.api}/guilds/${this.id}/emojis`,
-						method: "POST",
-						headers: this.headers,
-					},
-				);
-				form.addFileInput(I18n.emoji["image:"](), "image", {required: true});
-				form.addTextInput(I18n.emoji["name:"](), "name", {required: true});
-				popup.show();
-			});
-			const containdiv = document.createElement("div");
-			const genDiv = () => {
-				containdiv.innerHTML = "";
-				for (const emoji of this.emojis) {
-					const div = document.createElement("div");
-					div.classList.add("flexltr", "emojiOption");
-					const emojic = new Emoji(emoji, this);
-
-					const text = document.createElement("input");
-					text.type = "text";
-					text.value = emoji.name;
-					text.addEventListener("change", () => {
-						fetch(`${this.info.api}/guilds/${this.id}/emojis/${emoji.id}`, {
-							method: "PATCH",
-							headers: this.headers,
-							body: JSON.stringify({name: text.value}),
-						}).then((e) => {
-							if (!e.ok) text.value = emoji.name;
-						}); //if not ok, undo
-					});
-
-					const del = document.createElement("span");
-					del.classList.add("svgicon", "svg-x", "deleteEmoji");
-					del.onclick = () => {
-						const diaolog = new Dialog("");
-						diaolog.options.addTitle(I18n.emoji.confirmDel());
-						const options = diaolog.options.addOptions("", {ltr: true});
-						options.addButtonInput("", I18n.yes(), () => {
-							fetch(`${this.info.api}/guilds/${this.id}/emojis/${emoji.id}`, {
-								method: "DELETE",
-								headers: this.headers,
-							});
-							diaolog.hide();
-						});
-						options.addButtonInput("", I18n.no(), () => {
-							diaolog.hide();
-						});
-						diaolog.show();
-					};
-
-					div.append(emojic.getHTML(true), ":", text, ":", del);
-
-					containdiv.append(div);
-				}
-			};
-			this.onEmojiUpdate = () => {
-				if (!document.body.contains(containdiv)) {
-					this.onEmojiUpdate = () => {};
-					return;
-				}
-				genDiv();
-			};
-			genDiv();
-			emoji.addHTMLArea(containdiv);
-		}
-		if (this.member.hasPermission("MANAGE_GUILD")) {
-			const onboard = settings.addButton(I18n.onboarding.name());
-			const genOnboard = async () => {
-				this.welcomeScreen = await (
-					await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-						headers: this.headers,
-					})
-				).json();
-				onboard.removeAll();
-				if (this.welcomeScreen?.enabled) {
-					const welcomeScreen = this.welcomeScreen;
-					onboard.afterSubmit = () => {
-						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-							method: "PATCH",
-							headers: this.headers,
-							body: JSON.stringify(welcomeScreen),
-						});
-					};
-					onboard.addButtonInput("", I18n.onboarding.disable(), () => {
-						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-							method: "PATCH",
-							headers: this.headers,
-							body: JSON.stringify({enabled: false}),
-						}).then((r) => {
-							this.welcomeScreen = undefined;
-							if (r.ok) {
-								genOnboard();
-							}
-						});
-					});
-					onboard.addButtonInput("", I18n.onboarding.addChannel(), () => {
-						const d = new Dialog(I18n.onboarding.addChannel());
-						const form = d.options.addForm("", (o) => {
-							const obj = o as {description: string; channel_id: string};
-							welcomeScreen.welcome_channels.push(obj);
-							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify(welcomeScreen),
-							}).then((r) => {
-								if (r.ok) {
-									d.hide();
-									welcome(obj);
-								}
-							});
-						});
-						const channels = this.channels.filter((channel) => {
-							if (channel.isThread()) return false;
-							if (channel.type === 4) return false;
-							if (welcomeScreen.welcome_channels.find((c) => c.emoji_id === channel.id))
-								return false;
-							return true;
-						});
-						form.addSelect(
-							I18n.onboarding.channel(),
-							"channel_id",
-							channels.map(({name}) => name),
-							{},
-							channels.map(({id}) => id),
-						);
-						form.addTextInput(I18n.onboarding.desc(), "description");
-						d.show();
-					});
-					onboard.addMDInput(
-						I18n.onboarding.desc(),
-						(desc) => {
-							welcomeScreen.description = desc;
-						},
-						{
-							initText: welcomeScreen.description,
-						},
-					);
-					const welcome = (obj: {channel_id: string; description: string}) => {
-						const {channel_id, description} = obj;
-						const opt = onboard.addOptions("");
-						const channel = this.getChannel(channel_id);
-						if (!channel) return;
-						opt.addTitle(channel.name);
-						opt.addTextInput(
-							I18n.onboarding.desc(),
-							(desc) => {
-								obj.description = desc;
-							},
-							{initText: description},
-						);
-						opt.addButtonInput("", I18n.onboarding.deleteChannel(), () => {
-							welcomeScreen.welcome_channels = welcomeScreen.welcome_channels.filter(
-								({channel_id}) => channel_id !== channel_id,
-							);
-							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify(welcomeScreen),
-							}).then((r) => {
-								if (r.ok) {
-									opt.removeAll();
-								}
-							});
-						});
-					};
-					welcomeScreen.welcome_channels.forEach(welcome);
-				} else {
-					onboard.addButtonInput("", I18n.onboarding.enable(), () => {
-						const d = new Dialog("");
-						const form = d.options.addForm("", (o) => {
-							const obj = o as {description: string};
-							const welcome_screen = {
-								description: obj.description,
-								enabled: true,
-								welcome_channels: [],
-							} satisfies extendedProperties["welcome_screen"];
-							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify(welcome_screen),
-							}).then((r) => {
-								this.welcomeScreen = welcome_screen;
-								if (r.ok) {
-									d.hide();
-									genOnboard();
-								}
-							});
-						});
-						form.addTextInput(I18n.onboarding.desc(), "description");
-						d.show();
-					});
-				}
-			};
-			genOnboard();
-		}
-		settings.addSection(sectionLabel("settingsCategories.guild.media", "Media"));
-		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
-			const emoji = settings.addButton(I18n.sticker.title());
-			emoji.addButtonInput("", I18n.sticker.upload(), () => {
-				const popup = new Dialog(I18n.sticker.upload());
-				const form = popup.options.addForm("", async () => {
-					const body = new FormData();
-					body.set("name", name.value);
-					if (!filei.value) throw new FormError(filei, I18n.sticker.errFileMust());
-					const file = filei.value.item(0);
-					if (!file) throw new FormError(filei, I18n.sticker.errFileMust());
-					body.set("file", file);
-					if (!tags.value) throw new FormError(tags, I18n.sticker.errEmjMust());
-					if (tags.value.id) {
-						body.set("tags", tags.value.id);
-					} else if (tags.value.emoji) {
-						body.set("tags", tags.value.emoji);
-					} else {
-						throw new FormError(tags, I18n.sticker.errEmjMust());
-					}
-					const res = await fetch(this.info.api + "/guilds/" + this.id + "/stickers", {
-						method: "POST",
-						headers: {
-							Authorization: this.headers.Authorization,
-						},
-						body,
-					});
-					if (res.ok) {
-						popup.hide();
-					} else {
-						const json = await res.json();
-						if ("message" in json && typeof json.message === "string") {
-							throw new FormError(filei, json.message);
-						}
-					}
-				});
-				const filei = form.addFileInput(I18n.sticker.image(), "file", {required: true});
-				const name = form.addTextInput(I18n.sticker.name(), "name", {required: true});
-				const tags = form.addEmojiInput(I18n.sticker.tags(), "tags", this.localuser, {
-					required: true,
-				});
-				popup.show();
-			});
-			const containdiv = document.createElement("div");
-			containdiv.classList.add("stickersDiv");
-			const genDiv = () => {
-				containdiv.innerHTML = "";
-				for (const sticker of this.stickers) {
-					const div = document.createElement("div");
-					div.classList.add("flexttb", "stickerOption");
-
-					const text = document.createElement("span");
-					text.textContent = sticker.name;
-
-					div.onclick = () => {
-						const form = emoji.addSubForm(emoji.name, () => {}, {
-							fetchURL: this.info.api + "/guilds/" + this.id + "/stickers/" + sticker.id,
-							method: "PATCH",
-							headers: this.headers,
-							traditionalSubmit: true,
-						});
-
-						form.addHTMLArea(sticker.getHTML());
-						form.addTextInput(I18n.sticker.name(), "name", {
-							initText: sticker.name,
-						});
-
-						form.addMDInput(I18n.sticker.desc(), "description", {
-							initText: sticker.description,
-						});
-
-						let initEmoji = Emoji.getEmojiFromIDOrString(sticker.tags, this.localuser);
-						form.addEmojiInput(I18n.sticker.tags(), "tags", this.localuser, {
-							initEmoji,
-							required: false,
-						});
-
-						form.addButtonInput("", I18n.sticker.del(), () => {
-							const diaolog = new Dialog("");
-							diaolog.options.addTitle(I18n.sticker.confirmDel());
-							const options = diaolog.options.addOptions("", {ltr: true});
-							options.addButtonInput("", I18n.yes(), () => {
-								fetch(`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`, {
-									method: "DELETE",
-									headers: this.headers,
-								});
-								diaolog.hide();
-							});
-							options.addButtonInput("", I18n.no(), () => {
-								diaolog.hide();
-							});
-							diaolog.show();
-						});
-					};
-
-					div.append(sticker.getHTML(), text);
-
-					containdiv.append(div);
-				}
-			};
-			this.onStickerUpdate = () => {
-				emoji.returnFromSub();
-				if (!document.body.contains(containdiv)) {
-					this.onStickerUpdate = () => {};
-					return;
-				}
-				genDiv();
-			};
-			genDiv();
-			emoji.addHTMLArea(containdiv);
-		}
-		if (this.member.hasPermission("MANAGE_GUILD")) {
-			const inviteMenu = settings.addButton(I18n.guild.invites());
-			makeInviteMenu(inviteMenu, this, this.info.api + `/guilds/${this.id}/invites`);
-		}
-
+		settings.addSection(sectionLabel("settingsCategories.guild.bans", "Bans"));
 		if (this.member.hasPermission("BAN_MEMBERS")) {
-			const banMenu = settings.addButton(I18n.guild.bans());
+			const banMenu = settings.addButton(I18n.guild.bans(), {fullWidth: true});
 			banMenu.addButtonInput("", I18n.guild.banId(), () => {
 				const opt = banMenu.addSubOptions(I18n.guild.banId(), {noSubmit: true});
 				const reason = opt.addTextInput(I18n.member["reason:"](), () => {});
@@ -1235,7 +899,356 @@ class Guild extends SnowFlake {
 			};
 			banMenu.addHTMLArea(makeBanMenu);
 		}
+		settings.addSection(sectionLabel("settingsCategories.guild.expressions", "Expressions"));
+		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
+			const emoji = settings.addButton(I18n.emoji.title());
+			emoji.addButtonInput("", I18n.emoji.upload(), () => {
+				const popup = new Dialog(I18n.emoji.upload());
+				const form = popup.options.addForm(
+					"",
+					() => {
+						popup.hide();
+					},
+					{
+						fetchURL: `${this.info.api}/guilds/${this.id}/emojis`,
+						method: "POST",
+						headers: this.headers,
+					},
+				);
+				form.addFileInput(I18n.emoji["image:"](), "image", {required: true});
+				form.addTextInput(I18n.emoji["name:"](), "name", {required: true});
+				popup.show();
+			});
+			const containdiv = document.createElement("div");
+			containdiv.classList.add("stickersDiv", "emojiGrid");
+			const genDiv = () => {
+				containdiv.innerHTML = "";
+				for (const emjData of this.emojis) {
+					const div = document.createElement("div");
+					div.classList.add("emojiOption");
+					const emojic = new Emoji(emjData, this);
+
+					const img = emojic.getHTML(true);
+					img.classList.add("emojiGridImg");
+					div.append(img);
+
+					const nameSpan = document.createElement("span");
+					nameSpan.classList.add("emojiGridName");
+					nameSpan.textContent = emjData.name;
+					nameSpan.onclick = (e) => {
+						e.stopPropagation();
+						const input = document.createElement("input");
+						input.type = "text";
+						input.value = emjData.name;
+						input.className = "emojiNameInput";
+						nameSpan.replaceWith(input);
+						input.focus();
+						input.select();
+						const save = () => {
+							const newName = input.value.trim();
+							if (newName && newName !== emjData.name) {
+								fetch(this.info.api + "/guilds/" + this.id + "/emojis/" + emjData.id, {
+									method: "PATCH",
+									headers: this.headers,
+									body: JSON.stringify({name: newName}),
+								}).then((res) => {
+									if (res.ok) emjData.name = newName;
+									else input.value = emjData.name;
+								});
+							}
+							input.replaceWith(nameSpan);
+						};
+						input.onblur = save;
+						input.onkeydown = (ke) => {
+							if (ke.key === "Enter") {
+								ke.preventDefault();
+								input.blur();
+							}
+							if (ke.key === "Escape") {
+								ke.preventDefault();
+								input.value = emjData.name;
+								input.blur();
+							}
+						};
+					};
+					div.append(nameSpan);
+
+					const del = document.createElement("span");
+					del.classList.add("svgicon", "svg-x", "emojiGridDel");
+					del.onclick = (e) => {
+						e.stopPropagation();
+						const diaolog = new Dialog("");
+						diaolog.options.addTitle(I18n.emoji.confirmDel());
+						const options = diaolog.options.addOptions("", {ltr: true});
+						options.addButtonInput("", I18n.yes(), () => {
+							fetch(`${this.info.api}/guilds/${this.id}/emojis/${emjData.id}`, {
+								method: "DELETE",
+								headers: this.headers,
+							});
+							diaolog.hide();
+						});
+						options.addButtonInput("", I18n.no(), () => {
+							diaolog.hide();
+						});
+						diaolog.show();
+					};
+
+					div.append(del);
+
+					containdiv.append(div);
+				}
+			};
+			this.onEmojiUpdate = () => {
+				if (!document.body.contains(containdiv)) {
+					this.onEmojiUpdate = () => {};
+					return;
+				}
+				genDiv();
+			};
+			genDiv();
+			emoji.addHTMLArea(containdiv);
+		}
+		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
+			const emoji = settings.addButton(I18n.sticker.title());
+			emoji.addButtonInput("", I18n.sticker.upload(), () => {
+				const popup = new Dialog(I18n.sticker.upload());
+				const form = popup.options.addForm("", async () => {
+					const body = new FormData();
+					body.set("name", name.value);
+					if (!filei.value) throw new FormError(filei, I18n.sticker.errFileMust());
+					const file = filei.value.item(0);
+					if (!file) throw new FormError(filei, I18n.sticker.errFileMust());
+					body.set("file", file);
+					if (!tags.value) throw new FormError(tags, I18n.sticker.errEmjMust());
+					if (tags.value.id) {
+						body.set("tags", tags.value.id);
+					} else if (tags.value.emoji) {
+						body.set("tags", tags.value.emoji);
+					} else {
+						throw new FormError(tags, I18n.sticker.errEmjMust());
+					}
+					const res = await fetch(this.info.api + "/guilds/" + this.id + "/stickers", {
+						method: "POST",
+						headers: {
+							Authorization: this.headers.Authorization,
+						},
+						body,
+					});
+					if (res.ok) {
+						popup.hide();
+					} else {
+						const json = await res.json();
+						if ("message" in json && typeof json.message === "string") {
+							throw new FormError(filei, json.message);
+						}
+					}
+				});
+				const filei = form.addFileInput(I18n.sticker.image(), "file", {required: true});
+				const name = form.addTextInput(I18n.sticker.name(), "name", {required: true});
+				const tags = form.addEmojiInput(I18n.sticker.tags(), "tags", this.localuser, {
+					required: true,
+				});
+				popup.show();
+			});
+			const containdiv = document.createElement("div");
+			containdiv.classList.add("stickersDiv");
+			const genDiv = () => {
+				containdiv.innerHTML = "";
+				for (const sticker of this.stickers) {
+					const div = document.createElement("div");
+					div.classList.add("flexttb", "stickerOption");
+
+					const text = document.createElement("span");
+					text.textContent = sticker.name;
+
+					div.onclick = () => {
+						const form = emoji.addSubForm(emoji.name, () => {}, {
+							fetchURL: this.info.api + "/guilds/" + this.id + "/stickers/" + sticker.id,
+							method: "PATCH",
+							headers: this.headers,
+							traditionalSubmit: true,
+						});
+
+						form.addHTMLArea(sticker.getHTML());
+						form.addTextInput(I18n.sticker.name(), "name", {
+							initText: sticker.name,
+						});
+
+						form.addMDInput(I18n.sticker.desc(), "description", {
+							initText: sticker.description,
+						});
+
+						let initEmoji = Emoji.getEmojiFromIDOrString(sticker.tags, this.localuser);
+						form.addEmojiInput(I18n.sticker.tags(), "tags", this.localuser, {
+							initEmoji,
+							required: false,
+						});
+
+						form.addButtonInput("", I18n.sticker.del(), () => {
+							const diaolog = new Dialog("");
+							diaolog.options.addTitle(I18n.sticker.confirmDel());
+							const options = diaolog.options.addOptions("", {ltr: true});
+							options.addButtonInput("", I18n.yes(), () => {
+								fetch(`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`, {
+									method: "DELETE",
+									headers: this.headers,
+								});
+								diaolog.hide();
+							});
+							options.addButtonInput("", I18n.no(), () => {
+								diaolog.hide();
+							});
+							diaolog.show();
+						});
+					};
+
+					div.append(sticker.getHTML(), text);
+
+					containdiv.append(div);
+				}
+			};
+			this.onStickerUpdate = () => {
+				emoji.returnFromSub();
+				if (!document.body.contains(containdiv)) {
+					this.onStickerUpdate = () => {};
+					return;
+				}
+				genDiv();
+			};
+			genDiv();
+			emoji.addHTMLArea(containdiv);
+		}
 		settings.addSection(sectionLabel("settingsCategories.guild.community", "Community"));
+		if (this.member.hasPermission("MANAGE_GUILD")) {
+			const onboard = settings.addButton(I18n.onboarding.name());
+			const genOnboard = async () => {
+				this.welcomeScreen = await (
+					await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+						headers: this.headers,
+					})
+				).json();
+				onboard.removeAll();
+				if (this.welcomeScreen?.enabled) {
+					const welcomeScreen = this.welcomeScreen;
+					onboard.afterSubmit = () => {
+						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+							method: "PATCH",
+							headers: this.headers,
+							body: JSON.stringify(welcomeScreen),
+						});
+					};
+					onboard.addButtonInput("", I18n.onboarding.disable(), () => {
+						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+							method: "PATCH",
+							headers: this.headers,
+							body: JSON.stringify({enabled: false}),
+						}).then((r) => {
+							this.welcomeScreen = undefined;
+							if (r.ok) {
+								genOnboard();
+							}
+						});
+					});
+					onboard.addButtonInput("", I18n.onboarding.addChannel(), () => {
+						const d = new Dialog(I18n.onboarding.addChannel());
+						const form = d.options.addForm("", (o) => {
+							const obj = o as {description: string; channel_id: string};
+							welcomeScreen.welcome_channels.push(obj);
+							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify(welcomeScreen),
+							}).then((r) => {
+								if (r.ok) {
+									d.hide();
+									welcome(obj);
+								}
+							});
+						});
+						const channels = this.channels.filter((channel) => {
+							if (channel.isThread()) return false;
+							if (channel.type === 4) return false;
+							if (welcomeScreen.welcome_channels.find((c) => c.emoji_id === channel.id))
+								return false;
+							return true;
+						});
+						form.addSelect(
+							I18n.onboarding.channel(),
+							"channel_id",
+							channels.map(({name}) => name),
+							{},
+							channels.map(({id}) => id),
+						);
+						form.addTextInput(I18n.onboarding.desc(), "description");
+						d.show();
+					});
+					onboard.addMDInput(
+						I18n.onboarding.desc(),
+						(desc) => {
+							welcomeScreen.description = desc;
+						},
+						{
+							initText: welcomeScreen.description,
+						},
+					);
+					const welcome = (obj: {channel_id: string; description: string}) => {
+						const {channel_id, description} = obj;
+						const opt = onboard.addOptions("");
+						const channel = this.getChannel(channel_id);
+						if (!channel) return;
+						opt.addTitle(channel.name);
+						opt.addTextInput(
+							I18n.onboarding.desc(),
+							(desc) => {
+								obj.description = desc;
+							},
+							{initText: description},
+						);
+						opt.addButtonInput("", I18n.onboarding.deleteChannel(), () => {
+							welcomeScreen.welcome_channels = welcomeScreen.welcome_channels.filter(
+								({channel_id}) => channel_id !== channel_id,
+							);
+							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify(welcomeScreen),
+							}).then((r) => {
+								if (r.ok) {
+									opt.removeAll();
+								}
+							});
+						});
+					};
+					welcomeScreen.welcome_channels.forEach(welcome);
+				} else {
+					onboard.addButtonInput("", I18n.onboarding.enable(), () => {
+						const d = new Dialog("");
+						const form = d.options.addForm("", (o) => {
+							const obj = o as {description: string};
+							const welcome_screen = {
+								description: obj.description,
+								enabled: true,
+								welcome_channels: [],
+							} satisfies extendedProperties["welcome_screen"];
+							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify(welcome_screen),
+							}).then((r) => {
+								this.welcomeScreen = welcome_screen;
+								if (r.ok) {
+									d.hide();
+									genOnboard();
+								}
+							});
+						});
+						form.addTextInput(I18n.onboarding.desc(), "description");
+						d.show();
+					});
+				}
+			};
+			genOnboard();
+		}
 		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const widgetMenu = settings.addButton(I18n.widget());
 			(async () => {
@@ -1356,11 +1369,6 @@ class Guild extends SnowFlake {
 					generateTemplateArea(temp);
 				}
 			})();
-		}
-		let com = false;
-		if (this.properties.features.includes("COMMUNITY")) {
-			if (this.member.hasPermission("MANAGE_GUILD")) this.addCommunity(settings, textChannels);
-			com = true;
 		}
 		settings.show();
 	}
