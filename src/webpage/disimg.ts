@@ -24,12 +24,12 @@ class ImagesDisplay {
 		let scale = 1;
 		let translateX = 0;
 		let translateY = 0;
-		let dragging = false;
-		let clickedAfterDrag = false;
-		const dragThreshold = 5;
-		const pointers = new Map<number, {x: number; y: number}>();
+		let moved = false;
+		const moveThreshold = 10;
+		const pointers = new Map<number, {x: number; y: number; startX: number; startY: number}>();
 		let initialDistance = 0;
 		let pinchStartScale = 1;
+		let downOnImage = false;
 
 		const imageElement = imageWrapper.querySelector("img");
 		let baseWidth = 0;
@@ -69,7 +69,7 @@ class ImagesDisplay {
 			event.preventDefault();
 			const delta = Math.sign(event.deltaY) * -0.15;
 			const oldScale = scale;
-			scale = Math.max(0.5, Math.min(10, scale + delta));
+			scale = Math.max(1, Math.min(10, scale + delta));
 			if (!imageElement || scale === oldScale) return;
 			const rect = imageWrapper.getBoundingClientRect();
 			const offsetX = event.clientX - rect.left - rect.width / 2;
@@ -81,13 +81,16 @@ class ImagesDisplay {
 
 		imageWrapper.onpointerdown = (event) => {
 			if (event.button !== 0 && event.pointerType !== "touch") return;
-			event.preventDefault();
-			pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
+			pointers.set(event.pointerId, {
+				x: event.clientX,
+				y: event.clientY,
+				startX: event.clientX,
+				startY: event.clientY,
+			});
+			downOnImage = imageWrapper.contains(event.target as Node) && event.target !== imageWrapper;
 			imageWrapper.setPointerCapture(event.pointerId);
-			if (pointers.size === 1) {
-				dragging = true;
-			} else if (pointers.size === 2) {
-				dragging = false;
+			moved = false;
+			if (pointers.size === 2) {
 				const [a, b] = Array.from(pointers.values());
 				initialDistance = getDistance(a, b);
 				pinchStartScale = scale;
@@ -101,31 +104,44 @@ class ImagesDisplay {
 			const previous = pointers.get(event.pointerId)!;
 			const dx = event.clientX - previous.x;
 			const dy = event.clientY - previous.y;
-			pointers.set(event.pointerId, {x: event.clientX, y: event.clientY});
+			pointers.set(event.pointerId, {
+				x: event.clientX,
+				y: event.clientY,
+				startX: previous.startX,
+				startY: previous.startY,
+			});
 			if (pointers.size === 2) {
 				const [a, b] = Array.from(pointers.values());
 				const currentDistance = getDistance(a, b);
-				const newScale = Math.max(
-					0.5,
-					Math.min(10, pinchStartScale * (currentDistance / initialDistance)),
-				);
-				if (newScale !== scale && imageElement) {
-					const rect = imageWrapper.getBoundingClientRect();
-					const center = {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
-					const offsetX = center.x - rect.left - rect.width / 2;
-					const offsetY = center.y - rect.top - rect.height / 2;
-					translateX -= offsetX * (newScale / scale - 1);
-					translateY -= offsetY * (newScale / scale - 1);
-					scale = newScale;
+				if (initialDistance > 0) {
+					const newScale = Math.max(
+						1,
+						Math.min(10, pinchStartScale * (currentDistance / initialDistance)),
+					);
+					if (newScale !== scale && imageElement) {
+						const rect = imageWrapper.getBoundingClientRect();
+						const center = {x: (a.x + b.x) / 2, y: (a.y + b.y) / 2};
+						const offsetX = center.x - rect.left - rect.width / 2;
+						const offsetY = center.y - rect.top - rect.height / 2;
+						translateX -= offsetX * (newScale / scale - 1);
+						translateY -= offsetY * (newScale / scale - 1);
+						scale = newScale;
+						updateTransform();
+					}
+				}
+				moved = true;
+			} else if (pointers.size === 1) {
+				const start = pointers.get(event.pointerId)!;
+				if (
+					Math.hypot(event.clientX - start.startX, event.clientY - start.startY) > moveThreshold
+				) {
+					moved = true;
+				}
+				if (scale > 1) {
+					translateX += dx;
+					translateY += dy;
 					updateTransform();
 				}
-			} else if (dragging) {
-				if (Math.abs(dx) > dragThreshold || Math.abs(dy) > dragThreshold) {
-					clickedAfterDrag = true;
-				}
-				translateX += dx;
-				translateY += dy;
-				updateTransform();
 			}
 		};
 
@@ -134,24 +150,17 @@ class ImagesDisplay {
 				imageWrapper.releasePointerCapture(event.pointerId);
 			}
 			pointers.delete(event.pointerId);
-			if (pointers.size === 1) {
-				dragging = true;
-			} else {
-				dragging = false;
-			}
 			imageWrapper.classList.remove("dragging");
 		};
 
 		imageWrapper.onpointercancel = () => {
-			dragging = false;
 			pointers.clear();
 			imageWrapper.classList.remove("dragging");
 		};
 
 		imageWrapper.addEventListener("click", (event) => {
-			if (clickedAfterDrag) {
+			if (moved || downOnImage) {
 				event.stopPropagation();
-				clickedAfterDrag = false;
 			}
 		});
 
@@ -165,9 +174,6 @@ class ImagesDisplay {
 		};
 
 		if (imageElement) {
-			imageElement.addEventListener("click", (e) => {
-				e.stopPropagation();
-			});
 			imageElement.addEventListener("load", () => {
 				reset();
 			});
