@@ -829,7 +829,6 @@ h2:empty {
 	-webkit-box-orient: vertical;
 	line-clamp: 1;
 	-webkit-line-clamp: 1;
-	font-weight: bold;
 }
 
 a,
