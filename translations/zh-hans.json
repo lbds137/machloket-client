@@ -446,7 +446,7 @@
 		"notImpl": "Fermo 尚不可執行组件类型$1",
 		"onlyYou": "只有您可看到此消息",
 		"replyline": "开始交互",
-		"started": "处理交互...",
+		"started": "处理交互…",
 		"worked": "交互成功"
 	},
 	"invite": {

@@ -355,7 +355,7 @@
 		"invites": "Einladungen",
 		"joinConfirm": "Beitreten $1?",
 		"leave": "Server verlassen",
-		"loadingDiscovery": "Lade...",
+		"loadingDiscovery": "Lade…",
 		"makeInvite": "Einladung erstellen",
 		"markRead": "Als gelesen markieren",
 		"memberCount": "$1 Mitglied{{PLURAL:$1||er}}",
@@ -450,7 +450,7 @@
 		"notImpl": "Fermo hat den Komponententyp $1 noch nicht implementiert.",
 		"onlyYou": "Nur du kannst diese Nachricht sehen.",
 		"replyline": "Interaktion gestartet",
-		"started": "Interaktion wird verarbeitet...",
+		"started": "Interaktion wird verarbeitet…",
 		"worked": "Die Interaktion war erfolgreich."
 	},
 	"invite": {
@@ -667,7 +667,7 @@
 	"no": "Nein",
 	"noEmojiFont": "System-Emoji verwenden",
 	"noMessages": "Keine Nachrichten vorhanden, sei der Erste, der etwas sagt!",
-	"noPins": "Hier gibt es nichts für dich... noch nicht.",
+	"noPins": "Hier gibt es nichts für dich… noch nicht.",
 	"noStickers": "Das ist schade, es gibt keine Sticker, die du nutzen kannst!",
 	"notiClump": "Sie haben $1 Benachrichtigungen von $2 erhalten.",
 	"notiVolume": "Benachrichtigungslautstärke:",
@@ -808,7 +808,7 @@
 	"renderJoinAvatars": "Anzeigen von Avataren für neue Mitglieder:",
 	"reply": "Antworten",
 	"replyingTo": "Antworte auf $1",
-	"retrying": "Erneuter Versuch...",
+	"retrying": "Erneuter Versuch…",
 	"role": {
 		"color": "Erste Farbe",
 		"colors": {
@@ -822,7 +822,7 @@
 		"confirmDelete": "Sicher, dass $1 gelöscht werden soll?",
 		"copyId": "Rollen-ID kopieren",
 		"delete": "Rolle löschen",
-		"deleting": "Rolle wird gelöscht...",
+		"deleting": "Rolle wird gelöscht…",
 		"displaySettings": "Anzeigeeinstellungen",
 		"hoisted": "Zeige Rollenmitglieder getrennt von Online-Mitgliedern an (sie werden anhand der höchsten Rollengruppe, zu der sie gehören, angezeigt):",
 		"mentionable": "Erlaube jedem, diese Rolle anzupingen:",
@@ -930,7 +930,7 @@
 	},
 	"vc": {
 		"joinForStream": "Treten Sie dem Sprachkanal bei, um zuzusehen",
-		"joiningStream": "Trete Stream bei...",
+		"joiningStream": "Trete Stream bei…",
 		"joinstream": "Stream ansehen",
 		"leavestream": "Stream verlassen",
 		"stopstream": "Stream stoppen"

@@ -258,7 +258,7 @@
 		"upload": "絵文字をアップロードする"
 	},
 	"emojiSelect": "絵文字:",
-	"errorReconnect": "サーバーに接続できません。** $1 ** 秒後に再試行します...",
+	"errorReconnect": "サーバーに接続できません。** $1 ** 秒後に再試行します…",
 	"favoriteGifs": "お気に入りのGIF",
 	"folder": {
 		"color": "フォルダの色:",
@@ -338,7 +338,7 @@
 		"invites": "招待",
 		"joinConfirm": "$1に参加しますか?",
 		"leave": "ギルドを脱退",
-		"loadingDiscovery": "読み込み中...",
+		"loadingDiscovery": "読み込み中…",
 		"makeInvite": "招待する",
 		"markRead": "既読にする",
 		"memberCount": "$1{{PLURAL:$1|人}}のメンバー",

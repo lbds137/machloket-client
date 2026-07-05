@@ -196,7 +196,7 @@
 		"upload": "Wrzuć emoji"
 	},
 	"emojiSelect": "Emoji:",
-	"errorReconnect": "Nie można połączyć się z serwerem, ponowna próba za **$1** sekund...",
+	"errorReconnect": "Nie można połączyć się z serwerem, ponowna próba za **$1** sekund…",
 	"favoriteGifs": "Ulubione Gify",
 	"folder": {
 		"color": "Kolor folderu:",
@@ -275,7 +275,7 @@
 		"invites": "Zaproszenia",
 		"joinConfirm": "Dołącz do $1?",
 		"leave": "Opuść gildię",
-		"loadingDiscovery": "Ładowanie...",
+		"loadingDiscovery": "Ładowanie…",
 		"makeInvite": "Zaproś",
 		"markRead": "Oznacz jako przeczytane",
 		"memberCount": "$1 {{PLURAL:$1|członek|członków}}",
@@ -370,7 +370,7 @@
 		"notImpl": "Fermo nie zaimplementował jeszcze typu komponentu $1",
 		"onlyYou": "Tylko Ty możesz zobaczyć tę wiadomość",
 		"replyline": "Rozpoczęto interakcję",
-		"started": "Przetwarzanie interakcji...",
+		"started": "Przetwarzanie interakcji…",
 		"worked": "Interakcja powiodła się"
 	},
 	"invite": {
@@ -582,7 +582,7 @@
 	"no": "Nie",
 	"noEmojiFont": "Użyj emoji systemowych",
 	"noMessages": "Wygląda na to, że nie ma tu żadnych wiadomości, bądź pierwszy, który coś powie!",
-	"noPins": "Wygląda na to, że jeszcze nic tu nie ma...",
+	"noPins": "Wygląda na to, że jeszcze nic tu nie ma…",
 	"noStickers": "Wygląda na to, że jesteś w dziwnym miejscu, nie ma żadnych naklejek, których mógłbyś użyć!",
 	"notiClump": "Otrzymałeś $1 powiadomień od $2",
 	"notiVolume": "Głośność powiadomień:",
@@ -723,7 +723,7 @@
 	"renderJoinAvatars": "Wyświetl awatary dla nowych członków:",
 	"reply": "Odpowiedz",
 	"replyingTo": "Odpowiadasz do $1",
-	"retrying": "Ponawianie próby...",
+	"retrying": "Ponawianie próby…",
 	"role": {
 		"color": "Kolor",
 		"colors": {
@@ -737,7 +737,7 @@
 		"confirmDelete": "Czy na pewno chcesz usunąć $1?",
 		"copyId": "Kopiuj identyfikator roli",
 		"delete": "Usuń rolę",
-		"deleting": "Usuwanie roli...",
+		"deleting": "Usuwanie roli…",
 		"displaySettings": "Ustawienia wyświetlania",
 		"hoisted": "Wyświetlana osobno",
 		"mentionable": "Zezwól wszystkim na wzmiankę tej roli:",
@@ -844,7 +844,7 @@
 	},
 	"vc": {
 		"joinForStream": "Dołącz do kanału głosowego, aby oglądać",
-		"joiningStream": "Dołączanie do streamu...",
+		"joiningStream": "Dołączanie do streamu…",
 		"joinstream": "Oglądaj stream",
 		"leavestream": "Opuść stream",
 		"stopstream": "Zatrzymaj stream"

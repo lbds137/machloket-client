@@ -435,7 +435,7 @@
 		"notImpl": "Fermo ondersteunt componenttype $1 nog niet",
 		"onlyYou": "Alleen jij kunt dit bericht zien",
 		"replyline": "Interactie gestart",
-		"started": "Interactie verwerken...",
+		"started": "Interactie verwerken…",
 		"worked": "Interactie geslaagd"
 	},
 	"invite": {
@@ -792,7 +792,7 @@
 	"renderJoinAvatars": "Profielafbeeldingen weergeven voor nieuwe leden:",
 	"reply": "Antwoorden",
 	"replyingTo": "Reageren op $1",
-	"retrying": "Opnieuw proberen...",
+	"retrying": "Opnieuw proberen…",
 	"role": {
 		"color": "Eerste kleur",
 		"colors": {

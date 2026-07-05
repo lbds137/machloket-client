@@ -37,7 +37,7 @@
 	"copymessageid": "Kopijuoti žinutės id",
 	"copyrawtext": "Kopijuoti neapdorotą tekstą",
 	"deleteConfirm": "Ar tikrai norite tai ištrinti?",
-	"errorReconnect": "Nepavyko prisijungti prie serverio, bandoma iš naujo po **$1** sekundžių...",
+	"errorReconnect": "Nepavyko prisijungti prie serverio, bandoma iš naujo po **$1** sekundžių…",
 	"goThere": "Eiti ten",
 	"goThereTrust": "Eiti ten ir ateityje pasitikėti",
 	"goingToURL": "Einate į $1. Tikrai norite ten eiti?",
@@ -306,7 +306,7 @@
 	},
 	"reply": "Atsakyti",
 	"replyingTo": "Atsakoma $1",
-	"retrying": "Bandoma dar kartą...",
+	"retrying": "Bandoma dar kartą…",
 	"role": {
 		"color": "Spalva",
 		"confirmDelete": "Ar tikrai norite ištrinti $1?",

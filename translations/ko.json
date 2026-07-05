@@ -184,7 +184,7 @@
 		"default": "기본값 ($1)",
 		"description:": "설명:",
 		"icon:": "아이콘:",
-		"loadingDiscovery": "불러오는 중...",
+		"loadingDiscovery": "불러오는 중…",
 		"makeInvite": "초대하기",
 		"markRead": "읽은 것으로 표시",
 		"memberCount": "$1명의 {{PLURAL:$1|회원}}",
@@ -451,7 +451,7 @@
 		"usernameError": "사용자 이름: $1"
 	},
 	"reply": "답변",
-	"retrying": "다시 시도하는 중...",
+	"retrying": "다시 시도하는 중…",
 	"role": {
 		"color": "첫 번째 색",
 		"colors": {

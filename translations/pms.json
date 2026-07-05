@@ -184,7 +184,7 @@
 		"notImpl": "Fermo a l'ha ancor nen butà an euvra la sòrt ëd component$1",
 		"onlyYou": "Mach chiel a peul vëdde 's mëssagi",
 		"replyline": "Antërassion ancaminà",
-		"started": "Antërassion an tratament...",
+		"started": "Antërassion an tratament…",
 		"worked": "L'antërassion a l'ha marcià"
 	},
 	"leaveGuild": "Chité la corporassion",
@@ -352,7 +352,7 @@
 	},
 	"vc": {
 		"joinForStream": "Gionz-se a la ciamà vocal për beiché",
-		"joiningStream": "Conession al fluss...",
+		"joiningStream": "Conession al fluss…",
 		"joinstream": "Beiché ël fluss",
 		"leavestream": "Chité ël fluss",
 		"stopstream": "Fërmé ël fluss"

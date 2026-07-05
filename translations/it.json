@@ -243,7 +243,7 @@
 		"upload": "Carica emoji"
 	},
 	"emojiSelect": "Emoji:",
-	"errorReconnect": "Impossibile connettersi al server, nuovo tentativo tra **$1** secondi...",
+	"errorReconnect": "Impossibile connettersi al server, nuovo tentativo tra **$1** secondi…",
 	"favoriteGifs": "GIF preferite",
 	"folder": {
 		"color": "Colore cartella:",
@@ -318,7 +318,7 @@
 		"invites": "Inviti",
 		"joinConfirm": "Unirsi a $1?",
 		"leave": "Lascia la gilda",
-		"loadingDiscovery": "Caricamento...",
+		"loadingDiscovery": "Caricamento…",
 		"makeInvite": "Crea invito",
 		"markRead": "Segna come letto",
 		"mute": "Disattiva guild",
@@ -586,7 +586,7 @@
 	},
 	"messageLink": "Messaggio in # $1",
 	"no": "No",
-	"noPins": "Non c'è niente per te qui...per ora",
+	"noPins": "Non c'è niente per te qui…per ora",
 	"otherAt": "$1 alle $2",
 	"permissions": {
 		"descriptions": {

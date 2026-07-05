@@ -259,7 +259,7 @@
 		"upload": "Uaslódáil emojis"
 	},
 	"emojiSelect": "Emoji:",
-	"errorReconnect": "Ní féidir ceangal leis an bhfreastalaí, déan iarracht eile i gceann **$1** soicind...",
+	"errorReconnect": "Ní féidir ceangal leis an bhfreastalaí, déan iarracht eile i gceann **$1** soicind…",
 	"favoriteGifs": "GIFanna is fearr leat",
 	"folder": {
 		"color": "Dath an fhillteáin:",
@@ -340,7 +340,7 @@
 		"invites": "Cuirí",
 		"joinConfirm": "Bí páirteach i $1?",
 		"leave": "Fág an gild",
-		"loadingDiscovery": "Ag lódáil...",
+		"loadingDiscovery": "Ag lódáil…",
 		"makeInvite": "Cuir cuireadh",
 		"markRead": "Marcáil mar léite",
 		"memberCount": "$1 {{PLURAL:$1|ball|baill}}",
@@ -435,7 +435,7 @@
 		"notImpl": "Níl cineál comhpháirte $1 curtha i bhfeidhm ag Fermo go fóill",
 		"onlyYou": "Ní féidir ach leatsa an teachtaireacht seo a fheiceáil",
 		"replyline": "Idirghníomhaíocht tosaithe",
-		"started": "Ag próiseáil idirghníomhaíochta...",
+		"started": "Ag próiseáil idirghníomhaíochta…",
 		"worked": "D'éirigh leis an idirghníomhaíocht"
 	},
 	"invite": {
@@ -652,7 +652,7 @@
 	"no": "Níl",
 	"noEmojiFont": "Úsáid emojis córais",
 	"noMessages": "Níl aon teachtaireachtaí anseo go fóill, bí ar an gcéad duine a déarfaidh rud éigin!",
-	"noPins": "Níl aon rud anseo duit... go fóill",
+	"noPins": "Níl aon rud anseo duit… go fóill",
 	"noStickers": "Is trua é sin, níl aon ghreamáin ann le húsáid agat!",
 	"notiClump": "Fuair ​​tú fógraí $1 ó $2",
 	"notiVolume": "Toirt fógraí:",
@@ -793,7 +793,7 @@
 	"renderJoinAvatars": "Taispeáin abhatár do bhaill nua:",
 	"reply": "Freagra",
 	"replyingTo": "Ag freagairt do $1",
-	"retrying": "Ag iarraidh arís...",
+	"retrying": "Ag iarraidh arís…",
 	"role": {
 		"color": "An chéad dath",
 		"colors": {
@@ -807,7 +807,7 @@
 		"confirmDelete": "An bhfuil tú cinnte gur mian leat $1 a scriosadh?",
 		"copyId": "Cóipeáil ID róil",
 		"delete": "Scrios Ról",
-		"deleting": "Ag scriosadh ról...",
+		"deleting": "Ag scriosadh ról…",
 		"displaySettings": "Socruithe taispeána",
 		"hoisted": "Taispeáin baill róil ar leithligh ó bhaill ar líne (ardófar iad ag baint úsáide as an ngrúpa róil is airde a bhfuil siad mar chuid de):",
 		"mentionable": "Ceadaigh d'aon duine an ról seo a phingeadh:",
@@ -923,7 +923,7 @@
 	},
 	"vc": {
 		"joinForStream": "Bígí páirteach sa chainéal gutha le féachaint",
-		"joiningStream": "Ag dul isteach sa sruth...",
+		"joiningStream": "Ag dul isteach sa sruth…",
 		"joinstream": "Féach ar an sruth",
 		"leavestream": "Fág an sruth",
 		"stopstream": "Stop an sruth"

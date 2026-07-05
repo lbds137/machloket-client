@@ -93,7 +93,7 @@
 	},
 	"discovery": "Keşfet",
 	"edit": "Düzenle",
-	"errorReconnect": "Sunucuya bağlanılamadı, **$1** saniye içinde yeniden denenecek...",
+	"errorReconnect": "Sunucuya bağlanılamadı, **$1** saniye içinde yeniden denenecek…",
 	"favoriteGifs": "Favori Gifler",
 	"form": {
 		"captcha": "Bir saniye, siz insan mısınız?"
@@ -126,7 +126,7 @@
 		"invites": "Davetler",
 		"joinConfirm": "$1'e katıl?",
 		"leave": "Sunucudan ayrıl",
-		"loadingDiscovery": "Yükleniyor...",
+		"loadingDiscovery": "Yükleniyor…",
 		"makeInvite": "Davet oluştur",
 		"markRead": "Okundu olarak işaretle",
 		"mute": "Guild'i Sessize Al",
@@ -454,13 +454,13 @@
 	},
 	"reply": "Yanıtla",
 	"replyingTo": "$1 yanıtlıyor",
-	"retrying": "Yeniden deneniyor...",
+	"retrying": "Yeniden deneniyor…",
 	"role": {
 		"color": "Renk",
 		"confirmDelete": "$1 silmek istediğinizden emin misiniz?",
 		"copyId": "Rol kimliğini kopyala",
 		"delete": "Rolü Sil",
-		"deleting": "Rol siliniyor...",
+		"deleting": "Rol siliniyor…",
 		"displaySettings": "Görüntü Ayarları",
 		"hoisted": "Listede göster:",
 		"mentionable": "Herkes bu rolü etiketleyebilir:",
@@ -511,7 +511,7 @@
 	},
 	"vc": {
 		"joinForStream": "İzlemek için Sesli Kanal'a katılın.",
-		"joiningStream": "Yayına katılınılıyor...",
+		"joiningStream": "Yayına katılınılıyor…",
 		"joinstream": "Yayını izle",
 		"leavestream": "Yayından ayrıl",
 		"stopstream": "Yayını Durdur"

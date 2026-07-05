@@ -266,7 +266,7 @@
 		"upload": "Enviar Emojis"
 	},
 	"emojiSelect": "Emoji:",
-	"errorReconnect": "Impossível conectar ao servidor, tentando novamente em **$1** segundos...",
+	"errorReconnect": "Impossível conectar ao servidor, tentando novamente em **$1** segundos…",
 	"favoriteGifs": "Gifs Favoritos",
 	"folder": {
 		"color": "Cor da pasta:",
@@ -346,7 +346,7 @@
 		"invites": "Convites",
 		"joinConfirm": "Entrar em $1?",
 		"leave": "Sair da guilda",
-		"loadingDiscovery": "Carregando...",
+		"loadingDiscovery": "Carregando…",
 		"makeInvite": "Criar convite",
 		"markRead": "Marcar como lida",
 		"memberCount": "$1 {{PLURAL:$1|membro|membros}}",
@@ -441,7 +441,7 @@
 		"notImpl": "Fermo ainda não implementou componente de tipo $1 ainda",
 		"onlyYou": "Só você pode ver essa mensagem",
 		"replyline": "Iniciou interação",
-		"started": "Processando interação...",
+		"started": "Processando interação…",
 		"worked": "Interação sucedida"
 	},
 	"invite": {
@@ -655,7 +655,7 @@
 	"no": "Não",
 	"noEmojiFont": "Usar emojis do sistema",
 	"noMessages": "Nada aqui ainda, seja o primeiro a dizer algo!",
-	"noPins": "Parece que não tem nada aqui... ainda",
+	"noPins": "Parece que não tem nada aqui… ainda",
 	"noStickers": "Isso é meio estranho, não tem nenhum adesivo aqui para usar!",
 	"notiClump": "Você recebeu $1 notificações de $2",
 	"notiVolume": "Volume da notificação:",
@@ -796,7 +796,7 @@
 	"renderJoinAvatars": "Mostrar avatares de membros novos:",
 	"reply": "Responder",
 	"replyingTo": "Respondendo a $1",
-	"retrying": "Tentando novamente...",
+	"retrying": "Tentando novamente…",
 	"role": {
 		"color": "Cor",
 		"colors": {
@@ -810,7 +810,7 @@
 		"confirmDelete": "Tem certeza de que quer apagar $1?",
 		"copyId": "Copiar ID do cargo",
 		"delete": "Apagar cargo",
-		"deleting": "Apagando cargo...",
+		"deleting": "Apagando cargo…",
 		"displaySettings": "Configurações de exibição",
 		"hoisted": "Levantado:",
 		"mentionable": "Permitir que qualquer um possa marcar este cargo:",
@@ -917,7 +917,7 @@
 	},
 	"vc": {
 		"joinForStream": "Entre no canal para assistir",
-		"joiningStream": "Juntando-se a transmissão...",
+		"joiningStream": "Juntando-se a transmissão…",
 		"joinstream": "Assistir transmissão",
 		"leavestream": "Sair da transmissão",
 		"stopstream": "Interromper transmissão"
