@@ -7,7 +7,7 @@
 		"esModuleInterop": true,
 		"importHelpers": false,
 		"incremental": true,
-		"lib": ["esnext", "DOM", "webworker", "DOM.AsyncIterable"],
+		"lib": ["esnext", "DOM", "webworker", "DOM.AsyncIterable", "DOM.Iterable"],
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"newLine": "lf",
