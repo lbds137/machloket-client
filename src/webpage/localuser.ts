@@ -4326,7 +4326,7 @@ class Localuser {
 		{
 			const jankInfo = settings.addButton(I18n.jankInfo());
 			const img = document.createElement("img");
-			img.src = new URL("./logo.svg", import.meta.url).href;
+			img.src = new URL("public/logo.svg", import.meta.url).href;
 			jankInfo.addHTMLArea(img);
 			img.width = 128;
 			img.height = 128;
