@@ -32,6 +32,10 @@ class ImagesDisplay {
 		let downOnImage = false;
 
 		const imageElement = imageWrapper.querySelector("img");
+		if (imageElement) {
+			imageElement.draggable = false;
+			imageElement.ondragstart = (e) => e.preventDefault();
+		}
 		let baseWidth = 0;
 		let baseHeight = 0;
 		const refreshBaseSize = () => {
