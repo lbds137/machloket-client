@@ -546,7 +546,7 @@
 		"install": "Install",
 		"installDesc": "Installing Fermo will allow you to open it in its own window and act like its own app! You can also just continue to use Fermo in the web browser like you have been and it'll work the same.",
 		"installJank": "Install Fermo",
-		"language": "Language:",
+		"language": "Language",
 		"manageBot": "Manage bot",
 		"manageInstance": "Manage instance",
 		"mustTypePhrase": "To delete your account you must type the phrase",
@@ -710,6 +710,7 @@
 		"confirmLanguage": "Confirm",
 		"targetLanguage": "Target language:",
 		"translationLanguage": "Translation language:",
+		"wantToHelpTranslate": "Want to help translate Fermo? [Click here](https://localization.sovrahi.com/projects/fermo/) to contribute.",
 		"translateTypingTitle": "Translate message",
 		"translate": "Translate",
 		"typingResult": "$1 ($2)"

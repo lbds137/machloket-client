@@ -3928,6 +3928,7 @@ class Localuser {
 					select.watchForChange(saveTranslationLang);
 				});
 			});
+			langRegion.addMDText(new MarkDown(I18n.translation.wantToHelpTranslate()));
 		}
 		{
 			const update = settings.addButton(I18n.localuser.updateSettings());
@@ -4352,7 +4353,7 @@ class Localuser {
 
 		if (isOpenpanelConfigured()) {
 			const openpanelOpts = settings.addButton(I18n.localuser.openpanelTitle());
-			openpanelOpts.addText(I18n.localuser.openpanelDesc());
+			openpanelOpts.addMDText(new MarkDown(I18n.localuser.openpanelDesc()));
 			const analyticsWidget = makeOpenpanelAnalyticsWidget(
 				localSettings.openpanelAnalyticsMode || OpenPanelAnalyticsMode.Default,
 				(mode) => {
