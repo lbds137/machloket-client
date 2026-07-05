@@ -10,4 +10,4 @@ Currently, I only support the most up to date version of Fermo client, there are
 
 ## Reporting a Vulnerability
 
-If there's an issue please disclose it responsibly to me, or here on Github privately.
+If there's an issue please disclose it responsibly to me, or here on Forgejo privately.
