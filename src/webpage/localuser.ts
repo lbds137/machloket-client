@@ -501,45 +501,6 @@ class Localuser {
 			}),
 		);
 	}
-	async queryBlog() {
-		this.perminfo.localuser ??= {};
-		const prefs = await getPreferences();
-		const bstate = prefs.showBlogUpdates;
-		if (bstate === undefined) {
-			/*const pop = new Dialog("");
-			pop.options.addText(I18n.blog.wantUpdates());
-			const opts = pop.options.addOptions("", {ltr: true});
-			opts.addButtonInput("", I18n.yes(), async () => {
-				prefs.showBlogUpdates = true;
-				await setPreferences(prefs);
-				this.queryBlog();
-				pop.hide();
-			});
-			opts.addButtonInput("", I18n.no(), async () => {
-				prefs.showBlogUpdates = false;
-				await setPreferences(prefs);
-				this.queryBlog();
-				pop.hide();
-			});
-			pop.show();*/
-			prefs.showBlogUpdates = false;
-			await setPreferences(prefs);
-			return;
-		} else if (bstate) {
-			const post = (await this.getPosts()).items[0];
-			if (this.perminfo.localuser.mostRecent !== post.url) {
-				this.perminfo.localuser.mostRecent = post.url;
-				const pop = new Dialog(post.title);
-				//TODO implement images for the rendering of this
-				pop.options.addText(post.content_html);
-				pop.options.addButtonInput("", I18n.blog.gotoPost(), () => {
-					window.open(post.url);
-					pop.hide();
-				});
-				pop.show();
-			}
-		}
-	}
 	guildFolders: guildFolder[] = [];
 	unknownRead = new Map<string, readStateEntry>();
 	async gottenReady(ready: readyjson): Promise<void> {
@@ -548,7 +509,6 @@ class Localuser {
 		this.channelids.clear();
 		this.inrelation.clear();
 		this.userMap.clear();
-		this.queryBlog();
 		this.guildFolders = ready.d.user_settings.guild_folders;
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
@@ -3018,16 +2978,6 @@ class Localuser {
 			headers: this.headers,
 			body: JSON.stringify(json),
 		});
-	}
-	async getPosts() {
-		return (await (await fetch("https://blog.fermo.sovr.top/feed_json_created.json")).json()) as {
-			items: {
-				url: string;
-				title: string;
-				content_html: string;
-				image: null | string;
-			}[];
-		};
 	}
 	async getConnections() {
 		return fetch(this.info.api + "/connections", {
@@ -5722,13 +5672,8 @@ class Localuser {
 		if (this.keyup(event)) {
 			return true;
 		}
-		if (event.key === "Escape") {
-			if (event.ctrlKey) {
-				this.lookingguild?.markAsRead();
-			} else {
-				this.channelfocus?.readbottom();
-				this.channelfocus?.goToBottom();
-			}
+		if (event.key === "Escape" && event.ctrlKey) {
+			this.lookingguild?.markAsRead();
 			return true;
 		}
 

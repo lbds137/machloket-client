@@ -26,7 +26,6 @@ export const ThemeOptionValues = [
 ];
 
 export class UserPreferences {
-	showBlogUpdates?: boolean;
 	locale: string = navigator.language || "en";
 	translationLang?: string;
 	typingTranslationLang?: string;
@@ -59,14 +58,7 @@ export async function setPreferences(prefs: UserPreferences): Promise<void> {
 //region Migration from untyped storage
 async function migrateOldPreferences(): Promise<void> {
 	const prefs = await getPreferences();
-	const oldBlogUpdates = localStorage.getItem("blogUpdates");
 	let mod = false;
-
-	if (oldBlogUpdates !== null) {
-		prefs.showBlogUpdates = oldBlogUpdates === "Yes";
-		localStorage.removeItem("blogUpdates");
-		mod = true;
-	}
 
 	const oldAnimateGifs = localStorage.getItem("gifSetting");
 	if (oldAnimateGifs !== null) {

@@ -180,7 +180,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		},
 	);
 	const channelw = document.getElementById("channelw");
-	if (channelw)
+	if (channelw) {
 		channelw.addEventListener("keypress", (e) => {
 			if (e.ctrlKey || e.altKey || e.metaKey || e.metaKey) return;
 			let owner = e.target as HTMLElement;
@@ -192,6 +192,22 @@ if (window.location.pathname.startsWith("/channels")) {
 			}
 			typebox.markdown.boxupdate(Infinity);
 		});
+		channelw.addEventListener("keydown", (event) => {
+			if (event.key === "PageUp" || event.key === "PageDown" || event.key === "Escape") {
+				const div = thisUser.channelfocus?.infinite.div;
+				if (!div) return;
+				event.preventDefault();
+				if (event.key === "Escape") {
+					thisUser.channelfocus?.readbottom();
+					thisUser.channelfocus?.goToBottom();
+					typebox.focus();
+				} else {
+					const page = div.clientHeight - 50;
+					div.scrollTop += event.key === "PageUp" ? -page : page;
+				}
+			}
+		});
+	}
 	menu.bindContextmenu(document.getElementById("channels") as HTMLDivElement);
 
 	const pasteImageElement = document.getElementById("pasteimage") as HTMLDivElement;
@@ -286,16 +302,23 @@ if (window.location.pathname.startsWith("/channels")) {
 	}
 	async function handleEnter(event: KeyboardEvent): Promise<void> {
 		if (event.isComposing) return;
-		if (event.key === "Escape" && (images.length || thisUser.channelfocus?.replyingto)) {
-			while (images.length) {
-				const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
-				if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
+		if (event.key === "Escape") {
+			if (images.length || thisUser.channelfocus?.replyingto) {
+				while (images.length) {
+					const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
+					if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
+				}
+				if (thisUser.channelfocus) {
+					thisUser.channelfocus?.replyingto?.div?.classList.remove("replying");
+					thisUser.channelfocus.replyingto = null;
+					thisUser.channelfocus.makereplybox();
+				}
 			}
 			if (thisUser.channelfocus) {
-				thisUser.channelfocus?.replyingto?.div?.classList.remove("replying");
-				thisUser.channelfocus.replyingto = null;
-				thisUser.channelfocus.makereplybox();
+				thisUser.channelfocus.readbottom();
+				thisUser.channelfocus.goToBottom();
 			}
+			typebox.focus();
 			return;
 		}
 		if (thisUser.handleKeyUp(event)) {
@@ -336,6 +359,14 @@ if (window.location.pathname.startsWith("/channels")) {
 		if (event.key === "Enter" && !event.shiftKey && window.innerWidth > 600) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
+		}
+		if (event.key === "PageUp" || event.key === "PageDown") {
+			const div = thisUser.channelfocus?.infinite.div;
+			if (div) {
+				event.preventDefault();
+				const page = div.clientHeight - 50;
+				div.scrollTop += event.key === "PageUp" ? -page : page;
+			}
 		}
 	});
 	markdown.giveBox(typebox);

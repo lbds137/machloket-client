@@ -15,7 +15,7 @@ The translations are stored in `/src/webpage/translations` in this format below.
 
 ## I want to help translate this
 
-Please go to [https://translatewiki.net/wiki/Translating:Fermo](https://translatewiki.net/wiki/Translating:Fermo) to help translate this project.
+Please go to [https://localization.sovrahi.com/projects/fermo/](https://localization.sovrahi.com/projects/fermo/) to help translate this project.
 
 ## What is the format?
 

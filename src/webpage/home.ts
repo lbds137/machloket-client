@@ -46,127 +46,125 @@ async function loadInstanceUptime(instanceId: string) {
 if (window.location.pathname === "/" || window.location.pathname.startsWith("/index")) {
 	console.log(mobile);
 	const serverbox = document.getElementById("instancebox") as HTMLDivElement;
+	const observer = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				if (entry.isIntersecting) {
+					entry.target.classList.add("visible");
+					observer.unobserve(entry.target);
+				}
+			}
+		},
+		{threshold: 0.1},
+	);
+	requestAnimationFrame(() => {
+		for (const box of document.querySelectorAll(".pagebox")) {
+			observer.observe(box);
+		}
+	});
 
 	(async () => {
 		await I18n.done;
-		const box1Items = document.getElementById("box1Items");
 		I18n.translatePage();
+	})();
 
-		if (box1Items) {
-			const items = I18n.htmlPages.box1Items().split("|");
-			let i = 0;
-			//@ts-ignore ts is being dumb here
-			for (const item of box1Items.children) {
-				(item as HTMLElement).textContent = items[i];
-				i++;
+	const SKELETON_COUNT = 6;
+	for (let i = 0; i < SKELETON_COUNT; i++) {
+		const skeleton = document.createElement("div");
+		skeleton.classList.add("instance-skeleton", "skeleton");
+		serverbox.append(skeleton);
+	}
+
+	(async () => {
+		let json: {
+			id: string;
+			name: string;
+			tags?: string[];
+			short?: string;
+			description?: string;
+			display?: boolean;
+			icon?: string;
+			images?: string[];
+			level?: number;
+			link?: string;
+		}[];
+		try {
+			const res = await fetch("https://sbar.top/api/catalog/instances");
+			if (!res.ok) throw new Error("HTTP " + res.status);
+			json = await res.json();
+		} catch {
+			serverbox.innerHTML = "";
+			const errorEl = document.createElement("div");
+			errorEl.classList.add("instance-error");
+			errorEl.textContent = I18n.htmlPages.instanceError();
+			serverbox.append(errorEl);
+			return;
+		}
+		serverbox.innerHTML = "";
+		await I18n.done;
+		console.warn(json);
+		for (const instance of json) {
+			if (instance.display === false) {
+				continue;
 			}
+			const div = document.createElement("div");
+			div.classList.add("flexltr", "instance");
+			const image = instance.icon || instance.images?.[0];
+			if (image) {
+				const img = document.createElement("img");
+				img.alt = I18n.home.icon(instance.name);
+				img.src = new URL(image, "https://sbar.top").href;
+				div.append(img);
+			}
+			const statbox = document.createElement("div");
+			statbox.classList.add("flexttb", "flexgrow");
+
+			{
+				const textbox = document.createElement("div");
+				textbox.classList.add("flexttb", "instancetextbox");
+				const title = document.createElement("h2");
+				title.innerText = instance.name;
+				textbox.append(title);
+				if (instance.short || instance.description) {
+					const p = document.createElement("p");
+					if (instance.description) {
+						p.innerText = instance.description;
+					} else if (instance.short) {
+						p.innerText = instance.short;
+					}
+					textbox.append(p);
+				}
+				statbox.append(textbox);
+			}
+			{
+				const stats = document.createElement("div");
+				stats.classList.add("flexltr");
+				const span = document.createElement("span");
+				stats.append(span);
+				statbox.append(stats);
+				loadInstanceUptime(instance.id)
+					.then((uptime) => {
+						if (!uptime) {
+							stats.remove();
+							return;
+						}
+						span.innerText = I18n.home.uptimeStats(
+							uptime.all + "",
+							uptime.week + "",
+							uptime.day + "",
+						);
+					})
+					.catch(() => {
+						stats.remove();
+					});
+			}
+			div.append(statbox);
+			div.onclick = (_) => {
+				makeRegister(true, instance.name);
+			};
+			serverbox.append(div);
 		}
 	})();
-	/*
-	const recent = document.getElementById("recentBlog");
-	if (recent) {
-		fetch("https://blog.fermo.sovr.top/feed_json_created.json")
-			.then((_) => _.json())
-			.then(
-				(json: {
-					items: {
-						url: string;
-						title: string;
-						content_html: string;
-					}[];
-				}) => {
-					for (const thing of json.items.slice(0, 5)) {
-						const a = document.createElement("a");
-						a.href = thing.url;
-						a.textContent = thing.title;
-						recent.append(a);
-					}
-				},
-			);
-	}
-	*/
-	fetch("https://sbar.top/api/catalog/instances")
-		.then((_) => _.json())
-		.then(
-			async (
-				json: {
-					id: string;
-					name: string;
-					tags?: string[];
-					short?: string;
-					description?: string;
-					display?: boolean;
-					icon?: string;
-					images?: string[];
-					level?: number;
-					link?: string;
-				}[],
-			) => {
-				await I18n.done;
-				console.warn(json);
-				for (const instance of json) {
-					if (instance.display === false) {
-						continue;
-					}
-					const div = document.createElement("div");
-					div.classList.add("flexltr", "instance");
-					const image = instance.icon || instance.images?.[0];
-					if (image) {
-						const img = document.createElement("img");
-						img.alt = I18n.home.icon(instance.name);
-						img.src = new URL(image, "https://sbar.top").href;
-						div.append(img);
-					}
-					const statbox = document.createElement("div");
-					statbox.classList.add("flexttb", "flexgrow");
-
-					{
-						const textbox = document.createElement("div");
-						textbox.classList.add("flexttb", "instancetextbox");
-						const title = document.createElement("h2");
-						title.innerText = instance.name;
-						textbox.append(title);
-						if (instance.short || instance.description) {
-							const p = document.createElement("p");
-							if (instance.description) {
-								p.innerText = instance.description;
-							} else if (instance.short) {
-								p.innerText = instance.short;
-							}
-							textbox.append(p);
-						}
-						statbox.append(textbox);
-					}
-					{
-						const stats = document.createElement("div");
-						stats.classList.add("flexltr");
-						const span = document.createElement("span");
-						stats.append(span);
-						statbox.append(stats);
-						loadInstanceUptime(instance.id)
-							.then((uptime) => {
-								if (!uptime) {
-									stats.remove();
-									return;
-								}
-								span.innerText = I18n.home.uptimeStats(
-									uptime.all + "",
-									uptime.week + "",
-									uptime.day + "",
-								);
-							})
-							.catch(() => {
-								stats.remove();
-							});
-					}
-					div.append(statbox);
-					div.onclick = (_) => {
-						makeRegister(true, instance.name);
-					};
-					serverbox.append(div);
-				}
-			},
-		);
 
 	const slides = document.getElementById("ScreenshotSlides");
 	if (slides) {

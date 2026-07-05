@@ -196,7 +196,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "クライアント バージョン: $1 \n\n[Fermoの公式ギルドに参加する]( $2 /invite/USgYJo?instance=https %3A% 2F%2Fspacebar.chat)\n\n[Fermoの翻訳に協力する](https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc) \n\n[Fermoの開発に協力する](https://git.sovrahi.com/oh64/Fermo)\n\n[Fermoが依存するサーバーのメンテナンスに協力する](https://git.sovrahi.com/spacebarchat/server)\n\n\n推定された権限: $3",
+	"clientDesc": "クライアント バージョン: $1 \n\n[Fermoの公式ギルドに参加する]( $2 /invite/USgYJo?instance=https %3A% 2F%2Fspacebar.chat)\n\n[Fermoの翻訳に協力する](https://localization.sovrahi.com/projects/fermo/) \n\n[Fermoの開発に協力する](https://git.sovrahi.com/oh64/Fermo)\n\n[Fermoが依存するサーバーのメンテナンスに協力する](https://git.sovrahi.com/spacebarchat/server)\n\n\n推定された権限: $3",
 	"commands": {
 		"errorNotValid": "$1は$2に対する有効な選択肢ではありません",
 		"required": "$1はこのコマンドに必須の箇所です"

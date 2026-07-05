@@ -196,7 +196,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "客戶端版本：$1 \n\n[加入 Fermo 官方公會]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[協助翻譯 Fermo]（https://translatewiki.net/wiki/Translating:JankClient#sortable:3=desc）\n\n[協助開發 Fermo]（https://git.sovrahi.com/oh64/Fermo）\n\n[協助維護 Fermo 所依賴的伺服器]（https://git.sovrahi.com/spacebarchat/server）\n\n\n計算權限：$3",
+	"clientDesc": "客戶端版本：$1 \n\n[加入 Fermo 官方公會]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[協助翻譯 Fermo]（https://localization.sovrahi.com/projects/fermo/）\n\n[協助開發 Fermo]（https://git.sovrahi.com/oh64/Fermo）\n\n[協助維護 Fermo 所依賴的伺服器]（https://git.sovrahi.com/spacebarchat/server）\n\n\n計算權限：$3",
 	"commands": {
 		"errorNotValid": "$1不是$2的有效選擇",
 		"required": "$1是此指令的必需部分"

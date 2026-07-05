@@ -36,10 +36,25 @@
 			</a>
 		</div>
 		<div id="homePage">
-			<h1 class="pagehead" id="welcomeJank" i18n="htmlPages.welcomeJank">Welcome to Fermo</h1>
-			<div class="pagebox" id="ScreenshotSlides">
-				<span class="rightArrow svg-intoMenu"></span>
-				<span class="leftArrow svg-leftArrow"></span>
+			<div id="hero">
+				<h1 id="welcomeJank" i18n="htmlPages.welcomeJank">Welcome to Fermo</h1>
+				<p id="heroSubtitle" i18n="htmlPages.heroSubtitle">
+					A modern, feature-rich Spacebar client
+				</p>
+				<div id="heroCtas">
+					<a href="/channels/@me" class="heroCta primary" i18n="htmlPages.startHere">Start here</a>
+					<a href="https://git.sovrahi.com/oh64/Fermo" class="heroCta secondary">View source</a>
+				</div>
+			</div>
+			<div
+				class="pagebox"
+				id="ScreenshotSlides"
+				role="region"
+				aria-roledescription="carousel"
+				aria-label="Screenshots"
+			>
+				<span class="rightArrow svg-intoMenu" role="button" aria-label="Next slide"></span>
+				<span class="leftArrow svg-leftArrow" role="button" aria-label="Previous slide"></span>
 				<img src="./home/SS1.webp" class="screenshots" alt="Screenshot 1" />
 				<img src="./home/SS2.webp" class="screenshots hidden" alt="Screenshot 2" />
 				<img src="./home/SS3.webp" class="screenshots hidden" alt="Screenshot 3" />
@@ -51,34 +66,54 @@
 				</h2>
 				<div id="instancebox"></div>
 			</div>
-			<div class="pagebox">
-				<p id="box1title" i18n="htmlPages.box1title">
-					Fermo is a Spacebar-compatible client seeking to be as good as it can be with many
-					features including:
-				</p>
-				<ul id="box1Items">
-					<li>Direct Messaging</li>
-					<li>Reactions support</li>
-					<li>Invites</li>
-					<li>Account switching</li>
-					<li>User settings</li>
-					<li>Developer portal</li>
-					<li>Bot invites</li>
-					<li>Translation support</li>
-				</ul>
+			<div class="pagebox feature-row">
+				<div class="feature-content">
+					<h2 i18n="htmlPages.featuresTitle">Spacebar Explorer Integration</h2>
+					<p i18n="htmlPages.featuresDesc1">
+						Quickly view a bot's information and links without having to spend 40 years looking for
+						them, all instances retrieved directly from Explorer.
+					</p>
+				</div>
+				<div class="feature-image">
+					<img src="features/spacebar-explorer-int.webp" alt="Feature 1" id="featureImg1" />
+				</div>
 			</div>
 
-			<!--
-			<div class="pagebox">
-				<h2 id="box5title" i18n="blog.fermo">Fermo Blog</h2>
-				<p id="box5description" i18n="blog.desc">
-					Read or subscribe to the blog for updates on Fermo!
-				</p>
-				<br />
-				<a href="https://blog.fermo.sovr.top" class="TitleButtons" id="blog" i18n="blog.blog"> Blog </a>
-				<div id="recentBlog" class="flexttb"></div>
+			<div class="pagebox feature-row reverse">
+				<div class="feature-content">
+					<h2 i18n="htmlPages.featuresTitle2">Simple Yet Professional</h2>
+					<p i18n="htmlPages.featuresDesc2">
+						A clean, intuitive interface that stays out of your way while giving you all the power
+						you need.
+					</p>
+				</div>
+				<div class="feature-image">
+					<img src="features/fermo-settings-design.webp" alt="Feature 2" id="featureImg2" />
+				</div>
 			</div>
-			-->
+
+			<div class="pagebox feature-row">
+				<div class="feature-content">
+					<h2 i18n="htmlPages.featuresTitle3">All Spacebar Features</h2>
+					<p i18n="htmlPages.featuresDesc3">
+						Full support for all Spacebar features: channels, voice, reactions, invites, permissions
+						and more.
+					</p>
+				</div>
+			</div>
+
+			<div class="pagebox feature-row reverse">
+				<div class="feature-content">
+					<h2 i18n="htmlPages.featuresTitle4">PC & Mobile Compatible</h2>
+					<p i18n="htmlPages.featuresDesc4">
+						Works flawlessly on both desktop and mobile devices, so you can stay connected wherever
+						you are.
+					</p>
+				</div>
+				<div class="feature-image">
+					<img src="features/mobile-view.webp" alt="Feature 4" id="featureImg4" />
+				</div>
+			</div>
 
 			<div class="pagebox">
 				<h2 id="box4title" i18n="htmlPages.transTitle">Translate Fermo</h2>
@@ -87,7 +122,7 @@
 				</p>
 				<br />
 				<a
-					href="https://translatewiki.net/wiki/Translating:Fermo"
+					href="https://localization.sovrahi.com/projects/fermo/"
 					class="TitleButtons"
 					id="translate"
 					i18n="htmlPages.trans"
@@ -104,6 +139,15 @@
 				</p>
 				<br />
 				<a href="https://git.sovrahi.com/oh64/Fermo" class="TitleButtons"> Forgejo </a>
+			</div>
+
+			<div id="homeFooter">
+				<div id="homeFooterLinks">
+					<a href="https://git.sovrahi.com/oh64/Fermo">Forgejo</a>
+					<a href="https://localization.sovrahi.com/projects/fermo/">Translate</a>
+					<a href="/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat">Spacebar Guild</a>
+				</div>
+				<span>Fermo, an open-source Spacebar client</span>
 			</div>
 		</div>
 	</body>
