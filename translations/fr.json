@@ -180,6 +180,11 @@
 								"required": "$1 est une partie requise de cette commande"
 				},
 				"confirmGuildLeave": "Êtes-vous sûr·e de vouloir quitter $1",
+				"connections": {
+								"delete": "Supprimer la connexion",
+								"display": "Afficher sur le profile : ",
+								"since": "Membre depuis : $1"
+				},
 				"copyLink": "Copier le lien du message",
 				"copyRegLink": "Copier le lien",
 				"copymessageid": "Copier l'id du message",
@@ -839,6 +844,7 @@
 				"pinMessage": "Épingler le message",
 				"poll": {
 								"answers": "Réponses :",
+								"count": "$1 {{PLURAL:$1|vote|votes}} $2%",
 								"durCount": {
 												"1": "1 heure",
 												"168": "7 jours",
@@ -849,9 +855,11 @@
 												"8": "8 heures"
 								},
 								"duration": "Durée :",
+								"expires": "Expire dans : $1",
 								"mult": "Autoriser les réponses multiples :",
 								"newAnswer": "Nouvelle réponse",
 								"question": "Question :",
+								"tie": "Ce fut un ex aequo !",
 								"view": "Voir le sondage",
 								"warning": "Avertissement : les sondages ne sont pris en charge que par une minorité de clients, il est donc possible que certaines personnes ne puissent ni les voir ni y répondre.",
 								"winningAnswer": "Réponse gagnante : $1%"
@@ -919,7 +927,13 @@
 								"roles": "Rôles"
 				},
 				"search": {
+								"after": "Après :",
+								"authors": "Auteurs :",
 								"back": "Retour",
+								"before": "Avant :",
+								"channels": "Salons :",
+								"includensfw": "Inclure du NSFW :",
+								"mentions": "Mentions :",
 								"new": "Nouveau",
 								"next": "Suivant",
 								"nofind": "Il semble qu'il n'y ait aucun message correspondant à votre recherche, essayez peut-être d'élargir votre recherche pour trouver ce que vous recherchez",
@@ -932,6 +946,7 @@
 								"clear": "Retirer",
 								"img": "Importer une image",
 								"save": "Enregistrer les modifications",
+								"showAll": "Afficher tout $1",
 								"unsaved": "Attention, vous avez des modifications non enregistrées",
 								"updates": {
 												"serviceWorkerMode": {
@@ -941,6 +956,22 @@
 																"title": "Paramètre Service Worker",
 																"unregistered": "Désactivé (cache média inclu)"
 												}
+								}
+				},
+				"settingsCategories": {
+								"guild": {
+												"bans": "Bannissements",
+												"community": "Communauté",
+												"general": "Général",
+												"integrations": "Intégrations",
+												"roles": "Rôles"
+								},
+								"user": {
+												"accountSecurity": "Compte & Sécurité",
+												"application": "Application",
+												"developerOptions": "Options de développeur",
+												"instanceInfo": "Informations sur l'instance",
+												"profileAppearance": "Profil & Apparence"
 								}
 				},
 				"showBlockedMessages": "Vous avez bloqué cet utilisateur, cliquez pour voir $1 {{PLURAL:$1|message bloqué|messages bloqués}}.",
