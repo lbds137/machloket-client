@@ -2,7 +2,7 @@
 
 Fermo is a [Spacebar](https://spacebar.chat) Client written in TS, HTML, and CSS.
 
-![](src/webpage/home/SS1.webp)
+![](src/webpage/public/home/SS1.webp)
 
 To build it, clone the repo and run `npm install`, then `npm run build`
 To run it, use `npm start`
