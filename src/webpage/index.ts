@@ -15,7 +15,9 @@ import "./recover.js";
 import "./home.js";
 import "./invite.js";
 import "./oauth2/auth.js";
-import "./audio/page.js";
+if (window.location.pathname.startsWith("/audio")) {
+	await import("./audio/page.js");
+}
 import "./404.js";
 import {Channel} from "./channel.js";
 import {

@@ -7,10 +7,6 @@ export class Play {
 	audioContext: AudioContext;
 	tracks: string[] = [];
 	onload = () => {};
-	static soundNamesPromise = fetch("/audio/sounds.jasf")
-		.then((res) => res.arrayBuffer())
-		.then((buffer) => [...JasfPlay.parseBin(buffer).audios.keys()])
-		.catch(() => [] as string[]);
 	constructor(buffer: ArrayBuffer) {
 		this.buffer = buffer;
 		this.tracks = [...JasfPlay.parseBin(buffer).audios.keys()];

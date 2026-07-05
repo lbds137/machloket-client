@@ -2766,7 +2766,10 @@ class Channel extends SnowFlake {
 				"/channels/" + this.guild_id + "/" + this.id + (aroundMessage ? `/${aroundMessage}` : ""),
 			);
 		}
-		this.localuser.pageTitle("#" + this.name);
+		this.localuser.pageTitle(
+			this.guild_id === "@me" ? this.name : "#" + this.name,
+			this.guild.properties.name,
+		);
 		const channelTopic = document.getElementById("channelTopic") as HTMLSpanElement;
 		if (this.topic) {
 			channelTopic.innerHTML = "";
@@ -4066,7 +4069,7 @@ class Channel extends SnowFlake {
 		}
 		if (this.trueNotiValue === "none") {
 			return;
-		} else if (this.notification === "mentions" && !message.mentionsuser(this.localuser.user)) {
+		} else if (this.trueNotiValue === "mentions" && !message.mentionsuser(this.localuser.user)) {
 			return;
 		}
 		if (message.author.relationshipType == 2) {

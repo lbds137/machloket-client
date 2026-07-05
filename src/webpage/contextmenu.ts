@@ -289,11 +289,21 @@ class Contextmenu<x, y> {
 	}
 	static setup() {
 		Contextmenu.declareMenu();
-		document.addEventListener("click", (event) => {
-			while (Contextmenu.currentmenu && !Contextmenu.currentmenu.contains(event.target as Node)) {
+		const closeIfOutside = (event: Event) => {
+			const target = event.target as Node | null;
+			if (!target) return;
+			while (
+				Contextmenu.currentmenu &&
+				!Contextmenu.currentmenu.contains(target) &&
+				!Contextmenu.prevmenus.some((m) => m.contains(target))
+			) {
 				Contextmenu.declareMenu();
 			}
-		});
+		};
+		document.addEventListener("click", closeIfOutside);
+		document.addEventListener("wheel", closeIfOutside, {passive: true});
+		document.addEventListener("touchmove", closeIfOutside, {passive: true});
+		window.addEventListener("scroll", closeIfOutside, {passive: true});
 	}
 	private layered = false;
 	constructor(name: string, layered = false) {
@@ -443,7 +453,24 @@ class Contextmenu<x, y> {
 		if (click === "right") {
 			obj.addEventListener("contextmenu", func);
 		} else {
-			obj.addEventListener("click", func);
+			obj.addEventListener("click", (event: MouseEvent) => {
+				const selectedText = window.getSelection();
+				if (selectedText) {
+					for (let ranges = 0; ranges < selectedText.rangeCount; ranges++) {
+						const range = selectedText.getRangeAt(ranges);
+						const rect = range.getBoundingClientRect();
+						if (
+							rect.left < event.clientX &&
+							rect.right > event.clientX &&
+							rect.top < event.clientY &&
+							rect.bottom > event.clientY
+						) {
+							return;
+						}
+					}
+				}
+				event.preventDefault();
+			});
 		}
 		//NOTE not sure if this code is correct, seems fine at least for now
 		let hold: NodeJS.Timeout | undefined;

@@ -2866,31 +2866,30 @@ class Localuser {
 			let text = this.totalMentions() + "";
 			if (this.last === text) return;
 			this.last = text;
-			if (text === "0") {
-				favicon.href = "/favicon.ico";
-				return;
-			}
-			if (+text > 99) text = "+99";
 
 			const c = Localuser.favC;
 			c.width = 256;
 			c.height = 256;
 			const ctx = Localuser.favCTX;
 			ctx.drawImage(Localuser.favImg, 0, 0, c.width, c.height);
-			ctx.fillStyle = "#F00";
-			const pos = 0.675;
 
-			ctx.beginPath();
-			ctx.arc(c.width * pos, c.height * pos, c.width * (1 - pos), 0, 2 * Math.PI);
-			ctx.fill();
+			if (text !== "0") {
+				if (+text > 99) text = "+99";
+				ctx.fillStyle = "#F00";
+				const pos = 0.675;
 
-			ctx.fillStyle = "#FFF";
+				ctx.beginPath();
+				ctx.arc(c.width * pos, c.height * pos, c.width * (1 - pos), 0, 2 * Math.PI);
+				ctx.fill();
 
-			ctx.font = `bolder ${text.length === 1 ? 150 : 100}px sans-serif`;
+				ctx.fillStyle = "#FFF";
 
-			const messure = ctx.measureText(text);
-			const height = messure.fontBoundingBoxAscent + messure.fontBoundingBoxDescent;
-			ctx.fillText(text, c.width * pos - messure.width / 2, c.height * pos + height / 2 - 25);
+				ctx.font = `bolder ${text.length === 1 ? 150 : 100}px sans-serif`;
+
+				const messure = ctx.measureText(text);
+				const height = messure.fontBoundingBoxAscent + messure.fontBoundingBoxDescent;
+				ctx.fillText(text, c.width * pos - messure.width / 2, c.height * pos + height / 2 - 25);
+			}
 
 			favicon.href = c.toDataURL("image/x-icon");
 		};
@@ -5923,11 +5922,7 @@ class Localuser {
 	pageTitle(channelName = "", guildName = "") {
 		(document.getElementById("channelname") as HTMLSpanElement).textContent = channelName;
 		(document.getElementsByTagName("title")[0] as HTMLTitleElement).textContent =
-			channelName +
-			(guildName ? " | " + guildName : "") +
-			" | " +
-			this.instancePing.name +
-			" | Fermo";
+			channelName + (guildName ? " | " + guildName : "") + " | Fermo";
 	}
 	async instanceStats() {
 		const dialog = new Dialog("");

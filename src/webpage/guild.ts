@@ -313,7 +313,7 @@ class Guild extends SnowFlake {
 		//TODO mute guild button
 	}
 	get muted() {
-		return this.mute_config && new Date(this.mute_config.end_time).getTime() < Date.now();
+		return !!this.mute_config && new Date(this.mute_config.end_time).getTime() > Date.now();
 	}
 	resolveMember(user: User) {
 		return Member.resolveMember(user, this);
@@ -1645,7 +1645,7 @@ class Guild extends SnowFlake {
 	}
 	mute_config!: mute_config | null;
 	notisetting(settings: GuildOverrides) {
-		this.mute_config = this.mute_config;
+		this.mute_config = settings.mute_config;
 		this.message_notifications = settings.message_notifications;
 		for (const override of settings.channel_overrides) {
 			const channel = this.localuser.channelids.get(override.channel_id);
