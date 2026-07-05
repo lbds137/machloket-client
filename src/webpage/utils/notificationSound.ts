@@ -21,6 +21,7 @@ export const BUILTIN_NOTIFICATION_SOUNDS: NotificationSoundConfig[] = [
 			[1.2, 0.4],
 		],
 	},
+	{name: "Meeo", type: "single", path: "/audio/sounds/meeo.mp3"},
 ];
 
 const ACCEPTED_AUDIO_TYPES = new Set(["audio/mpeg", "audio/mp3", "audio/ogg", "audio/webm"]);
