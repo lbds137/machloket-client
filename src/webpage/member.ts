@@ -92,7 +92,7 @@ class Member extends SnowFlake {
 		return new Member(
 			{
 				id: this.id + "#clone",
-				user: this.user.tojson(),
+				user: this.user.clone().tojson(),
 				guild_id: this.guild.id,
 				guild: {id: this.guild.id},
 				avatar: this.avatar as string | undefined,
