@@ -20,11 +20,23 @@ class File {
 		this.id = fileJSON.id;
 		this.filename = fileJSON.filename;
 		this.content_type = fileJSON.content_type;
+		if (!this.content_type || this.content_type === "application/octet-stream") {
+			this.content_type = this.guessContentType(fileJSON.filename);
+		}
 		this.width = fileJSON.width;
 		this.height = fileJSON.height;
 		this.url = fileJSON.url;
 		this.proxy_url = fileJSON.proxy_url;
 		this.size = fileJSON.size;
+	}
+	private guessContentType(filename: string): string {
+		const ext = filename.split(".").pop()?.toLowerCase();
+		if (!ext) return "";
+		if (["png", "jpg", "jpeg", "gif", "webp", "apng", "svg", "bmp", "ico"].includes(ext))
+			return "image/";
+		if (["mp4", "webm", "mov", "avi", "mkv", "wmv"].includes(ext)) return "video/";
+		if (["mp3", "wav", "ogg", "flac", "aac", "wma"].includes(ext)) return "audio/";
+		return "";
 	}
 	getHTML(temp: boolean = false, fullScreen = false, OSpoiler = false): HTMLElement {
 		function makeSpoilerHTML(): HTMLElement {
