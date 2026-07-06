@@ -580,9 +580,12 @@ body {
 			margin-top: 0.025in;
 			margin-right: 0.05in;
 			margin-bottom: 0.025in;
-			padding: 0.075in 0.05in;
 			border-radius: 0.03in;
 			transition: background 0.1s;
+			height: 0.3in;
+		}
+		span > img {
+			width: 0.3in;
 		}
 		padding: 5px;
 		cursor: pointer;

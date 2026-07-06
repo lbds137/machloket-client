@@ -5199,15 +5199,29 @@ class Localuser {
 		}
 		members.sort((a, b) => b[1] - a[1]);
 		this.MDSearchOptions(
-			members.map((a) => [
-				typeof a[0] === "string" ? a[0] : "@" + a[0].name,
-				a[0] instanceof Role
-					? `<@&${a[0].id}> `
-					: typeof a[0] === "string"
-						? a[0] + " "
-						: `<@${a[0].id}> `,
-				undefined,
-			]),
+			members.map((a) => {
+				const item = a[0];
+				if (typeof item === "string") {
+					return [item, item + " ", undefined];
+				}
+				const elm = document.createElement("span");
+				elm.style.display = "inline-flex";
+				elm.style.alignItems = "center";
+				elm.style.gap = "4px";
+				if (item instanceof Member || item instanceof User) {
+					const img = document.createElement("img");
+					img.src = item.getpfpsrc();
+					img.style.borderRadius = "50%";
+					img.style.objectFit = "cover";
+					elm.appendChild(img);
+					const nameSpan = document.createElement("span");
+					nameSpan.textContent = "@" + item.name;
+					elm.appendChild(nameSpan);
+				} else if (item instanceof Role) {
+					elm.textContent = "@" + item.name;
+				}
+				return ["", item instanceof Role ? `<@&${item.id}> ` : `<@${item.id}> `, elm];
+			}),
 			original,
 			box,
 			typebox,

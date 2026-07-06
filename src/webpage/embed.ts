@@ -459,6 +459,7 @@ class Embed {
 						img.remove();
 						const iframe = document.createElement("iframe");
 						iframe.src = this.json.video.url + "?autoplay=1";
+						iframe.allowFullscreen = true;
 						if (this.json.thumbnail.width && this.json.thumbnail.height) {
 							iframe.style.width = this.json.thumbnail.width + "px";
 							iframe.style.height = this.json.thumbnail.height + "px";
