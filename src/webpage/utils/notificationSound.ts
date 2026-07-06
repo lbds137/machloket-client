@@ -31,6 +31,13 @@ export class NotificationSoundManager {
 	private static context = new AudioContext();
 	private static buffers = new Map<string, AudioBuffer>();
 	private static loadingBuffers = new Map<string, Promise<AudioBuffer>>();
+	private static masterGain = (() => {
+		const g = NotificationSoundManager.context.createGain();
+		g.gain.value = 1;
+		g.connect(NotificationSoundManager.context.destination);
+		return g;
+	})();
+	private static activeSource: AudioBufferSourceNode | null = null;
 
 	static getAvailableSounds(prefs: UserPreferences): NotificationSoundConfig[] {
 		return [...BUILTIN_NOTIFICATION_SOUNDS, ...(prefs.customNotificationSounds ?? [])];
@@ -128,30 +135,39 @@ export class NotificationSoundManager {
 				await this.context.resume();
 			}
 
+			if (this.activeSource) {
+				try {
+					this.activeSource.stop();
+				} catch {}
+				this.activeSource = null;
+			}
+
 			const buffer = await this.getBuffer(audioPath);
 
 			const source = this.context.createBufferSource();
 			source.buffer = buffer;
-
-			const gain = this.context.createGain();
-
-			source.connect(gain);
-			gain.connect(this.context.destination);
+			source.connect(this.masterGain);
 
 			const gainValue = Math.max(0, Math.min(1, volume / 100));
-			const fade = 0.003;
+			const fade = 0.01;
 			const when = this.context.currentTime + 0.002;
 
-			gain.gain.setValueAtTime(0, when);
-			gain.gain.linearRampToValueAtTime(gainValue, when + fade);
+			this.masterGain.gain.cancelScheduledValues(when);
+			this.masterGain.gain.setValueAtTime(0, when);
+			this.masterGain.gain.linearRampToValueAtTime(gainValue, when + fade);
 
-			if (duration !== undefined) {
-				gain.gain.setValueAtTime(gainValue, when + duration - fade);
-				gain.gain.linearRampToValueAtTime(0, when + duration);
-				source.start(when, startTime, duration);
-			} else {
-				source.start(when);
-			}
+			const endTime = when + (duration ?? buffer.duration);
+			this.masterGain.gain.setValueAtTime(gainValue, endTime - fade);
+			this.masterGain.gain.linearRampToValueAtTime(0, endTime);
+
+			source.start(when, startTime, duration);
+
+			this.activeSource = source;
+			source.onended = () => {
+				if (this.activeSource === source) {
+					this.activeSource = null;
+				}
+			};
 		} catch (e) {
 			console.warn("Can't play notification sound", config.name, e);
 		}

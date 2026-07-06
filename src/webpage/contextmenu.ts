@@ -453,24 +453,7 @@ class Contextmenu<x, y> {
 		if (click === "right") {
 			obj.addEventListener("contextmenu", func);
 		} else {
-			obj.addEventListener("click", (event: MouseEvent) => {
-				const selectedText = window.getSelection();
-				if (selectedText) {
-					for (let ranges = 0; ranges < selectedText.rangeCount; ranges++) {
-						const range = selectedText.getRangeAt(ranges);
-						const rect = range.getBoundingClientRect();
-						if (
-							rect.left < event.clientX &&
-							rect.right > event.clientX &&
-							rect.top < event.clientY &&
-							rect.bottom > event.clientY
-						) {
-							return;
-						}
-					}
-				}
-				event.preventDefault();
-			});
+			obj.addEventListener("click", func);
 		}
 		//NOTE not sure if this code is correct, seems fine at least for now
 		let hold: NodeJS.Timeout | undefined;

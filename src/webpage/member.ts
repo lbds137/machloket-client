@@ -60,7 +60,7 @@ class Member extends SnowFlake {
 		}
 		if (this.avatar !== undefined && this.avatar !== null) {
 			return (
-				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/avatars/${
+				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id.replace("#clone", "")}/avatars/${
 					this.avatar
 				}.${this.avatar.startsWith("a_") ? "gif" : "png"}` +
 				new CDNParams({expectedSize: 96, animated: this.avatar.startsWith("a_")})
@@ -74,7 +74,7 @@ class Member extends SnowFlake {
 		}
 		if (this.banner) {
 			return (
-				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id}/banners/${
+				`${this.info.cdn}/guilds/${this.guild.id}/users/${this.id.replace("#clone", "")}/banners/${
 					this.banner
 				}.${this.banner.startsWith("a_") ? "gif" : "png"}` +
 				new CDNParams({expectedSize: 96, animated: this.banner.startsWith("a_")})

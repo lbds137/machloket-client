@@ -20,6 +20,7 @@ if (window.location.pathname.startsWith("/audio")) {
 }
 import "./404.js";
 import {Channel} from "./channel.js";
+import {Guild} from "./guild.js";
 import {
 	initOpenpanel,
 	installOpenpanelErrorTracking,
@@ -371,6 +372,88 @@ if (window.location.pathname.startsWith("/channels")) {
 			}
 		}
 	});
+
+	const getNavigableChannels = (guild: Guild): Channel[] => {
+		if (guild.id === "@me") return [...guild.channels];
+		return guild.channels.filter(
+			(ch) => ch.visible && ch.type !== 4 && !ch.isThread() && ch.type !== 13,
+		);
+	};
+
+	const getGuildList = (): Guild[] => {
+		const list: Guild[] = [];
+		const dm = thisUser.guildids.get("@me");
+		if (dm) list.push(dm);
+		for (const item of thisUser.guildOrder) {
+			if (item instanceof Guild) {
+				list.push(item);
+			} else {
+				list.push(...item.guilds);
+			}
+		}
+		return list;
+	};
+
+	document.addEventListener("keydown", (event) => {
+		if (!event.altKey || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+		if (!thisUser?.channelfocus) return;
+
+		event.preventDefault();
+
+		const down = event.key === "ArrowDown";
+		const shift = event.shiftKey;
+		const step = down ? 1 : -1;
+
+		const currentChannel = thisUser.channelfocus;
+		const currentGuild = currentChannel.guild;
+
+		const channels = getNavigableChannels(currentGuild);
+		const currentIndex = channels.indexOf(currentChannel);
+		if (currentIndex === -1) return;
+
+		let nextIndex = currentIndex + step;
+
+		if (shift) {
+			while (nextIndex >= 0 && nextIndex < channels.length) {
+				if (channels[nextIndex].hasunreads) break;
+				nextIndex += step;
+			}
+		}
+
+		if (nextIndex >= 0 && nextIndex < channels.length) {
+			thisUser.goToChannel(channels[nextIndex].id);
+			return;
+		}
+
+		const guilds = getGuildList();
+		const currentGuildIndex = guilds.indexOf(currentGuild);
+		if (currentGuildIndex === -1) return;
+
+		let nextGuildIndex = currentGuildIndex + step;
+
+		while (nextGuildIndex >= 0 && nextGuildIndex < guilds.length) {
+			const guild = guilds[nextGuildIndex];
+			const guildChannels = getNavigableChannels(guild);
+			if (guildChannels.length === 0) {
+				nextGuildIndex += step;
+				continue;
+			}
+
+			if (!shift) {
+				thisUser.goToChannel(guildChannels[down ? 0 : guildChannels.length - 1].id);
+				return;
+			}
+
+			const unreadIndex = guildChannels.findIndex((ch) => ch.hasunreads);
+			if (unreadIndex !== -1) {
+				thisUser.goToChannel(guildChannels[unreadIndex].id);
+				return;
+			}
+
+			nextGuildIndex += step;
+		}
+	});
+
 	markdown.giveBox(typebox);
 	{
 		const searchBox = document.getElementById("searchBox") as CustomHTMLDivElement;
