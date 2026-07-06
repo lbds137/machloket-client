@@ -331,7 +331,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		const channel = thisUser.channelfocus;
 		if (!channel) return;
 		const content = MarkDown.gatherBoxText(typebox);
-		if (content === "" && event.key === "ArrowUp") {
+		if (content === "" && event.key === "ArrowUp" && !event.altKey) {
 			channel.editLast();
 			return;
 		}
