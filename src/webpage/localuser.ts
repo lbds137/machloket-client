@@ -3203,26 +3203,26 @@ class Localuser {
 							);
 							return;
 						}
+						if (soundFile.size > 4_000_000) {
+							alert(I18n.localuser.soundTooLarge());
+							return;
+						}
+						const trimmedName = soundName.trim();
+						if (
+							BUILTIN_NOTIFICATION_SOUNDS.some((s) => s.name === trimmedName) ||
+							prefs.customNotificationSounds.some((s) => s.name === trimmedName)
+						) {
+							alert(
+								sectionLabel("localuser.soundNameTaken", "A sound with this name already exists"),
+							);
+							return;
+						}
 						try {
-							const dataUrl = await NotificationSoundManager.readFileAsDataUrl(soundFile);
-							if (dataUrl.length > 4_000_000) {
-								alert(I18n.localuser.soundTooLarge());
-								return;
-							}
-							const trimmedName = soundName.trim();
-							if (
-								BUILTIN_NOTIFICATION_SOUNDS.some((s) => s.name === trimmedName) ||
-								prefs.customNotificationSounds.some((s) => s.name === trimmedName)
-							) {
-								alert(
-									sectionLabel("localuser.soundNameTaken", "A sound with this name already exists"),
-								);
-								return;
-							}
+							const path = await NotificationSoundManager.storeSoundFile(trimmedName, soundFile);
 							prefs.customNotificationSounds.push({
 								name: trimmedName,
 								type: "single",
-								path: dataUrl,
+								path,
 							});
 							prefs.notificationSound = trimmedName;
 							await setPreferences(prefs);
@@ -4774,18 +4774,38 @@ class Localuser {
 		document.body.append(menu);
 		Contextmenu.keepOnScreen(menu);
 		Contextmenu.declareMenu(menu);
-		const trending = (await (
-			await fetch(
+		const showGifError = () => {
+			menu.textContent = "";
+			const errDiv = document.createElement("div");
+			errDiv.style.margin = "auto";
+			errDiv.style.padding = "16px";
+			errDiv.style.textAlign = "center";
+			const msg = document.createElement("p");
+			msg.textContent = I18n.failedToLoadGifs();
+			errDiv.appendChild(msg);
+			const link = document.createElement("a");
+			link.href = "https://sbar.top/articles/tenor-migration";
+			link.target = "_blank";
+			link.rel = "noopener noreferrer";
+			link.textContent = I18n.tenorMigrationInfo();
+			errDiv.appendChild(link);
+			menu.appendChild(errDiv);
+		};
+		let trending: {categories: {name: string; src: string}[]; gifs: [fullgif]} | undefined;
+		try {
+			const res = await fetch(
 				this.info.api + "/gifs/trending?" + new URLSearchParams([["locale", I18n.lang]]),
 				{headers: this.headers},
-			)
-		).json()) as {
-			categories: {
-				name: string;
-				src: string;
-			}[];
-			gifs: [fullgif];
-		};
+			);
+			if (!res.ok) {
+				showGifError();
+				return;
+			}
+			trending = (await res.json()) as typeof trending;
+		} catch {
+			showGifError();
+			return;
+		}
 		const gifbox = document.createElement("div");
 		gifbox.classList.add("gifbox");
 		const search = document.createElement("input");
@@ -4873,8 +4893,9 @@ class Localuser {
 			gifs.classList.add("gifbox");
 			menu.append(gifs);
 			const sValue = search.value;
-			const gifReturns = (await (
-				await fetch(
+			let gifReturns: fullgif[];
+			try {
+				const res = await fetch(
 					this.info.api +
 						"/gifs/search?" +
 						new URLSearchParams([
@@ -4883,8 +4904,16 @@ class Localuser {
 							["limit", "500"],
 						]),
 					{headers: this.headers},
-				)
-			).json()) as fullgif[];
+				);
+				if (!res.ok) {
+					showGifError();
+					return;
+				}
+				gifReturns = (await res.json()) as fullgif[];
+			} catch {
+				showGifError();
+				return;
+			}
 			if (sValue !== search.value) {
 				return;
 			}
@@ -4943,7 +4972,7 @@ class Localuser {
 				placeGifs(gifs, favs);
 			};
 		}
-		for (const category of trending.categories) {
+		for (const category of trending!.categories) {
 			const div = document.createElement("div");
 			div.classList.add("gifPreviewBox");
 			const img = document.createElement("img");

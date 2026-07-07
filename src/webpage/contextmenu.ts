@@ -9,6 +9,7 @@ type iconJson =
 	| {
 			html: HTMLElement;
 	  };
+type iconResolvable<x, y> = iconJson | ((this: x, arg: y) => iconJson | undefined);
 
 interface menuPart<x, y> {
 	group?: string;
@@ -24,7 +25,7 @@ interface menuPart<x, y> {
 class ContextButton<x, y> implements menuPart<x, y> {
 	private text: string | ((this: x, arg: y) => string);
 	private onClick: (this: x, arg: y, e: MouseEvent) => void;
-	private icon?: iconJson;
+	private icon?: iconResolvable<x, y>;
 	private visible?: (this: x, arg: y) => boolean;
 	private enabled?: (this: x, arg: y) => boolean;
 	//TODO there *will* be more colors
@@ -34,7 +35,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		text: ContextButton<x, y>["text"],
 		onClick: ContextButton<x, y>["onClick"],
 		addProps: {
-			icon?: iconJson;
+			icon?: iconResolvable<x, y>;
 			visible?: (this: x, arg: y) => boolean;
 			enabled?: (this: x, arg: y) => boolean;
 			color?: "red" | "blue";
@@ -48,6 +49,12 @@ class ContextButton<x, y> implements menuPart<x, y> {
 		this.enabled = addProps.enabled;
 		this.color = addProps.color;
 		this.group = addProps.group;
+	}
+	private resolveIcon(obj1: x, obj2: y): iconJson | undefined {
+		if (typeof this.icon === "function") {
+			return this.icon.call(obj1, obj2);
+		}
+		return this.icon;
 	}
 	isVisible(obj1: x, obj2: y): boolean {
 		if (!this.visible) return true;
@@ -64,15 +71,16 @@ class ContextButton<x, y> implements menuPart<x, y> {
 
 		intext.disabled = !!this.enabled && !this.enabled.call(obj1, obj2);
 
-		if (this.icon) {
-			if ("src" in this.icon) {
+		const resolvedIcon = this.resolveIcon(obj1, obj2);
+		if (resolvedIcon) {
+			if ("src" in resolvedIcon) {
 				const icon = document.createElement("img");
 				icon.classList.add("svgicon");
-				icon.src = this.icon.src;
+				icon.src = resolvedIcon.src;
 				intext.append(icon);
-			} else if ("css" in this.icon) {
+			} else if ("css" in resolvedIcon) {
 				const icon = document.createElement("span");
-				icon.classList.add(this.icon.css, "svgicon");
+				icon.classList.add(resolvedIcon.css, "svgicon");
 				switch (this.color) {
 					case "red":
 						icon.style.background = "var(--red)";
@@ -83,7 +91,7 @@ class ContextButton<x, y> implements menuPart<x, y> {
 				}
 				intext.append(icon);
 			} else {
-				intext.append(this.icon.html);
+				intext.append(resolvedIcon.html);
 			}
 		}
 
@@ -316,7 +324,7 @@ class Contextmenu<x, y> {
 		text: ContextButton<x, y>["text"],
 		onClick: ContextButton<x, y>["onClick"],
 		addProps: {
-			icon?: iconJson;
+			icon?: iconResolvable<x, y>;
 			visible?: (this: x, arg: y) => boolean;
 			enabled?: (this: x, arg: y) => boolean;
 			color?: "red" | "blue";

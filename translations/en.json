@@ -943,6 +943,8 @@
 		"channels": "Channels:"
 	},
 	"searchGifs": "Search $1",
+	"failedToLoadGifs": "Failed to load GIFs.",
+	"tenorMigrationInfo": "Tenor migration info",
 	"settings": {
 		"clear": "Clear",
 		"img": "Upload image",
@@ -1050,7 +1052,8 @@
 		"unTimeout": "Remove timeout on member",
 		"unban": "Unban $1",
 		"unblock": "Unblock user",
-		"viewProfile": "View profile"
+		"viewProfile": "View profile",
+		"viewBot": "View Bot"
 	},
 	"userping": {
 		"resolving": "resolving user",

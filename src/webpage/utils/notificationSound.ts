@@ -1,4 +1,9 @@
-import {getPreferences, UserPreferences} from "./storage/userPreferences.js";
+import {getPreferences, setPreferences, UserPreferences} from "./storage/userPreferences.js";
+import {
+	getSoundArrayBuffer,
+	saveSoundBlob,
+	migrateFromLocalStorage,
+} from "./storage/notificationSoundStorage.js";
 
 export type NotificationSoundConfig = {
 	name: string;
@@ -58,7 +63,15 @@ export class NotificationSoundManager {
 	}
 
 	static async preload(prefs?: UserPreferences) {
-		const sounds = prefs ? this.getAvailableSounds(prefs) : BUILTIN_NOTIFICATION_SOUNDS;
+		const p = prefs ?? (await getPreferences());
+		const needsSave = p.customNotificationSounds.some(
+			(s) => (s.type === "single" || s.type === "segments") && s.path.startsWith("data:"),
+		);
+		if (needsSave) {
+			await migrateFromLocalStorage(p.customNotificationSounds as {name: string; path: string}[]);
+			await setPreferences(p);
+		}
+		const sounds = this.getAvailableSounds(p);
 		console.log(
 			"Preloading notification sounds:",
 			sounds.map((s) => s.name),
@@ -85,8 +98,16 @@ export class NotificationSoundManager {
 		if (loading) return loading;
 
 		const promise = (async () => {
-			const response = await fetch(path);
-			const data = await response.arrayBuffer();
+			let data: ArrayBuffer;
+			if (path.startsWith("idb://")) {
+				const key = path.slice(6);
+				const ab = await getSoundArrayBuffer(key);
+				if (!ab) throw new Error("Sound not found in IndexedDB: " + key);
+				data = ab;
+			} else {
+				const response = await fetch(path);
+				data = await response.arrayBuffer();
+			}
 			const buffer = await this.context.decodeAudioData(data);
 
 			this.buffers.set(path, buffer);
@@ -187,5 +208,10 @@ export class NotificationSoundManager {
 			reader.onerror = () => reject(reader.error);
 			reader.readAsDataURL(file);
 		});
+	}
+
+	static async storeSoundFile(name: string, file: File): Promise<string> {
+		await saveSoundBlob(name, file);
+		return "idb://" + name;
 	}
 }

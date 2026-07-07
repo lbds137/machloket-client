@@ -1252,10 +1252,20 @@ class Message extends SnowFlake {
 				userwrap.classList.add("userwrap");
 				userwrap.appendChild(username);
 				if (this.author.bot) {
-					const username = document.createElement("span");
-					username.classList.add("bot");
-					username.textContent = this.author.webhook ? I18n.webhook() : I18n.bot();
-					userwrap.appendChild(username);
+					const appId = this.author.webhook?.application_id;
+					if (
+						!appId ||
+						!(
+							JSON.parse(localStorage.getItem("botConfigs_" + new URL(this.info.api).host) || "{}")[
+								appId
+							] & 1
+						)
+					) {
+						const username = document.createElement("span");
+						username.classList.add("bot");
+						username.textContent = this.author.webhook ? I18n.webhook() : I18n.bot();
+						userwrap.appendChild(username);
+					}
 				}
 				const time = document.createElement("span");
 				time.textContent = "  " + formatTime(new Date(this.timestamp));

@@ -433,6 +433,22 @@ class User extends SnowFlake {
 				this.buildprofile(e.clientX, e.clientY, m, 100000);
 			},
 		);
+		this.contextmenu.addButton(
+			() => I18n.user.viewBot(),
+			async function (this: User, _m, e) {
+				if (!this.webhook?.application_id || !e) return;
+				const user = await this.localuser.getUser(this.webhook.application_id);
+				if (user) user.buildprofile(e.clientX, e.clientY, undefined, 100000);
+			},
+			{
+				visible: function () {
+					return !!this.webhook?.application_id;
+				},
+				icon: function (this: User) {
+					return {src: (this as any)._botAvatar || this.getpfpsrc()};
+				},
+			},
+		);
 
 		this.contextmenu.addSeperator();
 
@@ -983,6 +999,11 @@ class User extends SnowFlake {
 		button: "right" | "left" | "none" = "right",
 	): void {
 		if (guild && guild.id !== "@me") {
+			if (this.webhook?.application_id) {
+				this.localuser.getUser(this.webhook.application_id).then((botUser) => {
+					if (botUser) (this as any)._botAvatar = botUser.getpfpsrc();
+				});
+			}
 			Member.resolveMember(this, guild)
 				.then((member) => {
 					User.contextmenu.bindContextmenu(html, this, member);
@@ -1278,6 +1299,73 @@ class User extends SnowFlake {
 		}
 
 		userbody.appendChild(explorerInfo);
+	}
+	private appendWebhookBotInfo(userbody: HTMLDivElement) {
+		if (!this.webhook?.application_id) return;
+		this.localuser.getUser(this.webhook.application_id).then((user) => {
+			if (!user) return;
+			const info = document.createElement("div");
+			info.classList.add("explorerInfo");
+			const title = document.createElement("h4");
+			title.textContent = "Bot";
+			info.appendChild(title);
+			const row = document.createElement("div");
+			row.style.display = "flex";
+			row.style.alignItems = "center";
+			row.style.gap = "8px";
+			row.style.cursor = "pointer";
+			row.onclick = (e) => {
+				e.stopPropagation();
+				user.buildprofile(e.clientX, e.clientY, undefined, 100000);
+			};
+			row.oncontextmenu = (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				user.buildprofile(e.clientX, e.clientY, undefined, 100000);
+			};
+			const img = document.createElement("img");
+			img.src = user.getpfpsrc();
+			img.style.width = "24px";
+			img.style.height = "24px";
+			img.style.borderRadius = "50%";
+			img.style.objectFit = "cover";
+			row.appendChild(img);
+			const name = document.createElement("span");
+			name.textContent = "@" + user.name;
+			row.appendChild(name);
+			info.appendChild(row);
+			userbody.appendChild(info);
+		});
+	}
+	private addBotConfigButton(userbody: HTMLDivElement, closeProfile: () => void) {
+		if (!this.bot || this.webhook) return;
+		const storageKey = "botConfigs_" + new URL(this.info.api).host;
+		const btn = document.createElement("button");
+		btn.textContent = "Config";
+		btn.classList.add("contextbutton");
+		btn.style.marginTop = "4px";
+		btn.onclick = (e) => {
+			e.stopPropagation();
+			closeProfile();
+			const d = new Dialog("Bot Config");
+			const opt = d.options;
+			const configs: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || "{}");
+			const flags = configs[this.id] || 0;
+			const FLAG_HIDE_WEBHOOK = 1;
+			const box = opt.addCheckboxInput('Hide "WEBHOOK" tag in chat', () => {}, {
+				initState: !!(flags & FLAG_HIDE_WEBHOOK),
+			});
+			box.onchange = (v) => {
+				if (v) {
+					configs[this.id] = (configs[this.id] || 0) | FLAG_HIDE_WEBHOOK;
+				} else {
+					configs[this.id] = (configs[this.id] || 0) & ~FLAG_HIDE_WEBHOOK;
+				}
+				localStorage.setItem(storageKey, JSON.stringify(configs));
+			};
+			d.show();
+		};
+		userbody.appendChild(btn);
 	}
 
 	private static async loadCustomBadgeFile(): Promise<customBadgeFile | null> {
@@ -1622,7 +1710,6 @@ class User extends SnowFlake {
 			username.textContent = this.webhook ? I18n.webhook() : I18n.bot();
 			usernamehtml.appendChild(username);
 		}
-
 		userbody.appendChild(badgediv);
 		this.appendCustomBadges(badgediv);
 		const discrimatorhtml = document.createElement("h3");
@@ -1636,6 +1723,8 @@ class User extends SnowFlake {
 		userbody.appendChild(pronounshtml);
 
 		this.appendExplorerBotInfo(userbody);
+		this.appendWebhookBotInfo(userbody);
+		this.addBotConfigButton(userbody, () => removeAni(background));
 
 		membres.then((member) => {
 			if (!member) return;
@@ -2008,13 +2097,14 @@ class User extends SnowFlake {
 		discrimatorhtml.classList.add("tag");
 		discrimatorhtml.textContent = `${this.username}#${this.discriminator}`;
 		userbody.appendChild(discrimatorhtml);
-
 		const pronounshtml = document.createElement("p");
 		pronounshtml.textContent = this.pronouns || "";
 		pronounshtml.classList.add("pronouns");
 		userbody.appendChild(pronounshtml);
 
 		this.appendExplorerBotInfo(userbody);
+		this.appendWebhookBotInfo(userbody);
+		this.addBotConfigButton(userbody, () => removeAni(div));
 
 		membres.then((member) => {
 			if (!member) return;
