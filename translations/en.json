@@ -687,7 +687,7 @@
 	},
 	"translation": {
 		"confirmTitle": "Translate message",
-		"confirmText": "The full message text will be sent to Sovrahi for translation.\nNo other data is sent.\nDo you want to continue?",
+		"confirmText": "The full text of your message will be sent to [Sovrahi](https://sovrahi.com) for translation.\n\nOnly the text you want to translate is sent. No account information, personal data, or additional context is shared.\n\nYour data is not used for any purpose other than providing the translation service.\n\nSovrahi is developed and maintained by oh64, who leads Sovrahi and is the current maintainer of Fermo.\n\nDo you want to continue?",
 		"agree": "Agree",
 		"cancel": "Cancel",
 		"translated": "Translated",
