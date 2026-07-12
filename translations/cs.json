@@ -82,10 +82,69 @@
 				"copyRegLink": "Zkopírovat odkaz",
 				"createAccount": "Vytvořit Účet",
 				"delete": "Smazat",
+				"deleteConfirm": "Jsi si jistý že chceš tohle smazat?",
+				"deviceManage": {
+								"city": "Město: $1",
+								"continent": "Kontinent: $1",
+								"country": "Země: $1",
+								"ip": "Poslední známá IP: $1",
+								"logout": "Odhlásit",
+								"postal": "PSČ: $1",
+								"region": "Region: $1"
+				},
 				"dismiss": "Zrušit",
+				"emoji": {
+								"image:": "Obrázek:",
+								"name:": "Jméno:"
+				},
+				"favoriteGifs": "Oblíbené GIFy",
+				"folder": {
+								"color": "Barva složky:",
+								"create": "Vytvořit novou složku",
+								"edit": "Upravit složku",
+								"name": "Název složky:"
+				},
+				"form": {
+								"captcha": "Počkat, jsi člověk?"
+				},
 				"forum": {
 								"back": "Zpět",
 								"next": "Další"
+				},
+				"friends": {
+								"addfriend": "Přidat kamaráda",
+								"addfriendpromt": "Přidat kamaráda podle jmenovky:",
+								"all": "Všichni",
+								"all:": "Všichni kamarádi:",
+								"blocked": "Zablokovaní",
+								"blockedusers": "Zablokovaní uživatelé:",
+								"bu": "Zablokovaný uživatel",
+								"discnotfound": "Diskriminátor nebyl nalezen",
+								"friendlist": "Seznam kamarádů",
+								"friends": "Kamarádi",
+								"notfound": "Uživatel nenalezen",
+								"online": "Online",
+								"online:": "Online přátelé:",
+								"removeFriend": "oddělat kamaráda",
+								"requestsent": "Pozvánka odeslána!"
+				},
+				"goThere": "Ano, jít tam",
+				"goThereTrust": "Ano a důvěřovat doménu odteď",
+				"goingToURL": "Tento odkaz vás pošle do $1. Jsi si jistý že tam chceš jít?",
+				"group": {
+								"createdm": "Vytvořit DM!",
+								"select": "Vybrat kamarády"
+				},
+				"guild": {
+								"adminMenu": {
+												"ownName": "Majitel",
+												"owner": "Najít majitele"
+								},
+								"admins": "Najít administrátory",
+								"all": "Všichni",
+								"community": "Komunita",
+								"confirmDelete": "Jsi si jistý že chceš smazat $1?",
+								"confirmLeave": "Jsi si jistý že se chceš odpojit?"
 				},
 				"inbox": {
 								"directMessage": "Přímá Zpráva",
