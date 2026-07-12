@@ -1,1 +1,108 @@
-{}
+{
+				"2faCode": "Kód 2FA:",
+				"404": {
+								"404": "chyba:404 - Stránka Nenalezena",
+								"app": "Zpátky do aplikace",
+								"home": "Hlavní stránka",
+								"listtitle": "Možná jsi chtěl jít na jedno z těchto míst",
+								"login": "Přihlášení",
+								"report": "Jestli jsi tuhle stránku našel v klientovi, prosím nahlaš ji:",
+								"reset": "Stránka na obnovení hesla",
+								"title": "Vypadá to že jsi ztracený",
+								"whatelse": "Co jsi si myslel že se stane?"
+				},
+				"DMs": {
+								"add": "Přidej někoho do tohoto DM",
+								"close": "Zavřít DM",
+								"copyId": "Zkopírovat DM id",
+								"markRead": "Označit jako přečtené",
+								"name": "Přímé Zprávy"
+				},
+				"UrlGen": "Generátor pozvánky Bota",
+				"Voice": {
+								"status": {
+												"badWS": "Špatná odpověd z WS",
+												"conectionFailed": "Připojení Selhalo",
+												"done": "Připojen",
+												"left": "Odešel z hlasového kanálu"
+								},
+								"userVol": "Hlasitost uživatele:"
+				},
+				"accessibility": {
+								"gifSettings": {
+												"always": "Vždy",
+												"hover": "Po přejetí myši",
+												"never": "Nikdy"
+								},
+								"name": "Přístupnost"
+				},
+				"add": "Přidat",
+				"applications": {
+								"sure": "Jsi si jistý že chceš smazat $1?"
+				},
+				"badge": {
+								"active_developer": "Aktivní vývojář",
+								"application_guild_subscription": "má Prémium",
+								"automod": "používá AutoMod",
+								"bot_commands": "podporuje příkazy",
+								"certified_moderator": "Moderátor",
+								"customBadgeNotice": "Vlastní Fermo odznak. Není ovládaný Spacebar nebo týmem této instance.",
+								"partner": "Partner Instance",
+								"premium": "Prémium"
+				},
+				"bio": "Popisek:",
+				"blankMessage": "Prázdná zpráva",
+				"bot": "BOT",
+				"cancel": "Zrušit",
+				"channel": {
+								"allowIcons": "Povolit vlastní ikony kanálů",
+								"announcement": "Oznámení",
+								"createCatagory": "Vytvořit kategorii",
+								"createChannel": "Vytvořit kanál",
+								"creating": "Vytvářím kanál",
+								"delete": "Smazat kanál",
+								"deleteCat": "Smazat kategorii",
+								"forum": "Fórum",
+								"icon": "Ikona:",
+								"makeInvite": "Vytvořit pozvánku",
+								"markRead": "Označit jako přečtené",
+								"mute": "Ztlumit kanál",
+								"name": "Kanál",
+								"name:": "Název kanálu:",
+								"selectCatName": "Název kategorie",
+								"selectName": "Název kanálu",
+								"selectType": "Vyber typ kanálu",
+								"settings": "Nastavení",
+								"settingsFor": "Nastavení pro $1",
+								"text": "Text",
+								"typebox": "Zpráva v $1",
+								"voice": "Hlas"
+				},
+				"channelLink": "# $1",
+				"copyRegLink": "Zkopírovat odkaz",
+				"createAccount": "Vytvořit Účet",
+				"delete": "Smazat",
+				"dismiss": "Zrušit",
+				"forum": {
+								"back": "Zpět",
+								"next": "Další"
+				},
+				"inbox": {
+								"directMessage": "Přímá Zpráva",
+								"markAllAsRead": "Označit vše jako přečtené",
+								"markAsRead": "Označit jako přečtené",
+								"mentionCount": "{{PLURAL:$1|$1 označení|$1 označení}}",
+								"mentions": "Označení",
+								"noUnreadChannels": "Žádné nepřečtené kanály",
+								"noUnreadMentions": "Žádná nepřečtená označení",
+								"openChannel": "Otevřít kanál",
+								"unread": "Nepřečtené"
+				},
+				"ok": "Ok",
+				"onboarding": {
+								"addChannel": "Přidat kanál",
+								"channel": "Kanál:",
+								"desc": "Popis:",
+								"title": "Vítej v $1!"
+				}
+}
