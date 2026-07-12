@@ -2050,7 +2050,6 @@ class Message extends SnowFlake {
 				return;
 			}
 		}
-		console.log(data, this.reactions);
 		this.reactions.push({
 			count: 1,
 			emoji: data,
@@ -2059,7 +2058,6 @@ class Message extends SnowFlake {
 		this.updateReactions();
 	}
 	reactionRemove(data: {name: string; id?: string}, id: string) {
-		console.log("test");
 		for (const i in this.reactions) {
 			const thing = this.reactions[i];
 			console.log(thing, data);
