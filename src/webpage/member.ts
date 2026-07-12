@@ -16,6 +16,9 @@ class Member extends SnowFlake {
 	avatar: void | string = undefined;
 	banner: void | string = undefined;
 	communication_disabled_until?: Date;
+	get roles() {
+		return this.guild.roles.filter((_) => this.roleIds.has(_.id) || _.id === this.guild.id);
+	}
 	private constructor(memberjson: memberjson, owner: Guild) {
 		super(memberjson.id);
 		this.owner = owner;
