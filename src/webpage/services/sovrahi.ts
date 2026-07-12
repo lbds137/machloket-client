@@ -16,6 +16,7 @@ const PENDING_TRANSLATE_KEY = "sovrahiPendingTranslateMessageId";
 const AUTH_REDIRECT_URI_KEY = "sovrahiAuthRedirectUri";
 const TRANSLATION_CONSENT_KEY = "sovrahiTranslationConsent";
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const MAX_UPSTREAM_RETRIES = 3;
 
 type StoredAuth = {
 	accessToken: string;
@@ -683,6 +684,7 @@ export class SovrahiService {
 		targetLang: string,
 		token?: string,
 		capToken?: string,
+		retryCount = 0,
 	): Promise<BatchTranslateResultItem[]> {
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
@@ -710,13 +712,22 @@ export class SovrahiService {
 			const json = (await response.json().catch(() => ({}))) as RateLimitedResponse & AbuseResponse;
 			if (json.error === "rate_limited") {
 				return (await handleRateLimitedResponse(json, (newCapToken) =>
-					this.requestBatchTranslation(items, targetLang, token, newCapToken),
+					this.requestBatchTranslation(items, targetLang, token, newCapToken, retryCount),
 				)) as BatchTranslateResultItem[];
+			}
+			if (json.error === "upstream_error") {
+				if (retryCount < MAX_UPSTREAM_RETRIES) {
+					return this.retryWithBackoff(
+						() => this.requestBatchTranslation(items, targetLang, token, capToken, retryCount + 1),
+						retryCount,
+					);
+				}
+				throw new Error(json.message || I18n.translation.errorUnexpected());
 			}
 			if (response.status === 401) {
 				if (token) {
 					clearAuth();
-					return this.requestBatchTranslation(items, targetLang, undefined, capToken);
+					return this.requestBatchTranslation(items, targetLang, undefined, capToken, retryCount);
 				}
 				throw new SovrahiRequiresKeycloakError();
 			}
@@ -727,8 +738,17 @@ export class SovrahiService {
 		}
 
 		const json = (await response.json()) as Record<string, unknown>;
+		if ((json as Record<string, unknown>).error === "upstream_error") {
+			if (retryCount < MAX_UPSTREAM_RETRIES) {
+				return this.retryWithBackoff(
+					() => this.requestBatchTranslation(items, targetLang, token, capToken, retryCount + 1),
+					retryCount,
+				);
+			}
+			throw new Error(I18n.translation.errorUnexpected());
+		}
 		await handleTranslationResponseJson(json, (newCapToken) =>
-			this.requestBatchTranslation(items, targetLang, token, newCapToken),
+			this.requestBatchTranslation(items, targetLang, token, newCapToken, retryCount),
 		);
 		const parsed = parseBatchTranslateResponse(
 			json,
@@ -773,12 +793,20 @@ export class SovrahiService {
 		return this.requestTranslation(messageId, request, token);
 	}
 
+	// bleh
+	private static async retryWithBackoff<T>(fn: () => Promise<T>, retryCount: number): Promise<T> {
+		const delay = 1000 * Math.pow(2, retryCount);
+		await new Promise((resolve) => setTimeout(resolve, delay));
+		return fn();
+	}
+
 	private static async requestTranslation(
 		messageId: string,
 		request: TranslateRequest,
 		token?: string,
 		capToken?: string,
 		skipCache = false,
+		retryCount = 0,
 	): Promise<TranslateResult> {
 		const headers: Record<string, string> = {
 			"Content-Type": "application/json",
@@ -805,13 +833,37 @@ export class SovrahiService {
 			const json = (await response.json().catch(() => ({}))) as RateLimitedResponse & AbuseResponse;
 			if (json.error === "rate_limited") {
 				return (await handleRateLimitedResponse(json, (newCapToken) =>
-					this.requestTranslation(messageId, request, token, newCapToken, skipCache),
+					this.requestTranslation(messageId, request, token, newCapToken, skipCache, retryCount),
 				)) as TranslateResult;
+			}
+			if (json.error === "upstream_error") {
+				if (retryCount < MAX_UPSTREAM_RETRIES) {
+					return this.retryWithBackoff(
+						() =>
+							this.requestTranslation(
+								messageId,
+								request,
+								token,
+								capToken,
+								skipCache,
+								retryCount + 1,
+							),
+						retryCount,
+					);
+				}
+				throw new Error(json.message || I18n.translation.errorUnexpected());
 			}
 			if (response.status === 401) {
 				if (token) {
 					clearAuth();
-					return this.requestTranslation(messageId, request, undefined, capToken, skipCache);
+					return this.requestTranslation(
+						messageId,
+						request,
+						undefined,
+						capToken,
+						skipCache,
+						retryCount,
+					);
 				}
 				throw new SovrahiRequiresKeycloakError();
 			}
@@ -822,8 +874,18 @@ export class SovrahiService {
 		}
 
 		const json = (await response.json()) as Record<string, unknown>;
+		if ((json as Record<string, unknown>).error === "upstream_error") {
+			if (retryCount < MAX_UPSTREAM_RETRIES) {
+				return this.retryWithBackoff(
+					() =>
+						this.requestTranslation(messageId, request, token, capToken, skipCache, retryCount + 1),
+					retryCount,
+				);
+			}
+			throw new Error(I18n.translation.errorUnexpected());
+		}
 		await handleTranslationResponseJson(json, (newCapToken) =>
-			this.requestTranslation(messageId, request, token, newCapToken, skipCache),
+			this.requestTranslation(messageId, request, token, newCapToken, skipCache, retryCount),
 		);
 		const parsed = parseTranslateResponse(json);
 		if (!skipCache) {

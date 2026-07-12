@@ -28,7 +28,11 @@ import {
 } from "./utils/openpanel.js";
 import {showChangelogPopup} from "./changelog.js";
 import {AutoTranslationService} from "./services/autoTranslation.js";
-import {TranslationService} from "./services/translation.js";
+import {
+	setTranslationLang,
+	showLanguagePickerDialog,
+	TranslationService,
+} from "./services/translation.js";
 import {SovrahiService} from "./services/sovrahi.js";
 
 if (window.location.pathname === "/app") {
@@ -863,6 +867,18 @@ if (window.location.pathname.startsWith("/channels")) {
 			return;
 		}
 		void AutoTranslationService.toggle();
+	};
+	autoTranslateBtn.oncontextmenu = (e) => {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+		void showLanguagePickerDialog(I18n.translation.chooseLanguageTitle(), {
+			defaultCode: AutoTranslationService.getTargetLang(),
+		}).then(async (lang) => {
+			if (lang) {
+				await setTranslationLang(lang);
+				await AutoTranslationService.refreshTargetLang();
+			}
+		});
 	};
 	const autoTranslateDiv = document.getElementById("autoTranslateDiv") || autoTranslateBtn;
 	new Hover(() =>

@@ -150,7 +150,7 @@ export function showConsentDialog(): Promise<boolean> {
 		const dialog = new Dialog(I18n.translation.confirmTitle(), {noSubmit: true});
 		const body = document.createElement("p");
 		body.style.whiteSpace = "pre-line";
-		body.textContent = I18n.translation.confirmText();
+		body.innerHTML = I18n.translation.confirmText();
 		dialog.options.addHTMLArea(body);
 		dialog.options.addButtonInput("", I18n.translation.agree(), () => {
 			setTranslationConsent();
