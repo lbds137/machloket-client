@@ -99,8 +99,9 @@ class Message extends SnowFlake {
 	headers: Localuser["headers"];
 	embeds: Embed[] = [];
 	author!: User;
-	mentions: userjson[] = [];
-	mention_roles!: Role[];
+	mentions = new Set<string>();
+	mention_roles = new Set<string>();
+	mention_everyone!: boolean;
 	attachments: File[] = []; //probably should be its own class tbh, should be Attachments[]
 	message_reference?: {
 		guild_id: string;
@@ -873,7 +874,7 @@ class Message extends SnowFlake {
 			console.error(e);
 		}
 	}
-	mention_everyone!: boolean;
+
 	mentionsuser(userd: User | Member) {
 		if (this.mention_everyone) return true;
 		if (userd instanceof User) {
