@@ -830,7 +830,7 @@
 		"page": "Página $1",
 		"search": "Pesquisar"
 	},
-	"searchGifs": "Pesquisar no Tenor",
+	"searchGifs": "Pesquisar no $1",
 	"settings": {
 		"clear": "Limpar",
 		"img": "Enviar imagem",

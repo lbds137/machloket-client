@@ -65,7 +65,7 @@ export class Favorites {
 		this.setup();
 	}
 	get store() {
-		return (this.owner.perminfo.favoriteStore || {}) as permStore;
+		return (this.owner.perminfo.favoriteStore ||= {}) as permStore;
 	}
 	hasGif(gif: string) {
 		return !!this.gifs[gif];

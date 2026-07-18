@@ -757,7 +757,7 @@
 		"page": "Strona $1",
 		"search": "Szukaj"
 	},
-	"searchGifs": "Wyszukaj w Tenor",
+	"searchGifs": "Wyszukaj w $1",
 	"settings": {
 		"clear": "Wyczyść",
 		"img": "Wrzuć zdjęcie",

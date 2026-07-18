@@ -273,6 +273,7 @@ class Localuser {
 	guilds!: Guild[];
 	guildids: Map<string, Guild> = new Map();
 	user!: User;
+	gifProviders: string[] = [];
 	idToPrev: Map<string, string | undefined> = new Map();
 	idToNext: Map<string, string | undefined> = new Map();
 	messages: Map<string, Message> = new Map();
@@ -597,6 +598,18 @@ class Localuser {
 		}
 
 		this.pingEndpoint();
+		try {
+			const integrationsUrl = new URL("/_spacebar/api/v1/integrations/gif", this.info.api).href;
+			const res = await fetch(integrationsUrl);
+			if (res.ok) {
+				const data = (await res.json()) as {providers: Record<string, {available: boolean}>};
+				this.gifProviders = Object.keys(data.providers || {}).filter(
+					(p) => data.providers[p].available,
+				);
+			}
+		} catch (e) {
+			console.warn("Failed to fetch GIF providers", e);
+		}
 	}
 	inrelation = new Set<User>();
 	outoffocus(): void {
@@ -4774,6 +4787,10 @@ class Localuser {
 		document.body.append(menu);
 		Contextmenu.keepOnScreen(menu);
 		Contextmenu.declareMenu(menu);
+
+		const providers = this.gifProviders.length ? this.gifProviders : ["klipy"];
+		let selectedProvider = providers[0];
+
 		const showGifError = () => {
 			menu.textContent = "";
 			const errDiv = document.createElement("div");
@@ -4791,21 +4808,32 @@ class Localuser {
 			errDiv.appendChild(link);
 			menu.appendChild(errDiv);
 		};
-		let trending: {categories: {name: string; src: string}[]; gifs: [fullgif]} | undefined;
-		try {
-			const res = await fetch(
-				this.info.api + "/gifs/trending?" + new URLSearchParams([["locale", I18n.lang]]),
-				{headers: this.headers},
-			);
-			if (!res.ok) {
+		const fetchTrending = async (provider: string) => {
+			try {
+				const res = await fetch(
+					this.info.api +
+						"/gifs/trending?" +
+						new URLSearchParams([
+							["locale", I18n.lang],
+							["provider", provider],
+						]),
+					{headers: this.headers},
+				);
+				if (!res.ok) {
+					showGifError();
+					return undefined;
+				}
+				return (await res.json()) as {
+					categories: {name: string; src: string}[];
+					gifs: [fullgif];
+				};
+			} catch {
 				showGifError();
 				return;
 			}
-			trending = (await res.json()) as typeof trending;
-		} catch {
-			showGifError();
-			return;
-		}
+		};
+		let trending = await fetchTrending(selectedProvider);
+		if (!trending) return;
 		const gifbox = document.createElement("div");
 		gifbox.classList.add("gifbox");
 		const search = document.createElement("input");
@@ -4882,7 +4910,7 @@ class Localuser {
 			}
 			gifs.style.height = (right == Infinity ? left : Math.max(left, right)) + "px";
 		};
-		const searchBox = async () => {
+		const searchBox = async (provider: string) => {
 			gifs.remove();
 			if (search.value === "") {
 				menu.append(gifbox);
@@ -4902,6 +4930,7 @@ class Localuser {
 							["locale", I18n.lang],
 							["q", sValue],
 							["limit", "500"],
+							["provider", provider],
 						]),
 					{headers: this.headers},
 				);
@@ -4924,13 +4953,57 @@ class Localuser {
 				}),
 			);
 		};
-		const debouncedSearch = debounce(searchBox, 350);
+		const debouncedSearch = debounce(() => searchBox(selectedProvider), 350);
 		search.onkeyup = () => {
 			debouncedSearch();
 		};
 		search.classList.add("searchGifBar");
-		//TODO fix this once we swap over
-		search.placeholder = I18n.searchGifs("Tenor");
+		search.placeholder = I18n.searchGifs(selectedProvider);
+
+		let tabBar: HTMLDivElement | undefined;
+		const tabButtons: HTMLButtonElement[] = [];
+		const switchProvider = async (provider: string) => {
+			selectedProvider = provider;
+			tabButtons.forEach((btn, i) => {
+				btn.classList.toggle("active", providers[i] === provider);
+			});
+			search.placeholder = I18n.searchGifs(provider);
+			const newTrending = await fetchTrending(provider);
+			if (!newTrending) return;
+			trending = newTrending;
+			gifbox.textContent = "";
+			for (const category of trending!.categories) {
+				const div = document.createElement("div");
+				div.classList.add("gifPreviewBox");
+				const img = document.createElement("img");
+				img.src = category.src;
+				const title = document.createElement("span");
+				title.textContent = category.name;
+				div.append(img, title);
+				gifbox.append(div);
+				div.onclick = (e) => {
+					e.stopImmediatePropagation();
+					search.value = category.name;
+					searchBox(provider);
+				};
+			}
+			if (search.value !== "") {
+				searchBox(provider);
+			}
+		};
+		if (providers.length > 1) {
+			tabBar = document.createElement("div");
+			tabBar.classList.add("gifProviderTabs");
+			for (const provider of providers) {
+				const btn = document.createElement("button");
+				btn.textContent = provider;
+				btn.classList.toggle("active", provider === selectedProvider);
+				btn.onclick = () => switchProvider(provider);
+				tabBar.append(btn);
+				tabButtons.push(btn);
+			}
+		}
+
 		const favs = this.favorites.favoriteGifs();
 		if (favs.length) {
 			favs.forEach(async (_) => (_.src = await this.refreshIfNeeded(_.src)));
@@ -4984,10 +5057,10 @@ class Localuser {
 			div.onclick = (e) => {
 				e.stopImmediatePropagation();
 				search.value = category.name;
-				searchBox();
+				searchBox(selectedProvider);
 			};
 		}
-		menu.append(search, gifbox);
+		menu.append(...(tabBar ? [tabBar] : []), search, gifbox);
 		search.focus();
 	}
 	async TBEmojiMenu(rect: DOMRect) {

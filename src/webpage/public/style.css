@@ -7332,6 +7332,30 @@ fieldset input[type="radio"] {
 	align-items: center;
 }
 
+.gifProviderTabs {
+	display: flex;
+	flex-shrink: 0;
+	gap: 4px;
+	padding: 6px 0.15in 0;
+}
+
+.gifProviderTabs button {
+	flex: 1;
+	padding: 4px 8px;
+	border: none;
+	border-radius: 4px;
+	background: var(--card-bg);
+	color: var(--primary-text);
+	cursor: pointer;
+	font-size: 0.16in;
+	text-transform: capitalize;
+}
+
+.gifProviderTabs button.active {
+	background: var(--accent-color);
+	color: var(--accent-text);
+}
+
 .searchGifBar,
 .gifmenu .title {
 	& {
