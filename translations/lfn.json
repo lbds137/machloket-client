@@ -1,5 +1,7 @@
 {
 				"404": {
+								"404": "era:404 - Paje nontrovada",
+								"app": "Vade a la ap",
 								"home": "Paje xef",
 								"listtitle": "Cisa tu ta vole vade a un de aceles",
 								"login": "Autentici",
@@ -8,5 +10,32 @@
 								"title": "Lo pare ce tu es perdeda",
 								"whatelse": "Cual otra cosa tu pensa ce lo ta debe aveni?",
 								"whereever": "Sempre do esta es"
+				},
+				"DMs": {
+								"add": "Ajunta algun a esta mesaje direta",
+								"close": "Clui la mesaje direta",
+								"copyId": "Copia la id de mesaje direta",
+								"markRead": "Marca como lejeda",
+								"name": "Mesajes direta"
+				},
+				"UrlGen": "Jenerador de invitas per bot",
+				"dismiss": "Dejeta",
+				"inbox": {
+								"directMessage": "Mesaje direta",
+								"markAllAsRead": "Marca tota como lejeda",
+								"markAsRead": "Marca como lejeda",
+								"mentionCount": "{{PLURAL:$1|$1 mensiona|$1 mensionas}}",
+								"mentions": "Mensionas",
+								"noUnreadChannels": "No canal nonlejeda",
+								"noUnreadMentions": "No mensiona nonlejeda",
+								"openChannel": "Abri la canal",
+								"unread": "Nonlejeda"
+				},
+				"ok": "Oce",
+				"onboarding": {
+								"addChannel": "Ajunta un canal",
+								"channel": "Canal:",
+								"desc": "Descrive:",
+								"title": "Bonveni a $1!"
 				}
 }
