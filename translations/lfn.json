@@ -19,6 +19,13 @@
 								"name": "Mesajes direta"
 				},
 				"UrlGen": "Jenerador de invitas per bot",
+				"Voice": {
+								"status": {
+												"badWS": "Mal responde de WS",
+												"left": "Sortida de la conversa vosal"
+								},
+								"userVol": "Volum de la usor:"
+				},
 				"dismiss": "Dejeta",
 				"inbox": {
 								"directMessage": "Mesaje direta",
