@@ -596,6 +596,45 @@ class Channel extends SnowFlake {
 				});
 			}
 		}
+		if (this.type === 4) {
+			const syncSection = settings.addButton(I18n.channel.syncPerms());
+			syncSection.addText(I18n.channel.syncPermsDesc());
+			syncSection.addButtonInput("", I18n.channel.syncPermsConfirm(), () => {
+				const d = new Dialog(I18n.channel.syncPermsTitle());
+				const descDiv = document.createElement("div");
+				descDiv.textContent = I18n.channel.syncPermsDesc();
+				d.options.addHTMLArea(descDiv);
+				d.options.addButtonInput("", I18n.channel.syncPermsConfirm(), async () => {
+					d.hide();
+					const overwrites: {id: string; type: number; allow: string; deny: string}[] = [];
+					for (const [id, perms] of this.permission_overwrites) {
+						overwrites.push({
+							id,
+							type: this.guild.roleids.has(id) ? 0 : 1,
+							allow: perms.allow.toString(),
+							deny: perms.deny.toString(),
+						});
+					}
+					const promises: Promise<Response>[] = [];
+					for (const child of this.children) {
+						if (child.isThread()) continue;
+						promises.push(
+							fetch(this.info.api + "/channels/" + child.id, {
+								method: "PATCH",
+								headers: this.headers,
+								body: JSON.stringify({permission_overwrites: overwrites}),
+							}),
+						);
+					}
+					await Promise.all(promises);
+					new Dialog(I18n.channel.syncPermsSuccess()).show();
+				});
+				d.options.addButtonInput("", I18n.channel.syncPermsCancel(), () => {
+					d.hide();
+				});
+				d.show();
+			});
+		}
 		if (!this.isThread()) {
 			const s1 = settings.addButton(I18n.channel.permissions(), {optName: ""});
 
@@ -4037,6 +4076,7 @@ class Channel extends SnowFlake {
 
 		if (messagez.author === this.localuser.user) {
 			this.lastSentMessage = messagez;
+			this.lastreadmessageid = messagez.id;
 			this.slowmode();
 			this.mentions = 0;
 			this.unreads();
