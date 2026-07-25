@@ -31,6 +31,7 @@ export class Buttons implements OptionsElement<unknown> {
 	titles = true;
 	_sectionContentDiv: HTMLElement | null = null;
 	_activeSection: string | null = null;
+	_backButton: HTMLElement | null = null;
 	constructor(name: string, {top = false, titles = true} = {}) {
 		this.top = top;
 		this.buttons = [];
@@ -67,6 +68,7 @@ export class Buttons implements OptionsElement<unknown> {
 		this.buttonList = buttonList;
 		const htmlarea = document.createElement("div");
 		htmlarea.classList.add("flexgrow", "settingsHTMLArea");
+		if (window.innerWidth <= 1012) htmlarea.classList.add("mobileHidden");
 		const buttonTable = this.generateButtons(htmlarea);
 		this.htmlarea = new WeakRef(htmlarea);
 		this.buttonTable = new WeakRef(buttonTable);
@@ -100,8 +102,9 @@ export class Buttons implements OptionsElement<unknown> {
 			if (this.warndiv) {
 				this.warndiv.remove();
 			}
-			if (window.innerWidth <= 600) {
-				optionsArea.scrollIntoView({behavior: "smooth", block: "nearest"});
+			if (window.innerWidth <= 1012) {
+				button.closest(".settingbuttons")?.classList.add("mobileHidden");
+				this._showMobileBack();
 			}
 		};
 		return button;
@@ -161,7 +164,17 @@ export class Buttons implements OptionsElement<unknown> {
 							.querySelectorAll(".sectionHeader")
 							.forEach((el) => el.classList.remove("activeSetting"));
 						header.classList.add("activeSetting");
+						if (this.warndiv) this.warndiv.remove();
 						this._renderSection(sectionName, optionsArea);
+					}
+					if (window.innerWidth <= 1012) {
+						sidebar.classList.add("mobileHidden");
+						optionsArea.classList.remove("mobileHidden");
+						this._showMobileBack();
+						requestAnimationFrame(() => {
+							document.getElementById(cardId)?.scrollIntoView({behavior: "smooth", block: "start"});
+						});
+						return;
 					}
 					requestAnimationFrame(() => {
 						document.getElementById(cardId)?.scrollIntoView({behavior: "smooth", block: "start"});
@@ -227,15 +240,16 @@ export class Buttons implements OptionsElement<unknown> {
 			for (const name of sections) {
 				const header = this.makeSectionHeaderHTML(name);
 				header.onclick = () => {
-					if (this._activeSection === name) return;
+					if (this.warndiv) this.warndiv.remove();
 					buttonTable
 						.querySelectorAll(".sectionHeader")
 						.forEach((el) => el.classList.remove("activeSetting"));
 					header.classList.add("activeSetting");
-					if (this.warndiv) this.warndiv.remove();
 					this._renderSection(name, optionsArea);
-					if (window.innerWidth <= 600) {
-						optionsArea.scrollIntoView({behavior: "smooth", block: "nearest"});
+					if (window.innerWidth <= 1012) {
+						buttonTable.classList.add("mobileHidden");
+						optionsArea.classList.remove("mobileHidden");
+						this._showMobileBack();
 					}
 				};
 				buttonTable.append(header);
@@ -283,6 +297,13 @@ export class Buttons implements OptionsElement<unknown> {
 		div.textContent = str;
 		return div;
 	}
+	_showMobileBack() {
+		if (window.innerWidth > 1012) return;
+		if (this._backButton) this._backButton.style.display = "";
+	}
+	_hideMobileBack() {
+		if (this._backButton) this._backButton.style.display = "none";
+	}
 	last?: Options | string;
 	generateHTMLArea(buttonInfo: Options | string, htmlarea: HTMLElement) {
 		if (this.last) {
@@ -311,7 +332,7 @@ export class Buttons implements OptionsElement<unknown> {
 	}
 	changed(html: HTMLElement) {
 		this.warndiv = html;
-		this.buttonList.append(html);
+		document.body.append(html);
 	}
 	watchForChange() {}
 	save() {}
@@ -1690,6 +1711,7 @@ class Options implements OptionsElement<void> {
 		this.html.delete(opt);
 	}
 	title: WeakRef<HTMLElement> = new WeakRef(document.createElement("h2"));
+	headerActions: HTMLElement[] = [];
 	generateHTML(): HTMLElement {
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "titlediv");
@@ -1699,8 +1721,24 @@ class Options implements OptionsElement<void> {
 		}
 		const title = document.createElement("h2");
 		title.textContent = this.name;
-		div.append(title);
-		if (this.name !== "") title.classList.add("settingstitle");
+		if (this.name !== "") {
+			title.classList.add("settingstitle");
+			if (this.headerActions.length) {
+				const headerRow = document.createElement("div");
+				headerRow.classList.add("settingsHeaderRow");
+				title.classList.add("settingsHeaderTitle");
+				headerRow.append(title);
+				const actions = document.createElement("div");
+				actions.classList.add("settingsHeaderActions");
+				actions.append(...this.headerActions);
+				headerRow.append(actions);
+				div.append(headerRow);
+			} else {
+				div.append(title);
+			}
+		} else {
+			div.append(title);
+		}
 		this.title = new WeakRef(title);
 		const container = document.createElement("div");
 		this.container = new WeakRef(container);
@@ -1712,18 +1750,6 @@ class Options implements OptionsElement<void> {
 
 	generateName(): (HTMLElement | string)[] {
 		const build: (HTMLElement | string)[] = [];
-		if (this.owner instanceof Buttons) {
-			const span = document.createElement("span");
-			//span.classList.add("svg-intoMenu", "svgicon", "mobileback");
-			if (!(this.owner instanceof Settings) || !this.owner.hideButtons) build.push(span);
-			span.onclick = () => {
-				const container = this.container.deref();
-				if (!container) return;
-				if (!container.parentElement) return;
-				if (!container.parentElement.parentElement) return;
-				container.parentElement.parentElement.classList.add("mobileHidden");
-			};
-		}
 		if (this.subOptions) {
 			if (this.name !== "") {
 				const name = document.createElement("span");
@@ -2585,6 +2611,35 @@ class Settings extends Buttons {
 
 		background.append(this.generateHTML(this.hideButtons));
 
+		const back = document.createElement("span");
+		back.classList.add("exitsettings", "svgicon", "svg-backReturn", "settingsback");
+		back.style.display = "none";
+		this._backButton = back;
+		back.onclick = () => {
+			const buttons = this.buttonList;
+			if (!buttons) return;
+			const mainArea = buttons.querySelector<HTMLElement>(":scope > .settingsHTMLArea");
+			if (!mainArea) return;
+			const nestedVisible = mainArea.querySelector<HTMLElement>(
+				".settingsHTMLArea:not(.mobileHidden)",
+			);
+			if (nestedVisible) {
+				const nestedSidebar = nestedVisible.previousElementSibling;
+				if (
+					nestedSidebar instanceof HTMLElement &&
+					nestedSidebar.classList.contains("settingbuttons")
+				) {
+					nestedVisible.classList.add("mobileHidden");
+					nestedSidebar.classList.remove("mobileHidden");
+				}
+				return;
+			}
+			buttons.querySelector(".settingbuttons")?.classList.remove("mobileHidden");
+			mainArea.classList.add("mobileHidden");
+			this._hideMobileBack();
+		};
+		background.append(back);
+
 		const exit = document.createElement("span");
 		exit.classList.add("exitsettings", "svgicon", "svg-x");
 		background.append(exit);
@@ -2606,6 +2661,9 @@ class Settings extends Buttons {
 		this.html = background;
 	}
 	hide() {
+		if (this.warndiv) {
+			this.warndiv.remove();
+		}
 		if (this.html) {
 			const html = this.html;
 			html.classList.add("bgRemove");

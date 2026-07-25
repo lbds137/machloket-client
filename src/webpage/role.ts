@@ -158,62 +158,74 @@ class PermissionToggle implements OptionsElement<number> {
 	}
 	watchForChange() {}
 	generateHTML(): HTMLElement {
-		const div = document.createElement("div");
-		div.classList.add("setting");
-		const name = document.createElement("span");
-		name.textContent = this.rolejson.readableName;
-		name.classList.add("settingsname");
-		div.append(name);
-
-		div.append(this.generateCheckbox());
-		const p = document.createElement("p");
-		p.textContent = this.rolejson.description;
-		div.appendChild(p);
-		return div;
-	}
-	generateCheckbox(): HTMLElement {
-		const rand = Math.random() + "";
-		const div = document.createElement("div");
-		div.classList.add("tritoggle");
 		const state = this.permissions.getPermission(this.rolejson.name);
 
-		const on = document.createElement("input");
-		on.type = "radio";
-		on.name = this.rolejson.name + rand;
-		div.append(on);
-		if (state === 1) {
-			on.checked = true;
-		}
-		on.onclick = (_) => {
-			this.permissions.setPermission(this.rolejson.name, 1);
-			this.owner.changed();
-		};
+		const container = document.createElement("div");
+		container.classList.add("permRow");
 
-		const no = document.createElement("input");
-		no.type = "radio";
-		no.name = this.rolejson.name + rand;
-		div.append(no);
-		if (state === 0) {
-			no.checked = true;
-		}
-		no.onclick = (_) => {
-			this.permissions.setPermission(this.rolejson.name, 0);
-			this.owner.changed();
-		};
+		const labelContainer = document.createElement("div");
+		labelContainer.classList.add("permLabel");
+
+		const name = document.createElement("label");
+		name.textContent = this.rolejson.readableName;
+		name.classList.add("permName");
+		labelContainer.append(name);
+
+		const desc = document.createElement("div");
+		desc.textContent = this.rolejson.description;
+		desc.classList.add("permDesc");
+		labelContainer.append(desc);
+
+		container.append(labelContainer);
+
+		const control = document.createElement("div");
+		control.classList.add("permControl");
+
 		if (this.permissions.hasDeny) {
-			const off = document.createElement("input");
-			off.type = "radio";
-			off.name = this.rolejson.name + rand;
-			div.append(off);
-			if (state === -1) {
-				off.checked = true;
+			const states = [-1, 0, 1];
+			const labels = ["✕", "/", "✓"];
+			const classes = ["permBtn-deny", "permBtn-unset", "permBtn-allow"];
+			const btns: HTMLButtonElement[] = [];
+			for (let i = 0; i < 3; i++) {
+				const btn = document.createElement("button");
+				btn.textContent = labels[i];
+				btn.classList.add("permBtn", classes[i]);
+				if (state === states[i]) btn.classList.add("active");
+				btn.onclick = (_) => {
+					this.permissions.setPermission(this.rolejson.name, states[i]);
+					btns.forEach((b) => b.classList.toggle("active", b === btn));
+					this.owner.changed();
+				};
+				btns.push(btn);
+				control.append(btn);
 			}
-			off.onclick = (_) => {
-				this.permissions.setPermission(this.rolejson.name, -1);
+		} else {
+			const toggle = document.createElement("button");
+			toggle.classList.add("permSwitch");
+			if (state === 1) toggle.classList.add("active");
+			toggle.onclick = (_) => {
+				const curState = this.permissions.getPermission(this.rolejson.name);
+				const newState = curState === 1 ? 0 : 1;
+				this.permissions.setPermission(this.rolejson.name, newState);
+				toggle.classList.toggle("active", newState === 1);
 				this.owner.changed();
 			};
+			const thumb = document.createElement("span");
+			thumb.classList.add("permSwitchThumb");
+			toggle.append(thumb);
+			control.append(toggle);
 		}
-		return div;
+
+		container.append(control);
+
+		const wrapper = document.createElement("div");
+		wrapper.classList.add("permWrapper");
+		wrapper.append(container);
+		const divider = document.createElement("div");
+		divider.classList.add("permDivider");
+		wrapper.append(divider);
+
+		return wrapper;
 	}
 	submit() {}
 }
@@ -254,14 +266,27 @@ class RoleList extends Buttons {
 		if (!channel) {
 			this.makeguildmenus(options);
 		}
-		for (const thing of Permissions.info()) {
-			options.options.push(new PermissionToggle(thing, this.permission, options));
+		for (const [catKey, permNames] of Object.entries(Permissions.categories)) {
+			const catLabel = (I18n.permissions.categories as any)?.[catKey]?.() ?? catKey;
+			const catOptions = options.addOptions(catLabel);
+			catOptions.container.deref()?.classList.add("permGrid");
+			catOptions.vsmaller = true;
+			catOptions.container.deref()?.classList.add("permGrid");
+			for (const permName of permNames) {
+				const info = Array.from(Permissions.info()).find((_) => _.name === permName);
+				if (!info) continue;
+				catOptions.options.push(new PermissionToggle(info, this.permission, catOptions));
+			}
 		}
 		if (!channel) {
-			options.addButtonInput("", I18n.role.delete(), () => {
+			const deleteBtn = document.createElement("button");
+			deleteBtn.textContent = I18n.role.delete();
+			deleteBtn.classList.add("roleDeleteBtn");
+			deleteBtn.onclick = () => {
 				const role = this.permissions.find((_) => _[0].id === this.curid)?.[0];
 				if (role) this.deleteRole(role);
-			});
+			};
+			options.headerActions.push(deleteBtn);
 		}
 		for (const i of permissions) {
 			this.buttons.push([i[0].name, i[0].id]);
@@ -674,10 +699,16 @@ class RoleList extends Buttons {
 				}
 			}
 			button.onclick = (_) => {
-				//html.classList.remove("mobileHidden");
 				this.generateHTMLArea(thing[1], html);
 				if (this.warndiv) {
 					this.warndiv.remove();
+				}
+				if (window.innerWidth <= 1012) {
+					button.closest(".settingbuttons")?.classList.add("mobileHidden");
+					html.classList.remove("mobileHidden");
+					const settingsPanel = button.closest(".background");
+					const backBtn = settingsPanel?.querySelector(".settingsback") as HTMLElement;
+					if (backBtn) backBtn.style.display = "";
 				}
 			};
 			buttonTable.append(button);

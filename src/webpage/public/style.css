@@ -1470,6 +1470,11 @@ textarea:focus {
 	mask-size: contain !important;
 }
 
+.svg-backReturn {
+	mask: url(./icons/backReturn.svg);
+	mask-size: contain !important;
+}
+
 .svg-channel {
 	mask: url(./icons/channel.svg);
 	mask-size: contain !important;
@@ -1809,12 +1814,6 @@ textarea:focus {
 	background-color: var(--red);
 	mask: url(./icons/micmute.svg);
 	mask-size: contain !important;
-}
-
-.mobileback {
-	visibility: hidden;
-	width: 0;
-	height: 0;
 }
 
 #searchX {
@@ -6592,48 +6591,228 @@ fieldset input[type="radio"] {
 	color: var(--secondary-text-soft);
 }
 
-.tritoggle {
-	display: inline;
-	margin-left: 4px;
+.permGrid {
+	display: grid !important;
+	grid-template-columns: 1fr 1fr;
+	gap: 0 24px;
 }
 
-.tritoggle input {
-	margin: 0 2px;
-	accent-color: var(--grey);
+.permWrapper {
+	width: 100%;
 }
 
-.tritoggle input:first-child {
-	accent-color: var(--green);
+.permRow {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 12px 0;
 }
 
-.tritoggle input:nth-child(3) {
-	accent-color: var(--red);
+.permLabel {
+	flex: 1;
+	min-width: 0;
 }
 
-.nonimagecenter > .flexltr.savediv {
+.permName {
+	font-size: 0.18in;
+	font-weight: 500;
+	color: var(--primary-text);
+	display: block;
+	margin-bottom: 2px;
+}
+
+.permDesc {
+	font-size: 0.14in;
+	color: var(--primary-text-soft);
+	line-height: 1.3;
+}
+
+.permControl {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+}
+
+.permDivider {
+	width: 100%;
+	height: 1px;
+	background: var(--card-bg);
+}
+
+.permBtn {
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	font-size: 13px;
+	line-height: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	color: var(--primary-text-soft);
+	opacity: 0.35;
+	transition:
+		opacity 0.15s,
+		background 0.15s;
+}
+.permBtn:hover {
+	opacity: 0.7;
+}
+.permBtn.active {
+	opacity: 1;
+}
+
+.permBtn.permBtn-allow {
+	color: rgb(35, 165, 90);
+}
+.permBtn.permBtn-allow.active {
+	background: rgba(35, 165, 90, 0.2);
+	color: rgb(35, 165, 90);
+}
+
+.permBtn.permBtn-deny {
+	color: rgb(237, 66, 69);
+}
+.permBtn.permBtn-deny.active {
+	background: rgba(237, 66, 69, 0.2);
+	color: rgb(237, 66, 69);
+}
+
+.permBtn.permBtn-unset {
+	color: var(--primary-text-soft);
+}
+.permBtn.permBtn-unset.active {
+	background: rgba(128, 132, 142, 0.15);
+	color: var(--primary-text-soft);
+}
+
+.permSwitch {
+	position: relative;
+	width: 40px;
+	height: 22px;
+	padding: 0;
+	border: 1px solid rgba(151, 151, 159, 0.2);
+	border-radius: 4px;
+	cursor: pointer;
+	background: rgba(0, 0, 0, 0.12);
+	transition:
+		background 0.15s,
+		border-color 0.15s;
+	flex-shrink: 0;
+}
+.permSwitch.active {
+	background: var(--accent-color);
+	border-color: var(--button-bg);
+}
+
+.permSwitchThumb {
+	position: absolute;
+	top: 1px;
+	left: 1px;
+	width: 18px;
+	height: 18px;
+	border-radius: 3px;
+	background: white;
+	transition: transform 0.15s;
+}
+.permSwitch.active .permSwitchThumb {
+	transform: translateX(18px);
+}
+
+.settingsHeaderRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	width: 100%;
+}
+.settingsHeaderTitle {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin: 0 !important;
+}
+.settingsHeaderActions {
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	gap: 4px;
+}
+
+.roleDeleteBtn {
+	padding: 4px 10px;
+	border: none;
+	border-radius: 4px;
+	background: rgba(237, 66, 69, 0.15);
+	color: rgb(237, 66, 69);
+	cursor: pointer;
+	font-size: 0.16in;
+	white-space: nowrap;
+}
+.roleDeleteBtn:hover {
+	background: rgba(237, 66, 69, 0.3);
+}
+
+#permissions .optionElement > div {
+	width: 100%;
+}
+#permissions .optionElement > div > button {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	padding: 8px 12px;
+	border: none;
+	border-radius: 4px;
+	background: var(--card-bg);
+	color: var(--primary-text);
+	cursor: pointer;
+	font-size: 0.18in;
+	text-align: left;
+}
+#permissions .optionElement > div > button::after {
+	content: ">";
+	color: var(--primary-text-soft);
+	font-weight: bold;
+	margin-left: 8px;
+}
+#permissions .optionElement > div > button:hover {
+	background: color-mix(in srgb, var(--card-bg) 80%, var(--primary-text));
+}
+
+.nonimagecenter .nonimagecenter > .flexltr.savediv {
 	padding: 16px !important;
 }
 
 .savediv {
-	z-index: 2;
+	z-index: 999;
 	position: fixed;
 	left: 50%;
 	bottom: 24px;
-	align-items: center;
-	box-sizing: border-box;
+	transform: translateX(-50%);
 	width: min(720px, calc(100% - 32px));
 	height: auto;
-	padding: 16px !important;
+	align-items: center;
+	justify-content: space-between;
+	box-sizing: border-box;
+	display: flex;
+	gap: 8px;
+	padding: 12px 16px !important;
 	border-radius: 8px !important;
-	font-size: 1.2em;
-	font-weight: bold;
+	font-size: 1em;
+	font-weight: 600;
 	color: var(--secondary-text);
 	background: var(--secondary-bg) !important;
 	background: var(--green);
 	box-shadow:
 		0 0 24px var(--shadow),
 		0 0 1px var(--primary-text);
-	transform: translateX(-50%);
 }
 
 .exitsettings {
@@ -6660,6 +6839,11 @@ fieldset input[type="radio"] {
 
 .exitsettings:active {
 	transform: scale(0.95);
+}
+
+.settingsback {
+	right: 44px;
+	margin-right: 8px;
 }
 
 #loading > .centeritem {
@@ -6728,6 +6912,47 @@ fieldset input[type="radio"] {
 		height: 32px;
 		min-width: 32px;
 		transition: width 0.2s;
+	}
+}
+
+@media screen and (max-width: 1012px) {
+	.Buttons {
+		position: relative;
+		flex: 1;
+		min-height: 0;
+		overflow: hidden;
+		flex-direction: column !important;
+	}
+
+	.Buttons > .settingbuttons,
+	.Buttons > .settingsHTMLArea {
+		flex: none;
+		width: 100%;
+		height: 100%;
+		overflow-y: auto;
+	}
+	.Buttons > .settingbuttons.mobileHidden,
+	.Buttons > .settingsHTMLArea.mobileHidden {
+		display: none;
+	}
+
+	.settingstitle {
+		font-size: 1.2rem;
+	}
+
+	.nonimagecenter .settingbuttons {
+		height: 100%;
+	}
+
+	.fixedsearch {
+		top: 50% !important;
+		left: 50% !important;
+		min-width: 80svw;
+		transform: translate(-50%, -50%);
+	}
+
+	.rolesheader {
+		margin: 6px 12px;
 	}
 }
 
@@ -6979,13 +7204,20 @@ fieldset input[type="radio"] {
 
 	#logindiv,
 	#invitebody,
-	.savediv,
 	.nonimagecenter:not(.dialogModal),
 	.accountSwitcher {
 		top: 0;
 		width: 94%;
 		min-width: unset;
 		margin-top: 80%;
+	}
+	.savediv {
+		left: 50%;
+		right: auto;
+		bottom: 12px;
+		width: calc(100% - 16px);
+		padding: 10px 12px !important;
+		font-size: 0.9em;
 	}
 
 	.dialogModal {
@@ -7020,54 +7252,6 @@ fieldset input[type="radio"] {
 
 	.openpanelTrackingWidget p {
 		min-height: 5.5em;
-	}
-
-	.Buttons {
-		flex-direction: column;
-		overflow-y: auto;
-	}
-
-	.settingstitle {
-		font-size: 1.2rem;
-	}
-
-	.settingbuttons {
-		z-index: 1;
-		width: 100%;
-		flex: none;
-		overflow: visible;
-	}
-
-	.settingsHTMLArea {
-		flex: none;
-		overflow: visible;
-	}
-
-	.nonimagecenter .settingbuttons {
-		height: auto;
-	}
-
-	.fixedsearch {
-		top: 50% !important;
-		left: 50% !important;
-		min-width: 80svw;
-		transform: translate(-50%, -50%);
-	}
-
-	.rolesheader {
-		margin: 6px 12px;
-	}
-
-	.mobileback {
-		visibility: visible;
-		width: 20px;
-		height: 20px;
-		cursor: pointer;
-	}
-
-	.mobileHidden {
-		transform: translate(100%, 0px);
-		transition: transform 0.25s ease-in-out;
 	}
 
 	.outerTypeBox:not(.noConent) {
