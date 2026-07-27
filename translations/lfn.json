@@ -22,9 +22,24 @@
 				"Voice": {
 								"status": {
 												"badWS": "Mal responde de WS",
-												"left": "Sortida de la conversa vosal"
+												"conectionFailed": "La comuta ia fali",
+												"done": "Comutada",
+												"left": "Sortida de la conversa vosal",
+												"noSDP": "No SDP",
+												"notconnected": "Noncomutada",
+												"sendingStreams": "Enviante siniales audio",
+												"startingRTC": "Comensante la comuta de RTC",
+												"waitingMainWS": "Espeta la WS xef",
+												"waitingURL": "Espeta la iperlia de vosa",
+												"wsAuth": "espeta la permete de WS",
+												"wsOpen": "Espeta la abri de WS"
 								},
 								"userVol": "Volum de la usor:"
+				},
+				"accessibility": {
+								"gifSettings": {
+												"always": "Sempre"
+								}
 				},
 				"dismiss": "Dejeta",
 				"inbox": {
