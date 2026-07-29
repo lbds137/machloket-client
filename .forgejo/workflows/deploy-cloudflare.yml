@@ -27,6 +27,21 @@ jobs:
           VITE_OP_CLIENT_ID: ${{ vars.VITE_OP_CLIENT_ID }}
           VITE_OP_API_URL: ${{ vars.VITE_OP_API_URL }}
           VITE_OP_REPLAY_SAMPLE_RATE: ${{ vars.VITE_OP_REPLAY_SAMPLE_RATE }}
+          VITE_SENTRY_DSN: ${{ vars.VITE_SENTRY_DSN }}
+          VITE_SENTRY_TUNNEL: ${{ vars.VITE_SENTRY_TUNNEL }}
+          VITE_SENTRY_ENVIRONMENT: ${{ vars.VITE_SENTRY_ENVIRONMENT }}
+          VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
+
+      - name: Upload source maps
+        run: |
+          npx glitchtip-cli sourcemaps inject ./dist/webpage
+          npx glitchtip-cli sourcemaps upload ./dist/webpage \
+            --url "${{ vars.GLITCHTIP_URL }}" \
+            --org "${{ vars.GLITCHTIP_ORG }}" \
+            --project "${{ vars.GLITCHTIP_PROJECT }}"
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.GLITCHTIP_API_TOKEN }}
+        continue-on-error: true
 
       - name: Deploy to Cloudflare Pages
         run: npx wrangler pages deploy ./dist/webpage --branch=main --commit-dirty=true

@@ -13,6 +13,7 @@
 	"license": "AGPL-3.0",
 	"dependencies": {
 		"@openpanel/sdk": "^1.0.0",
+		"@sentry/browser": "^10.68.0",
 		"@swc/core": "1.11.24",
 		"cap-widget": "^0.1.56",
 		"vite": "^8.0.12"

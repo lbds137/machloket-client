@@ -74,7 +74,6 @@ function safeOpenpanelCall(promise: Promise<unknown> | undefined | void): void {
 
 let op: OpenPanelInstance | null = null;
 let replaySampled = false;
-let errorTrackingInstalled = false;
 let sessionOpenTracked = false;
 let unloadTrackingInstalled = false;
 let fermoVersion = "dev";
@@ -93,11 +92,6 @@ function getTrackingMode() {
 
 function canTrackFeatureEvents() {
 	return getTrackingMode() === OpenPanelAnalyticsMode.Default;
-}
-
-function canTrackErrorEvents() {
-	const mode = getTrackingMode();
-	return mode === OpenPanelAnalyticsMode.Default || mode === OpenPanelAnalyticsMode.ErrorSending;
 }
 
 function canTrackSessionEvents() {
@@ -198,13 +192,6 @@ export function sendOpenpanelAnalytics(event: string, props: OpenPanelTrackProps
 	safeOpenpanelCall(inst.track(event, props));
 }
 
-export function sendOpenpanelError(event: string, props: OpenPanelTrackProps = {}): void {
-	if (!canTrackErrorEvents()) return;
-	const inst = initOpenpanel();
-	if (!inst) return;
-	safeOpenpanelCall(inst.track(event, props));
-}
-
 export function sendOpenpanelSession(event: string, props: OpenPanelTrackProps = {}): void {
 	if (!canTrackSessionEvents()) return;
 	const inst = initOpenpanel();
@@ -240,30 +227,4 @@ export function clearOpenpanel(): void {
 	sessionOpenTracked = false;
 	op?.clear?.();
 	op = null;
-}
-
-export function installOpenpanelErrorTracking(): void {
-	if (errorTrackingInstalled) return;
-	errorTrackingInstalled = true;
-	window.addEventListener("error", (event) => {
-		const err = event.error;
-		if (!(err instanceof Error)) return;
-		sendOpenpanelError("error_spotted", {
-			name: err.name,
-			message: err.message,
-			stack: err.stack,
-			filename: event.filename,
-			lineno: event.lineno,
-			colno: event.colno,
-		});
-	});
-	window.addEventListener("unhandledrejection", (event) => {
-		const reason = event.reason;
-		if (!(reason instanceof Error)) return;
-		sendOpenpanelError("error_spotted", {
-			name: reason.name,
-			message: reason.message,
-			stack: reason.stack,
-		});
-	});
 }

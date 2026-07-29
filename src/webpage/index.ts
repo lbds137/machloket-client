@@ -21,11 +21,9 @@ if (window.location.pathname.startsWith("/audio")) {
 import "./404.js";
 import {Channel} from "./channel.js";
 import {Guild} from "./guild.js";
-import {
-	initOpenpanel,
-	installOpenpanelErrorTracking,
-	sendOpenpanelAnalytics,
-} from "./utils/openpanel.js";
+import {initOpenpanel, sendOpenpanelAnalytics} from "./utils/openpanel.js";
+import {getLocalSettings, OpenPanelAnalyticsMode} from "./utils/storage/localSettings.js";
+import {initSentry} from "./utils/sentry.js";
 import {showChangelogPopup} from "./changelog.js";
 import {AutoTranslationService} from "./services/autoTranslation.js";
 import {
@@ -48,7 +46,6 @@ if (window.location.pathname.startsWith("/channels")) {
 	await SovrahiService.handleAuthCallback();
 	let pendingTranslateMessageId = SovrahiService.consumePendingTranslateMessageId();
 	Localuser.loadFont();
-	installOpenpanelErrorTracking();
 
 	I18n.translatePage();
 
@@ -124,6 +121,14 @@ if (window.location.pathname.startsWith("/channels")) {
 				loading.classList.add("doneloading");
 				loading.classList.remove("loading");
 				await Localuser.showOpenpanelAnalyticsPrompt();
+				const settings = getLocalSettings();
+				if (
+					settings.openpanelEnabled !== false &&
+					settings.openpanelAnalyticsMode !== OpenPanelAnalyticsMode.Disabled &&
+					settings.openpanelAnalyticsMode !== OpenPanelAnalyticsMode.JustPing
+				) {
+					await initSentry();
+				}
 				initOpenpanel();
 				thisUser.identifyOpenpanelUser();
 				sendOpenpanelAnalytics("app_loaded", {

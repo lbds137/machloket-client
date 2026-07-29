@@ -77,6 +77,7 @@ import {
 	sendOpenpanelAnalytics,
 	sendOpenpanelAnalyticsModeChange,
 } from "./utils/openpanel.js";
+import {initSentry, setSentryUser} from "./utils/sentry.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SnowFlake} from "./snowflake.js";
@@ -1877,6 +1878,11 @@ class Localuser {
 		}
 	}
 	identifyOpenpanelUser(trackingMode = getLocalSettings().openpanelAnalyticsMode): void {
+		setSentryUser({
+			id: this.user.id,
+			username: this.user.username,
+			avatar: this.user.getpfpsrc(),
+		});
 		identifyOpenpanel({
 			profileId: this.user.id,
 			firstName: this.user.username,
@@ -4368,7 +4374,7 @@ class Localuser {
 			openpanelOpts.addMDText(new MarkDown(I18n.localuser.openpanelDesc()));
 			const analyticsWidget = makeOpenpanelAnalyticsWidget(
 				localSettings.openpanelAnalyticsMode || OpenPanelAnalyticsMode.Default,
-				(mode) => {
+				async (mode) => {
 					const prevEnabled = localSettings.openpanelEnabled !== false;
 					const previousMode = prevEnabled
 						? localSettings.openpanelAnalyticsMode
@@ -4392,6 +4398,9 @@ class Localuser {
 					analyticsWidget.setDisabled(false);
 					if (!prevEnabled) {
 						document.dispatchEvent(new CustomEvent("openpanel:enabled", {detail: {enabled: true}}));
+					}
+					if (mode !== OpenPanelAnalyticsMode.JustPing) {
+						await initSentry();
 					}
 					initOpenpanel(true);
 					this.identifyOpenpanelUser();
