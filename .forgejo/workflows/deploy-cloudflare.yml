@@ -41,7 +41,9 @@ jobs:
           glitchtip-cli sourcemaps upload ./dist/webpage \
             --url "${{ vars.GLITCHTIP_URL }}" \
             --org "${{ vars.GLITCHTIP_ORG }}" \
-            --project "${{ vars.GLITCHTIP_PROJECT }}"
+            --project "${{ vars.GLITCHTIP_PROJECT }}" \
+            --release "${{ vars.VER || github.sha }}"
+
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.GLITCHTIP_API_TOKEN }}
         continue-on-error: true
