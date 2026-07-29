@@ -53,21 +53,24 @@ class File {
 		const src = this.proxy_url || this.url;
 		const url = this.refreshURL();
 
-		if (this.width && this.height) {
+		let dispWidth = this.width;
+		let dispHeight = this.height;
+		if (dispWidth && dispHeight) {
 			let scale = 1;
 			const max = 96 * 3;
-			scale = Math.max(scale, this.width / max);
-			scale = Math.max(scale, this.height / max);
-			this.width /= scale;
-			this.height /= scale;
+			scale = Math.max(scale, dispWidth / max);
+			scale = Math.max(scale, dispHeight / max);
+			dispWidth /= scale;
+			dispHeight /= scale;
 		}
-		if (this.height === null) {
-			this.height = 96 * 3;
+		if (dispHeight === null || dispHeight === undefined) {
+			dispHeight = 96 * 3;
 		}
 
 		if (this.content_type.startsWith("image/")) {
 			const div = document.createElement("div");
 			const img = createImg(src, undefined, div);
+			img.style.height = "auto";
 			if (!fullScreen) {
 				img.classList.add("messageimg");
 				div.classList.add("messageimgdiv");
@@ -95,9 +98,8 @@ class File {
 					img.setSrcs(src);
 				});
 			div.append(img);
-			if (this.width && !fullScreen) {
-				div.style.width = this.width + "px";
-				div.style.height = this.height + "px";
+			if (dispWidth && !fullScreen) {
+				div.style.width = dispWidth + "px";
 			} else if (!fullScreen) {
 				div.style.maxWidth = 96 * 3 + "px";
 				div.style.maxHeight = 96 * 3 + "px";

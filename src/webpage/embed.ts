@@ -205,6 +205,7 @@ class Embed {
 		div.classList.add("messageimgdiv");
 		const img = createImg(this.json.thumbnail.proxy_url);
 		img.classList.add("messageimg");
+		img.style.height = "auto";
 		img.onclick = () => {
 			const full = new ImagesDisplay([
 				new File(
@@ -220,16 +221,17 @@ class Embed {
 			]);
 			full.show();
 		};
-		if (this.json.thumbnail.width) {
+		let thumbW = this.json.thumbnail.width;
+		let thumbH = this.json.thumbnail.height;
+		if (thumbW) {
 			let scale = 1;
 			const max = 96 * 3;
-			scale = Math.max(scale, this.json.thumbnail.width / max);
-			scale = Math.max(scale, this.json.thumbnail.height / max);
-			this.json.thumbnail.width /= scale;
-			this.json.thumbnail.height /= scale;
+			scale = Math.max(scale, thumbW / max);
+			scale = Math.max(scale, thumbH / max);
+			thumbW /= scale;
+			thumbH /= scale;
 		}
-		img.style.width = this.json.thumbnail.width + "px";
-		img.style.height = this.json.thumbnail.height + "px";
+		img.style.width = thumbW + "px";
 		console.log(this.json, "Image fix");
 
 		img.isAnimated().then((animated) => {
@@ -442,15 +444,16 @@ class Embed {
 		}
 		if (this.json.thumbnail) {
 			const img = document.createElement("img");
-			if (this.json.thumbnail.width && this.json.thumbnail.width) {
+			let thumbW = this.json.thumbnail.width;
+			let thumbH = this.json.thumbnail.height;
+			if (thumbW) {
 				let scale = 1;
 				const inch = 96;
-				scale = Math.max(scale, this.json.thumbnail.width / inch / 4);
-				scale = Math.max(scale, this.json.thumbnail.height / inch / 3);
-				this.json.thumbnail.width /= scale;
-				this.json.thumbnail.height /= scale;
-				img.style.width = this.json.thumbnail.width + "px";
-				img.style.height = this.json.thumbnail.height + "px";
+				scale = Math.max(scale, thumbW / inch / 4);
+				scale = Math.max(scale, thumbH / inch / 3);
+				thumbW /= scale;
+				thumbH /= scale;
+				img.style.width = thumbW + "px";
 			}
 			img.classList.add("bigembedimg");
 			if (this.json.video) {
