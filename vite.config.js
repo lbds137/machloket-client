@@ -139,6 +139,7 @@ export default defineConfig({
 	root: resolve(__dirname, "src/webpage"),
 
 	build: {
+		sourcemap: "hidden",
 		outDir: resolve(__dirname, "dist/webpage"),
 		emptyOutDir: true,
 		rollupOptions: {
