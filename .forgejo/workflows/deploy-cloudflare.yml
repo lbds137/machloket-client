@@ -32,10 +32,13 @@ jobs:
           VITE_SENTRY_ENVIRONMENT: ${{ vars.VITE_SENTRY_ENVIRONMENT }}
           VITE_SENTRY_TRACES_SAMPLE_RATE: ${{ vars.VITE_SENTRY_TRACES_SAMPLE_RATE }}
 
+      - name: Install glitchtip-cli
+        run: curl -fsSL https://glitchtip.com/install.sh | sh
+
       - name: Upload source maps
         run: |
-          npx glitchtip-cli sourcemaps inject ./dist/webpage
-          npx glitchtip-cli sourcemaps upload ./dist/webpage \
+          glitchtip-cli sourcemaps inject ./dist/webpage
+          glitchtip-cli sourcemaps upload ./dist/webpage \
             --url "${{ vars.GLITCHTIP_URL }}" \
             --org "${{ vars.GLITCHTIP_ORG }}" \
             --project "${{ vars.GLITCHTIP_PROJECT }}"
