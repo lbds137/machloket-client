@@ -37,9 +37,24 @@
 								"userVol": "Volum de la usor:"
 				},
 				"accessibility": {
+								"decorations": "Comuta la decoras de avatar:",
 								"gifSettings": {
-												"always": "Sempre"
-								}
+												"always": "Sempre",
+												"hover": "Cuando la cursor levita sur",
+												"never": "Nunca"
+								},
+								"gradientColors": "Descomuta la gradiente de color:",
+								"roleColors": "Descomuta la colores de rol:"
+				},
+				"accountNotStart": "La conta no pote comensa",
+				"add": "Ajunta",
+				"applications": {
+								"delete": "Sutrae la ap",
+								"sure": "Esce tu es serta ce tu vole sutrae $1?"
+				},
+				"badge": {
+								"active_developer": "Programor ativa",
+								"application_guild_subscription": "ave Premium"
 				},
 				"dismiss": "Dejeta",
 				"inbox": {
