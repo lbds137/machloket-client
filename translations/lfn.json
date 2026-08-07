@@ -54,7 +54,13 @@
 				},
 				"badge": {
 								"active_developer": "Programor ativa",
-								"application_guild_subscription": "ave Premium"
+								"application_guild_subscription": "ave Premium",
+								"automod": "usa AutoMod",
+								"bug_hunter_level_1": "Xasor de defetos nivel 1",
+								"bug_hunter_level_2": "Xasor de defetos nivel 2",
+								"certified_moderator": "Moderor",
+								"customBadgeNotice": "Insinia personalida. Lo no ia es creada par Spacebar o la ecipo de esta instanse.",
+								"early_supporter": "Suportor temprana"
 				},
 				"dismiss": "Dejeta",
 				"inbox": {
