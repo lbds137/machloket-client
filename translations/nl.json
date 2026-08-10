@@ -553,7 +553,7 @@
 		"tokenDisplay": "Token: $1",
 		"trace": "Sporen",
 		"trusted": "Vertrouwde domeinen",
-		"trustedDesc": "Wanneer u via koppelingen op dit domein komt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan domeinen die u vertrouwt, zoals'https://fermo.sovr.top'.",
+		"trustedDesc": "Wanneer u via koppelingen op dit domein komt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan domeinen die u vertrouwt, zoals'https://fermo.sovr.fyi'.",
 		"updateSettings": "Instellingen bijwerken",
 		"updatesYay": "Updates gevonden!",
 		"userSettings": "Uw publieke profiel"

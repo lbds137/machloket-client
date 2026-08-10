@@ -569,7 +569,7 @@
 		"tokenDisplay": "Token: $1",
 		"trace": "Spuren",
 		"trusted": "Vertrauenswürdige Domains",
-		"trustedDesc": "Wenn du auf Links klickest, die dich zu dieser Domain führen, wirst du ***nicht*** wie bei anderen Links zur Bestätigung aufgefordert. Erlaube dies nur für Domains, denen du vertraust, wie z. B. „https://fermo.sovr.top“.",
+		"trustedDesc": "Wenn du auf Links klickest, die dich zu dieser Domain führen, wirst du ***nicht*** wie bei anderen Links zur Bestätigung aufgefordert. Erlaube dies nur für Domains, denen du vertraust, wie z. B. „https://fermo.sovr.fyi“.",
 		"updateSettings": "Einstellungen aktualisieren",
 		"updatesYay": "Aktualisierungen gefunden!",
 		"userSettings": "Benutzereinstellungen"

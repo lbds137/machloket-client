@@ -565,7 +565,7 @@
 		"tokenDisplay": "令牌：$1",
 		"trace": "轨迹",
 		"trusted": "受信任域名",
-		"trustedDesc": "当您点击链接跳转到这些域名时，系统***不会***像其他链接那样提示您授予打开权限，请仅对您信任的域名授予权限，例如<code>https://fermo.sovr.top</code>。",
+		"trustedDesc": "当您点击链接跳转到这些域名时，系统***不会***像其他链接那样提示您授予打开权限，请仅对您信任的域名授予权限，例如<code>https://fermo.sovr.fyi</code>。",
 		"updateSettings": "更新设置",
 		"updatesYay": "找到了更新！",
 		"userSettings": "您的公开个人资料"
