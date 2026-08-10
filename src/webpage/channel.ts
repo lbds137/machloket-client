@@ -404,7 +404,7 @@ class Channel extends SnowFlake {
 					const params = new URLSearchParams("");
 					params.set("instance", this.info.wellknown);
 					const encoded = params.toString();
-					text.textContent = `https://sbar.top/i/${json.code}?${encoded}`;
+					text.textContent = `https://sovr.fyi/i/${json.code}?${encoded}`;
 				});
 		};
 		update();

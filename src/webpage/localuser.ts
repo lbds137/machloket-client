@@ -4810,7 +4810,7 @@ class Localuser {
 			msg.textContent = I18n.failedToLoadGifs();
 			errDiv.appendChild(msg);
 			const link = document.createElement("a");
-			link.href = "https://sbar.top/articles/tenor-migration";
+			link.href = "https://sovr.fyi/articles/tenor-migration";
 			link.target = "_blank";
 			link.rel = "noopener noreferrer";
 			link.textContent = I18n.tenorMigrationInfo();

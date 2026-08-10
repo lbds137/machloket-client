@@ -71,7 +71,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 
 			opt.addMDText(
 				new MarkDown(
-					"https://sbar.top" +
+					"https://sovr.fyi" +
 						"/i/" +
 						invite.code +
 						"?" +
@@ -1455,7 +1455,7 @@ class Guild extends SnowFlake {
 					const params = new URLSearchParams("");
 					params.set("instance", this.info.wellknown);
 					const encoded = params.toString();
-					text.textContent = `https://sbar.top/i/${json.code}?${encoded}`;
+					text.textContent = `https://sovr.fyi/i/${json.code}?${encoded}`;
 				});
 		};
 
