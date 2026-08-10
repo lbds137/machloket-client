@@ -15,10 +15,10 @@ export function normalizeInviteLink(text: string): string {
 					}
 				} catch {}
 
-				return `https://sbar.top/i/${code}?instance=${encodeURIComponent(instance)}`;
+				return `https://sbar.fyi/i/${code}?instance=${encodeURIComponent(instance)}`;
 			}
 
-			return `https://sbar.top/i/${code}`;
+			return `https://sbar.fyi/i/${code}`;
 		},
 	);
 }

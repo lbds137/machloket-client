@@ -1279,9 +1279,9 @@ class MarkDown {
 		}
 		return new Set([
 			location.host,
-			"*.sovr.top", // own and shortlink domain
+			"*.sovr.fyi", // own and shortlink domain
 			"*.sovrahi.com", // Git domain
-			"*.sbar.top", // invite
+			"*.sbar.fyi", // invite
 		]);
 	}
 	static isTrustedHost(host: string) {

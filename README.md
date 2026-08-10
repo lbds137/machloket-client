@@ -30,6 +30,6 @@ And to be clear, _any_ use of AI is not allowed in Fermo.
 
 ## Link
 
-The official Spacebar server for Fermo: https://sbar.top/i/WYbNha?instance=https%3A%2F%2Fspacebar.chat
+The official Spacebar server for Fermo: https://sbar.fyi/i/WYbNha?instance=https%3A%2F%2Fspacebar.chat
 
-The current hosted instance of Fermo: https://fermo.sovr.top/
+The current hosted instance of Fermo: https://fermo.sovr.fyi/

@@ -392,7 +392,7 @@ export function getViewportWidth() {
 
 const datalist = document.getElementById("instances");
 console.warn(datalist);
-const catalogInstancesUrl = "https://sbar.top/api/catalog/instances";
+const catalogInstancesUrl = "https://sbar.fyi/api/catalog/instances";
 type CatalogInstance = {
 	id: string;
 	name: string;
@@ -437,7 +437,7 @@ export const instancefetch = fetch(catalogInstancesUrl)
 		},
 	);
 
-const catalogBotsUrl = "https://sbar.top/api/catalog/bots";
+const catalogBotsUrl = "https://sbar.fyi/api/catalog/bots";
 type CatalogBot = {
 	id: string;
 	name: string;
@@ -465,7 +465,7 @@ export async function getExplorerBotByUsername(username: string): Promise<Catalo
 }
 
 export function getExplorerBotUrl(botId: string): string {
-	return new URL(`/bots/${encodeURIComponent(botId)}`, "https://sbar.top").href;
+	return new URL(`/bots/${encodeURIComponent(botId)}`, "https://sbar.fyi").href;
 }
 
 const stringURLMap = new Map<string, string>();

@@ -229,7 +229,7 @@ export class Buttons implements OptionsElement<unknown> {
 		if (this.sectionHeaders.size) {
 			const fb = document.createElement("a");
 			fb.textContent = "Give feedback about this design";
-			fb.href = "https://forms.sovr.top/index.php/861742?lang=en";
+			fb.href = "https://forms.sovr.fyi/index.php/861742?lang=en";
 			fb.target = "_blank";
 			fb.rel = "noopener noreferrer";
 			fb.classList.add("settingsFeedback");

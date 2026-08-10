@@ -24,7 +24,7 @@ NotificationSoundManager.preload().catch((e) => {
 
 async function loadInstanceUptime(instanceId: string) {
 	const response = await fetch(
-		`https://sbar.top/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,
+		`https://sbar.fyi/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,
 	);
 	if (!response.ok) return null;
 	const data = (await response.json()) as PingHistory;
@@ -89,7 +89,7 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 			link?: string;
 		}[];
 		try {
-			const res = await fetch("https://sbar.top/api/catalog/instances");
+			const res = await fetch("https://sbar.fyi/api/catalog/instances");
 			if (!res.ok) throw new Error("HTTP " + res.status);
 			json = await res.json();
 		} catch {
@@ -113,7 +113,7 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 			if (image) {
 				const img = document.createElement("img");
 				img.alt = I18n.home.icon(instance.name);
-				img.src = new URL(image, "https://sbar.top").href;
+				img.src = new URL(image, "https://sbar.fyi").href;
 				div.append(img);
 			}
 			const statbox = document.createElement("div");
