@@ -1,15 +1,4 @@
 {
-	"@metadata": {
-		"authors": [
-			"Bartomelow",
-			"Eduardoaddad",
-			"Erol",
-			"Illyria",
-			"S0rs immanis12",
-			"Sixaxis",
-			"YuriNikolai"
-		]
-	},
 	"2faCode": "Código 2FA:",
 	"404": {
 		"404": "Erro: 404 - Página não encontrada",
@@ -24,15 +13,16 @@
 		"whatelse": "O que mais você acha que deveria acontecer?",
 		"whereever": "O que quer que isso seja"
 	},
-	"onboarding": {
-		"name": "Onboarding",
-		"disable": "Desabilitar onboarding",
-		"addChannel": "Adicionar canal",
-		"channel": "Canal:",
-		"desc": "Descrição:",
-		"deleteChannel": "Apagar canal do onboarding",
-		"enable": "Habilitar onboarding",
-		"title": "Bem-vindo à $1"
+	"@metadata": {
+		"authors": [
+			"Bartomelow",
+			"Eduardoaddad",
+			"Erol",
+			"Illyria",
+			"S0rs immanis12",
+			"Sixaxis",
+			"YuriNikolai"
+		]
 	},
 	"DMs": {
 		"add": "Adicione alguém para este PV",
@@ -41,8 +31,6 @@
 		"markRead": "Marcar como lido",
 		"name": "Mensagens Privadas"
 	},
-	"ok": "Ok",
-	"dismiss": "Ignorar",
 	"UrlGen": "Gerador de convite do bot",
 	"Voice": {
 		"status": {
@@ -62,17 +50,17 @@
 		}
 	},
 	"accessibility": {
+		"decorations": "Habilitar decorações de avatar:",
 		"gifSettings": {
 			"always": "Sempre",
 			"hover": "Ao passar o mouse",
 			"never": "Nunca"
 		},
+		"gradientColors": "Desabilitar gradientes",
 		"name": "Acessibilidade",
 		"playGif": "Tocar GIFs:",
 		"playIcon": "Tocar ícones animados:",
-		"roleColors": "Desabilitar cores dos cargo",
-		"gradientColors": "Desabilitar gradientes",
-		"decorations": "Habilitar decorações de avatar:"
+		"roleColors": "Desabilitar cores dos cargo"
 	},
 	"accountNotStart": "Conta falhou ao iniciar",
 	"add": "Adicionar",
@@ -135,6 +123,9 @@
 		"creating": "Criando canal",
 		"delete": "Apagar canal",
 		"deleteCat": "Apagar categoria",
+		"deleteThread": "Apagar tópico",
+		"forum": "Fórum",
+		"hideThreads": "Esconder após inatividade",
 		"icon": "Ícone:",
 		"makeInvite": "Criar convite",
 		"markRead": "Marcar como lido",
@@ -154,54 +145,7 @@
 		"topic:": "Tópico:",
 		"typebox": "Converse em $1",
 		"unmute": "Dessilenciar Canal",
-		"voice": "Voz",
-		"deleteThread": "Apagar tópico",
-		"hideThreads": "Esconder após inatividade",
-		"forum": "Fórum"
-	},
-	"threads": {
-		"leave": "Sair do tópico",
-		"join": "Entrar no tópico",
-		"name": "Nome:",
-		"editTags": "Editar tags"
-	},
-	"forum": {
-		"creorsear": "Crie ou procure por um post",
-		"next": "Próximo",
-		"back": "Anterior",
-		"newPost": "Fazer um novo post",
-		"post": "Postar",
-		"sortOptions": {
-			"sortby": {
-				"title": "Filtrar por",
-				"recent": "Ativo recentemente",
-				"posted": "Data de postagem"
-			},
-			"sortOrder": {
-				"title": "Filtrar ordem",
-				"recent": "Recentes primeiro",
-				"old": "Antigos primeiro"
-			},
-			"tagMatch": {
-				"title": "Etiqueta corresponde",
-				"some": "Corresponde a algumas etiquetas",
-				"all": "Corresponde a todas as tags"
-			},
-			"name": "Opções de filtragem"
-		},
-		"errors": {
-			"tagsReq": "Etiqueta são necessárias",
-			"requireText": "Mensagem não pode estar vazia"
-		},
-		"allTags": "Todas as etiquetas",
-		"settings": {
-			"editTags": "Editar etiquetas:",
-			"editTag": "Editar etiqueta",
-			"tagName": "Nome da etiqueta:",
-			"moderated": "Permitir que somente moderadores de tópicos apliquem etiqueta:",
-			"addTag": "Adicionar etiqueta",
-			"delTag": "Apagar etiqueta"
-		}
+		"voice": "Voz"
 	},
 	"channelLink": "# $1",
 	"clientDesc": "Versão do cliente: $1\n\n[Entre na guilda oficial do Fermo]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Ajude a traduzir o Fermo](https://localization.sovrahi.com/projects/fermo/) \n\n[Ajude a criar o Fermo](https://git.sovrahi.com/oh64/Fermo)\n\n[Ajude a manter o servidor que o Fermo depende](https://github.com/spacebarchat/server)\n\n\nDireitos calculados: $3",
@@ -225,9 +169,9 @@
 		"clearWellKnowns": "Re-obter registros .well-known",
 		"description": "Essas são para desenvolvedores do Spacebar/Fermo, se você não sabe o que está fazendo, por favor não mexa com elas.",
 		"gatewayComp": "Desabilitar compressão do Gateway",
-		"reportSystem": "Habilitar sistema experimental de denúncias",
 		"logGateway": "Registrar no console eventos de gateway:",
 		"name": "Configurações de desenvolvedor",
+		"reportSystem": "Habilitar sistema experimental de denúncias",
 		"traces": "Expôr traços:"
 	},
 	"deviceManage": {
@@ -247,6 +191,7 @@
 		"title": "Gerenciar sessões"
 	},
 	"discovery": "Descobrir",
+	"dismiss": "Ignorar",
 	"dms": "Mensagens Privadas",
 	"edit": "Editar",
 	"emoji": {
@@ -277,6 +222,44 @@
 	"form": {
 		"captcha": "Espera, você é humano?"
 	},
+	"forum": {
+		"allTags": "Todas as etiquetas",
+		"back": "Anterior",
+		"creorsear": "Crie ou procure por um post",
+		"errors": {
+			"requireText": "Mensagem não pode estar vazia",
+			"tagsReq": "Etiqueta são necessárias"
+		},
+		"newPost": "Fazer um novo post",
+		"next": "Próximo",
+		"post": "Postar",
+		"settings": {
+			"addTag": "Adicionar etiqueta",
+			"delTag": "Apagar etiqueta",
+			"editTag": "Editar etiqueta",
+			"editTags": "Editar etiquetas:",
+			"moderated": "Permitir que somente moderadores de tópicos apliquem etiqueta:",
+			"tagName": "Nome da etiqueta:"
+		},
+		"sortOptions": {
+			"name": "Opções de filtragem",
+			"sortOrder": {
+				"old": "Antigos primeiro",
+				"recent": "Recentes primeiro",
+				"title": "Filtrar ordem"
+			},
+			"sortby": {
+				"posted": "Data de postagem",
+				"recent": "Ativo recentemente",
+				"title": "Filtrar por"
+			},
+			"tagMatch": {
+				"all": "Corresponde a todas as tags",
+				"some": "Corresponde a algumas etiquetas",
+				"title": "Etiqueta corresponde"
+			}
+		}
+	},
 	"friends": {
 		"addfriend": "Adicionar como amigo",
 		"addfriendpromt": "Adicionar como amigo por nome de usuário:",
@@ -305,7 +288,6 @@
 	},
 	"guild": {
 		"COMMUNITY": "Aplicar para entrar",
-		"disableInvites": "Desabilitar convites:",
 		"DISCOVERABLE": "Descoberta",
 		"INVITES_DISABLED": "Somente convite",
 		"adminMenu": {
@@ -315,7 +297,6 @@
 			"owner": "Encontrar o dono",
 			"permission": "Permissões:"
 		},
-		"report": "Denunciar guilda",
 		"admins": "Encontrar Administradores",
 		"all": "Todas",
 		"banReason": "Motivo do banimento: $1",
@@ -335,6 +316,7 @@
 		"defaultNoti": "Configure a configuração de notificações padrão da sua guilda!",
 		"delete": "Apagar guilda",
 		"description:": "Descrição:",
+		"disableInvites": "Desabilitar convites:",
 		"disoveryTitle": "Descobrir guildas ($1 {{PLURAL:$1|guilda|guildas}})",
 		"editingTemplate": "Editando $1",
 		"emptytext": "Que curioso, essa guilda não tem nenhum canal!?",
@@ -360,6 +342,7 @@
 		"onlyMentions": "Somente @menções",
 		"overview": "Visão geral",
 		"region:": "Região:",
+		"report": "Denunciar guilda",
 		"roles": "Cargos",
 		"ruleId": "Canal de regras:",
 		"selectnoti": "Selecionar tipo de notificações:",
@@ -497,6 +480,7 @@
 		"addBot": "Adicionar bot",
 		"addStatus": "Adicionar status",
 		"advancedBot": "Configurações de bot avançadas",
+		"appID": "ID do aplicativo: $1",
 		"appName": "Nome do aplicativo:",
 		"areYouSureDelete": "Você tem certeza que quer apagar sua conta? Se sim, digite $1",
 		"badCode": "Código inválido",
@@ -509,6 +493,7 @@
 		"changePassword": "Mudar senha",
 		"changeUsername": "Mudar nome de usuário",
 		"clearCache": "Limpar cache",
+		"clientSecret": "Segredo do cliente: $1",
 		"confirmAddBot": "Tem certeza de que quer adicionar um bot a esta aplicação? Não tem volta.",
 		"confirmReset": "Tem certeza que quer resetar o token do bot? Seu bot vai parar de funcionar até que o atualize.",
 		"confuseNoBot": "Por algum motivo, esta aplicação não tem um bot (ainda)",
@@ -539,18 +524,16 @@
 		"oldPassword:": "Senha antiga:",
 		"password:": "Senha",
 		"privacyPolcyURL": "Link da política de privacidade:",
-		"appID": "ID do aplicativo: $1",
-		"showSecret": "Mostrar segredo do cliente",
-		"clientSecret": "Segredo do cliente: $1",
-		"secret": "Segredo",
 		"publicAvaliable": "Criar bot publicamente convidável?",
 		"refreshPage": "Recarregue para aplicar",
 		"requireCode": "Exigir código para convidar o bot?",
 		"resetToken": "Redefinir o Token",
 		"saveToken": "Salvar token para o localStorage",
+		"secret": "Segredo",
 		"setUp2fa": "Configuração do 2FA",
 		"setUp2faInstruction": "Copiar este segredo para seu aplicativo totp (gerenciador de senhas temporárias)",
 		"settings": "Configurações",
+		"showSecret": "Mostrar segredo do cliente",
 		"sillyDeleteConfirmPhrase": "Shrek é amor, shrek é vida",
 		"soundTooLarge": "O som que você tentou enviar é grande demais, tente novamente",
 		"status": "Status",
@@ -626,7 +609,6 @@
 		"andMore": "$1, e mais!",
 		"attached": "Enviou um anexo",
 		"delete": "Excluir mensagem",
-		"report": "Denunciar mensagem",
 		"deleted": "Mensagem excluída",
 		"edit": "Editar mensagem",
 		"edited": "editado",
@@ -634,20 +616,12 @@
 		"pin": "$1 fixou uma mensagem",
 		"reactedWith": "Reagiu com $1",
 		"reactionAdd": "Adicionar reação",
-		"threadOptions": "Opções do tópico",
 		"reactions": "Ver reações",
 		"reactionsTitle": "Reações",
+		"report": "Denunciar mensagem",
 		"retry": "Reenviar mensagem com erro",
+		"threadOptions": "Opções do tópico",
 		"viewrest": "Ver o resto"
-	},
-	"report": {
-		"back": "Voltar",
-		"next": "Próximo",
-		"cancel": "Cancelar",
-		"submit": "Enviar",
-		"blockUser": "Bloquear usuário",
-		"timeout": "Castigar membro",
-		"summary": "Sumário do reporte:"
 	},
 	"messageLink": "Mensageie # $1",
 	"muteDuration": "Dessilenciar em:",
@@ -659,60 +633,71 @@
 	"noStickers": "Isso é meio estranho, não tem nenhum adesivo aqui para usar!",
 	"notiClump": "Você recebeu $1 notificações de $2",
 	"notiVolume": "Volume da notificação:",
+	"ok": "Ok",
+	"onboarding": {
+		"addChannel": "Adicionar canal",
+		"channel": "Canal:",
+		"deleteChannel": "Apagar canal do onboarding",
+		"desc": "Descrição:",
+		"disable": "Desabilitar onboarding",
+		"enable": "Habilitar onboarding",
+		"name": "Onboarding",
+		"title": "Bem-vindo à $1"
+	},
 	"otherAt": "$1 às $2",
 	"permissions": {
 		"descriptions": {
+			"ADD_REACTIONS": "Permite que o usuário adicione reações às mensagens",
 			"ADMINISTRATOR": "Permite todas as permissões e ultrapassa permissões específicas. Esta é uma permissão perigosa!",
-			"MANAGE_GUILD": "Permite o gerenciamento e alterações da guilda",
-			"VIEW_AUDIT_LOG": "Permite que o usuário visualize o registro",
-			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Permite que o usuário visualize detalhes de assinatura de cargo",
-			"VIEW_GUILD_INSIGHTS": "Permite que o usuário veja detalhes da guilda",
-			"BYPASS_SLOWMODE": "Modo lento não afetará mais este usuário",
-			"MENTION_EVERYONE": "Permite que o usuário mencione everyone",
-			"MANAGE_NICKNAMES": "Permite que o usuário mude o apelido de outros membros",
-			"PIN_MESSAGES": "Permite o usuário fixar mensagens",
-			"SEND_POLLS": "Permite que o usuário envie enquetes",
-			"MANAGE_MESSAGES": "Permite que o usuário apague mensagens que não são suas",
-			"MANAGE_THREADS": "Permite que o usuário apague e arquive tópicos e que veja todos os tópicos privados",
-			"MANAGE_CHANNELS": "Permite que o usuário gerencie e altere canais",
-			"MANAGE_ROLES": "Permite que o usuário altere e gerencie cargos",
-			"MANAGE_WEBHOOKS": "Permite que o usuário gerencie e altere webhooks",
-			"CREATE_EVENTS": "Permite a criação de eventos programados e que altere e apague esses criados pelo usuário atual.",
-			"MANAGE_EVENTS": "Permite que o usuário altere e gerencie eventos",
-			"CREATE_GUILD_EXPRESSIONS": "Permite que o usuário crie emojis, adesivos, e sons da soundboard, e alterar e apagar esses criados pelo usuário atual.",
-			"MANAGE_GUILD_EXPRESSIONS": "Permite que o usuário gerencie emojis, adesivos e a soundboard",
-			"MODERATE_MEMBERS": "Permite que o usuário deixe outros usuários de castigo para previnir que mandem ou reajam a mensagens no chat e em tópicos, e que falem em canais de voz e canais stage",
-			"KICK_MEMBERS": "Permite que o usuário expulse membros da guilda",
+			"ATTACH_FILES": "Permite que o usuário anexe arquivos",
 			"BAN_MEMBERS": "Permite que o usuário faça o banimento de membros da guilda",
+			"BYPASS_SLOWMODE": "Modo lento não afetará mais este usuário",
+			"CHANGE_NICKNAME": "Permite que o usuário mude o próprio apelido",
+			"CONNECT": "Permite que o usuário conecte a um canal de voz",
+			"CREATE_EVENTS": "Permite a criação de eventos programados e que altere e apague esses criados pelo usuário atual.",
+			"CREATE_GUILD_EXPRESSIONS": "Permite que o usuário crie emojis, adesivos, e sons da soundboard, e alterar e apagar esses criados pelo usuário atual.",
+			"CREATE_INSTANT_INVITE": "Permite que o usuário crie convites para a guilda",
+			"CREATE_PRIVATE_THREADS": "Permite que o usuário crie tópicos privados",
+			"CREATE_PUBLIC_THREADS": "Permite que o usuário crie tópicos públicos",
+			"DEAFEN_MEMBERS": "Permite que o usuário ensurdeça outro membros",
+			"EMBED_LINKS": "Permite que links enviados por este usuário mostrem um embed",
+			"KICK_MEMBERS": "Permite que o usuário expulse membros da guilda",
+			"MANAGE_CHANNELS": "Permite que o usuário gerencie e altere canais",
+			"MANAGE_EVENTS": "Permite que o usuário altere e gerencie eventos",
+			"MANAGE_GUILD": "Permite o gerenciamento e alterações da guilda",
+			"MANAGE_GUILD_EXPRESSIONS": "Permite que o usuário gerencie emojis, adesivos e a soundboard",
+			"MANAGE_MESSAGES": "Permite que o usuário apague mensagens que não são suas",
+			"MANAGE_NICKNAMES": "Permite que o usuário mude o apelido de outros membros",
+			"MANAGE_ROLES": "Permite que o usuário altere e gerencie cargos",
+			"MANAGE_THREADS": "Permite que o usuário apague e arquive tópicos e que veja todos os tópicos privados",
+			"MANAGE_WEBHOOKS": "Permite que o usuário gerencie e altere webhooks",
+			"MENTION_EVERYONE": "Permite que o usuário mencione everyone",
+			"MODERATE_MEMBERS": "Permite que o usuário deixe outros usuários de castigo para previnir que mandem ou reajam a mensagens no chat e em tópicos, e que falem em canais de voz e canais stage",
 			"MOVE_MEMBERS": "Permite que o usuário mova membros entre canais de voz",
 			"MUTE_MEMBERS": "Permite que o usuário silencie outros membros",
-			"DEAFEN_MEMBERS": "Permite que o usuário ensurdeça outro membros",
-			"CHANGE_NICKNAME": "Permite que o usuário mude o próprio apelido",
-			"VIEW_CHANNEL": "Permite que o usuário veja o canal",
+			"PIN_MESSAGES": "Permite o usuário fixar mensagens",
+			"PRIORITY_SPEAKER": "Permite o uso de fala com prioridade em um canal de voz",
 			"READ_MESSAGE_HISTORY": "Permite que o usuário leia o histórico de mensagens",
-			"ADD_REACTIONS": "Permite que o usuário adicione reações às mensagens",
+			"REQUEST_TO_SPEAK": "Permite que o usuário peça para falar em um canal stage",
 			"SEND_MESSAGES": "Permite que o usuário envie mensagens",
 			"SEND_MESSAGES_IN_THREADS": "Permite que o usuário envie mensagens em tópicos",
+			"SEND_POLLS": "Permite que o usuário envie enquetes",
 			"SEND_TTS_MESSAGES": "Permite que o usuário envie mensagens texto-para-fala",
-			"USE_EXTERNAL_EMOJIS": "Permite que o usuário use emojis externos",
-			"USE_EXTERNAL_STICKERS": "Permite que o usuário use adesivos externos",
-			"EMBED_LINKS": "Permite que links enviados por este usuário mostrem um embed",
-			"ATTACH_FILES": "Permite que o usuário anexe arquivos",
 			"SEND_VOICE_MESSAGES": "Permite que o usuário envie mensagens de voz",
-			"CREATE_INSTANT_INVITE": "Permite que o usuário crie convites para a guilda",
-			"CREATE_PUBLIC_THREADS": "Permite que o usuário crie tópicos públicos",
-			"CREATE_PRIVATE_THREADS": "Permite que o usuário crie tópicos privados",
-			"CONNECT": "Permite que o usuário conecte a um canal de voz",
 			"SPEAK": "Permite que o usuário fale em um canal de voz",
-			"USE_VAD": "Permite que usuários falem em um canal de voz simplesmente falando",
 			"STREAM": "Permite que o usuário transmita",
-			"USE_SOUNDBOARD": "Permite que o usuário use a soundboard em um canal de voz",
-			"USE_EXTERNAL_SOUNDS": "Permite a utilização de sons customizados da soundboard de outras guildas",
-			"PRIORITY_SPEAKER": "Permite o uso de fala com prioridade em um canal de voz",
-			"REQUEST_TO_SPEAK": "Permite que o usuário peça para falar em um canal stage",
-			"USE_EMBEDDED_ACTIVITIES": "Permite que o usuário use atividades embutidas",
 			"USE_APPLICATION_COMMANDS": "Permite que o usuário utilize comandos de aplicação",
-			"USE_EXTERNAL_APPS": "Permite que aplicativos instalados pelo usuário enviem respostas públicas. Quando desabilitado, usuários ainda poderão usar seus aplicativos mas as respostas serão temporárias. Isso só se aplica a aplicativos não instalados na guilda."
+			"USE_EMBEDDED_ACTIVITIES": "Permite que o usuário use atividades embutidas",
+			"USE_EXTERNAL_APPS": "Permite que aplicativos instalados pelo usuário enviem respostas públicas. Quando desabilitado, usuários ainda poderão usar seus aplicativos mas as respostas serão temporárias. Isso só se aplica a aplicativos não instalados na guilda.",
+			"USE_EXTERNAL_EMOJIS": "Permite que o usuário use emojis externos",
+			"USE_EXTERNAL_SOUNDS": "Permite a utilização de sons customizados da soundboard de outras guildas",
+			"USE_EXTERNAL_STICKERS": "Permite que o usuário use adesivos externos",
+			"USE_SOUNDBOARD": "Permite que o usuário use a soundboard em um canal de voz",
+			"USE_VAD": "Permite que usuários falem em um canal de voz simplesmente falando",
+			"VIEW_AUDIT_LOG": "Permite que o usuário visualize o registro",
+			"VIEW_CHANNEL": "Permite que o usuário veja o canal",
+			"VIEW_CREATOR_MONETIZATION_ANALYTICS": "Permite que o usuário visualize detalhes de assinatura de cargo",
+			"VIEW_GUILD_INSIGHTS": "Permite que o usuário veja detalhes da guilda"
 		},
 		"readableNames": {
 			"ADD_REACTIONS": "Adicionar reações",
@@ -796,16 +781,25 @@
 	"renderJoinAvatars": "Mostrar avatares de membros novos:",
 	"reply": "Responder",
 	"replyingTo": "Respondendo a $1",
+	"report": {
+		"back": "Voltar",
+		"blockUser": "Bloquear usuário",
+		"cancel": "Cancelar",
+		"next": "Próximo",
+		"submit": "Enviar",
+		"summary": "Sumário do reporte:",
+		"timeout": "Castigar membro"
+	},
 	"retrying": "Tentando novamente…",
 	"role": {
 		"color": "Cor",
 		"colors": {
 			"name": "Número de cores:",
 			"one": "Uma",
-			"two": "Duas",
-			"three": "Três",
 			"secondColor": "Segunda cor:",
-			"thirdColor": "Terceira cor:"
+			"thirdColor": "Terceira cor:",
+			"three": "Três",
+			"two": "Duas"
 		},
 		"confirmDelete": "Tem certeza de que quer apagar $1?",
 		"copyId": "Copiar ID do cargo",
@@ -862,6 +856,12 @@
 	},
 	"submit": "Enviar",
 	"switchAccounts": "Trocar contas",
+	"threads": {
+		"editTags": "Editar tags",
+		"join": "Entrar no tópico",
+		"leave": "Sair do tópico",
+		"name": "Nome:"
+	},
 	"todayAt": "Hoje às $1",
 	"trace": {
 		"totalTime": "$2: $1ms",
@@ -879,8 +879,6 @@
 	"useTemplateButton": "Usar modelo",
 	"usedClient": "Usou $1",
 	"user": {
-		"report": "Denunciar usuário",
-		"reportApp": "Denunciar aplicativo",
 		"addRole": "Adicionar cargos",
 		"ban": "Banir membro",
 		"block": "Bloquear usuário",
@@ -905,6 +903,8 @@
 		"online": "Online",
 		"remove": "Remover usuário",
 		"removeRole": "Remover cargos",
+		"report": "Denunciar usuário",
+		"reportApp": "Denunciar aplicativo",
 		"sendMessage": "Conversar com @$1",
 		"timeout": "Castigar membro",
 		"unTimeout": "Remover Castigo do membro",
