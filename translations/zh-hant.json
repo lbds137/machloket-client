@@ -552,7 +552,7 @@
 		"tokenDisplay": "權杖：$1",
 		"trace": "軌跡",
 		"trusted": "信任網域",
-		"trustedDesc": "當您點擊導向這些網域的連結時，系統將『不會』像其他連結那樣要求您授權開啟。請僅將此權限授予您信任的網域，例如：'https://fermo.sovr.fyi'",
+		"trustedDesc": "當您點擊導向這些網域的連結時，系統將『不會』像其他連結那樣要求您授權開啟。請僅將此權限授予您信任的網域，例如：'https://fermo.sbar.fyi'",
 		"updateSettings": "更新設定",
 		"updatesYay": "已找到更新！",
 		"userSettings": "使用者設定"

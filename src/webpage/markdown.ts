@@ -1279,7 +1279,6 @@ class MarkDown {
 		}
 		return new Set([
 			location.host,
-			"*.sovr.fyi", // own and shortlink domain
 			"*.sovrahi.com", // Git domain
 			"*.sbar.fyi", // invite
 		]);
