@@ -3344,7 +3344,7 @@ span.instanceStatus {
 #userdock {
 	align-items: center;
 	justify-content: space-between;
-	padding: 4px 6px;
+	padding: 12px 6px;
 	background: var(--dock-bg);
 }
 
