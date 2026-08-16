@@ -401,6 +401,10 @@
 								"userField": "Nome de usuário:",
 								"welcomeJank": "Bem-vindo(a) ao Fermo"
 				},
+				"inbox": {
+								"mentions": "Azul e a cor do mar, mas porque azul e sua cor porque nem eu sei dizer o porquê da cor dela ser assim",
+								"unread": "Empatia"
+				},
 				"incorrectURLS": "## Esta instância provávelmente enviou as URLs incorretas.\n### Se você for o dono da instância por favor veja [isso](https://docs.spacebar.chat/setup/server/) após *Connecting from remote machines* para corrigir o problema.\n Você gostaria que o Fermo corigisse esse problema automáticamente para permitir que conecte a instância?",
 				"instInfo": "Informação da Instância",
 				"instanceInfo": {
