@@ -62,6 +62,7 @@
 				},
 				"accountNotStart": "Account kan niet worden gestart",
 				"add": "Toevoegen",
+				"addAccount": "Accounts toevoegen",
 				"applications": {
 								"delete": "Toepassing verwijderen",
 								"sure": "Weet u zeker dat u $1 wilt verwijderen?"
@@ -74,6 +75,7 @@
 								"bug_hunter_level_1": "Foutenjager niveau 1",
 								"bug_hunter_level_2": "Foutenjager niveau 2",
 								"certified_moderator": "Moderator",
+								"customBadgeNotice": "Eigen Fermo-badge. Dit wordt niet beheerd door Spacebar, of deze instantie's team.",
 								"early_supporter": "Eerste ondersteuner",
 								"guild_booster_lvl1": "Versterkt gilde",
 								"guild_booster_lvl2": "Versterkt gilde",
@@ -106,9 +108,17 @@
 								"wantUpdates": "Wilt u wekelijks actualiteiten ontvangen over de ontwikkeling van Fermo?"
 				},
 				"bot": "ROBOT",
+				"botExplorerLink": "Weergeven in de Spacebar-verkenner",
+				"botExplorerMaintainer": "Onderhouder: $1",
+				"botExplorerTitle": "Spacebar-verkenner",
 				"botGuilds": "Gilden waar de robot lid van is:",
 				"botSettings": "Robot-instellingen",
 				"cancel": "Annuleren",
+				"changelog": {
+								"ok": "OK",
+								"title": "Wat is er nieuw",
+								"viewButton": "Changelog weergeven"
+				},
 				"channel": {
 								"SlowmodeCool": "Afkoeltijd voor langzame modus: $1",
 								"TimeOutCool": "Time-out bereikt na: $1",
@@ -138,6 +148,12 @@
 								"settings": "Instellingen",
 								"settingsFor": "Instellingen voor $1",
 								"slowmode": "Langzame modus:",
+								"syncPerms": "Machtigingen synchroniseren naar kanalen",
+								"syncPermsCancel": "Annuleren",
+								"syncPermsConfirm": "Synchroniseren",
+								"syncPermsDesc": "Dit zal alle kanaal-machtigingen in deze categorie vervangen met die van de categorie.",
+								"syncPermsSuccess": "Machtigingen gesynchroniseerd!",
+								"syncPermsTitle": "Machtigingen synchroniseren?",
 								"text": "Tekst",
 								"timedOutUntil": "Time-out bereikt na: $1",
 								"topic:": "Onderwerp:",
@@ -166,6 +182,7 @@
 				"createAccount": "Account aanmaken",
 				"delete": "Verwijderen",
 				"deleteConfirm": "Weet u zeker dat u dit wilt verwijderen?",
+				"deleteConfirmPoll": "Bent u zeker dat u de enquete vroegtijdig wil afsluiten?",
 				"devSettings": {
 								"badUser": "Logging voor slechte gebruikersobjecten inschakelen die te veel gegevens verzenden:",
 								"cache": "Cachefunctie voor kaartbestanden van de Service Worker inschakelen:",
@@ -217,6 +234,7 @@
 				},
 				"emojiSelect": "Emoji:",
 				"errorReconnect": "Kan geen verbinding maken met de server. Het wordt over **$1** seconden opnieuw geprobeerd…",
+				"failedToLoadGifs": "Laden van GIFs mislukt.",
 				"favoriteGifs": "Favoriete GIF's",
 				"folder": {
 								"color": "Mapkleur:",
@@ -305,6 +323,7 @@
 								},
 								"admins": "Beheerders zoeken",
 								"all": "Alle",
+								"banId": "Verbannen met ID",
 								"banReason": "Reden voor ban: $1",
 								"bannedBy": "Verbannen door:",
 								"banner:": "Banner:",
@@ -331,6 +350,7 @@
 								"helpTips?": "Stuur nuttige tips voor uw gilde!",
 								"howJoin": "Hoe kunnen mensen zich bij uw gilde aansluiten?",
 								"icon:": "Pictogram:",
+								"idSel": "ID:",
 								"invites": "Uitnodigingen",
 								"joinConfirm": "Bij $1 aansluiten?",
 								"leave": "Gilde verlaten",
@@ -369,7 +389,7 @@
 								"templates": "Sjablonen",
 								"templcateMetaDesc": "Met een sjabloon kunnen anderen dit gilde gebruiken als basis voor hun eigen gilden. De kanalen, rollen en instellingen van dit gilde worden gekopieerd, maar niet de berichten binnen het gilde, de robots of het gildepictogram.",
 								"topic:": "Onderwerp:",
-								"unknownRole": "@unknown-role",
+								"unknownRole": "@onbekende-rol",
 								"viewTemplate": "Sjabloon bekijken",
 								"yesDelete": "Ja, ik weet het zeker",
 								"yesLeave": "Ja, ik weet het zeker"
@@ -391,7 +411,17 @@
 								"createAccount": "Account aanmaken",
 								"dobField": "Geboortedatum:",
 								"emailField": "E-mail:",
+								"featuresDesc1": "Snel een bot's informatie en links weergeven, zonder hier jaren achter te zoeken. Alle instanties rechstreeks ingeladen van de Spacebar-verkenner.",
+								"featuresDesc2": "Een nette, intuitieve interface die uit uw weg blijft, terwijl u alle macht krijgt die u nodig heeft.",
+								"featuresDesc3": "Volledige ondersteuning voor alle Spacebar-functies: kanalen, oproepen, reacties, uitnodigingen, machtigingen en meer.",
+								"featuresDesc4": "Werkt zonder probleem op PC's en mobiele appareten, zodat je verbonden kan blijven, waar je ook mag zijn.",
+								"featuresTitle": "Spacebar-verkenner integratie",
+								"featuresTitle2": "Simpel Maar Professioneel",
+								"featuresTitle3": "Alle Spacebar-functies",
+								"featuresTitle4": "PC & Mobiel Compatibel",
+								"heroSubtitle": "Een moderne, functie-rijke Spacebar client",
 								"idpermissions": "Hiermee kan de robot:",
+								"instanceError": "Kon lijst van instanties niet laden. Gelieve later opnieuw te proberen.",
 								"instanceField": "Server:",
 								"loaddesc": "Dit zou niet lang moeten duren",
 								"loadingText": "Fermo wordt geladen",
@@ -400,12 +430,24 @@
 								"openClient": "Cliënt openen",
 								"pw2Field": "Voer het wachtwoord opnieuw in:",
 								"pwField": "Wachtwoord:",
+								"startHere": "Start hier",
 								"switchaccounts": "Van account wisselen",
 								"trans": "Vertalen",
 								"transDesc": "U kunt helpen Fermo in uw eigen taal te vertalen!",
 								"transTitle": "Fermo vertalen",
 								"userField": "Gebruikersnaam:",
 								"welcomeJank": "Welkom bij Fermo"
+				},
+				"inbox": {
+								"directMessage": "Privébericht",
+								"markAllAsRead": "Alles markereren als gelezen",
+								"markAsRead": "Markeren als gelezen",
+								"mentionCount": "{{PLURAL:$1|$1 vermelding|$1 vermeldingen}}",
+								"mentions": "Vermeldingen",
+								"noUnreadChannels": "Geen ongelezen kanalen",
+								"noUnreadMentions": "Geen ongelezen vermeldingen",
+								"openChannel": "Kanaal openen",
+								"unread": "Ongelezen"
 				},
 				"incorrectURLS": "## Deze instantie heeft waarschijnlijk de verkeerde koppelingen verzonden.\n### Als u de eigenaar van de instantie bent, raadpleeg dan [hier](https://docs.spacebar.chat/setup/server/) onder *Verbinding maken vanaf externe machines* om het probleem op te lossen.\n Wilt u dat Fermo automatisch probeert deze fout te herstellen, zodat u verbinding kunt maken met de instantie?",
 				"instInfo": "Serverinformatie",
@@ -452,7 +494,8 @@
 								"never": "Nooit",
 								"noAccount": "Maak een account aan om de uitnodiging te accepteren",
 								"notFound": "De uitnodiging kon niet gevonden worden",
-								"subtext": "bij $1 in $2"
+								"subtext": "bij $1 in $2",
+								"used": "Gebruikte $1"
 				},
 				"inviteOptions": {
 								"12h": "12 uur",
@@ -483,6 +526,7 @@
 								"accentColor": "Thema-accentkleur:",
 								"accountSettings": "Accountinstellingen",
 								"addBot": "Robot toevoegen",
+								"addNewSound": "Nieuw geluid toevoegen",
 								"addStatus": "Status toevoegen",
 								"advancedBot": "Robotinstellingen voor gevorderden",
 								"appID": "Toepassing ID: $1",
@@ -515,7 +559,8 @@
 								"install": "Installeren",
 								"installDesc": "Na installeren kunt u Fermo in een eigen venster openen en als aparte app gebruiken! U kunt Fermo ook gewoon in de webbrowser blijven gebruiken en dan werkt het precies hetzelfde.",
 								"installJank": "Fermo installeren",
-								"language": "Taal:",
+								"invalidSoundFormat": "Gelieve een MP3, OGG of WebM bestand te uploaden",
+								"language": "Taal",
 								"manageBot": "Robot beheren",
 								"manageInstance": "Instantie beheren",
 								"mustTypePhrase": "Om uw account te verwijderen moet u de zin typen",
@@ -525,8 +570,24 @@
 								"newUsername": "Nieuwe gebruikersnaam:",
 								"noToken": "Het token is niet bekend en kan dus helaas niet worden opgeslagen in localStorage",
 								"noUpdates": "Geen updates gevonden",
+								"notificationSoundSection": "Notificatiegeluid",
 								"notisound": "Meldingsgeluid:",
 								"oldPassword:": "Oud wachtwoord:",
+								"openpanelDesc": "Fermo houdt data bij om de applicatie te verbeteren (performantie, bugs, gebruik van functies).\nWe sturen NOOIT persoonlijke gegens door, zoals conversaties, berichten, gilde-lijsten, etc.",
+								"openpanelDisableAnalytics": "Analytische data volledig uitschakelen",
+								"openpanelEnableAnalytics": "Analytische data inschakelen",
+								"openpanelModeDefaultDesc": "Stuurt gebruikersstatistieken (welke functies je vooral gebruikt, hoe lang het duurt om berichten te laden, performantie op mobiele apparen, etc) + foutmeldingen.\n**Geen persoonlijke data of berichtinhoud wordt verzameld.**",
+								"openpanelModeDefaultTitle": "Standaard (helpt on het meest, dank u wel!)",
+								"openpanelModeDisableDesc": "Alle analytische data uitschakelen.\nFermo werkt zoals normaal.",
+								"openpanelModeDisableTitle": "Uitgeschakeld",
+								"openpanelModeErrorSendingDesc": "Stuur technische foutmeldingen + een ping wanneer de applicatie opent/sluit.\nDit helpt ons sneller fouten op te lossen.",
+								"openpanelModeErrorSendingTitle": "Enkel fouten",
+								"openpanelModeJustPingDesc": "Stuurt een ping wanneer de applicatie opent of sluit.\nGeen details over je gebruik.\nAls niemand Fermo gebruikt, waarom zouden we dit dan onderhouden?",
+								"openpanelModeJustPingTitle": "Minimum",
+								"openpanelPromptDesc": "Kies de hoeveelheid data die u accepteert:",
+								"openpanelPromptPrivacy": "We sturen NOOIT conversaties, berichten, kanalen of gilde-lijsten door.",
+								"openpanelPromptTitle": "Help met het verbeteren van Fermo (Dit kunt U later in de instellingen aanpassen)",
+								"openpanelTitle": "OpenPanel",
 								"password:": "Wachtwoord",
 								"privacyPolcyURL": "Link privacybeleid:",
 								"publicAvaliable": "De robot publiekelijk uitnodigbaar maken?",
@@ -539,7 +600,10 @@
 								"setUp2faInstruction": "Kopieer dit geheim naar uw TOTP-app (Time-based One-Time Password) om uw 2FA aanmeldcode te genereren.",
 								"settings": "Instellingen",
 								"showSecret": "Clientgeheim weergeven",
-								"sillyDeleteConfirmPhrase": "Shrek is liefde, Shrek is leven",
+								"sillyDeleteConfirmPhrase": "Ja, ik ben het zeker, nu verwijderen",
+								"soundFile": "Audiobestand:",
+								"soundName": "Geluidsnaam:",
+								"soundNameTaken": "Een geluid met deze naam bestaat al",
 								"soundTooLarge": "Het geluid dat u probeerde te uploaden was te groot. Probeer het nog eens.",
 								"status": "Status",
 								"team:": "Team:",
@@ -549,6 +613,7 @@
 								"trace": "Sporen",
 								"trusted": "Vertrouwde domeinen",
 								"trustedDesc": "Wanneer u via koppelingen op dit domein komt, wordt u ***niet*** om toestemming gevraagd om deze te openen, zoals bij andere koppelingen. Geef dit alleen aan domeinen die u vertrouwt, zoals'https://fermo.sbar.fyi'.",
+								"trustedDomainPlaceholder": "example.com of *.example.com",
 								"updateSettings": "Instellingen bijwerken",
 								"updatesYay": "Updates gevonden!",
 								"userSettings": "Uw publieke profiel"
@@ -557,6 +622,7 @@
 								"allGood": "Alles goed",
 								"checking": "Server wordt gecontroleerd",
 								"enterPAgain": "Voer het nieuwe wachtwoord nogmaals in:",
+								"explorerNotice": "Als u een account maakte op de Spacebar-verkenner, log in met dezelfde referenties. Deze zijn Spacebar-referenties, en zijn dus onafhankelijk van welke client u gebruikt.",
 								"invalid": "Onjuiste instantie, probeer het nog eens",
 								"login": "Aanmelden",
 								"newPassword": "Nieuw wachtwoord:",
@@ -574,6 +640,7 @@
 								},
 								"logout": "Afmelden"
 				},
+				"makePoll": "Enquete aanmaken",
 				"manageInstance": {
 								"AreYouSureStop": "Weet u zeker dat u deze server wilt stoppen?",
 								"TokenFormats": {
@@ -618,9 +685,11 @@
 								"deleted": "Verwijderd bericht",
 								"edit": "Bericht bewerken",
 								"edited": "(bewerkt)",
+								"endPoll": "Enquete afsluiten",
 								"fullMessage": "Volledig bericht:",
 								"messages": "$1 {{PLURAL:$1|bericht|berichten}} >",
 								"pin": "$1 heeft een bericht vastgezet",
+								"pollRes": "$1's enquete $2 is afgesloten.",
 								"reactedWith": "Reageerde met $1",
 								"reactionAdd": "Reactie toevoegen",
 								"reactions": "Reacties bekijken",
@@ -629,6 +698,7 @@
 								"retry": "Bericht met fout opnieuw verzenden",
 								"thread": "$1 heeft een thread aangemaakt: $2",
 								"threadOptions": "Thread-opties",
+								"translate": "Vertalen",
 								"viewrest": "De rest bekijken"
 				},
 				"messageLink": "Bericht in # $1",
@@ -654,6 +724,15 @@
 				},
 				"otherAt": "$1 om $2",
 				"permissions": {
+								"categories": {
+												"advanced": "Geadvanceerde machtigingen",
+												"apps": "App-machtigingen",
+												"events": "Evenement-machtigingen",
+												"general": "Algemene machtigingen",
+												"membership": "Lidmachtigingen",
+												"text": "Tekstkanaal-machtigingen",
+												"voice": "Spraakkanaal-machtigingen"
+								},
 								"descriptions": {
 												"ADD_REACTIONS": "Hiermee kunnen rol-leden reacties op berichten in tekstkanalen toevoegen.",
 												"ADMINISTRATOR": "Geeft alle onderstaande machtigingen aan rolleden en omzeilt alle overschrijvingen van machtigingen. Alleen U en leden/bots die u volledig vertrouwt, zouden deze UITGEBREIDE machtiging mogen hebben!",
@@ -762,12 +841,35 @@
 								}
 				},
 				"pinMessage": "Bericht vastzetten",
+				"poll": {
+								"answers": "Antwoorden:",
+								"count": "$1 {{PLURAL:$1|stem|stemmen}} $2%",
+								"durCount": {
+												"1": "1 uur",
+												"168": "7 dagen",
+												"24": "24 uur",
+												"336": "14 dagen",
+												"4": "4 uur",
+												"72": "3 dagen",
+												"8": "8 uur"
+								},
+								"duration": "Duurtijd:",
+								"expires": "Verloopt: $1",
+								"mult": "Meerdere antwoorden toestaan:",
+								"newAnswer": "Nieuw antwoord",
+								"question": "Vraag:",
+								"tie": "Gelijkspel!",
+								"view": "Enquete weergeven",
+								"warning": "Waarschuwing: Enquetes worden niet door alle clients ondersteund, dus is het mogelijk dat sommigen deze niet zien, of niet kunnen beantwoorden.",
+								"winningAnswer": "Winnend antwoord: $1%"
+				},
 				"profile": {
 								"bio": "Over mij:",
 								"joined": "Account aangemaakt: $1",
 								"joinedMember": "Toegetreden tot $1: $2",
 								"mut": "Onderlinge gilden",
 								"mutFriends": "Wederzijdse vrienden",
+								"notes": "Gebruikersnota's",
 								"permInfo": "Machtigingen",
 								"userInfo": "Gebruikersinfo"
 				},
@@ -817,7 +919,7 @@
 								"hoisted": "Rolleden apart weergeven van online leden; ze worden weergegeven op basis van de hoogste rolgroep waartoe ze behoren:",
 								"mentionable": "Iedereen toestaan deze rol te pingen:",
 								"name": "Rolnaam:",
-								"perms": "Rechten",
+								"perms": "Machtigingen",
 								"remove": "Rol intrekken",
 								"roleEmoji": "Rol-emoji:",
 								"roleFileIcon": "Rolpictogram:",
@@ -844,6 +946,7 @@
 								"clear": "Wissen",
 								"img": "Afbeelding uploaden",
 								"save": "Wijzigingen opslaan",
+								"showAll": "Alle $1 weergeven",
 								"unsaved": "Voorzichtig, u hebt niet-opgeslagen wijzigingen",
 								"updates": {
 												"serviceWorkerMode": {
@@ -853,6 +956,23 @@
 																"title": "Service Worker-instelling",
 																"unregistered": "Uitgeschakeld (inclusief mediacache)"
 												}
+								}
+				},
+				"settingsCategories": {
+								"guild": {
+												"bans": "Verbanningen",
+												"community": "Gemeenschap",
+												"expressions": "Expressies",
+												"general": "Algemeen",
+												"integrations": "Integraties",
+												"roles": "Rollen"
+								},
+								"user": {
+												"accountSecurity": "Account & Beveiliging",
+												"application": "Applicatie",
+												"developerOptions": "Ontwikkelaarsopties",
+												"instanceInfo": "Instantie-informatie",
+												"profileAppearance": "Profiel & Weergave"
 								}
 				},
 				"showBlockedMessages": "U heeft deze gebruiker geblokkeerd. Klik om {{PLURAL:$1|het geblokkeerde bericht|de $1 geblokkeerde berichten}} te bekijken.",
@@ -871,6 +991,7 @@
 				},
 				"submit": "Opslaan",
 				"switchAccounts": "Van account wisselen ⇌",
+				"tenorMigrationInfo": "Tenor migratie-info",
 				"threads": {
 								"editTags": "Labels bewerken",
 								"join": "Aan discussie meedoen",
@@ -882,11 +1003,38 @@
 								"totalTime": "$2: $1ms",
 								"traces": "$1 ($2ms) $3"
 				},
+				"translation": {
+								"agree": "Akkoord",
+								"authConnect": "Log in",
+								"authRequiredText": "U heeft de limiet van anonieme vertalingen bereikt. Gelieve in the loggen met uw Sovahri-account om verder te gaan.",
+								"authRequiredTitle": "Inloggen verplicht",
+								"autoTranslate": "Zichtbare berichten automatisch vertalen",
+								"autoTranslateBlocked": "Automatische vertaling geblokeerd. Log in met Sovrahi om verder te gaan.",
+								"cancel": "Annuleren",
+								"capVerifying": "Verifieren",
+								"chooseLanguageTitle": "Kies een taal",
+								"confirmLanguage": "Confirmeren",
+								"confirmText": "De volledige text van uw bericht zal worden doorgestuurd naar <a href=\"https://sovrahi.com\">Sovrahi</a> voor vertaling.\nEnkel de tekst die u wilt vertalen wordt doorgestuurd, geen account-informatie, andere context etc. wordt gedeeld.\nUw data wordt nergens voor gebruikt, behalve voor het vertalen.\nSovrahi is ontwikkeld en onderhouden door oh64, die Sovrahi leidt en ook Fermo onderhoudt.\n\nWilt u verder gaan?",
+								"confirmTitle": "Bericht vertalen",
+								"errorAuth": "Authenticatie mislukt. Gelieve opnieuw te proberen.",
+								"errorRateLimited": "Vertalingslimiet bereikt. Gelieve later opnieuw te proberen.",
+								"errorUnexpected": "Vertaling mislukt. Gelieve later opnieuw te proberen.",
+								"hideTranslation": "Verberg vertaling",
+								"loading": "Vertalen…",
+								"targetLanguage": "Doeltaal:",
+								"translate": "Vertalen",
+								"translateTypingTitle": "Bericht vertalen",
+								"translated": "Vertaald",
+								"translatedByPrefix": "Vertaald door ",
+								"translationLanguage": "Vertalingstaal:",
+								"wantToHelpTranslate": "Wilt u mede helpen met Fermo vertalen? [Klik hier](https://localization.sovrahi.com/projects/fermo/) om te helpen."
+				},
 				"typing": "$2 {{PLURAL:$1|is|zijn}} aan het typen",
 				"unableToConnect": "Kan geen verbinding maken met de Spacebar-server. Probeer u af en weer aan te melden.",
 				"unableToPin": "Bericht kan niet worden vastgezet",
 				"unpinMessage": "Bericht losmaken",
 				"updateAv": "Updates beschikbaar",
+				"upload": "Bestanden uploaden",
 				"uploadBanner": "Banner uploaden:",
 				"uploadFilesText": "Upload hier uw bestanden!",
 				"uploadPfp": "Profielafbeelding uploaden:",
@@ -902,6 +1050,7 @@
 								"deleted": "Gebruiker verwijderd",
 								"dnd": "Niet storen",
 								"editNick": "Bijnaam bewerken",
+								"editProfile": "Profiel aanpassen",
 								"editServerProfile": "Gildeprofiel bewerken",
 								"friendReq": "Vriendschapsverzoek",
 								"idle": "Inactief",
@@ -926,7 +1075,8 @@
 								"unTimeout": "Time-out voor lid verwijderen",
 								"unban": "$1 ontbannen",
 								"unblock": "Gebruiker deblokkeren",
-								"viewBot": "Bot weergeven"
+								"viewBot": "Bot weergeven",
+								"viewProfile": "Profiel weergeven"
 				},
 				"userping": {
 								"resolving": "gebruiken aan het opzoeken",
