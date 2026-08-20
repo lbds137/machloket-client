@@ -19,6 +19,10 @@
 								"markRead": "Marcar como leído",
 								"name": "Mensajes Directos"
 				},
+				"UrlGen": "Bot generador de invitación",
+				"Voice": {
+								"userVol": "Volumen del usuario:"
+				},
 				"dismiss": "Descartar",
 				"inbox": {
 								"directMessage": "Mensaje Directo",
