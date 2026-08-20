@@ -21,6 +21,14 @@
 				},
 				"UrlGen": "Bot generador de invitación",
 				"Voice": {
+								"status": {
+												"badWS": "Mala respuesta de WS",
+												"conectionFailed": "Conexión fallida",
+												"done": "Conectado",
+												"left": "Dejó el chat de voz",
+												"makingOffer": "Haciendo oferta",
+												"noSDP": "Sin SDP"
+								},
 								"userVol": "Volumen del usuario:"
 				},
 				"dismiss": "Descartar",
