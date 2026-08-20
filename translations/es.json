@@ -27,7 +27,9 @@
 												"done": "Conectado",
 												"left": "Dejó el chat de voz",
 												"makingOffer": "Haciendo oferta",
-												"noSDP": "Sin SDP"
+												"noSDP": "Sin SDP",
+												"notconnected": "No conectado",
+												"sendingStreams": "Enviando audio"
 								},
 								"userVol": "Volumen del usuario:"
 				},
