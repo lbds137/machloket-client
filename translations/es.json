@@ -19,6 +19,19 @@
 								"markRead": "Marcar como leído",
 								"name": "Mensajes Directos"
 				},
+				"dismiss": "Descartar",
+				"inbox": {
+								"directMessage": "Mensaje Directo",
+								"markAllAsRead": "Marcar todo como leído",
+								"markAsRead": "Marcar como leído",
+								"mentionCount": "{{PLURAL:$1|$1 mención|$1 menciones}}",
+								"mentions": "Menciones",
+								"noUnreadChannels": "Sin canales no leídos",
+								"noUnreadMentions": "No hay menciones sin leer",
+								"openChannel": "Abrir canal",
+								"unread": "No leído"
+				},
+				"ok": "Ok",
 				"onboarding": {
 								"addChannel": "Añadir canal",
 								"channel": "Canal:",
