@@ -1,1 +1,12 @@
-{}
+{
+				"2faCode": "Código 2FA:",
+				"404": {
+								"404": "error:404 - Página no encontrada",
+								"app": "A la app",
+								"home": "Inicio",
+								"listtitle": "Tal vez quisiste ir a uno de estos lugares",
+								"login": "Iniciar sesión",
+								"report": "Si encontraste esta página en el cliente, por favor repórtelo a:",
+								"reset": "Perdí mi contraseña"
+				}
+}
