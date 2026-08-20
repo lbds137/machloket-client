@@ -29,7 +29,8 @@
 												"makingOffer": "Haciendo oferta",
 												"noSDP": "Sin SDP",
 												"notconnected": "No conectado",
-												"sendingStreams": "Enviando audio"
+												"sendingStreams": "Enviando audio",
+												"startingRTC": "Iniciando conexión RTC"
 								},
 								"userVol": "Volumen del usuario:"
 				},
