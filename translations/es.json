@@ -30,7 +30,11 @@
 												"noSDP": "Sin SDP",
 												"notconnected": "No conectado",
 												"sendingStreams": "Enviando audio",
-												"startingRTC": "Iniciando conexión RTC"
+												"startingRTC": "Iniciando conexión RTC",
+												"waitingMainWS": "Esperando WS Principal",
+												"waitingURL": "Esperando URL de Voz",
+												"wsAuth": "Esperando que el WS Autorize",
+												"wsOpen": "Esperando que el WS abra"
 								},
 								"userVol": "Volumen del usuario:"
 				},
