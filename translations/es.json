@@ -7,6 +7,26 @@
 								"listtitle": "Tal vez quisiste ir a uno de estos lugares",
 								"login": "Iniciar sesión",
 								"report": "Si encontraste esta página en el cliente, por favor repórtelo a:",
-								"reset": "Perdí mi contraseña"
+								"reset": "Perdí mi contraseña",
+								"title": "Parece que te has perdido",
+								"whatelse": "Que piensas que debería pasar?",
+								"whereever": "Donde sea que es esto"
+				},
+				"DMs": {
+								"add": "Agrega a alguien a este DM",
+								"close": "Cerrar Conversación",
+								"copyId": "Copiar id del Mensaje",
+								"markRead": "Marcar como leído",
+								"name": "Mensajes Directos"
+				},
+				"onboarding": {
+								"addChannel": "Añadir canal",
+								"channel": "Canal:",
+								"deleteChannel": "Eliminar canal del inicio",
+								"desc": "Descripción :",
+								"disable": "Desactivar \"Empezando\"",
+								"enable": "Activar \"Empezando\"",
+								"name": "Empezando",
+								"title": "Bienvenid@ a $1!"
 				}
 }
