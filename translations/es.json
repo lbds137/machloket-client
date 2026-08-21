@@ -38,6 +38,17 @@
 								},
 								"userVol": "Volumen del usuario:"
 				},
+				"accessibility": {
+								"gifSettings": {
+												"always": "Siempre",
+												"hover": "Al pasar mouse",
+												"never": "Nunca"
+								},
+								"name": "Accesibilidad",
+								"playGif": "Reproducir GIFs:",
+								"playIcon": "Reproducir iconos animados:",
+								"roleColors": "Desactivar colores de rol:"
+				},
 				"dismiss": "Descartar",
 				"inbox": {
 								"directMessage": "Mensaje Directo",
