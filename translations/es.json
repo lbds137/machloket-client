@@ -54,7 +54,14 @@
 				"accountNotStart": "Cuenta no inicia",
 				"add": "Agregar",
 				"applications": {
-								"delete": "Eliminar aplicación"
+								"delete": "Eliminar aplicación",
+								"sure": "Estas segur@ de eliminar $1?"
+				},
+				"badge": {
+								"active_developer": "Desarrollador Activo",
+								"application_guild_subscription": "tiene Premium",
+								"automod": "usa Automod",
+								"bot_commands": "soporta comandos"
 				},
 				"dismiss": "Descartar",
 				"inbox": {
