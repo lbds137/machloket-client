@@ -39,15 +39,22 @@
 								"userVol": "Volumen del usuario:"
 				},
 				"accessibility": {
+								"decorations": "Activar decoraciones de avatar:",
 								"gifSettings": {
 												"always": "Siempre",
 												"hover": "Al pasar mouse",
 												"never": "Nunca"
 								},
+								"gradientColors": "Desactivar gradiente:",
 								"name": "Accesibilidad",
 								"playGif": "Reproducir GIFs:",
 								"playIcon": "Reproducir iconos animados:",
 								"roleColors": "Desactivar colores de rol:"
+				},
+				"accountNotStart": "Cuenta no inicia",
+				"add": "Agregar",
+				"applications": {
+								"delete": "Eliminar aplicación"
 				},
 				"dismiss": "Descartar",
 				"inbox": {
