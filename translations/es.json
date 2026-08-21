@@ -69,7 +69,28 @@
 								"early_supporter": "Partidario temprano",
 								"guild_booster_lvl1": "Gremio potenciado",
 								"guild_booster_lvl9": "Potencio el gremio por un buen tiempo",
-								"hypesquad": "Vibesquad [NOMBRE TEMPORAL]"
+								"hypesquad": "Vibesquad [NOMBRE TEMPORAL]",
+								"hypesquad_house_1": "Audacia",
+								"hypesquad_house_2": "Excelencia",
+								"hypesquad_house_3": "Equilibrio",
+								"legacy_username": "Tiene nombre legacy",
+								"partner": "Patrocinador de la instancia",
+								"premium": "Premium",
+								"quest_completed": "terminó una tarea",
+								"staff": "Personal de la instancia",
+								"verified_developer": "Desarrollador Verificado"
+				},
+				"bio": "Descripción:",
+				"blankMessage": "Mensaje vacío",
+				"bot": "Bot",
+				"botExplorerLink": "Abrir en el Explorador",
+				"botExplorerMaintainer": "Mantenedor: $1",
+				"botExplorerTitle": "Explorador de Spacebar",
+				"botGuilds": "El bot del gremio está en:",
+				"botSettings": "Ajustes del bot",
+				"cancel": "Cancelar",
+				"channel": {
+								"SlowmodeCool": "Cooldown de modo lento: $1"
 				},
 				"dismiss": "Descartar",
 				"inbox": {
