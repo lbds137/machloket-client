@@ -208,7 +208,7 @@
 		}
 	},
 	"channelLink": "# $1",
-	"clientDesc": "客户端版本：$1 \n\n[加入 Fermo 官方公会]（$2/invite\n/USgYJo?instance=https%3A%2F%2Fspacebar.chat）\n\n[帮助翻译 Fermo]（https://localization.sovrahi.com/projects/fermo/）\n\n[帮助开发 Fermo]（https://git.sovrahi.com/oh64/Fermo）\n\n[帮助维护 Fermo 所依赖的服务器]（https://github.com/spacebarchat/server）\n\n\n计算权限：$3",
+	"clientDesc": "客户端版本：$1 \n\n[加入 Fermo 官方公会]($2/invite/USgYJo?instance=https%3A%2F%2Fspacebar.chat)\n\n[帮助翻译 Fermo](https://localization.sovrahi.com/projects/fermo/)\n\n[帮助开发 Fermo](https://git.sovrahi.com/oh64/Fermo)\n\n[帮助维护 Fermo 所依赖的服务器](https://github.com/spacebarchat/server)\n\n\n计算权限：$3",
 	"commands": {
 		"errorNotValid": "$1不是$2的有效选择",
 		"required": "$1是此命令的必要组成部分"
