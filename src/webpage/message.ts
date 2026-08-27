@@ -1242,6 +1242,15 @@ class Message extends SnowFlake {
 						member.subName(username);
 						const icon = member.getRoleIcon();
 						if (icon) username.after(icon);
+						const memberpronouns = member.pronouns || this.author.pronouns;
+						if (memberpronouns) {
+							const pronouns =
+								memberpronouns.length > 11 ? memberpronouns.slice(0, 11) + "..." : memberpronouns;
+							const pronounspan = document.createElement("span");
+							pronounspan.classList.add("pronouns");
+							pronounspan.textContent = `(${pronouns})`;
+							(icon || username).after(pronounspan);
+						}
 					} else {
 						this.author.subName(username);
 					}

@@ -4014,6 +4014,9 @@ span.instanceStatus {
 	cursor: default;
 	object-fit: contain;
 }
+.userwrap .pronouns {
+	margin-left: 4px;
+}
 
 .userwrap {
 	display: flex;

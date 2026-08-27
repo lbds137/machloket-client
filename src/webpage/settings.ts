@@ -68,7 +68,7 @@ export class Buttons implements OptionsElement<unknown> {
 		this.buttonList = buttonList;
 		const htmlarea = document.createElement("div");
 		htmlarea.classList.add("flexgrow", "settingsHTMLArea");
-		if (window.innerWidth <= 1012) htmlarea.classList.add("mobileHidden");
+		if (window.innerWidth <= 1012 && !hideButtons) htmlarea.classList.add("mobileHidden");
 		const buttonTable = this.generateButtons(htmlarea);
 		this.htmlarea = new WeakRef(htmlarea);
 		this.buttonTable = new WeakRef(buttonTable);
