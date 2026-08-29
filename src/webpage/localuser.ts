@@ -435,6 +435,7 @@ class Localuser {
 		this.perminfo.guilds ??= {};
 		this.perminfo.user ??= {};
 		this.perminfo.user.decorations ??= true;
+		this.perminfo.localuser ??= {};
 		this.serverurls = this.userinfo.serverurls;
 		this.initialized = false;
 		this.info = this.serverurls;
