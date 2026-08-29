@@ -877,11 +877,12 @@ class Message extends SnowFlake {
 		}
 	}
 
-	mentionsuser(userd: User | Member) {
+	mentionsuser(userd?: User | Member) {
+		if (!userd) return false;
 		if (this.mention_everyone) return true;
 		if (this.mentions.has(userd.id)) return true;
 		if (userd instanceof Member) {
-			return !this.mention_roles.isDisjointFrom(new Set(userd.roles));
+			return !this.mention_roles.isDisjointFrom(new Set(userd.roles)); //if the message mentions a role the user has
 		}
 		return false;
 	}
