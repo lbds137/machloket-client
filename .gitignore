@@ -143,3 +143,5 @@ dependency-graph.svg
 
 # translations
 src/webpage/translations/*.json
+
+commit.txt
