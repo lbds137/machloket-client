@@ -115,7 +115,7 @@ class MediaGallery extends compObj {
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "mediaDisp");
 		const items = this.items.map((elm) => {
-			const img = elm.media.getHTML(undefined, undefined, undefined, 150);
+			const img = elm.media.getHTML();
 			img.classList.add("mediaDispImg");
 			return img;
 		});

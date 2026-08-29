@@ -11,7 +11,7 @@ class Member extends SnowFlake {
 	static already = {};
 	owner: Guild;
 	user: User;
-	roles: Role[] = [];
+	roleIds = new Set<string>();
 	nick!: string;
 	avatar: void | string = undefined;
 	banner: void | string = undefined;
@@ -361,22 +361,7 @@ class Member extends SnowFlake {
 					memberjson.roles = (memberjson.roles as any[]).map((_) => _.id);
 					console.error("Member role is incorrectly sent as role object instead of role ID");
 				}
-				this.roles = [];
-				for (const strrole of memberjson.roles) {
-					const role = this.guild.roleids.get(strrole);
-					if (!role) {
-						console.warn(strrole + " is not in ", this.guild.roleids);
-						continue;
-					}
-					this.roles.push(role);
-				}
-
-				if (!this.user.bot) {
-					const everyone = this.guild.roleids.get(this.guild.id);
-					if (everyone && this.roles.indexOf(everyone) === -1) {
-						this.roles.push(everyone);
-					}
-				}
+				this.roleIds = new Set(memberjson.roles);
 				continue;
 			}
 			if (key === "presence") {
@@ -386,14 +371,6 @@ class Member extends SnowFlake {
 			(this as any)[key] = (memberjson as any)[key];
 		}
 
-		const everyone = this.guild.roleids.get(this.guild.id);
-		if (everyone && this.roles.indexOf(everyone) === -1) {
-			this.roles.push(everyone);
-		}
-
-		this.roles.sort((a, b) => {
-			return this.guild.roles.indexOf(a) - this.guild.roles.indexOf(b);
-		});
 		if (changeNick) {
 			this.nameChange();
 		}

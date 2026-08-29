@@ -100,7 +100,7 @@ class Message extends SnowFlake {
 	embeds: Embed[] = [];
 	author!: User;
 	mentions = new Set<string>();
-	mention_roles = new Set<string>();
+	mention_roles = new Set<Role>();
 	mention_everyone!: boolean;
 	attachments: File[] = []; //probably should be its own class tbh, should be Attachments[]
 	message_reference?: {
@@ -451,7 +451,6 @@ class Message extends SnowFlake {
 		dio.options.addHTMLArea(div);
 		dio.show();
 	}
-	nonce: string = "";
 	setEdit() {
 		const prev = this.channel.editing;
 		this.channel.editing = this;
@@ -564,13 +563,16 @@ class Message extends SnowFlake {
 		if (messagejson.author.id) {
 			this.author = new User(messagejson.author, this.localuser, false);
 		}
-		if (messagejson.mentions) this.mentions = messagejson.mentions;
+		if (messagejson.mentions)
+			this.mentions = new Set((messagejson.mentions as {id: string}[]).map(({id}) => id));
 
-		this.mention_roles = (messagejson.mention_roles || [])
-			.map((role: string | {id: string}) => {
-				return this.guild.roleids.get(role instanceof Object ? role.id : role);
-			})
-			.filter((_) => _ !== undefined);
+		this.mention_roles = new Set(
+			(messagejson.mention_roles || [])
+				.map((role: string | {id: string}) => {
+					return this.guild.roleids.get(role instanceof Object ? role.id : role);
+				})
+				.filter((_): _ is Role => _ !== undefined),
+		);
 
 		if (!this.member && this.guild.id !== "@me") {
 			this.author.resolvemember(this.guild).then((_) => {
@@ -877,17 +879,11 @@ class Message extends SnowFlake {
 
 	mentionsuser(userd: User | Member) {
 		if (this.mention_everyone) return true;
-		if (userd instanceof User) {
-			return !!this.mentions.find(({id}) => id == userd.id);
-		} else if (userd instanceof Member) {
-			if (!!this.mentions.find(({id}) => id == userd.id)) {
-				return true;
-			} else {
-				return !new Set(this.mention_roles).isDisjointFrom(new Set(userd.roles)); //if the message mentions a role the user has
-			}
-		} else {
-			return false;
+		if (this.mentions.has(userd.id)) return true;
+		if (userd instanceof Member) {
+			return !this.mention_roles.isDisjointFrom(new Set(userd.roles));
 		}
+		return false;
 	}
 	getimages() {
 		const build: File[] = [];
