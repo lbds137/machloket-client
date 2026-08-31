@@ -233,7 +233,7 @@
         "upload": "Emoji's uploaden"
     },
     "emojiSelect": "Emoji:",
-    "errorReconnect": "Kan geen verbinding maken met de server. Het wordt over **$1** seconden opnieuw geprobeerd…",
+    "errorReconnect": "Kan geen verbinding maken met de server. We proberen in **$1** seconden opnieuw…",
     "failedToLoadGifs": "Laden van GIFs mislukt.",
     "favoriteGifs": "Favoriete GIF's",
     "folder": {
