@@ -137,6 +137,7 @@ const buildPlugin = () => ({
 
 export default defineConfig({
 	root: resolve(__dirname, "src/webpage"),
+	envPrefix: ["VITE_", "FORCELOCALINSTANCE"],
 
 	build: {
 		sourcemap: "hidden",

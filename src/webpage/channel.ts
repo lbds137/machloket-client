@@ -39,6 +39,8 @@ import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
 
+const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
+
 async function createFermoNonce(): Promise<string> {
 	const Rev = await (await fetch("/getupdates")).text();
 	const shortRev = Rev.slice(0, 7);
@@ -2137,8 +2139,16 @@ class Channel extends SnowFlake {
 
 		const messageContent = document.createElement("span");
 		messageContent.classList.add("messageForumContent");
-		if (message) messageContent.append(message.content.makeHTML());
-		else messageContent.textContent = I18n.message.deleted();
+		if (message) {
+			const raw = message.content.rawString;
+			const preview =
+				raw.length <= FORUM_MESSAGE_PREVIEW_MAX_LENGTH
+					? raw
+					: raw.slice(0, FORUM_MESSAGE_PREVIEW_MAX_LENGTH - 3) + "...";
+			messageContent.append(new MarkDown(preview, message.channel).makeHTML());
+		} else {
+			messageContent.textContent = I18n.message.deleted();
+		}
 
 		const mrow = document.createElement("div");
 		mrow.classList.add("flexltr");

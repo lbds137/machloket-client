@@ -140,7 +140,7 @@ export async function makeLogin(
 	const a = document.createElement("a");
 	a.onclick = () => {
 		dialog.hide();
-		makeRegister(trasparentBg, "", handle);
+		makeRegister(trasparentBg, picker.input.value, handle);
 	};
 	a.textContent = I18n.htmlPages.noAccount();
 	rec = document.createElement("div");

@@ -16,8 +16,13 @@ If there are any issues please report them either here, or to me dirrectly on sp
 
 ## Adding instances to the dropdown
 
-Fermo use the spacebar explorer instance list to the dropdown picker.
-https://git.sovrahi.com/oh64/spacebar-explorer
+By default, Fermo uses the [Spacebar Explorer](https://git.sovrahi.com/oh64/spacebar-explorer) instance list.
+
+To use a local list instead, edit `src/webpage/public/instances.json`. Each entry must contain a `name`, an `icon` URL, and an instance `url`; the file can contain any number of entries. Build with the local list enabled using:
+
+```sh
+FORCELOCALINSTANCE=1 npm run build
+```
 
 ## How to statically host Fermo
 

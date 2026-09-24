@@ -1278,6 +1278,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 	verify = document.createElement("p");
 	onchange = (_: InstanceInfo) => {};
 	instance?: string;
+	validation = 0;
 	watchForChange(func: (arg1: InstanceInfo) => void) {
 		this.onchange = func;
 	}
@@ -1305,11 +1306,9 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		div.append(verify);
 
 		const input = this.input;
-		input.value =
-			this.instance ||
-			new URLSearchParams(window.location.search).get("instance") ||
-			"spacebar.chat";
-		input.readOnly = !!new URLSearchParams(window.location.search).get("instance");
+		const queryInstance = new URLSearchParams(window.location.search).get("instance");
+		input.value = this.instance || queryInstance || "spacebar.chat";
+		input.readOnly = !!queryInstance;
 		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
 		input.setAttribute("list", "instances");
@@ -1318,10 +1317,8 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		input.onkeyup = async () => {
 			const thiscur = ++cur;
 			await new Promise((res) => setTimeout(res, 500));
-			if (thiscur !== cur) return;
-			const urls = await checkInstance(input.value, verify, this.button);
-			if (thiscur === cur && urls) {
-				this.onchange(urls);
+			if (thiscur === cur) {
+				this.validate();
 			}
 		};
 
@@ -1332,8 +1329,20 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 	}
 	button?: HTMLButtonElement;
 	input = document.createElement("input");
+	async validate() {
+		const validation = ++this.validation;
+		const urls = await checkInstance(this.input.value, this.verify, this.button);
+		if (validation === this.validation && urls) {
+			this.onchange(urls);
+		}
+	}
 	giveButton(button: HTMLButtonElement | undefined) {
 		this.button = button;
+		if (this.input.value) {
+			this.validate();
+		} else if (button) {
+			button.disabled = true;
+		}
 	}
 	static picker?: InstancePicker;
 	static genDataList() {
@@ -1352,34 +1361,21 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			return;
 		}
 
-		if (json.length !== 0) {
-			let name =
-				this.picker?.instance ||
-				new URLSearchParams(window.location.search).get("instance") ||
-				"spacebar.chat";
-			if (!name) {
-				const l = localStorage.getItem("instanceinfo");
-				if (l) {
-					const json = JSON.parse(l);
-					if (json.value) {
-						name = json.value;
-					} else {
-						name = json.wellknown;
-					}
-				}
-			}
-			if (!name) {
-				name = json[0].name;
-			}
-			if (this.picker) {
-				checkInstance(
-					name,
-					this.picker.verify,
-					this.picker.button || document.createElement("button"),
-				).then((e) => {
-					if (e) this.picker?.onchange(e);
-				});
-				this.picker.input.value = name;
+		const getInstanceUrl = (instance: ReturnType<typeof getInstances>[number]) =>
+			instance.url || instance.urls?.wellknown;
+		const defaultInstance = json.find(
+			(instance) =>
+				instance.display !== false && instance.online !== false && getInstanceUrl(instance),
+		);
+		const picker = this.picker;
+		const value =
+			picker?.instance ||
+			new URLSearchParams(window.location.search).get("instance") ||
+			(defaultInstance ? getInstanceUrl(defaultInstance) : undefined);
+		if (picker && value) {
+			picker.input.value = value;
+			if (picker.button) {
+				picker.validate();
 			}
 		}
 
@@ -1393,14 +1389,16 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			}
 			const option = document.createElement("option");
 			option.disabled = instance.online === false;
-			option.value = instance.name;
-			if (instance.url) {
-				stringURLMap.set(option.value.toLowerCase(), instance.url);
-				if (instance.urls) {
-					stringURLsMap.set(instance.url, instance.urls);
+			const url = getInstanceUrl(instance);
+			option.value = url || "";
+			if (url) {
+				const name = instance.name.toLowerCase();
+				if (name !== url.toLowerCase()) {
+					stringURLMap.set(name, url);
 				}
-			} else if (instance.urls) {
-				stringURLsMap.set(option.value.toLowerCase(), instance.urls);
+				if (instance.urls) {
+					stringURLsMap.set(url.toLowerCase(), instance.urls);
+				}
 			} else {
 				option.disabled = true;
 			}

@@ -392,7 +392,13 @@ export function getViewportWidth() {
 
 const datalist = document.getElementById("instances");
 console.warn(datalist);
-const catalogInstancesUrl = "https://sbar.fyi/api/catalog/instances";
+const forceLocalInstance = import.meta.env.FORCELOCALINSTANCE === "1";
+export const instanceCatalogAssetBaseUrl = forceLocalInstance
+	? window.location.origin
+	: "https://sbar.fyi";
+const catalogInstancesUrl = forceLocalInstance
+	? new URL("/instances.json", window.location.origin).href
+	: "https://sbar.fyi/api/catalog/instances";
 type CatalogInstance = {
 	id: string;
 	name: string;
@@ -404,38 +410,57 @@ type CatalogInstance = {
 	level?: number;
 	link?: string;
 };
-function normalizeCatalogInstance(instance: CatalogInstance) {
-	const image = instance.icon || instance.images?.[0];
+type LocalInstance = {
+	name: string;
+	icon: string;
+	url: string;
+};
+export type InstanceCatalogInstance = CatalogInstance | LocalInstance;
+export const instanceCatalogFetch = fetch(catalogInstancesUrl).then(async (res) => {
+	if (!res.ok) {
+		throw new Error("Failed to fetch instance catalog");
+	}
+	return (await res.json()) as InstanceCatalogInstance[];
+});
+function normalizeCatalogInstance(instance: InstanceCatalogInstance) {
+	let image: string | undefined;
+	let url: string | undefined;
+	let description: string | undefined;
+	let descriptionLong: string | undefined;
+	let display = true;
+	if ("url" in instance) {
+		image = instance.icon;
+		url = instance.url;
+	} else {
+		image = instance.icon || instance.images?.[0];
+		url = instance.link;
+		description = instance.short;
+		descriptionLong = instance.description;
+		display = !instance.tags?.includes("hidden");
+	}
 	return {
 		name: instance.name,
-		description: instance.short,
-		descriptionLong: instance.description,
-		image: image ? new URL(image, catalogInstancesUrl).href : undefined,
-		url: instance.link,
-		display: !instance.tags?.includes("hidden"),
+		description,
+		descriptionLong,
+		image: image ? new URL(image, instanceCatalogAssetBaseUrl).href : undefined,
+		url,
+		display,
 		online: undefined,
 		uptime: undefined,
 		urls: undefined,
 	};
 }
-export const instancefetch = fetch(catalogInstancesUrl)
-	.then(async (res) => {
-		if (!res.ok) {
-			throw new Error("Failed to fetch instance catalog");
-		}
-		return (await res.json()) as CatalogInstance[];
-	})
-	.then(
-		async (json: CatalogInstance[]) => {
-			await I18n.done;
-			instances = json.map(normalizeCatalogInstance);
-			instancesLoaded = true;
-		},
-		() => {
-			instances = [];
-			instancesLoaded = true;
-		},
-	);
+export const instancefetch = instanceCatalogFetch.then(
+	async (json: InstanceCatalogInstance[]) => {
+		await I18n.done;
+		instances = json.map(normalizeCatalogInstance);
+		instancesLoaded = true;
+	},
+	() => {
+		instances = [];
+		instancesLoaded = true;
+	},
+);
 
 const catalogBotsUrl = "https://sbar.fyi/api/catalog/bots";
 type CatalogBot = {

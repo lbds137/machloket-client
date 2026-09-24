@@ -92,7 +92,7 @@ export async function makeRegister(
 	const a = document.createElement("a");
 	a.onclick = () => {
 		dialog.hide();
-		makeLogin(trasparentBg);
+		makeLogin(trasparentBg, picker.input.value, handle);
 	};
 	a.textContent = I18n.htmlPages.alreadyHave();
 	form.addHTMLArea(a);
