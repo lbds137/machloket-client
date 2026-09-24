@@ -32,6 +32,8 @@ import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {trimTrailingSlashes} from "./utils/netUtils.js";
+import {ImagesDisplay} from "./disimg.js";
+import {File} from "./file.js";
 
 type customBadgeDefinition = {
 	important?: boolean;
@@ -1636,6 +1638,22 @@ class User extends SnowFlake {
 		};
 		div.classList.add("centeritem", "profile");
 
+		const showProfileImage = (url: string | undefined) => {
+			if (!url) return;
+			const display = new ImagesDisplay([
+				new File(
+					{
+						id: "profile-image",
+						filename: "profile-image",
+						content_type: "image/",
+						url,
+						size: 0,
+					},
+					null,
+				),
+			]);
+			display.show();
+		};
 		if (this.accent_color) {
 			div.style.setProperty(
 				"--accent_color",
@@ -1645,6 +1663,10 @@ class User extends SnowFlake {
 			div.style.setProperty("--accent_color", "transparent");
 		}
 		const banner = this.getBanner(guild);
+		banner.onclick = async () => {
+			const member = await membres;
+			showProfileImage(member?.getBannerUrl() ?? this.getBannerUrl());
+		};
 		div.append(banner);
 		membres.then((member) => {
 			if (!member) return;
@@ -1694,6 +1716,10 @@ class User extends SnowFlake {
 		})();
 
 		const pfp = this.buildstatuspfp(guild);
+		pfp.onclick = async () => {
+			const member = await membres;
+			showProfileImage(member?.getpfpsrc() ?? this.getpfpsrc(undefined));
+		};
 		div.appendChild(pfp);
 		const userbody = document.createElement("div");
 		userbody.classList.add("flexttb", "infosection");
