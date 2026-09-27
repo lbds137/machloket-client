@@ -1525,6 +1525,11 @@ textarea:focus {
 	mask-size: contain !important;
 }
 
+.svg-file {
+	mask: url(./icons/file.svg);
+	mask-size: contain !important;
+}
+
 .svg-upload {
 	width: 0.2in !important;
 	cursor: pointer;
@@ -4538,6 +4543,16 @@ img.bigembedimg {
 	padding: 4px;
 	border-radius: 4px;
 	background: var(--secondary-bg);
+}
+
+.unknownfile .fileicon {
+	width: 32px;
+	padding-right: 6px;
+}
+
+.unknownfile .fileicon .svgicon {
+	width: 32px;
+	height: 32px;
 }
 
 .acceptinvbutton {

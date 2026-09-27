@@ -252,7 +252,6 @@ class File {
 		);
 	}
 	createunknown(url: Promise<string> | void): HTMLElement {
-		console.log("🗎");
 		const src = this.proxy_url || this.url;
 		const div = document.createElement("table");
 		div.classList.add("unknownfile");
@@ -260,7 +259,10 @@ class File {
 		div.append(nametr);
 		const fileicon = document.createElement("td");
 		nametr.append(fileicon);
-		fileicon.append("🗎");
+		// An SVG, not "🗎" (U+1F5CE): phones' emoji fonts lack it and showed "?".
+		const glyph = document.createElement("span");
+		glyph.classList.add("svgicon", "svg-file");
+		fileicon.append(glyph);
 		fileicon.classList.add("fileicon");
 		fileicon.rowSpan = 2;
 		const nametd = document.createElement("td");
