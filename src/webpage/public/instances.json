@@ -2,7 +2,13 @@
 	{
 		"name": "Machloket",
 		"icon": "/logo.svg",
-		"description": "the owner's Spacebar instance on the machine serving this client",
+		"description": "the owner's Spacebar instance, over Tailscale (https)",
+		"url": "https://{hostname}:8443"
+	},
+	{
+		"name": "Machloket (local)",
+		"icon": "/logo.svg",
+		"description": "the owner's Spacebar instance, from the Deck or the LAN (http)",
 		"url": "http://{hostname}:3001"
 	}
 ]

@@ -10,7 +10,7 @@ If there are any issues please report them either here, or to me dirrectly on sp
 
 ## Adding instances to the dropdown
 
-Machloket reads its instance list only from `src/webpage/public/instances.json` (upstream Fermo used the Spacebar Explorer catalog instead). Each entry has a `name` and an instance `url`, plus an optional `icon` URL and `description`. The first entry is the default for new logins. In a `url`, `{hostname}` stands for the host the client was loaded from, so `http://{hostname}:3001` reaches an instance on the same machine as the client, from that machine or from another device on the LAN.
+Machloket reads its instance list only from `src/webpage/public/instances.json` (upstream Fermo used the Spacebar Explorer catalog instead). Each entry has a `name` and an instance `url`, plus an optional `icon` URL and `description`. New logins default to the first entry whose scheme matches the page's (an https page can't call an http instance), else the first usable entry. In a `url`, `{hostname}` stands for the host the client was loaded from: `http://{hostname}:3001` reaches an instance on the same machine as the client, from that machine or another device on the LAN, and `https://{hostname}:8443` reaches it through Tailscale serve.
 
 ## How to statically host Fermo
 

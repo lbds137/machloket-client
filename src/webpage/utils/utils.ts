@@ -1123,13 +1123,21 @@ export function getInstances() {
 	return instances ?? [];
 }
 
-/** The instance a new login starts on: the first usable listed one. Valid once `instancefetch` settles. */
-export function getDefaultInstanceUrl(): string | undefined {
+/**
+ * The instance a new login starts on: the first usable listed one whose scheme matches the
+ * page's, else the first usable one. Valid once `instancefetch` settles.
+ */
+export function getDefaultInstanceUrl(protocol = window.location.protocol): string | undefined {
+	// Same scheme as the page: an https page can't call an http instance (mixed content), and
+	// an http page is usually where the https address isn't reachable (the Deck itself).
+	let fallback: string | undefined;
 	for (const instance of getInstances()) {
 		const url = instance.url || instance.urls?.wellknown;
-		if (instance.display !== false && instance.online !== false && url) return url;
+		if (instance.display === false || instance.online === false || !url) continue;
+		if (URL.canParse(url) && new URL(url).protocol === protocol) return url;
+		fallback ??= url;
 	}
-	return undefined;
+	return fallback;
 }
 
 export function isInstanceListLoaded() {

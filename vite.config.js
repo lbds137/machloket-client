@@ -169,6 +169,8 @@ export default defineConfig({
 	server: {
 		port: 8080,
 		host: true,
+		// Tailscale serve proxies https://deck.TAILNET-REDACTED (the owner's tailnet only) to this server.
+		allowedHosts: [".TAILNET-REDACTED"],
 		hmr: {
 			overlay: true,
 		},

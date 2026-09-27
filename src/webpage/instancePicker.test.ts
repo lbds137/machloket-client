@@ -56,10 +56,19 @@ describe("instance list", () => {
 		await instancefetch;
 
 		expect(getInstances().map((instance) => instance.url)).toEqual([
+			`https://${location.hostname}:8443`,
 			`http://${location.hostname}:3001`,
 			"http://other.test",
 		]);
-		expect(getDefaultInstanceUrl()).toBe(`http://${location.hostname}:3001`);
+	});
+
+	it("defaults to the first instance using the page's own scheme", async () => {
+		// An https page can't call an http instance (mixed content), and the http page on the
+		// Deck can't reach the tailnet https address.
+		await instancefetch;
+
+		expect(getDefaultInstanceUrl("https:")).toBe(`https://${location.hostname}:8443`);
+		expect(getDefaultInstanceUrl("http:")).toBe(`http://${location.hostname}:3001`);
 	});
 });
 
