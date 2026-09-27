@@ -148,3 +148,6 @@ commit.txt
 
 # Vitest browser-mode failure screenshots
 .vitest/
+
+# Agent git worktrees (Claude Code)
+.claude/worktrees/
