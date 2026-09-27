@@ -10,6 +10,7 @@ import "./utils/pollyfills.js";
 import {makeLogin} from "./login.js";
 import {Hover} from "./hover.js";
 import "./templatePage.js";
+import {installDrawerSwipe} from "./utils/drawerSwipe.js";
 import "./more.js";
 import "./recover.js";
 import "./home.js";
@@ -566,7 +567,6 @@ if (window.location.pathname.startsWith("/channels")) {
 	if (mobile) {
 		const channelWrapper = document.getElementById("channelw") as HTMLDivElement;
 		const mainArea = document.getElementById("mainarea") as HTMLDivElement;
-		const channelList = document.querySelector<HTMLDivElement>(".channelflex");
 		const maintoggle = document.getElementById("maintoggle") as HTMLInputElement | null;
 		const updateViewportHeight = () => {
 			document.documentElement.style.setProperty(
@@ -655,44 +655,12 @@ if (window.location.pathname.startsWith("/channels")) {
 				ignoreChannelWrapperClick = true;
 			}
 		});
-		if (channelList) {
-			let listGesture: "none" | "horizontal" | "vertical" = "none";
-			let listStartX = 0;
-			let listStartY = 0;
-			let listDeltaX = 0;
-			channelList.addEventListener(
-				"touchstart",
-				(event) => {
-					if (event.touches.length !== 1) return;
-					listGesture = "none";
-					listStartX = event.touches[0].pageX;
-					listStartY = event.touches[0].pageY;
-					listDeltaX = 0;
-				},
-				{passive: true},
-			);
-			channelList.addEventListener(
-				"touchmove",
-				(event) => {
-					if (event.touches.length !== 1) return;
-					const target = event.target as HTMLElement | null;
-					if (target?.closest(".scroller")) return;
-					const dx = event.touches[0].pageX - listStartX;
-					const dy = event.touches[0].pageY - listStartY;
-					if (listGesture === "none" && (Math.abs(dx) > 16 || Math.abs(dy) > 16)) {
-						listGesture = Math.abs(dx) > Math.abs(dy) * 1.5 ? "horizontal" : "vertical";
-					}
-					if (listGesture === "horizontal") {
-						listDeltaX = dx;
-						event.preventDefault();
-					}
-				},
-				{passive: false},
-			);
-			channelList.addEventListener("touchend", () => {
-				if (listGesture === "horizontal" && listDeltaX < -45) {
-					setMainOpen(true);
-				}
+		if (pageEl) {
+			// A left swipe anywhere with the drawer open (rail, channel list, peeking chat) opens
+			// the chat; message swipes stand aside meanwhile (message.ts, drawerOwnsTouch).
+			installDrawerSwipe(pageEl, {
+				isOpen: () => !maintoggle?.checked,
+				openChat: () => setMainOpen(true),
 			});
 		}
 		memberListToggle.checked = false;

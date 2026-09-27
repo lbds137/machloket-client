@@ -37,6 +37,7 @@ import {
 	TranslationService,
 } from "./services/translation.js";
 import {hasTranslationConsent, SovrahiService} from "./services/sovrahi.js";
+import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 
 function decodeBase64Safe(value: string): string | undefined {
 	try {
@@ -803,7 +804,8 @@ class Message extends SnowFlake {
 			this,
 			undefined,
 			(x: number, y: number, event: TouchEvent) => {
-				if (scrolling) {
+				// With the drawer open this message only peeks: a swipe belongs to the drawer.
+				if (scrolling || drawerOwnsTouch()) {
 					return;
 				}
 
@@ -841,7 +843,7 @@ class Message extends SnowFlake {
 				obj.style.translate = "0px";
 				this.channel.moveForDrag(-1);
 
-				if (scrolling) {
+				if (scrolling || drawerOwnsTouch()) {
 					scrolling = false;
 					gesture = "none";
 					drag = false;
