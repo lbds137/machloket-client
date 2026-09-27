@@ -8006,3 +8006,13 @@ textarea.interactionModalInput {
 	opacity: 0.5;
 	cursor: not-allowed;
 }
+
+/* A message select's count error (utils/fancySelect.ts) */
+.fancySelectError {
+	flex-basis: 100%;
+	color: var(--red);
+	font-size: 0.85em;
+}
+.fancySelectError:empty {
+	display: none;
+}

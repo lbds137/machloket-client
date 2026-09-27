@@ -363,7 +363,7 @@ class Select extends compObj {
 		this.custom_id = comp.custom_id;
 		this.options = comp.options;
 		this.maxValues = comp.max_values || 1;
-		this.minValues = comp.min_values || 1;
+		this.minValues = comp.min_values ?? 1;
 	}
 	async submit(values: string[]) {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
