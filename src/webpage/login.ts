@@ -56,7 +56,14 @@ export async function makeLogin(
 	let form: Form;
 	let rec: HTMLDivElement;
 	let pendingInstance: InstanceInfo | undefined;
+	// The instance the form currently posts to, and per submit (keyed by the body Form hands to
+	// both the preprocessor and onSubmit) the one that request went to. The session is saved
+	// against its own request's instance: the picker stays editable, and Form allows a second
+	// submit while the first is still out.
+	let loginInstance: InstanceInfo | undefined;
+	const submittedInstances = new WeakMap<object, InstanceInfo>();
 	const applyInstance = (info: InstanceInfo) => {
+		loginInstance = info;
 		if (!form || !rec) {
 			pendingInstance = info;
 			return;
@@ -79,10 +86,12 @@ export async function makeLogin(
 
 	form = opt.addForm(
 		"",
-		(res) => {
+		(res, sent) => {
 			if ("token" in res && typeof res.token == "string") {
+				const submittedInstance = submittedInstances.get(sent);
+				if (!submittedInstance) throw new Error("Login succeeded before any instance was applied");
 				const u = adduser({
-					serverurls: JSON.parse(localStorage.getItem("instanceinfo") as string),
+					serverurls: submittedInstance,
 					email: email.value,
 					token: res.token,
 				});
@@ -114,6 +123,9 @@ export async function makeLogin(
 			vsmaller: true,
 		},
 	);
+	form.addPreprocessor((sent) => {
+		if (loginInstance) submittedInstances.set(sent, loginInstance);
+	});
 	const button = form.button.deref();
 	picker.giveButton(button);
 	button?.classList.add("createAccount");

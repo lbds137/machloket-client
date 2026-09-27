@@ -1,5 +1,5 @@
 import {I18n} from "../i18n.js";
-import {getapiurls} from "../utils/utils.js";
+import {getapiurls, getDefaultInstanceUrl, instancefetch} from "../utils/utils.js";
 import {getBulkUsers, Specialuser} from "../utils/utils.js";
 import {Permissions} from "../permissions.js";
 type botjsonfetch = {
@@ -47,7 +47,9 @@ type botjsonfetch = {
 if (window.location.pathname.startsWith("/oauth2")) {
 	const users = getBulkUsers();
 	const params = new URLSearchParams(window.location.search);
-	const well = params.get("instance") || "https://spacebar.chat";
+	await instancefetch;
+	const well = params.get("instance") || getDefaultInstanceUrl();
+	if (!well) throw new Error("No instance: pass ?instance= or list one in instances.json");
 	const permstr = params.get("permissions");
 	const joinable: Specialuser[] = [];
 

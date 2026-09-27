@@ -1,5 +1,5 @@
 import {I18n} from "./i18n.js";
-import {adduser, Specialuser} from "./utils/utils.js";
+import {adduser, InstanceInfo, Specialuser} from "./utils/utils.js";
 import {makeLogin} from "./login.js";
 import {MarkDown} from "./markdown.js";
 import {Dialog, FormError} from "./settings.js";
@@ -12,10 +12,17 @@ export async function makeRegister(
 	const dialog = new Dialog("");
 	const opt = dialog.options;
 	opt.addTitle(I18n.htmlPages.createAccount());
+	// The instance the form currently posts to, and per submit (keyed by the body Form hands to
+	// both the preprocessor and onSubmit) the one that request went to. The session is saved
+	// against its own request's instance: the picker stays editable, and Form allows a second
+	// submit while the first is still out.
+	let registerInstance: InstanceInfo | undefined;
+	const submittedInstances = new WeakMap<object, InstanceInfo>();
 	const picker = opt.addInstancePicker(
 		(info) => {
+			registerInstance = info;
 			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/register";
-			tosLogic(md);
+			tosLogic(md, info);
 		},
 		{instance},
 	);
@@ -24,10 +31,14 @@ export async function makeRegister(
 
 	const form = opt.addForm(
 		"",
-		(res) => {
+		(res, sent) => {
 			if ("token" in res && typeof res.token == "string") {
+				const submittedInstance = submittedInstances.get(sent);
+				if (!submittedInstance) {
+					throw new Error("Registration succeeded before any instance was applied");
+				}
 				const u = adduser({
-					serverurls: JSON.parse(localStorage.getItem("instanceinfo") as string),
+					serverurls: submittedInstance,
 					email: email.value,
 					token: res.token,
 				});
@@ -80,6 +91,7 @@ export async function makeRegister(
 		if (!check.checked) throw new FormError(checkbox, I18n.register.tos());
 		//@ts-expect-error it's there
 		e.consent = check.checked;
+		if (registerInstance) submittedInstances.set(e, registerInstance);
 	});
 	const toshtml = document.createElement("div");
 	const md = document.createElement("span");
@@ -97,8 +109,7 @@ export async function makeRegister(
 	a.textContent = I18n.htmlPages.alreadyHave();
 	form.addHTMLArea(a);
 }
-async function tosLogic(box: HTMLElement) {
-	const instanceInfo = JSON.parse(localStorage.getItem("instanceinfo") ?? "{}");
+async function tosLogic(box: HTMLElement, instanceInfo: InstanceInfo) {
 	const apiurl = new URL(instanceInfo.api);
 	const urlstr = apiurl.toString();
 	const response = await fetch(urlstr + (urlstr.endsWith("/") ? "" : "/") + "ping");

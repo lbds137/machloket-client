@@ -7,7 +7,8 @@
 	"scripts": {
 		"build": "vite build",
 		"dev": "vite",
-		"check": "npx tsc -p tsconfig.json --noEmit"
+		"check": "npx tsc -p tsconfig.json --noEmit",
+		"test": "vitest run"
 	},
 	"author": "MathMan05",
 	"license": "AGPL-3.0",
@@ -22,10 +23,13 @@
 		"@types/audioworklet": "^0.0.90",
 		"@types/node": "^25.5.0",
 		"@types/node-fetch": "^2.6.13",
+		"@vitest/browser-playwright": "^5.0.2",
 		"husky": "9.1.7",
 		"lint-staged": "^16.4.0",
+		"playwright": "^1.63.0",
 		"prettier": "^3.7.4",
-		"typescript": "^5.9.3"
+		"typescript": "^5.9.3",
+		"vitest": "^5.0.2"
 	},
 	"prettier": {
 		"useTabs": true,

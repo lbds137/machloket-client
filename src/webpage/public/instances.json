@@ -1,8 +1,8 @@
 [
 	{
-		"name": "Spacebar",
-		"icon": "https://raw.githubusercontent.com/spacebarchat/spacebarchat/master/branding/png/Spacebar__Icon-Discord.png",
-		"description": "Official Instance",
-		"url": "https://spacebar.chat"
+		"name": "Machloket",
+		"icon": "/logo.svg",
+		"description": "the owner's Spacebar instance on the machine serving this client",
+		"url": "http://{hostname}:3001"
 	}
 ]

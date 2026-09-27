@@ -145,3 +145,6 @@ dependency-graph.svg
 src/webpage/translations/*.json
 
 commit.txt
+
+# Vitest browser-mode failure screenshots
+.vitest/

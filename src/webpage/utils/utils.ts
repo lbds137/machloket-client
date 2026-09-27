@@ -392,75 +392,56 @@ export function getViewportWidth() {
 
 const datalist = document.getElementById("instances");
 console.warn(datalist);
-const forceLocalInstance = import.meta.env.FORCELOCALINSTANCE === "1";
-export const instanceCatalogAssetBaseUrl = forceLocalInstance
-	? window.location.origin
-	: "https://sbar.fyi";
-const catalogInstancesUrl = forceLocalInstance
-	? new URL("/instances.json", window.location.origin).href
-	: "https://sbar.fyi/api/catalog/instances";
-type CatalogInstance = {
-	id: string;
-	name: string;
-	tags?: string[];
-	short?: string;
-	description?: string;
-	icon?: string;
-	images?: string[];
-	level?: number;
-	link?: string;
-};
+/**
+ * An entry of `public/instances.json`, the only instance list Machloket reads (never the
+ * Spacebar Explorer catalog). `{hostname}` in `url` stands for the host the client was loaded
+ * from, so one build reaches the instance from the Deck and from a phone on the LAN.
+ */
 type LocalInstance = {
 	name: string;
-	icon: string;
+	icon?: string;
+	description?: string;
 	url: string;
 };
-export type InstanceCatalogInstance = CatalogInstance | LocalInstance;
-export const instanceCatalogFetch = fetch(catalogInstancesUrl).then(async (res) => {
-	if (!res.ok) {
-		throw new Error("Failed to fetch instance catalog");
-	}
-	return (await res.json()) as InstanceCatalogInstance[];
-});
-function normalizeCatalogInstance(instance: InstanceCatalogInstance) {
-	let image: string | undefined;
-	let url: string | undefined;
-	let description: string | undefined;
-	let descriptionLong: string | undefined;
-	let display = true;
-	if ("url" in instance) {
-		image = instance.icon;
-		url = instance.url;
-	} else {
-		image = instance.icon || instance.images?.[0];
-		url = instance.link;
-		description = instance.short;
-		descriptionLong = instance.description;
-		display = !instance.tags?.includes("hidden");
-	}
+const localInstancesFetch = fetch(new URL("/instances.json", window.location.origin).href).then(
+	async (res) => {
+		if (!res.ok) {
+			throw new Error("Failed to fetch instances.json");
+		}
+		const json: unknown = await res.json();
+		if (!Array.isArray(json)) throw new Error("instances.json must be an array");
+		return json.filter((entry): entry is LocalInstance => {
+			const usable = typeof entry?.name === "string" && typeof entry?.url === "string";
+			if (!usable) console.error("Skipping an instances.json entry without a name and url:", entry);
+			return usable;
+		});
+	},
+);
+function normalizeLocalInstance(instance: LocalInstance) {
 	return {
 		name: instance.name,
-		description,
-		descriptionLong,
-		image: image ? new URL(image, instanceCatalogAssetBaseUrl).href : undefined,
-		url,
-		display,
+		description: instance.description,
+		descriptionLong: undefined,
+		image: instance.icon ? new URL(instance.icon, window.location.origin).href : undefined,
+		url: instance.url.replaceAll("{hostname}", window.location.hostname),
+		display: true,
 		online: undefined,
 		uptime: undefined,
 		urls: undefined,
 	};
 }
-export const instancefetch = instanceCatalogFetch.then(
-	async (json: InstanceCatalogInstance[]) => {
+// Never rejects: a missing or broken list leaves the picker empty instead of stalling it.
+export const instancefetch = localInstancesFetch
+	.then(async (json: LocalInstance[]) => {
 		await I18n.done;
-		instances = json.map(normalizeCatalogInstance);
+		instances = json.map(normalizeLocalInstance);
 		instancesLoaded = true;
-	},
-	() => {
+	})
+	.catch((e) => {
+		console.error("Couldn't load the instance list:", e);
 		instances = [];
 		instancesLoaded = true;
-	},
-);
+	});
 
 const catalogBotsUrl = "https://sbar.fyi/api/catalog/bots";
 type CatalogBot = {
@@ -917,53 +898,21 @@ export function createImg(
 }
 
 /**
- *
- * This function takes in a string and checks if the string is a valid instance
- * the string may be a URL or the name of the instance
- * the alt property is something you may fire on success.
+ * Resolves `instance` (a URL or a listed instance's name) to its URLs, or undefined if it isn't
+ * a reachable instance. It leaves the UI alone: checks can finish out of order, so only the
+ * caller knows whether this result is still the one to show.
  */
-const checkInstance = Object.assign(
-	async function (
-		instance: string,
-		verify = document.getElementById("verify"),
-		loginButton = (document.getElementById("loginButton") ||
-			document.getElementById("createAccount") ||
-			document.createElement("button")) as HTMLButtonElement,
-	) {
+async function checkInstance(instance: string): Promise<InstanceInfo | undefined> {
+	try {
 		await instancefetch;
-		try {
-			loginButton.disabled = true;
-			verify!.textContent = I18n.login.checking();
-			const instanceValue = instance;
-			const instanceinfo = (await getapiurls(instanceValue)) as InstanceInfo;
-			if (instanceinfo) {
-				instanceinfo.value = instanceValue;
-				localStorage.setItem("instanceinfo", JSON.stringify(instanceinfo));
-				verify!.textContent = I18n.login.allGood();
-				loginButton.disabled = false;
-				if (checkInstance.alt) {
-					checkInstance.alt(instanceinfo);
-				}
-				setTimeout((_: any) => {
-					console.log(verify!.textContent);
-					verify!.textContent = "";
-				}, 3000);
-				return instanceinfo;
-			} else {
-				verify!.textContent = I18n.login.invalid();
-				loginButton.disabled = true;
-				return;
-			}
-		} catch {
-			verify!.textContent = I18n.login.invalid();
-			loginButton.disabled = true;
-			return;
-		}
-	},
-	{} as {
-		alt?: (e: InstanceInfo) => void;
-	},
-);
+		const instanceinfo = (await getapiurls(instance)) as InstanceInfo | null;
+		if (!instanceinfo) return undefined;
+		instanceinfo.value = instance;
+		return instanceinfo;
+	} catch {
+		return undefined;
+	}
+}
 {
 	//TODO look at this and see if this can be made less hacky :P
 	const originalFetch = window.fetch;
@@ -1172,6 +1121,15 @@ export function installPGet() {
 
 export function getInstances() {
 	return instances ?? [];
+}
+
+/** The instance a new login starts on: the first usable listed one. Valid once `instancefetch` settles. */
+export function getDefaultInstanceUrl(): string | undefined {
+	for (const instance of getInstances()) {
+		const url = instance.url || instance.urls?.wellknown;
+		if (instance.display !== false && instance.online !== false && url) return url;
+	}
+	return undefined;
 }
 
 export function isInstanceListLoaded() {

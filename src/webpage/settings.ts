@@ -1,5 +1,6 @@
 import {
 	checkInstance,
+	getDefaultInstanceUrl,
 	getInstances,
 	getStringURLMapPair,
 	isInstanceListLoaded,
@@ -1307,7 +1308,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 
 		const input = this.input;
 		const queryInstance = new URLSearchParams(window.location.search).get("instance");
-		input.value = this.instance || queryInstance || "spacebar.chat";
+		input.value = this.instance || queryInstance || getDefaultInstanceUrl() || "";
 		input.readOnly = !!queryInstance;
 		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
@@ -1331,10 +1332,24 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 	input = document.createElement("input");
 	async validate() {
 		const validation = ++this.validation;
-		const urls = await checkInstance(this.input.value, this.verify, this.button);
-		if (validation === this.validation && urls) {
-			this.onchange(urls);
+		const isLatest = () => validation === this.validation;
+		if (this.button) this.button.disabled = true;
+		this.verify.textContent = I18n.login.checking();
+		const urls = await checkInstance(this.input.value);
+		// Checks can finish out of order. Only the latest may update the button, be stored or be
+		// applied, or a login could go to (or be saved against) an instance the user didn't pick.
+		if (!isLatest()) return;
+		if (!urls) {
+			this.verify.textContent = I18n.login.invalid();
+			return;
 		}
+		this.verify.textContent = I18n.login.allGood();
+		if (this.button) this.button.disabled = false;
+		localStorage.setItem("instanceinfo", JSON.stringify(urls));
+		this.onchange(urls);
+		setTimeout(() => {
+			if (isLatest()) this.verify.textContent = "";
+		}, 3000);
 	}
 	giveButton(button: HTMLButtonElement | undefined) {
 		this.button = button;
@@ -1363,15 +1378,11 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 
 		const getInstanceUrl = (instance: ReturnType<typeof getInstances>[number]) =>
 			instance.url || instance.urls?.wellknown;
-		const defaultInstance = json.find(
-			(instance) =>
-				instance.display !== false && instance.online !== false && getInstanceUrl(instance),
-		);
 		const picker = this.picker;
 		const value =
 			picker?.instance ||
 			new URLSearchParams(window.location.search).get("instance") ||
-			(defaultInstance ? getInstanceUrl(defaultInstance) : undefined);
+			getDefaultInstanceUrl();
 		if (picker && value) {
 			picker.input.value = value;
 			if (picker.button) {
@@ -2407,6 +2418,9 @@ class Form implements OptionsElement<object> {
 				return;
 			}
 			if (this.fetchURL !== "") {
+				// Captcha and 2FA retries go to the URL this submit started with, even if the
+				// form is pointed elsewhere meanwhile (login pages re-point it on instance change).
+				const fetchURL = this.fetchURL;
 				const onSubmit = async (json: any) => {
 					try {
 						await this.onSubmit(json, build);
@@ -2419,7 +2433,7 @@ class Form implements OptionsElement<object> {
 					}
 				};
 				const doFetch = async () => {
-					fetch(this.fetchURL, {
+					fetch(fetchURL, {
 						method: this.method,
 						body: JSON.stringify(build),
 						headers: this.headers,
@@ -2435,7 +2449,7 @@ class Form implements OptionsElement<object> {
 							if (await handleCaptcha(json, build, this.captcha)) {
 								return await doFetch();
 							}
-							const match = this.fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
+							const match = fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
 							if (match && this.tfaCheck) {
 								const tried = await handle2fa(json, match[0]);
 								if (tried) {

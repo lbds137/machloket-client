@@ -16,13 +16,7 @@ If there are any issues please report them either here, or to me dirrectly on sp
 
 ## Adding instances to the dropdown
 
-By default, Fermo uses the [Spacebar Explorer](https://git.sovrahi.com/oh64/spacebar-explorer) instance list.
-
-To use a local list instead, edit `src/webpage/public/instances.json`. Each entry must contain a `name`, an `icon` URL, and an instance `url`; the file can contain any number of entries. Build with the local list enabled using:
-
-```sh
-FORCELOCALINSTANCE=1 npm run build
-```
+Machloket reads its instance list only from `src/webpage/public/instances.json` (upstream Fermo used the Spacebar Explorer catalog instead). Each entry has a `name` and an instance `url`, plus an optional `icon` URL and `description`. The first entry is the default for new logins. In a `url`, `{hostname}` stands for the host the client was loaded from, so `http://{hostname}:3001` reaches an instance on the same machine as the client, from that machine or from another device on the LAN.
 
 ## How to statically host Fermo
 

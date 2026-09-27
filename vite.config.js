@@ -1,4 +1,5 @@
 import {defineConfig} from "vite";
+import {playwright} from "@vitest/browser-playwright";
 import {resolve} from "path";
 import {readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, statSync} from "fs";
 import {execSync} from "child_process";
@@ -137,7 +138,7 @@ const buildPlugin = () => ({
 
 export default defineConfig({
 	root: resolve(__dirname, "src/webpage"),
-	envPrefix: ["VITE_", "FORCELOCALINSTANCE"],
+	envPrefix: ["VITE_"],
 
 	build: {
 		sourcemap: "hidden",
@@ -177,4 +178,17 @@ export default defineConfig({
 	appType: "spa",
 
 	plugins: [buildPlugin()],
+
+	// Tests run in headless Chromium: the app's modules import each other in cycles that only
+	// evaluate correctly under native browser ESM.
+	test: {
+		include: ["**/*.test.ts"],
+		setupFiles: [resolve(__dirname, "src/webpage/test/setup.ts")],
+		browser: {
+			enabled: true,
+			provider: playwright(),
+			headless: true,
+			instances: [{browser: "chromium"}],
+		},
+	},
 });

@@ -1,47 +1,11 @@
 import {I18n} from "./i18n.js";
 import {makeRegister} from "./register.js";
-import {instanceCatalogAssetBaseUrl, instanceCatalogFetch, mobile} from "./utils/utils.js";
+import {getInstances, instancefetch, mobile} from "./utils/utils.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
-
-type PingHistory = {
-	rows?: {status: string | number; created_at?: string}[];
-	graph?: {points?: {status: string | number}[]};
-};
-
-function isSuccessStatus(status: string | number) {
-	return String(status).startsWith("2");
-}
-
-function computeUptime(entries: {status: string | number; created_at?: string}[]) {
-	if (entries.length === 0) return null;
-	const success = entries.filter((entry) => isSuccessStatus(entry.status)).length;
-	return Math.round((success / entries.length) * 100);
-}
 
 NotificationSoundManager.preload().catch((e) => {
 	console.error("Failed to preload notification sounds:", e);
 });
-
-async function loadInstanceUptime(instanceId: string) {
-	const response = await fetch(
-		`https://sbar.fyi/api/ping?instanceId=${encodeURIComponent(instanceId)}&limit=168&graph=1`,
-	);
-	if (!response.ok) return null;
-	const data = (await response.json()) as PingHistory;
-	const rows = data.rows ?? [];
-	const all = computeUptime((data.graph?.points ?? rows) as {status: string | number}[]);
-	const now = Date.now();
-	const week = computeUptime(
-		rows.filter(
-			(row) => row.created_at && Date.parse(row.created_at) >= now - 7 * 24 * 60 * 60 * 1000,
-		),
-	);
-	const day = computeUptime(
-		rows.filter((row) => row.created_at && Date.parse(row.created_at) >= now - 24 * 60 * 60 * 1000),
-	);
-	if (all === null || week === null || day === null) return null;
-	return {all, week, day};
-}
 
 if (window.location.pathname === "/" || window.location.pathname.startsWith("/index")) {
 	console.log(mobile);
@@ -77,21 +41,21 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 
 	(async () => {
 		try {
-			const json = await instanceCatalogFetch;
+			await instancefetch;
+			const instances = getInstances();
+			if (instances.length === 0) throw new Error("instances.json is missing or empty");
 			serverbox.innerHTML = "";
 			await I18n.done;
-			console.warn(json);
-			for (const instance of json) {
-				if ("display" in instance && instance.display === false) {
+			for (const instance of instances) {
+				if (instance.display === false) {
 					continue;
 				}
 				const div = document.createElement("div");
 				div.classList.add("flexltr", "instance");
-				const image = instance.icon || ("images" in instance ? instance.images?.[0] : undefined);
-				if (image) {
+				if (instance.image) {
 					const img = document.createElement("img");
 					img.alt = I18n.home.icon(instance.name);
-					img.src = new URL(image, instanceCatalogAssetBaseUrl).href;
+					img.src = instance.image;
 					div.append(img);
 				}
 				const statbox = document.createElement("div");
@@ -103,43 +67,16 @@ if (window.location.pathname === "/" || window.location.pathname.startsWith("/in
 					const title = document.createElement("h2");
 					title.innerText = instance.name;
 					textbox.append(title);
-					if ("short" in instance || "description" in instance) {
+					if (instance.description) {
 						const p = document.createElement("p");
-						if ("description" in instance && instance.description) {
-							p.innerText = instance.description;
-						} else if ("short" in instance && instance.short) {
-							p.innerText = instance.short;
-						}
+						p.innerText = instance.description;
 						textbox.append(p);
 					}
 					statbox.append(textbox);
 				}
-				if ("id" in instance) {
-					const stats = document.createElement("div");
-					stats.classList.add("flexltr");
-					const span = document.createElement("span");
-					stats.append(span);
-					statbox.append(stats);
-					loadInstanceUptime(instance.id)
-						.then((uptime) => {
-							if (!uptime) {
-								stats.remove();
-								return;
-							}
-							span.innerText = I18n.home.uptimeStats(
-								uptime.all + "",
-								uptime.week + "",
-								uptime.day + "",
-							);
-						})
-						.catch(() => {
-							stats.remove();
-						});
-				}
 				div.append(statbox);
 				div.onclick = (_) => {
-					const url = "url" in instance ? instance.url : instance.link;
-					makeRegister(true, url || instance.name);
+					makeRegister(true, instance.url || instance.name);
 				};
 				serverbox.append(div);
 			}
