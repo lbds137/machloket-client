@@ -4,6 +4,13 @@ import {resolve} from "path";
 import {readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, statSync} from "fs";
 import {execSync} from "child_process";
 
+// Unchanged files are left alone: the dev server watches src/webpage, and a rewrite, even
+// identical, reloads every open page (a build or test run would reload the phone mid-test).
+function writeIfChanged(path, content) {
+	if (existsSync(path) && readFileSync(path, "utf-8") === content) return;
+	writeFileSync(path, content);
+}
+
 function generateLangs() {
 	const translationsDir = resolve(__dirname, "translations");
 	const outputDir = resolve(__dirname, "src/webpage/translations");
@@ -18,10 +25,10 @@ function generateLangs() {
 	for (const file of files) {
 		const content = JSON.parse(readFileSync(resolve(translationsDir, file), "utf-8"));
 		langs[file] = content.readableName;
-		writeFileSync(resolve(outputDir, file), JSON.stringify(content, null, 2));
+		writeIfChanged(resolve(outputDir, file), JSON.stringify(content, null, 2));
 	}
 
-	writeFileSync(
+	writeIfChanged(
 		resolve(outputDir, "langs.js"),
 		`export const langs = ${JSON.stringify(langs, null, 2)};`,
 	);
@@ -108,6 +115,32 @@ function generateBuildFiles() {
 			writeFileSync(distPath, readFileSync(srcPath));
 		}
 	}
+
+	// The service worker precaches every file listed here on each update (service.ts,
+	// downloadAllFiles). Written last so it lists the files above too.
+	const files = fileTree(distDir);
+	files["files.json"] = "files.json";
+	writeFileSync(resolve(distDir, "files.json"), JSON.stringify(files));
+
+	const serviceWorker = resolve(distDir, "service.js");
+	if (!existsSync(serviceWorker)) {
+		throw new Error("The build emitted no service.js; offline caching needs it");
+	}
+	// A runtime import in service.ts would pull a shared chunk (possibly DOM code) into the worker.
+	if (/(^|[;}\s])(import\s*[\w{*"'`(]|export\s*[{*])/.test(readFileSync(serviceWorker, "utf-8"))) {
+		throw new Error("service.js imports or exports something; keep service.ts self-contained");
+	}
+}
+
+/** `{name: name}` for files and `{name: {...}}` for directories; hidden files are skipped. */
+function fileTree(dir) {
+	const tree = {};
+	for (const entry of readdirSync(dir)) {
+		if (entry.startsWith(".")) continue;
+		const fullPath = resolve(dir, entry);
+		tree[entry] = statSync(fullPath).isDirectory() ? fileTree(fullPath) : entry;
+	}
+	return tree;
 }
 
 const buildPlugin = () => ({
@@ -156,6 +189,13 @@ export default defineConfig({
 				404: resolve(__dirname, "src/webpage/404.html"),
 				"oauth2/authorize": resolve(__dirname, "src/webpage/oauth2/authorize.html"),
 				"audio/index": resolve(__dirname, "src/webpage/audio/index.html"),
+				service: resolve(__dirname, "src/webpage/service.ts"),
+			},
+			output: {
+				// The service worker must sit at /service.js under a stable name: its URL is its
+				// identity (utils.ts, SW.register) and its scope is the directory it's served from.
+				entryFileNames: (chunk) =>
+					chunk.name === "service" ? "service.js" : "assets/[name]-[hash].js",
 			},
 		},
 	},

@@ -1,11 +1,11 @@
-import {messageFrom, messageTo} from "./utils/serviceType";
+import type {messageFrom, messageTo} from "./utils/serviceType";
 
 async function deleteoldcache() {
 	await caches.delete("cache");
 }
 type files = {[key: string]: string | files};
 async function getAllFiles() {
-	const files = await fetch(new URL("./files.json", import.meta.url).href, {cache: "no-store"});
+	const files = await fetch(new URL("/files.json", self.location.origin).href, {cache: "no-store"});
 	const json: files = await files.json();
 	return json;
 }
@@ -19,7 +19,7 @@ async function downloadAllFiles() {
 						return;
 					}
 					const res = await fetch(lpath);
-					putInCache(new URL(path, self.location.origin), res);
+					putInCache(new URL(lpath, self.location.origin), res);
 				} else {
 					await cachePath(path + "/" + name, thing);
 				}

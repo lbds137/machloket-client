@@ -1055,16 +1055,21 @@ export class SW {
 			this.postMessage({code: "CheckUpdate"});
 		});
 	}
+	/**
+	 * A module worker: Vite emits service.ts as an ES module (dev and build), whose `export {}`
+	 * is a syntax error in a classic worker. Browsers without module service workers fail this
+	 * registration and run without one.
+	 */
+	static register() {
+		return navigator.serviceWorker.register("/service.js", {scope: "/", type: "module"});
+	}
 	static async start() {
 		if (!("serviceWorker" in navigator)) return;
 
 		// If it's registered, it handles CDN caching regardless of settings.
 		if (getLocalSettings().serviceWorkerMode == ServiceWorkerMode.Unregistered) return;
 		return new Promise<void>((res) => {
-			navigator.serviceWorker
-				.register("/service.js", {
-					scope: "/",
-				})
+			SW.register()
 				.then((registration) => {
 					let serviceWorker: ServiceWorker | undefined;
 					if (registration.installing) {
@@ -1088,6 +1093,11 @@ export class SW {
 						});
 						res();
 					}
+				})
+				.catch((e) => {
+					// E.g. a browser without module service workers: run without one.
+					console.error("Service worker registration failed:", e);
+					res();
 				});
 		});
 	}
