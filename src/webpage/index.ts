@@ -645,6 +645,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			installDrawerSwipe(pageEl, {
 				isOpen: () => !maintoggle?.checked,
 				openChat: () => setMainOpen(true),
+				panel: () => mainArea,
 			});
 		}
 		memberListToggle.checked = false;
