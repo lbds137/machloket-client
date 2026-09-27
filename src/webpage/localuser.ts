@@ -82,6 +82,7 @@ import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
+import {showCommandStatus} from "./interactions/commandStatus.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -889,9 +890,12 @@ class Localuser {
 		this.interNonceMap.set(nonce, thing);
 		this.interactionNonces.add(nonce);
 	}
+	/** Where each slash command was sent, to show its progress above that channel's composer. */
+	commandChannels = new Map<string, Channel>();
 	/** A slash command's nonce: it has no message of its own. */
-	registerCommandNonce(nonce: string) {
+	registerCommandNonce(nonce: string, channel?: Channel) {
 		this.interactionNonces.add(nonce);
+		if (channel) this.commandChannels.set(nonce, channel);
 	}
 	relationshipsUpdate = () => {};
 	rights: Rights;
@@ -961,6 +965,10 @@ class Localuser {
 					if (m) {
 						//Punt the events off to the message class
 						m.interactionEvents(temp);
+					} else if (this.commandChannels.has(temp.d.nonce)) {
+						// A slash command's progress, shown while its channel is on screen.
+						const channel = this.commandChannels.get(temp.d.nonce);
+						showCommandStatus(temp, !!this.channelfocus && channel === this.channelfocus);
 					}
 					break;
 				case "INTERACTION_MODAL_CREATE": {
@@ -980,7 +988,7 @@ class Localuser {
 						// The opener message shows the submit's progress and any failure.
 						trackSubmit: (nonce) => {
 							if (opener) this.registerInterNonce(nonce, opener);
-							else this.registerCommandNonce(nonce);
+							else this.registerCommandNonce(nonce, channel);
 						},
 					}).show();
 					break;

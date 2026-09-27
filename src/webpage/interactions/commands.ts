@@ -254,7 +254,7 @@ export class Command extends SnowFlake {
 	async submit(html: HTMLElement, channel: Channel) {
 		try {
 			const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-			this.localuser.registerCommandNonce(nonce);
+			this.localuser.registerCommandNonce(nonce, channel);
 			const states = this.state.get(channel);
 			if (!states) {
 				return true;

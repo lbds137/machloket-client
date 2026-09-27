@@ -461,6 +461,7 @@
 		"modalCount": "Choose between $1 and $2",
 		"modalLength": "Must be between $1 and $2 characters",
 		"modalRequired": "This field is required",
+		"noResponse": "The application did not respond",
 		"modalUnsupported": "This form has a field Machloket can't show yet, so it can't be sent",
 		"nonsence": "The server sent a component of type $1 which does not exist",
 		"notImpl": "Fermo has not implemented component type $1 yet",

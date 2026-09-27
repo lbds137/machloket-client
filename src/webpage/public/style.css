@@ -8016,3 +8016,16 @@ textarea.interactionModalInput {
 .fancySelectError:empty {
 	display: none;
 }
+
+/* A slash command's progress above the composer (interactions/commandStatus.ts) */
+.commandStatus {
+	padding: 2px 12px;
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+}
+.commandStatus.failed {
+	color: var(--red);
+}
+.commandStatus:empty {
+	display: none;
+}
