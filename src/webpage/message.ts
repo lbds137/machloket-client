@@ -28,15 +28,6 @@ import {Components} from "./interactions/compontents.js";
 import {ImagesDisplay} from "./disimg";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
-import {AutoTranslationService} from "./services/autoTranslation.js";
-import {
-	getActiveTranslationLang,
-	handleTranslationError,
-	resolveTranslationTargetLang,
-	showConsentDialog,
-	TranslationService,
-} from "./services/translation.js";
-import {hasTranslationConsent, SovrahiService} from "./services/sovrahi.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 
 function decodeBase64Safe(value: string): string | undefined {
@@ -146,14 +137,6 @@ class Message extends SnowFlake {
 	}[] = [];
 	pinned!: boolean;
 	flags: number = 0;
-	translation?: {
-		text: string;
-		sourceLang: string;
-		targetLang: string;
-		hidden: boolean;
-		loading: boolean;
-	};
-	translationDiv?: HTMLDivElement;
 	poll?: polljson;
 	nonce: string = "";
 	components?: Components;
@@ -256,20 +239,6 @@ class Message extends SnowFlake {
 			},
 		);
 
-		Message.contextmenu.addButton(
-			() => I18n.message.translate(),
-			function (this: Message) {
-				this.showTranslateConfirmation();
-			},
-			{
-				icon: {
-					css: "svg-translate",
-				},
-				visible: function () {
-					return this.canTranslate();
-				},
-			},
-		);
 		Message.contextmenu.addSeperator();
 		Message.contextmenu.addButton(
 			() => I18n.copyrawtext(),
@@ -512,12 +481,7 @@ class Message extends SnowFlake {
 				continue;
 			} else if (thing === "content") {
 				const newContent = messagejson[thing] || "";
-				const previousContent = this.content?.rawString;
 				this.content = new MarkDown(newContent, this.channel);
-				if (previousContent !== undefined && previousContent !== newContent) {
-					SovrahiService.invalidateTranslation(this.id);
-					this.translation = undefined;
-				}
 				continue;
 			} else if (thing === "id") {
 				continue;
@@ -590,169 +554,6 @@ class Message extends SnowFlake {
 	}
 	canDelete() {
 		return this.channel.hasPermission("MANAGE_MESSAGES") || this.author === this.localuser.user;
-	}
-	canTranslate() {
-		if (!TranslationService.canTranslateContent(this.content?.rawString)) return false;
-		if (this.ephemeral) return false;
-		if (this.translation?.loading) return false;
-		if (this.translation && !this.translation.hidden) return false;
-		return true;
-	}
-	canAutoTranslate(targetLang: string) {
-		if (!TranslationService.canTranslateContent(this.content?.rawString)) return false;
-		if (this.ephemeral) return false;
-		if (this.translation?.loading) return false;
-		if (
-			this.translation &&
-			!this.translation.hidden &&
-			this.translation.targetLang === targetLang
-		) {
-			return false;
-		}
-		return true;
-	}
-	showTranslateConfirmation() {
-		if (hasTranslationConsent()) {
-			void this.performTranslate();
-			return;
-		}
-		void showConsentDialog().then((consented) => {
-			if (consented) void this.performTranslate();
-		});
-	}
-	markTranslationLoading(targetLang: string) {
-		this.translation = {
-			text: "",
-			sourceLang: "auto",
-			targetLang,
-			hidden: false,
-			loading: true,
-		};
-		this.generateMessage();
-	}
-
-	clearTranslationLoading() {
-		if (this.translation?.loading) {
-			this.translation = undefined;
-			this.generateMessage();
-		}
-	}
-
-	applyTranslation(text: string, sourceLang: string, targetLang: string) {
-		this.translation = {
-			text,
-			sourceLang,
-			targetLang,
-			hidden: false,
-			loading: false,
-		};
-		this.generateMessage();
-	}
-
-	hideTranslation(): void {
-		if (!this.translation || this.translation.hidden) return;
-		this.translation.hidden = true;
-		SovrahiService.setTranslationHidden(this.id, this.translation.targetLang, true);
-		this.generateMessage();
-	}
-
-	async performTranslate() {
-		if (!TranslationService.canTranslateContent(this.content?.rawString) || this.ephemeral) {
-			return;
-		}
-
-		const targetLang = await resolveTranslationTargetLang();
-		if (!targetLang) return;
-
-		const raw = this.content.rawString;
-		const needsLoading = !TranslationService.isCodeOnly(raw);
-		const cached = SovrahiService.getCachedTranslation(this.id, targetLang, raw);
-
-		if (needsLoading && !cached) {
-			this.markTranslationLoading(targetLang);
-		}
-
-		try {
-			const outcome = await TranslationService.translateContent(raw, targetLang, {
-				cacheId: this.id,
-			});
-			this.applyTranslation(outcome.text, outcome.sourceLang, targetLang);
-		} catch (error) {
-			this.clearTranslationLoading();
-			handleTranslationError(error, {
-				channel: this.channel,
-				messageId: this.id,
-				onAuthRequired: () => AutoTranslationService.onAuthRequired(this.channel, this.id),
-			});
-		}
-	}
-	loadCachedTranslation(targetLang = I18n.lang) {
-		const sourceText = this.content?.rawString || "";
-		const cached = SovrahiService.getCachedTranslation(this.id, targetLang, sourceText);
-		if (!cached || this.translation) return;
-		this.translation = {
-			text: cached.text,
-			sourceLang: cached.sourceLang,
-			targetLang,
-			hidden: cached.hidden ?? false,
-			loading: false,
-		};
-	}
-	renderTranslation(messagedwrap: HTMLElement) {
-		this.translationDiv?.remove();
-		this.translationDiv = undefined;
-		if (!this.translation || this.translation.hidden) return;
-
-		const box = document.createElement("div");
-		box.classList.add("messageTranslation", "flexttb");
-		this.translationDiv = box;
-
-		const header = document.createElement("div");
-		header.classList.add("messageTranslationHeader", "flexltr");
-
-		if (this.translation.loading) {
-			const loading = document.createElement("span");
-			loading.textContent = I18n.translation.loading();
-			header.append(loading);
-		} else {
-			const label = document.createElement("span");
-			label.textContent = I18n.translation.translated();
-			header.append(label);
-
-			const attribution = document.createElement("span");
-			attribution.classList.add("messageTranslationAttribution");
-			attribution.append(document.createTextNode(I18n.translation.translatedByPrefix()));
-			const sovrahiLink = document.createElement("a");
-			sovrahiLink.href = "https://sovrahi.com";
-			sovrahiLink.target = "_blank";
-			sovrahiLink.rel = "noopener noreferrer";
-			sovrahiLink.classList.add("messageTranslationAttributionLink");
-			sovrahiLink.textContent = "sovrahi.com";
-			attribution.append(sovrahiLink);
-			header.append(attribution);
-
-			const hide = document.createElement("button");
-			hide.classList.add("messageTranslationToggle");
-			hide.textContent = I18n.translation.hideTranslation();
-			hide.onclick = (event) => {
-				event.preventDefault();
-				event.stopImmediatePropagation();
-				this.hideTranslation();
-			};
-			header.append(hide);
-		}
-
-		box.append(header);
-
-		if (!this.translation.loading) {
-			const content = document.createElement("div");
-			content.classList.add("messageTranslationContent");
-			const translationMd = new MarkDown(this.translation.text, this.channel);
-			content.append(translationMd.makeHTML());
-			box.append(content);
-		}
-
-		messagedwrap.append(box);
 	}
 	get channel() {
 		return this.owner;
@@ -1400,13 +1201,6 @@ class Message extends SnowFlake {
 				}
 				messagedwrap.appendChild(embeds);
 			}
-			const targetLang = AutoTranslationService.isEnabled()
-				? AutoTranslationService.getTargetLang()
-				: getActiveTranslationLang();
-			if (targetLang) {
-				this.loadCachedTranslation(targetLang);
-			}
-			this.renderTranslation(messagedwrap);
 			//
 		} else if (this.type === 7) {
 			const messages = I18n.welcomeMessages("|||").split("\n");
@@ -1867,35 +1661,6 @@ class Message extends SnowFlake {
 					buttons.append(container);
 					container.onclick = (_) => {
 						this.channel.setReplying(this);
-					};
-				}
-				if (this.canTranslate() && !this.translation?.hidden) {
-					const container = document.createElement("button");
-					container.classList.add("messageTranslateButton");
-					const icon = document.createElement("span");
-					icon.classList.add("svg-translate", "svgicon");
-					container.append(icon);
-					buttons.append(container);
-					container.onclick = (event) => {
-						event.preventDefault();
-						event.stopImmediatePropagation();
-						this.showTranslateConfirmation();
-					};
-				}
-				if (this.translation?.hidden) {
-					const container = document.createElement("button");
-					container.classList.add("messageTranslateButton");
-					const icon = document.createElement("span");
-					icon.classList.add("svg-translate", "svgicon");
-					container.append(icon);
-					buttons.append(container);
-					container.onclick = (event) => {
-						event.preventDefault();
-						event.stopImmediatePropagation();
-						if (!this.translation) return;
-						this.translation.hidden = false;
-						SovrahiService.setTranslationHidden(this.id, this.translation.targetLang, false);
-						this.generateMessage();
 					};
 				}
 				if (this.channel.hasPermission("ADD_REACTIONS")) {

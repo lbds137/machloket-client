@@ -14,7 +14,6 @@
 	"dependencies": {
 		"@openpanel/sdk": "^1.0.0",
 		"@sentry/browser": "^10.68.0",
-		"cap-widget": "^0.1.56",
 		"vite": "^8.0.12"
 	},
 	"devDependencies": {

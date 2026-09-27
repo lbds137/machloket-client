@@ -1495,10 +1495,6 @@ textarea:focus {
 	mask-size: contain !important;
 }
 
-.svg-translate {
-	mask: url(./icons/translate.svg);
-	mask-size: contain !important;
-}
 
 .svg-explore {
 	mask: url(./icons/explore.svg);
@@ -2018,8 +2014,7 @@ textarea:focus {
 	transform: scale(0.9);
 }
 
-#emojiTB,
-#translateTB {
+#emojiTB {
 	flex-shrink: 0;
 	width: 0.2in;
 	height: 0.2in;
@@ -2044,75 +2039,8 @@ textarea:focus {
 	transition: transform 0.2s ease;
 }
 
-#gifTB:hover,
-#translateTB:hover {
+#gifTB:hover {
 	transform: scale(0.8);
-}
-
-#translationStatusDiv {
-	display: flex;
-	align-items: center;
-	max-width: 180px;
-	font-size: 0.8rem;
-	color: var(--secondary-text);
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-#translationStatusDiv.verifying {
-	color: var(--text);
-	padding: 0 6px;
-}
-
-#translationStatusLabel {
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-#autoTranslateDiv {
-	display: flex;
-	align-items: center;
-	cursor: pointer;
-	padding: 0 4px;
-}
-
-#autoTranslateBtn {
-	width: 20px;
-	height: 20px;
-	opacity: 0.7;
-	transition:
-		opacity 0.2s ease,
-		background-color 0.2s ease;
-}
-
-#autoTranslateBtn:hover {
-	opacity: 1;
-}
-
-#autoTranslateBtn.active {
-	opacity: 1;
-	background-color: var(--accent-color, #5865f2);
-}
-
-#autoTranslateBtn.blocked {
-	opacity: 1;
-	background-color: var(--red, #ed4245);
-}
-
-#autoTranslateBtn.verifying {
-	opacity: 1;
-	animation: cap-pulse 1.2s ease-in-out infinite;
-}
-
-@keyframes cap-pulse {
-	0%,
-	100% {
-		opacity: 0.55;
-	}
-	50% {
-		opacity: 1;
-	}
 }
 
 .selectarrow {
@@ -3800,67 +3728,6 @@ span.instanceStatus {
 	background: var(--secondary-text-soft);
 }
 
-.messageTranslateButton {
-	display: flex !important;
-	align-items: center;
-	gap: 4px;
-	padding: 6px 8px !important;
-}
-
-.messageTranslateButton .translateLabel {
-	font-size: 12px;
-	line-height: 1;
-	color: var(--secondary-text-soft);
-	white-space: nowrap;
-}
-
-.messageTranslation {
-	margin-top: 6px;
-	padding: 8px 10px;
-	border-radius: 4px;
-	background: color-mix(in srgb, var(--secondary-bg) 85%, var(--primary-text-soft));
-	font-style: italic;
-	color: var(--secondary-text);
-}
-
-.messageTranslationHeader {
-	align-items: center;
-	gap: 8px;
-	font-size: 0.85em;
-	font-style: normal;
-}
-
-.messageTranslationContent {
-	word-break: break-word;
-}
-
-.messageTranslationToggle {
-	padding: 0;
-	border: none;
-	background: transparent;
-	color: var(--accent-color, #5865f2);
-	cursor: pointer;
-	font-size: 0.85em;
-}
-
-.messageTranslationToggle:hover {
-	text-decoration: underline;
-}
-
-.messageTranslationAttribution {
-	font-size: 0.8em;
-	color: var(--secondary-text-soft);
-}
-
-.messageTranslationAttributionLink {
-	color: var(--link, var(--accent-color, #5865f2));
-	text-decoration: underline;
-}
-
-.messageTranslationAttributionLink:hover {
-	text-decoration: none;
-}
-
 .changelogBody {
 	max-width: 480px;
 	max-height: 60vh;
@@ -3884,10 +3751,6 @@ span.instanceStatus {
 	background: transparent;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
-}
-
-.sovrahiAuthDialog {
-	box-shadow: 0 8px 32px color-mix(in srgb, var(--black) 25%, transparent);
 }
 
 .messageButtons button:hover,

@@ -5,7 +5,6 @@ import {Localuser} from "./localuser.js";
 import {Permissions} from "./permissions.js";
 import {Dialog, Float, Settings} from "./settings.js";
 import {Role, RoleList} from "./role.js";
-import {AutoTranslationService} from "./services/autoTranslation.js";
 import {InfiniteScroller} from "./infiniteScroller.js";
 import {SnowFlake} from "./snowflake.js";
 import {
@@ -740,9 +739,6 @@ class Channel extends SnowFlake {
 			},
 			this.onReachedBottom.bind(this),
 		);
-		this.infinite.onVisibilityChange = (_id, visible) => {
-			if (visible) AutoTranslationService.onMessageVisible(this, _id);
-		};
 	}
 
 	scrolling: boolean = false;
@@ -2906,9 +2902,6 @@ class Channel extends SnowFlake {
 		(document.getElementById("gifTB") as HTMLElement).style.display = this.canMessage
 			? "block"
 			: "none";
-		(document.getElementById("translateTB") as HTMLElement).style.display = this.canMessage
-			? "block"
-			: "none";
 		(document.getElementById("stickerTB") as HTMLElement).style.display = this.canMessage
 			? "block"
 			: "none";
@@ -2933,7 +2926,6 @@ class Channel extends SnowFlake {
 		this.makereplybox();
 
 		if (getMessages) await this.buildmessages(aroundMessage);
-		AutoTranslationService.onChannelFocused(this);
 		//loading.classList.remove("loading");
 	}
 	typingmap: Map<Member | User, number> = new Map();
@@ -4022,9 +4014,6 @@ class Channel extends SnowFlake {
 				await this.tryfocusinfinate();
 			}
 			await this.infinite.addedBottom();
-			if (AutoTranslationService.isEnabled()) {
-				AutoTranslationService.scheduleChannel(this);
-			}
 		}
 
 		if (messagez.author === this.localuser.user) {

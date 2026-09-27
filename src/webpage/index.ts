@@ -26,13 +26,6 @@ import {initOpenpanel, sendOpenpanelAnalytics} from "./utils/openpanel.js";
 import {getLocalSettings, OpenPanelAnalyticsMode} from "./utils/storage/localSettings.js";
 import {initSentry} from "./utils/sentry.js";
 import {showChangelogPopup} from "./changelog.js";
-import {AutoTranslationService} from "./services/autoTranslation.js";
-import {
-	setTranslationLang,
-	showLanguagePickerDialog,
-	TranslationService,
-} from "./services/translation.js";
-import {SovrahiService} from "./services/sovrahi.js";
 import type * as C from "./typeChecker/chekerIndex.js";
 
 if (window.location.pathname === "/app") {
@@ -55,9 +48,6 @@ if (localStorage.getItem("checkTypes")) {
 if (window.location.pathname.startsWith("/channels")) {
 	let templateID = new URLSearchParams(window.location.search).get("templateID");
 	await I18n.done;
-	await AutoTranslationService.refreshTargetLang();
-	await SovrahiService.handleAuthCallback();
-	let pendingTranslateMessageId = SovrahiService.consumePendingTranslateMessageId();
 	Localuser.loadFont();
 
 	I18n.translatePage();
@@ -153,12 +143,6 @@ if (window.location.pathname.startsWith("/channels")) {
 				}
 				console.warn("huh");
 				await thisUser.init();
-				if (pendingTranslateMessageId && thisUser.channelfocus) {
-					const message = await thisUser.channelfocus.getmessage(pendingTranslateMessageId);
-					if (message) {
-						await message.performTranslate();
-					}
-				}
 				console.warn("huh2");
 				sendOpenpanelAnalytics("initial_channel_loaded", {
 					startup_ms: Math.round(performance.now() - startupStarted),
@@ -832,45 +816,6 @@ if (window.location.pathname.startsWith("/channels")) {
 		e.stopImmediatePropagation();
 		thisUser.makeGifBox(gifTB.getBoundingClientRect());
 	};
-
-	const translateTB = document.getElementById("translateTB") as HTMLElement;
-	translateTB.onmousedown = (e) => e.stopImmediatePropagation();
-	translateTB.onclick = (e) => {
-		e.preventDefault();
-		e.stopImmediatePropagation();
-		void TranslationService.translateTypingBox(thisUser.channelfocus);
-	};
-
-	const autoTranslateBtn = document.getElementById("autoTranslateBtn") as HTMLElement;
-	autoTranslateBtn.onmousedown = (e) => e.stopImmediatePropagation();
-	AutoTranslationService.bindButton(autoTranslateBtn, () => thisUser.channelfocus);
-	autoTranslateBtn.onclick = (e) => {
-		e.preventDefault();
-		e.stopImmediatePropagation();
-		if (AutoTranslationService.isBlocked()) {
-			AutoTranslationService.promptReconnect();
-			return;
-		}
-		void AutoTranslationService.toggle();
-	};
-	autoTranslateBtn.oncontextmenu = (e) => {
-		e.preventDefault();
-		e.stopImmediatePropagation();
-		void showLanguagePickerDialog(I18n.translation.chooseLanguageTitle(), {
-			defaultCode: AutoTranslationService.getTargetLang(),
-		}).then(async (lang) => {
-			if (lang) {
-				await setTranslationLang(lang);
-				await AutoTranslationService.refreshTargetLang();
-			}
-		});
-	};
-	const autoTranslateDiv = document.getElementById("autoTranslateDiv") || autoTranslateBtn;
-	new Hover(() =>
-		AutoTranslationService.isBlocked()
-			? I18n.translation.autoTranslateBlocked()
-			: I18n.translation.autoTranslate(),
-	).addEvent(autoTranslateDiv);
 
 	const stickerTB = document.getElementById("stickerTB") as HTMLElement;
 	stickerTB.onmousedown = (e) => e.stopImmediatePropagation();

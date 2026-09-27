@@ -33,7 +33,6 @@ export const OpenPanelAnalyticsModeValues = [
 export class LocalSettings {
 	serviceWorkerMode: ServiceWorkerMode = ServiceWorkerMode.Unregistered;
 	openpanelEnabled: boolean = true;
-	externalFeaturesEnabled: boolean = true;
 	openpanelAnalyticsMode?: OpenPanelAnalyticsMode;
 	constructor(init?: Partial<LocalSettings>) {
 		Object.assign(this, init);
