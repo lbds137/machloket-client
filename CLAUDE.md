@@ -34,5 +34,6 @@ Node 24 (mise), npm (the repo ships `package-lock.json`; don't switch it to pnpm
 
 - Commit straight to `main` (no PRs; Deck env doc, "Where PRs Are Used").
 - the owner doesn't read diffs. A fresh-context review agent checks every change before it's committed.
+- A reviewer that runs the gate does it in a scratch copy, because the live dev server on :8080 serves this tree to the owner's phone and writes under `src/webpage` reload her page. The copy goes on disk (`~/.cache/machloket-review/<name>` with `node_modules` symlinked, or a git worktree under `.claude/worktrees/`), never `/tmp`: on the Deck `/tmp` is RAM, and five 127 MB copies there filled it.
 - Every behaviour fix lands red-first: write the test, watch it fail on the assertion the fix is about, then fix.
 - The task list lives in `docs/local/machloket-client-tasks.md` (git-excluded via `.git/info/exclude`). Evidence for each item is in `~/Projects/spacebar-server/docs/local/client-survey-2026-09-27.md`.
