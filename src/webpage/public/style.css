@@ -7908,3 +7908,101 @@ img.error::after {
 		animation-timing-function: ease-out;
 	}
 }
+
+/* Application modals (interactions/modal.ts), laid out like Discord's */
+.interactionModal {
+	gap: 12px;
+	padding: 16px !important;
+	max-height: calc(var(--app-height) - var(--safe-top) - var(--safe-bottom) - 48px);
+	overflow-y: auto;
+}
+.interactionModalApp {
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+}
+.interactionModalTitle {
+	margin: 2px 0 0;
+	color: var(--primary-text-prominent);
+	font-size: 1.25em;
+}
+.interactionModalBody {
+	gap: 16px;
+}
+.interactionModalField {
+	gap: 6px;
+}
+.interactionModalLabel {
+	color: var(--primary-text-prominent);
+	font-weight: 600;
+}
+.interactionModalRequired::after {
+	content: " *";
+	color: var(--red);
+}
+.interactionModalDescription,
+.interactionModalChoice small {
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+}
+.interactionModalInput {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 10px;
+	border: none;
+	border-radius: 4px;
+	background: var(--secondary-bg);
+	color: var(--primary-text);
+	font: inherit;
+}
+textarea.interactionModalInput {
+	min-height: 5.5em;
+	resize: vertical;
+}
+.interactionModalChoices {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.interactionModalChoice {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 0;
+	cursor: pointer;
+}
+.interactionModalChoice small {
+	flex-basis: 100%;
+	padding-left: 26px;
+}
+.interactionModalChoice input {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+}
+.interactionModalError,
+.interactionModalFormError {
+	color: var(--red);
+	font-size: 0.85em;
+}
+.interactionModalError:empty,
+.interactionModalFormError:empty {
+	display: none;
+}
+.interactionModalFooter {
+	justify-content: flex-end;
+	gap: 8px;
+}
+.interactionModalCancel {
+	background: transparent;
+	color: var(--primary-text);
+}
+.interactionModalSubmit {
+	padding: 8px 20px;
+	background: var(--blue);
+	color: white;
+}
+.interactionModalSubmit:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}

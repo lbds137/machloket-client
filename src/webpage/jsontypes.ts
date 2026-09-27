@@ -1,3 +1,5 @@
+import type {ModalCreateEvent} from "./interactions/modal.js";
+
 interface readyjson {
 	op: 0;
 	t: "READY";
@@ -1222,6 +1224,7 @@ type wsjson =
 	| streamServerUpdate
 	| streamCreate
 	| interactionEvents
+	| interactionModalCreate
 	| {
 			op: 0;
 			t: "CHANNEL_RECIPIENT_ADD";
@@ -1280,6 +1283,13 @@ export interface interactionFailure {
 	s: number;
 }
 export type interactionEvents = interactionCreate | interactionSuccess | interactionFailure;
+/** A bot answered an interaction with a modal (callback type 9); see interactions/modal.ts. */
+export interface interactionModalCreate {
+	op: 0;
+	t: "INTERACTION_MODAL_CREATE";
+	d: ModalCreateEvent;
+	s: number;
+}
 type memberChunk = {
 	guild_id: string;
 	nonce: string;

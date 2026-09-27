@@ -68,9 +68,28 @@ export function acceptAuth(origin: string, route: "login" | "register", token: s
 	return {release, requestSeen};
 }
 
+/**
+ * Records every request to `url` (origin + path) and answers each with `respond()`; returns the
+ * recorded requests' parsed JSON bodies, in order.
+ */
+export function captureRequests(
+	url: string,
+	respond: () => Response = () => new Response(null, {status: 204}),
+) {
+	const bodies: unknown[] = [];
+	captures.set(url, {bodies, respond});
+	return bodies;
+}
+const captures = new Map<string, {bodies: unknown[]; respond: () => Response}>();
+
 const realFetch = globalThis.fetch.bind(globalThis);
 vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
 	const url = new URL(input instanceof Request ? input.url : input, location.href);
+	const capture = captures.get(url.origin + url.pathname);
+	if (capture) {
+		capture.bodies.push(typeof init?.body === "string" ? JSON.parse(init.body) : init?.body);
+		return capture.respond();
+	}
 	const route = testNetwork.get(url.origin + url.pathname);
 	if (route) return route();
 	if (url.origin === location.origin && url.pathname === "/instances.json") {

@@ -81,6 +81,7 @@ import {initSentry, setSentryUser} from "./utils/sentry.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SnowFlake} from "./snowflake.js";
+import {InteractionModal} from "./interactions/modal.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -878,8 +879,18 @@ class Localuser {
 		console.warn("huh");
 	}
 	interNonceMap = new Map<string, Message>();
+	/**
+	 * Nonces of the interactions this session sent. A bot's modal reaches every session of the
+	 * user; only the one that opened it shows it (another can't name the right message).
+	 */
+	interactionNonces = new Set<string>();
 	registerInterNonce(nonce: string, thing: Message) {
 		this.interNonceMap.set(nonce, thing);
+		this.interactionNonces.add(nonce);
+	}
+	/** A slash command's nonce: it has no message of its own. */
+	registerCommandNonce(nonce: string) {
+		this.interactionNonces.add(nonce);
 	}
 	relationshipsUpdate = () => {};
 	rights: Rights;
@@ -951,6 +962,28 @@ class Localuser {
 						m.interactionEvents(temp);
 					}
 					break;
+				case "INTERACTION_MODAL_CREATE": {
+					if (!temp.d.nonce || !this.interactionNonces.has(temp.d.nonce)) break;
+					// The nonce names the interaction that opened it: a component's message, or none for
+					// a slash command. The submit must name the same message.
+					const opener = this.interNonceMap.get(temp.d.nonce);
+					const channel = this.channelids.get(temp.d.channel_id);
+					const guildId = channel?.guild.id;
+					new InteractionModal(temp.d, {
+						api: this.info.api,
+						headers: this.headers,
+						sessionId: this.session_id,
+						guildId: guildId && guildId !== "@me" ? guildId : undefined,
+						openerMessageId: opener?.id,
+						markdownOwner: channel ?? this,
+						// The opener message shows the submit's progress and any failure.
+						trackSubmit: (nonce) => {
+							if (opener) this.registerInterNonce(nonce, opener);
+							else this.registerCommandNonce(nonce);
+						},
+					}).show();
+					break;
+				}
 				case "MESSAGE_CREATE":
 					if (this.initialized) {
 						this.messageCreate(temp);
