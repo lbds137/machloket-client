@@ -633,6 +633,7 @@ class Localuser {
 	}
 	unload(): void {
 		this.initialized = false;
+		this.disconnectComposer();
 		this.outoffocus();
 		this.guilds = [];
 		this.guildids = new Map();
@@ -4785,14 +4786,31 @@ class Localuser {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const typeMd = typebox.markdown;
 		typeMd.owner = this;
+		// The send button shows for text or a pending attachment: a phone has no Enter to send
+		// an attachment alone.
+		const pending = document.getElementById("pasteimage");
+		let hasText = false;
+		const updateSend = () => {
+			const empty = !hasText && !pending?.childElementCount;
+			typebox.parentElement!.classList.toggle("noConent", empty);
+		};
 		typeMd.onUpdate = (str, pre) => {
 			this.search(document.getElementById("searchOptions") as HTMLDivElement, typeMd, str, pre);
-			if (str && str !== "\n") {
-				typebox.parentElement!.classList.remove("noConent");
-			} else {
-				typebox.parentElement!.classList.add("noConent");
-			}
+			hasText = !!str && str !== "\n";
+			updateSend();
 		};
+		// mdBox runs on every READY (reconnects too): replace the watcher rather than stack them.
+		this.pendingWatcher?.disconnect();
+		if (pending) {
+			this.pendingWatcher = new MutationObserver(updateSend);
+			this.pendingWatcher.observe(pending, {childList: true});
+		}
+	}
+	private pendingWatcher?: MutationObserver;
+	/** Stops watching the shared composer, e.g. when an account switch unloads this session. */
+	disconnectComposer() {
+		this.pendingWatcher?.disconnect();
+		this.pendingWatcher = undefined;
 	}
 	async pinnedClick(rect: DOMRect) {
 		if (!this.channelfocus) return;
