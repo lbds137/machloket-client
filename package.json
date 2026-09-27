@@ -1,8 +1,7 @@
 {
 	"name": "jankclient",
 	"version": "0.2.0",
-	"description": "A Spacebar Client written in TS, HTML and CSS. to run, clone the repo and do either `npm start` or `bun start` both bun and node are supported, and both should function as expected. To access Fermo Client after init simply go to http://localhost:8080/login and login with your username and password.",
-	"main": ".dist/index.js",
+	"description": "Machloket: a Discord-like Spacebar web client (private fork of Fermo), in TypeScript, HTML and CSS.",
 	"type": "module",
 	"scripts": {
 		"build": "vite build",
@@ -15,7 +14,6 @@
 	"dependencies": {
 		"@openpanel/sdk": "^1.0.0",
 		"@sentry/browser": "^10.68.0",
-		"@swc/core": "1.11.24",
 		"cap-widget": "^0.1.56",
 		"vite": "^8.0.12"
 	},
@@ -39,8 +37,5 @@
 	},
 	"lint-staged": {
 		"*.{js,ts,css,html,json,md}": "prettier --write"
-	},
-	"allowScripts": {
-		"@swc/core@1.11.24": true
 	}
 }

@@ -4,13 +4,7 @@ Fermo is a [Spacebar](https://spacebar.chat) Client written in TS, HTML, and CSS
 
 ![](src/webpage/public/home/SS1.webp)
 
-To build it, clone the repo and run `npm install`, then `npm run build`
-To run it, use `npm start`
-or do the equivalent with bun.
-
-Both [Bun](https://bun.sh) and [Node.js](https://nodejs.org) are supported, and should function as expected.
-
-To access Fermo after starting, simply go to http://localhost:8080/login and either register a new account, or log in with your email and password.
+To build it, clone the repo and run `npm ci`, then `npm run build`; the static site lands in `dist/webpage/`. For development, run `npx vite --port 8080` and open http://localhost:8080/login.html.
 
 If there are any issues please report them either here, or to me dirrectly on spacebar
 

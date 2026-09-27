@@ -27,7 +27,7 @@ Node 24 (mise), npm (the repo ships `package-lock.json`; don't switch it to pnpm
 - Tests are Vitest in browser mode (`vite.config.js` → `test`). The app's modules import each other in cycles that only evaluate correctly under native browser ESM; Vitest's default module runner (tried with happy-dom) fails at import. A test imports `./localuser` before anything else, in the entry's order (see `src/webpage/instancePicker.test.ts`). `src/webpage/test/setup.ts` answers instance discovery in memory (`addInstance`, `acceptLogins`); other same-origin requests reach the Vitest server. First run on a new machine: `npx playwright install chromium`.
 - The instance list is only `src/webpage/public/instances.json` (upstream's Spacebar Explorer catalog is gone). `{hostname}` in a `url` is replaced with the host serving the client.
 - Dev only: `/login?instance=` hits a Vite module-resolution error; use `/login.html?instance=`. Production builds are unaffected.
-- The build is Vite (`vite.config.js`). `build.ts`, `buildnode.js`, `dev-server.js`, `.swcrc` and the Node server in `src/index.ts`, `src/stats.ts`, `src/utils.ts` belong to the pre-Vite pipeline and nothing runs them (see `docs/local/machloket-client-tasks.md`, P0 item 3).
+- The build is Vite (`vite.config.js`), the only pipeline; the pre-Vite one (`build.ts`, the Node server, the Dockerfile) was removed.
 - `.husky/` and `.forgejo/` are upstream leftovers: husky is not installed as a git hook here, and GitHub does not run Forgejo workflows.
 
 ## Workflow
