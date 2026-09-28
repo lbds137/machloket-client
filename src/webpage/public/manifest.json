@@ -1,9 +1,22 @@
 {
-	"name": "Fermo",
+	"id": "/app",
+	"name": "Machloket",
+	"short_name": "Machloket",
 	"icons": [
+		{"src": "/brand/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"},
+		{"src": "/brand/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+		{"src": "/brand/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
 		{
-			"src": "/logo.webp",
-			"sizes": "512x512"
+			"src": "/brand/icon-maskable-192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "/brand/icon-maskable-512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
 		}
 	],
 	"start_url": "/app",
@@ -11,7 +24,7 @@
 	"scope": "/",
 	"theme_color": "#05050a",
 	"categories": ["social"],
-	"description": "A lightweight chat app for all of your spacebar needs!",
-	"background_color": "#05050a",
+	"description": "A Discord-like client for Spacebar",
+	"background_color": "#0B0B12",
 	"offline_enabled": true
 }

@@ -1,7 +1,15 @@
 import {defineConfig} from "vite";
 import {playwright} from "@vitest/browser-playwright";
 import {resolve} from "path";
-import {readFileSync, readdirSync, writeFileSync, mkdirSync, existsSync, statSync} from "fs";
+import {
+	readFileSync,
+	readdirSync,
+	writeFileSync,
+	mkdirSync,
+	existsSync,
+	statSync,
+	rmSync,
+} from "fs";
 import {execSync} from "child_process";
 
 // Unchanged files are left alone: the dev server watches src/webpage, and a rewrite, even
@@ -116,6 +124,17 @@ function generateBuildFiles() {
 		}
 	}
 
+	// The Machlakot artwork is for the dev server only (devBrandPlugin).
+	rmSync(resolve(distDir, "brand/dev"), {recursive: true, force: true});
+
+	// Android installs from the manifest; an icon that isn't shipped gets a generic letter tile.
+	const manifest = JSON.parse(readFileSync(resolve(distDir, "manifest.json"), "utf-8"));
+	for (const icon of [...manifest.icons, {src: "/favicon.ico"}]) {
+		if (!existsSync(resolve(distDir, "." + icon.src))) {
+			throw new Error(`The build ships no ${icon.src}, which the manifest or pages name`);
+		}
+	}
+
 	// The service worker precaches every file listed here on each update (service.ts,
 	// downloadAllFiles). Written last so it lists the files above too.
 	const files = fileTree(distDir);
@@ -169,6 +188,38 @@ const buildPlugin = () => ({
 	},
 });
 
+// The dev server brands itself Machlakot (brand.ts), so an install from it can't pass for the
+// production app: the brand URLs are answered from public/brand/dev/, and names are swapped in
+// the pages and the manifest. The manifest keeps its `id`, so an installed app updates in place.
+const devBrandPlugin = () => ({
+	name: "dev-brand",
+	apply: "serve",
+	configureServer(server) {
+		server.middlewares.use((req, res, next) => {
+			const path = (req.url || "").split("?")[0];
+			if (path === "/manifest.json") {
+				const manifest = JSON.parse(
+					readFileSync(resolve(__dirname, "src/webpage/public/manifest.json"), "utf-8"),
+				);
+				manifest.name = manifest.short_name = "Machlakot";
+				manifest.background_color = "#170A08";
+				res.setHeader("Content-Type", "application/manifest+json");
+				res.end(JSON.stringify(manifest));
+				return;
+			}
+			if (path === "/favicon.ico") {
+				req.url = "/brand/dev/favicon.ico";
+			} else if (path.startsWith("/brand/") && !path.startsWith("/brand/dev/")) {
+				req.url = "/brand/dev/" + path.slice("/brand/".length);
+			}
+			next();
+		});
+	},
+	transformIndexHtml(html) {
+		return html.replaceAll("Machloket", "Machlakot");
+	},
+});
+
 export default defineConfig({
 	root: resolve(__dirname, "src/webpage"),
 	envPrefix: ["VITE_"],
@@ -219,7 +270,7 @@ export default defineConfig({
 
 	appType: "spa",
 
-	plugins: [buildPlugin()],
+	plugins: [buildPlugin(), devBrandPlugin()],
 
 	// Tests run in headless Chromium: the app's modules import each other in cycles that only
 	// evaluate correctly under native browser ESM.

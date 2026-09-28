@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+	<!-- Machlakot (dev build): two voices in a dispute for the sake of heaven, woven through each other.
+	     Amber passes over at the bottom crossing, violet over at the top. -->
+	<defs>
+		<path id="left" d="M155.5 358.2 A130 130 0 1 0 100.4 319.6 L93.9 387.5 Z" />
+		<path id="right" d="M356.5 358.2 A130 130 0 1 1 411.6 319.6 L418.1 387.5 Z" />
+		<!-- The violet ring's arc through the top crossing (±25° around it). -->
+		<path id="right-over" d="M211.7 153.3 A130 130 0 0 1 310.9 106.0" />
+		<!-- Its gap outline ends 2° short, so its soft ends sit under solid violet (no hairline). -->
+		<path id="right-over-gap" d="M214.6 149.9 A130 130 0 0 1 306.3 106.1" />
+	</defs>
+	<rect width="512" height="512" fill="#170A08" />
+	<g fill="none" stroke-linejoin="round" stroke-linecap="round">
+		<use href="#right" stroke="#E0452C" stroke-width="34" />
+		<!-- Amber over violet, with a gap of background around it. -->
+		<use href="#left" stroke="#170A08" stroke-width="54" />
+		<use href="#left" stroke="#FFB23E" stroke-width="34" />
+		<!-- Violet back over amber at the top crossing; butt ends meet the violet beneath. -->
+		<use href="#right-over-gap" stroke="#170A08" stroke-width="54" stroke-linecap="butt" />
+		<use href="#right-over" stroke="#E0452C" stroke-width="34" stroke-linecap="butt" />
+	</g>
+</svg>

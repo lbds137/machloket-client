@@ -2,6 +2,7 @@ import {Guild} from "./guild.js";
 import {Channel} from "./channel.js";
 import {Direct, Group} from "./direct.js";
 import {User} from "./user.js";
+import {APP_NAME} from "./brand.js";
 import {
 	createImg,
 	getapiurls,
@@ -2916,7 +2917,7 @@ class Localuser {
 	static favImg = this.getFaviconImg();
 	static getFaviconImg() {
 		const img = document.createElement("img");
-		img.src = "/logo.webp";
+		img.src = "/brand/icon-192.png";
 		return img;
 	}
 	last = "-1";
@@ -4363,7 +4364,7 @@ class Localuser {
 		{
 			const jankInfo = settings.addButton(I18n.jankInfo());
 			const img = document.createElement("img");
-			img.src = new URL("public/logo.svg", import.meta.url).href;
+			img.src = "/brand/icon.svg";
 			jankInfo.addHTMLArea(img);
 			img.width = 128;
 			img.height = 128;
@@ -6083,7 +6084,7 @@ class Localuser {
 	pageTitle(channelName = "", guildName = "") {
 		(document.getElementById("channelname") as HTMLSpanElement).textContent = channelName;
 		(document.getElementsByTagName("title")[0] as HTMLTitleElement).textContent =
-			channelName + (guildName ? " | " + guildName : "") + " | Fermo";
+			channelName + (guildName ? " | " + guildName : "") + " | " + APP_NAME;
 	}
 	async instanceStats() {
 		const dialog = new Dialog("");
