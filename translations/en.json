@@ -841,6 +841,8 @@
 		}
 	},
 	"pinMessage": "Pin message",
+	"pinsLoadFailed": "Couldn't load the pinned messages. Tap the pin to try again.",
+	"pinsLoading": "Loading pinned messages…",
 	"profile": {
 		"bio": "About me:",
 		"joined": "Account made: $1",

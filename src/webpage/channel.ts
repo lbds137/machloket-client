@@ -855,27 +855,41 @@ class Channel extends SnowFlake {
 			document.removeEventListener("click", l);
 		};
 		document.addEventListener("mouseup", l);
+		// The panel's one line of text: loading, a failure, or no pins.
+		const status = document.createElement("b");
+		status.classList.add("noPins");
 		if (!this.pinnedMessages) {
-			const pinnedM = (await (
-				await fetch(`${this.info.api}/channels/${this.id}/pins`, {headers: this.headers})
-			).json()) as messagejson[];
-			this.pinnedMessages = pinnedM.map((_) => {
-				if (this.messages.has(_.id)) {
-					return this.messages.get(_.id) as Message;
-				} else {
-					return new Message(_, this);
-				}
-			});
+			// The instance can take seconds to answer, so say so instead of showing an empty box.
+			status.textContent = I18n.pinsLoading();
+			div.append(status);
+			try {
+				const res = await fetch(`${this.info.api}/channels/${this.id}/pins`, {
+					headers: this.headers,
+				});
+				if (!res.ok) throw new Error(`Loading pins answered ${res.status}`);
+				const pinnedM = (await res.json()) as messagejson[];
+				if (!Array.isArray(pinnedM)) throw new Error("Loading pins answered a non-list");
+				this.pinnedMessages = pinnedM.map((_) => {
+					if (this.messages.has(_.id)) {
+						return this.messages.get(_.id) as Message;
+					} else {
+						return new Message(_, this);
+					}
+				});
+			} catch (e) {
+				console.error(e);
+				status.textContent = I18n.pinsLoadFailed();
+				return;
+			}
+			status.remove();
 		}
 		const pinnedM = document.getElementById("pinnedMDiv");
 		if (pinnedM) {
 			pinnedM.classList.remove("unreadPin");
 		}
 		if (this.pinnedMessages.length === 0) {
-			const b = document.createElement("b");
-			b.classList.add("noPins");
-			b.textContent = I18n.noPins();
-			div.append(b);
+			status.textContent = I18n.noPins();
+			div.append(status);
 			return;
 		}
 		div.append(
