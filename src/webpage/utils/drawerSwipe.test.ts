@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("../localuser");
-const {installDrawerSwipe} = await import("./drawerSwipe");
+const {installDrawerSwipe, drawerSwipeJustEnded} = await import("./drawerSwipe");
 const {Message} = await import("../message");
 
 let page: HTMLElement;
@@ -64,13 +64,26 @@ function swipe(
 const glide = () => new Promise((res) => setTimeout(res, 400));
 const offsetX = () => new DOMMatrix(getComputedStyle(panel).transform).m41;
 
+/** The chat on screen, as after opening it: #maintoggle checked and the panel at left 0. */
+function chatOpen() {
+	toggle.checked = true;
+	panel.style.left = "0px";
+}
+
 function install() {
-	const openChat = vi.fn(() => {
-		toggle.checked = true;
-		panel.style.left = "0px";
+	const openChat = vi.fn(chatOpen);
+	const closeChat = vi.fn(() => {
+		toggle.checked = false;
+		panel.style.left = `${PEEK_LEFT}px`;
 	});
-	installDrawerSwipe(page, {isOpen: () => !toggle.checked, openChat, panel: () => panel});
-	return openChat;
+	installDrawerSwipe(page, {
+		isOpen: () => !toggle.checked,
+		openChat,
+		closeChat,
+		panel: () => panel,
+		peekLeft: () => PEEK_LEFT,
+	});
+	return Object.assign(openChat, {closeChat});
 }
 
 describe("swiping the drawer shut", () => {
@@ -180,15 +193,14 @@ describe("swiping the drawer shut", () => {
 	});
 });
 
-describe("a message's swipe while the drawer is open", () => {
-	const bindMessage = (setReplying = vi.fn()) => {
-		const message = Object.assign(Object.create(Message.prototype), {
-			owner: {moveForDrag: () => {}, setReplying},
-		});
-		message.messageevents(chat);
-		return setReplying;
-	};
+/** Binds the real message gestures to the chat's message row; returns its setReplying spy. */
+function bindMessage(setReplying = vi.fn()) {
+	const message = Object.assign(Object.create(Message.prototype), {owner: {setReplying}});
+	message.messageevents(chat);
+	return setReplying;
+}
 
+describe("a message's swipe while the drawer is open", () => {
 	it("doesn't start a reply", async () => {
 		install();
 		const setReplying = bindMessage();
@@ -232,5 +244,165 @@ describe("a message's swipe while the drawer is open", () => {
 		await glide();
 
 		expect(setReplying).toHaveBeenCalled();
+	});
+});
+
+describe("swiping the chat back to the drawer", () => {
+	it("follows the finger rightward, then closes the chat after the glide", async () => {
+		chatOpen();
+		const {closeChat} = install();
+
+		swipe(chat, [40, 300], [160, 304], {hold: true});
+		expect(offsetX()).toBe(120);
+		fire(chat, "touchend", [], [at(chat, 160, 304)]);
+		await glide();
+
+		expect(closeChat).toHaveBeenCalledTimes(1);
+		expect(panel.style.transform).toBe("");
+	});
+
+	it("never drags the chat past where it rests beside the drawer", () => {
+		chatOpen();
+		install();
+
+		swipe(chat, [10, 300], [400, 304], {hold: true});
+
+		expect(offsetX()).toBe(PEEK_LEFT);
+	});
+
+	it("springs back and stays open after a short swipe", async () => {
+		chatOpen();
+		const {closeChat} = install();
+
+		swipe(chat, [40, 300], [70, 302]);
+		await glide();
+
+		expect(closeChat).not.toHaveBeenCalled();
+		expect(panel.style.transform).toBe("");
+	});
+
+	it("closes from a right swipe that starts on a message, and doesn't reply", async () => {
+		chatOpen();
+		const {closeChat} = install();
+		const setReplying = bindMessage();
+
+		swipe(chat, [40, 300], [180, 304]);
+		await glide();
+
+		expect(closeChat).toHaveBeenCalledTimes(1);
+		expect(setReplying).not.toHaveBeenCalled();
+	});
+});
+
+describe("swipe to reply", () => {
+	beforeEach(() => {
+		// Headless Chromium may lack navigator.vibrate; the app treats it as optional.
+		Object.defineProperty(navigator, "vibrate", {value: vi.fn(() => true), configurable: true});
+	});
+
+	it("replies on a left swipe on a message with the chat open, and leaves the chat alone", async () => {
+		chatOpen();
+		const {closeChat} = install();
+		const setReplying = bindMessage();
+
+		swipe(chat, [300, 300], [200, 302]);
+		await glide();
+
+		expect(setReplying).toHaveBeenCalledTimes(1);
+		expect(closeChat).not.toHaveBeenCalled();
+		expect(offsetX()).toBe(0);
+	});
+
+	it("vibrates once, as the swipe passes the reply threshold", () => {
+		chatOpen();
+		install();
+		bindMessage();
+
+		swipe(chat, [300, 300], [150, 302], {hold: true});
+
+		expect(navigator.vibrate).toHaveBeenCalledTimes(1);
+	});
+
+	it("doesn't vibrate for a swipe too short to reply", () => {
+		chatOpen();
+		install();
+		bindMessage();
+
+		swipe(chat, [300, 300], [270, 302]);
+
+		expect(navigator.vibrate).not.toHaveBeenCalled();
+	});
+
+	it("doesn't vibrate for drawer swipes", async () => {
+		const openChat = install();
+
+		swipe(rail, [300, 200], [150, 205]);
+		await glide();
+		swipe(chat, [40, 300], [180, 304]);
+		await glide();
+
+		expect(openChat).toHaveBeenCalled();
+		expect(openChat.closeChat).toHaveBeenCalled();
+		expect(navigator.vibrate).not.toHaveBeenCalled();
+	});
+
+	it("glides the message back rather than snapping", () => {
+		chatOpen();
+		install();
+		bindMessage();
+
+		swipe(chat, [300, 300], [200, 302]);
+
+		expect(chat.style.transition).toContain("translate");
+	});
+});
+
+describe("the click a phone makes at the end of a swipe", () => {
+	it("is reported as the swipe's own for a moment after a drawer swipe ends", async () => {
+		chatOpen();
+		install();
+
+		swipe(chat, [40, 300], [180, 304]);
+
+		expect(drawerSwipeJustEnded()).toBe(true);
+		await new Promise((res) => setTimeout(res, 450));
+		expect(drawerSwipeJustEnded()).toBe(false);
+	});
+
+	it("doesn't reach a channel row's click handler right after a close swipe", () => {
+		chatOpen();
+		install();
+		const row = document.createElement("div");
+		rail.append(row);
+		const onRowClick = vi.fn();
+		row.addEventListener("click", onRowClick);
+
+		swipe(chat, [40, 300], [180, 304]);
+		row.click();
+
+		expect(onRowClick).not.toHaveBeenCalled();
+	});
+
+	it("isn't claimed after a plain tap or a vertical scroll", async () => {
+		// Let the previous test's swipe window lapse (the timestamp is module-wide).
+		await new Promise((res) => setTimeout(res, 450));
+		install();
+
+		swipe(rail, [200, 400], [190, 150]);
+
+		expect(drawerSwipeJustEnded()).toBe(false);
+	});
+});
+
+describe("a message after its reply swipe", () => {
+	it("drops the glide-back transition once the glide is done", async () => {
+		chatOpen();
+		install();
+		bindMessage();
+
+		swipe(chat, [300, 300], [200, 302]);
+		await new Promise((res) => setTimeout(res, 300));
+
+		expect(chat.style.transition).toBe("");
 	});
 });

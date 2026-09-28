@@ -595,17 +595,26 @@ class Message extends SnowFlake {
 		}
 	}
 	messageevents(obj: HTMLDivElement) {
-		let drag = false;
+		// Swipe left to reply: the message follows the finger, buzzes once past the threshold (as in
+		// Discord's app; the only swipe that does), and glides back. Right swipes, and every swipe
+		// while the drawer is open, belong to the drawer (utils/drawerSwipe.ts).
+		const REPLY_DISTANCE = 40;
 		let reply = false;
+		let buzzed = false;
 		let scrolling = false;
 		let gesture: "none" | "horizontal" | "vertical" = "none";
+		const reset = () => {
+			reply = false;
+			buzzed = false;
+			scrolling = false;
+			gesture = "none";
+		};
 
 		Message.contextmenu.bindContextmenu(
 			obj,
 			this,
 			undefined,
 			(x: number, y: number, event: TouchEvent) => {
-				// With the drawer open this message only peeks: a swipe belongs to the drawer.
 				if (scrolling || drawerOwnsTouch()) {
 					return;
 				}
@@ -621,10 +630,11 @@ class Message extends SnowFlake {
 					return;
 				}
 
-				if (reply || drag) {
+				if (reply) {
 					event.preventDefault();
 				}
 
+				obj.style.transition = "none";
 				if (x < -20) {
 					reply = true;
 					obj.style.translate = x + 20 + "px 0px";
@@ -632,39 +642,29 @@ class Message extends SnowFlake {
 					obj.style.translate = "0px";
 				}
 
-				if (!drag && x > 20) {
-					drag = true;
-				}
-
-				if (drag) {
-					this.channel.moveForDrag(Math.max(x, 0));
+				if (x < -REPLY_DISTANCE && !buzzed) {
+					buzzed = true;
+					// 30 ms: phone motors often cannot spin up in less, so a shorter buzz goes unfelt.
+					if ("vibrate" in navigator) navigator.vibrate(30);
 				}
 			},
 			(x: number) => {
+				obj.style.transition = "translate 150ms ease-out";
 				obj.style.translate = "0px";
-				this.channel.moveForDrag(-1);
+				// Then hand transitions back to the stylesheet (its hover background fade).
+				setTimeout(() => {
+					if (obj.style.translate === "0px") obj.style.removeProperty("transition");
+				}, 200);
 
 				if (scrolling || drawerOwnsTouch()) {
-					scrolling = false;
-					gesture = "none";
-					drag = false;
-					reply = false;
+					reset();
 					return;
 				}
 
-				if (x > 60) {
-					const toggle = document.getElementById("maintoggle") as HTMLInputElement;
-					toggle.checked = false;
-					toggle.dispatchEvent(new Event("change", {bubbles: true}));
-				}
-				if (x < -40) {
+				if (x < -REPLY_DISTANCE) {
 					this.channel.setReplying(this);
 				}
-
-				reply = false;
-				scrolling = false;
-				drag = false;
-				gesture = "none";
+				reset();
 			},
 		);
 		this.div = obj;

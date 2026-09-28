@@ -1224,17 +1224,6 @@ class Channel extends SnowFlake {
 	threadVis() {
 		return (this.member && !this.threadData?.archived) || this.localuser.channelfocus === this;
 	}
-	async moveForDrag(x: number) {
-		const mainarea = document.getElementById("mainarea");
-		if (!mainarea) return;
-		if (x === -1) {
-			mainarea.style.removeProperty("left");
-			mainarea.style.removeProperty("transition");
-			return;
-		}
-		mainarea.style.left = x + "px";
-		mainarea.style.transition = "left 0s";
-	}
 	async setUpVoice() {
 		if (!this.voice) return;
 		this.voice.onUserVol = (u) => {

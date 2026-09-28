@@ -576,14 +576,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			maintoggle.onchange = updateMainClass;
 			updateMainClass();
 		}
-		let ignoreChannelWrapperClick = false;
-		channelWrapper.addEventListener("click", (event) => {
-			if (ignoreChannelWrapperClick) {
-				ignoreChannelWrapperClick = false;
-				event.preventDefault();
-				event.stopImmediatePropagation();
-				return;
-			}
+		channelWrapper.addEventListener("click", () => {
 			if (!maintoggle) return;
 			setMainOpen(true);
 		});
@@ -600,52 +593,18 @@ if (window.location.pathname.startsWith("/channels")) {
 				{capture: true},
 			);
 		}
-		let swipeGesture: "none" | "horizontal" | "vertical" = "none";
-		let swipeStartX = 0;
-		let swipeStartY = 0;
-		let swipeDeltaX = 0;
-		mainArea.addEventListener(
-			"touchstart",
-			(event) => {
-				if (event.touches.length !== 1) return;
-				swipeGesture = "none";
-				swipeStartX = event.touches[0].pageX;
-				swipeStartY = event.touches[0].pageY;
-				swipeDeltaX = 0;
-			},
-			{passive: true},
-		);
-		mainArea.addEventListener(
-			"touchmove",
-			(event) => {
-				if (event.touches.length !== 1) return;
-				const target = event.target as HTMLElement | null;
-				if (target?.closest(".scroller")) return;
-				const dx = event.touches[0].pageX - swipeStartX;
-				const dy = event.touches[0].pageY - swipeStartY;
-				if (swipeGesture === "none" && (Math.abs(dx) > 16 || Math.abs(dy) > 16)) {
-					swipeGesture = Math.abs(dx) > Math.abs(dy) * 1.5 ? "horizontal" : "vertical";
-				}
-				if (swipeGesture === "horizontal") {
-					swipeDeltaX = dx;
-					event.preventDefault();
-				}
-			},
-			{passive: false},
-		);
-		mainArea.addEventListener("touchend", () => {
-			if (swipeGesture === "horizontal" && swipeDeltaX > 45) {
-				setMainOpen(false);
-				ignoreChannelWrapperClick = true;
-			}
-		});
 		if (pageEl) {
-			// A left swipe anywhere with the drawer open (rail, channel list, peeking chat) opens
-			// the chat; message swipes stand aside meanwhile (message.ts, drawerOwnsTouch).
+			// The chat follows the finger both ways: a left swipe anywhere with the drawer open
+			// opens it, a right swipe on it goes back to the drawer. Left swipes on messages with the
+			// chat open are swipe-to-reply (message.ts, drawerOwnsTouch).
+			const channelList = document.querySelector<HTMLElement>(".channelflex");
 			installDrawerSwipe(pageEl, {
 				isOpen: () => !maintoggle?.checked,
 				openChat: () => setMainOpen(true),
+				closeChat: () => setMainOpen(false),
 				panel: () => mainArea,
+				// The chat rests beside the channel list while the drawer is open.
+				peekLeft: () => channelList?.getBoundingClientRect().right ?? window.innerWidth * 0.78,
 			});
 		}
 		memberListToggle.checked = false;
