@@ -1495,7 +1495,6 @@ textarea:focus {
 	mask-size: contain !important;
 }
 
-
 .svg-explore {
 	mask: url(./icons/explore.svg);
 	mask-size: contain !important;
@@ -2648,12 +2647,46 @@ span.instanceStatus {
 	overflow: hidden; /* keep size if window height is too small */
 	text-align: center;
 	color: var(--loading-text);
-	background: var(--loading-bg, inherit) !important;
+	/* The logo's own background (brand/brand.css), so the icon's square doesn't show. */
+	background: var(--brand-bg, var(--loading-bg, inherit)) !important;
 	transition: transform 0.2s;
 }
 
 #loading.doneloading {
 	transform: translate(0%, -100%);
+}
+
+.splash {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	font-size: 0.95rem;
+	& p {
+		margin: 0;
+	}
+	& #load-desc {
+		opacity: 0.7;
+	}
+}
+
+.splashLogo {
+	margin-bottom: 16px;
+	border-radius: 28px;
+	animation: splashPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes splashPulse {
+	50% {
+		transform: scale(0.94);
+		opacity: 0.8;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.splashLogo {
+		animation: none;
+	}
 }
 
 #loadingdiv {

@@ -1,0 +1,4 @@
+/* The splash colour matches the icon art and the manifest background_color. */
+:root {
+	--brand-bg: #0b0b12;
+}

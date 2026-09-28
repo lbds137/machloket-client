@@ -37,5 +37,10 @@ describe("dev server branding", () => {
 		const devFavicon = new Uint8Array(await (await fetch("/brand/dev/favicon.ico")).arrayBuffer());
 		expect(favicon.length).toBeGreaterThan(0);
 		expect(favicon).toEqual(devFavicon);
+
+		// The splash's background matches the dev icon's, so the icon's square doesn't show.
+		const css = await (await fetch("/brand/brand.css")).text();
+		expect(css.toLowerCase()).toContain("#170a08");
+		expect(svg.toLowerCase()).toContain("#170a08");
 	});
 });
