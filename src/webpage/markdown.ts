@@ -1131,6 +1131,19 @@ class MarkDown {
 			if (_.isComposing || _.key === "Dead" || deadKeyPending) return;
 			gatherBoxContents(_.key === "Backspace");
 		};
+		// A chip (a mention, or anything else rendered from raw text) goes in one press, as on
+		// Discord. Android keyboards send no Backspace keydown, only this, so it covers every keyboard.
+		// No isComposing guard, unlike the handlers above: Android keyboards can report composing
+		// right after a chip, and real composing text beside the caret already rules a chip out.
+		box.addEventListener("beforeinput", (e) => {
+			const {inputType} = e as InputEvent;
+			if (inputType !== "deleteContentBackward" && inputType !== "deleteContentForward") return;
+			const chip = chipBesideCaret(box, inputType === "deleteContentBackward");
+			if (!chip) return;
+			e.preventDefault();
+			chip.remove();
+			gatherBoxContents(true);
+		});
 		box.addEventListener("input", (e) => {
 			if ((e as InputEvent).isComposing || deadKeyPending) return;
 			gatherBoxContents(false);
@@ -1386,6 +1399,50 @@ class MarkDown {
 	}
 	}
 	*/
+}
+
+/**
+ * The chip (an element with a `real` raw-text attribute) right before (or after) a collapsed
+ * caret in `box`, skipping the empty spans and text nodes the renderer puts around chips.
+ */
+function chipBesideCaret(box: HTMLElement, before: boolean): HTMLElement | undefined {
+	const selection = getSelection();
+	if (!selection?.rangeCount || !selection.isCollapsed) return;
+	const {startContainer, startOffset} = selection.getRangeAt(0);
+	if (!box.contains(startContainer)) return;
+	// The node on the caret's side: a text node's characters, or the child next to the offset.
+	let node: Node | null;
+	if (startContainer instanceof Text) {
+		if (before ? startOffset > 0 : startOffset < startContainer.data.length) return;
+		node = neighbour(startContainer, box, before);
+	} else {
+		node = startContainer.childNodes[before ? startOffset - 1 : startOffset] ?? null;
+		if (!node) node = startContainer === box ? null : neighbour(startContainer, box, before);
+	}
+	while (node) {
+		const edge = before ? node.lastChild : node.firstChild;
+		if (node instanceof HTMLElement && node.hasAttribute("real")) return node;
+		if (edge) {
+			node = edge;
+			continue;
+		}
+		const raw =
+			node instanceof HTMLElement ? MarkDown.gatherBoxText(node) : (node.textContent ?? "");
+		if (raw !== "") return;
+		node = neighbour(node, box, before);
+	}
+	return;
+}
+
+/** The next node toward the start (or end) of `box` after leaving `node`, or null at the edge. */
+function neighbour(node: Node, box: HTMLElement, before: boolean): Node | null {
+	let current: Node | null = node;
+	while (current && current !== box) {
+		const sibling = before ? current.previousSibling : current.nextSibling;
+		if (sibling) return sibling;
+		current = current.parentNode;
+	}
+	return null;
 }
 
 //solution from https://stackoverflow.com/questions/4576694/saving-and-restoring-caret-position-for-contenteditable-div
