@@ -5,6 +5,8 @@ import type {commandJson as commandJsonT, commandOptionJson} from "../jsontypes.
 
 // The fixture loads localuser (and I18n) first; commands.js comes after.
 const {Command} = await import("./commands.js");
+// @ts-expect-error Vite's ?inline import returns the stylesheet text.
+const {default: styleText} = await import("../public/style.css?inline");
 
 const commandJson = (options: commandOptionJson[]): commandJsonT => ({
 	id: "900",
@@ -755,7 +757,10 @@ describe("subcommand options (types 1 and 2)", () => {
 		});
 	});
 
-	it("the live flow works: render seeds the branch, its leaves reach state and collect keeps them", async () => {
+	it("the live flow works: render offers the branch choice, leaves reach state, collect keeps them", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
 		const {localuser, channel} = messageIn("100");
 		const command = new Command(
 			commandJson([
@@ -767,12 +772,22 @@ describe("subcommand options (types 1 and 2)", () => {
 		document.body.append(html);
 		try {
 			command.render(html, channel as never);
-			// render seeds the branch chip; its microtask self-activates and renders the leaves
-			// (the chip must be connected, as the real composer's typebox always is).
+			// The branch chip offers its popup on insert — no auto-pick of the first branch.
 			await new Promise((r) => setTimeout(r, 0));
+			expect(command.getState(command.options[0], channel as never)).toBe("");
+			expect(html.querySelectorAll(".commandinput")).toHaveLength(1);
+			expect(searchOptions.querySelectorAll("span").length).toBeGreaterThan(0);
+
+			const viewRow = [...searchOptions.querySelectorAll("span")].find(
+				(s) => s.textContent === "view",
+			) as HTMLElement;
+			viewRow.click();
+			expect(command.getState(command.options[0], channel as never)).toBe("view");
 
 		const chips = [...html.querySelectorAll(".commandinput")];
 		expect(chips.length).toBe(2); // the branch chip and the required leaf's
+		expect(chips[1].getAttribute("commandName")).toBe("name");
+		expect(chips[1].classList.contains("commandHidden")).toBe(false);
 		const leafInput = chips[1].querySelector("input") as HTMLInputElement;
 		leafInput.value = "Zed";
 		leafInput.dispatchEvent(new KeyboardEvent("keyup", {key: "d"}));
@@ -786,6 +801,42 @@ describe("subcommand options (types 1 and 2)", () => {
 		expect(command.getState(leaf as never, channel as never)).toBe("Zed");
 		} finally {
 			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("an argument-less branch shows its picked name and submits with no leaves", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([{type: 1, name: "browse", description: "", options: []}]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			await new Promise((r) => setTimeout(r, 0));
+			const browseRow = [...searchOptions.querySelectorAll("span")].find(
+				(s) => s.textContent === "browse",
+			) as HTMLElement;
+			browseRow.click();
+
+			const branchInput = html.querySelector(".commandinput input") as HTMLInputElement;
+			expect(branchInput.value).toBe("browse");
+			expect(html.querySelectorAll(".commandinput")).toHaveLength(1);
+
+			await command.submit(html, channel as never);
+			expect(sent).toHaveLength(1);
+			expect(sent[0]).toMatchObject({
+				data: {options: [{name: "browse", type: 1, options: []}]},
+			});
+		} finally {
+			html.remove();
+			searchOptions.remove();
 		}
 	});
 
@@ -857,6 +908,12 @@ describe("subcommand options (types 1 and 2)", () => {
 		try {
 			command.render(html, channel as never);
 			await new Promise((r) => setTimeout(r, 0));
+			// No auto-pick: the popup offers the choice, the user picks view first.
+			expect(command.getState(command.options[0], channel as never)).toBe("");
+			const viewRow = [...searchOptions.querySelectorAll("span")].find(
+				(s) => s.textContent === "view",
+			) as HTMLElement;
+			viewRow.click();
 			expect(command.getState(command.options[0], channel as never)).toBe("view");
 
 			// Re-pick: type into the branch input, choose delete from the popup.
@@ -870,9 +927,12 @@ describe("subcommand options (types 1 and 2)", () => {
 
 			expect(command.getState(command.options[0], channel as never)).toBe("delete");
 			const delLeaves = (command.options[1] as unknown as {children: unknown[]}).children;
-			const idInput = [...html.querySelectorAll(".commandinput input")].find(
-				(input) => (input.parentElement!.getAttribute("commandName") === "id"),
-			) as HTMLInputElement;
+			const idChip = [...html.querySelectorAll(".commandinput")].find(
+				(c) => c.getAttribute("commandName") === "id",
+			) as HTMLElement;
+			// The re-pick resets disclosure: only the new branch's required leaf shows.
+			expect(idChip.classList.contains("commandHidden")).toBe(false);
+			const idInput = idChip.querySelector("input") as HTMLInputElement;
 			expect(idInput).toBeTruthy();
 			idInput.value = "42";
 			idInput.dispatchEvent(new KeyboardEvent("keyup", {key: "2"}));
@@ -887,6 +947,182 @@ describe("subcommand options (types 1 and 2)", () => {
 		} finally {
 			html.remove();
 			searchOptions.remove();
+		}
+	});
+});
+
+describe("progressive composer model", () => {
+	function flatCommand(options: commandOptionJson[]) {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(commandJson(options), localuser);
+		return {channel, command};
+	}
+
+	it("renders only the first required option; the rest wait hidden", async () => {
+		const {channel, command} = flatCommand([
+			{type: 3, name: "message", description: "", required: true},
+			{type: 5, name: "incognito", description: ""},
+			{type: 3, name: "tag", description: ""},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const chips = [...html.querySelectorAll(".commandinput")];
+			expect(chips).toHaveLength(3);
+			const visible = chips.filter((c) => !c.classList.contains("commandHidden"));
+			expect(visible).toHaveLength(1);
+			expect(visible[0].getAttribute("commandName")).toBe("message");
+			expect(document.activeElement).toBe(visible[0].querySelector("input"));
+			// The app stylesheet's own .commandinput rule is display:inline-flex !important —
+			// the hidden rule must actually win the cascade, not just carry the class.
+			const style = document.createElement("style");
+			style.textContent = styleText;
+			document.head.append(style);
+			try {
+				expect(getComputedStyle(chips[1]).display).toBe("none");
+				expect(getComputedStyle(chips[0]).display).not.toBe("none");
+			} finally {
+				style.remove();
+			}
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("reveals the next option as each fills", async () => {
+		const {channel, command} = flatCommand([
+			{type: 3, name: "message", description: "", required: true},
+			{type: 5, name: "incognito", description: ""},
+			{type: 3, name: "tag", description: ""},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const chips = () => [...html.querySelectorAll(".commandinput")];
+
+			const message = chips()[0].querySelector("input") as HTMLInputElement;
+			message.value = "hello";
+			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
+			expect(chips()[1].classList.contains("commandHidden")).toBe(false);
+			expect(chips()[2].classList.contains("commandHidden")).toBe(true);
+
+			(chips()[1].querySelector("input") as HTMLInputElement).click();
+			expect(chips()[2].classList.contains("commandHidden")).toBe(false);
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("an answered-false boolean still counts as filled and reveals the next option", async () => {
+		const {channel, command} = flatCommand([
+			{type: 3, name: "message", description: "", required: true},
+			{type: 5, name: "incognito", description: ""},
+			{type: 3, name: "tag", description: ""},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const chips = () => [...html.querySelectorAll(".commandinput")];
+			const message = chips()[0].querySelector("input") as HTMLInputElement;
+			message.value = "hello";
+			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
+
+			// Click twice: checked → true, unchecked → false. False is still an answer.
+			const box = chips()[1].querySelector("input") as HTMLInputElement;
+			box.click();
+			box.click();
+
+			expect(command.getState(command.options[1], channel as never)).toBe("false");
+			expect(chips()[2].classList.contains("commandHidden")).toBe(false);
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("a required error reveals the hidden required option it names", async () => {
+		const {channel, command} = flatCommand([
+			{type: 3, name: "first", description: "", required: true},
+			{type: 3, name: "second", description: "", required: true},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const chips = [...html.querySelectorAll(".commandinput")];
+			expect(chips[1].classList.contains("commandHidden")).toBe(true);
+
+			const first = chips[0].querySelector("input") as HTMLInputElement;
+			first.value = "done";
+			first.dispatchEvent(new KeyboardEvent("keyup", {key: "e"}));
+
+			await expect(command.submit(html, channel as never)).resolves.toBe(false);
+			// The submit's complaint about `second` brings its chip into view.
+			expect(chips[1].classList.contains("commandHidden")).toBe(false);
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("backspace on the empty first chip exits command mode entirely", async () => {
+		const {Channel} = await import("../channel");
+		const {localuser} = messageIn("100");
+		const typebox = document.createElement("div");
+		typebox.id = "typebox";
+		(typebox as unknown as {markdown: unknown}).markdown = {
+			boxEnabled: false,
+			boxupdate: () => {},
+		};
+		document.body.append(typebox);
+		const chan = Object.assign(Object.create(Channel.prototype), {
+			id: "200",
+			// Channel's guild/localuser/info/headers all resolve through its owner; only
+			// plain fields go here directly.
+			owner: {id: "100", localuser, info: {api: API}, headers: {}},
+		});
+		const command = new Command(
+			commandJson([{type: 3, name: "message", description: "", required: true}]),
+			localuser,
+		);
+		try {
+			command.render(typebox, chan as never);
+			chan.curCommand = command;
+
+			const input = typebox.querySelector(".commandinput input") as HTMLInputElement;
+			input.dispatchEvent(new KeyboardEvent("keydown", {key: "Backspace"}));
+
+			expect(typebox.innerHTML).toBe("");
+			expect(chan.curCommand).toBeUndefined();
+			// A later start of the same command begins clean, not on stale option state.
+			expect(command.state.get(chan as never)).toBeUndefined();
+		} finally {
+			typebox.remove();
+		}
+	});
+
+	it("backspace on a later chip removes only that chip", async () => {
+		const {channel, command} = flatCommand([
+			{type: 3, name: "message", description: "", required: true},
+			{type: 3, name: "tag", description: ""},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const chips = [...html.querySelectorAll(".commandinput")];
+			const message = chips[0].querySelector("input") as HTMLInputElement;
+			message.value = "hello";
+			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
+
+			const tag = chips[1].querySelector("input") as HTMLInputElement;
+			tag.dispatchEvent(new KeyboardEvent("keydown", {key: "Backspace"}));
+
+			expect(html.querySelectorAll(".commandinput")).toHaveLength(1);
+			expect(html.querySelector(".commandFront")).toBeTruthy();
+		} finally {
+			html.remove();
 		}
 	});
 });

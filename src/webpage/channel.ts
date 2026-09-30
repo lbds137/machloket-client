@@ -2058,16 +2058,29 @@ class Channel extends SnowFlake {
 	}
 	curCommand?: Command;
 	curWatch = () => {};
-	async submitCommand() {
-		if (!this.curCommand) return;
+	/** Tears command mode down: chips and the command front go, the composer types again, and
+	 * the command's per-channel state is dropped so a later start begins clean. */
+	exitCommand() {
+		this.curCommand?.state.delete(this);
+		this.curCommand = undefined;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		if (await this.curCommand.submit(typebox, this)) {
-			this.curCommand = undefined;
-			const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-			typebox.markdown.boxEnabled = true;
-			typebox.innerHTML = "";
-			typebox.markdown.boxupdate();
-			typebox.removeEventListener("keyup", this.curWatch);
+		typebox.removeEventListener("keyup", this.curWatch);
+		typebox.markdown.boxEnabled = true;
+		typebox.innerHTML = "";
+		typebox.markdown.boxupdate();
+		// The branch picker's popup is offered on insert, so the default bail gesture is
+		// Backspace with it open: clear it or its ghost rows eat the next Enter.
+		document.getElementById("searchOptions")?.replaceChildren();
+		typebox.focus();
+	}
+	async submitCommand() {
+		const cmd = this.curCommand;
+		if (!cmd) return;
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		if (await cmd.submit(typebox, this)) {
+			// Only tear down what's still there: the user may have bailed (or started
+			// something else) while the POST was in flight.
+			if (this.curCommand === cmd) this.exitCommand();
 		}
 	}
 	startCommand(command: Command) {

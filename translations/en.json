@@ -224,6 +224,7 @@
 		"placeholderChannel": "Channel",
 		"placeholderRole": "Role",
 		"placeholderMentionable": "User, Role, or Channel",
+		"placeholderSubcommand": "Subcommand",
 		"uploading": "Uploading…"
 	},
 	"confirmGuildLeave": "Are you sure you want to leave $1",

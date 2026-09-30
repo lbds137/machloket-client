@@ -312,6 +312,18 @@ if (window.location.pathname.startsWith("/channels")) {
 	async function handleEnter(event: KeyboardEvent): Promise<void> {
 		if (event.isComposing) return;
 		if (event.key === "Escape") {
+			// Escape walks out layer by layer: the option popup first, then command mode,
+			// then the reply/attachment state below.
+			const searchOptions = document.getElementById("searchOptions");
+			if (searchOptions && searchOptions.childElementCount) {
+				searchOptions.replaceChildren();
+				typebox.focus();
+				return;
+			}
+			if (thisUser.channelfocus?.curCommand) {
+				thisUser.channelfocus.exitCommand();
+				return;
+			}
 			if (images.length || thisUser.channelfocus?.replyingto) {
 				while (images.length) {
 					const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;

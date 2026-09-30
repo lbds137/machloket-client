@@ -10,6 +10,28 @@ function focusInput(html: HTMLElement) {
 	const input = html.getElementsByTagName("input")[0];
 	if (input) input.focus();
 }
+/** Backspace at the start of an empty chip input removes the chip — and removing the FIRST
+ * chip exits command mode entirely (the command front goes with it, as Discord does). */
+function chipBackspace(
+	div: HTMLElement,
+	input: HTMLInputElement,
+	channel: Channel,
+	e: KeyboardEvent,
+	emptyOnly = true,
+) {
+	if (emptyOnly && !(input.selectionStart === 0 && input.value.length === 0)) return;
+	const prev = div.previousElementSibling;
+	if (!prev || prev.classList.contains("commandFront")) {
+		channel.exitCommand();
+	} else {
+		const before = !!div.nextSibling;
+		const sib = div.nextSibling || div.previousSibling;
+		div.remove();
+		focusElm(sib as HTMLElement, before);
+	}
+	e.preventDefault();
+	e.stopImmediatePropagation();
+}
 function focusElm(node: HTMLElement | Text, before = true) {
 	const selection = window.getSelection();
 	if (!selection) return;
@@ -195,7 +217,6 @@ export class Command extends SnowFlake {
 						textNode.after(html);
 						textNode.remove();
 						this.collect(Divhtml, channel);
-						console.log(this.state.get(channel));
 						focusInput(html);
 						return true;
 					},
@@ -205,14 +226,16 @@ export class Command extends SnowFlake {
 			document.getElementById("searchOptions") as HTMLDivElement,
 		);
 	}
+	/** Where each channel's chips render, so progressive reveals can find them. */
+	boxes = new WeakMap<Channel, HTMLElement>();
 	render(html: HTMLElement, channel: Channel) {
-		console.warn(this.rawJson);
 		html.innerHTML = "";
+		this.boxes.set(channel, html);
 		let state = this.state.get(channel);
 		if (!state) {
 			// A command made of subcommands/groups seeds one branch picker instead of every
 			// leaf; the picked branch brings its own. Otherwise every option seeds — an empty
-			// optional is omitted at submit — so there is always an input to type into.
+			// optional is omitted at submit.
 			const branches = this.options.filter((_) => _ instanceof SubCommandOption);
 			const req =
 				branches.length && branches.length === this.options.length
@@ -226,6 +249,9 @@ export class Command extends SnowFlake {
 		command.textContent = `/${this.localizedName}`;
 		command.contentEditable = "false";
 		html.append(command);
+		// Progressive disclosure: every chip renders (hidden keeps its state alive through
+		// collect()), but only the first REQUIRED option (or the branch picker, or the first
+		// option when nothing is required) is shown; each fill reveals the next.
 		let firstChip: HTMLElement | undefined = undefined;
 		let firstRequired: HTMLElement | undefined = undefined;
 		for (const thing of state) {
@@ -235,17 +261,17 @@ export class Command extends SnowFlake {
 			}
 			const {option, state} = thing;
 			const opt = option.toHTML(state, channel);
-			// Typing should reach the first REQUIRED option (or the branch picker); when
-			// nothing is required, the FIRST option — never the last (live: /random's note
-			// landed in its tag option and the bot answered about a tag nobody typed).
+			opt.classList.add("commandHidden");
 			firstChip = firstChip ?? opt;
 			if (!firstRequired && (option.required || option instanceof SubCommandOption)) {
 				firstRequired = opt;
 			}
 			html.append(opt);
 		}
-		if (firstRequired ?? firstChip) {
-			focusInput((firstRequired ?? firstChip)!);
+		const target = firstRequired ?? firstChip;
+		if (target) {
+			target.classList.remove("commandHidden");
+			focusInput(target);
 		} else {
 			const node = new Text();
 			node.textContent = "";
@@ -253,12 +279,27 @@ export class Command extends SnowFlake {
 			focusElm(node, false);
 		}
 	}
+	/** Unhides the next hidden chip (document order = option order). */
+	revealNext(channel: Channel) {
+		this.boxes
+			.get(channel)
+			?.querySelector(".commandinput.commandHidden")
+			?.classList.remove("commandHidden");
+	}
+	/** Unhides one option's chip by name (a required-error names its option). */
+	revealOption(option: Option, channel: Channel) {
+		this.boxes
+			.get(channel)
+			?.querySelector(`.commandinput[commandname="${CSS.escape(option.name)}"]`)
+			?.classList.remove("commandHidden");
+	}
 	stateChange(option: Option, channel: Channel, state: string) {
 		const states = this.state.get(channel);
 		if (!states) return;
 		const stateObj = states.find((_) => _ instanceof Object && _.option === option);
 		if (stateObj && stateObj instanceof Object) {
 			stateObj.state = state;
+			if (option.filled(state)) this.revealNext(channel);
 		}
 	}
 	getState(option: Option, channel: Channel) {
@@ -295,6 +336,9 @@ export class Command extends SnowFlake {
 			for (const thing of [...this.options, ...leavesAll]) {
 				const state = opts.find((_) => _.option === thing)?.state ?? "";
 				if (thing.required && !thing.filled(state)) {
+					// The complaint brings the field into view: a hidden required option
+					// would block with no field to fill.
+					this.revealOption(thing, channel);
 					throw new OptionError(I18n.commands.required(thing.localizedName));
 				}
 			}
@@ -553,14 +597,7 @@ class StringOption extends Option {
 		input.type = "text";
 		input.value = state;
 		input.onkeydown = (e) => {
-			if (input.selectionStart === 0 && e.key === "Backspace") {
-				const before = !!div.nextSibling;
-				const sib = div.nextSibling || div.previousSibling;
-				div.remove();
-				focusElm(sib as HTMLElement, before);
-				e.preventDefault();
-				e.stopImmediatePropagation();
-			}
+			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
 			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
@@ -665,14 +702,7 @@ class NumberishOption extends Option {
 		if (this.max !== undefined) input.max = String(this.max);
 		input.value = state;
 		input.onkeydown = (e) => {
-			if (input.selectionStart === 0 && e.key === "Backspace") {
-				const before = !!div.nextSibling;
-				const sib = div.nextSibling || div.previousSibling;
-				div.remove();
-				focusElm(sib as HTMLElement, before);
-				e.preventDefault();
-				e.stopImmediatePropagation();
-			}
+			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
 			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
@@ -740,14 +770,7 @@ class BooleanOption extends Option {
 			this.owner.stateChange(this, channel, input.checked ? "true" : "false");
 		};
 		input.onkeydown = (e) => {
-			if (e.key === "Backspace") {
-				const before = !!div.nextSibling;
-				const sib = div.nextSibling || div.previousSibling;
-				div.remove();
-				focusElm(sib as HTMLElement, before);
-				e.preventDefault();
-				e.stopImmediatePropagation();
-			}
+			chipBackspace(div, input, channel, e, false);
 		};
 
 		div.append(label, input);
@@ -902,14 +925,7 @@ class EntityOption extends Option {
 						: I18n.commands.placeholderMentionable();
 		input.value = this.describe(channel, state);
 		input.onkeydown = (e) => {
-			if (input.selectionStart === 0 && input.value.length === 0 && e.key === "Backspace") {
-				const before = !!div.nextSibling;
-				const sib = div.nextSibling || div.previousSibling;
-				div.remove();
-				focusElm(sib as HTMLElement, before);
-				e.preventDefault();
-				e.stopImmediatePropagation();
-			}
+			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
 			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
@@ -993,14 +1009,7 @@ class AttachmentOption extends Option {
 			}
 		};
 		input.onkeydown = (e) => {
-			if (e.key === "Backspace") {
-				const before = !!div.nextSibling;
-				const sib = div.nextSibling || div.previousSibling;
-				div.remove();
-				focusElm(sib as HTMLElement, before);
-				e.preventDefault();
-				e.stopImmediatePropagation();
-			}
+			chipBackspace(div, input, channel, e, false);
 		};
 
 		div.append(label, input, status);
@@ -1082,6 +1091,7 @@ class SubCommandOption extends Option {
 	 * existing entries). Stale entries of a previously picked branch are dropped. */
 	renderLeaves(div: HTMLElement, state: string, channel: Channel) {
 		this.clearFollowing(div);
+		if (div.parentElement) this.owner.boxes.set(channel, div.parentElement);
 		const leaves = this.leavesOf(state);
 		const states = this.owner.state.get(channel);
 		if (states) {
@@ -1092,12 +1102,24 @@ class SubCommandOption extends Option {
 			}
 			this.owner.state.set(channel, kept);
 		}
+		// Progressive disclosure, same as render(): only the first required leaf (or the
+		// first leaf when none is required) shows; fills reveal the rest.
 		let cursor = div;
+		let reveal: HTMLElement | undefined;
 		for (const leaf of leaves) {
 			const chip = leaf.toHTML("", channel);
+			chip.classList.add("commandHidden");
+			if (!reveal && leaf.required) reveal = chip;
 			cursor.after(chip);
 			cursor = chip;
 		}
+		if (!reveal) {
+			const first = div.nextElementSibling;
+			if (first instanceof HTMLElement && first.classList.contains("commandinput")) {
+				reveal = first;
+			}
+		}
+		reveal?.classList.remove("commandHidden");
 	}
 	toHTML(state: string, channel: Channel): HTMLElement {
 		const div = document.createElement("div");
@@ -1105,12 +1127,13 @@ class SubCommandOption extends Option {
 		div.classList.add("flexltr", "commandinput");
 		this.imprintName(div);
 
-		const label = document.createElement("span");
-		label.textContent = this.localizedName + ":";
-
 		const input = document.createElement("input");
 		input.type = "text";
-		input.value = state || this.name;
+		// The chip is the command's branch picker: no label of its own (a sibling
+		// subcommand's name there read as that subcommand's field), and the picked branch's
+		// name stays visible so argument-less branches read as runnable.
+		input.placeholder = I18n.commands.placeholderSubcommand();
+		input.value = state;
 		// A group command picks twice: the group, then its subcommand.
 		let group: SubCommandGroupOption | undefined;
 		const offer = () => {
@@ -1155,16 +1178,7 @@ class SubCommandOption extends Option {
 			);
 		};
 		input.onkeydown = (e) => {
-			if (input.selectionStart === 0 && input.value.length === 0 && e.key === "Backspace") {
-				const before = !!div.nextSibling;
-				const sib = div.nextSibling || div.previousSibling;
-				// The branch chip carries its leaves; they go with it.
-				this.clearFollowing(div);
-				div.remove();
-				focusElm(sib as HTMLElement, before);
-				e.preventDefault();
-				e.stopImmediatePropagation();
-			}
+			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
 			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
@@ -1174,18 +1188,18 @@ class SubCommandOption extends Option {
 		};
 		input.oninput = offer;
 
-		div.append(label, input);
+		div.append(input);
 		if (state !== "") {
 			queueMicrotask(() => {
 				if (div.isConnected) this.renderLeaves(div, state, channel);
 			});
-		} else if (this.branches().every((_) => !(_ instanceof SubCommandGroupOption))) {
-			// A freshly inserted branch chip among plain subcommands picks itself and shows its
-			// leaves; group commands wait for the user's two picks.
+		} else {
+			// A freshly inserted branch chip offers the choice immediately — no auto-pick of
+			// the first subcommand.
 			queueMicrotask(() => {
 				if (div.isConnected) {
-					this.owner.stateChange(this, channel, this.name);
-					this.renderLeaves(div, this.name, channel);
+					input.value = "";
+					offer();
 				}
 			});
 		}

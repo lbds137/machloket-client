@@ -7951,3 +7951,8 @@ textarea.interactionModalInput {
 	display: block;
 	cursor: pointer;
 }
+/* An option chip not yet revealed by progressive disclosure (still in the DOM so its state
+ * survives collect()). !important: .commandinput's own display is author-important. */
+.commandinput.commandHidden {
+	display: none !important;
+}
