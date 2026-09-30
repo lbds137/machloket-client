@@ -261,15 +261,17 @@ export class Command extends SnowFlake {
 				return true;
 			}
 			const opts = states.filter((_) => typeof _ !== "string");
-			const options = opts.map(({option, state}) => {
-				return option.toJson(state);
-			});
-			const madeit = new Set(opts.map((_) => _.option));
 			for (const thing of this.options) {
-				if (thing.required && !madeit.has(thing)) {
+				const state = opts.find((_) => _.option === thing)?.state ?? "";
+				if (thing.required && !thing.filled(state)) {
 					throw new OptionError(I18n.commands.required(thing.localizedName));
 				}
 			}
+			const options = opts
+				.filter((_) => _.option.filled(_.state))
+				.map(({option, state}) => {
+					return option.toJson(state);
+				});
 
 			await fetch(this.info.api + "/interactions", {
 				method: "POST",
@@ -310,7 +312,7 @@ export class Command extends SnowFlake {
 abstract class Option {
 	type: number;
 	required: boolean;
-	private name: string;
+	name: string;
 	private description: string;
 	private nameLocalizations: Record<string, string>;
 	private descriptionLocalizations: Record<string, string>;
@@ -335,6 +337,12 @@ abstract class Option {
 		switch (optionjson.type) {
 			case 3:
 				return new StringOption(optionjson, owner);
+			case 4:
+				return new IntegerOption(optionjson, owner);
+			case 5:
+				return new BooleanOption(optionjson, owner);
+			case 6:
+				return new NumberOption(optionjson, owner);
 			default:
 				return new ErrorOption(optionjson);
 		}
@@ -370,7 +378,12 @@ abstract class Option {
 			name: this.name,
 		};
 	}
-	getValue(state: string): string | number {
+	/** Whether `state` counts as answered. An unanswered required option blocks the send; an
+	 * unanswered optional one is omitted from it (Discord's behavior). */
+	filled(state: string): boolean {
+		return state !== "";
+	}
+	getValue(state: string): string | number | boolean {
 		return state;
 	}
 }
@@ -501,5 +514,128 @@ class StringOption extends Option {
 			throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 		}
 		return state;
+	}
+}
+class NumberishOption extends Option {
+	min?: number;
+	max?: number;
+	integer: boolean;
+	owner: Command;
+	constructor(optionjson: commandOptionJson, owner: Command, integer: boolean) {
+		super(optionjson);
+		this.owner = owner;
+		this.integer = integer;
+		this.min = optionjson.min_value;
+		this.max = optionjson.max_value;
+	}
+	toHTML(state: string, channel: Channel): HTMLElement {
+		const div = document.createElement("div");
+		div.contentEditable = "false";
+		div.classList.add("flexltr", "commandinput");
+		this.imprintName(div);
+
+		const label = document.createElement("span");
+		label.textContent = this.localizedName + ":";
+
+		const input = document.createElement("input");
+		input.type = "number";
+		input.step = this.integer ? "1" : "any";
+		if (this.min !== undefined) input.min = String(this.min);
+		if (this.max !== undefined) input.max = String(this.max);
+		input.value = state;
+		input.onkeydown = (e) => {
+			if (input.selectionStart === 0 && e.key === "Backspace") {
+				const before = !!div.nextSibling;
+				const sib = div.nextSibling || div.previousSibling;
+				div.remove();
+				focusElm(sib as HTMLElement, before);
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+		};
+		input.onkeyup = (e) => {
+			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
+				focusElm(div, false);
+			}
+			this.owner.stateChange(this, channel, input.value);
+		};
+		// Spinner clicks change the value without firing any key event.
+		input.oninput = () => {
+			this.owner.stateChange(this, channel, input.value);
+		};
+
+		div.append(label, input);
+		return div;
+	}
+	getValue(state: string) {
+		const num = Number(state);
+		if (state === "" || !Number.isFinite(num)) {
+			// An empty state is filtered out before toJson; reaching here means a logic slip.
+			// isFinite also rejects NaN and Infinity (JSON.stringify would emit null for it).
+			throw new OptionError(I18n.commands.notNumber(this.localizedName));
+		}
+		if (this.integer && !Number.isInteger(num)) {
+			throw new OptionError(I18n.commands.notInteger(this.localizedName));
+		}
+		if (this.min !== undefined && num < this.min) {
+			throw new OptionError(I18n.commands.numberMin(this.localizedName, String(this.min)));
+		}
+		if (this.max !== undefined && num > this.max) {
+			throw new OptionError(I18n.commands.numberMax(this.localizedName, String(this.max)));
+		}
+		return num;
+	}
+}
+class IntegerOption extends NumberishOption {
+	constructor(optionjson: commandOptionJson, owner: Command) {
+		super(optionjson, owner, true);
+	}
+}
+class NumberOption extends NumberishOption {
+	constructor(optionjson: commandOptionJson, owner: Command) {
+		super(optionjson, owner, false);
+	}
+}
+class BooleanOption extends Option {
+	owner: Command;
+	constructor(optionjson: commandOptionJson, owner: Command) {
+		super(optionjson);
+		this.owner = owner;
+	}
+	toHTML(state: string, channel: Channel): HTMLElement {
+		const div = document.createElement("div");
+		div.contentEditable = "false";
+		div.classList.add("flexltr", "commandinput");
+		this.imprintName(div);
+
+		const label = document.createElement("span");
+		label.textContent = this.localizedName + ":";
+
+		const input = document.createElement("input");
+		input.type = "checkbox";
+		input.checked = state === "true";
+		input.onchange = () => {
+			// Touching the toggle is an explicit answer; "false" stays filled, like Discord.
+			this.owner.stateChange(this, channel, input.checked ? "true" : "false");
+		};
+		input.onkeydown = (e) => {
+			if (e.key === "Backspace") {
+				const before = !!div.nextSibling;
+				const sib = div.nextSibling || div.previousSibling;
+				div.remove();
+				focusElm(sib as HTMLElement, before);
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+		};
+
+		div.append(label, input);
+		return div;
+	}
+	filled(state: string): boolean {
+		return state === "true" || state === "false";
+	}
+	getValue(state: string) {
+		return state === "true";
 	}
 }

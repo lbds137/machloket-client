@@ -1,55 +1,11 @@
 import {describe, expect, it} from "vitest";
 import {captureRequests} from "../test/setup";
+import {API, dmMessage, messageIn} from "../test/interactionFixture";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
-// order (index.ts imports localuser first), so load that before the interaction code.
-const {Localuser} = await import("../localuser");
+// order (index.ts imports localuser first); the fixture loads localuser first.
 const {Components} = await import("./compontents");
-const {Message} = await import("../message.js");
 const {Command} = await import("./commands.js");
-
-const API = "http://dm.test/api/v9";
-
-/**
- * A message in a channel whose owning guild is `guildId` — "@me" for a DM, a snowflake for a
- * guild. In a DM the client's owning "guild" is the "@me" pseudo-guild (direct.ts), and that id
- * must never reach the wire: the server rejects an interaction whose guild_id isn't the
- * channel's own guild, and a DM channel has none. Discord's client omits guild_id for DM
- * interactions; in a guild the real snowflake is sent and validated.
- */
-function messageIn(guildId: string) {
-	const headers = {"Content-type": "application/json", Authorization: "token"};
-	const localuser = Object.assign(Object.create(Localuser.prototype), {
-		interNonceMap: new Map(),
-		interactionNonces: new Set(),
-		commandChannels: new Map(),
-		guilds: [],
-		guildids: new Map([[guildId, {channels: []}]]),
-		generateFavicon: () => {},
-		channelids: new Map(),
-		info: {api: API},
-		headers,
-		session_id: "session-1",
-	}) as InstanceType<typeof Localuser>;
-	const guild = {id: guildId};
-	const channel = {
-		id: "200",
-		owner: guild,
-		guild,
-		localuser,
-		info: {api: API},
-		headers,
-	};
-	const message = Object.assign(Object.create(Message.prototype), {
-		id: "500",
-		flags: 0,
-		author: {id: "300"},
-		owner: channel,
-		headers,
-	}) as unknown as InstanceType<typeof Message>;
-	return {localuser, channel, message};
-}
-const dmMessage = () => messageIn("@me");
 
 describe("component and command interactions in a DM", () => {
 	it("a button click sends no guild_id", async () => {
