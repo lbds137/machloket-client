@@ -857,6 +857,9 @@ class Message extends SnowFlake {
 		}
 
 		const editmode = this.channel.editing === this;
+		// The thinking class belongs to the defer only: a re-render after the real content
+		// arrives must drop it, or the whole reply stays italic forever.
+		div.classList.remove("thinking");
 		if (this.loading) {
 			// A deferred interaction: a minimal "…is thinking" bubble until the bot's
 			// MESSAGE_UPDATE replaces it with the real content (deferred messages carry no

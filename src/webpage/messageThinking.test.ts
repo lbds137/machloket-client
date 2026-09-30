@@ -46,4 +46,18 @@ describe("deferred (loading) messages", () => {
 
 		expect(div.classList.contains("thinking")).toBe(false);
 	});
+
+	it("re-rendering after the defer clears drops the thinking class", () => {
+		// The live bug: the defer renders with .thinking, the bot's real content arrives via
+		// MESSAGE_UPDATE, and a re-render that kept the class left the whole reply italic.
+		const message = loadingMessage(1 << 7, "");
+		const div = document.createElement("div");
+		message.generateMessage(undefined, false, div);
+		expect(div.classList.contains("thinking")).toBe(true);
+
+		message.flags = 0;
+		message.generateMessage(undefined, false, div);
+
+		expect(div.classList.contains("thinking")).toBe(false);
+	});
 });
