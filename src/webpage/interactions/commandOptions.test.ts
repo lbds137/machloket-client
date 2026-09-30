@@ -762,10 +762,13 @@ describe("subcommand options (types 1 and 2)", () => {
 		expect(retry).toHaveLength(1);
 	});
 
-	it("after picking a command with only optional options, focus lands in an option input", async () => {
+	it("after picking a command with only optional options, focus lands in the FIRST option input", async () => {
 		const {localuser, channel} = messageIn("100");
 		const command = new Command(
-			commandJson([{type: 3, name: "note", description: ""}]),
+			commandJson([
+				{type: 3, name: "message", description: ""},
+				{type: 3, name: "tag", description: ""},
+			]),
 			localuser,
 		);
 		const html = document.createElement("div");
@@ -775,10 +778,8 @@ describe("subcommand options (types 1 and 2)", () => {
 			await new Promise((r) => setTimeout(r, 0));
 
 			const focused = document.activeElement;
-			expect(
-				focused instanceof HTMLInputElement &&
-					focused.closest(".commandinput") !== null,
-			).toBe(true);
+			const first = html.querySelector(".commandinput input") as HTMLInputElement;
+			expect(focused).toBe(first); // typing should reach the first option, not the last
 		} finally {
 			html.remove();
 		}

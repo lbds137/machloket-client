@@ -226,8 +226,8 @@ export class Command extends SnowFlake {
 		command.textContent = `/${this.localizedName}`;
 		command.contentEditable = "false";
 		html.append(command);
-		let lastElm: HTMLElement | undefined = undefined;
-		let firstFocus: HTMLElement | undefined = undefined;
+		let firstChip: HTMLElement | undefined = undefined;
+		let firstRequired: HTMLElement | undefined = undefined;
 		for (const thing of state) {
 			if (typeof thing === "string") {
 				html.append(thing);
@@ -235,15 +235,17 @@ export class Command extends SnowFlake {
 			}
 			const {option, state} = thing;
 			const opt = option.toHTML(state, channel);
-			if (!firstFocus && (option.required || option instanceof SubCommandOption)) {
-				firstFocus = opt;
+			// Typing should reach the first REQUIRED option (or the branch picker); when
+			// nothing is required, the FIRST option — never the last (live: /random's note
+			// landed in its tag option and the bot answered about a tag nobody typed).
+			firstChip = firstChip ?? opt;
+			if (!firstRequired && (option.required || option instanceof SubCommandOption)) {
+				firstRequired = opt;
 			}
-			lastElm = opt;
 			html.append(opt);
 		}
-		if (firstFocus ?? lastElm) {
-			// The first required option (or the branch picker) is where typing should land.
-			focusInput((firstFocus ?? lastElm)!);
+		if (firstRequired ?? firstChip) {
+			focusInput((firstRequired ?? firstChip)!);
 		} else {
 			const node = new Text();
 			node.textContent = "";
