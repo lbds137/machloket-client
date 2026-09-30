@@ -132,7 +132,14 @@ export class Command extends SnowFlake {
 				if (state) {
 					build.push(state);
 				} else {
-					const option = this.options.find((_) => _.match(name || ""));
+					// A branch's leaf options are chips of this command too — collect must know
+					// them or their inputs can never record values.
+					const branchLeaves = this.options.flatMap((branch) =>
+						branch instanceof SubCommandOption ? branch.allLeaves() : [],
+					);
+					const option =
+						this.options.find((_) => _.match(name || "")) ??
+						branchLeaves.find((_) => _.match(name || ""));
 					if (option) {
 						build.push({option, state: ""});
 					}
@@ -166,7 +173,12 @@ export class Command extends SnowFlake {
 			return;
 		}
 		const opts = this.options
-			.filter((obj) => !states.find((_) => _ instanceof Object && _.option === obj))
+			.filter(
+				(obj) =>
+					// Branches are the branch picker's business, not insertable arguments.
+					!(obj instanceof SubCommandOption) &&
+					!states.find((_) => _ instanceof Object && _.option === obj),
+			)
 			.map((opt) => [opt, opt.similar(text)] as const)
 			.filter((_) => _[1])
 			.sort((a, b) => a[1] - b[1])
@@ -198,7 +210,13 @@ export class Command extends SnowFlake {
 		html.innerHTML = "";
 		let state = this.state.get(channel);
 		if (!state) {
-			const req = this.options.filter((_) => _.required);
+			// A command made of subcommands/groups seeds one branch picker instead of every
+			// required leaf; the picked branch brings its own.
+			const branches = this.options.filter((_) => _ instanceof SubCommandOption);
+			const req =
+				branches.length && branches.length === this.options.length
+					? [branches[0]]
+					: this.options.filter((_) => _.required);
 			state = req.map((option) => ({option, state: ""}));
 			this.state.set(channel, state);
 		}
@@ -261,17 +279,33 @@ export class Command extends SnowFlake {
 				return true;
 			}
 			const opts = states.filter((_) => typeof _ !== "string");
-			for (const thing of this.options) {
+			// A subcommand/group command nests: the picked branch carries the leaf entries.
+			const branch = opts.find(
+				(_) => _.option instanceof SubCommandOption,
+			) as {option: SubCommandOption; state: string} | undefined;
+			const leavesAll = branch ? branch.option.leavesOf(branch.state) : [];
+			for (const thing of [...this.options, ...leavesAll]) {
 				const state = opts.find((_) => _.option === thing)?.state ?? "";
 				if (thing.required && !thing.filled(state)) {
 					throw new OptionError(I18n.commands.required(thing.localizedName));
 				}
 			}
-			const options = opts
-				.filter((_) => _.option.filled(_.state))
+			if (branch && !branch.option.filled(branch.state)) {
+				throw new OptionError(I18n.commands.required(branch.option.localizedName));
+			}
+			const leafEntries = opts
+				.filter(
+					(_) =>
+						_ !== branch &&
+						!(_.option instanceof SubCommandOption) &&
+						_.option.filled(_.state),
+				)
 				.map(({option, state}) => {
 					return option.toJson(state);
 				});
+			const options = branch
+				? [branch.option.wireEntry(branch.state, leafEntries)]
+				: leafEntries;
 
 			await fetch(this.info.api + "/interactions", {
 				method: "POST",
@@ -346,6 +380,10 @@ abstract class Option {
 				return new IntegerOption(optionjson, owner);
 			case 5:
 				return new BooleanOption(optionjson, owner);
+			case 1:
+				return new SubCommandOption(optionjson, owner);
+			case 2:
+				return new SubCommandGroupOption(optionjson, owner);
 			case 6:
 			case 7:
 			case 8:
@@ -356,7 +394,6 @@ abstract class Option {
 			case 11:
 				return new AttachmentOption(optionjson, owner);
 			default:
-				// 1 SUB_COMMAND and 2 SUB_COMMAND_GROUP are not built.
 				return new ErrorOption(optionjson);
 		}
 	}
@@ -901,5 +938,195 @@ class AttachmentOption extends Option {
 	getValue(state: string) {
 		if (/^\d+$/.test(state)) return state;
 		throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
+	}
+}
+/** A subcommand (type 1) or, subclassed, a subcommand group (type 2). The chip this renders is
+ * the command's branch picker: its popup offers the sibling branches (and, for groups, a second
+ * step offering the group's subcommands), the state holds the PICKED subcommand's name, and the
+ * picked branch's leaf options render as chips after it. */
+class SubCommandOption extends Option {
+	owner: Command;
+	children: Option[];
+	constructor(optionjson: commandOptionJson, owner: Command) {
+		super(optionjson);
+		this.owner = owner;
+		this.children = (optionjson.options || []).map((_) => Option.toOption(_, owner));
+	}
+	/** Every branch the popup can target (the command's sibling subcommands/groups). */
+	branches(): SubCommandOption[] {
+		return this.owner.options.filter((_) => _ instanceof SubCommandOption) as SubCommandOption[];
+	}
+	/** Every leaf option of every branch (for state seeding and cleanup). */
+	allLeaves(): Option[] {
+		return this.branches().flatMap((branch) =>
+			branch instanceof SubCommandGroupOption
+				? branch.children.flatMap((sub) =>
+						sub instanceof SubCommandOption ? sub.children : [],
+					)
+				: branch.children,
+		);
+	}
+	/** The leaf options behind a picked branch: a subcommand name, or "group/sub" for groups. */
+	leavesOf(state: string): Option[] {
+		const [groupName, subName] = state.includes("/") ? state.split("/") : [undefined, state];
+		for (const branch of this.branches()) {
+			if (groupName) {
+				const sub = branch.children.find((child) => child.name === subName);
+				if (branch.name === groupName && sub instanceof SubCommandOption) {
+					return sub.children;
+				}
+			} else if (branch.name === state && !(branch instanceof SubCommandGroupOption)) {
+				return branch.children;
+			}
+		}
+		return [];
+	}
+	filled(state: string): boolean {
+		return state !== "";
+	}
+	getValue(state: string) {
+		return state;
+	}
+	/** The wire entry: the picked subcommand nesting the leaf entries. */
+	wireEntry(state: string, leaves: {value: unknown; type: number; name: string}[]) {
+		return {name: state, type: 1, options: leaves} as {
+			name: string;
+			type: number;
+			options: unknown[];
+		};
+	}
+	/** Removes every option chip after `div` (the previous branch's leaves). */
+	clearFollowing(div: HTMLElement) {
+		let node = div.nextElementSibling;
+		while (node) {
+			const next = node.nextElementSibling;
+			if (node instanceof HTMLElement && node.classList.contains("commandinput")) {
+				node.remove();
+			}
+			node = next;
+		}
+	}
+	/** Replaces the chips after `div` with the picked branch's leaves — and seeds their state
+	 * entries, without which their inputs can never record values (stateChange only mutates
+	 * existing entries). Stale entries of a previously picked branch are dropped. */
+	renderLeaves(div: HTMLElement, state: string, channel: Channel) {
+		this.clearFollowing(div);
+		const leaves = this.leavesOf(state);
+		const states = this.owner.state.get(channel);
+		if (states) {
+			const stale = new Set(this.allLeaves());
+			const kept = states.filter((s) => typeof s === "string" || !stale.has(s.option));
+			for (const leaf of leaves) {
+				kept.push({option: leaf, state: ""});
+			}
+			this.owner.state.set(channel, kept);
+		}
+		let cursor = div;
+		for (const leaf of leaves) {
+			const chip = leaf.toHTML("", channel);
+			cursor.after(chip);
+			cursor = chip;
+		}
+	}
+	toHTML(state: string, channel: Channel): HTMLElement {
+		const div = document.createElement("div");
+		div.contentEditable = "false";
+		div.classList.add("flexltr", "commandinput");
+		this.imprintName(div);
+
+		const label = document.createElement("span");
+		label.textContent = this.localizedName + ":";
+
+		const input = document.createElement("input");
+		input.type = "text";
+		input.value = state || this.name;
+		// A group command picks twice: the group, then its subcommand.
+		let group: SubCommandGroupOption | undefined;
+		const offer = () => {
+			const entries =
+				group === undefined
+					? this.branches()
+					: (group.children.filter((_) => _ instanceof SubCommandOption) as SubCommandOption[]);
+			this.owner.localuser.MDSearchOptions(
+				entries
+					.filter((branch) => branch.localizedName.includes(input.value))
+					.slice(0, 8)
+					.map((branch) => {
+						return [
+							branch.localizedName,
+							"",
+							undefined,
+							() => {
+								if (
+									group === undefined &&
+									branch instanceof SubCommandGroupOption
+								) {
+									group = branch;
+									input.value = "";
+									offer();
+								} else {
+									// Groups persist their pick as "group/sub" so the wire names
+									// the group the user actually chose, not the first one.
+									const picked =
+										group === undefined
+											? branch.name
+											: group.name + "/" + branch.name;
+									input.value = branch.localizedName;
+									this.owner.stateChange(this, channel, picked);
+									this.renderLeaves(div, picked, channel);
+								}
+								return true;
+							},
+						] as const;
+					}),
+				"",
+			);
+		};
+		input.onkeydown = (e) => {
+			if (input.selectionStart === 0 && input.value.length === 0 && e.key === "Backspace") {
+				const before = !!div.nextSibling;
+				const sib = div.nextSibling || div.previousSibling;
+				// The branch chip carries its leaves; they go with it.
+				this.clearFollowing(div);
+				div.remove();
+				focusElm(sib as HTMLElement, before);
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+		};
+		input.onkeyup = (e) => {
+			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
+				focusElm(div, false);
+			}
+			offer();
+		};
+		input.oninput = offer;
+
+		div.append(label, input);
+		if (state !== "") {
+			queueMicrotask(() => {
+				if (div.isConnected) this.renderLeaves(div, state, channel);
+			});
+		} else if (this.branches().every((_) => !(_ instanceof SubCommandGroupOption))) {
+			// A freshly inserted branch chip among plain subcommands picks itself and shows its
+			// leaves; group commands wait for the user's two picks.
+			queueMicrotask(() => {
+				if (div.isConnected) {
+					this.owner.stateChange(this, channel, this.name);
+					this.renderLeaves(div, this.name, channel);
+				}
+			});
+		}
+		return div;
+	}
+}
+class SubCommandGroupOption extends SubCommandOption {
+	wireEntry(state: string, leaves: {value: unknown; type: number; name: string}[]) {
+		const [groupName, subName] = state.split("/");
+		return {
+			name: groupName,
+			type: 2,
+			options: [{name: subName, type: 1, options: leaves}],
+		};
 	}
 }

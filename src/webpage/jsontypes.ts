@@ -264,7 +264,7 @@ export interface commandOptionJson {
 				value: string | number;
 		  }[]
 		| null;
-	options?: commandJson[];
+	options?: commandOptionJson[];
 	channel_types?: number[];
 	min_value?: number;
 	max_value?: number;

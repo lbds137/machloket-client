@@ -469,3 +469,265 @@ describe("attachment slash-command options (type 11)", () => {
 		expect(body.data.attachments.map((_) => _.id).sort()).toEqual([...ids].sort());
 	});
 });
+
+describe("subcommand options (types 1 and 2)", () => {
+	it("a picked subcommand nests its leaf options", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
+			]),
+			localuser,
+		);
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "view"},
+			{
+				option: (command.options[0] as unknown as {children: unknown[]}).children[0] as never,
+				state: "Zed",
+			},
+		]);
+
+		await command.submit(document.createElement("div"), channel as never);
+
+		expect(sent).toHaveLength(1);
+		expect(sent[0]).toMatchObject({
+			data: {
+				options: [{name: "view", type: 1, options: [{name: "name", type: 3, value: "Zed"}]}],
+			},
+		});
+	});
+
+	it("a command whose subcommand is unpicked blocks the send", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "view", description: "", options: []},
+			]),
+			localuser,
+		);
+		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
+
+		await expect(command.submit(document.createElement("div"), channel as never)).resolves.toBe(
+			false,
+		);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("a subcommand group nests group, subcommand and leaves", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{
+					type: 2,
+					name: "apikey",
+					description: "",
+					options: [
+						{
+							type: 1,
+							name: "set",
+							description: "",
+							options: [{type: 3, name: "key", description: "", required: true}],
+						},
+					],
+				},
+			]),
+			localuser,
+		);
+		const sub = (command.options[0] as unknown as {children: unknown[]}).children[0];
+		const leaf = (sub as unknown as {children: unknown[]}).children[0];
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "apikey/set"},
+			{option: leaf as never, state: "abc123"},
+		]);
+
+		await command.submit(document.createElement("div"), channel as never);
+
+		expect(sent).toHaveLength(1);
+		expect(sent[0]).toMatchObject({
+			data: {
+				options: [
+					{
+						name: "apikey",
+						type: 2,
+						options: [{name: "set", type: 1, options: [{name: "key", type: 3, value: "abc123"}]}],
+					},
+				],
+			},
+		});
+	});
+
+	it("a required leaf under the picked subcommand blocks when empty", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
+			]),
+			localuser,
+		);
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "view"},
+			{
+				option: (command.options[0] as unknown as {children: unknown[]}).children[0] as never,
+				state: "",
+			},
+		]);
+
+		await expect(command.submit(document.createElement("div"), channel as never)).resolves.toBe(
+			false,
+		);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("an optional leaf under the picked subcommand is omitted from its nested options", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [
+						{type: 3, name: "name", description: "", required: true},
+						{type: 3, name: "tag", description: ""},
+					],
+				},
+			]),
+			localuser,
+		);
+		const children = (command.options[0] as unknown as {children: unknown[]}).children;
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "view"},
+			{option: children[0] as never, state: "Zed"},
+			{option: children[1] as never, state: ""},
+		]);
+
+		await command.submit(document.createElement("div"), channel as never);
+
+		expect(sent).toHaveLength(1);
+		expect((sent[0] as {data: {options: unknown[]}}).data.options).toEqual([
+			{name: "view", type: 1, options: [{value: "Zed", type: 3, name: "name"}]},
+		]);
+	});
+
+	it("a sub of the SECOND group wires that group's name", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{
+					type: 2,
+					name: "persona",
+					description: "",
+					options: [
+						{type: 1, name: "set", description: "", options: [{type: 3, name: "a", description: "", required: true}]},
+					],
+				},
+				{
+					type: 2,
+					name: "locale",
+					description: "",
+					options: [
+						{type: 1, name: "set", description: "", options: [{type: 3, name: "b", description: "", required: true}]},
+					],
+				},
+			]),
+			localuser,
+		);
+		const locale = command.options[1];
+		const subLeaf = (locale as unknown as {children: unknown[]}).children[0] as unknown as {
+			children: unknown[];
+		};
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "locale/set"},
+			{option: subLeaf.children[0] as never, state: "en-GB"},
+		]);
+
+		await command.submit(document.createElement("div"), channel as never);
+
+		expect(sent).toHaveLength(1);
+		expect(sent[0]).toMatchObject({
+			data: {
+				options: [
+					{
+						name: "locale",
+						type: 2,
+						options: [{name: "set", type: 1, options: [{name: "b", value: "en-GB"}]}],
+					},
+				],
+			},
+		});
+	});
+
+	it("picking the SECOND sibling subcommand resolves its own leaves", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "view", description: "", options: [{type: 3, name: "name", description: "", required: true}]},
+				{type: 1, name: "delete", description: "", options: [{type: 3, name: "id", description: "", required: true}]},
+			]),
+			localuser,
+		);
+		const delLeaves = (command.options[1] as unknown as {children: unknown[]}).children;
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "delete"},
+			{option: delLeaves[0] as never, state: "42"},
+		]);
+
+		await command.submit(document.createElement("div"), channel as never);
+
+		expect(sent).toHaveLength(1);
+		expect(sent[0]).toMatchObject({
+			data: {options: [{name: "delete", type: 1, options: [{name: "id", value: "42"}]}]},
+		});
+	});
+
+	it("the live flow works: render seeds the branch, its leaves reach state and collect keeps them", async () => {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "view", description: "", options: [{type: 3, name: "name", description: "", required: true}]},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			// render seeds the branch chip; its microtask self-activates and renders the leaves
+			// (the chip must be connected, as the real composer's typebox always is).
+			await new Promise((r) => setTimeout(r, 0));
+
+		const chips = [...html.querySelectorAll(".commandinput")];
+		expect(chips.length).toBe(2); // the branch chip and the required leaf's
+		const leafInput = chips[1].querySelector("input") as HTMLInputElement;
+		leafInput.value = "Zed";
+		leafInput.dispatchEvent(new KeyboardEvent("keyup", {key: "d"}));
+
+		expect(command.getState(command.options[0], channel as never)).toBe("view");
+		const leaf = (command.options[0] as unknown as {children: unknown[]}).children[0];
+		expect(command.getState(leaf as never, channel as never)).toBe("Zed");
+
+		// collect() rebuilds state from the DOM; the leaf entry must survive it.
+		command.collect(html, channel as never);
+		expect(command.getState(leaf as never, channel as never)).toBe("Zed");
+		} finally {
+			html.remove();
+		}
+	});
+});
