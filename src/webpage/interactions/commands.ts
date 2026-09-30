@@ -4,6 +4,7 @@ import {I18n} from "../i18n.js";
 import {commandJson, commandOptionJson} from "../jsontypes.js";
 import {Localuser} from "../localuser.js";
 import {SnowFlake} from "../snowflake.js";
+import {wireGuildId} from "./compontents.js";
 import {removeAni} from "../utils/utils.js";
 function focusInput(html: HTMLElement) {
 	const input = html.getElementsByTagName("input")[0];
@@ -276,7 +277,7 @@ export class Command extends SnowFlake {
 				body: JSON.stringify({
 					type: 2,
 					nonce: nonce,
-					guild_id: channel.owner.id,
+					guild_id: wireGuildId(channel.owner),
 					channel_id: channel.id,
 					application_id: this.applicationId,
 					session_id: this.localuser.session_id,

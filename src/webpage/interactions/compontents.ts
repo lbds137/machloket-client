@@ -43,6 +43,14 @@ abstract class compObj {
 		return this.owner.owner.localuser;
 	}
 }
+/**
+ * A DM channel's owning "guild" is the "@me" pseudo-guild; the interaction wire carries no
+ * guild_id for it (the server rejects a guild_id that isn't the channel's own guild, and a DM
+ * has none).
+ */
+export function wireGuildId(guild: {id: string}) {
+	return guild.id === "@me" ? undefined : guild.id;
+}
 export class Components {
 	components: compObj[];
 	owner: Message | Channel;
@@ -301,7 +309,7 @@ class Button extends compObj {
 			body: JSON.stringify({
 				type: this.message ? 3 : 5,
 				nonce: nonce,
-				guild_id: this.guild.id,
+				guild_id: wireGuildId(this.guild),
 				channel_id: this.channel.id,
 				message_flags: this.message?.flags,
 				message_id: this.message?.id,
@@ -374,7 +382,7 @@ class Select extends compObj {
 			body: JSON.stringify({
 				type: this.message ? 3 : 5,
 				nonce: nonce,
-				guild_id: this.guild.id,
+				guild_id: wireGuildId(this.guild),
 				channel_id: this.channel.id,
 				message_flags: this.message?.flags,
 				message_id: this.message?.id,
