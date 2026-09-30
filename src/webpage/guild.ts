@@ -2260,14 +2260,16 @@ class Guild extends SnowFlake {
 			await this.commandProm;
 		}
 		if (this.commands) {
-			return this.commands;
+			return this.commands.filter((_) => _.type === 1);
 		} else {
 			const prom = this.getCommandsFetch();
 			this.commandProm = prom;
 			const {apps, commands} = await prom;
 			this.commands = commands;
 			this.apps = apps;
-			return commands;
+			// The slash popup offers only chat-input commands; context-menu commands (USER 2,
+			// MESSAGE 3) stay in this.commands for their own menus.
+			return commands.filter((_) => _.type === 1);
 		}
 	}
 

@@ -59,4 +59,26 @@ describe("application-command index fetch", () => {
 		expect(commands).toHaveLength(1);
 		expect((commands[0] as unknown as {name: string}).name).toBe("row9");
 	});
+
+	it("context-menu commands are stored but never offered in the slash popup", async () => {
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Tzurot"}],
+					application_commands: [
+						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+						{id: "2", type: 3, application_id: "300", name: "Inspect Message", description: "", dm_permission: true},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		const guild = guildWithId("1554722916606791818");
+
+		const slashCommands = await guild.getCommands();
+
+		const names = (slashCommands as unknown as {name: string}[]).map((c) => c.name);
+		expect(names).toContain("random");
+		expect(names).not.toContain("Inspect Message");
+	});
 });
