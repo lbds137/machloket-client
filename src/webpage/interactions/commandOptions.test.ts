@@ -159,3 +159,178 @@ describe("typed slash-command options", () => {
 		expect((sent[0] as {data: {options: unknown[]}}).data.options).toHaveLength(1);
 	});
 });
+
+describe("entity slash-command options (user, channel, role, mentionable)", () => {
+	it("a user option sends the picked snowflake as a string", async () => {
+		const {sent, run} = commandWith(
+			[{type: 6, name: "who", description: "", required: true}],
+			{who: "1553128655016763450"},
+		);
+
+		await run();
+
+		expect(sent[0]).toMatchObject({
+			data: {options: [{name: "who", type: 6, value: "1553128655016763450"}]},
+		});
+	});
+
+	it("a channel option sends the picked snowflake as a string", async () => {
+		const {sent, run} = commandWith(
+			[{type: 7, name: "where", description: "", required: true}],
+			{where: "1553780562722828434"},
+		);
+
+		await run();
+
+		expect(sent[0]).toMatchObject({
+			data: {options: [{name: "where", type: 7, value: "1553780562722828434"}]},
+		});
+	});
+
+	it("role and mentionable options send snowflake strings", async () => {
+		const roleRun = commandWith(
+			[{type: 8, name: "role", description: "", required: true}],
+			{role: "1553128655016763451"},
+		);
+		await roleRun.run();
+		expect(roleRun.sent[0]).toMatchObject({
+			data: {options: [{name: "role", type: 8, value: "1553128655016763451"}]},
+		});
+
+		const mentionRun = commandWith(
+			[{type: 9, name: "target", description: "", required: true}],
+			{target: "1553128655016763452"},
+		);
+		await mentionRun.run();
+		expect(mentionRun.sent[0]).toMatchObject({
+			data: {options: [{name: "target", type: 9, value: "1553128655016763452"}]},
+		});
+	});
+
+	it("a typed answer that isn't a picked id blocks the send", async () => {
+		const {sent, run} = commandWith(
+			[{type: 6, name: "who", description: "", required: true}],
+			{who: "alice"},
+		);
+
+		await expect(run()).resolves.toBe(false);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("picking a candidate from the popup stores the member's id", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const {localuser, channel} = messageIn("1553128655016763450");
+		(channel as unknown as {guild: unknown}).guild = {
+			id: "1553128655016763450",
+			members: [
+				{
+					id: "1553128655016763451",
+					user: {username: "Tzurot"},
+					compare: (name: string) => (name ? 1 : 0),
+				},
+			],
+			roles: [],
+			channels: [],
+		};
+		const command = new Command(
+			commandJson([{type: 6, name: "who", description: "", required: true}]),
+			localuser,
+		);
+		const chip = command.options[0].toHTML("", channel as never);
+		// render() seeds the channel's state entries before any chip exists; mirror that.
+		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
+		const input = chip.querySelector("input") as HTMLInputElement;
+		input.value = "Tz";
+		input.dispatchEvent(new KeyboardEvent("keyup", {key: "T"}));
+
+		const candidate = searchOptions.querySelector("span") as HTMLElement;
+		expect(candidate).not.toBeNull();
+		candidate.click();
+
+		expect(command.getState(command.options[0], channel as never)).toBe(
+			"1553128655016763451",
+		);
+		searchOptions.remove();
+	});
+
+	it("the @everyone role is not a candidate, but real roles are", () => {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(commandJson([{type: 8, name: "role", description: ""}]), localuser);
+		(channel as unknown as {guild: unknown}).guild = {
+			id: "100",
+			members: [],
+			roles: [
+				{id: "100", name: "everyone"},
+				{id: "101", name: "witch"},
+			],
+			channels: [],
+		};
+		const collect = command.options[0] as unknown as {
+			collect: (channel: unknown) => {value: string}[];
+		};
+
+		const values = collect.collect(channel).map((_) => _.value);
+
+		expect(values).toEqual(["101"]);
+	});
+
+	it("channel_types narrows channel candidates", () => {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([{type: 7, name: "where", description: "", channel_types: [2]}]),
+			localuser,
+		);
+		(channel as unknown as {guild: unknown}).guild = {
+			id: "100",
+			members: [],
+			roles: [],
+			channels: [
+				{id: "1", name: "general", type: 0, visible: true},
+				{id: "2", name: "voice", type: 2, visible: true},
+				{id: "3", name: "hidden", type: 2, visible: false},
+			],
+		};
+		const collect = command.options[0] as unknown as {
+			collect: (channel: unknown) => {value: string}[];
+		};
+
+		expect(collect.collect(channel).map((_) => _.value)).toEqual(["2"]);
+	});
+
+	it("in a DM, only people are candidates: a role option offers nothing", () => {
+		const {localuser, channel} = messageIn("@me");
+		(channel as unknown as {users?: unknown}).users = [{id: "9", name: "the owner"}];
+		const userCommand = new Command(commandJson([{type: 6, name: "who", description: ""}]), localuser);
+		const roleCommand = new Command(commandJson([{type: 8, name: "role", description: ""}]), localuser);
+		const collect = (option: unknown) =>
+			(option as {collect: (channel: unknown) => {value: string}[]}).collect(channel);
+
+		expect(collect(userCommand.options[0]).map((_) => _.value)).toEqual(["9"]);
+		expect(collect(roleCommand.options[0])).toEqual([]);
+	});
+
+	it("matching goes through the member's compare, not the display text", () => {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(commandJson([{type: 6, name: "who", description: ""}]), localuser);
+		(channel as unknown as {guild: unknown}).guild = {
+			id: "100",
+			members: [
+				{
+					id: "7",
+					user: {username: "Zed"},
+					// Refuses everything: if matching fell back to the display text, "Zed" would match.
+					compare: () => 0,
+				},
+			],
+			roles: [],
+			channels: [],
+		};
+		const candidates = command.options[0] as unknown as {
+			candidates: (channel: unknown, query: string) => {value: string}[];
+		};
+
+		expect(candidates.candidates(channel, "Zed")).toEqual([]);
+	});
+});

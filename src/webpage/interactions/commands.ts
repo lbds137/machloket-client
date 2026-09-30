@@ -341,11 +341,15 @@ abstract class Option {
 				return new IntegerOption(optionjson, owner);
 			case 5:
 				return new BooleanOption(optionjson, owner);
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+				return new EntityOption(optionjson, owner);
 			case 10:
 				return new NumberOption(optionjson, owner);
 			default:
-				// 6 USER, 7 CHANNEL, 8 ROLE, 9 MENTIONABLE, 11 ATTACHMENT: entity pickers,
-				// not built yet (tranche 2).
+				// 11 ATTACHMENT: the file-picker option, not built yet.
 				return new ErrorOption(optionjson);
 		}
 	}
@@ -639,5 +643,174 @@ class BooleanOption extends Option {
 	}
 	getValue(state: string) {
 		return state === "true";
+	}
+}
+class EntityOption extends Option {
+	owner: Command;
+	kind: "user" | "channel" | "role" | "mentionable";
+	channelTypes?: number[];
+	constructor(optionjson: commandOptionJson, owner: Command) {
+		super(optionjson);
+		this.owner = owner;
+		this.kind =
+			optionjson.type === 6
+				? "user"
+				: optionjson.type === 7
+					? "channel"
+					: optionjson.type === 8
+						? "role"
+						: "mentionable";
+		this.channelTypes = optionjson.channel_types;
+	}
+	/** Every pickable entity in this channel's context: chip display, snowflake value, and a
+	 * match score for a query (the entity's own compare/similar when it has one — the same
+	 * ranking the composer's @/# popups use, matching nick, username and id). */
+	collect(
+		channel: Channel,
+	): {display: string; value: string; score: (query: string) => number}[] {
+		const out: {display: string; value: string; score: (query: string) => number}[] = [];
+		const displayRank = (display: string) => (query: string) => {
+			if (display.includes(query)) return query.length / display.length;
+			if (display.toLowerCase().includes(query.toLowerCase()))
+				return query.length / display.length / 1.2;
+			return 0;
+		};
+		const guild = channel.guild;
+		if (guild.id === "@me") {
+			// A DM has roles or guild channels for no one; only people are pickable here.
+			if (this.kind !== "user" && this.kind !== "mentionable") return out;
+			const users = (
+				channel as unknown as {
+					users?: {
+						id: string;
+						name?: string;
+						username?: string;
+						compare?: (query: string) => number;
+					}[];
+				}
+			).users;
+			for (const user of users || []) {
+				const display = "@" + (user.name || user.username);
+				out.push({display, value: user.id, score: user.compare || displayRank(display)});
+			}
+			return out;
+		}
+		const g = guild as unknown as {
+			id: string;
+			members?: Iterable<{
+				id: string;
+				name?: string;
+				user?: {username: string};
+				compare?: (query: string) => number;
+			}>;
+			roles?: {id: string; name: string; compare?: (query: string) => number}[];
+			channels?: Channel[];
+		};
+		if (this.kind !== "channel") {
+			for (const member of g.members || []) {
+				const display = "@" + (member.name || member.user?.username);
+				out.push({display, value: member.id, score: member.compare || displayRank(display)});
+			}
+		}
+		if (this.kind === "role" || this.kind === "mentionable") {
+			// The guild's @everyone role shares the guild's id; it isn't a pickable role.
+			for (const role of (g.roles || []).filter((_) => _.id !== g.id)) {
+				const display = "@" + role.name;
+				out.push({display, value: role.id, score: role.compare || displayRank(display)});
+			}
+		}
+		if (this.kind === "channel" || this.kind === "mentionable") {
+			for (const chan of (g.channels || []).filter((_) => _.visible)) {
+				if (this.channelTypes && !this.channelTypes.includes((chan as {type: number}).type))
+					continue;
+				out.push({
+					display: "#" + chan.name,
+					value: chan.id,
+					// Channel.similar returns -1 for categories, excluding them.
+					score: chan.similar ? chan.similar.bind(chan) : displayRank("#" + chan.name),
+				});
+			}
+		}
+		return out;
+	}
+	/** Candidates matching `query`, capped like the other popups. Sorted ascending because
+	 * MDSearchOptions prepends each row: the best match renders at the top. */
+	candidates(channel: Channel, query: string): {display: string; value: string}[] {
+		return this.collect(channel)
+			.map((c) => ({c, rank: c.score(query)}))
+			.filter((_) => _.rank > 0)
+			.sort((a, b) => a.rank - b.rank)
+			.slice(0, 8)
+			.map((_) => ({display: _.c.display, value: _.c.value}));
+	}
+	/** The chip text for an already-picked id (the raw id if it resolves to nothing). */
+	describe(channel: Channel, state: string) {
+		if (state === "") return "";
+		const hit = this.collect(channel).find((_) => _.value === state);
+		return hit ? hit.display : state;
+	}
+	displayCandidates(input: HTMLInputElement, channel: Channel) {
+		this.owner.localuser.MDSearchOptions(
+			this.candidates(channel, input.value).map((c) => {
+				return [
+					c.display,
+					"",
+					undefined,
+					() => {
+						input.value = c.display;
+						this.owner.stateChange(this, channel, c.value);
+						return true;
+					},
+				] as const;
+			}),
+			"",
+		);
+	}
+	toHTML(state: string, channel: Channel): HTMLElement {
+		const div = document.createElement("div");
+		div.contentEditable = "false";
+		div.classList.add("flexltr", "commandinput");
+		this.imprintName(div);
+
+		const label = document.createElement("span");
+		label.textContent = this.localizedName + ":";
+
+		const input = document.createElement("input");
+		input.type = "text";
+		input.placeholder =
+			this.kind === "user"
+				? I18n.commands.placeholderUser()
+				: this.kind === "channel"
+					? I18n.commands.placeholderChannel()
+					: this.kind === "role"
+						? I18n.commands.placeholderRole()
+						: I18n.commands.placeholderMentionable();
+		input.value = this.describe(channel, state);
+		input.onkeydown = (e) => {
+			if (input.selectionStart === 0 && input.value.length === 0 && e.key === "Backspace") {
+				const before = !!div.nextSibling;
+				const sib = div.nextSibling || div.previousSibling;
+				div.remove();
+				focusElm(sib as HTMLElement, before);
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+		};
+		input.onkeyup = (e) => {
+			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
+				focusElm(div, false);
+			}
+			this.owner.stateChange(this, channel, input.value);
+			this.displayCandidates(input, channel);
+		};
+
+		div.append(label, input);
+		return div;
+	}
+	getValue(state: string) {
+		// The wire value is the picked entity's snowflake; anything else (a typed name that was
+		// never picked) is refused client-side, where the server would refuse it too.
+		if (/^\d+$/.test(state)) return state;
+		throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 	}
 }
