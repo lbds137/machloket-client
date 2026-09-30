@@ -731,6 +731,34 @@ describe("subcommand options (types 1 and 2)", () => {
 		}
 	});
 
+	it("a refused interaction POST keeps the command and shows the error", async () => {
+		captureRequests(
+			API + "/interactions",
+			() =>
+				new Response(JSON.stringify({code: 0, message: "Gateway unavailable"}), {
+					status: 502,
+					headers: {"Content-Type": "application/json"},
+				}),
+		);
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([{type: 3, name: "msg", description: "", required: true}]),
+			localuser,
+		);
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "hello"},
+		]);
+		const html = document.createElement("div");
+
+		await expect(command.submit(html, channel as never)).resolves.toBe(false);
+
+		// The command stays as it was: a retry should resend the same payload.
+		expect(command.state.get(channel as never)).toBeTruthy();
+		const retry = captureRequests(API + "/interactions");
+		await expect(command.submit(html, channel as never)).resolves.toBe(true);
+		expect(retry).toHaveLength(1);
+	});
+
 	it("after picking a command with only optional options, focus lands in an option input", async () => {
 		const {localuser, channel} = messageIn("100");
 		const command = new Command(

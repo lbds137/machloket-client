@@ -313,7 +313,7 @@ export class Command extends SnowFlake {
 				? [branch.option.wireEntry(branch.state, leafEntries)]
 				: leafEntries;
 
-			await fetch(this.info.api + "/interactions", {
+			const res = await fetch(this.info.api + "/interactions", {
 				method: "POST",
 				headers: this.headers,
 				body: JSON.stringify({
@@ -339,6 +339,24 @@ export class Command extends SnowFlake {
 					},
 				}),
 			});
+			if (!res.ok) {
+				// The command was not accepted: keep it exactly as it was, so the user sees the
+				// failure and a retry resends the same payload (a lost POST used to clear the
+				// composer as if the command had been sent).
+				let message = `${res.status}`;
+				try {
+					const body = (await res.json()) as {message?: string};
+					if (body.message) message = `${res.status}: ${body.message}`;
+				} catch {
+					// A non-JSON body (a bare proxy error page) keeps the bare status.
+				}
+				const error = document.createElement("span");
+				error.classList.add("commandError");
+				error.textContent = message;
+				html.parentElement?.append(error);
+				removeAni(error, 25000);
+				return false;
+			}
 			this.state.delete(channel);
 		} catch (e) {
 			if (e instanceof OptionError) {
