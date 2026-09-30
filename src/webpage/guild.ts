@@ -2255,14 +2255,16 @@ class Guild extends SnowFlake {
 			return apps;
 		}
 	}
-	async getCommands() {
-		if (this.commandProm) {
+	async getCommands(channelId?: string) {
+		// A DM context always refetches: each DM has its own bot set, so the per-guild cache
+		// would serve one DM's commands inside every other.
+		if (this.id !== "@me" && this.commandProm) {
 			await this.commandProm;
 		}
-		if (this.commands) {
+		if (this.commands && !(this.id === "@me" && channelId)) {
 			return this.commands.filter((_) => _.type === 1);
 		} else {
-			const prom = this.getCommandsFetch();
+			const prom = this.getCommandsFetch(channelId);
 			this.commandProm = prom;
 			const {apps, commands} = await prom;
 			this.commands = commands;
@@ -2273,12 +2275,16 @@ class Guild extends SnowFlake {
 		}
 	}
 
-	async getCommandsFetch() {
+	async getCommandsFetch(channelId?: string) {
 		// DMs ("@me") discover commands through the user index: the bots the user shares a DM
 		// channel with, global commands only (the server never advertises one that can't run).
+		// channel_id scopes the list to that channel's bots — a solo DM gets exactly its own
+		// bot's commands instead of every bot in every DM.
 		const url =
 			this.id === "@me"
-				? this.info.api + "/users/@me/application-command-index"
+				? this.info.api +
+					"/users/@me/application-command-index" +
+					(channelId ? `?channel_id=${channelId}` : "")
 				: this.info.api + `/guilds/${this.id}/application-command-index`;
 		const json = (await (
 			await fetch(url, {

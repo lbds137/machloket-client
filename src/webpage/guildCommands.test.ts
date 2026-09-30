@@ -60,6 +60,31 @@ describe("application-command index fetch", () => {
 		expect((commands[0] as unknown as {name: string}).name).toBe("row9");
 	});
 
+	it("a DM context scopes the index to the focused channel's bots", async () => {
+		captureRequests(API_ROOT + "/users/@me/application-command-index", () =>
+			new Response(JSON.stringify({applications: [], application_commands: []}), {
+				headers: {"Content-Type": "application/json"},
+			}),
+		);
+		// captureRequests keys on origin+pathname (queries stripped), so the query is asserted
+		// through a delegating fetch wrapper instead.
+		const urls: string[] = [];
+		const inner = globalThis.fetch;
+		globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+			urls.push(String(input));
+			return inner(input, init);
+		}) as typeof fetch;
+		const direct = guildWithId("@me");
+
+		try {
+			await direct.getCommandsFetch("200");
+		} finally {
+			globalThis.fetch = inner;
+		}
+
+		expect(urls.some((u) => u.includes("channel_id=200"))).toBe(true);
+	});
+
 	it("context-menu commands are stored but never offered in the slash popup", async () => {
 		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
 			new Response(

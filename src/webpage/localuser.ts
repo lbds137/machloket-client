@@ -5407,7 +5407,7 @@ class Localuser {
 	async findCommands(search: string, box: HTMLDivElement, md: MarkDown) {
 		const guild = this.lookingguild;
 		if (!guild) return;
-		const commands = await guild.getCommands();
+		const commands = await guild.getCommands(this.channelfocus?.id);
 		// Discord's popup: with no search, recently used first and the rest A-Z; with a
 		// search, best match first (ties A-Z).
 		const sorted = (
