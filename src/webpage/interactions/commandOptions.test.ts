@@ -252,6 +252,9 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 		expect(command.getState(command.options[0], channel as never)).toBe(
 			"1553128655016763451",
 		);
+		// A pick empties the popup: leftover rows make the next Enter pick again instead of
+		// submitting the command (the live /random stall).
+		expect(searchOptions.innerHTML).toBe("");
 		searchOptions.remove();
 	});
 
