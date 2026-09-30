@@ -124,6 +124,16 @@ export async function makeLogin(
 		},
 	);
 	form.addPreprocessor((sent) => {
+		// The submit must not reach an unvalidated origin: that is how a typo'd instance hung
+		// the app at the loading screen (the button is gated, but Enter submitted anyway).
+		if (picker.validationState !== "ok") {
+			throw new FormError(
+				email,
+				picker.validationState === "invalid"
+					? I18n.login.invalid()
+					: I18n.login.checking(),
+			);
+		}
 		if (loginInstance) submittedInstances.set(sent, loginInstance);
 	});
 	const button = form.button.deref();

@@ -1305,15 +1305,18 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		const verify = this.verify;
 		verify.classList.add("verify");
 		div.append(verify);
+		this.div = div;
 
 		const input = this.input;
 		const queryInstance = new URLSearchParams(window.location.search).get("instance");
 		input.value = this.instance || queryInstance || getDefaultInstanceUrl() || "";
 		input.readOnly = !!queryInstance;
-		console.log("read only", input.readOnly, window.location.search);
 		input.type = "search";
 		input.setAttribute("list", "instances");
 		div.append(input);
+		const suggest = document.createElement("div");
+		suggest.classList.add("instancesuggest");
+		div.append(suggest);
 		let cur = 0;
 		input.onkeyup = async () => {
 			const thiscur = ++cur;
@@ -1330,19 +1333,26 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 	}
 	button?: HTMLButtonElement;
 	input = document.createElement("input");
+	div?: HTMLElement;
+	/** Whether the CURRENT input value has passed an instance check. Submission is gated on
+	 * this: an unvalidated origin used to log straight into a dead endpoint and hang. */
+	validationState: "pending" | "invalid" | "ok" = "pending";
 	async validate() {
 		const validation = ++this.validation;
 		const isLatest = () => validation === this.validation;
 		if (this.button) this.button.disabled = true;
+		this.validationState = "pending";
 		this.verify.textContent = I18n.login.checking();
 		const urls = await checkInstance(this.input.value);
 		// Checks can finish out of order. Only the latest may update the button, be stored or be
 		// applied, or a login could go to (or be saved against) an instance the user didn't pick.
 		if (!isLatest()) return;
 		if (!urls) {
+			this.validationState = "invalid";
 			this.verify.textContent = I18n.login.invalid();
 			return;
 		}
+		this.validationState = "ok";
 		this.verify.textContent = I18n.login.allGood();
 		if (this.button) this.button.disabled = false;
 		localStorage.setItem("instanceinfo", JSON.stringify(urls));
@@ -1387,6 +1397,47 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			picker.input.value = value;
 			if (picker.button) {
 				picker.validate();
+			}
+		}
+
+		const suggest = picker?.div?.querySelector(".instancesuggest");
+		for (const instance of json) {
+			if (instance.display === false) {
+				continue;
+			}
+			const option = document.createElement("option");
+			option.disabled = instance.online === false;
+			const url = getInstanceUrl(instance);
+			option.value = url || "";
+			if (url) {
+				const name = instance.name.toLowerCase();
+				if (name !== url.toLowerCase()) {
+					stringURLMap.set(name, url);
+				}
+				if (instance.urls) {
+					stringURLsMap.set(url.toLowerCase(), instance.urls);
+				}
+			} else {
+				option.disabled = true;
+			}
+			if (instance.description) {
+				option.label = instance.description;
+			} else {
+				option.label = instance.name;
+			}
+			if (suggest && url) {
+				// Native datalists are inconsistent (the arrow does nothing until the list is
+				// loaded, and some platforms hide it entirely): render the same entries as
+				// plain rows. mousedown, because click lands after the input loses focus.
+				const row = document.createElement("div");
+				row.textContent = instance.name + " — " + url;
+				row.onmousedown = (e) => {
+					e.preventDefault();
+					if (!picker) return;
+					picker.input.value = url;
+					picker.input.dispatchEvent(new KeyboardEvent("keyup"));
+				};
+				suggest.append(row);
 			}
 		}
 

@@ -73,6 +73,37 @@ describe("instance list", () => {
 });
 
 describe("InstancePicker", () => {
+	it("exposes the instance list as clickable suggestion rows that pick and validate", async () => {
+		await instancefetch;
+		addInstance("http://other.test", 0);
+		const {picker, button} = pickerWithButton();
+		const div = picker.generateHTML();
+
+		const rows = [...div.querySelectorAll<HTMLDivElement>(".instancesuggest div")];
+		expect(rows.length).toBe(getInstances().length);
+
+		rows[2].dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
+		const input = div.querySelector<HTMLInputElement>("input");
+		expect(input?.value).toBe("http://other.test");
+		await vi.waitUntil(() => button.disabled === false, {timeout: 2000});
+	});
+
+	it("blocks submission while the instance is unvalidated, with a visible reason", async () => {
+		addInstance("http://picked.test", 0);
+		const auth = acceptAuth("http://picked.test", "login", "picked-token");
+		makeLogin(false, "", () => {});
+
+		// No pickInstance: the picker never validated. Submitting must NOT send the login
+		// anywhere (Enter used to bypass the button's disabled state and hang the app on a
+		// dead origin).
+		newest<HTMLButtonElement>("button.createAccount").click();
+		const seen = await Promise.race([
+			auth.requestSeen.then(() => true),
+			new Promise((r) => setTimeout(() => r(false), 500)),
+		]);
+		expect(seen).toBe(false);
+	});
+
 	it("starts on the default instance, never on spacebar.chat", async () => {
 		await instancefetch;
 		const picker = new Dialog("").options.addInstancePicker(vi.fn(), {instance: ""});

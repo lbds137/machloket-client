@@ -5410,7 +5410,9 @@ class Localuser {
 		const sorted = commands
 			.map((_) => [_, _.similar(search)] as const)
 			.filter((_) => _[1] !== 0)
-			.sort((a, b) => b[1] - a[1])
+			// Best match first; ties (an empty search scores everything equal) read A-Z,
+			// Discord's order.
+			.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
 			.slice(0, 10);
 
 		this.MDSearchOptions(

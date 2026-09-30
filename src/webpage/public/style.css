@@ -7945,3 +7945,12 @@ textarea.interactionModalInput {
 	opacity: 0.65;
 	font-style: italic;
 }
+/* The instance picker's suggestion rows (the native datalist arrow is unreliable). */
+.instancesuggest {
+	display: none;
+}
+input[list="instances"]:focus + .instancesuggest,
+.instancesuggest:hover {
+	display: block;
+	cursor: pointer;
+}

@@ -905,7 +905,11 @@ export function createImg(
 async function checkInstance(instance: string): Promise<InstanceInfo | undefined> {
 	try {
 		await instancefetch;
-		const instanceinfo = (await getapiurls(instance)) as InstanceInfo | null;
+		// A black-holed origin used to leave the picker "checking" forever; bound the check.
+		const instanceinfo = (await Promise.race([
+			getapiurls(instance),
+			new Promise<null>((_, rej) => setTimeout(() => rej(new Error("instance check timed out")), 8000)),
+		])) as InstanceInfo | null;
 		if (!instanceinfo) return undefined;
 		instanceinfo.value = instance;
 		return instanceinfo;
