@@ -3593,7 +3593,7 @@ class Channel extends SnowFlake {
 			},
 		};
 	}
-	async uploadFile(files: globalThis.File[]) {
+	async uploadFile(files: globalThis.File[], ids?: string[]) {
 		const urls = (await (
 			await fetch(this.info.api + "/channels/" + this.id + "/attachments", {
 				headers: this.headers,
@@ -3602,7 +3602,7 @@ class Channel extends SnowFlake {
 						return {
 							file_size: file.size,
 							filename: file.name,
-							id: index + "",
+							id: ids?.[index] ?? index + "",
 						};
 					}),
 				}),
@@ -3616,14 +3616,16 @@ class Channel extends SnowFlake {
 				original_content_type?: string;
 			}[];
 		};
-		Promise.all(
-			urls.attachments.map(async ({upload_url, id}) => {
-				return await (
-					await fetch(upload_url, {
-						body: files[+id],
-						method: "PUT",
-					})
-				).json();
+		// Resolve only once every byte stream landed: a caller that submits while the PUTs are
+		// still in flight loses the upload (the server pairs by id at submit time, once).
+		await Promise.all(
+			urls.attachments.map(async ({upload_url}, index) => {
+				const res = await fetch(upload_url, {
+					body: files[index],
+					method: "PUT",
+				});
+				if (!res.ok) throw new Error("attachment upload failed: " + res.status);
+				return res;
 			}),
 		);
 		return urls.attachments;

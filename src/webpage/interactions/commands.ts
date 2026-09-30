@@ -285,7 +285,12 @@ export class Command extends SnowFlake {
 					session_id: this.localuser.session_id,
 					data: {
 						application_command: this.rawJson,
-						attachments: [],
+						// Each attachment option's upload, paired with its value's ref id.
+						attachments: opts
+							.filter((_) => _.option instanceof AttachmentOption && _.option.filled(_.state))
+							.map(({option, state}) =>
+								(option as AttachmentOption).attachmentEntry(channel, state),
+							),
 						id: this.id,
 						name: this.name,
 						options,
@@ -348,8 +353,10 @@ abstract class Option {
 				return new EntityOption(optionjson, owner);
 			case 10:
 				return new NumberOption(optionjson, owner);
+			case 11:
+				return new AttachmentOption(optionjson, owner);
 			default:
-				// 11 ATTACHMENT: the file-picker option, not built yet.
+				// 1 SUB_COMMAND and 2 SUB_COMMAND_GROUP are not built.
 				return new ErrorOption(optionjson);
 		}
 	}
@@ -810,6 +817,88 @@ class EntityOption extends Option {
 	getValue(state: string) {
 		// The wire value is the picked entity's snowflake; anything else (a typed name that was
 		// never picked) is refused client-side, where the server would refuse it too.
+		if (/^\d+$/.test(state)) return state;
+		throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
+	}
+}
+/** Upload ref ids must differ across the picks of one command: the server pairs each option's
+ * value with its data.attachments entry by id. */
+let attachmentRefIds = 0;
+class AttachmentOption extends Option {
+	owner: Command;
+	/** Per channel: the upload behind the state's ref id (the channel's own upload flow). */
+	uploads = new WeakMap<Channel, {filename: string; upload_filename: string}>();
+	constructor(optionjson: commandOptionJson, owner: Command) {
+		super(optionjson);
+		this.owner = owner;
+	}
+	/** Uploads the picked file and records the pairing the submit needs. The state is set only
+	 * once the bytes have landed, so a submit can never race the upload. */
+	async pick(files: globalThis.File[], channel: Channel) {
+		const file = files[0];
+		if (!file) return;
+		const [entry] = await channel.uploadFile([file], [++attachmentRefIds + ""]);
+		if (!entry) return;
+		this.uploads.set(channel, {filename: file.name, upload_filename: entry.upload_filename});
+		this.owner.stateChange(this, channel, entry.id);
+	}
+	/** The data.attachments entry pairing this option's value with its upload; a value with
+	 * nothing uploaded behind it (a pasted id) is refused, as the server would refuse it. */
+	attachmentEntry(channel: Channel, state: string) {
+		const upload = this.uploads.get(channel);
+		if (!/^\d+$/.test(state) || !upload) {
+			throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
+		}
+		return {id: state, filename: upload.filename, uploaded_filename: upload.upload_filename};
+	}
+	toHTML(_state: string, channel: Channel): HTMLElement {
+		const div = document.createElement("div");
+		div.contentEditable = "false";
+		div.classList.add("flexltr", "commandinput");
+		this.imprintName(div);
+
+		const label = document.createElement("span");
+		label.textContent = this.localizedName + ":";
+
+		const input = document.createElement("input");
+		input.type = "file";
+		const status = document.createElement("span");
+		const uploaded = this.uploads.get(channel);
+		if (uploaded) status.textContent = uploaded.filename;
+		input.onchange = async () => {
+			const files = Array.from(input.files || []);
+			if (!files[0]) return;
+			status.textContent = I18n.commands.uploading();
+			try {
+				await this.pick(files, channel);
+				status.textContent = this.uploads.get(channel)?.filename ?? "";
+			} catch (e) {
+				// The native input still names the file; without this the failure is invisible and
+				// re-picking the SAME file fires no change event at all (Chromium).
+				status.textContent = "";
+				input.value = "";
+				const error = document.createElement("span");
+				error.classList.add("commandError");
+				error.textContent = e instanceof Error ? e.message : String(e);
+				div.parentElement?.append(error);
+				removeAni(error, 25000);
+			}
+		};
+		input.onkeydown = (e) => {
+			if (e.key === "Backspace") {
+				const before = !!div.nextSibling;
+				const sib = div.nextSibling || div.previousSibling;
+				div.remove();
+				focusElm(sib as HTMLElement, before);
+				e.preventDefault();
+				e.stopImmediatePropagation();
+			}
+		};
+
+		div.append(label, input, status);
+		return div;
+	}
+	getValue(state: string) {
 		if (/^\d+$/.test(state)) return state;
 		throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 	}

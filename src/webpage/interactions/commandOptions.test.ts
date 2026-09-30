@@ -334,3 +334,138 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 		expect(candidates.candidates(channel, "Zed")).toEqual([]);
 	});
 });
+
+describe("attachment slash-command options (type 11)", () => {
+	function attachmentCommand() {
+		const {localuser, channel} = messageIn("100");
+		(channel as unknown as {uploadFile: unknown}).uploadFile = async () => [
+			{
+				id: "0",
+				upload_url: "http://dm.test/up/0",
+				upload_filename: "77/0/kitten.png",
+			},
+		];
+		const command = new Command(
+			commandJson([{type: 11, name: "image", description: "", required: true}]),
+			localuser,
+		);
+		return {localuser, channel, command};
+	}
+
+	it("picking a file uploads it and the submit pairs the option value with data.attachments", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {channel, command} = attachmentCommand();
+		command.state.set(channel as never, [
+			{option: command.options[0], state: ""},
+		]);
+		const pick = command.options[0] as unknown as {
+			pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
+		};
+
+		await pick.pick([new File(["png"], "kitten.png", {type: "image/png"})], channel);
+
+		expect(command.getState(command.options[0], channel as never)).toBe("0");
+		await command.submit(document.createElement("div"), channel as never);
+
+		expect(sent).toHaveLength(1);
+		expect(sent[0]).toMatchObject({
+			type: 2,
+			data: {
+				options: [{name: "image", type: 11, value: "0"}],
+				attachments: [{id: "0", filename: "kitten.png", uploaded_filename: "77/0/kitten.png"}],
+			},
+		});
+	});
+
+	it("a required attachment blocks until a file is picked", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {channel, command} = attachmentCommand();
+		command.state.set(channel as never, [
+			{option: command.options[0], state: ""},
+		]);
+
+		await expect(command.submit(document.createElement("div"), channel as never)).resolves.toBe(
+			false,
+		);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("a value with no uploaded file behind it blocks the send", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {channel, command} = attachmentCommand();
+		command.state.set(channel as never, [
+			{option: command.options[0], state: "123456789012345678"},
+		]);
+
+		await expect(command.submit(document.createElement("div"), channel as never)).resolves.toBe(
+			false,
+		);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("a failed upload leaves the option empty — no half-attached state", async () => {
+		const {channel, command} = attachmentCommand();
+		(channel as unknown as {uploadFile: unknown}).uploadFile = async () => {
+			throw new Error("attachment upload failed: 413");
+		};
+		command.state.set(channel as never, [
+			{option: command.options[0], state: ""},
+		]);
+		const pick = command.options[0] as unknown as {
+			pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
+		};
+
+		await expect(
+			pick.pick([new File(["png"], "huge.png", {type: "image/png"})], channel),
+		).rejects.toThrow("413");
+		expect(command.getState(command.options[0], channel as never)).toBe("");
+	});
+
+	it("two attachment options pair distinct ref ids", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {localuser, channel} = messageIn("100");
+		(channel as unknown as {uploadFile: unknown}).uploadFile = async (
+			files: globalThis.File[],
+			ids?: string[],
+		) => [
+			{
+				id: ids?.[0] ?? "0",
+				upload_url: "http://dm.test/up/" + (ids?.[0] ?? "0"),
+				upload_filename: "77/" + (ids?.[0] ?? "0") + "/" + files[0].name,
+			},
+		];
+		const command = new Command(
+			commandJson([
+				{type: 11, name: "before", description: "", required: true},
+				{type: 11, name: "after", description: "", required: true},
+			]),
+			localuser,
+		);
+		command.state.set(channel as never, [
+			{option: command.options[0], state: ""},
+			{option: command.options[1], state: ""},
+		]);
+		const pickA = command.options[0] as unknown as {
+			pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
+		};
+		const pickB = command.options[1] as unknown as {
+			pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
+		};
+
+		await pickA.pick([new File(["a"], "a.png", {type: "image/png"})], channel);
+		await pickB.pick([new File(["b"], "b.png", {type: "image/png"})], channel);
+
+		const ids = [
+			command.getState(command.options[0], channel as never),
+			command.getState(command.options[1], channel as never),
+		];
+		expect(new Set(ids).size).toBe(2);
+		await command.submit(document.createElement("div"), channel as never);
+
+		const body = sent[0] as {
+			data: {options: {name: string; value: string}[]; attachments: {id: string}[]};
+		};
+		expect(body.data.options.map((_) => _.value).sort()).toEqual([...ids].sort());
+		expect(body.data.attachments.map((_) => _.id).sort()).toEqual([...ids].sort());
+	});
+});

@@ -223,7 +223,8 @@
 		"placeholderUser": "User",
 		"placeholderChannel": "Channel",
 		"placeholderRole": "Role",
-		"placeholderMentionable": "User, Role, or Channel"
+		"placeholderMentionable": "User, Role, or Channel",
+		"uploading": "Uploading…"
 	},
 	"confirmGuildLeave": "Are you sure you want to leave $1",
 	"copyLink": "Copy message link",
