@@ -2276,10 +2276,13 @@ class Guild extends SnowFlake {
 			await fetch(this.info.api + `/guilds/${this.id}/application-command-index`, {
 				headers: this.headers,
 			})
-		).json()) as {application_commands: commandJson[]; applications: applicationJson[]};
+		).json()) as {application_commands?: commandJson[]; applications?: applicationJson[]};
+		// A non-200 answer is an error body with neither field: no commands, not a crash. DMs
+		// ("@me") have no index route on the server yet and degrade to an empty list until one
+		// exists.
 		return {
-			apps: json.applications,
-			commands: json.application_commands.map((_) => new Command(_, this.localuser)),
+			apps: json.applications ?? [],
+			commands: (json.application_commands ?? []).map((_) => new Command(_, this.localuser)),
 		};
 	}
 }

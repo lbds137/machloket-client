@@ -10,5 +10,11 @@
 		"icon": "/logo.svg",
 		"description": "the owner's Spacebar instance, from the Deck or the LAN (http)",
 		"url": "http://{hostname}:3001"
+	},
+	{
+		"name": "Boot Instance B",
+		"icon": "/logo.svg",
+		"description": "Joint-boot test instance (disposable data)",
+		"url": "https://{hostname}:8444"
 	}
 ]
