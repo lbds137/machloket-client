@@ -31,12 +31,14 @@ export const CHANGELOG_CONTENT = `# Fermooo update!
 ![polls](./changelog/1-poll.webp)
 `;
 
-function resolveChangelogImageSrc(src: string): string {
+export function resolveChangelogImageSrc(src: string): string {
 	const trimmed = src.trim();
 	if (/^(https?:\/\/|data:|\/)/.test(trimmed)) {
 		return trimmed;
 	}
-	return new URL(trimmed, import.meta.url).href;
+	// Origin-relative, not import.meta.url-relative: the latter absolutizes to whichever
+	// origin served the module (localhost:8080 in dev), breaking the images everywhere else.
+	return "/" + trimmed.replace(/^\.\//, "");
 }
 
 function renderMarkdownFragment(text: string): HTMLElement {

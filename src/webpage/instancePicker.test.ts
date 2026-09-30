@@ -73,6 +73,21 @@ describe("instance list", () => {
 });
 
 describe("InstancePicker", () => {
+	it("re-renders the suggestion rows in place instead of appending copies", async () => {
+		await instancefetch;
+		const {picker} = pickerWithButton();
+		picker.generateHTML();
+		// genDataList is static (the rows rebuild per list load against the live picker).
+		const gen = (picker.constructor as unknown as {genDataList: () => void}).genDataList;
+		gen.call(picker.constructor);
+		gen.call(picker.constructor);
+
+		const div = picker.div!;
+		expect(div.querySelectorAll<HTMLDivElement>(".instancesuggest div").length).toBe(
+			getInstances().length,
+		);
+	});
+
 	it("exposes the instance list as clickable suggestion rows that pick and validate", async () => {
 		await instancefetch;
 		addInstance("http://other.test", 0);
@@ -90,6 +105,19 @@ describe("InstancePicker", () => {
 		rows[2].dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
 		expect(input.value).toBe("http://other.test");
 		await vi.waitUntil(() => button.disabled === false, {timeout: 2000});
+	});
+
+	it("hints at a certificate mismatch when a localhost page fails a non-local origin", async () => {
+		// Not registered: the fetch fails, and from the localhost test origin the target's
+		// certificate could never match — the hint must say so instead of a bare "invalid".
+		const {picker} = pickerWithButton();
+		const div = picker.generateHTML();
+		const input = div.querySelector<HTMLInputElement>("input")!;
+		input.value = "https://unregistered.test:9999";
+		input.dispatchEvent(new KeyboardEvent("keyup"));
+		await vi.waitUntil(() => picker.validationState === "invalid", {timeout: 2000});
+
+		expect(div.querySelector(".verify")!.textContent).toContain("certificate");
 	});
 
 	it("blocks submission while the instance is unvalidated, with a visible reason", async () => {
@@ -144,7 +172,8 @@ describe("InstancePicker", () => {
 		await Promise.all([slow, fast]);
 
 		expect(button.disabled).toBe(true);
-		expect(picker.verify.textContent).toBe(I18n.login.invalid());
+		// fast-dead.test is non-local from the localhost test origin: the certificate hint.
+		expect(picker.verify.textContent).toContain("certificate");
 		expect(onchange).not.toHaveBeenCalled();
 	});
 

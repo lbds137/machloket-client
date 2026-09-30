@@ -1352,7 +1352,20 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		if (!isLatest()) return;
 		if (!urls) {
 			this.validationState = "invalid";
-			this.verify.textContent = I18n.login.invalid();
+			// From a loopback page (localhost:8080 on the Deck), a non-local origin's
+			// certificate can never match — the failure is silent in JS, but the condition is
+			// computable, and "invalid" alone sent the owner round in circles.
+			const pageLocal = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
+			let targetLocal = false;
+			if (URL.canParse(this.input.value)) {
+				targetLocal = ["localhost", "127.0.0.1", "[::1]"].includes(
+					new URL(this.input.value).hostname,
+				);
+			}
+			this.verify.textContent =
+				pageLocal && !targetLocal
+					? I18n.login.certHint(this.input.value)
+					: I18n.login.invalid();
 			return;
 		}
 		this.validationState = "ok";
@@ -1404,6 +1417,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		}
 
 		const suggest = picker?.div?.querySelector(".instancesuggest");
+		suggest?.replaceChildren();
 		for (const instance of json) {
 			if (instance.display === false) {
 				continue;
