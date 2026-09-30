@@ -902,14 +902,10 @@ export function createImg(
  * a reachable instance. It leaves the UI alone: checks can finish out of order, so only the
  * caller knows whether this result is still the one to show.
  */
-async function checkInstance(instance: string): Promise<InstanceInfo | undefined> {
+	async function checkInstance(instance: string): Promise<InstanceInfo | undefined> {
 	try {
 		await instancefetch;
-		// A black-holed origin used to leave the picker "checking" forever; bound the check.
-		const instanceinfo = (await Promise.race([
-			getapiurls(instance),
-			new Promise<null>((_, rej) => setTimeout(() => rej(new Error("instance check timed out")), 8000)),
-		])) as InstanceInfo | null;
+		const instanceinfo = (await getapiurls(instance)) as InstanceInfo | null;
 		if (!instanceinfo) return undefined;
 		instanceinfo.value = instance;
 		return instanceinfo;

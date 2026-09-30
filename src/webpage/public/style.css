@@ -7945,12 +7945,9 @@ textarea.interactionModalInput {
 	opacity: 0.65;
 	font-style: italic;
 }
-/* The instance picker's suggestion rows (the native datalist arrow is unreliable). */
+/* The instance picker's suggestion rows (the native datalist arrow is unreliable). Always
+ * visible inside the open Advanced section — focus-gating hid them from real picks. */
 .instancesuggest {
-	display: none;
-}
-input[list="instances"]:focus + .instancesuggest,
-.instancesuggest:hover {
 	display: block;
 	cursor: pointer;
 }
