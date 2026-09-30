@@ -79,12 +79,16 @@ describe("InstancePicker", () => {
 		const {picker, button} = pickerWithButton();
 		const div = picker.generateHTML();
 
+		// The browser's own search-history autofill duplicates the list (every pasted origin
+		// variant becomes an entry) — off, so only the static rows show.
+		const input = div.querySelector<HTMLInputElement>("input")!;
+		expect(input.autocomplete).toBe("off");
+
 		const rows = [...div.querySelectorAll<HTMLDivElement>(".instancesuggest div")];
 		expect(rows.length).toBe(getInstances().length);
 
 		rows[2].dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
-		const input = div.querySelector<HTMLInputElement>("input");
-		expect(input?.value).toBe("http://other.test");
+		expect(input.value).toBe("http://other.test");
 		await vi.waitUntil(() => button.disabled === false, {timeout: 2000});
 	});
 

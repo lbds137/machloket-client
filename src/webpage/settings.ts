@@ -1310,6 +1310,9 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		const input = this.input;
 		const queryInstance = new URLSearchParams(window.location.search).get("instance");
 		input.value = this.instance || queryInstance || getDefaultInstanceUrl() || "";
+		// The browser's own search-history autofill duplicates the list with every pasted
+		// origin variant; the rows below are the only suggestions.
+		input.autocomplete = "off";
 		input.readOnly = !!queryInstance;
 		input.type = "search";
 		input.setAttribute("list", "instances");
