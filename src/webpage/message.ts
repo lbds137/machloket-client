@@ -832,6 +832,10 @@ class Message extends SnowFlake {
 	get ephemeral() {
 		return !!(this.flags & (1 << 6));
 	}
+	/** A deferred interaction awaiting its real content (Discord's LOADING flag). */
+	get loading() {
+		return !!(this.flags & (1 << 7));
+	}
 	generateMessage(
 		premessage?: Message | undefined,
 		ignoredblock = false,
@@ -853,6 +857,16 @@ class Message extends SnowFlake {
 		}
 
 		const editmode = this.channel.editing === this;
+		if (this.loading) {
+			// A deferred interaction: a minimal "…is thinking" bubble until the bot's
+			// MESSAGE_UPDATE replaces it with the real content (deferred messages carry no
+			// replies, embeds or components of their own).
+			div.classList.add("messagediv", "thinking");
+			const label = document.createElement("span");
+			label.textContent = I18n.message.thinking(this.author.username);
+			div.append(label);
+			return div;
+		}
 		if (!premessage && !dupe) {
 			premessage = this.channel.messages.get(this.channel.idToPrev.get(this.id) as string);
 		}

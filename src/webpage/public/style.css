@@ -7940,3 +7940,8 @@ textarea.interactionModalInput {
 .commandStatus:empty {
 	display: none;
 }
+/* A deferred interaction awaiting its content (the bot's "thinking" state). */
+.messagediv.thinking {
+	opacity: 0.65;
+	font-style: italic;
+}

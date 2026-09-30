@@ -689,6 +689,7 @@
 		"delete": "Delete message",
 		"endPoll": "End poll",
 		"report": "Report message",
+		"thinking": "$1 is thinking…",
 		"deleted": "Deleted message",
 		"edit": "Edit message",
 		"edited": "(edited)",
