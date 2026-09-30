@@ -2272,14 +2272,18 @@ class Guild extends SnowFlake {
 	}
 
 	async getCommandsFetch() {
+		// DMs ("@me") discover commands through the user index: the bots the user shares a DM
+		// channel with, global commands only (the server never advertises one that can't run).
+		const url =
+			this.id === "@me"
+				? this.info.api + "/users/@me/application-command-index"
+				: this.info.api + `/guilds/${this.id}/application-command-index`;
 		const json = (await (
-			await fetch(this.info.api + `/guilds/${this.id}/application-command-index`, {
+			await fetch(url, {
 				headers: this.headers,
 			})
 		).json()) as {application_commands?: commandJson[]; applications?: applicationJson[]};
-		// A non-200 answer is an error body with neither field: no commands, not a crash. DMs
-		// ("@me") have no index route on the server yet and degrade to an empty list until one
-		// exists.
+		// A non-200 answer is an error body with neither field: no commands, not a crash.
 		return {
 			apps: json.applications ?? [],
 			commands: (json.application_commands ?? []).map((_) => new Command(_, this.localuser)),

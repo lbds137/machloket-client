@@ -23,18 +23,40 @@ function guildWithId(id: string) {
 describe("application-command index fetch", () => {
 	it("an error body (a non-200 answer) degrades to no commands, not a crash", async () => {
 		captureRequests(
-			API_ROOT + "/guilds/@me/application-command-index",
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
 			() =>
 				new Response(JSON.stringify({code: 10013, message: "Unknown Guild"}), {
 					status: 404,
 					headers: {"Content-Type": "application/json"},
 				}),
 		);
-		const direct = guildWithId("@me");
+		const direct = guildWithId("1554722916606791818");
 
 		const {apps, commands} = await direct.getCommandsFetch();
 
 		expect(apps).toEqual([]);
 		expect(commands).toEqual([]);
+	});
+
+	it('the "@me" guild fetches the user command index, not a guild route', async () => {
+		const sent = captureRequests(API_ROOT + "/users/@me/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "TzurotProbeB"}],
+					application_commands: [
+						{id: "900", type: 1, application_id: "300", name: "row9", description: "", dm_permission: true},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		const direct = guildWithId("@me");
+
+		const {apps, commands} = await direct.getCommandsFetch();
+
+		expect(sent).toHaveLength(1);
+		expect(apps).toEqual([{id: "300", name: "TzurotProbeB"}]);
+		expect(commands).toHaveLength(1);
+		expect((commands[0] as unknown as {name: string}).name).toBe("row9");
 	});
 });
