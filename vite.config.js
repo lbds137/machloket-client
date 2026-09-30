@@ -169,24 +169,33 @@ const buildPlugin = () => ({
 	},
 	configureServer(server) {
 		generateLangs();
-		server.middlewares.use(async (req, res, next) => {
-			const path = req.url || "";
-
-			if (path.startsWith("/channels")) {
-				req.url = "/app.html";
-			} else if (path.startsWith("/invite/")) {
-				req.url = "/invite.html";
-			} else if (path.startsWith("/template/")) {
-				req.url = "/template.html";
-			}
-
-			next();
-		});
+		server.middlewares.use(clientRouteFallback);
+	},
+	// The production preview needs the same client-route rewrites: without them a deep link
+	// 404s (bare static serving) or lands on the marketing index.html instead of the app.
+	configurePreviewServer(server) {
+		server.middlewares.use(clientRouteFallback);
 	},
 	closeBundle() {
 		generateBuildFiles();
 	},
 });
+
+/** Client routes are served by the page that implements them — the default SPA fallback
+ * would serve the marketing landing page for /channels, and a bare static server 404s. */
+const clientRouteFallback = (req, res, next) => {
+	const path = (req.url || "").split("?")[0];
+
+	if (path.startsWith("/channels")) {
+		req.url = "/app.html";
+	} else if (path.startsWith("/invite/")) {
+		req.url = "/invite.html";
+	} else if (path.startsWith("/template/")) {
+		req.url = "/template.html";
+	}
+
+	next();
+};
 
 // The dev server brands itself Machlakot (brand.ts), so an install from it can't pass for the
 // production app: the brand URLs are answered from public/brand/dev/, and names are swapped in
