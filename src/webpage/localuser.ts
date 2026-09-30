@@ -1,4 +1,5 @@
 import {Guild} from "./guild.js";
+import {bumpCommandRecency, getCommandRecency, recentFirst} from "./commandRecency.js";
 import {Channel} from "./channel.js";
 import {Direct, Group} from "./direct.js";
 import {User} from "./user.js";
@@ -5407,21 +5408,26 @@ class Localuser {
 		const guild = this.lookingguild;
 		if (!guild) return;
 		const commands = await guild.getCommands();
-		const sorted = commands
-			.map((_) => [_, _.similar(search)] as const)
-			.filter((_) => _[1] !== 0)
-			// Best match first; ties (an empty search scores everything equal) read A-Z,
-			// Discord's order.
-			.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
-			.slice(0, 10);
+		// Discord's popup: with no search, recently used first and the rest A-Z; with a
+		// search, best match first (ties A-Z).
+		const sorted = (
+			search === ""
+				? recentFirst(commands, getCommandRecency())
+				: commands
+						.map((_) => [_, _.similar(search)] as const)
+						.filter((_) => _[1] !== 0)
+						.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
+						.map((_) => _[0])
+		).slice(0, 10);
 
 		this.MDSearchOptions(
-			sorted.map(([elm]) => {
+			sorted.map((elm) => {
 				return [
 					`/${elm.localizedName}`,
 					"",
 					undefined,
 					() => {
+						bumpCommandRecency(elm.name);
 						this.channelfocus?.startCommand(elm);
 						return true;
 					},
@@ -5431,7 +5437,6 @@ class Localuser {
 			box,
 			md,
 		);
-		console.log(sorted, search);
 	}
 	search(box: HTMLDivElement, md: MarkDown, str: string, pre: boolean) {
 		if (!pre) {

@@ -181,7 +181,7 @@ export class Command extends SnowFlake {
 			)
 			.map((opt) => [opt, opt.similar(text)] as const)
 			.filter((_) => _[1])
-			.sort((a, b) => a[1] - b[1])
+			.sort((a, b) => a[1] - b[1] || a[0].name.localeCompare(b[0].name))
 			.slice(0, 6)
 			.map((_) => _[0]);
 		this.localuser.MDSearchOptions(
@@ -849,12 +849,12 @@ class EntityOption extends Option {
 		return out;
 	}
 	/** Candidates matching `query`, capped like the other popups. Sorted ascending because
-	 * MDSearchOptions prepends each row: the best match renders at the top. */
+	 * MDSearchOptions prepends each row: the best match renders at the top (ties A-Z). */
 	candidates(channel: Channel, query: string): {display: string; value: string}[] {
 		return this.collect(channel)
 			.map((c) => ({c, rank: c.score(query)}))
 			.filter((_) => _.rank > 0)
-			.sort((a, b) => a.rank - b.rank)
+			.sort((a, b) => a.rank - b.rank || a.c.display.localeCompare(b.c.display))
 			.slice(0, 8)
 			.map((_) => ({display: _.c.display, value: _.c.value}));
 	}
@@ -1121,6 +1121,7 @@ class SubCommandOption extends Option {
 			this.owner.localuser.MDSearchOptions(
 				entries
 					.filter((branch) => branch.localizedName.includes(input.value))
+					.sort((a, b) => a.localizedName.localeCompare(b.localizedName))
 					.slice(0, 8)
 					.map((branch) => {
 						return [
