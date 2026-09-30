@@ -211,12 +211,13 @@ export class Command extends SnowFlake {
 		let state = this.state.get(channel);
 		if (!state) {
 			// A command made of subcommands/groups seeds one branch picker instead of every
-			// required leaf; the picked branch brings its own.
+			// leaf; the picked branch brings its own. Otherwise every option seeds — an empty
+			// optional is omitted at submit — so there is always an input to type into.
 			const branches = this.options.filter((_) => _ instanceof SubCommandOption);
 			const req =
 				branches.length && branches.length === this.options.length
 					? [branches[0]]
-					: this.options.filter((_) => _.required);
+					: this.options.filter((_) => !(_ instanceof SubCommandOption));
 			state = req.map((option) => ({option, state: ""}));
 			this.state.set(channel, state);
 		}
@@ -226,6 +227,7 @@ export class Command extends SnowFlake {
 		command.contentEditable = "false";
 		html.append(command);
 		let lastElm: HTMLElement | undefined = undefined;
+		let firstFocus: HTMLElement | undefined = undefined;
 		for (const thing of state) {
 			if (typeof thing === "string") {
 				html.append(thing);
@@ -233,11 +235,15 @@ export class Command extends SnowFlake {
 			}
 			const {option, state} = thing;
 			const opt = option.toHTML(state, channel);
+			if (!firstFocus && (option.required || option instanceof SubCommandOption)) {
+				firstFocus = opt;
+			}
 			lastElm = opt;
 			html.append(opt);
 		}
-		if (lastElm) {
-			focusInput(lastElm);
+		if (firstFocus ?? lastElm) {
+			// The first required option (or the branch picker) is where typing should land.
+			focusInput((firstFocus ?? lastElm)!);
 		} else {
 			const node = new Text();
 			node.textContent = "";

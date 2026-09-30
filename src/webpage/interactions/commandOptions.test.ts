@@ -730,4 +730,76 @@ describe("subcommand options (types 1 and 2)", () => {
 			html.remove();
 		}
 	});
+
+	it("after picking a command with only optional options, focus lands in an option input", async () => {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([{type: 3, name: "note", description: ""}]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			await new Promise((r) => setTimeout(r, 0));
+
+			const focused = document.activeElement;
+			expect(
+				focused instanceof HTMLInputElement &&
+					focused.closest(".commandinput") !== null,
+			).toBe(true);
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("re-picking a branch from its popup swaps the branch and its leaves", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "view", description: "", options: [{type: 3, name: "name", description: "", required: true}]},
+				{type: 1, name: "delete", description: "", options: [{type: 3, name: "id", description: "", required: true}]},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			await new Promise((r) => setTimeout(r, 0));
+			expect(command.getState(command.options[0], channel as never)).toBe("view");
+
+			// Re-pick: type into the branch input, choose delete from the popup.
+			const branchInput = html.querySelector(".commandinput input") as HTMLInputElement;
+			branchInput.focus();
+			branchInput.value = "del";
+			branchInput.dispatchEvent(new KeyboardEvent("keyup", {key: "l"}));
+			const candidate = searchOptions.querySelector("span") as HTMLElement;
+			expect(candidate).not.toBeNull();
+			candidate.click();
+
+			expect(command.getState(command.options[0], channel as never)).toBe("delete");
+			const delLeaves = (command.options[1] as unknown as {children: unknown[]}).children;
+			const idInput = [...html.querySelectorAll(".commandinput input")].find(
+				(input) => (input.parentElement!.getAttribute("commandName") === "id"),
+			) as HTMLInputElement;
+			expect(idInput).toBeTruthy();
+			idInput.value = "42";
+			idInput.dispatchEvent(new KeyboardEvent("keyup", {key: "2"}));
+
+			const sent = captureRequests(API + "/interactions");
+			await command.submit(html, channel as never);
+			expect(sent).toHaveLength(1);
+			expect(sent[0]).toMatchObject({
+				data: {options: [{name: "delete", type: 1, options: [{name: "id", value: "42"}]}]},
+			});
+			expect(delLeaves).toBeTruthy();
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
 });
