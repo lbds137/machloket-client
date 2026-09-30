@@ -373,6 +373,51 @@ export class Command extends SnowFlake {
 		}
 		return true;
 	}
+	/** A context-menu command (USER 2 / MESSAGE 3) invoked on `target_id`: the same type-2 POST
+	 * as a slash command, but the data names the target and carries no options (the server
+	 * builds the resolved entities and rejects a missing target). Returns false when refused. */
+	async submitContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
+		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
+		this.localuser.registerCommandNonce(nonce, channel);
+		try {
+			const res = await fetch(this.info.api + "/interactions", {
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({
+					type: 2,
+					nonce,
+					guild_id: wireGuildId(channel.owner),
+					channel_id: channel.id,
+					application_id: this.applicationId,
+					session_id: this.localuser.session_id,
+					data: {
+						id: this.id,
+						name: this.name,
+						type: this.type,
+						target_id,
+					},
+				}),
+			});
+			if (!res.ok) {
+				let message = `${res.status}`;
+				try {
+					const body = (await res.json()) as {message?: string};
+					if (body.message) message = `${res.status}: ${body.message}`;
+				} catch {
+					// A non-JSON body keeps the bare status.
+				}
+				const error = document.createElement("span");
+				error.classList.add("commandError");
+				error.textContent = message;
+				(anchor ?? document.body).append(error);
+				removeAni(error, 25000);
+				return false;
+			}
+			return true;
+		} catch {
+			return false;
+		}
+	}
 }
 abstract class Option {
 	type: number;

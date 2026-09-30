@@ -682,6 +682,7 @@
 		"timeoutTime": "Timeout duration:"
 	},
 	"message": {
+		"apps": "Apps",
 		"messages": "$1 message{{PLURAL:$1||s}} >",
 		"andMore": "$1, and more!",
 		"attached": "sent an attachment",

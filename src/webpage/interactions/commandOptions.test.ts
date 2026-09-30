@@ -473,6 +473,61 @@ describe("attachment slash-command options (type 11)", () => {
 	});
 });
 
+describe("context-menu commands (types 2 and 3)", () => {
+	function contextCommand(type: 2 | 3) {
+		const {localuser, channel, message} = messageIn("100");
+		const command = new Command(
+			{
+				id: "950",
+				type,
+				application_id: "300",
+				name: type === 3 ? "Inspect Message" : "Inspect User",
+				description: "",
+				dm_permission: true,
+				nsfw: false,
+				global_popularity_rank: 0,
+				handler: 1,
+				version: "1",
+			},
+			localuser,
+		);
+		return {localuser, channel, message, command};
+	}
+
+	it("a message context-menu invocation sends type 2 with target_id and no options", async () => {
+		const sent = captureRequests(API + "/interactions");
+		const {channel, message, command} = contextCommand(3);
+
+		await command.submitContext(message.id, channel as never);
+
+		expect(sent).toHaveLength(1);
+		const body = sent[0] as {data: Record<string, unknown>};
+		expect(body.data).toMatchObject({
+			id: "950",
+			name: "Inspect Message",
+			type: 3,
+			target_id: "500",
+		});
+		expect(body.data).not.toHaveProperty("options");
+	});
+
+	it("a refused context-menu invocation reports and keeps nothing sent", async () => {
+		captureRequests(
+			API + "/interactions",
+			() =>
+				new Response(JSON.stringify({message: "Unknown target"}), {
+					status: 404,
+					headers: {"Content-Type": "application/json"},
+				}),
+		);
+		const {channel, message, command} = contextCommand(3);
+
+		await expect(
+			command.submitContext(message.id, channel as never),
+		).resolves.toBe(false);
+	});
+});
+
 describe("subcommand options (types 1 and 2)", () => {
 	it("a picked subcommand nests its leaf options", async () => {
 		const sent = captureRequests(API + "/interactions");

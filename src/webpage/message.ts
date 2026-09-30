@@ -155,6 +155,34 @@ class Message extends SnowFlake {
 	static setupcmenu() {
 		const editTypes = new Set([0, 19]);
 		Message.contextmenu.addButton(
+			() => I18n.message.apps(),
+			function (this: Message) {
+				const guild = this.channel.guild;
+				const commands = (guild.commands ?? []).filter((_) => _.type === 3);
+				if (commands.length === 1) {
+					void commands[0].submitContext(this.id, this.channel);
+					return;
+				}
+				const dio = new Dialog(I18n.message.apps());
+				for (const command of commands) {
+					dio.options.addButtonInput("", command.localizedName, () => {
+						dio.hide();
+						void command.submitContext(this.id, this.channel);
+					});
+				}
+				dio.show();
+			},
+			{
+				visible: function () {
+					const guild = this.channel.guild;
+					// Warm the command cache: the first open may precede the fetch, later ones
+					// see the stored list.
+					void guild.getCommands().catch(() => {});
+					return (guild.commands ?? []).some((_) => _.type === 3);
+				},
+			},
+		);
+		Message.contextmenu.addButton(
 			() => I18n.message.edit(),
 			function (this: Message) {
 				this.setEdit();
