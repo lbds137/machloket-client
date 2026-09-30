@@ -51,16 +51,16 @@ describe("typed slash-command options", () => {
 		});
 	});
 
-	it("a number option sends a float", async () => {
+	it("a number option (type 10) sends a float", async () => {
 		const {sent, run} = commandWith(
-			[{type: 6, name: "scale", description: "", required: true}],
+			[{type: 10, name: "scale", description: "", required: true}],
 			{scale: "3.5"},
 		);
 
 		await run();
 
 		expect(sent[0]).toMatchObject({
-			data: {options: [{name: "scale", type: 6, value: 3.5}]},
+			data: {options: [{name: "scale", type: 10, value: 3.5}]},
 		});
 	});
 
@@ -145,7 +145,7 @@ describe("typed slash-command options", () => {
 		const {sent, run} = commandWith(
 			[
 				{type: 3, name: "msg", description: "", required: true},
-				{type: 6, name: "scale", description: ""},
+				{type: 10, name: "scale", description: ""},
 			],
 			{msg: "hi", scale: ""},
 		);

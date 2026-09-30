@@ -341,9 +341,11 @@ abstract class Option {
 				return new IntegerOption(optionjson, owner);
 			case 5:
 				return new BooleanOption(optionjson, owner);
-			case 6:
+			case 10:
 				return new NumberOption(optionjson, owner);
 			default:
+				// 6 USER, 7 CHANNEL, 8 ROLE, 9 MENTIONABLE, 11 ATTACHMENT: entity pickers,
+				// not built yet (tranche 2).
 				return new ErrorOption(optionjson);
 		}
 	}
