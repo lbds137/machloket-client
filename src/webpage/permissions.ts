@@ -27,6 +27,7 @@ class Permissions {
 	//private static info: { name: string; readableName: string; description: string }[];
 	static *info(): Generator<{name: string; readableName: string; description: string}> {
 		for (const thing of this.permisions) {
+			if (thing === "UNUSED_47") continue; // reserved bits have no editor UI
 			yield {
 				name: thing,
 				readableName: I18n.permissions.readableNames[thing](),
@@ -82,6 +83,10 @@ class Permissions {
 		"CREATE_EVENTS",
 		"USE_EXTERNAL_SOUNDS",
 		"SEND_VOICE_MESSAGES",
+		// Discord reserves bit 47; the array's index is the bit, so a never-queried
+		// placeholder holds the position.
+		"UNUSED_47",
+		"SET_VOICE_CHANNEL_STATUS",
 		"SEND_POLLS",
 		"USE_EXTERNAL_APPS",
 		"PIN_MESSAGES",
