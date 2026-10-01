@@ -197,9 +197,14 @@ describe("command picker rows", () => {
 	it("the browse panel sections commands by bot, with a Frequently Used rail that filters", async () => {
 		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
+		// Recency keys carry the app id (invocationKey): random is Tzurot's (300), roll
+		// Helper's (400).
 		localStorage.setItem(
 			"commandRecency",
-			JSON.stringify({roll: Date.now(), random: Date.now() - 5000}),
+			JSON.stringify({
+				"300/random": Date.now() - 5000,
+				"400/roll": Date.now(),
+			}),
 		);
 		const commandJson = (over: Partial<commandJsonT>): commandJsonT => ({
 			id: "1",
@@ -280,6 +285,156 @@ describe("command picker rows", () => {
 		} finally {
 			box.remove();
 			localStorage.removeItem("commandRecency");
+		}
+	});
+
+	it("the picker lists one row per subcommand; picking one pre-selects it", async () => {
+		const {Localuser} = await import("./localuser");
+		const {Command} = await import("./interactions/commands.js");
+		const commandJson = (over: Partial<commandJsonT>): commandJsonT => ({
+			id: "1",
+			type: 1,
+			application_id: "300",
+			name: "random",
+			description: "A description",
+			dm_permission: true,
+			nsfw: false,
+			global_popularity_rank: 0,
+			version: "1",
+			handler: 1,
+			...over,
+		});
+		const started: {name?: string; branch?: string}[] = [];
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			lookingguild: {
+				getCommands: async () => [
+					new Command(
+						commandJson({
+							id: "1",
+							name: "character",
+							options: [
+								{
+									type: 1,
+									name: "browse",
+									description: "Browse characters",
+									options: [{type: 3, name: "query", description: ""}],
+								},
+								{
+									type: 1,
+									name: "view",
+									description: "View one",
+									options: [{type: 3, name: "name", description: "", required: true}],
+								},
+							],
+						}),
+						localuser,
+					),
+					new Command(
+						commandJson({id: "2", name: "roll", application_id: "400"}),
+						localuser,
+					),
+				],
+				apps: [
+					{id: "300", name: "Tzurot", icon: "ab", description: "Tzurot the bot", flags: 0},
+					{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
+				],
+			},
+			channelfocus: {
+				startCommand: (c: {name: string}, branch?: string) =>
+					started.push({name: c.name, branch}),
+			},
+			info: {cdn: "http://cdn.test"},
+		});
+		const box = document.createElement("div");
+		document.body.append(box);
+		// Recency keys carry the app id (invocationKey): roll belongs to Helper (400).
+		localStorage.setItem(
+			"commandRecency",
+			JSON.stringify({"400/roll": Date.now()}),
+		);
+		try {
+			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
+				.findCommands("", box, {} as never);
+
+			// Discord's list: one row per runnable path, alphabetical by the full text.
+			const sectionOf = (title: string) => {
+				const sections = [...box.querySelectorAll(".searchSection")];
+				return sections.find((s) =>
+					s.querySelector(".searchSectionTitle")?.textContent === title,
+				) as HTMLElement;
+			};
+			const rowsOf = (title: string) =>
+				[...sectionOf(title).querySelectorAll(".commandRowName")].map(
+					(s) => s.textContent,
+				);
+			expect(rowsOf("Tzurot")).toEqual(["/character browse", "/character view"]);
+			expect(rowsOf("Helper")).toEqual(["/roll"]);
+
+			// Base bold, sub path dimmer, and the SUB's own description.
+			const browseRow = [...box.querySelectorAll(".commandRow")].find((r) =>
+				r.querySelector(".commandRowName")?.textContent === "/character browse",
+			) as HTMLElement;
+			expect(browseRow.querySelector(".commandRowBase")?.textContent).toBe("/character");
+			expect(browseRow.querySelector(".commandRowSubs")?.textContent).toBe(" browse");
+			expect(browseRow.querySelector(".commandRowDesc")?.textContent).toBe("Browse characters");
+
+			browseRow.click();
+			expect(started).toEqual([{name: "character", branch: "browse"}]);
+		} finally {
+			box.remove();
+			localStorage.removeItem("commandRecency");
+		}
+	});
+
+	it("mention and channel popups put the BEST match on top, selected", async () => {
+		const {Localuser} = await import("./localuser");
+		const {User} = await import("./user.js");
+		const member = (name: string, score: number) => {
+			const user = Object.assign(Object.create(User.prototype), {
+				compare: () => score,
+				getpfpsrc: () => "",
+			});
+			Object.defineProperty(user, "name", {value: name, writable: true});
+			return user;
+		};
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			lookingguild: {
+				id: "100",
+				members: [member("joel", 1), member("ajo", 2)],
+				roles: [],
+				member_count: 2,
+				members_size: 2,
+			},
+			channelfocus: undefined,
+		});
+		const box = document.createElement("div");
+		document.body.append(box);
+		try {
+			localuser.MDFineMentionGen("jo", "@jo", box, {} as never);
+			const rows = [...box.children].map((c) => c.textContent);
+			expect(rows[0]).toBe("@ajo"); // best match renders at the top…
+			expect(box.querySelector("span.selected")?.textContent).toBe("@ajo"); // …selected
+		} finally {
+			box.remove();
+		}
+
+		const chanUser = Object.assign(Object.create(Localuser.prototype), {
+			lookingguild: {
+				channels: [
+					{name: "general", visible: true, similar: () => 1},
+					{name: "joys", visible: true, similar: () => 2},
+				],
+			},
+		});
+		const box2 = document.createElement("div");
+		document.body.append(box2);
+		try {
+			chanUser.MDFindChannel("j", "#j", box2, {} as never);
+			const rows = [...box2.children].map((c) => c.textContent);
+			expect(rows[0]).toBe("# joys");
+			expect(box2.querySelector("span.selected")?.textContent).toBe("# joys");
+		} finally {
+			box2.remove();
 		}
 	});
 

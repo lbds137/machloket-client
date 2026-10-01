@@ -538,9 +538,14 @@ class Emoji {
 			}
 		}
 		ranked.sort((a, b) => b[1] - a[1]);
-		return ranked.splice(0, results).map((a) => {
-			return [new Emoji(a[0], weakGuild.get(a[0]) || localuser), a[1]];
-		});
+		// Worst-first: the only caller renders through MDSearchOptions, which prepends each
+		// row — the best match must come LAST so it renders (and selects) at the top.
+		return ranked
+			.splice(0, results)
+			.reverse()
+			.map((a) => {
+				return [new Emoji(a[0], weakGuild.get(a[0]) || localuser), a[1]];
+			});
 	}
 }
 Emoji.grabEmoji();

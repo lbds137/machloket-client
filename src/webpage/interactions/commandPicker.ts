@@ -1,5 +1,5 @@
-import {bumpCommandRecency, getCommandRecency, recentFirst} from "../commandRecency.js";
-import type {Command} from "./commands.js";
+import {bumpCommandRecency, getCommandRecency} from "../commandRecency.js";
+import type {Command, CommandInvocation} from "./commands.js";
 import {I18n} from "../i18n.js";
 import type {applicationJson} from "../jsontypes.js";
 import type {Localuser} from "../localuser.js";
@@ -8,9 +8,30 @@ import {CDNParams} from "../utils/cdnParams.js";
 /** Discord's command-picker browse view (an empty "/" query): a rail of tabs — Frequently
  * Used first, then one icon per app, alphabetical — beside a body of per-app sections. A
  * rail tab filters the body to its app (titled by it); Frequently Used leads with the last
- * few used commands, then every app's section. Rows are name over description with the
- * app's name at the far edge. A non-empty query never reaches this panel; it gets the flat
- * best-match list in findCommands. */
+ * few used commands, then every app's section. Rows are one per runnable path — subcommands
+ * list individually ("/name sub"), name over description with the app's name at the far
+ * edge. A non-empty query never reaches this panel; it gets the flat best-match list in
+ * findCommands. */
+
+/** The row's label: "/name", "/name sub" or "/name group sub". */
+export function invocationLabel(inv: CommandInvocation): string {
+	return "/" + [inv.base, ...inv.subs].join(" ");
+}
+/** The recency key: the app and the non-localized path ("300/character browse") — two apps
+ * exposing the same command name must not bump each other's recency. */
+export function invocationKey(command: Command, inv: CommandInvocation): string {
+	const path = inv.branch ? command.name + " " + inv.branch : command.name;
+	return command.applicationId + "/" + path;
+}
+/** Substring-ratio match on the full label — Command.similar's intent (its own math has an
+ * upstream constant-branch quirk in the case-insensitive path; this one stays proportional). */
+export function similarLabel(label: string, search: string): number {
+	if (!search.length) return 0.1;
+	if (label.includes(search)) return search.length / label.length;
+	if (label.toLowerCase().includes(search.toLowerCase()))
+		return search.length / label.length / 1.4;
+	return 0;
+}
 
 /** The app's icon, or its initial when the index carried none. */
 export function appIconElm(
@@ -37,12 +58,25 @@ export function appIconElm(
 	return letter;
 }
 
-/** One app's slice of the picker: its index row and the commands credited to it. */
+/** One app's slice of the picker: its index row and its pickable invocations. */
 type Group = {
 	app: applicationJson | undefined;
 	name: string;
-	commands: Command[];
+	invocations: {command: Command; inv: CommandInvocation}[];
 };
+
+/** Every pickable row of the command list, keyed for recency. */
+type Entry = {command: Command; inv: CommandInvocation; key: string};
+
+function entriesOf(commands: Command[]): Entry[] {
+	return commands.flatMap((command) =>
+		command.invocations.map((inv) => ({
+			command,
+			inv,
+			key: invocationKey(command, inv),
+		})),
+	);
+}
 
 export function renderCommandPanel(
 	localuser: Localuser,
@@ -51,10 +85,16 @@ export function renderCommandPanel(
 	apps: applicationJson[] | undefined,
 ) {
 	const recency = getCommandRecency();
-	const recent = recentFirst(
-		commands.filter((_) => recency[_.name]),
-		recency,
-	).slice(0, 5);
+	// Frequently Used: the last five RUNS, whatever path they took. hasOwn: a command named
+	// "constructor" must not read the Object prototype as a recency entry.
+	const recent = entriesOf(commands)
+		.filter((entry) => Object.hasOwn(recency, entry.key))
+		.sort(
+			(a, b) =>
+				recency[b.key] - recency[a.key] ||
+				invocationLabel(a.inv).localeCompare(invocationLabel(b.inv)),
+		)
+		.slice(0, 5);
 	// One group per application, alphabetical by name; a command whose app has no row in the
 	// index still groups (under an unknown name) so it never disappears from the picker.
 	const byId = new Map<string, Group>();
@@ -62,14 +102,20 @@ export function renderCommandPanel(
 		const app = apps?.find((_) => _.id === command.applicationId);
 		let group = byId.get(command.applicationId);
 		if (!group) {
-			group = {app, name: app?.name || "?", commands: []};
+			group = {app, name: app?.name || "?", invocations: []};
 			byId.set(command.applicationId, group);
 		}
-		group.commands.push(command);
+		group.invocations.push(
+			...command.invocations.map((inv) => ({command, inv})),
+		);
 	}
 	const groups = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 	for (const group of groups) {
-		group.commands.sort((a, b) => a.name.localeCompare(b.name));
+		// Alphabetical by the full "/name sub" text — a base's subs stay adjacent because
+		// the shared prefix sorts together, as Discord's list does.
+		group.invocations.sort((a, b) =>
+			invocationLabel(a.inv).localeCompare(invocationLabel(b.inv)),
+		);
 	}
 
 	const panel = document.createElement("div");
@@ -80,14 +126,15 @@ export function renderCommandPanel(
 	body.classList.add("searchBody");
 	panel.append(rail, body);
 
-	const pick = (command: Command) => {
-		bumpCommandRecency(command.name);
-		// The pick closes the popup — the composer is now a command.
+	const pick = (command: Command, inv: CommandInvocation) => {
+		bumpCommandRecency(invocationKey(command, inv));
+		// The pick closes the popup — the composer is now a command, its branch (if the row
+		// was a subcommand) already chosen.
 		box.replaceChildren();
-		localuser.channelfocus?.startCommand(command);
+		localuser.channelfocus?.startCommand(command, inv.branch);
 	};
 
-	const row = (command: Command) => {
+	const row = (command: Command, inv: CommandInvocation) => {
 		const group = byId.get(command.applicationId);
 		const div = document.createElement("div");
 		div.classList.add("commandRow");
@@ -95,19 +142,29 @@ export function renderCommandPanel(
 		const text = document.createElement("div");
 		text.classList.add("commandRowText");
 		const name = document.createElement("span");
-		// The name span is exactly "/name" — commit-on-space matches on that text.
+		// The name span reads exactly "/name" or "/name sub" — commit-on-space matches on
+		// that text. The base is bold; the sub path, dimmer.
 		name.classList.add("commandRowName");
-		name.textContent = `/${command.localizedName}`;
+		const base = document.createElement("span");
+		base.classList.add("commandRowBase");
+		base.textContent = "/" + inv.base;
+		name.append(base);
+		if (inv.subs.length) {
+			const subs = document.createElement("span");
+			subs.classList.add("commandRowSubs");
+			subs.textContent = " " + inv.subs.join(" ");
+			name.append(subs);
+		}
 		const desc = document.createElement("span");
 		desc.classList.add("commandRowDesc");
-		desc.textContent = command.localizedDescription;
+		desc.textContent = inv.description;
 		text.append(name, desc);
 		div.append(text);
 		const appName = document.createElement("span");
 		appName.classList.add("commandRowApp");
 		appName.textContent = group?.name ?? "";
 		div.append(appName);
-		div.onclick = () => pick(command);
+		div.onclick = () => pick(command, inv);
 		return div;
 	};
 
@@ -130,8 +187,16 @@ export function renderCommandPanel(
 			icon: clockIcon,
 			render: () => {
 				body.replaceChildren(
-					section(I18n.commands.frequentlyUsed(), recent.map(row)),
-					...groups.map((group) => section(group.name, group.commands.map(row))),
+					section(
+						I18n.commands.frequentlyUsed(),
+						recent.map((entry) => row(entry.command, entry.inv)),
+					),
+					...groups.map((group) =>
+						section(
+							group.name,
+							group.invocations.map(({command, inv}) => row(command, inv)),
+						),
+					),
 				);
 			},
 		});
@@ -153,7 +218,10 @@ export function renderCommandPanel(
 				body.replaceChildren(
 					title,
 					sub,
-					section(I18n.commands.appCommands(), group.commands.map(row)),
+					section(
+						I18n.commands.appCommands(),
+						group.invocations.map(({command, inv}) => row(command, inv)),
+					),
 				);
 			},
 		});

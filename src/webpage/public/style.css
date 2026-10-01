@@ -8141,3 +8141,9 @@ textarea.interactionModalInput {
 .searchPanel span:hover {
 	background: none;
 }
+/* A subcommand row's two-part name (Discord): the base command bold, its sub path
+ * dimmer — one continuous "/name sub" label inside the .commandRowName span. */
+.commandRowSubs {
+	font-weight: 400;
+	color: var(--primary-text-soft);
+}

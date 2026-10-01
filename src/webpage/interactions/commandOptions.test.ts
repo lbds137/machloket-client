@@ -160,6 +160,78 @@ describe("typed slash-command options", () => {
 		});
 		expect((sent[0] as {data: {options: unknown[]}}).data.options).toHaveLength(1);
 	});
+
+	it("the live submit body matches the pinned wire shape EXACTLY (a slash command)", async () => {
+		// Subset matching (toMatchObject) would let an extra field slip through — the
+		// server's strict schema rejects those silently, so the whole body is pinned.
+		// application_command mirrors the index row the server sent and its schema allows
+		// it verbatim; only its presence is pinned.
+		const {sent, run} = commandWith(
+			[{type: 3, name: "msg", description: "", required: true}],
+			{msg: "hi"},
+		);
+		await run();
+		expect(sent[0]).toEqual({
+			type: 2,
+			nonce: expect.any(String),
+			channel_id: "200",
+			application_id: "300",
+			session_id: "session-1",
+			data: {
+				application_command: expect.any(Object),
+				attachments: [],
+				id: "900",
+				name: "ask",
+				options: [{name: "msg", type: 3, value: "hi"}],
+				type: 1,
+				version: "1",
+			},
+		});
+	});
+
+	it("the live submit body matches the pinned wire shape EXACTLY (a nested subcommand)", async () => {
+		const {localuser} = messageIn("@me");
+		const command = new Command(
+			commandJson([
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
+			]),
+			localuser,
+		);
+		const sent = captureRequests(API + "/interactions");
+		const {channel} = messageIn("@me");
+		const branch = command.options[0];
+		const leaf = (branch as unknown as {children: {name: string}[]}).children.find(
+			(_) => _.name === "name",
+		);
+		command.state.set(channel as never, [
+			{option: branch, state: "view"},
+			{option: leaf as never, state: "alice"},
+		]);
+		await command.submit(document.createElement("div"), channel as never);
+		expect(sent[0]).toEqual({
+			type: 2,
+			nonce: expect.any(String),
+			channel_id: "200",
+			application_id: "300",
+			session_id: "session-1",
+			data: {
+				application_command: expect.any(Object),
+				attachments: [],
+				id: "900",
+				name: "ask",
+				options: [
+					{name: "view", type: 1, options: [{name: "name", type: 3, value: "alice"}]},
+				],
+				type: 1,
+				version: "1",
+			},
+		});
+	});
 });
 
 describe("entity slash-command options (user, channel, role, mentionable)", () => {
@@ -1502,6 +1574,87 @@ describe("progressive composer model", () => {
 			const rebuilt = html.querySelectorAll(".commandinput[commandName='query']");
 			expect(rebuilt).toHaveLength(1);
 			expect((rebuilt[0] as HTMLElement).classList.contains("commandHidden")).toBe(false);
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("prePick starts a command with its branch chosen and leaves rendered", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{
+					type: 1,
+					name: "browse",
+					description: "",
+					options: [{type: 3, name: "query", description: ""}],
+				},
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			// Pre-pick BEFORE the branch chip's offer microtask flushes — the picker's
+			// real ordering — so the guard is what keeps the offer suppressed after it.
+			command.prePick(channel as never, "view");
+			await new Promise((r) => setTimeout(r, 0));
+
+			const branch = command.options[0];
+			expect(command.getState(branch, channel as never)).toBe("view");
+			// The branch chip shows the pick…
+			const chip = html.querySelector(".commandinput") as HTMLElement;
+			expect((chip.querySelector("input") as HTMLInputElement).value).toBe("view");
+			// …the offer microtask did NOT clear it or open the branch popup…
+			expect(searchOptions.childElementCount).toBe(0);
+			// …and view's required leaf renders revealed and focused.
+			const name = html.querySelector(
+				".commandinput[commandName='name']",
+			) as HTMLElement;
+			expect(name.classList.contains("commandHidden")).toBe(false);
+			expect(document.activeElement).toBe(name.querySelector("input"));
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("the branch popup offers subcommands in alphabetical order", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "view", description: "", options: []},
+				{type: 1, name: "browse", description: "", options: []},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			await new Promise((r) => setTimeout(r, 0));
+			// The popup prepends rows as it renders: the alphabetically FIRST branch must be
+			// the one at the top (the owner's walk: the list read Z-A).
+			const rows = [...searchOptions.children].map((c) => c.textContent);
+			expect(rows).toEqual(["browse", "view"]);
+			// …and the keyboard selection starts on that top row — Enter commits what the
+			// user is looking at (Discord), not the bottom of the list.
+			const selected = searchOptions.querySelector("span.selected") as HTMLElement;
+			expect(selected.textContent).toBe("browse");
 		} finally {
 			html.remove();
 			searchOptions.remove();

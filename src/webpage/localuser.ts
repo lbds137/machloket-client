@@ -1,6 +1,12 @@
 import {Guild} from "./guild.js";
 import {bumpCommandRecency} from "./commandRecency.js";
-import {appIconElm, renderCommandPanel} from "./interactions/commandPicker.js";
+import {
+	appIconElm,
+	invocationKey,
+	invocationLabel,
+	renderCommandPanel,
+	similarLabel,
+} from "./interactions/commandPicker.js";
 import {Channel} from "./channel.js";
 import {Direct, Group} from "./direct.js";
 import {User} from "./user.js";
@@ -35,7 +41,7 @@ import {
 	pollUpdateJson,
 	applicationJson,
 } from "./jsontypes.js";
-import type {Command} from "./interactions/commands.js";
+import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
 import {Dialog, Form, FormError, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
@@ -637,6 +643,7 @@ class Localuser {
 		this.outoffocus();
 		this.guilds = [];
 		this.guildids = new Map();
+		this.stopHeartbeat();
 		if (this.ws) {
 			this.ws.close(4040);
 		}
@@ -661,6 +668,8 @@ class Localuser {
 				(doComp ? "&compress=zlib-stream" : ""),
 		);
 		this.ws = ws;
+		// A fresh socket starts its silence clock at birth, before its HELLO arrives.
+		this.lastFrameAt = Date.now();
 		let ds: DecompressionStream;
 		let w: WritableStreamDefaultWriter;
 		let arr: Uint8Array;
@@ -743,6 +752,7 @@ class Localuser {
 		let order = new Promise<void>((res) => res());
 
 		ws.addEventListener("message", async (event) => {
+			this.lastFrameAt = Date.now();
 			const temp2 = order;
 			order = new Promise<void>(async (res) => {
 				await temp2;
@@ -789,6 +799,7 @@ class Localuser {
 
 		ws.addEventListener("close", async (event) => {
 			this.ws = undefined;
+			this.stopHeartbeat();
 			console.log("WebSocket closed with code " + event.code);
 			sendOpenpanelAnalytics("ws_disconnected", {code: event.code});
 			if (
@@ -815,7 +826,11 @@ class Localuser {
 			) {
 				if (this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + 20000) {
 					this.errorBackoff = 0;
-				} else this.errorBackoff++;
+				} else {
+					// Capped: a long outage must stretch the delay, never quietly stop
+					// retrying while the app is in use.
+					this.errorBackoff = Math.min(this.errorBackoff + 1, 20);
+				}
 				this.connectionSucceed = 0;
 
 				loaddesc.innerHTML = "";
@@ -1333,8 +1348,29 @@ class Localuser {
 		} else if (temp.op === 10) {
 			if (!this.ws) return;
 			console.log("heartbeat down");
-			this.heartbeat_interval = temp.d.heartbeat_interval;
+			// An absent interval would arm ~4ms spam timers and NaN the watchdog's math —
+			// fall back to Discord's typical 41.25s.
+			const interval = temp.d?.heartbeat_interval || 41250;
+			this.heartbeat_interval = interval;
+			// Heartbeats keep their OWN schedule. The old chain sent the next beat only from
+			// inside an ACK handler — no ACK, no further beats, and a half-open socket (a
+			// bounced server whose close never reached the client) read as healthy forever.
+			this.stopHeartbeat();
+			this.heartbeatTimer = setInterval(() => {
+				if (!this.ws) {
+					this.stopHeartbeat();
+					return;
+				}
+				this.ws.send(JSON.stringify({op: 1, d: this.lastSequence}));
+			}, interval);
 			this.ws.send(JSON.stringify({op: 1, d: this.lastSequence}));
+			// The watchdog converts silence into a close event the reconnect path handles:
+			// two heartbeat intervals (30s floor) with no frame means the server is gone.
+			this.watchdogTimer = setInterval(() => {
+				if (Date.now() - this.lastFrameAt > Math.max(interval * 2, 30_000)) {
+					this.ws?.close(4000);
+				}
+			}, Math.max(interval, 5_000));
 		} else if (temp.op === 11) {
 			setTimeout((_: any) => {
 				if (!this.ws) return;
@@ -1351,6 +1387,17 @@ class Localuser {
 		} else {
 			console.log("Unhandled case " + temp.d, temp);
 		}
+	}
+	heartbeatTimer: ReturnType<typeof setInterval> | undefined;
+	watchdogTimer: ReturnType<typeof setInterval> | undefined;
+	/** Last time a frame arrived, whatever it was — the watchdog's silence clock. */
+	lastFrameAt = 0;
+	/** Clears the heartbeat and watchdog timers (a closing socket owns none). */
+	stopHeartbeat() {
+		if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+		if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+		this.heartbeatTimer = undefined;
+		this.watchdogTimer = undefined;
 	}
 	generateReasons() {
 		const reasons: string[] = [];
@@ -5246,8 +5293,10 @@ class Localuser {
 			return false;
 		};
 		if (htmloptions[0]) {
-			let curindex = 0;
-			let cur = htmloptions[0];
+			// The list renders BACKWARDS (each row is prepended), so the LAST option is the
+			// top row — and the top row is what Enter commits (Discord), not the bottom.
+			let curindex = htmloptions.length - 1;
+			let cur = htmloptions[curindex];
 			cur.classList.add("selected");
 			const cancel = new Set(["ArrowUp", "ArrowDown", "Enter", "Tab"]);
 			this.keyup = (event) => {
@@ -5300,7 +5349,9 @@ class Localuser {
 				}
 			}
 		}
-		maybe.sort((a, b) => b[0] - a[0]);
+		// Worst-first: MDSearchOptions prepends each row, so the last array entry renders
+		// (and is selected) at the top — the best match must be that last entry.
+		maybe.sort((a, b) => a[0] - b[0]);
 		this.MDSearchOptions(
 			maybe.map((a) => ["# " + a[1].name, `<#${a[1].id}> `, undefined]),
 			original,
@@ -5349,7 +5400,8 @@ class Localuser {
 			const hereScore = similar("here");
 			if (hereScore) members.push(["@here", hereScore]);
 		}
-		members.sort((a, b) => b[1] - a[1]);
+		// Worst-first (see MDFindChannel): the last entry renders and selects at the top.
+		members.sort((a, b) => a[1] - b[1]);
 		this.MDSearchOptions(
 			members.map((a) => {
 				const item = a[0];
@@ -5420,22 +5472,39 @@ class Localuser {
 			return;
 		}
 		const top = commands
-			.map((_) => [_, _.similar(search)] as const)
+			.flatMap((command) =>
+				command.invocations.map((inv) => ({command, inv})),
+			)
+			.map(({command, inv}) => {
+				// Match on the full "/name sub" label, keeping the command's own
+				// description matching too.
+				const score = Math.max(
+					similarLabel(invocationLabel(inv), search),
+					command.similar(search),
+				);
+				return [{command, inv}, score] as const;
+			})
 			.filter((_) => _[1] !== 0)
-			.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
+			.sort(
+				(a, b) =>
+					b[1] - a[1] ||
+					invocationLabel(a[0].inv).localeCompare(invocationLabel(b[0].inv)),
+			)
 			.map((_) => _[0])
-			.slice(0, 10);
+			// MDSearchOptions renders at most 8 rows; feeding it ten cuts the two best after
+			// the reverse, so the slice happens at 8.
+			.slice(0, 8);
 		const sorted = top.reverse();
 
 		this.MDSearchOptions(
-			sorted.map((elm) => {
+			sorted.map(({command, inv}) => {
 				return [
 					"",
 					"",
-					this.commandRow(elm, guild.apps),
+					this.commandRow({command, inv}, guild.apps),
 					() => {
-						bumpCommandRecency(elm.name);
-						this.channelfocus?.startCommand(elm);
+						bumpCommandRecency(invocationKey(command, inv));
+						this.channelfocus?.startCommand(command, inv.branch);
 						return true;
 					},
 				] as const;
@@ -5445,17 +5514,31 @@ class Localuser {
 			md,
 		);
 	}
-	/** A search-result row for a slash command: the owning app's icon, the "/name", and the
-	 * app's name — with several bots in a guild, a bare name doesn't say whose command it
-	 * is. The name span's text is exactly "/name"; commit-on-space matches on it. */
-	private commandRow(command: Command, apps: applicationJson[] | undefined): HTMLElement {
+	/** A search-result row for a slash command: the owning app's icon, the "/name" (plus its
+	 * sub path — subcommands list individually), and the app's name — with several bots in a
+	 * guild, a bare name doesn't say whose command it is. The name span's text is exactly
+	 * "/name" or "/name sub"; commit-on-space matches on it. */
+	private commandRow(
+		entry: {command: Command; inv: CommandInvocation},
+		apps: applicationJson[] | undefined,
+	): HTMLElement {
+		const {command, inv} = entry;
 		const app = apps?.find((_) => _.id === command.applicationId);
 		const row = document.createElement("span");
 		row.classList.add("commandRow");
 		row.append(appIconElm(this, app));
 		const name = document.createElement("span");
 		name.classList.add("commandRowName");
-		name.textContent = `/${command.localizedName}`;
+		const base = document.createElement("span");
+		base.classList.add("commandRowBase");
+		base.textContent = "/" + inv.base;
+		name.append(base);
+		if (inv.subs.length) {
+			const subs = document.createElement("span");
+			subs.classList.add("commandRowSubs");
+			subs.textContent = " " + inv.subs.join(" ");
+			name.append(subs);
+		}
 		row.append(name);
 		const appName = document.createElement("span");
 		appName.classList.add("commandRowApp");

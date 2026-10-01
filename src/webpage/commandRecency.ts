@@ -12,14 +12,16 @@ export function recentFirst<T extends {name: string}>(
 	});
 }
 
-/** Records a command as just used, in localStorage under `commandRecency`. */
-export function bumpCommandRecency(name: string) {
+/** Records an invocation as just used, in localStorage under `commandRecency`. The key is
+ * the app-scoped invocation path ("300/character browse" — see invocationKey), not a bare
+ * command name. */
+export function bumpCommandRecency(key: string) {
 	try {
 		const recency = JSON.parse(localStorage.getItem("commandRecency") ?? "{}") as Record<
 			string,
 			number
 		>;
-		recency[name] = Date.now();
+		recency[key] = Date.now();
 		localStorage.setItem("commandRecency", JSON.stringify(recency));
 	} catch {
 		// A full or blocked storage loses one recency entry; ordering is cosmetic.

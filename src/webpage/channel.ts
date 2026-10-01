@@ -2083,7 +2083,7 @@ class Channel extends SnowFlake {
 			if (this.curCommand === cmd) this.exitCommand();
 		}
 	}
-	startCommand(command: Command) {
+	startCommand(command: Command, branch?: string) {
 		this.curCommand = command;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		typebox.markdown.boxEnabled = false;
@@ -2104,6 +2104,9 @@ class Channel extends SnowFlake {
 		this.curWatch = func;
 		typebox.addEventListener("keyup", func);
 		command.render(typebox, this);
+		// The picker's subcommand rows ("/name sub") start the command with the branch
+		// already chosen.
+		if (branch) command.prePick(this, branch);
 	}
 	isForum() {
 		return this.type === 15 || this.type === 16;

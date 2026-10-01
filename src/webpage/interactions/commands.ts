@@ -6,6 +6,19 @@ import {Localuser} from "../localuser.js";
 import {SnowFlake} from "../snowflake.js";
 import {wireGuildId} from "./compontents.js";
 import {removeAni} from "../utils/utils.js";
+
+/** One pickable row of the command list: the command itself, or one branch of a subcommand
+ * command — Discord lists every runnable path ("/name sub", "/name group sub"), never a
+ * bare group. */
+export type CommandInvocation = {
+	/** The branch chip's wire state: undefined, "sub", or "group/sub". */
+	branch?: string;
+	/** The command's localized base name, without the slash. */
+	base: string;
+	/** The localized sub path segments. */
+	subs: string[];
+	description: string;
+};
 function focusInput(html: HTMLElement) {
 	const input = html.getElementsByTagName("input")[0];
 	if (input) input.focus();
@@ -149,6 +162,42 @@ export class Command extends SnowFlake {
 	}
 	get localizedName() {
 		return this.nameLocalizations[I18n.lang] || this.name;
+	}
+	/** The picker's rows for this command: itself, or one entry per subcommand branch. */
+	get invocations(): CommandInvocation[] {
+		const branches = this.options.filter((_) => _ instanceof SubCommandOption);
+		if (!branches.length || branches.length !== this.options.length) {
+			return [
+				{
+					base: this.localizedName,
+					subs: [],
+					description: this.localizedDescription,
+				},
+			];
+		}
+		const out: CommandInvocation[] = [];
+		for (const branch of branches as SubCommandOption[]) {
+			if (branch instanceof SubCommandGroupOption) {
+				for (const sub of branch.children.filter(
+					(_) => _ instanceof SubCommandOption,
+				) as SubCommandOption[]) {
+					out.push({
+						branch: branch.name + "/" + sub.name,
+						base: this.localizedName,
+						subs: [branch.localizedName, sub.localizedName],
+						description: sub.localizedDescription,
+					});
+				}
+			} else {
+				out.push({
+					branch: branch.name,
+					base: this.localizedName,
+					subs: [branch.localizedName],
+					description: branch.localizedDescription,
+				});
+			}
+		}
+		return out;
 	}
 	get localizedDescription() {
 		return this.descriptionLocalizations[I18n.lang] || this.description;
@@ -465,6 +514,35 @@ export class Command extends SnowFlake {
 			?.querySelector(`.commandinput[commandname="${CSS.escape(option.name)}"]`)
 			?.classList.remove("commandHidden");
 	}
+	/** Starts the command with a branch already chosen (the picker's subcommand rows): the
+	 * branch chip shows the pick and its leaves render, exactly as a manual pick leaves
+	 * them. */
+	prePick(channel: Channel, picked: string) {
+		const branch = this.options.find((_) => _ instanceof SubCommandOption);
+		const box = this.boxes.get(channel);
+		if (!(branch instanceof SubCommandOption) || !box) return;
+		const chip = box.querySelector(".commandinput");
+		if (!(chip instanceof HTMLElement)) return;
+		const [groupName, subName] = picked.includes("/")
+			? picked.split("/")
+			: [undefined, picked];
+		const pickedBranch = branch
+			.branches()
+			.find((b) => b.name === (groupName ?? picked));
+		const display = groupName
+			? pickedBranch instanceof SubCommandGroupOption
+				? (
+						pickedBranch.children.find(
+							(c) => c instanceof SubCommandOption && c.name === subName,
+						) as SubCommandOption | undefined
+					)?.localizedName
+				: undefined
+			: pickedBranch?.localizedName;
+		const input = chip.querySelector("input");
+		if (input && display) input.value = display;
+		this.stateChange(branch, channel, picked);
+		branch.renderLeaves(chip, picked, channel);
+	}
 	stateChange(option: Option, channel: Channel, state: string) {
 		const states = this.state.get(channel);
 		if (!states) return;
@@ -563,11 +641,26 @@ export class Command extends SnowFlake {
 				// composer as if the command had been sent).
 				let message = `${res.status}`;
 				try {
-					const body = (await res.json()) as {message?: string};
+					const body = (await res.json()) as {
+						message?: string;
+						errors?: Record<string, {_errors?: {params?: {additionalProperty?: string}}[]}>;
+					};
 					if (body.message) message = `${res.status}: ${body.message}`;
+					// The enforcement validator names the offending field; showing it turns
+					// a bare "Invalid Form Body" into something actionable.
+					const extra = Object.values(body.errors ?? {})
+						.flatMap((e) => e?._errors ?? [])
+						.map((e) => e.params?.additionalProperty)
+						.filter(Boolean)[0];
+					if (extra) message += ` (${extra})`;
 				} catch {
 					// A non-JSON body (a bare proxy error page) keeps the bare status.
 				}
+				// The nonce will never resolve now; drop it from both gates — the modal
+				// suppression Set and the command-status channel map — so a late
+				// INTERACTION_FAILURE can't stack "did not respond" on the real error.
+				this.localuser.interactionNonces.delete(nonce);
+				this.localuser.commandChannels.delete(nonce);
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;
@@ -582,6 +675,14 @@ export class Command extends SnowFlake {
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;
+				html.parentElement?.append(error);
+				removeAni(error, 25000);
+			} else if (e instanceof Error) {
+				// A POST that never left the browser (offline, refused) used to fail
+				// silently and only surface as a later "did not respond".
+				const error = document.createElement("span");
+				error.classList.add("commandError");
+				error.textContent = e.message;
 				html.parentElement?.append(error);
 				removeAni(error, 25000);
 			}
@@ -622,6 +723,8 @@ export class Command extends SnowFlake {
 				} catch {
 					// A non-JSON body keeps the bare status.
 				}
+				this.localuser.interactionNonces.delete(nonce);
+				this.localuser.commandChannels.delete(nonce);
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;
@@ -630,7 +733,15 @@ export class Command extends SnowFlake {
 				return false;
 			}
 			return true;
-		} catch {
+		} catch (e) {
+			if (e instanceof Error) {
+				// Same as the slash path: a POST that never left the browser shows why.
+				const error = document.createElement("span");
+				error.classList.add("commandError");
+				error.textContent = e.message;
+				(anchor ?? document.body).append(error);
+				removeAni(error, 25000);
+			}
 			return false;
 		}
 	}
@@ -1334,7 +1445,9 @@ class SubCommandOption extends Option {
 			this.owner.localuser.MDSearchOptions(
 				entries
 					.filter((branch) => branch.localizedName.includes(input.value))
-					.sort((a, b) => a.localizedName.localeCompare(b.localizedName))
+					// Descending: MDSearchOptions prepends each row, so the last entry
+					// renders at the top — the list reads A-Z.
+					.sort((a, b) => b.localizedName.localeCompare(a.localizedName))
 					.slice(0, 8)
 					.map((branch) => {
 						return [
@@ -1383,12 +1496,13 @@ class SubCommandOption extends Option {
 			});
 		} else {
 			// A freshly inserted branch chip offers the choice immediately — no auto-pick of
-			// the first subcommand.
+			// the first subcommand. A pre-pick (the picker's subcommand rows) that landed
+			// before this microtask already displays its choice.
 			queueMicrotask(() => {
-				if (div.isConnected) {
-					input.value = "";
-					offer();
-				}
+				if (!div.isConnected) return;
+				if (this.owner.getState(this, channel)) return;
+				input.value = "";
+				offer();
 			});
 		}
 		return div;
