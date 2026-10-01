@@ -2,7 +2,7 @@
     "2faCode": "2FA-Code:",
     "404": {
         "404": "Feeler: 404 – Säit net fonnt",
-        "blog": "De Fermo-Blog",
+        "blog": "De Machloket-Blog",
         "home": "Haaptsäit",
         "login": "Aloggen"
     },
@@ -39,7 +39,7 @@
     "blankMessage": "Eidele Message",
     "blog": {
         "blog": "Blog",
-        "fermo": "Fermo-Blog"
+        "fermo": "Machloket-Blog"
     },
     "bot": "BOT",
     "botSettings": "Bot-Astellungen",
@@ -171,8 +171,8 @@
         "pw2Field": "Passwuert nach eng Kéier aginn:",
         "pwField": "Passwuert:",
         "trans": "Iwwersetzen",
-        "transDesc": "Dir kënnt dobäi hëllefe fir Fermo an Är eege Sprooch z'iwwersetzen!",
-        "transTitle": "Fermo iwwersetzen",
+        "transDesc": "Dir kënnt dobäi hëllefe fir Machloket an Är eege Sprooch z'iwwersetzen!",
+        "transTitle": "Machloket iwwersetzen",
         "userField": "Benotzernumm:"
     },
     "instanceStats": {
@@ -221,7 +221,7 @@
         "deleteAccountButton": "Kont läschen",
         "description": "Beschreiwung:",
         "install": "Installéieren",
-        "installJank": "Fermo installéieren",
+        "installJank": "Machloket installéieren",
         "language": "Sprooch:",
         "manageBot": "Bot geréieren",
         "newEmail:": "Nei E-Mail",

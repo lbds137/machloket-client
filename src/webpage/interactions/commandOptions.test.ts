@@ -378,7 +378,7 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 
 	it("in a DM, only people are candidates: a role option offers nothing", () => {
 		const {localuser, channel} = messageIn("@me");
-		(channel as unknown as {users?: unknown}).users = [{id: "9", name: "the owner"}];
+		(channel as unknown as {users?: unknown}).users = [{id: "9", name: "Alice"}];
 		const userCommand = new Command(commandJson([{type: 6, name: "who", description: ""}]), localuser);
 		const roleCommand = new Command(commandJson([{type: 8, name: "role", description: ""}]), localuser);
 		const collect = (option: unknown) =>
@@ -1648,7 +1648,7 @@ describe("progressive composer model", () => {
 			command.render(html, channel as never);
 			await new Promise((r) => setTimeout(r, 0));
 			// The popup prepends rows as it renders: the alphabetically FIRST branch must be
-			// the one at the top (the owner's walk: the list read Z-A).
+			// the one at the top (the list used to read Z-A).
 			const rows = [...searchOptions.children].map((c) => c.textContent);
 			expect(rows).toEqual(["browse", "view"]);
 			// …and the keyboard selection starts on that top row — Enter commits what the

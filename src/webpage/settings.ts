@@ -230,7 +230,7 @@ export class Buttons implements OptionsElement<unknown> {
 		if (this.sectionHeaders.size) {
 			const fb = document.createElement("a");
 			fb.textContent = "Give feedback about this design";
-			fb.href = "https://forms.sovrahi.com/index.php/861742?lang=en";
+			fb.href = "https://github.com/lbds137/machloket/issues";
 			fb.target = "_blank";
 			fb.rel = "noopener noreferrer";
 			fb.classList.add("settingsFeedback");
@@ -1354,7 +1354,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			this.validationState = "invalid";
 			// From a loopback page (localhost:8080 on the Deck), a non-local origin's
 			// certificate can never match — the failure is silent in JS, but the condition is
-			// computable, and "invalid" alone sent the owner round in circles.
+			// computable, and "invalid" alone sent the user round in circles.
 			const pageLocal = ["localhost", "127.0.0.1", "[::1]"].includes(window.location.hostname);
 			let targetLocal = false;
 			if (URL.canParse(this.input.value)) {

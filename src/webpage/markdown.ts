@@ -1292,7 +1292,6 @@ class MarkDown {
 		}
 		return new Set([
 			location.host,
-			"*.sovrahi.com", // Git domain
 			"*.sbar.fyi", // invite
 		]);
 	}

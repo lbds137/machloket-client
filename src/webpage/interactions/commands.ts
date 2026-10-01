@@ -857,7 +857,7 @@ class ErrorOption extends Option {
 	toHTML(): HTMLElement {
 		const span = document.createElement("span");
 		this.imprintName(span);
-		span.textContent = "Fermo doesn't impl this yet";
+		span.textContent = "Machloket doesn't implement this yet";
 		return span;
 	}
 }

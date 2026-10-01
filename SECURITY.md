@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Currently, I only support the most up to date version of Fermo client, there are no stable releases, but this is planned for in the future
+Only the `main` branch is supported; there are no stable releases yet.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -10,4 +10,4 @@ Currently, I only support the most up to date version of Fermo client, there are
 
 ## Reporting a Vulnerability
 
-If there's an issue please disclose it responsibly to me, or here on Forgejo privately.
+Please report privately using this repository's GitHub security advisories (Security tab → "Report a vulnerability"), not a public issue. Include reproduction steps and affected routes or files if you can. You'll hear back with a fix timeline.

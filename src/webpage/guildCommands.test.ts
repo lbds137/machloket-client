@@ -43,7 +43,7 @@ describe("application-command index fetch", () => {
 		const sent = captureRequests(API_ROOT + "/users/@me/application-command-index", () =>
 			new Response(
 				JSON.stringify({
-					applications: [{id: "300", name: "TzurotProbeB"}],
+					applications: [{id: "300", name: "ProbeBot"}],
 					application_commands: [
 						{id: "900", type: 1, application_id: "300", name: "row9", description: "", dm_permission: true},
 					],
@@ -56,7 +56,7 @@ describe("application-command index fetch", () => {
 		const {apps, commands} = await direct.getCommandsFetch();
 
 		expect(sent).toHaveLength(1);
-		expect(apps).toEqual([{id: "300", name: "TzurotProbeB"}]);
+		expect(apps).toEqual([{id: "300", name: "ProbeBot"}]);
 		expect(commands).toHaveLength(1);
 		expect((commands[0] as unknown as {name: string}).name).toBe("row9");
 	});
@@ -90,7 +90,7 @@ describe("application-command index fetch", () => {
 		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
 			new Response(
 				JSON.stringify({
-					applications: [{id: "300", name: "Tzurot"}],
+					applications: [{id: "300", name: "Echo"}],
 					application_commands: [
 						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
 						{id: "2", type: 1, application_id: "300", name: "random", description: "", guild_id: "1554722916606791818", dm_permission: true},
@@ -112,7 +112,7 @@ describe("application-command index fetch", () => {
 		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
 			new Response(
 				JSON.stringify({
-					applications: [{id: "300", name: "Tzurot"}],
+					applications: [{id: "300", name: "Echo"}],
 					application_commands: [
 						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
 						{id: "2", type: 3, application_id: "300", name: "Inspect Message", description: "", dm_permission: true},
@@ -155,7 +155,7 @@ describe("command picker rows", () => {
 					new Command(commandJson({id: "2", name: "roll", application_id: "400"}), localuser),
 				],
 				apps: [
-					{id: "300", name: "Tzurot", icon: "ab", description: "", flags: 0},
+					{id: "300", name: "Echo", icon: "ab", description: "", flags: 0},
 					{id: "400", name: "Helper", icon: null, description: "", flags: 0},
 				],
 			},
@@ -177,7 +177,7 @@ describe("command picker rows", () => {
 			const random = byName("random");
 			const img = random.querySelector("img") as HTMLImageElement;
 			expect(img.src.startsWith("http://cdn.test/app-icons/300/ab.png")).toBe(true);
-			expect(random.querySelector(".commandRowApp")?.textContent).toBe("Tzurot");
+			expect(random.querySelector(".commandRowApp")?.textContent).toBe("Echo");
 
 			// An app without an icon: a letter stands in, and the name still names the bot.
 			const roll = byName("roll");
@@ -197,7 +197,7 @@ describe("command picker rows", () => {
 	it("the browse panel sections commands by bot, with a Frequently Used rail that filters", async () => {
 		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
-		// Recency keys carry the app id (invocationKey): random is Tzurot's (300), roll
+		// Recency keys carry the app id (invocationKey): random is Echo's (300), roll
 		// Helper's (400).
 		localStorage.setItem(
 			"commandRecency",
@@ -228,7 +228,7 @@ describe("command picker rows", () => {
 					new Command(commandJson({id: "3", name: "ask", application_id: "400"}), localuser),
 				],
 				apps: [
-					{id: "300", name: "Tzurot", icon: "ab", description: "Tzurot the bot", flags: 0},
+					{id: "300", name: "Echo", icon: "ab", description: "Echo the bot", flags: 0},
 					{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
 				],
 			},
@@ -245,13 +245,13 @@ describe("command picker rows", () => {
 			const rail = [...box.querySelectorAll(".searchRailButton")].map(
 				(b) => b.getAttribute("aria-label"),
 			);
-			expect(rail).toEqual(["Frequently Used", "Helper", "Tzurot"]);
+			expect(rail).toEqual(["Frequently Used", "Echo", "Helper"]);
 
 			// The body: recents (most recent first) above one section per app.
 			const sections = [...box.querySelectorAll(".searchSectionTitle")].map(
 				(t) => t.textContent,
 			);
-			expect(sections).toEqual(["Frequently Used", "Helper", "Tzurot"]);
+			expect(sections).toEqual(["Frequently Used", "Echo", "Helper"]);
 			const recentsNames = [
 				...box.querySelectorAll(".searchSection")[0].querySelectorAll(".commandRowName"),
 			].map((s) => s.textContent);
@@ -263,16 +263,16 @@ describe("command picker rows", () => {
 			expect(rollRow.querySelector(".commandRowApp")?.textContent).toBe("Helper");
 
 			// A rail tab filters the body to that app, titled by the app.
-			(box.querySelectorAll(".searchRailButton")[2] as HTMLElement).click();
+			(box.querySelectorAll(".searchRailButton")[1] as HTMLElement).click();
 			expect(
 				[...box.querySelectorAll(".commandRowName")].map((s) => s.textContent),
 			).toEqual(["/random"]);
-			expect(box.querySelector(".searchPanelTitle")?.textContent).toContain("Tzurot");
+			expect(box.querySelector(".searchPanelTitle")?.textContent).toContain("Echo");
 
 			// ArrowLeft/Right walk the rail; Enter runs the selected row.
-			localuser.keyup(new KeyboardEvent("keyup", {key: "ArrowLeft"}));
+			localuser.keyup(new KeyboardEvent("keyup", {key: "ArrowRight"}));
 			expect(box.querySelector(".searchPanelTitle")?.textContent).toContain("Helper");
-			const keydown = new KeyboardEvent("keydown", {key: "ArrowLeft", cancelable: true});
+			const keydown = new KeyboardEvent("keydown", {key: "ArrowRight", cancelable: true});
 			localuser.keydown(keydown);
 			expect(keydown.defaultPrevented).toBe(true);
 			localuser.keyup(new KeyboardEvent("keyup", {key: "ArrowDown"}));
@@ -335,7 +335,7 @@ describe("command picker rows", () => {
 					),
 				],
 				apps: [
-					{id: "300", name: "Tzurot", icon: "ab", description: "Tzurot the bot", flags: 0},
+					{id: "300", name: "Echo", icon: "ab", description: "Echo the bot", flags: 0},
 					{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
 				],
 			},
@@ -367,7 +367,7 @@ describe("command picker rows", () => {
 				[...sectionOf(title).querySelectorAll(".commandRowName")].map(
 					(s) => s.textContent,
 				);
-			expect(rowsOf("Tzurot")).toEqual(["/character browse", "/character view"]);
+			expect(rowsOf("Echo")).toEqual(["/character browse", "/character view"]);
 			expect(rowsOf("Helper")).toEqual(["/roll"]);
 
 			// Base bold, sub path dimmer, and the SUB's own description.

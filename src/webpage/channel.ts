@@ -40,10 +40,10 @@ import {NotificationSoundManager} from "./utils/notificationSound.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
-async function createFermoNonce(): Promise<string> {
+async function createMachloketNonce(): Promise<string> {
 	const Rev = await (await fetch("/getupdates")).text();
 	const shortRev = Rev.slice(0, 7);
-	return btoa(`fermo-${shortRev}|${Math.floor(Date.now() / 1000)}`);
+	return btoa(`machloket-${shortRev}|${Math.floor(Date.now() / 1000)}`);
 }
 
 class Channel extends SnowFlake {
@@ -3873,7 +3873,7 @@ class Channel extends SnowFlake {
 		if (attachments.length === 0) {
 			const body = {
 				content,
-				nonce: nonce || (await createFermoNonce()),
+				nonce: nonce || (await createMachloketNonce()),
 				message_reference: undefined,
 				sticker_ids,
 				embeds,
@@ -3916,7 +3916,7 @@ class Channel extends SnowFlake {
 			const formData = new FormData();
 			const body = {
 				content,
-				nonce: nonce || (await createFermoNonce()),
+				nonce: nonce || (await createMachloketNonce()),
 				message_reference: undefined,
 				sticker_ids,
 				embeds,

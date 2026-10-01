@@ -3,7 +3,7 @@
     "404": {
         "404": "Fehler 404 – Seite nicht gefunden",
         "app": "Zur App",
-        "blog": "Der Fermo-Blog",
+        "blog": "Der Machloket-Blog",
         "home": "Startseite",
         "listtitle": "Vielleicht wolltest du zu einem dieser Orte gehen",
         "login": "Anmelden",
@@ -111,10 +111,10 @@
     "blog": {
         "blog": "Blog",
         "blogUpdates": "Blog-Aktualisierungen:",
-        "desc": "Lies oder abonniere den Blog, um über Fermo auf dem Laufenden zu bleiben!",
-        "fermo": "Fermo Blog",
+        "desc": "Lies oder abonniere den Blog, um über Machloket auf dem Laufenden zu bleiben!",
+        "fermo": "Machloket Blog",
         "gotoPost": "Zum Beitrag gehen",
-        "wantUpdates": "Möchtest du wöchentliche Blog-Updates zum aktuellen Stand von Fermo erhalten?"
+        "wantUpdates": "Möchtest du wöchentliche Blog-Updates zum aktuellen Stand von Machloket erhalten?"
     },
     "bot": "BOT",
     "botGuilds": "Server, denen der Bot angehört:",
@@ -157,7 +157,7 @@
         "voice": "Sprache"
     },
     "channelLink": "# $1",
-    "clientDesc": "Client-Version: $1 \n\n[Tritt der offiziellen Fermo-Server bei]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Hilf, Fermo zu übersetzen](https://localization.sovrahi.com/projects/fermo/) \n\n[Hilf, Fermo zu entwickeln](https://git.sovrahi.com/oh64/Fermo)\n\n[Hilf, den Server zu pflegen, auf den Fermo angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
+    "clientDesc": "Client-Version: $1 \n\n[Hilf, Machloket zu übersetzen](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Hilf, Machloket zu entwickeln](https://github.com/lbds137/machloket)\n\n[Hilf, den Server zu pflegen, auf den Machloket angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
     "commands": {
         "errorNotValid": "$1 ist keine gültige Option für $2",
         "required": "$1 ist ein notwendiger Teil dieses Befehls"
@@ -174,9 +174,9 @@
         "badUser": "Protokollierung fehlerhafter Benutzerobjekte aktivieren, die zu viele Informationen senden:",
         "cache": "Service-Worker-Caching für Kartendateien aktivieren",
         "cacheDesc": "Die Kartendateien werden trotzdem geladen, so dass sie nur sichergestellt werden, dass sie im Cache sind, wenn ein neues Update veröffentlicht wird.",
-        "captureTrace": "Diese Einstellung weist Fermo an, _trace-Eigenschaften vom Server zu erfassen. Durch die Aktivierung dieser Option kann es vorkommen, dass die progressive JSON-Dekodierung nicht funktioniert (möglicherweise ist ein Neuladen erforderlich).",
+        "captureTrace": "Diese Einstellung weist Machloket an, _trace-Eigenschaften vom Server zu erfassen. Durch die Aktivierung dieser Option kann es vorkommen, dass die progressive JSON-Dekodierung nicht funktioniert (möglicherweise ist ein Neuladen erforderlich).",
         "clearWellKnowns": ".well-known Einträge erneut abrufen:",
-        "description": "Diese Hinweise richten sich an die Entwickler von Spacebar/Fermo. Wenn Sie nicht genau wissen, was Sie tun, verändern Sie diese Einstellungen bitte nicht.",
+        "description": "Diese Hinweise richten sich an die Entwickler von Spacebar/Machloket. Wenn Sie nicht genau wissen, was Sie tun, verändern Sie diese Einstellungen bitte nicht.",
         "gatewayComp": "Gateway-Komprimierung deaktivieren:",
         "logGateway": "Log-Empfang von Gateway-Ereignisse (Log-Level-Informationen):",
         "name": "Entwicklereinstellungen",
@@ -387,9 +387,9 @@
         "addBot": "Zum Server hinzufügen",
         "alreadyHave": "Hast du bereits ein Benutzerkonto?",
         "box1Items": "Direktnachrichten|Reaktionen auf Nachrichten|Einladungen|Benutzerkontowechsel|Benutzereinstellungen|Entwicklerportal|Bot-Einladungen|Übersetzungen",
-        "box1title": "Fermo ist ein Spacebar-kompatibler Client, welcher versucht, so gut wie möglich zu sein, durch viele Funktionen wie:",
+        "box1title": "Machloket ist ein Spacebar-kompatibler Client, welcher versucht, so gut wie möglich zu sein, durch viele Funktionen wie:",
         "box3description": "Wir freuen uns immer über Hilfe, sei es in Form von Fehlerberichten, Programmierung oder einfach nur das Hinweisen auf Tippfehler.",
-        "box3title": "Unterstützung bei der Entwicklung von Fermo",
+        "box3title": "Unterstützung bei der Entwicklung von Machloket",
         "compatableInstances": "Einige Spacebar-Instanzen:",
         "createAccount": "Benutzerkonto erstellen",
         "dobField": "Geburtsdatum:",
@@ -397,7 +397,7 @@
         "idpermissions": "Dies berechtigt den Bot zu:",
         "instanceField": "Instanz:",
         "loaddesc": "Das sollte nicht lange dauern",
-        "loadingText": "Fermo lädt",
+        "loadingText": "Machloket lädt",
         "loginButton": "Anmelden",
         "noAccount": "Du hast noch kein Benutzerkonto?",
         "openClient": "Client öffnen",
@@ -405,12 +405,12 @@
         "pwField": "Passwort:",
         "switchaccounts": "Benutzerkonto wechseln",
         "trans": "Übersetzen",
-        "transDesc": "Hilf Fermo in deine eigene Sprache zu übersetzen!",
-        "transTitle": "Übersetze Fermo",
+        "transDesc": "Hilf Machloket in deine eigene Sprache zu übersetzen!",
+        "transTitle": "Übersetze Machloket",
         "userField": "Benutzername:",
-        "welcomeJank": "Willkommen bei Fermo"
+        "welcomeJank": "Willkommen bei Machloket"
     },
-    "incorrectURLS": "## Diese Instanz hat wahrscheinlich die falschen Links gesendet.\n### Wenn Du der Instanzbesitzer sind, lies [hier](https://docs.spacebar.chat/setup/server/) unter *Verbindung von Remotecomputern herstellen* nach, um das Problem zu beheben.\nSoll Fermo automatisch versuchen, diesen Fehler zu beheben, damit Du eine Verbindung zur Instanz herstellen kannst?",
+    "incorrectURLS": "## Diese Instanz hat wahrscheinlich die falschen Links gesendet.\n### Wenn Du der Instanzbesitzer sind, lies [hier](https://docs.spacebar.chat/setup/server/) unter *Verbindung von Remotecomputern herstellen* nach, um das Problem zu beheben.\nSoll Machloket automatisch versuchen, diesen Fehler zu beheben, damit Du eine Verbindung zur Instanz herstellen kannst?",
     "instInfo": "Instanzinformation",
     "instanceInfo": {
         "contact": "E-Mail-Instanz-Admins",
@@ -430,7 +430,7 @@
         "ephemeralDismiss": "Nachricht ablehnen",
         "failed": "Interaktion fehlgeschlagen",
         "nonsence": "Der Server hat eine Komponente des Typs $1 gesendet, die nicht existiert",
-        "notImpl": "Fermo hat den Komponententyp $1 noch nicht implementiert.",
+        "notImpl": "Machloket hat den Komponententyp $1 noch nicht implementiert.",
         "onlyYou": "Nur du kannst diese Nachricht sehen.",
         "replyline": "Interaktion gestartet",
         "started": "Interaktion wird verarbeitet…",
@@ -517,8 +517,8 @@
         "disableConnection": "Diese Verbindung wurde serverseitig deaktiviert",
         "editingBot": "Bearbeiten des Bots $1",
         "install": "Installieren",
-        "installDesc": "Die Installation ermöglicht, Fermo in einem eigenen Fenster zu öffnen und es wie eine eigene App zu nutzen! Fermo kann aber auch einfach wie bisher im Webbrowser verwendet werden, es funktioniert dort genauso.",
-        "installJank": "Fermo installieren",
+        "installDesc": "Die Installation ermöglicht, Machloket in einem eigenen Fenster zu öffnen und es wie eine eigene App zu nutzen! Machloket kann aber auch einfach wie bisher im Webbrowser verwendet werden, es funktioniert dort genauso.",
+        "installJank": "Machloket installieren",
         "language": "Sprache:",
         "manageBot": "Bot verwalten",
         "manageInstance": "Instanz verwalten",
@@ -552,7 +552,7 @@
         "tokenDisplay": "Token: $1",
         "trace": "Spuren",
         "trusted": "Vertrauenswürdige Domains",
-        "trustedDesc": "Wenn du auf Links klickest, die dich zu dieser Domain führen, wirst du ***nicht*** wie bei anderen Links zur Bestätigung aufgefordert. Erlaube dies nur für Domains, denen du vertraust, wie z. B. „https://fermo.sbar.fyi“.",
+        "trustedDesc": "Wenn du auf Links klickest, die dich zu dieser Domain führen, wirst du ***nicht*** wie bei anderen Links zur Bestätigung aufgefordert. Erlaube dies nur für Domains, denen du vertraust, wie z. B. „https://app.example.org“.",
         "updateSettings": "Einstellungen aktualisieren",
         "updatesYay": "Aktualisierungen gefunden!",
         "userSettings": "Benutzereinstellungen"
@@ -573,7 +573,7 @@
         "error": {
             "cancel": "Abbrechen",
             "cont": "Trotzdem fortfahren",
-            "desc": "Fermo konnte Sie nicht abmelden\n Möchten Sie das Konto trotzdem entfernen?",
+            "desc": "Machloket konnte Sie nicht abmelden\n Möchten Sie das Konto trotzdem entfernen?",
             "title": "Es gab einen Fehler bei der Abmeldung."
         },
         "logout": "Abmelden"

@@ -61,7 +61,7 @@ function isSafeClientName(name: string): boolean {
 	return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(name);
 }
 
-function getClientLabelFromNonce(nonce?: string): string | undefined {
+export function getClientLabelFromNonce(nonce?: string): string | undefined {
 	if (!nonce) return undefined;
 	if (/^\d{1,10}$/.test(nonce)) {
 		return "Fermi";
@@ -86,6 +86,9 @@ function getClientLabelFromNonce(nonce?: string): string | undefined {
 		return "Hoshika";
 	}
 
+	if (head.startsWith("machloket-")) {
+		return "Machloket";
+	}
 	if (head.startsWith("fermo-")) {
 		return "Fermo";
 	}

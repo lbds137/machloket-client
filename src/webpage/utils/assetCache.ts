@@ -1,6 +1,6 @@
 const VERSIONED_STYLESHEETS = ["/style.css", "/themes.css"];
 
-export async function fetchFermoVersion(): Promise<string> {
+export async function fetchMachloketVersion(): Promise<string> {
 	try {
 		const response = await fetch("/getupdates", {cache: "no-store"});
 		if (!response.ok) return "dev";
@@ -30,6 +30,6 @@ export function applyStylesheetCacheBust(version: string): void {
 }
 
 export async function refreshStylesheetsForUpdate(): Promise<void> {
-	const version = await fetchFermoVersion();
+	const version = await fetchMachloketVersion();
 	applyStylesheetCacheBust(version);
 }

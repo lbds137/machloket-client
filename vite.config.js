@@ -93,10 +93,10 @@ function patchStylesheetCacheBusting(distDir, version) {
 			changed = true;
 			return `href="${pathname}?v=${cacheVersion}"`;
 		});
-		if (!html.includes("fermoStylesheetBust")) {
+		if (!html.includes("machloketStylesheetBust")) {
 			const patched = html.replace(
 				/(<link href="\/(?:style|themes)\.css[^"]*" rel="stylesheet"[^>]*>)/,
-				`${bustScript}<!--fermoStylesheetBust-->\n$1`,
+				`${bustScript}<!--machloketStylesheetBust-->\n$1`,
 			);
 			if (patched !== html) {
 				html = patched;

@@ -3,7 +3,7 @@
     "404": {
         "404": "Errore: 404 - Pagina non trovata",
         "app": "Vai all'app",
-        "blog": "Il blog Fermo",
+        "blog": "Il blog Machloket",
         "home": "Pagina principale",
         "listtitle": "Forse volevi andare in uno di questi",
         "login": "Accedi",
@@ -102,10 +102,10 @@
     "blog": {
         "blog": "Blog",
         "blogUpdates": "Aggiornamenti del blog:",
-        "desc": "Leggi o iscriviti al blog per ricevere aggiornamenti su Fermo!",
-        "fermo": "Blog di Fermo",
+        "desc": "Leggi o iscriviti al blog per ricevere aggiornamenti su Machloket!",
+        "fermo": "Blog di Machloket",
         "gotoPost": "Vai a post",
-        "wantUpdates": "Vorresti ricevere aggiornamenti settimanali del blog riguardo lo stato di Fermo?"
+        "wantUpdates": "Vorresti ricevere aggiornamenti settimanali del blog riguardo lo stato di Machloket?"
     },
     "bot": "BOT",
     "botGuilds": "I guild a cui il bot partecipa:",
@@ -148,7 +148,7 @@
         "voice": "Voce"
     },
     "channelLink": "# $1",
-    "clientDesc": "Versione client: $1 \n\n[Unisciti alla gilda ufficiale di Fermo]($2/invite/USgYJo?instance=https%3A% 2F%2Fspacebar.chat)\n\n[Aiutaci a tradurre Fermo](https://localization.sovrahi.com/projects/fermo/) \n\n[Aiuta a creare Fermo](https://git.sovrahi.com/oh64/Fermo)\n\n[Aiuta a gestire il server su cui si basa Fermo](https://github.com/spacebarchat/server)\n\n\nDiritti calcolati: $3",
+    "clientDesc": "Versione client: $1 \n\n[Aiutaci a tradurre Machloket](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Aiuta a creare Machloket](https://github.com/lbds137/machloket)\n\n[Aiuta a gestire il server su cui si basa Machloket](https://github.com/spacebarchat/server)\n\n\nDiritti calcolati: $3",
     "commands": {
         "errorNotValid": "$1 non è una scelta valida per $2",
         "required": "$1 è una parte obbligatoria di questo comando"
@@ -168,7 +168,7 @@
     "delete": "Cancella",
     "deleteConfirm": "Sei sicuro di voler cancellare questo?",
     "devSettings": {
-        "description": "Queste impostazioni sono riservate agli sviluppatori di Spacebar/Fermo, se non sapete cosa state facendo, vi preghiamo di non modificarle.",
+        "description": "Queste impostazioni sono riservate agli sviluppatori di Spacebar/Machloket, se non sapete cosa state facendo, vi preghiamo di non modificarle.",
         "name": "Impostazioni sviluppatore",
         "reportSystem": "Attiva sistema di segnalazione sperimentale:"
     },
@@ -354,9 +354,9 @@
     "htmlPages": {
         "addBot": "Aggiungi alla gilda",
         "alreadyHave": "Hai già un'utenza?",
-        "box1title": "Fermo è un client compatibile con Spacebar che punta a essere il migliore possibile, con numerose funzionalità, tra cui:",
+        "box1title": "Machloket è un client compatibile con Spacebar che punta a essere il migliore possibile, con numerose funzionalità, tra cui:",
         "box3description": "Apprezziamo sempre un po' di aiuto, che si tratti di segnalazioni di bug, di codice o anche solo di segnalazioni di errori di battitura.",
-        "box3title": "Contribuisci a Fermo",
+        "box3title": "Contribuisci a Machloket",
         "compatableInstances": "Istanze compatibili con Spacebar:",
         "createAccount": "Registrati",
         "dobField": "Data di nascita:",
@@ -364,7 +364,7 @@
         "idpermissions": "Questo consentirà al bot di:",
         "instanceField": "Instanza:",
         "loaddesc": "Non dovrebbe volerci molto tempo",
-        "loadingText": "Fermo sta caricando",
+        "loadingText": "Machloket sta caricando",
         "loginButton": "Accedi",
         "noAccount": "Non hai un'utenza?",
         "openClient": "Apri client",
@@ -372,10 +372,10 @@
         "pwField": "Password:",
         "switchaccounts": "Cambia utenza",
         "trans": "Traduci",
-        "transDesc": "Puoi aiutarci a tradurre Fermo nella tua lingua!",
-        "transTitle": "Traduci Fermo",
+        "transDesc": "Puoi aiutarci a tradurre Machloket nella tua lingua!",
+        "transTitle": "Traduci Machloket",
         "userField": "Nome utente:",
-        "welcomeJank": "Benvenuto a Fermo"
+        "welcomeJank": "Benvenuto a Machloket"
     },
     "instInfo": "Informazioni sull'istanza",
     "instanceInfo": {
@@ -392,7 +392,7 @@
     "interactions": {
         "ephemeralDismiss": "Ignora messaggio",
         "failed": "Interazione fallita",
-        "notImpl": "Fermo non ha ancora implementato il tipo di componente $1",
+        "notImpl": "Machloket non ha ancora implementato il tipo di componente $1",
         "onlyYou": "Solo tu puoi vedere questo messaggio"
     },
     "invite": {
@@ -458,7 +458,7 @@
         "deleteAccount": "Cancellazione utenza",
         "deleteAccountButton": "Cancella utenza",
         "install": "Installa",
-        "installJank": "Scarica Fermo",
+        "installJank": "Scarica Machloket",
         "language": "Lingua:",
         "manageBot": "Gestisci bot",
         "manageInstance": "Gestisci istanza",
@@ -488,7 +488,7 @@
         "tokenDisplay": "Token: $1",
         "trace": "Tracciati",
         "trusted": "Domini attendibili",
-        "trustedDesc": "Quando clicchi sui link che ti indirizzano a questi domini, ***NON*** ti verrà chiesto il permesso di aprire come per altri link, concedilo solo ai domini di cui ti fidi, come 'https://fermo.sbar.fyi'",
+        "trustedDesc": "Quando clicchi sui link che ti indirizzano a questi domini, ***NON*** ti verrà chiesto il permesso di aprire come per altri link, concedilo solo ai domini di cui ti fidi, come 'https://app.example.org'",
         "updateSettings": "Aggiorna impostazioni",
         "updatesYay": "Aggiornamenti trovati!",
         "userSettings": "Il tuo profilo pubblico"
@@ -509,7 +509,7 @@
         "error": {
             "cancel": "Annulla",
             "cont": "Continua comunque",
-            "desc": "Fermo non è riuscito a disconnetterti, vuoi comunque rimuovere l'utenza?",
+            "desc": "Machloket non è riuscito a disconnetterti, vuoi comunque rimuovere l'utenza?",
             "title": "Si è verificato un errore durante il tentativo di disconnetterti"
         },
         "logout": "Esci"

@@ -1,6 +1,6 @@
-### How to statically host Fermo
+### How to statically host Machloket
 
-Fermo due to its service worker, will technically work without any of this, but here's what you need to keep in mind for statically hosting it.
+Machloket due to its service worker, will technically work without any of this, but here's what you need to keep in mind for statically hosting it.
 
 ### I will assume the following
 
@@ -10,7 +10,7 @@ Fermo due to its service worker, will technically work without any of this, but 
 
 Here's the other thing you need to do:
 
-Firstly you'll need to build Fermo like normal and host out the `./dist/webpage` directory.
+Firstly you'll need to build Machloket like normal and host out the `./dist/webpage` directory.
 
 You need to make some rewrites, not redirects from these addresses:
 

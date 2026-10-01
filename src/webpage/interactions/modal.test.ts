@@ -11,7 +11,7 @@ await I18n.done;
 const API = "http://modal.test/api/v9";
 
 /** A modal like Tzurot's toolkit builds: every field in a Label, prose as a bare TextDisplay. */
-function tzurotModal() {
+function sampleModal() {
 	return {
 		id: "1100",
 		nonce: "42",
@@ -31,7 +31,7 @@ function tzurotModal() {
 					style: 1,
 					min_length: 2,
 					max_length: 32,
-					value: "the owner",
+					value: "Alice",
 				},
 			},
 			{
@@ -109,7 +109,7 @@ beforeEach(() => {
 
 describe("InteractionModal", () => {
 	it("shows the title, the app, every label and description, and prose", () => {
-		root = new InteractionModal(tzurotModal(), host()).show();
+		root = new InteractionModal(sampleModal(), host()).show();
 
 		expect(q(".interactionModalTitle").textContent).toBe("Edit persona");
 		expect(q(".interactionModalApp").textContent).toBe("Tzurot");
@@ -117,13 +117,13 @@ describe("InteractionModal", () => {
 		expect(labels).toEqual(["Name", "Backstory", "Model", "Tone", "Features", "Public"]);
 		expect(q(".interactionModalDescription").textContent).toBe("Shown above replies");
 		expect(q(".interactionModalText").textContent).toContain("Changes apply to new messages.");
-		expect(q<HTMLInputElement>('input[data-custom-id="name"]').value).toBe("the owner");
+		expect(q<HTMLInputElement>('input[data-custom-id="name"]').value).toBe("Alice");
 		expect(q<HTMLTextAreaElement>('textarea[data-custom-id="story"]').placeholder).toBe("Optional");
 	});
 
 	it("submits every field in Discord's modal-submit shape, with the opener's message", async () => {
 		const sent = captureRequests(API + "/interactions");
-		const modal = new InteractionModal(tzurotModal(), host("500"));
+		const modal = new InteractionModal(sampleModal(), host("500"));
 		root = modal.show();
 		q<HTMLInputElement>('input[value="warm"]').click();
 		q<HTMLInputElement>('input[value="voice"]').click();
@@ -144,7 +144,7 @@ describe("InteractionModal", () => {
 				custom_id: "persona-edit",
 				components: [
 					{type: 10},
-					{type: 18, component: {type: 4, custom_id: "name", value: "the owner"}},
+					{type: 18, component: {type: 4, custom_id: "name", value: "Alice"}},
 					{type: 18, component: {type: 4, custom_id: "story", value: ""}},
 					{type: 18, component: {type: 3, custom_id: "model", values: ["l"]}},
 					{type: 18, component: {type: 21, custom_id: "tone", value: "warm"}},
@@ -159,7 +159,7 @@ describe("InteractionModal", () => {
 
 	it("sends no message_id when a slash command opened the modal", async () => {
 		const sent = captureRequests(API + "/interactions");
-		const modal = new InteractionModal(tzurotModal(), host());
+		const modal = new InteractionModal(sampleModal(), host());
 		root = modal.show();
 		q<HTMLInputElement>('input[value="dry"]').click();
 
@@ -170,7 +170,7 @@ describe("InteractionModal", () => {
 
 	it("blocks the submit and marks the fields a required or length rule rejects", async () => {
 		const sent = captureRequests(API + "/interactions");
-		const modal = new InteractionModal(tzurotModal(), host());
+		const modal = new InteractionModal(sampleModal(), host());
 		root = modal.show();
 		q<HTMLInputElement>('input[data-custom-id="name"]').value = "L";
 
@@ -203,7 +203,7 @@ describe("InteractionModal", () => {
 					headers: {"Content-Type": "application/json"},
 				}),
 		);
-		const modal = new InteractionModal(tzurotModal(), host());
+		const modal = new InteractionModal(sampleModal(), host());
 		root = modal.show();
 		q<HTMLInputElement>('input[value="dry"]').click();
 
@@ -217,7 +217,7 @@ describe("InteractionModal", () => {
 		const sent = captureRequests(API + "/interactions");
 		const modal = new InteractionModal(
 			{
-				...tzurotModal(),
+				...sampleModal(),
 				components: [
 					{
 						type: 1,
@@ -255,7 +255,7 @@ describe("InteractionModal", () => {
 					{status: 400, headers: {"Content-Type": "application/json"}},
 				),
 		);
-		const modal = new InteractionModal(tzurotModal(), host());
+		const modal = new InteractionModal(sampleModal(), host());
 		root = modal.show();
 		q<HTMLInputElement>('input[value="dry"]').click();
 
@@ -269,7 +269,7 @@ describe("InteractionModal", () => {
 	});
 
 	it("stays open on a tap outside it, so typed answers survive", async () => {
-		root = new InteractionModal(tzurotModal(), host()).show();
+		root = new InteractionModal(sampleModal(), host()).show();
 		const background = root.closest(".background") as HTMLElement;
 
 		background.click();
@@ -279,7 +279,7 @@ describe("InteractionModal", () => {
 	});
 
 	it("closes on Escape", async () => {
-		root = new InteractionModal(tzurotModal(), host()).show();
+		root = new InteractionModal(sampleModal(), host()).show();
 		const background = root.closest(".background") as HTMLElement;
 
 		background.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
@@ -290,7 +290,7 @@ describe("InteractionModal", () => {
 
 	it("submits on Enter in a short text input", async () => {
 		const sent = captureRequests(API + "/interactions");
-		root = new InteractionModal(tzurotModal(), host()).show();
+		root = new InteractionModal(sampleModal(), host()).show();
 		q<HTMLInputElement>('input[value="dry"]').click();
 
 		q<HTMLInputElement>('input[data-custom-id="name"]').dispatchEvent(
@@ -303,7 +303,7 @@ describe("InteractionModal", () => {
 
 	it("sends once when Enter is pressed again while the first send is out", async () => {
 		const sent = captureRequests(API + "/interactions");
-		root = new InteractionModal(tzurotModal(), host()).show();
+		root = new InteractionModal(sampleModal(), host()).show();
 		q<HTMLInputElement>('input[value="dry"]').click();
 		const name = q<HTMLInputElement>('input[data-custom-id="name"]');
 
@@ -335,7 +335,7 @@ describe("INTERACTION_MODAL_CREATE from the gateway", () => {
 	const event = (nonce: string) => ({
 		op: 0,
 		t: "INTERACTION_MODAL_CREATE",
-		d: {...tzurotModal(), nonce},
+		d: {...sampleModal(), nonce},
 		s: 1,
 	});
 	const open = () => document.querySelector(".interactionModal");

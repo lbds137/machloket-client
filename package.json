@@ -1,7 +1,7 @@
 {
-	"name": "jankclient",
+	"name": "machloket",
 	"version": "0.2.0",
-	"description": "Machloket: a Discord-like Spacebar web client (private fork of Fermo), in TypeScript, HTML and CSS.",
+	"description": "Machloket: a Discord-like Spacebar web client (a fork of Fermo), in TypeScript, HTML and CSS.",
 	"type": "module",
 	"scripts": {
 		"build": "vite build",
@@ -12,8 +12,6 @@
 	"author": "MathMan05",
 	"license": "AGPL-3.0",
 	"dependencies": {
-		"@openpanel/sdk": "^1.0.0",
-		"@sentry/browser": "^10.68.0",
 		"vite": "^8.0.12"
 	},
 	"devDependencies": {

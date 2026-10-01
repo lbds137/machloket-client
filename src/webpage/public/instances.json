@@ -1,20 +1,14 @@
 [
 	{
-		"name": "Machloket",
+		"name": "Spacebar",
 		"icon": "/logo.svg",
-		"description": "the owner's Spacebar instance, over Tailscale (https)",
-		"url": "https://{hostname}:8443"
+		"description": "The public Spacebar community instance",
+		"url": "https://spacebar.chat"
 	},
 	{
-		"name": "Machloket (local)",
+		"name": "Local server",
 		"icon": "/logo.svg",
-		"description": "the owner's Spacebar instance, from the Deck or the LAN (http)",
+		"description": "A Spacebar server on this machine, reachable from the LAN",
 		"url": "http://{hostname}:3001"
-	},
-	{
-		"name": "Boot Instance B",
-		"icon": "/logo.svg",
-		"description": "Joint-boot test instance (disposable data)",
-		"url": "https://{hostname}:8444"
 	}
 ]

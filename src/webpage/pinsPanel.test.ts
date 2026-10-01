@@ -27,7 +27,7 @@ afterEach(() => {
 	vi.restoreAllMocks();
 });
 
-// The instance can take seconds to answer (5 s measured from the owner's phone); an empty box
+// The instance can take seconds to answer (5 s measured on a phone); an empty box
 // meanwhile looked broken.
 it("says it's loading while the pins request is in flight", async () => {
 	vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise(() => {}));

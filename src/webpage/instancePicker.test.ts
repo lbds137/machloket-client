@@ -56,18 +56,18 @@ describe("instance list", () => {
 		await instancefetch;
 
 		expect(getInstances().map((instance) => instance.url)).toEqual([
-			`https://${location.hostname}:8443`,
+			"https://spacebar.test",
 			`http://${location.hostname}:3001`,
 			"http://other.test",
 		]);
 	});
 
 	it("defaults to the first instance using the page's own scheme", async () => {
-		// An https page can't call an http instance (mixed content), and the http page on the
-		// Deck can't reach the tailnet https address.
+		// An https page can't call an http instance (mixed content), so the default picks the
+		// first entry whose scheme matches the page's.
 		await instancefetch;
 
-		expect(getDefaultInstanceUrl("https:")).toBe(`https://${location.hostname}:8443`);
+		expect(getDefaultInstanceUrl("https:")).toBe("https://spacebar.test");
 		expect(getDefaultInstanceUrl("http:")).toBe(`http://${location.hostname}:3001`);
 	});
 });

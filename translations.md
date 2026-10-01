@@ -1,6 +1,6 @@
 # Translations
 
-The translations are stored in `/src/webpage/translations` in this format below.
+The translations are stored in `/translations` at the root of the repo, in this format below. `en.json` is the source of truth; other locales fall back to it for missing keys.
 
 ```json
 {
@@ -15,7 +15,7 @@ The translations are stored in `/src/webpage/translations` in this format below.
 
 ## I want to help translate this
 
-Please go to [https://localization.sovrahi.com/projects/fermo/](https://localization.sovrahi.com/projects/fermo/) to help translate this project.
+Open a pull request against the `translations/*.json` file for your language — the files are plain JSON, one key per line.
 
 ## What is the format?
 

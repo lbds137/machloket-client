@@ -3,7 +3,7 @@
     "404": {
         "404": "erreur:404 - Page introuvable",
         "app": "Vers l'application",
-        "blog": "Le blog de Fermo",
+        "blog": "Le blog de Machloket",
         "home": "Page d'accueil",
         "listtitle": "Tu voulais peut-être aller dans un de ces endroits",
         "login": "Se connecter",
@@ -93,7 +93,7 @@
         "bug_hunter_level_1": "Chasseur de bugs niveau 1",
         "bug_hunter_level_2": "Chasseur de bugs niveau 2",
         "certified_moderator": "Modérateur",
-        "customBadgeNotice": "Badge custom Fermo. Il n'est pas géré par Spacebar ni par l'équipe de cette instance.",
+        "customBadgeNotice": "Badge custom Machloket. Il n'est pas géré par Spacebar ni par l'équipe de cette instance.",
         "early_supporter": "Supporteur de la première heure",
         "guild_booster_lvl1": "Guilde boostée",
         "guild_booster_lvl2": "Guilde boostée",
@@ -120,10 +120,10 @@
     "blog": {
         "blog": "Blog",
         "blogUpdates": "Actualités du blog :",
-        "desc": "Lisez ou abonnez-vous au blog pour rester informé des actualités de Fermo !",
-        "fermo": "Le blog sur Fermo",
+        "desc": "Lisez ou abonnez-vous au blog pour rester informé des actualités de Machloket !",
+        "fermo": "Le blog sur Machloket",
         "gotoPost": "Aller à la publication",
-        "wantUpdates": "Souhaiteriez-vous recevoir des actualités hebdomadaires du blog à propos de l'état de Fermo ?"
+        "wantUpdates": "Souhaiteriez-vous recevoir des actualités hebdomadaires du blog à propos de l'état de Machloket ?"
     },
     "bot": "BOT",
     "botExplorerLink": "Ouvrir sur le Spacebar Explorer",
@@ -180,7 +180,7 @@
         "voice": "Voix"
     },
     "channelLink": "# $1",
-    "clientDesc": "Version du client : $1\n\n[Rejoignez la guilde officielle du client Fermo]($2/invite/WYbNha?instance=https%3A%2F%2Fspacebar.chat)\n\n[Contribuez à la traduction du client Fermo](https://localization.sovrahi.com/projects/fermo/) \n\n[Contribuez au client Fermo](https://git.sovrahi.com/oh64/Fermo)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Fermo)](https://github.com/spacebarchat/server)\n\n\nDroits calculés : $3",
+    "clientDesc": "Version du client : $1\n\n[Contribuez à la traduction du client Machloket](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Contribuez au client Machloket](https://github.com/lbds137/machloket)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Machloket)](https://github.com/spacebarchat/server)\n\n\nDroits calculés : $3",
     "commands": {
         "errorNotValid": "$1 n'est pas un choix valide pour $2",
         "required": "$1 est une partie requise de cette commande"
@@ -198,9 +198,9 @@
         "badUser": "Activer la journalisation des objets utilisateur incorrects qui envoient trop d'informations :",
         "cache": "Activer les fichiers de mapping du cache du Service Worker",
         "cacheDesc": "les fichiers de mapping seront toujours chargés, cela s'assurera juste qu'ils sont en cache quand une nouvelle mise à jour est disponible.",
-        "captureTrace": "Cette option indique à Fermo de capturer les propriétés _trace depuis le serveur. Son activation peut empêcher le décodage progressif du JSON de fonctionner (un rechargement peut être nécessaire).",
+        "captureTrace": "Cette option indique à Machloket de capturer les propriétés _trace depuis le serveur. Son activation peut empêcher le décodage progressif du JSON de fonctionner (un rechargement peut être nécessaire).",
         "clearWellKnowns": "Re-charger les enregistrements .well-known",
-        "description": "Ces paramètres sont destinés aux développeurs de Spacebar/Fermo. Si vous ne savez pas ce que vous faites, ne les modifiez pas.",
+        "description": "Ces paramètres sont destinés aux développeurs de Spacebar/Machloket. Si vous ne savez pas ce que vous faites, ne les modifiez pas.",
         "gatewayComp": "Désactiver la compression de la passerelle",
         "logGateway": "Journaliser les événements reçus par la passerelle (niveau de log : info)",
         "name": "Paramètres développeur",
@@ -414,9 +414,9 @@
         "addBot": "Ajouter à la guilde",
         "alreadyHave": "Vous avez déjà un compte ?",
         "box1Items": "Messagerie en direct|Prise en charge des réactions|Invitations|Changement de compte|Paramètres utilisateur|Portail des développeurs|Invitations de bots|Prise en charge des traductions",
-        "box1title": "Le client Fermo est un client compatible avec Spacebar qui cherche à être aussi bon que possible avec de nombreuses fonctionnalités, notamment :",
+        "box1title": "Le client Machloket est un client compatible avec Spacebar qui cherche à être aussi bon que possible avec de nombreuses fonctionnalités, notamment :",
         "box3description": "Nous apprécierons toujours votre aide, que ce soit sous forme de rapports de bugs, de code ou même simplement en signalant des fautes de frappe.",
-        "box3title": "Contribuer au client Fermo",
+        "box3title": "Contribuer au client Machloket",
         "compatableInstances": "Instances compatibles avec Spacebar :",
         "createAccount": "Créer un compte",
         "dobField": "Date de naissance :",
@@ -434,7 +434,7 @@
         "instanceError": "Impossible de charger les instances. Veuillez réessayer plus tard.",
         "instanceField": "Instance :",
         "loaddesc": "Cela ne devrait pas prendre longtemps",
-        "loadingText": "Le client Fermo est en cours de chargement",
+        "loadingText": "Le client Machloket est en cours de chargement",
         "loginButton": "Se connecter",
         "noAccount": "Vous n'avez pas de compte ?",
         "openClient": "Ouvrir le client",
@@ -443,10 +443,10 @@
         "startHere": "Commencez ici",
         "switchaccounts": "Changer de compte",
         "trans": "Traduire",
-        "transDesc": "Vous pouvez aider à traduire le client Fermo dans votre propre langue !",
-        "transTitle": "Traduire le client Fermo",
+        "transDesc": "Vous pouvez aider à traduire le client Machloket dans votre propre langue !",
+        "transTitle": "Traduire le client Machloket",
         "userField": "Nom d'utilisateur :",
-        "welcomeJank": "Bienvenue dans le client Fermo"
+        "welcomeJank": "Bienvenue dans le client Machloket"
     },
     "inbox": {
         "directMessage": "Message privé",
@@ -459,7 +459,7 @@
         "openChannel": "Ouvrir le canal",
         "unread": "Non lus"
     },
-    "incorrectURLS": "## Cette instance a probablement envoyé des liens incorrects.\n### Si vous êtes le propriétaire de l'instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Fermo tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l'instance ?",
+    "incorrectURLS": "## Cette instance a probablement envoyé des liens incorrects.\n### Si vous êtes le propriétaire de l'instance, veuillez consulter la section *Connecting from remote machines* de [cette page](https://docs.spacebar.chat/setup/server/) pour corriger le problème.\n Souhaitez-vous que le client Machloket tente automatiquement de corriger cette erreur pour vous permettre de vous connecter à l'instance ?",
     "instInfo": "Informations d'instance",
     "instanceInfo": {
         "contact": "Envoyer un e-mail aux administrateurs de l'instance",
@@ -479,7 +479,7 @@
         "ephemeralDismiss": "Ignorer le message",
         "failed": "L'interaction a échoué",
         "nonsence": "Le serveur a envoyé un composant de type $1 qui n'existe pas",
-        "notImpl": "Fermo n'a pas encore implémenté le composant de type $1",
+        "notImpl": "Machloket n'a pas encore implémenté le composant de type $1",
         "onlyYou": "Vous seul pouvez voir ce message",
         "replyline": "Interaction commencée",
         "started": "Traitement de l'interaction…",
@@ -567,8 +567,8 @@
         "disableConnection": "Cette connexion a été désactivée côté serveur",
         "editingBot": "Modifier le bot $1",
         "install": "Installer",
-        "installDesc": "Installer le client Fermo vous permettra de l'ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Fermo dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
-        "installJank": "Installer le client Fermo",
+        "installDesc": "Installer le client Machloket vous permettra de l'ouvrir dans sa propre fenêtre et de le faire fonctionner comme une application séparée ! Vous pouvez également continuer à utiliser le client Machloket dans votre navigateur web comme auparavant, et le fonctionnement restera le même.",
+        "installJank": "Installer le client Machloket",
         "invalidSoundFormat": "Veuillez importer un fichier MP3, OGG ou WebM.",
         "language": "Langue :",
         "manageBot": "Gérer le bot",
@@ -578,27 +578,11 @@
         "newEmail:": "Nouvel e-mail",
         "newPassword:": "Nouveau mot de passe :",
         "newUsername": "Nouveau nom d'utilisateur :",
-        "noToken": "Le jeton n'est pas connu par Fermo, impossible de le sauvegarder dans le stockage local.",
+        "noToken": "Le jeton n'est pas connu par Machloket, impossible de le sauvegarder dans le stockage local.",
         "noUpdates": "Aucune mise à jour trouvée",
         "notificationSoundSection": "Son de notification",
         "notisound": "Son de notification :",
         "oldPassword:": "Ancien mot de passe :",
-        "openpanelDesc": "Fermo collecte des données afin d'améliorer l'application (performances, bugs, utilisation des fonctionnalités).\nNOUS NE TRANSMETTONS JAMAIS vos conversations, vos messages ou la liste de guildes/serveurs où vous êtes",
-        "openpanelDisableAnalytics": "Désactiver complètement les statistiques d'utilisation",
-        "openpanelEnableAnalytics": "Activer les statistiques d'utilisation",
-        "openpanelModeDefaultDesc": "Envoie des statistiques d'utilisation (fonctionnalités utilisées, temps de chargement des messages, performances sur mobile, etc.) ainsi que les erreurs.\n**Aucune donnée personnelle ni aucun contenu de message n'est collecté.**",
-        "openpanelModeDefaultTitle": "Par défaut (c'est ce qui nous aide le plus, merci !)",
-        "openpanelModeDisableDesc": "Désactive l'envoi de toute données.\nFermo continuera de fonctionner normalement.",
-        "openpanelModeDisableTitle": "Désactivé",
-        "openpanelModeErrorSendingDesc": "Envoyez des rapports d'erreurs techniques + un ping à l'ouverture et à la fermeture.\nCela permet de corriger les bugs plus rapidement.",
-        "openpanelModeErrorSendingTitle": "Erreurs uniquement",
-        "openpanelModeJustPingDesc": "Envoie un ping uniquement lorsque l'application s'ouvre et se ferme.\nAucune information sur votre utilisation.\nSi personne n'utilise Fermo, pourquoi continuerais-je à le faire, vous voyez ?",
-        "openpanelModeJustPingTitle": "Minimum",
-        "openpanelPromptDesc": "Vous pouvez choisir le niveau de données que vous acceptez :",
-        "openpanelPromptPrivacy": "NOUS NE TRANSMETTONS JAMAIS vos conversations, vos messages ou la liste de guildes/serveurs où vous êtes.",
-        "openpanelPromptTitle": "Aidez-nous à améliorer Fermo (vous pourrez modifier ce paramètre ultérieurement dans les paramètres)",
-        "openpanelReplay": "Échantillonnage des session : $1%",
-        "openpanelTitle": "OpenPanel",
         "password:": "Mot de passe",
         "privacyPolcyURL": "Lien vers la politique de confidentialité :",
         "publicAvaliable": "Rendre le bot invitable publiquement ?",
@@ -646,7 +630,7 @@
         "error": {
             "cancel": "Annuler",
             "cont": "Continuer quand même",
-            "desc": "Fermo n'a pas pu vous déconnecter,\n souhaitez-vous tout de même retirer le compte ?",
+            "desc": "Machloket n'a pas pu vous déconnecter,\n souhaitez-vous tout de même retirer le compte ?",
             "title": "Une erreur s'est produite en essayant de vous déconnecter"
         },
         "logout": "Se déconnecter"
@@ -955,7 +939,7 @@
         "traces": "$1 ($2ms) $3"
     },
     "translation": {
-        "wantToHelpTranslate": "Vous souhaitez participer à la traduction de Fermo ? [Cliquez ici](https://localization.sovrahi.com/projects/fermo/) pour apporter votre contribution."
+        "wantToHelpTranslate": "Vous souhaitez participer à la traduction de Machloket ? [Cliquez ici](https://github.com/lbds137/machloket/tree/main/translations) pour apporter votre contribution."
     },
     "typing": "$2 {{PLURAL:$1|est|sont}} en train d'écrire",
     "unableToConnect": "Impossible de se connecter au serveur Spacebar. Veuillez essayer de vous déconnecter et de vous reconnecter.",

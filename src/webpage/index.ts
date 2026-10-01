@@ -22,9 +22,6 @@ if (window.location.pathname.startsWith("/audio")) {
 import "./404.js";
 import {Channel} from "./channel.js";
 import {Guild} from "./guild.js";
-import {initOpenpanel, sendOpenpanelAnalytics} from "./utils/openpanel.js";
-import {getLocalSettings, OpenPanelAnalyticsMode} from "./utils/storage/localSettings.js";
-import {initSentry} from "./utils/sentry.js";
 import {showChangelogPopup} from "./changelog.js";
 import type * as C from "./typeChecker/chekerIndex.js";
 
@@ -115,7 +112,6 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 
 		regSwap(thisUser);
-		const startupStarted = performance.now();
 		thisUser.initwebsocket().then(async () => {
 			const loading = document.getElementById("loading") as HTMLDivElement;
 			try {
@@ -123,20 +119,6 @@ if (window.location.pathname.startsWith("/channels")) {
 				loaddesc.textContent = I18n.loaded();
 				loading.classList.add("doneloading");
 				loading.classList.remove("loading");
-				await Localuser.showOpenpanelAnalyticsPrompt();
-				const settings = getLocalSettings();
-				if (
-					settings.openpanelEnabled !== false &&
-					settings.openpanelAnalyticsMode !== OpenPanelAnalyticsMode.Disabled &&
-					settings.openpanelAnalyticsMode !== OpenPanelAnalyticsMode.JustPing
-				) {
-					await initSentry();
-				}
-				initOpenpanel();
-				thisUser.identifyOpenpanelUser();
-				sendOpenpanelAnalytics("app_loaded", {
-					startup_ms: Math.round(performance.now() - startupStarted),
-				});
 				showChangelogPopup();
 				if (templateID) {
 					thisUser.passTemplateID(templateID);
@@ -144,10 +126,6 @@ if (window.location.pathname.startsWith("/channels")) {
 				console.warn("huh");
 				await thisUser.init();
 				console.warn("huh2");
-				sendOpenpanelAnalytics("initial_channel_loaded", {
-					startup_ms: Math.round(performance.now() - startupStarted),
-					route: window.location.pathname.startsWith("/channels") ? "channel" : "home",
-				});
 				console.log("done loading");
 			} catch (e) {
 				console.error(e);
@@ -272,11 +250,6 @@ if (window.location.pathname.startsWith("/channels")) {
 					},
 					(res) => {
 						if (res === "Ok") {
-							sendOpenpanelAnalytics("message_sent", {
-								attachment_count: attachments.length,
-								has_reply: Boolean(replyingTo),
-								sent_from: channel.guild.id === "@me" ? "dm" : "guild",
-							});
 							mres();
 						} else {
 							rej();

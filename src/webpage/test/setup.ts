@@ -5,7 +5,7 @@ import {vi} from "vitest";
 // Vitest dev server.
 
 export const localInstances = [
-	{name: "This host over Tailscale", icon: "/logo.svg", url: "https://{hostname}:8443"},
+	{name: "Spacebar", icon: "/logo.svg", url: "https://spacebar.test"},
 	{name: "This host", icon: "/logo.svg", url: "http://{hostname}:3001"},
 	{name: "Other instance", url: "http://other.test"},
 ];

@@ -6,7 +6,7 @@ const CHANGELOG_STORAGE_KEY = "fermoChangelogVersion";
 const CHANGELOG_IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
 /* Increment this when updating CHANGELOG_CONTENT to show the popup again. */
-export const CHANGELOG_VERSION = 2;
+export const CHANGELOG_VERSION = 3;
 
 /**
  * Yo dev. here a smalli guidy
@@ -15,20 +15,9 @@ export const CHANGELOG_VERSION = 2;
  * - Public: ![Logo](/logo.svg)
  * - Bundled: ![Preview](./changelog/preview.png) -> place files in src/webpage/public/assets/changelog/
  */
-export const CHANGELOG_CONTENT = `# Fermooo update!
+export const CHANGELOG_CONTENT = `# A new name
 
-# the translation system is more powerful than ever!
-![translate2](./changelog/2-translate.webp)
-![translate](./changelog/1-translate.webp)
-
-## Some animations and more visual improvements soon
-![visual](./changelog/1-visual.webp)
-
-## New notification sounds!!
-![sounds](./changelog/1-sounds.webp)
-
-## Polls! (be careful using them)
-![polls](./changelog/1-poll.webp)
+This client is now **Machloket** — the same app you've been using, with a name of its own. Nothing else changes for you: same instance, same account, same messages.
 `;
 
 export function resolveChangelogImageSrc(src: string): string {

@@ -1,7 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {APP_NAME} from "./brand";
 
-// Tests run on a Vite dev server, so they see what the owner's phone sees from the dev server:
+// Tests run on a Vite dev server, so they see what a phone sees from the dev server:
 // the Machlakot brand (ember palette), never the production Machloket one.
 const DEV_EMBER = "#E0452C";
 const PROD_VIOLET = "#6C4BD8";
