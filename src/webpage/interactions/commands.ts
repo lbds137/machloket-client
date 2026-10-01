@@ -19,6 +19,7 @@ function chipBackspace(
 	e: KeyboardEvent,
 	emptyOnly = true,
 ) {
+	if (e.key !== "Backspace") return;
 	if (emptyOnly && !(input.selectionStart === 0 && input.value.length === 0)) return;
 	const prev = div.previousElementSibling;
 	if (!prev || prev.classList.contains("commandFront")) {

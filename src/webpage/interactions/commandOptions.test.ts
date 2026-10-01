@@ -1102,6 +1102,38 @@ describe("progressive composer model", () => {
 		}
 	});
 
+	it("typing a character into the empty first field does NOT exit command mode", async () => {
+		const {Channel} = await import("../channel");
+		const {localuser} = messageIn("100");
+		const typebox = document.createElement("div");
+		typebox.id = "typebox";
+		(typebox as unknown as {markdown: unknown}).markdown = {
+			boxEnabled: false,
+			boxupdate: () => {},
+		};
+		document.body.append(typebox);
+		const chan = Object.assign(Object.create(Channel.prototype), {
+			id: "200",
+			owner: {id: "100", localuser, info: {api: API}, headers: {}},
+		});
+		const command = new Command(
+			commandJson([{type: 3, name: "message", description: "", required: true}]),
+			localuser,
+		);
+		try {
+			command.render(typebox, chan as never);
+			chan.curCommand = command;
+
+			const input = typebox.querySelector(".commandinput input") as HTMLInputElement;
+			input.dispatchEvent(new KeyboardEvent("keydown", {key: "h"}));
+
+			expect(typebox.querySelector(".commandFront")).toBeTruthy();
+			expect(chan.curCommand).toBe(command);
+		} finally {
+			typebox.remove();
+		}
+	});
+
 	it("backspace on a later chip removes only that chip", async () => {
 		const {channel, command} = flatCommand([
 			{type: 3, name: "message", description: "", required: true},
