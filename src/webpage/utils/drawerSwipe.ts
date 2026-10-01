@@ -47,6 +47,19 @@ export function drawerSwipeJustEnded() {
 	return performance.now() - lastSwipeEnd < SWIPE_CLICK_MS;
 }
 
+/** A full-width overlay over the chat (the mobile member list) whose own right swipe closes
+ * it. While the overlay is shown it outranks the drawer's swipe: both installs listen on the
+ * page, and without the claim a right swipe would close the chat to the drawer underneath the
+ * overlay (tracker 9c's original complaint). */
+type Overlay = {
+	isShown(): boolean;
+	hide(): void;
+	/** The overlay panel, which follows the finger during the closing swipe. */
+	panel(): HTMLElement | null;
+};
+
+let overlay: Overlay | null = null;
+
 export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 	// Capture phase: message rows, guild icons and channel rows are bound by Contextmenu, whose
 	// touchstart stops propagation, so a bubbling listener here would never see those touches.
@@ -69,7 +82,7 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 			finishGlide = undefined;
 			gesture = "none";
 			deltaX = 0;
-			if (event.touches.length !== 1) {
+			if (event.touches.length !== 1 || overlay?.isShown()) {
 				mode = "none";
 				drawerOwnsIt = false;
 				return;
@@ -142,6 +155,81 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 		},
 		{capture: true},
 	);
+}
+
+/** The overlay's closing swipe: with the overlay shown, a rightward drag slides it out
+ * finger-following, and a swipe past SWITCH_DISTANCE glides it off and hides it. Leftward and
+ * vertical drags are not claimed (the list scrolls; Discord opens members by tap only). */
+export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
+	overlay = view;
+	let gesture: "none" | "horizontal" | "vertical" = "none";
+	/** Whether this touch actually dragged the panel (only the closing direction does). */
+	let claimed = false;
+	let startX = 0;
+	let startY = 0;
+	let deltaX = 0;
+	/** How far the panel may travel: its own width, fully off screen. */
+	let travel = 0;
+	/** Ends the release glide still under way, if any, where it was heading. */
+	let finishGlide: (() => void) | undefined;
+	page.addEventListener(
+		"touchstart",
+		(event) => {
+			finishGlide?.();
+			finishGlide = undefined;
+			gesture = "none";
+			claimed = false;
+			deltaX = 0;
+			if (event.touches.length !== 1 || !view.isShown()) return;
+			startX = event.touches[0].pageX;
+			startY = event.touches[0].pageY;
+			travel = view.panel()?.getBoundingClientRect().width ?? 0;
+		},
+		{passive: true, capture: true},
+	);
+	page.addEventListener(
+		"touchmove",
+		(event) => {
+			if (!view.isShown() || event.touches.length !== 1) return;
+			const dx = event.touches[0].pageX - startX;
+			const dy = event.touches[0].pageY - startY;
+			if (gesture === "none" && (Math.abs(dx) > SLOP || Math.abs(dy) > SLOP)) {
+				gesture = Math.abs(dx) > Math.abs(dy) * HORIZONTAL_RATIO ? "horizontal" : "vertical";
+				// Claim it from anything under the overlay, as the drawer's swipe does.
+				drawerOwnsIt = gesture === "horizontal";
+			}
+			// Only the closing direction follows the finger.
+			if (gesture !== "horizontal" || dx <= 0) return;
+			deltaX = dx;
+			claimed = true;
+			event.preventDefault();
+			const panel = view.panel();
+			if (!panel) return;
+			panel.style.transition = "none";
+			panel.style.transform = `translateX(${Math.min(dx, travel)}px)`;
+		},
+		{passive: false, capture: true},
+	);
+	/** Springs an unfinished drag back where it came from: a lift that didn't switch, or a
+	 * system-cancelled touch, which otherwise leaves the inline transform behind. */
+	const release = () => {
+		if (!view.isShown() || gesture !== "horizontal" || !claimed) {
+			gesture = "none";
+			claimed = false;
+			return;
+		}
+		lastSwipeEnd = performance.now();
+		const switching = deltaX > SWITCH_DISTANCE;
+		const target = switching ? travel : 0;
+		gesture = "none";
+		claimed = false;
+		const panel = view.panel();
+		const commit = switching ? () => view.hide() : undefined;
+		if (panel) finishGlide = settle(panel, target, commit);
+		else commit?.();
+	};
+	page.addEventListener("touchend", release, {capture: true});
+	page.addEventListener("touchcancel", release, {capture: true});
 }
 
 /**

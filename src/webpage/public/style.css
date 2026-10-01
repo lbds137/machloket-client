@@ -6979,6 +6979,13 @@ fieldset input[type="radio"] {
 		rotate: 180deg;
 	}
 
+	/* 9c: while the members view is up, the header's left icon is its back arrow — the glyph
+		stays at its left-pointing rest rotation instead of pointing into the drawer. The
+		:has() match outranks the checked-state rule below on specificity, not source order. */
+	#page.mobileMembersOpen:has(#maintoggle:checked) #maintoggleicon {
+		rotate: 0deg;
+	}
+
 	.messagediv {
 		padding: 3px 12px 3px 10px;
 	}

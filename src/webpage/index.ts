@@ -2,6 +2,7 @@ import {Localuser} from "./localuser.js";
 import {Contextmenu} from "./contextmenu.js";
 import {getViewportHeight, mobile, Specialuser} from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
+import {consumeMembersPop, installMembersView} from "./utils/membersView.js";
 import {MarkDown} from "./markdown.js";
 import {Message} from "./message.js";
 import {File} from "./file.js";
@@ -200,6 +201,8 @@ if (window.location.pathname.startsWith("/channels")) {
 	const pasteImageElement = document.getElementById("pasteimage") as HTMLDivElement;
 	let replyingTo: Message | null = null;
 	window.addEventListener("popstate", (e) => {
+		// The mobile members view consumes a back before channel navigation gets it (9c).
+		if (consumeMembersPop()) return;
 		if (e.state instanceof Object) {
 			thisUser.goToState(e.state);
 		}
@@ -612,6 +615,9 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 		memberListToggle.checked = false;
 		updateMemberListClass();
+		// 9c: the member list as a transient view — channel-name tap opens it, the header's
+		// left icon, Android back and a right swipe close it. Desktop keeps the checkbox.
+		if (pageEl) installMembersView(pageEl);
 	}
 	const channelPanel = document.querySelector<HTMLDivElement>(".channelflex");
 	const sidebarResize = document.getElementById("sidebarResize");
