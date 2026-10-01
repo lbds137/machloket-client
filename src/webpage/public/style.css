@@ -603,6 +603,9 @@ body {
 		z-index: 1;
 		margin: 16px;
 		border: solid 0.025in var(--black);
+		/* Discord caps the popup and scrolls; unbounded height pushed rows off-screen. */
+		max-height: 40vh;
+		overflow-y: auto;
 	}
 }
 

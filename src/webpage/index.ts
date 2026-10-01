@@ -346,6 +346,24 @@ if (window.location.pathname.startsWith("/channels")) {
 			return;
 		}
 
+		if (event.key === " ") {
+			// Space commits an exact command match, as Discord does ("/character" + space).
+			// Command rows are labeled "/name"; mention rows aren't, which keeps this from
+			// touching the mention popup.
+			const rows = document.getElementById("searchOptions");
+			if (rows?.childElementCount) {
+				const text = MarkDown.gatherBoxText(typebox).trim();
+				const match = [...rows.querySelectorAll<HTMLSpanElement>("span")].find(
+					(row) => row.textContent === text,
+				);
+				if (match?.textContent?.startsWith("/")) {
+					match.click();
+					event.preventDefault();
+					return;
+				}
+			}
+		}
+
 		const channel = thisUser.channelfocus;
 		if (!channel) return;
 		const content = MarkDown.gatherBoxText(typebox);
