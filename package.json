@@ -9,7 +9,7 @@
 		"check": "npx tsc -p tsconfig.json --noEmit",
 		"test": "vitest run"
 	},
-	"author": "MathMan05",
+	"author": "Machloket contributors",
 	"license": "AGPL-3.0",
 	"dependencies": {
 		"vite": "^8.0.12"
