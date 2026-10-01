@@ -2292,9 +2292,21 @@ class Guild extends SnowFlake {
 			})
 		).json()) as {application_commands?: commandJson[]; applications?: applicationJson[]};
 		// A non-200 answer is an error body with neither field: no commands, not a crash.
+		// An app registering a command both globally and per-guild makes the index carry both
+		// rows (global first); keep one per (app, name) — either id invokes — or the picker
+		// offers every command twice.
+		const seen = new Set<string>();
+		const commands = (json.application_commands ?? [])
+			.filter((raw) => {
+				const key = raw.application_id + "/" + raw.name;
+				if (seen.has(key)) return false;
+				seen.add(key);
+				return true;
+			})
+			.map((_) => new Command(_, this.localuser));
 		return {
 			apps: json.applications ?? [],
-			commands: (json.application_commands ?? []).map((_) => new Command(_, this.localuser)),
+			commands,
 		};
 	}
 }

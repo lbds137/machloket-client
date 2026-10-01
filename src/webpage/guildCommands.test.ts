@@ -85,6 +85,28 @@ describe("application-command index fetch", () => {
 		expect(urls.some((u) => u.includes("channel_id=200"))).toBe(true);
 	});
 
+	it("a command registered both globally and per-guild appears once", async () => {
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Tzurot"}],
+					application_commands: [
+						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+						{id: "2", type: 1, application_id: "300", name: "random", description: "", guild_id: "1554722916606791818", dm_permission: true},
+						{id: "3", type: 1, application_id: "300", name: "help", description: "", dm_permission: true},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		const guild = guildWithId("1554722916606791818");
+
+		const commands = (await guild.getCommands()) as unknown as {name: string}[];
+
+		const names = commands.map((c) => c.name);
+		expect(names).toEqual(["random", "help"]);
+	});
+
 	it("context-menu commands are stored but never offered in the slash popup", async () => {
 		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
 			new Response(
