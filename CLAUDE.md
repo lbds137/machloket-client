@@ -27,7 +27,6 @@ Node 24 (LTS), npm (the repo ships `package-lock.json`; don't switch it to pnpm)
 - The instance list is only `src/webpage/public/instances.json`. `{hostname}` in a `url` is replaced with the host serving the client.
 - Dev only: `/login?instance=` hits a Vite module-resolution error; use `/login.html?instance=`. Production builds are unaffected.
 - The build is Vite (`vite.config.js`), the only pipeline; the pre-Vite one (`build.ts`, the Node server, the Dockerfile) was removed.
-- `.husky/` and `.forgejo/` are upstream leftovers: husky is not installed as a git hook here, and GitHub does not run Forgejo workflows.
 
 ## Workflow
 
