@@ -25,6 +25,8 @@ function session(focused: object) {
 		interNonceMap: new Map(),
 		interactionNonces: new Set(),
 		commandChannels: new Map(),
+		commandNonceLabels: new Map(),
+		interactionIdLabels: new Map(),
 		channelids: new Map(),
 		guilds: [],
 		guildids: new Map([["@me", {channels: []}]]),

@@ -906,10 +906,16 @@ class Localuser {
 	}
 	/** Where each slash command was sent, to show its progress above that channel's composer. */
 	commandChannels = new Map<string, Channel>();
+	/** What each sent interaction ran ("walk browse"), for the "used /command" line. */
+	commandNonceLabels = new Map<string, string>();
+	/** The same, keyed by interaction id once the invoker echo names it — the reply message
+	 * knows the interaction id, not the nonce. */
+	interactionIdLabels = new Map<string, string>();
 	/** A slash command's nonce: it has no message of its own. */
-	registerCommandNonce(nonce: string, channel?: Channel) {
+	registerCommandNonce(nonce: string, channel?: Channel, label?: string) {
 		this.interactionNonces.add(nonce);
 		if (channel) this.commandChannels.set(nonce, channel);
+		if (label) this.commandNonceLabels.set(nonce, label);
 	}
 	relationshipsUpdate = () => {};
 	rights: Rights;
@@ -983,6 +989,12 @@ class Localuser {
 						// A slash command's progress, shown while its channel is on screen.
 						const channel = this.commandChannels.get(temp.d.nonce);
 						showCommandStatus(temp, !!this.channelfocus && channel === this.channelfocus);
+						// The echo carries the interaction id: the reply message's "used
+						// /command" line can find this run's label.
+						const label = this.commandNonceLabels.get(temp.d.nonce);
+						if (label && temp.d.id) {
+							this.interactionIdLabels.set(temp.d.id, label);
+						}
 					}
 					break;
 				case "INTERACTION_MODAL_CREATE": {

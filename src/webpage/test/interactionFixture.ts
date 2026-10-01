@@ -21,6 +21,8 @@ export function messageIn(guildId: string) {
 		interNonceMap: new Map(),
 		interactionNonces: new Set(),
 		commandChannels: new Map(),
+		commandNonceLabels: new Map(),
+		interactionIdLabels: new Map(),
 		guilds: [],
 		guildids: new Map([[guildId, {channels: []}]]),
 		generateFavicon: () => {},

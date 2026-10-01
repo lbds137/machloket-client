@@ -855,6 +855,8 @@ type messagejson = {
 	interaction?: {
 		id: string;
 		type: 2 | 3;
+		/** The invoked command's name, when the reply came from a command. */
+		name?: string;
 		user: userjson;
 	};
 	interaction_metadata?: {
@@ -864,6 +866,8 @@ type messagejson = {
 		};
 		id: string;
 		type: 2 | 3;
+		/** The invoked command's name, when the reply came from a command. */
+		name?: string;
 		user: userjson;
 	};
 	nonce: string;

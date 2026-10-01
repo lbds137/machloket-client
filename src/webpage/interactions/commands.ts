@@ -570,13 +570,23 @@ export class Command extends SnowFlake {
 	}
 
 	async submit(html: HTMLElement, channel: Channel) {
+		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
 		try {
-			const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-			this.localuser.registerCommandNonce(nonce, channel);
 			const states = this.state.get(channel);
 			if (!states) {
+				this.localuser.registerCommandNonce(nonce, channel);
 				return true;
 			}
+			// The "used /command" label: the command's path with the picked branch.
+			const branchLabel = states.find(
+				(_) => _ instanceof Object && _.option instanceof SubCommandOption,
+			) as {state: string} | undefined;
+			this.localuser.registerCommandNonce(
+				nonce,
+				channel,
+				this.name +
+					(branchLabel?.state ? " " + branchLabel.state.replace("/", " ") : ""),
+			);
 			const opts = states.filter((_) => typeof _ !== "string");
 			// A subcommand/group command nests: the picked branch carries the leaf entries.
 			const branch = opts.find(
@@ -661,6 +671,7 @@ export class Command extends SnowFlake {
 				// INTERACTION_FAILURE can't stack "did not respond" on the real error.
 				this.localuser.interactionNonces.delete(nonce);
 				this.localuser.commandChannels.delete(nonce);
+				this.localuser.commandNonceLabels.delete(nonce);
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;
@@ -671,6 +682,8 @@ export class Command extends SnowFlake {
 			this.state.delete(channel);
 		} catch (e) {
 			if (e instanceof OptionError) {
+				// A validation-blocked submit never sends; its label map entry dies with it.
+				this.localuser.commandNonceLabels.delete(nonce);
 				const message = e.message;
 				const error = document.createElement("span");
 				error.classList.add("commandError");
@@ -695,7 +708,7 @@ export class Command extends SnowFlake {
 	 * builds the resolved entities and rejects a missing target). Returns false when refused. */
 	async submitContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-		this.localuser.registerCommandNonce(nonce, channel);
+		this.localuser.registerCommandNonce(nonce, channel, this.name);
 		try {
 			const res = await fetch(this.info.api + "/interactions", {
 				method: "POST",
@@ -725,6 +738,7 @@ export class Command extends SnowFlake {
 				}
 				this.localuser.interactionNonces.delete(nonce);
 				this.localuser.commandChannels.delete(nonce);
+				this.localuser.commandNonceLabels.delete(nonce);
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;

@@ -481,6 +481,7 @@
 		"notImpl": "Fermo has not implemented component type $1 yet",
 		"onlyYou": "Only you can see this message",
 		"replyline": "Started interaction",
+		"used": "used",
 		"started": "Processing interaction…",
 		"worked": "Interaction succeeded"
 	},

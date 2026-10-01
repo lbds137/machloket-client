@@ -8147,3 +8147,18 @@ textarea.interactionModalInput {
 	font-weight: 400;
 	color: var(--primary-text-soft);
 }
+/* Discord's "used /command" pill on an interaction reply line. */
+.interactionCommand {
+	display: inline-flex;
+	align-items: center;
+	background: var(--secondary-bg);
+	border-radius: 999px;
+	padding: 0 0.5em;
+	font-weight: 600;
+	color: var(--primary-text-prominent);
+	white-space: nowrap;
+}
+.interactionCommandSlash {
+	font-weight: 700;
+	margin-right: 0.15em;
+}

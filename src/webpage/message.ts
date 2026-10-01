@@ -30,6 +30,18 @@ import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 
+/** Discord's "used /command" pill on an interaction reply line: a slash glyph and the
+ * command's path ("walk browse"), no other chrome. */
+export function interactionCommandChip(label: string): HTMLElement {
+	const chip = document.createElement("span");
+	chip.classList.add("interactionCommand");
+	const slash = document.createElement("span");
+	slash.classList.add("interactionCommandSlash");
+	slash.textContent = "/";
+	chip.append(slash, document.createTextNode(label));
+	return chip;
+}
+
 function decodeBase64Safe(value: string): string | undefined {
 	try {
 		return atob(value);
@@ -596,6 +608,18 @@ class Message extends SnowFlake {
 		return this.owner.info;
 	}
 	interactionDiv?: HTMLDivElement;
+	/** Set from the wire by giveData when a reply's interaction metadata rides the message. */
+	interaction_metadata?: messagejson["interaction_metadata"];
+	/** The command name this message's interaction ran, for the "used /command" line: the
+	 * invoker's own label first (the client knows the full "/name sub" path it submitted),
+	 * then whatever name the message itself carries. */
+	get usedLabel(): string | undefined {
+		return (
+			this.localuser.interactionIdLabels.get(this.interaction?.id || "") ||
+			this.interaction?.name ||
+			this.interaction_metadata?.name
+		);
+	}
 	interactionEvents(event: interactionEvents) {
 		if (!this.interactionDiv) return;
 		this.interactionDiv.classList.remove("failed");
@@ -908,7 +932,16 @@ class Message extends SnowFlake {
 
 			const reply = document.createElement("div");
 			reply.classList.add("replytext", "ellipsis");
-			reply.textContent = I18n.interactions.replyline();
+			// Discord names the command that was run — "used /walk browse" — and only falls
+			// back to a bare "Started interaction" when nothing names it.
+			const used = this.usedLabel;
+			if (used) {
+				const word = document.createElement("span");
+				word.textContent = I18n.interactions.used() + " ";
+				reply.append(word, interactionCommandChip(used));
+			} else {
+				reply.textContent = I18n.interactions.replyline();
+			}
 			replyline.appendChild(reply);
 
 			const user = new User(this.interaction.user, this.localuser);
