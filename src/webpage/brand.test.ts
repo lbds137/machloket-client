@@ -38,6 +38,15 @@ describe("dev server branding", () => {
 		expect(favicon.length).toBeGreaterThan(0);
 		expect(favicon).toEqual(devFavicon);
 
+		// The landing page's logo and the og:image cards get the same treatment.
+		const logoSvg = await (await fetch("/logo.svg")).text();
+		expect(logoSvg).toContain(DEV_EMBER);
+		expect(logoSvg).not.toContain(PROD_VIOLET);
+		const logoWebp = new Uint8Array(await (await fetch("/logo.webp")).arrayBuffer());
+		const devLogoWebp = new Uint8Array(await (await fetch("/brand/dev/logo.webp")).arrayBuffer());
+		expect(logoWebp.length).toBeGreaterThan(0);
+		expect(logoWebp).toEqual(devLogoWebp);
+
 		// The splash's background matches the dev icon's, so the icon's square doesn't show.
 		const css = await (await fetch("/brand/brand.css")).text();
 		expect(css.toLowerCase()).toContain("#170a08");

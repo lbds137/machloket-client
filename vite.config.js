@@ -225,6 +225,10 @@ const devBrandPlugin = () => ({
 			}
 			if (path === "/favicon.ico") {
 				req.url = "/brand/dev/favicon.ico";
+			} else if (path === "/logo.svg") {
+				req.url = "/brand/dev/icon.svg";
+			} else if (path === "/logo.webp") {
+				req.url = "/brand/dev/logo.webp";
 			} else if (path.startsWith("/brand/") && !path.startsWith("/brand/dev/")) {
 				req.url = "/brand/dev/" + path.slice("/brand/".length);
 			}
