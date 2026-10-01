@@ -12,6 +12,13 @@ import {
 } from "fs";
 import {execSync} from "child_process";
 
+// Extra hostnames the dev/preview servers accept (a reverse proxy may forward the original
+// Host). Comma-separated env var, so no deployment's hostnames live in the repo:
+// MACHLOKET_HOSTS=".example.ts.net" npx vite … — unset means Vite's own defaults.
+const allowedHosts = process.env.MACHLOKET_HOSTS
+	? process.env.MACHLOKET_HOSTS.split(",").map((host) => host.trim())
+	: undefined;
+
 // Unchanged files are left alone: the dev server watches src/webpage, and a rewrite, even
 // identical, reloads every open page (a build or test run would reload the phone mid-test).
 function writeIfChanged(path, content) {
@@ -269,12 +276,17 @@ export default defineConfig({
 	server: {
 		port: 8080,
 		host: true,
-		// Tailscale serve proxies https://deck.TAILNET-REDACTED (the owner's tailnet only) to this server.
-		allowedHosts: [".TAILNET-REDACTED"],
+		allowedHosts,
 		hmr: {
 			overlay: true,
 		},
 		middlewareMode: false,
+	},
+
+	preview: {
+		port: 8081,
+		host: true,
+		allowedHosts,
 	},
 
 	appType: "spa",

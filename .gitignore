@@ -151,3 +151,6 @@ commit.txt
 
 # Agent git worktrees (Claude Code)
 .claude/worktrees/
+
+# Machine-local notes (task tracker, evidence, session state) — never published
+docs/local/
