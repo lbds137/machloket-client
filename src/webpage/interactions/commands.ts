@@ -46,6 +46,57 @@ function focusElm(node: HTMLElement | Text, before = true) {
 	selection.removeAllRanges();
 	selection.addRange(range);
 }
+/** The box's trailing text node — the caret's home when no field is revealed; typing there
+ * opens the option popup. Created empty when absent. */
+function ensureTrailing(html: HTMLElement): Text {
+	const last = html.lastChild;
+	if (last instanceof Text) return last;
+	const node = new Text("");
+	html.append(node);
+	return node;
+}
+/** ArrowRight at a chip's end steps the caret just past THAT chip — the next visible chip
+ * stays one step away; past the last chip the fresh node is the trailing one, where typing
+ * (or the step itself) opens the option popup. */
+function chipExit(
+	div: HTMLElement,
+	input: HTMLInputElement,
+	command: Command,
+	channel: Channel,
+	e: KeyboardEvent,
+) {
+	if (!(e.key === "ArrowRight" && input.selectionStart === input.value.length)) return;
+	const box = command.boxes.get(channel) ?? div.parentElement;
+	if (!box) return;
+	let node: Text;
+	if (div.nextSibling instanceof Text) {
+		node = div.nextSibling;
+	} else {
+		node = new Text("");
+		div.after(node);
+	}
+	focusElm(node, false);
+	command.searchAtr(node, channel, box);
+}
+/** A popup row previewing `option`: its name, description, and required/optional mark — the
+ * inventory of what the command still takes. */
+function optionRow(option: Option): HTMLElement {
+	const row = document.createElement("span");
+	row.classList.add("commandOptionRow");
+	const name = document.createElement("span");
+	name.classList.add("commandOptionName");
+	name.textContent = option.localizedName;
+	const desc = document.createElement("span");
+	desc.classList.add("commandOptionDesc");
+	desc.textContent = option.localizedDescription;
+	const mark = document.createElement("span");
+	mark.classList.add("commandOptionMark");
+	mark.textContent = option.required
+		? I18n.commands.optionRequired()
+		: I18n.commands.optional();
+	row.append(name, desc, mark);
+	return row;
+}
 export class Command extends SnowFlake {
 	owner: Localuser | Guild;
 	type: 1 | 2 | 3 | 4;
@@ -157,12 +208,7 @@ export class Command extends SnowFlake {
 				} else {
 					// A branch's leaf options are chips of this command too — collect must know
 					// them or their inputs can never record values.
-					const branchLeaves = this.options.flatMap((branch) =>
-						branch instanceof SubCommandOption ? branch.allLeaves() : [],
-					);
-					const option =
-						this.options.find((_) => _.match(name || "")) ??
-						branchLeaves.find((_) => _.match(name || ""));
+					const option = this.resolveOption(name || "", states);
 					if (option) {
 						build.push({option, state: ""});
 					}
@@ -177,12 +223,43 @@ export class Command extends SnowFlake {
 		}
 
 		if (gotname) {
-			this.state.set(channel, build);
+			// searchAtr may have committed fresher state already (a colon-commit runs its own
+			// collect with the typed name consumed); this earlier snapshot would resurrect
+			// the typed text as a ghost — a nested commit wins.
+			if (this.state.get(channel) === states) {
+				this.state.set(channel, build);
+			}
 		} else {
 			this.state.delete(channel);
 		}
 
 		return gotname;
+	}
+	/** Resolves a chip's commandName to its option: the command's own options first, then
+	 * the PICKED branch's leaves, then any branch's — cross-branch leaf-name reuse must
+	 * resolve to the picked branch's leaf, never to an earlier branch's same-named one. */
+	private resolveOption(
+		name: string,
+		states:
+			| (
+					| {
+							option: Option;
+							state: string;
+					}
+					| string
+			)[]
+			| undefined,
+	): Option | undefined {
+		const branchEntry = states?.find(
+			(_) => _ instanceof Object && _.option instanceof SubCommandOption,
+		) as {option: SubCommandOption; state: string} | undefined;
+		return (
+			this.options.find((_) => _.match(name)) ??
+			(branchEntry
+				? branchEntry.option.leavesOf(branchEntry.state).find((_) => _.match(name))
+				: undefined) ??
+			this.branchLeaves().find((_) => _.match(name))
+		);
 	}
 	searchAtr(textNode: Text, channel: Channel, Divhtml: HTMLElement) {
 		const text = (textNode.textContent || "").trim();
@@ -195,30 +272,89 @@ export class Command extends SnowFlake {
 			);
 			return;
 		}
-		const opts = this.options
-			.filter(
-				(obj) =>
-					// Branches are the branch picker's business, not insertable arguments.
-					!(obj instanceof SubCommandOption) &&
-					!states.find((_) => _ instanceof Object && _.option === obj),
-			)
+		// The insertable pool: the command's own options (branches are the branch picker's
+		// business) plus the picked branch's leaves.
+		const branchEntry = states.find(
+			(_) => _ instanceof Object && _.option instanceof SubCommandOption,
+		) as {option: SubCommandOption; state: string} | undefined;
+		const pool = [
+			...this.options.filter((obj) => !(obj instanceof SubCommandOption)),
+			...(branchEntry ? branchEntry.option.leavesOf(branchEntry.state) : []),
+		];
+		const box = this.boxes.get(channel) ?? Divhtml;
+		const entry = (option: Option) =>
+			states.find((_) => _ instanceof Object && _.option === option) as {
+				option: Option;
+				state: string;
+			} | undefined;
+		// Offerable: unfilled, and without a chip already in view — a shown field (like the
+		// current required one) is not re-offered, a hidden one is (it awaits its pick).
+		const offerable = (option: Option) =>
+			!option.filled(entry(option)?.state ?? "") &&
+			!box.querySelector(
+				`.commandinput:not(.commandHidden)[commandname="${CSS.escape(option.name)}"]`,
+			);
+		/** Brings `option`'s field in: reveals its hidden chip, or builds one at the caret when
+		 * no chip exists (a backspaced field, or a fresh leaf). */
+		const insert = (option: Option) => {
+			const chip = box.querySelector(
+				`.commandinput.commandHidden[commandname="${CSS.escape(option.name)}"]`,
+			);
+			if (chip instanceof HTMLElement) {
+				chip.classList.remove("commandHidden");
+			} else {
+				textNode.after(option.toHTML(entry(option)?.state ?? "", channel));
+			}
+			textNode.textContent = "";
+			this.collect(Divhtml, channel);
+			focusInput(
+				box.querySelector(
+					`.commandinput:not(.commandHidden)[commandname="${CSS.escape(option.name)}"] input`,
+				)?.parentElement ?? box,
+			);
+			// Focus left the text area for the new field: the popup stands down.
+			this.localuser.MDSearchOptions(
+				[],
+				"",
+				document.getElementById("searchOptions") as HTMLDivElement,
+			);
+		};
+		// Inline commit: typing an option's name — with or without its colon — inserts that
+		// field, as Discord reads it.
+		const bare = text.replace(/:$/, "");
+		if (bare) {
+			const exact = pool.find(
+				(opt) =>
+					offerable(opt) && (opt.name === bare || opt.localizedName === bare),
+			);
+			if (exact) {
+				insert(exact);
+				return;
+			}
+		}
+		const opts = pool
+			.filter(offerable)
 			.map((opt) => [opt, opt.similar(text)] as const)
 			.filter((_) => _[1])
-			.sort((a, b) => a[1] - b[1] || a[0].name.localeCompare(b[0].name))
-			.slice(0, 6)
+			// The array is worst-first (MDSearchOptions prepends each row, so the last renders
+			// at the top): required options sort to the top of the popup, then best match
+			// (ties A-Z, like the command picker's tie order).
+			.sort(
+				(a, b) =>
+					Number(a[0].required) - Number(b[0].required) ||
+					a[1] - b[1] ||
+					b[0].name.localeCompare(a[0].name),
+			)
+			.slice(0, 8)
 			.map((_) => _[0]);
 		this.localuser.MDSearchOptions(
 			opts.map((opt) => {
 				return [
-					opt.localizedName,
 					"",
-					void 0,
+					"",
+					optionRow(opt),
 					() => {
-						const html = opt.toHTML("", channel);
-						textNode.after(html);
-						textNode.remove();
-						this.collect(Divhtml, channel);
-						focusInput(html);
+						insert(opt);
 						return true;
 					},
 				];
@@ -226,6 +362,21 @@ export class Command extends SnowFlake {
 			"",
 			document.getElementById("searchOptions") as HTMLDivElement,
 		);
+		// With nothing typed, Enter must still run the command — the preview is a menu, not a
+		// gate on optional-only commands (Tab still inserts the highlighted option). The
+		// guard wraps whatever keyup MDSearchOptions just installed and is dropped whenever
+		// keyup is reassigned (a typed query's popup, or the popup standing down).
+		if (text === "") {
+			const lu = this.localuser as Localuser & {
+				optionPreviewEnterGuard?: (event: KeyboardEvent) => boolean;
+			};
+			if (lu.keyup !== lu.optionPreviewEnterGuard) {
+				const delegate = lu.keyup.bind(lu);
+				lu.optionPreviewEnterGuard = (event) =>
+					event.key === "Enter" ? false : delegate(event);
+				lu.keyup = lu.optionPreviewEnterGuard;
+			}
+		}
 	}
 	/** Where each channel's chips render, so progressive reveals can find them. */
 	boxes = new WeakMap<Channel, HTMLElement>();
@@ -250,42 +401,62 @@ export class Command extends SnowFlake {
 		command.textContent = `/${this.localizedName}`;
 		command.contentEditable = "false";
 		html.append(command);
-		// Progressive disclosure: every chip renders (hidden keeps its state alive through
-		// collect()), but only the first REQUIRED option (or the branch picker, or the first
-		// option when nothing is required) is shown; each fill reveals the next.
-		let firstChip: HTMLElement | undefined = undefined;
-		let firstRequired: HTMLElement | undefined = undefined;
+		// Progressive disclosure, Discord's model: every chip renders (hidden keeps its state
+		// alive through collect()), but only an unfilled REQUIRED option (or the branch picker)
+		// earns an auto-revealed field — optional fields wait for an explicit pick, previewed
+		// by the option popup. A filled chip always stays visible: its value must not vanish.
+		let target: HTMLElement | undefined = undefined;
 		for (const thing of state) {
 			if (typeof thing === "string") {
 				html.append(thing);
 				continue;
 			}
-			const {option, state} = thing;
-			const opt = option.toHTML(state, channel);
+			const {option, state: value} = thing;
+			const opt = option.toHTML(value, channel);
 			opt.classList.add("commandHidden");
-			firstChip = firstChip ?? opt;
-			if (!firstRequired && (option.required || option instanceof SubCommandOption)) {
-				firstRequired = opt;
+			if (option.filled(value)) {
+				opt.classList.remove("commandHidden");
+			} else if (!target && (option.required || option instanceof SubCommandOption)) {
+				target = opt;
 			}
 			html.append(opt);
 		}
-		const target = firstRequired ?? firstChip;
 		if (target) {
 			target.classList.remove("commandHidden");
 			focusInput(target);
 		} else {
-			const node = new Text();
-			node.textContent = "";
-			html.append(node);
+			// No field to show: the caret's home is the trailing text node, where typing opens
+			// the option popup (the inventory preview). The offer waits a microtask because
+			// startCommand/renderLeaves run inside popup clicks, whose own handler clears the
+			// popup after the callback.
+			const node = ensureTrailing(html);
 			focusElm(node, false);
+			queueMicrotask(() => {
+				if (html.isConnected && node.isConnected) {
+					this.searchAtr(node, channel, html);
+				}
+			});
 		}
 	}
-	/** Unhides the next hidden chip (document order = option order). */
+	/** Unhides the next hidden REQUIRED chip (document order = option order); an optional
+	 * field joins only by an explicit pick from the option popup. */
 	revealNext(channel: Channel) {
-		this.boxes
-			.get(channel)
-			?.querySelector(".commandinput.commandHidden")
-			?.classList.remove("commandHidden");
+		const box = this.boxes.get(channel);
+		if (!box) return;
+		const states = this.state.get(channel);
+		for (const chip of box.querySelectorAll(".commandinput.commandHidden")) {
+			const option = this.resolveOption(chip.getAttribute("commandName") || "", states);
+			if (option?.required) {
+				chip.classList.remove("commandHidden");
+				return;
+			}
+		}
+	}
+	/** Every leaf option of every branch (the fields a picked subcommand brings). */
+	private branchLeaves(): Option[] {
+		return this.options.flatMap((branch) =>
+			branch instanceof SubCommandOption ? branch.allLeaves() : [],
+		);
 	}
 	/** Unhides one option's chip by name (a required-error names its option). */
 	revealOption(option: Option, channel: Channel) {
@@ -602,9 +773,7 @@ class StringOption extends Option {
 			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
-			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
-				focusElm(div, false);
-			}
+			chipExit(div, input, this.owner, channel, e);
 			const last = this.owner.getState(this, channel);
 			this.owner.stateChange(this, channel, input.value);
 			if (this.choices?.length && last !== input.value) {
@@ -708,9 +877,7 @@ class NumberishOption extends Option {
 			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
-			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
-				focusElm(div, false);
-			}
+			chipExit(div, input, this.owner, channel, e);
 			this.owner.stateChange(this, channel, input.value);
 		};
 		// Spinner clicks change the value without firing any key event.
@@ -933,9 +1100,7 @@ class EntityOption extends Option {
 			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
-			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
-				focusElm(div, false);
-			}
+			chipExit(div, input, this.owner, channel, e);
 			this.owner.stateChange(this, channel, input.value);
 			this.displayCandidates(input, channel);
 		};
@@ -1100,32 +1265,51 @@ class SubCommandOption extends Option {
 		if (div.parentElement) this.owner.boxes.set(channel, div.parentElement);
 		const leaves = this.leavesOf(state);
 		const states = this.owner.state.get(channel);
+		// A leaf the picker re-offers keeps what was typed in it — a channel round-trip (or
+		// re-picking the same branch) must not wipe filled values.
+		const prior = (leaf: Option) =>
+			states?.find((s) => s instanceof Object && s.option === leaf) as {
+				state: string;
+			} | undefined;
 		if (states) {
 			const stale = new Set(this.allLeaves());
 			const kept = states.filter((s) => typeof s === "string" || !stale.has(s.option));
 			for (const leaf of leaves) {
-				kept.push({option: leaf, state: ""});
+				kept.push({option: leaf, state: prior(leaf)?.state ?? ""});
 			}
 			this.owner.state.set(channel, kept);
 		}
-		// Progressive disclosure, same as render(): only the first required leaf (or the
-		// first leaf when none is required) shows; fills reveal the rest.
+		// Progressive disclosure, same as render(): a filled leaf stays visible; the first
+		// unfilled REQUIRED leaf earns a revealed field; optional leaves wait for an explicit
+		// pick (the popup previews them).
 		let cursor = div;
 		let reveal: HTMLElement | undefined;
 		for (const leaf of leaves) {
-			const chip = leaf.toHTML("", channel);
+			const value = prior(leaf)?.state ?? "";
+			const chip = leaf.toHTML(value, channel);
 			chip.classList.add("commandHidden");
-			if (!reveal && leaf.required) reveal = chip;
+			if (leaf.filled(value)) {
+				chip.classList.remove("commandHidden");
+			} else if (!reveal && leaf.required) {
+				reveal = chip;
+			}
 			cursor.after(chip);
 			cursor = chip;
 		}
-		if (!reveal) {
-			const first = div.nextElementSibling;
-			if (first instanceof HTMLElement && first.classList.contains("commandinput")) {
-				reveal = first;
-			}
+		const box = div.parentElement;
+		if (reveal) {
+			reveal.classList.remove("commandHidden");
+			focusInput(reveal);
+		} else if (box) {
+			// No required leaf (or none at all): the caret's home is the trailing node, and
+			// the popup previews the branch's options. Microtask: this runs inside a popup
+			// click, whose handler clears the popup after the pick.
+			const node = ensureTrailing(box);
+			focusElm(node, false);
+			queueMicrotask(() => {
+				if (node.isConnected) this.owner.searchAtr(node, channel, box);
+			});
 		}
-		reveal?.classList.remove("commandHidden");
 	}
 	toHTML(state: string, channel: Channel): HTMLElement {
 		const div = document.createElement("div");
@@ -1187,9 +1371,7 @@ class SubCommandOption extends Option {
 			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
-			if (input.selectionStart === input.value.length && e.key === "ArrowRight") {
-				focusElm(div, false);
-			}
+			chipExit(div, input, this.owner, channel, e);
 			offer();
 		};
 		input.oninput = offer;

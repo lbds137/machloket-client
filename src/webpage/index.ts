@@ -348,16 +348,16 @@ if (window.location.pathname.startsWith("/channels")) {
 
 		if (event.key === " ") {
 			// Space commits an exact command match, as Discord does ("/character" + space).
-			// Command rows are labeled "/name"; mention rows aren't, which keeps this from
-			// touching the mention popup.
+			// The command's name lives in the row's .commandRowName span (exactly "/name");
+			// mention rows carry no such span, which keeps this from touching their popup.
 			const rows = document.getElementById("searchOptions");
 			if (rows?.childElementCount) {
 				const text = MarkDown.gatherBoxText(typebox).trim();
-				const match = [...rows.querySelectorAll<HTMLSpanElement>("span")].find(
-					(row) => row.textContent === text,
+				const match = [...rows.querySelectorAll<HTMLSpanElement>(".commandRowName")].find(
+					(span) => span.textContent === text,
 				);
-				if (match?.textContent?.startsWith("/")) {
-					match.click();
+				if (match) {
+					(match.closest("span") as HTMLElement).click();
 					event.preventDefault();
 					return;
 				}

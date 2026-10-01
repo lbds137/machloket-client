@@ -1,5 +1,6 @@
 import {Guild} from "./guild.js";
-import {bumpCommandRecency, getCommandRecency, recentFirst} from "./commandRecency.js";
+import {bumpCommandRecency} from "./commandRecency.js";
+import {appIconElm, renderCommandPanel} from "./interactions/commandPicker.js";
 import {Channel} from "./channel.js";
 import {Direct, Group} from "./direct.js";
 import {User} from "./user.js";
@@ -32,7 +33,9 @@ import {
 	startTypingjson,
 	wsjson,
 	pollUpdateJson,
+	applicationJson,
 } from "./jsontypes.js";
+import type {Command} from "./interactions/commands.js";
 import {Member} from "./member.js";
 import {Dialog, Form, FormError, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
@@ -5408,26 +5411,28 @@ class Localuser {
 		const guild = this.lookingguild;
 		if (!guild) return;
 		const commands = await guild.getCommands(this.channelfocus?.id);
-		// Discord's popup: with no search, recently used first and the rest A-Z; with a
-		// search, best match first (ties A-Z). MDSearchOptions renders the list BACKWARDS
-		// (it prepends each row), so the top ten is picked first, then reversed for render.
-		const top = (
-			search === ""
-				? recentFirst(commands, getCommandRecency())
-				: commands
-						.map((_) => [_, _.similar(search)] as const)
-						.filter((_) => _[1] !== 0)
-						.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
-						.map((_) => _[0])
-		).slice(0, 10);
+		// Discord's popup: with no search, the browse panel — a Frequently Used rail and one
+		// section per app; with a search, best match first (ties A-Z). MDSearchOptions renders
+		// the list BACKWARDS (it prepends each row), so the top ten is picked first, then
+		// reversed for render.
+		if (search === "") {
+			renderCommandPanel(this, box, commands, guild.apps);
+			return;
+		}
+		const top = commands
+			.map((_) => [_, _.similar(search)] as const)
+			.filter((_) => _[1] !== 0)
+			.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
+			.map((_) => _[0])
+			.slice(0, 10);
 		const sorted = top.reverse();
 
 		this.MDSearchOptions(
 			sorted.map((elm) => {
 				return [
-					`/${elm.localizedName}`,
 					"",
-					undefined,
+					"",
+					this.commandRow(elm, guild.apps),
 					() => {
 						bumpCommandRecency(elm.name);
 						this.channelfocus?.startCommand(elm);
@@ -5439,6 +5444,24 @@ class Localuser {
 			box,
 			md,
 		);
+	}
+	/** A search-result row for a slash command: the owning app's icon, the "/name", and the
+	 * app's name — with several bots in a guild, a bare name doesn't say whose command it
+	 * is. The name span's text is exactly "/name"; commit-on-space matches on it. */
+	private commandRow(command: Command, apps: applicationJson[] | undefined): HTMLElement {
+		const app = apps?.find((_) => _.id === command.applicationId);
+		const row = document.createElement("span");
+		row.classList.add("commandRow");
+		row.append(appIconElm(this, app));
+		const name = document.createElement("span");
+		name.classList.add("commandRowName");
+		name.textContent = `/${command.localizedName}`;
+		row.append(name);
+		const appName = document.createElement("span");
+		appName.classList.add("commandRowApp");
+		appName.textContent = app?.name || "";
+		row.append(appName);
+		return row;
 	}
 	search(box: HTMLDivElement, md: MarkDown, str: string, pre: boolean) {
 		if (!pre) {

@@ -7959,3 +7959,185 @@ textarea.interactionModalInput {
 .commandinput.commandHidden {
 	display: none !important;
 }
+/* An option-preview row in the command popup: the option's name, description, and
+ * required/optional mark — the inventory of what the command still takes. */
+.commandOptionRow {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4em;
+	max-width: 100%;
+	min-width: 0;
+}
+.commandOptionName {
+	font-weight: 600;
+	white-space: nowrap;
+}
+.commandOptionDesc {
+	color: var(--primary-text-soft);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	min-width: 0;
+}
+.commandOptionMark {
+	color: var(--primary-text-soft);
+	font-size: 0.8em;
+	white-space: nowrap;
+}
+/* A slash-command picker row: the owning app's icon, the "/name", and the app's name at the
+ * far edge — with several bots in a guild, a bare command name doesn't say whose it is. */
+.commandRow {
+	display: flex;
+	align-items: center;
+	gap: 0.35em;
+}
+.commandRowName {
+	font-weight: 600;
+	white-space: nowrap;
+}
+.commandRowApp {
+	color: var(--primary-text-soft);
+	font-size: 0.9em;
+	margin-left: auto;
+	padding-left: 1em;
+	white-space: nowrap;
+}
+.commandAppIconFallback {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 0.3in;
+	height: 0.3in;
+	border-radius: 50%;
+	background: var(--secondary-bg);
+	font-weight: 600;
+}
+/* Discord's command-picker browse panel: a rail of app tabs (Frequently Used, then apps
+ * alphabetical) beside a body of per-app sections; a rail tab filters the body to its app.
+ * Everything here is div-based so the .searchOptions span-row rules don't reach inside. */
+.searchPanel {
+	display: flex;
+	gap: 0.1in;
+	min-height: 0;
+}
+.searchRail {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 4px;
+	flex-shrink: 0;
+	max-height: 40vh;
+	overflow-y: auto;
+}
+.searchRailButton {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 0.42in;
+	height: 0.42in;
+	border-radius: 8px;
+	cursor: pointer;
+	color: var(--primary-text-soft);
+}
+.searchRailButton img,
+.searchRailButton svg {
+	width: 0.3in;
+	height: 0.3in;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.searchRailButton:hover {
+	background: var(--primary-bg);
+}
+.searchRailButtonSelected {
+	background: var(--secondary-bg);
+	color: var(--primary-text);
+}
+.searchBody {
+	flex: 1;
+	min-width: 0;
+	overflow-y: auto;
+	max-height: 40vh;
+	padding: 4px;
+}
+.searchSectionTitle {
+	color: var(--primary-text-soft);
+	font-size: 0.75em;
+	font-weight: 700;
+	text-transform: uppercase;
+	padding: 6px 8px 2px;
+}
+.searchPanelTitle {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	font-weight: 700;
+	padding: 6px 8px;
+}
+.searchPanelTitle img {
+	width: 0.3in;
+	height: 0.3in;
+	border-radius: 50%;
+	object-fit: cover;
+}
+.searchPanelSubtitle {
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+	padding: 0 8px 4px;
+}
+.searchPanel .commandRow {
+	display: flex;
+	align-items: center;
+	gap: 0.4em;
+	padding: 6px 8px;
+	border-radius: 8px;
+	cursor: pointer;
+}
+.searchPanel .commandRow img,
+.searchPanel .commandAppIconFallback {
+	width: 0.3in;
+	height: 0.3in;
+	flex-shrink: 0;
+}
+.searchPanel .commandAppIconFallback {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: var(--secondary-bg);
+	font-weight: 600;
+}
+.searchPanel .commandRowText {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	flex: 1;
+}
+.searchPanel .commandRowName {
+	font-weight: 600;
+}
+.searchPanel .commandRowDesc {
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.searchPanel .commandRowApp {
+	color: var(--primary-text-soft);
+	font-size: 0.85em;
+	margin-left: auto;
+	padding-left: 1em;
+	white-space: nowrap;
+}
+.searchPanel .commandRow:hover {
+	background: var(--primary-bg);
+}
+.searchPanel .commandRow.commandRowSelected {
+	background: var(--button-bg);
+}
+/* The generic .searchOptions span:hover would highlight the panel's inner spans; the row
+ * owns its own hover. */
+.searchPanel span:hover {
+	background: none;
+}

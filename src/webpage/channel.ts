@@ -2087,7 +2087,10 @@ class Channel extends SnowFlake {
 		this.curCommand = command;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		typebox.markdown.boxEnabled = false;
-		const func = () => {
+		const func = (e?: KeyboardEvent) => {
+			// Escape closes the option popup (handleEnter clears it first); refreshing the
+			// offer on this same keyup would reopen it out from under the close.
+			if (e?.key === "Escape") return;
 			const node = window.getSelection()?.focusNode;
 			if (this.localuser.channelfocus === this) {
 				const out = command.collect(typebox, this, node || undefined);
