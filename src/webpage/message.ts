@@ -1631,23 +1631,15 @@ class Message extends SnowFlake {
 			div.append(ephemeral);
 		}
 		const unreadLine = premessage && premessage.id === this.channel.lastreadmessageid;
-		let datelineNeeded = false;
-		if ((premessage || unreadLine) && !dupe) {
+		if (premessage && !dupe) {
 			const thisTime = new Date(this.getUnixTime());
-			if (premessage && !unreadLine) {
-				const prevTime = new Date(premessage.getUnixTime());
-				datelineNeeded =
-					thisTime.getDay() !== prevTime.getDay() ||
-					thisTime.getMonth() !== prevTime.getMonth() ||
-					thisTime.getFullYear() !== prevTime.getFullYear();
-			} else {
-				datelineNeeded = true;
-			}
-			if (datelineNeeded) {
+			// The divider is a calendar-day boundary, not a weekday one: messages a week
+			// apart in the same month share getDay() and would otherwise draw nothing.
+			const dayChanged =
+				new Date(premessage.getUnixTime()).toDateString() !== thisTime.toDateString();
+			const markers: HTMLDivElement[] = [];
+			if (dayChanged) {
 				const dateline = document.createElement("div");
-				if (unreadLine) {
-					dateline.classList.add("unreadDateline");
-				}
 				dateline.classList.add("flexltr", "dateline");
 				dateline.append(document.createElement("hr"));
 				const span = document.createElement("span");
@@ -1658,11 +1650,26 @@ class Message extends SnowFlake {
 				}).format(thisTime);
 				dateline.append(span);
 				dateline.append(document.createElement("hr"));
+				markers.push(dateline);
+			}
+			if (unreadLine) {
+				// Discord's unread marker is its own red "NEW" line; it never carries the
+				// date — the day divider above, when the day changed, already does.
+				const dateline = document.createElement("div");
+				dateline.classList.add("flexltr", "dateline", "unreadDateline");
+				dateline.append(document.createElement("hr"));
+				const span = document.createElement("span");
+				span.innerText = I18n.message.newMarker();
+				dateline.append(span);
+				dateline.append(document.createElement("hr"));
+				markers.push(dateline);
+			}
+			if (markers.length) {
 				const messageDiv = document.createElement("div");
 				messageDiv.append(...Array.from(div.children));
 				messageDiv.classList = div.classList + "";
 				div.classList = "";
-				div.append(dateline, messageDiv);
+				div.append(...markers, messageDiv);
 			}
 		}
 		this.bindButtonEvent();
