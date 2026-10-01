@@ -5409,8 +5409,9 @@ class Localuser {
 		if (!guild) return;
 		const commands = await guild.getCommands(this.channelfocus?.id);
 		// Discord's popup: with no search, recently used first and the rest A-Z; with a
-		// search, best match first (ties A-Z).
-		const sorted = (
+		// search, best match first (ties A-Z). MDSearchOptions renders the list BACKWARDS
+		// (it prepends each row), so the top ten is picked first, then reversed for render.
+		const top = (
 			search === ""
 				? recentFirst(commands, getCommandRecency())
 				: commands
@@ -5419,6 +5420,7 @@ class Localuser {
 						.sort((a, b) => b[1] - a[1] || a[0].name.localeCompare(b[0].name))
 						.map((_) => _[0])
 		).slice(0, 10);
+		const sorted = top.reverse();
 
 		this.MDSearchOptions(
 			sorted.map((elm) => {
