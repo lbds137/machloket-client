@@ -420,8 +420,8 @@
 	"htmlPages": {
 		"addBot": "Add to guild",
 		"alreadyHave": "Already have an account?",
-		"featuresTitle": "Spacebar Explorer Integration",
-		"featuresDesc1": "Quickly view a bot's information and links without having to spend 40 years looking for them, all instances retrieved directly from Explorer.",
+		"featuresTitle": "Bot information at a glance",
+		"featuresDesc1": "See a bot's information and links right where it's mentioned — no digging through catalogs required.",
 		"featuresTitle2": "Simple Yet Professional",
 		"featuresDesc2": "A clean, intuitive interface that stays out of your way while giving you all the power you need.",
 		"featuresTitle3": "All Spacebar Features",
