@@ -180,7 +180,7 @@
         "voice": "Voix"
     },
     "channelLink": "# $1",
-    "clientDesc": "Version du client : $1\n\n[Contribuez à la traduction du client Machloket](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Contribuez au client Machloket](https://github.com/lbds137/machloket)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Machloket)](https://github.com/spacebarchat/server)\n\n\nDroits calculés : $3",
+    "clientDesc": "Version du client : $1\n\n[Contribuez à la traduction du client Machloket](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Contribuez au client Machloket](https://github.com/lbds137/machloket-client)\n\n[Contribuez au serveur Spacebar (l'infrastructure derrière Machloket)](https://github.com/spacebarchat/server)\n\n\nDroits calculés : $3",
     "commands": {
         "errorNotValid": "$1 n'est pas un choix valide pour $2",
         "required": "$1 est une partie requise de cette commande"
@@ -937,7 +937,7 @@
         "traces": "$1 ($2ms) $3"
     },
     "translation": {
-        "wantToHelpTranslate": "Vous souhaitez participer à la traduction de Machloket ? [Cliquez ici](https://github.com/lbds137/machloket/tree/main/translations) pour apporter votre contribution."
+        "wantToHelpTranslate": "Vous souhaitez participer à la traduction de Machloket ? [Cliquez ici](https://github.com/lbds137/machloket-client/tree/main/translations) pour apporter votre contribution."
     },
     "typing": "$2 {{PLURAL:$1|est|sont}} en train d'écrire",
     "unableToConnect": "Impossible de se connecter au serveur Spacebar. Veuillez essayer de vous déconnecter et de vous reconnecter.",

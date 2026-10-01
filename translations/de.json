@@ -157,7 +157,7 @@
         "voice": "Sprache"
     },
     "channelLink": "# $1",
-    "clientDesc": "Client-Version: $1 \n\n[Hilf, Machloket zu übersetzen](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Hilf, Machloket zu entwickeln](https://github.com/lbds137/machloket)\n\n[Hilf, den Server zu pflegen, auf den Machloket angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
+    "clientDesc": "Client-Version: $1 \n\n[Hilf, Machloket zu übersetzen](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Hilf, Machloket zu entwickeln](https://github.com/lbds137/machloket-client)\n\n[Hilf, den Server zu pflegen, auf den Machloket angewiesen ist](https://github.com/spacebarchat/server)\n\nBerechnete Rechte: $3",
     "commands": {
         "errorNotValid": "$1 ist keine gültige Option für $2",
         "required": "$1 ist ein notwendiger Teil dieses Befehls"

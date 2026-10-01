@@ -230,7 +230,7 @@ export class Buttons implements OptionsElement<unknown> {
 		if (this.sectionHeaders.size) {
 			const fb = document.createElement("a");
 			fb.textContent = "Give feedback about this design";
-			fb.href = "https://github.com/lbds137/machloket/issues";
+			fb.href = "https://github.com/lbds137/machloket-client/issues";
 			fb.target = "_blank";
 			fb.rel = "noopener noreferrer";
 			fb.classList.add("settingsFeedback");

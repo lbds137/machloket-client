@@ -152,7 +152,7 @@
         "voice": "语音"
     },
     "channelLink": "# $1",
-    "clientDesc": "客户端版本：$1 \n\n[帮助翻译 Machloket](https://github.com/lbds137/machloket/tree/main/translations)\n\n[帮助开发 Machloket](https://github.com/lbds137/machloket)\n\n[帮助维护 Machloket 所依赖的服务器](https://github.com/spacebarchat/server)\n\n\n计算权限：$3",
+    "clientDesc": "客户端版本：$1 \n\n[帮助翻译 Machloket](https://github.com/lbds137/machloket-client/tree/main/translations)\n\n[帮助开发 Machloket](https://github.com/lbds137/machloket-client)\n\n[帮助维护 Machloket 所依赖的服务器](https://github.com/spacebarchat/server)\n\n\n计算权限：$3",
     "commands": {
         "errorNotValid": "$1不是$2的有效选择",
         "required": "$1是此命令的必要组成部分"

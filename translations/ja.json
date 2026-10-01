@@ -145,7 +145,7 @@
         "voice": "ボイス"
     },
     "channelLink": "# $1",
-    "clientDesc": "クライアント バージョン: $1 \n\n[Machloketの翻訳に協力する](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Machloketの開発に協力する](https://github.com/lbds137/machloket)\n\n[Machloketが依存するサーバーのメンテナンスに協力する](https://github.com/spacebarchat/server)\n\n\n推定された権限: $3",
+    "clientDesc": "クライアント バージョン: $1 \n\n[Machloketの翻訳に協力する](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Machloketの開発に協力する](https://github.com/lbds137/machloket-client)\n\n[Machloketが依存するサーバーのメンテナンスに協力する](https://github.com/spacebarchat/server)\n\n\n推定された権限: $3",
     "commands": {
         "errorNotValid": "$1は$2に対する有効な選択肢ではありません",
         "required": "$1はこのコマンドに必須の箇所です"

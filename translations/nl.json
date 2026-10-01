@@ -162,7 +162,7 @@
         "voice": "Spraak"
     },
     "channelLink": "# $1",
-    "clientDesc": "Cliëntversie: $1 \n\n[Help Machloket te vertalen](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Help Machloket te maken](https://github.com/lbds137/machloket)\n\n[Help de server waar Machloket op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n\nBerekende rechten: $3",
+    "clientDesc": "Cliëntversie: $1 \n\n[Help Machloket te vertalen](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Help Machloket te maken](https://github.com/lbds137/machloket-client)\n\n[Help de server waar Machloket op bouwt te onderhouden](https://github.com/spacebarchat/server)\n\n\nBerekende rechten: $3",
     "commands": {
         "errorNotValid": "$1 is geen geldige keuze voor $2",
         "required": "$1 is een vereist onderdeel van deze opdracht"
@@ -986,7 +986,7 @@
         "traces": "$1 ($2ms) $3"
     },
     "translation": {
-        "wantToHelpTranslate": "Wilt u mede helpen met Machloket vertalen? [Klik hier](https://github.com/lbds137/machloket/tree/main/translations) om te helpen."
+        "wantToHelpTranslate": "Wilt u mede helpen met Machloket vertalen? [Klik hier](https://github.com/lbds137/machloket-client/tree/main/translations) om te helpen."
     },
     "typing": "$2 {{PLURAL:$1|is|zijn}} aan het typen",
     "unableToConnect": "Kan geen verbinding maken met de Spacebar-server. Probeer u af en weer aan te melden.",

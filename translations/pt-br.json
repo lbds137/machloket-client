@@ -148,7 +148,7 @@
         "voice": "Voz"
     },
     "channelLink": "# $1",
-    "clientDesc": "Versão do cliente: $1\n\n[Ajude a traduzir o Machloket](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Ajude a criar o Machloket](https://github.com/lbds137/machloket)\n\n[Ajude a manter o servidor que o Machloket depende](https://github.com/spacebarchat/server)\n\n\nDireitos calculados: $3",
+    "clientDesc": "Versão do cliente: $1\n\n[Ajude a traduzir o Machloket](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Ajude a criar o Machloket](https://github.com/lbds137/machloket-client)\n\n[Ajude a manter o servidor que o Machloket depende](https://github.com/spacebarchat/server)\n\n\nDireitos calculados: $3",
     "commands": {
         "errorNotValid": "$1 não é uma escolha válida para $2",
         "required": "$1 é uma parte necessária desse comando"

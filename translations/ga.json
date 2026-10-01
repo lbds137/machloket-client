@@ -143,7 +143,7 @@
         "voice": "Guth"
     },
     "channelLink": "# $1",
-    "clientDesc": "Leagan cliant: $1\n\n[Cabhraigh le Machloket a aistriú](https://github.com/lbds137/machloket/tree/main/translations)\n\n[Cabhraigh le Machloket a chruthú](https://github.com/lbds137/machloket)\n\n[Cabhraigh leis an bhfreastalaí a bhfuil Machloket ag brath air a chothabháil](https://github.com/spacebarchat/server)\n\n\nCearta ríofa: $3",
+    "clientDesc": "Leagan cliant: $1\n\n[Cabhraigh le Machloket a aistriú](https://github.com/lbds137/machloket-client/tree/main/translations)\n\n[Cabhraigh le Machloket a chruthú](https://github.com/lbds137/machloket-client)\n\n[Cabhraigh leis an bhfreastalaí a bhfuil Machloket ag brath air a chothabháil](https://github.com/spacebarchat/server)\n\n\nCearta ríofa: $3",
     "commands": {
         "errorNotValid": "Ní rogha bhailí é $1 le haghaidh $2",
         "required": "Is cuid riachtanach den ordú seo é $1"

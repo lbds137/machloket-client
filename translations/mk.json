@@ -141,7 +141,7 @@
         "voice": "Глас"
     },
     "channelLink": "бр. $1",
-    "clientDesc": "Верзија на клиентот: $1\n\n[Да го преведеме Махлокет](https://github.com/lbds137/machloket/tree/main/translations) \n\n[Помагајте во создавањето на Махлокет](https://github.com/lbds137/machloket)\n\n[Помагајте во одржувањето на опслужувачот на кој работи Махлокет](https://github.com/spacebarchat/server)\n\n\nПресметани права: $3",
+    "clientDesc": "Верзија на клиентот: $1\n\n[Да го преведеме Махлокет](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Помагајте во создавањето на Махлокет](https://github.com/lbds137/machloket-client)\n\n[Помагајте во одржувањето на опслужувачот на кој работи Махлокет](https://github.com/spacebarchat/server)\n\n\nПресметани права: $3",
     "commands": {
         "errorNotValid": "$1 не е важечки избор за $2",
         "required": "$1 е задолжителен дел од оваа наредба"
