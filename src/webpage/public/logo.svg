@@ -1,1 +1,22 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 135.5 135.5"><path fill="navy" d="m5.3.6 96.2-.5 24.4 70.3-101.5.5L0 .6z"/><path fill="#000036" d="m99.5.4 1.9-.2 24.4 70.3-7.2.2L94.2.4z"/><ellipse cx="74.4" cy="54.1" rx="7.3" ry="21.6"/><ellipse cx="39.9" cy="54.1" rx="7.3" ry="21.6"/><path fill="navy" d="m15.4 65.4 96.2-.6 24.4 70.3-101.5.6-24.4-70.3z"/><path fill="#000034" d="m38 130.4 96.2-.6 1.7 5.7-101.5.6-1.7-5.7z"/><path fill="#000036" d="m111.4 71 1.8-.2 22.8 65-7.2.2-22.7-65z"/><path d="M33.4 65.3H21a7.3 21.6 0 0 0 6.3 10.4 7.3 21.6 0 0 0 6.2-10.5zm22.1-.2a7.3 21.6 0 0 0 6.2 10.7A7.3 21.6 0 0 0 68 65z"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+	<!-- Machloket: two voices in a dispute for the sake of heaven, woven through each other.
+	     Amber passes over at the bottom crossing, violet over at the top. -->
+	<defs>
+		<path id="left" d="M155.5 358.2 A130 130 0 1 0 100.4 319.6 L93.9 387.5 Z" />
+		<path id="right" d="M356.5 358.2 A130 130 0 1 1 411.6 319.6 L418.1 387.5 Z" />
+		<!-- The violet ring's arc through the top crossing (±25° around it). -->
+		<path id="right-over" d="M211.7 153.3 A130 130 0 0 1 310.9 106.0" />
+		<!-- Its gap outline ends 2° short, so its soft ends sit under solid violet (no hairline). -->
+		<path id="right-over-gap" d="M214.6 149.9 A130 130 0 0 1 306.3 106.1" />
+	</defs>
+	<rect width="512" height="512" fill="#0B0B12" />
+	<g fill="none" stroke-linejoin="round" stroke-linecap="round">
+		<use href="#right" stroke="#6C4BD8" stroke-width="34" />
+		<!-- Amber over violet, with a gap of background around it. -->
+		<use href="#left" stroke="#0B0B12" stroke-width="54" />
+		<use href="#left" stroke="#F5A623" stroke-width="34" />
+		<!-- Violet back over amber at the top crossing; butt ends meet the violet beneath. -->
+		<use href="#right-over-gap" stroke="#0B0B12" stroke-width="54" stroke-linecap="butt" />
+		<use href="#right-over" stroke="#6C4BD8" stroke-width="34" stroke-linecap="butt" />
+	</g>
+</svg>
