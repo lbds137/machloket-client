@@ -1,1 +1,14 @@
-This ain't exactly rocket science, please just describe what you've done, and follow all normal steps, it may take a few days for me to get back to you, life happens. Just try to keep the pull requests fairly small, so adding one thing or fixing one thing, but you may fix multiple bugs in one patch if they're either related or small enough. These are all soft rules and I am going to be more lenient.
+# Contributing
+
+Bug reports and pull requests are both welcome on this repository.
+
+For code changes: clone, `npm ci`, make the change, then run the gate
+before opening a pull request — it must pass:
+
+```
+npm run check && npm test && npm run build
+```
+
+Keep pull requests small: one fix or one feature each, though a few
+small related fixes can ride together. Reviews happen as spare time
+allows; it may take a few days.
