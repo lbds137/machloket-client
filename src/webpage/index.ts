@@ -609,8 +609,9 @@ if (window.location.pathname.startsWith("/channels")) {
 				openChat: () => setMainOpen(true),
 				closeChat: () => setMainOpen(false),
 				panel: () => mainArea,
-				// The chat rests beside the channel list while the drawer is open.
-				peekLeft: () => channelList?.getBoundingClientRect().right ?? window.innerWidth * 0.78,
+				// The chat rests fully off screen beside the full-width channel list (9d);
+				// the gesture core reads the real resting edge, this is only its fallback.
+				peekLeft: () => channelList?.getBoundingClientRect().right ?? window.innerWidth,
 			});
 		}
 		memberListToggle.checked = false;

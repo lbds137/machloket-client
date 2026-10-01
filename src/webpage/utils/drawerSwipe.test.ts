@@ -12,7 +12,8 @@ let chat: HTMLElement;
 let panel: HTMLElement;
 let toggle: HTMLInputElement;
 
-/** Where the chat panel rests with the drawer open (the mobile CSS puts it at 78vw). */
+/** Where the chat panel rests with the drawer open. Prod is the full viewport width (9d); the
+ * core takes geometry as a parameter, and this models a narrower rest to exercise it. */
 const PEEK_LEFT = 280;
 
 beforeEach(() => {
@@ -96,7 +97,7 @@ describe("swiping the drawer shut", () => {
 		expect(openChat).toHaveBeenCalledTimes(1);
 	});
 
-	it("opens the chat from a left swipe on the peeking chat", async () => {
+	it("opens the chat from a left swipe on the hidden chat's edge", async () => {
 		const openChat = install();
 
 		swipe(chat, [340, 300], [200, 296]);

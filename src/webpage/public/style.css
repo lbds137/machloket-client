@@ -6894,14 +6894,16 @@ fieldset input[type="radio"] {
 
 	.channelflex {
 		left: 64px;
-		width: calc(78vw - 64px) !important;
+		width: calc(100vw - 64px) !important;
 		max-width: none;
 		min-width: 0;
 	}
 
+	/* 9d: the channel list is full screen, as in Discord's Android app — the chat rests
+		completely off screen beside it, no peeking strip. */
 	#mainarea {
 		z-index: 1;
-		left: 78vw;
+		left: 100vw;
 		width: 100vw;
 		background: var(--primary-bg);
 		transition: left 0.3s;

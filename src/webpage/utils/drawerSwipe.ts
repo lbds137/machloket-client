@@ -1,8 +1,9 @@
-// The mobile layout slides between the drawer (guild rail + channel list, with the chat peeking
-// at the edge) and the chat. As in Discord's app, the chat follows the finger both ways: a left
-// swipe anywhere while the drawer is open opens the chat, and a right swipe on the open chat
-// takes it back to the drawer. A left swipe on a message with the chat open is the message's
-// own (swipe to reply, message.ts); drawerOwnsTouch() tells it which touches are the drawer's.
+// The mobile layout slides between the drawer (guild rail + channel list, the chat fully off
+// screen beside it) and the chat. As in Discord's app, the chat follows the finger both ways:
+// a left swipe anywhere while the drawer is open opens the chat, and a right swipe on the open
+// chat takes it back to the drawer. A left swipe on a message with the chat open is the
+// message's own (swipe to reply, message.ts); drawerOwnsTouch() tells it whose touches are
+// the drawer's.
 
 type Drawer = {
 	isOpen(): boolean;
@@ -39,7 +40,7 @@ const SWIPE_CLICK_MS = 250;
 let lastSwipeEnd = -Infinity;
 
 /**
- * For click handlers on the drawer and the peeking chat: whether a drawer swipe just ended, so
+ * For click handlers on the drawer and the off-screen chat edge: whether a drawer swipe just ended, so
  * the click that follows it isn't a tap (it would undo the swipe). Time-limited, unlike the old
  * flag that swallowed the next real tap whenever it came.
  */
@@ -123,7 +124,7 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 		{passive: false, capture: true},
 	);
 	// Swallow that trailing click before any handler sees it (capture), wherever it lands: the
-	// channel list and the peeking chat both switch views on click.
+	// channel list and the chat's edge both switch views on click.
 	page.addEventListener(
 		"click",
 		(event) => {
