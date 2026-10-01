@@ -7,6 +7,7 @@ import {Dialog, Float, Settings} from "./settings.js";
 import {Role, RoleList} from "./role.js";
 import {InfiniteScroller} from "./infiniteScroller.js";
 import {SnowFlake} from "./snowflake.js";
+import {closeMembersOnNavigation} from "./utils/membersView.js";
 import {
 	channeljson,
 	creatPollJSON,
@@ -2832,6 +2833,12 @@ class Channel extends SnowFlake {
 				"",
 				"/channels/" + this.guild_id + "/" + this.id + (aroundMessage ? `/${aroundMessage}` : ""),
 			);
+			// A navigation push closes the mobile members view (Lila's call, Discord's app
+			// behavior) — AFTER the push: the view's marker entry is then no longer top, so
+			// the close issues no history.back() of its own (a same-task back-then-push
+			// interleave would let the traversal swallow the entry just pushed). The buried
+			// marker stays transparent to back via the skip rule in consumeMembersPop.
+			closeMembersOnNavigation();
 		}
 		this.localuser.pageTitle(
 			this.guild_id === "@me" ? this.name : "#" + this.name,

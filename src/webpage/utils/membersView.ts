@@ -78,6 +78,15 @@ export function consumeMembersPop(): boolean {
 	return false;
 }
 
+/**
+ * Discord's app closes its member overlay on any navigation. Called from the channel-load
+ * path where it pushes history (addstate) — NOT from popstate replays, which walk history
+ * the user already backed through and close the view through consumeMembersPop instead.
+ */
+export function closeMembersOnNavigation() {
+	if (membersOpen()) setMembersOpen(false);
+}
+
 export function installMembersView(pageEl: HTMLElement) {
 	page = pageEl;
 	installed = true;

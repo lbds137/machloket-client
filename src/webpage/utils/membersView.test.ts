@@ -4,7 +4,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 // order (index.ts imports localuser first).
 await import("../localuser");
 const {installDrawerSwipe} = await import("./drawerSwipe");
-const {installMembersView, consumeMembersPop} = await import("./membersView");
+const {installMembersView, consumeMembersPop, closeMembersOnNavigation} = await import("./membersView");
 
 // The entry's popstate wiring, once for the whole file: the members guard runs before channel
 // navigation would, and a UI close's swallowed pop actually clears its flag. What navigation
@@ -241,11 +241,11 @@ describe("the closing swipe", () => {
 	});
 });
 
-describe("the marker entry between channel entries", () => {
-	/** Pops settle asynchronously, and the skip issues its own back() mid-listener; a short
-	 * settle (not a late-armed listener) is what reliably observes the landed state. */
-	const settle = () => new Promise((res) => setTimeout(res, 120));
+/** Pops settle asynchronously, and the skip issues its own back() mid-listener; a short
+ * settle (not a late-armed listener) is what reliably observes the landed state. */
+const settle = () => new Promise((res) => setTimeout(res, 120));
 
+describe("the marker entry between channel entries", () => {
 	it("one Android back, with navigation stacked above the marker, lands on the channel below", async () => {
 		openAndView();
 		// A pinned message or search result navigates while the view stays open: the channel
@@ -292,6 +292,35 @@ describe("what a tap on the title is not", () => {
 		page.querySelector("#sideDiv")!.innerHTML = "";
 
 		channelTitle.click();
+
+		expect(membersShown()).toBe(false);
+	});
+});
+
+describe("navigation closes the view (Lila's call, Discord's app behavior)", () => {
+	it("pushes the channel entry, then closes the view over it — and the entry stays current", async () => {
+		openAndView();
+
+		// The app's exact order (channel.ts): the push first, the close after. A close
+		// BEFORE the push would let its history.back() traversal land past the entry the
+		// push is about to add (the round-4 blocker).
+		history.pushState({nav: "channel-b"}, "", location.href);
+		closeMembersOnNavigation();
+
+		expect(membersShown()).toBe(false);
+		expect((history.state as {nav?: string}).nav).toBe("channel-b");
+
+		// One Android back from the channel: the buried marker is skipped, one navigation.
+		history.back();
+		await settle();
+		await settle();
+		expect(navStates).toHaveLength(1);
+	});
+
+	it("a navigation with the view closed changes nothing", () => {
+		install();
+
+		closeMembersOnNavigation();
 
 		expect(membersShown()).toBe(false);
 	});
