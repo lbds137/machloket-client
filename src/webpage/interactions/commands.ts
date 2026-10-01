@@ -592,7 +592,8 @@ class StringOption extends Option {
 		this.imprintName(div);
 
 		const label = document.createElement("span");
-		label.textContent = this.localizedName + ":";
+		label.textContent =
+			this.localizedName + (this.required ? ":" : " " + I18n.commands.optional() + ":");
 
 		const input = document.createElement("input");
 		input.type = "text";
@@ -694,7 +695,8 @@ class NumberishOption extends Option {
 		this.imprintName(div);
 
 		const label = document.createElement("span");
-		label.textContent = this.localizedName + ":";
+		label.textContent =
+			this.localizedName + (this.required ? ":" : " " + I18n.commands.optional() + ":");
 
 		const input = document.createElement("input");
 		input.type = "number";
@@ -761,7 +763,8 @@ class BooleanOption extends Option {
 		this.imprintName(div);
 
 		const label = document.createElement("span");
-		label.textContent = this.localizedName + ":";
+		label.textContent =
+			this.localizedName + (this.required ? ":" : " " + I18n.commands.optional() + ":");
 
 		const input = document.createElement("input");
 		input.type = "checkbox";
@@ -912,7 +915,8 @@ class EntityOption extends Option {
 		this.imprintName(div);
 
 		const label = document.createElement("span");
-		label.textContent = this.localizedName + ":";
+		label.textContent =
+			this.localizedName + (this.required ? ":" : " " + I18n.commands.optional() + ":");
 
 		const input = document.createElement("input");
 		input.type = "text";
@@ -983,7 +987,8 @@ class AttachmentOption extends Option {
 		this.imprintName(div);
 
 		const label = document.createElement("span");
-		label.textContent = this.localizedName + ":";
+		label.textContent =
+			this.localizedName + (this.required ? ":" : " " + I18n.commands.optional() + ":");
 
 		const input = document.createElement("input");
 		input.type = "file";
