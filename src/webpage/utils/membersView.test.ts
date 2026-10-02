@@ -287,13 +287,16 @@ describe("what a tap on the title is not", () => {
 			.not.toBe(true);
 	});
 
-	it("an empty member panel (a voice channel) does not open the view", () => {
+	it("an empty member panel (a DM's cleared list) still opens — the tap must not dead-lock", () => {
+		// memberListUpdate clears #sideDiv for DMs and voice channels; refusing to open
+		// there made both the title tap and the members icon permanently dead (the
+		// phone-walk find). The view opens regardless; content is its own backlog item.
 		install();
 		page.querySelector("#sideDiv")!.innerHTML = "";
 
 		channelTitle.click();
 
-		expect(membersShown()).toBe(false);
+		expect(membersShown()).toBe(true);
 	});
 });
 

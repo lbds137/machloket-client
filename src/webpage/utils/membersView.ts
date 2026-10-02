@@ -22,17 +22,8 @@ function backEntryIsOurs() {
 	return (history.state as {machloketMembersView?: boolean} | null)?.machloketMembersView === true;
 }
 
-/** The panel with nothing to show (a voice channel's cleared list): the CSS collapses it to
- * zero width, so opening would push a history entry behind an invisible view. */
-function panelIsEmpty() {
-	const sideDiv = document.getElementById("sideDiv");
-	const player = document.getElementById("player");
-	return !sideDiv?.childElementCount && !player?.childElementCount;
-}
-
 function setMembersOpen(open: boolean) {
 	if (!page || open === membersOpen()) return;
-	if (open && panelIsEmpty()) return;
 	if (open) {
 		// Android back then closes the view instead of leaving the channel (the entry below
 		// is the channel view already on screen, so popping to it changes nothing).
