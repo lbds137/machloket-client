@@ -6947,8 +6947,9 @@ fieldset input[type="radio"] {
 		cursor: pointer;
 	}
 
+	/* 9c, retired per the owner's call after the walk: the channel title is the way in. */
 	#memberlisttoggleicon {
-		padding: 6px;
+		display: none;
 	}
 
 	#maintoggleicon span {

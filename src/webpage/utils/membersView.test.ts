@@ -18,8 +18,6 @@ let page: HTMLElement;
 let channelTitle: HTMLElement;
 let maintoggle: HTMLInputElement;
 let maintoggleIcon: HTMLElement;
-let memberListToggle: HTMLInputElement;
-let memberListToggleIcon: HTMLElement;
 let membersPanel: HTMLElement;
 let chatPanel: HTMLElement;
 
@@ -48,8 +46,6 @@ beforeEach(() => {
 	channelTitle = page.querySelector("#channelTitle")!;
 	maintoggle = page.querySelector("#maintoggle")!;
 	maintoggleIcon = page.querySelector("#maintoggleicon")!;
-	memberListToggle = page.querySelector("#memberlisttoggle")!;
-	memberListToggleIcon = page.querySelector("#memberlisttoggleicon")!;
 	membersPanel = page.querySelector("#sideContainDiv")!;
 	chatPanel = page.querySelector("#mainarea")!;
 });
@@ -125,18 +121,6 @@ describe("opening the members view", () => {
 		maintoggleIcon.click();
 		await pop;
 		expect(membersShown()).toBe(false);
-	});
-
-	it("the header members icon toggles the view without flipping the desktop checkbox", async () => {
-		openAndView();
-		expect(memberListToggle.checked).toBe(false);
-
-		const closing = popArmed();
-		memberListToggleIcon.click();
-		await closing;
-
-		expect(membersShown()).toBe(false);
-		expect(memberListToggle.checked).toBe(false);
 	});
 });
 

@@ -102,13 +102,6 @@ export function installMembersView(pageEl: HTMLElement) {
 		setMembersOpen(false);
 	});
 
-	const membersIcon = document.getElementById("memberlisttoggleicon");
-	membersIcon?.addEventListener("click", (event) => {
-		// On mobile the checkbox is the desktop layout's; the icon toggles the view.
-		event.preventDefault();
-		setMembersOpen(!membersOpen());
-	});
-
 	// The header's other actions (pins, inbox, search) act on the chat, which this view
 	// covers; on Discord's app the overlay owns the screen. A tap on them closes the view
 	// first (capture, before their own handlers) and lets the action proceed on the chat.
