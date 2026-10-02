@@ -6929,7 +6929,12 @@ fieldset input[type="radio"] {
 		width: 100vw;
 		margin-left: -100svw;
 		margin-left: -100vw;
-		transition: right 0.3s;
+		/* Opacity and transform ride the same slide so the panel fades out as it leaves,
+			rather than going transparent the instant the class drops. */
+		transition:
+			right 0.3s,
+			opacity 0.3s,
+			transform 0.3s;
 	}
 
 	.channelnamediv {
@@ -6984,13 +6989,6 @@ fieldset input[type="radio"] {
 
 	#page:has(#maintoggle:checked) #maintoggleicon {
 		rotate: 180deg;
-	}
-
-	/* 9c: while the members view is up, the header's left icon is its back arrow — the glyph
-		stays at its left-pointing rest rotation instead of pointing into the drawer. The
-		:has() match outranks the checked-state rule below on specificity, not source order. */
-	#page.mobileMembersOpen:has(#maintoggle:checked) #maintoggleicon {
-		rotate: 0deg;
 	}
 
 	.messagediv {

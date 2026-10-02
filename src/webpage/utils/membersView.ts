@@ -1,5 +1,5 @@
 // The mobile member list is a transient view over the chat, on Discord's app model (tracker
-// 9c): tapping the channel name opens it, the header's left icon becomes its back arrow while
+// 9c): tapping the channel name opens it, the header's left icon is its back arrow while
 // it is up, Android back and a right swipe close it, and a second right swipe — with the view
 // gone — is the drawer's. The desktop layout keeps its own switch (#memberlisttoggle, a
 // persisted preference); on mobile that checkbox stays untouched and the #page class is the
@@ -108,6 +108,19 @@ export function installMembersView(pageEl: HTMLElement) {
 		event.preventDefault();
 		setMembersOpen(!membersOpen());
 	});
+
+	// The header's other actions (pins, inbox, search) act on the chat, which this view
+	// covers; on Discord's app the overlay owns the screen. A tap on them closes the view
+	// first (capture, before their own handlers) and lets the action proceed on the chat.
+	for (const id of ["pinnedMDiv", "inboxMDiv", "searchMeta"]) {
+		document.getElementById(id)?.addEventListener(
+			"click",
+			() => {
+				if (membersOpen()) setMembersOpen(false);
+			},
+			{capture: true},
+		);
+	}
 
 	installOverlaySwipe(pageEl, {
 		isShown: membersOpen,
