@@ -48,10 +48,10 @@ export function drawerSwipeJustEnded() {
 	return performance.now() - lastSwipeEnd < SWIPE_CLICK_MS;
 }
 
-/** A full-width overlay over the chat (the mobile member list) whose own right swipe closes
- * it. While the overlay is shown it outranks the drawer's swipe: both installs listen on the
- * page, and without the claim a right swipe would close the chat to the drawer underneath the
- * overlay (tracker 9c's original complaint). */
+/** A full-width overlay over the chat (the mobile member list, the search view) whose own
+ * right swipe closes it. While an overlay is shown it outranks the drawer's swipe: both
+ * installs listen on the page, and without the claim a right swipe would close the chat to
+ * the drawer underneath the overlay (tracker 9c's original complaint). */
 type Overlay = {
 	isShown(): boolean;
 	hide(): void;
@@ -59,7 +59,9 @@ type Overlay = {
 	panel(): HTMLElement | null;
 };
 
-let overlay: Overlay | null = null;
+/** Every installed overlay; only one is shown at a time (the views close each other), but the
+ * drawer's guard must see them all, whichever was installed last. */
+const overlays: Overlay[] = [];
 
 export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 	// Capture phase: message rows, guild icons and channel rows are bound by Contextmenu, whose
@@ -83,7 +85,7 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 			finishGlide = undefined;
 			gesture = "none";
 			deltaX = 0;
-			if (event.touches.length !== 1 || overlay?.isShown()) {
+			if (event.touches.length !== 1 || overlays.some((o) => o.isShown())) {
 				mode = "none";
 				drawerOwnsIt = false;
 				return;
@@ -162,7 +164,7 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
  * finger-following, and a swipe past SWITCH_DISTANCE glides it off and hides it. Leftward and
  * vertical drags are not claimed (the list scrolls; Discord opens members by tap only). */
 export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
-	overlay = view;
+	overlays.push(view);
 	let gesture: "none" | "horizontal" | "vertical" = "none";
 	/** Whether this touch actually dragged the panel (only the closing direction does). */
 	let claimed = false;

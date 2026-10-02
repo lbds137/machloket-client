@@ -6849,23 +6849,6 @@ fieldset input[type="radio"] {
 		inset: 0;
 	}
 
-	.searching {
-		& {
-			/* TODO: Not do that, add a close button or idk */
-			z-index: 1;
-			position: absolute;
-			background: var(--primary-bg);
-			width: 60%;
-			left: 10%;
-		}
-
-		#searchBox {
-			flex-shrink: 1;
-			width: 100%;
-			padding: 7px 10px 13px 10px;
-		}
-	}
-
 	#homePage {
 		width: 94%;
 		max-width: unset;
@@ -6941,6 +6924,14 @@ fieldset input[type="radio"] {
 		padding: 0;
 	}
 
+	/* 18b: the header's closed state — with the members icon retired, three actions remain
+		(pins, search, inbox); breathing room between them instead of the cramped cluster. */
+	#pinnedMDiv,
+	.searchMeta,
+	#inboxMDiv {
+		padding: 0 8px;
+	}
+
 	#maintoggleicon {
 		display: block;
 		padding: 12px;
@@ -6979,6 +6970,94 @@ fieldset input[type="radio"] {
 			revealed, or it covers the chat invisibly and eats its touches. */
 		opacity: 1;
 		transform: translateX(0);
+	}
+
+	/* 18b: search is its own full-screen view on Discord's app model — the header magnifier
+		opens it; the view row's back arrow, Android back or a right swipe close it. Fixed
+		over the whole screen (the members panel slides over the chat only), so the view owns
+		its input and dismissal never depends on the header underneath. The slide rides
+		transform+opacity so the panel glides out; searchView.ts drops the class after the
+		transition, when the panel is already invisible. */
+	#page.mobileSearchOpen #sideContainDiv {
+		position: fixed;
+		inset: 0;
+		width: 100vw;
+		margin: 0;
+		z-index: 5;
+		transform: translateX(100vw);
+		opacity: 0;
+		transition:
+			transform 0.3s,
+			opacity 0.3s;
+	}
+
+	/* hideSearchDiv is the search flow's own hide (a result tap) and gets stripped again by
+		the debounced member-list rebuild; searchViewClosing is the view's close — the slide
+		out rides whichever is present, so neither the flow nor the async rebuild can cancel
+		it mid-window. */
+	#page.mobileSearchOpen #sideContainDiv:not(.hideSearchDiv):not(.searchViewClosing) {
+		transform: none;
+		opacity: 1;
+		overflow: auto;
+	}
+
+	/* The view's own header row: back arrow, the real #searchBox (moved here from the
+		channel header while the view is open — its wiring travels with the node), and a clear
+		✕ that appears only with text in the box (.searching rides the row, as it rode
+		.searchMeta). */
+	.searchViewRow {
+		flex: none;
+		gap: 4px;
+		align-items: center;
+		padding: 8px;
+		background: var(--main-header-bg);
+		border-bottom: 1px solid var(--divider);
+	}
+
+	.searchViewRow .searchBack {
+		flex: none;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 38px;
+		height: 38px;
+		cursor: pointer;
+	}
+
+	.searchViewRow .searchBack .svgicon {
+		width: 14px;
+		height: 14px;
+		/* svg-category at net 90° is the validated always-left back chevron (9c's walk). */
+		rotate: 90deg;
+	}
+
+	.searchViewRow #searchBox {
+		flex: 1;
+		width: 100%;
+		min-width: 0;
+		/* The ≤1000px `.searching #searchBox` rule ties this one on specificity, and its
+			36px right margin (a leftover of the old header squeeze) went uncontested when the
+			row carried .searching — the other properties win by source order; margin must be
+			zeroed explicitly. */
+		margin: 0;
+		padding: 8px 10px 14px 10px;
+	}
+
+	.searchViewRow .searchClear {
+		flex: none;
+		width: 24px;
+		height: 24px;
+		visibility: hidden;
+		cursor: pointer;
+	}
+
+	.searchViewRow.searching .searchClear {
+		visibility: visible;
+	}
+
+	/* The ≤1000px block blanks the empty-box hint; in the view the hint is the affordance. */
+	.searchViewRow .searchBox:empty::after {
+		content: var(--hint-text);
 	}
 
 	#channels,

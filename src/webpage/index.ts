@@ -3,6 +3,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {getViewportHeight, mobile, Specialuser} from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
 import {consumeMembersPop, installMembersView} from "./utils/membersView.js";
+import {consumeSearchPop, installSearchView} from "./utils/searchView.js";
 import {MarkDown} from "./markdown.js";
 import {Message} from "./message.js";
 import {File} from "./file.js";
@@ -201,8 +202,9 @@ if (window.location.pathname.startsWith("/channels")) {
 	const pasteImageElement = document.getElementById("pasteimage") as HTMLDivElement;
 	let replyingTo: Message | null = null;
 	window.addEventListener("popstate", (e) => {
-		// The mobile members view consumes a back before channel navigation gets it (9c).
-		if (consumeMembersPop()) return;
+		// The mobile members view consumes a back before channel navigation gets it (9c);
+		// the search view's guard runs next, same rule (18b).
+		if (consumeMembersPop() || consumeSearchPop()) return;
 		if (e.state instanceof Object) {
 			thisUser.goToState(e.state);
 		}
@@ -467,6 +469,9 @@ if (window.location.pathname.startsWith("/channels")) {
 	});
 
 	markdown.giveBox(typebox);
+	// Assigned inside the search-box block below; read by the mobile block's search-view
+	// install (18b). A `let` out here because the two blocks are siblings in this function.
+	let clearSearchQuery: (() => void) | undefined;
 	{
 		const searchBox = document.getElementById("searchBox") as CustomHTMLDivElement;
 		const markdown = new MarkDown("", thisUser);
@@ -513,6 +518,17 @@ if (window.location.pathname.startsWith("/channels")) {
 			span.textContent = e.replace("\n", "");
 			return span;
 		});
+		// The mobile search view (18b) resets the query through this hook: the MarkDown
+		// instance and the magnifier/✕ state are this block's to manage, and the view
+		// module lives outside it. Works wherever the input currently sits — the hook
+		// clears .searching off whatever the parent is (header or the view's row).
+		clearSearchQuery = () => {
+			markdown.txt = "";
+			searchBox.innerHTML = "";
+			searchX.classList.add("svg-search");
+			searchX.classList.remove("svg-plainx");
+			searchBox.parentElement!.classList.remove("searching");
+		};
 	}
 	let images: Blob[] = [];
 	let imagesHtml = new WeakMap<Blob, HTMLElement>();
@@ -619,6 +635,14 @@ if (window.location.pathname.startsWith("/channels")) {
 		// 9c: the member list as a transient view — channel-name tap opens it, the header's
 		// left icon, Android back and a right swipe close it. Desktop keeps the checkbox.
 		if (pageEl) installMembersView(pageEl);
+		// 18b: search as its own full-screen view — the header magnifier opens it, its row's
+		// back arrow, Android back and a right swipe close it. The header keeps its input
+		// for desktop; on mobile it stays collapsed and the magnifier is the way in.
+		if (pageEl)
+			installSearchView(pageEl, {
+				onQueryClear: () => clearSearchQuery?.(),
+				mSearch: (query) => thisUser.mSearch(query),
+			});
 	}
 	const channelPanel = document.querySelector<HTMLDivElement>(".channelflex");
 	const sidebarResize = document.getElementById("sidebarResize");
