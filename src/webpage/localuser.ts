@@ -1600,8 +1600,12 @@ class Localuser {
 					elm.remove();
 				}
 			});
-		div.classList.remove("searchDiv");
-		div.classList.remove("hideSearchDiv");
+		// The search panel sets these on the CONTAINER (sideContainDiv, search flow ~5673/5691);
+		// clearing them from the list div itself was a no-op, and a latched hideSearchDiv kept
+		// the members slide-in selector (`:not(.hideSearchDiv)`) from ever matching.
+		const container = document.getElementById("sideContainDiv");
+		container?.classList.remove("searchDiv");
+		container?.classList.remove("hideSearchDiv");
 		let lastDiv: HTMLDivElement | void = undefined;
 		for (const [role, list] of elms) {
 			if (!list.length) continue;

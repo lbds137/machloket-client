@@ -25,6 +25,9 @@ function backEntryIsOurs() {
 function setMembersOpen(open: boolean) {
 	if (!page || open === membersOpen()) return;
 	if (open) {
+		// Search-panel residue on the shared container would keep the slide-in selector
+		// (`:not(.hideSearchDiv)`) from matching; opening the view explicitly clears it.
+		document.getElementById("sideContainDiv")?.classList.remove("hideSearchDiv");
 		// Android back then closes the view instead of leaving the channel (the entry below
 		// is the channel view already on screen, so popping to it changes nothing).
 		history.pushState({machloketMembersView: true}, "", location.href);

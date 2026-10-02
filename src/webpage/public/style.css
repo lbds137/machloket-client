@@ -6968,6 +6968,11 @@ fieldset input[type="radio"] {
 	#sideContainDiv.searchDiv:not(.hideSearchDiv) {
 		right: 0;
 		overflow: auto;
+		/* The desktop sidebar rests hidden (opacity 0 + a 20px shift, revealed only by the
+			#memberlisttoggle checkbox — forced off on mobile); a slid-in panel must also be
+			revealed, or it covers the chat invisibly and eats its touches. */
+		opacity: 1;
+		transform: translateX(0);
 	}
 
 	#channels,
