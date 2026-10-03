@@ -185,9 +185,11 @@ export class Favorites {
 		//TODO remove this eventually
 		delete this.emojiReactionFrecency["undefined"];
 		delete this.store.current.emojiReactionFrecency["undefined"];
-		if (res.settings.emojiReactionFrecency)
-			delete res.settings.emojiReactionFrecency.emojis["undefined"];
-		this.saveDifs(res.settings, save);
+		// The fork's proto-JSON emits an empty map as {} with no nested `emojis` object, so the
+		// legacy-key migration must tolerate absent/null nested maps (every empty-map account
+		// was throwing "Cannot convert undefined or null to object" here).
+		delete res.settings?.emojiReactionFrecency?.emojis?.["undefined"];
+		this.saveDifs(res.settings ?? {}, save);
 	}
 	async setup() {
 		try {
