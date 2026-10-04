@@ -74,13 +74,13 @@ export function acceptAuth(origin: string, route: "login" | "register", token: s
  */
 export function captureRequests(
 	url: string,
-	respond: () => Response = () => new Response(null, {status: 204}),
+	respond: () => Response | Promise<Response> = () => new Response(null, {status: 204}),
 ) {
 	const bodies: unknown[] = [];
 	captures.set(url, {bodies, respond});
 	return bodies;
 }
-const captures = new Map<string, {bodies: unknown[]; respond: () => Response}>();
+const captures = new Map<string, {bodies: unknown[]; respond: () => Response | Promise<Response>}>();
 
 const realFetch = globalThis.fetch.bind(globalThis);
 vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {

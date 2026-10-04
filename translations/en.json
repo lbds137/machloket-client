@@ -876,6 +876,7 @@
 	"renderJoinAvatars": "Display avatars for new members: ",
 	"reply": "Reply",
 	"replyingTo": "Replying to $1",
+	"requestFailed": "That didn't go through ($1). Try again in a moment.",
 	"retrying": "Retrying…",
 	"role": {
 		"color": "First color",

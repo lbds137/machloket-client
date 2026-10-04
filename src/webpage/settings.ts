@@ -2397,12 +2397,15 @@ class Form implements OptionsElement<object> {
 	}
 	onFormError = (_: FormError) => {};
 	subbmitting = false;
+	/** URLs with a request still unanswered: a second tap waits, but a form re-pointed at
+	 * another URL (login after picking another instance) may send there. */
+	private readonly inFlight = new Set<string>();
 	async submit() {
 		if (this.options.subOptions) {
 			this.options.subOptions.submit();
 			return;
 		}
-		if (this.subbmitting) return;
+		if (this.subbmitting || this.inFlight.has(this.fetchURL)) return;
 		this.subbmitting = true;
 		try {
 			console.log("start");
@@ -2491,55 +2494,60 @@ class Form implements OptionsElement<object> {
 						return;
 					}
 				};
-				const doFetch = async () => {
-					fetch(fetchURL, {
-						method: this.method,
-						body: JSON.stringify(build),
-						headers: this.headers,
-					})
-						.then(async (_) => {
-							return [await _.text(), _.status] as const;
-						})
-						.then(([_, status]) => {
-							if (_ === "") return [null, status];
-							return [JSON.parse(_), status] as const;
-						})
-						.then(async ([json, status]) => {
-							if (await handleCaptcha(json, build, this.captcha)) {
-								return await doFetch();
-							}
-							const match = fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
-							if (match && this.tfaCheck) {
-								const tried = await handle2fa(json, match[0]);
-								if (tried) {
-									return await onSubmit(tried);
-								}
-							}
-							if (json.ticket) {
-							}
-							if (json.errors) {
-								if (this.errors(json)) {
-									return;
-								}
-							} else if (status === 500) {
-								this.error(
-									[...this.names].at(-1)?.[0] ?? "",
-									json.message ?? "internal server error",
-								);
-								return;
-							}
-							if (
-								Math.floor(json.code / 100) === 4 &&
-								json.message &&
-								typeof json.message === "string"
-							) {
-								this.showPrimError(json.message);
-								return;
-							}
-							onSubmit(json);
+				const doFetch = async (): Promise<void> => {
+					let json: any;
+					let status: number;
+					// A second tap waits for the answer; the captcha and 2FA prompts after it don't
+					// hold the guard, so closing one leaves the form sendable.
+					this.inFlight.add(fetchURL);
+					try {
+						const res = await fetch(fetchURL, {
+							method: this.method,
+							body: JSON.stringify(build),
+							headers: this.headers,
 						});
+						status = res.status;
+						const text = await res.text();
+						// An empty success (204) is still a success.
+						json = text === "" ? {} : JSON.parse(text);
+						if (typeof json !== "object" || json === null) {
+							throw new TypeError("expected a JSON object, got " + text.slice(0, 40));
+						}
+					} catch (e) {
+						// No answer, or one that isn't a JSON object (a proxy's error page).
+						console.error(e);
+						this.showPrimError(I18n.requestFailed(e instanceof Error ? e.message : String(e)));
+						return;
+					} finally {
+						this.inFlight.delete(fetchURL);
+					}
+					if (await handleCaptcha(json, build, this.captcha)) {
+						return await doFetch();
+					}
+					const match = fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
+					if (match && this.tfaCheck) {
+						const tried = await handle2fa(json, match[0]);
+						if (tried) {
+							return await onSubmit(tried);
+						}
+					}
+					if (json.errors) {
+						if (this.errors(json)) {
+							return;
+						}
+					} else if (status === 500) {
+						this.error([...this.names].at(-1)?.[0] ?? "", json.message ?? "internal server error");
+						return;
+					}
+					if (Math.floor(json.code / 100) === 4 && json.message && typeof json.message === "string") {
+						this.showPrimError(json.message);
+						return;
+					}
+					await onSubmit(json);
 				};
-				doFetch();
+				// From here the per-URL guard in doFetch takes over.
+				this.subbmitting = false;
+				await doFetch();
 			} else {
 				try {
 					await this.onSubmit(build, build);
