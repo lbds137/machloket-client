@@ -110,8 +110,11 @@ class Embed {
 			if (this.json.author.icon_url) {
 				const img = document.createElement("img");
 				img.classList.add("authorEmbedImg");
-				this.localuser.refreshIfNeeded(this.json.author.icon_url).then((url) => {
-					if (this.json.author) this.json.author.icon_url = url;
+				// The instance's proxy copy, when the server made one, keeps viewers off the bot's host.
+				const proxied = Boolean(this.json.author.proxy_icon_url);
+				const src = this.json.author.proxy_icon_url || this.json.author.icon_url;
+				this.localuser.refreshIfNeeded(src).then((url) => {
+					if (this.json.author) this.json.author[proxied ? "proxy_icon_url" : "icon_url"] = url;
 					img.src = url;
 				});
 				authorline.append(img);
@@ -167,24 +170,22 @@ class Embed {
 			if (this.json.image.height) {
 				img.height = this.json.image.height;
 			}
-			this.localuser.refreshIfNeeded(this.json.image.url).then((url) => {
-				if (this.json.image) this.json.image.url = url;
-				if (!this.json.image?.proxy_url) img.src = url;
+			const proxied = Boolean(this.json.image.proxy_url);
+			const src = this.json.image.proxy_url || this.json.image.url;
+			this.localuser.refreshIfNeeded(src).then((url) => {
+				if (this.json.image) this.json.image[proxied ? "proxy_url" : "url"] = url;
+				img.src = url;
 			});
-			if (this.json.image.proxy_url) {
-				this.localuser.refreshIfNeeded(this.json.image.url).then((url) => {
-					if (this.json.image) this.json.image.url = url;
-					img.src = url;
-				});
-			}
 			embed.append(img);
 		}
 		if (this.json.footer || this.json.timestamp) {
 			const footer = document.createElement("div");
 			if (this.json?.footer?.icon_url) {
 				const img = document.createElement("img");
-				this.localuser.refreshIfNeeded(this.json.footer.icon_url).then((url) => {
-					if (this.json.footer) this.json.footer.icon_url = url;
+				const proxied = Boolean(this.json.footer.proxy_icon_url);
+				const src = this.json.footer.proxy_icon_url || this.json.footer.icon_url;
+				this.localuser.refreshIfNeeded(src).then((url) => {
+					if (this.json.footer) this.json.footer[proxied ? "proxy_icon_url" : "icon_url"] = url;
 					img.src = url;
 				});
 				img.classList.add("embedicon");

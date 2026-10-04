@@ -383,3 +383,35 @@ describe("a bare link in a message", () => {
 		expect(links("https://example.com/a?")).toEqual(["https://example.com/a?"]);
 	});
 });
+
+describe("a rich embed's images", () => {
+	async function render(json: object) {
+		const {Embed} = await import("./embed");
+		type Args = ConstructorParameters<typeof Embed>;
+		const refreshIfNeeded = vi.fn(async (url: string) => url);
+		const owner = {channel: {guild: {localuser: {refreshIfNeeded}}}};
+		const html = new Embed({type: "rich", ...json} as unknown as Args[0], owner as unknown as Args[1]).generateHTML();
+		await new Promise((res) => setTimeout(res, 0));
+		return {html, refreshIfNeeded, srcs: Array.from(html.querySelectorAll("img")).map((img) => img.src)};
+	}
+
+	it("load through the instance's media proxy when the server gives one, once each", async () => {
+		const {html, refreshIfNeeded, srcs} = await render({
+			author: {name: "bot", icon_url: "https://bot.example/a.png", proxy_icon_url: "https://cdn.test/external/a"},
+			image: {url: "https://bot.example/i.png", proxy_url: "https://cdn.test/external/i"},
+			footer: {text: "f", icon_url: "https://bot.example/f.png", proxy_icon_url: "https://cdn.test/external/f"},
+		});
+		expect(srcs).toEqual(["https://cdn.test/external/a", "https://cdn.test/external/i", "https://cdn.test/external/f"]);
+		expect(refreshIfNeeded).toHaveBeenCalledTimes(3);
+		expect(html.outerHTML).not.toContain("bot.example");
+	});
+
+	it("fall back to the embed's own url when the proxy is missing or empty", async () => {
+		const {srcs} = await render({
+			author: {name: "bot", icon_url: "https://bot.example/a.png"},
+			image: {url: "https://bot.example/i.png", proxy_url: ""},
+			footer: {text: "f", icon_url: "https://bot.example/f.png", proxy_icon_url: ""},
+		});
+		expect(srcs).toEqual(["https://bot.example/a.png", "https://bot.example/i.png", "https://bot.example/f.png"]);
+	});
+});

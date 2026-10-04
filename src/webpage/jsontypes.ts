@@ -903,6 +903,7 @@ type embedjson = {
 	color?: number;
 	author: {
 		icon_url?: string;
+		proxy_icon_url?: string;
 		name?: string;
 		url?: string;
 		title?: string;
@@ -917,6 +918,7 @@ type embedjson = {
 	}[];
 	footer?: {
 		icon_url?: string;
+		proxy_icon_url?: string;
 		text?: string;
 		thumbnail?: string;
 	};
