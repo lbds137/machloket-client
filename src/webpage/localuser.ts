@@ -1,5 +1,6 @@
 import {Guild} from "./guild.js";
 import {bumpCommandRecency} from "./commandRecency.js";
+import {slashCommandQuery} from "./slashQuery.js";
 import {
 	appIconElm,
 	invocationKey,
@@ -5378,9 +5379,8 @@ class Localuser {
 				}
 				return;
 			}
-			const command = str.match(/^\/((\s*[\w\d]+)*)$/);
-			if (command) {
-				const search = command[1];
+			const search = slashCommandQuery(str);
+			if (search !== undefined) {
 				this.findCommands(search, box, md);
 			}
 		}
