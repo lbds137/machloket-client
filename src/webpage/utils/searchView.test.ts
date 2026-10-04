@@ -5,7 +5,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 await import("../localuser");
 const {installDrawerSwipe} = await import("./drawerSwipe");
 const {installMembersView, consumeMembersPop} = await import("./membersView");
-const {installSearchView, consumeSearchPop, closeSearchOnNavigation} = await import("./searchView");
+const {installSearchView, consumeSearchPop, closeSearchOnNavigation, SEARCH_RESULT_CLASS} =
+	await import("./searchView");
 
 // The entry's popstate wiring, once for the whole file: the members guard runs before the
 // search guard (index.ts chains them), and what navigation would receive lands in navStates.
@@ -39,7 +40,7 @@ beforeEach(() => {
 			<div id="inboxMDiv"><span class="svgicon svg-inbox"></span></div>
 		</div>
 		<div id="sideContainDiv" style="width: 360px; height: 560px">
-			<div id="sideDiv"><div class="messagediv">a search result</div></div>
+			<div id="sideDiv"><div class="topMessage ${SEARCH_RESULT_CLASS}"><span class="result">a search result</span></div></div>
 		</div>`;
 	document.body.append(page);
 	navStates = [];
@@ -273,7 +274,7 @@ describe("tapping a search result", () => {
 	it("closes the view with no history operation — a same-channel jump pushes nothing", async () => {
 		const {mSearch} = openAndView();
 
-		(panel.querySelector(".messagediv") as HTMLElement)!.click();
+		(panel.querySelector(".result") as HTMLElement)!.click();
 
 		expect(searchShown()).toBe(true); // mid-slide; the marker stays untouched
 		expect((history.state as {machloketSearchView?: boolean}).machloketSearchView).toBe(true);
@@ -295,7 +296,7 @@ describe("tapping a search result", () => {
 	it("reopening over the stale marker reuses it — no adjacent second marker", async () => {
 		const {pop} = openAndView();
 
-		(panel.querySelector(".messagediv") as HTMLElement)!.click(); // stale marker stays current
+		(panel.querySelector(".result") as HTMLElement)!.click(); // stale marker stays current
 		expect((history.state as {machloketSearchView?: boolean}).machloketSearchView).toBe(true);
 
 		searchX.click(); // reopen: reuses the stale marker, pushes nothing

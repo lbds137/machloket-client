@@ -19,6 +19,11 @@ export type SearchViewDeps = {
 	mSearch(query: string): void;
 };
 
+/** The class the search flow (localuser.mSearch) puts on each result it renders: the rows are
+ * dupe builds (buildhtml(_, true)), which never get .messagediv, so the result-tap close keys
+ * on this instead. */
+export const SEARCH_RESULT_CLASS = "searchViewResult";
+
 let installed = false;
 let suppressPop = false;
 /** A marker entry is being skipped: the pop landing below it is real navigation. */
@@ -247,7 +252,7 @@ export function installSearchView(pageEl: HTMLElement, viewDeps: SearchViewDeps)
 		"click",
 		(event) => {
 			if (!searchOpen()) return;
-			if ((event.target as HTMLElement).closest(".messagediv")) teardown();
+			if ((event.target as HTMLElement).closest("." + SEARCH_RESULT_CLASS)) teardown();
 		},
 		{capture: true},
 	);

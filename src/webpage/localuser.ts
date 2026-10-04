@@ -73,6 +73,7 @@ import {
 } from "./utils/storage/localSettings.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
 import {showCommandStatus} from "./interactions/commandStatus.js";
@@ -5700,6 +5701,7 @@ class Localuser {
 							htmls.push(h3);
 						}
 						const html = message.buildhtml(undefined, true);
+						html.classList.add(SEARCH_RESULT_CLASS);
 						if (message.div) console.error(message.div);
 						html.addEventListener("click", async () => {
 							try {
