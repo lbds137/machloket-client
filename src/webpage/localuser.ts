@@ -2374,17 +2374,9 @@ class Localuser {
 		{
 			const form = guildcreateFromTemplate.addForm(
 				"",
-				(_: any) => {
-					if (_.message) {
-						loading.hide();
-						full.show();
-						alert(_.message);
-						const htmlarea = buttons.htmlarea.deref();
-						if (htmlarea) buttons.generateHTMLArea(guildcreateFromTemplate, htmlarea);
-					} else {
-						loading.hide();
-						full.hide();
-					}
+				() => {
+					loading.hide();
+					full.hide();
 				},
 				{
 					method: "POST",
@@ -2402,6 +2394,15 @@ class Localuser {
 			form.onFormError = () => {
 				loading.hide();
 				full.show();
+			};
+			form.onErrorBody = (e) => {
+				if (typeof e.message !== "string") return false;
+				loading.hide();
+				full.show();
+				alert(e.message);
+				const htmlarea = buttons.htmlarea.deref();
+				if (htmlarea) buttons.generateHTMLArea(guildcreateFromTemplate, htmlarea);
+				return true;
 			};
 			form.addPreprocessor((e) => {
 				loading.show();
@@ -3318,24 +3319,21 @@ class Localuser {
 					addToGrid(I18n.localuser["2faDisable"](), () => {
 						const form = security.addSubForm(
 							I18n.localuser["2faDisable"](),
-							(_: any) => {
-								if (_.message) {
-									switch (_.code) {
-										case 60008:
-											form.error("code", I18n.localuser.badCode());
-											break;
-									}
-								} else {
-									this.mfa_enabled = false;
-									security.returnFromSub();
-									genSecurity();
-								}
+							() => {
+								this.mfa_enabled = false;
+								security.returnFromSub();
+								genSecurity();
 							},
 							{
 								fetchURL: this.info.api + "/users/@me/mfa/totp/disable",
 								headers: this.headers,
 							},
 						);
+						form.onErrorBody = (e) => {
+							if (e.code !== 60008) return false;
+							form.error("code", I18n.localuser.badCode());
+							return true;
+						};
 						form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
 					});
 				} else {
@@ -3346,27 +3344,23 @@ class Localuser {
 						}
 						const form = security.addSubForm(
 							I18n.localuser.setUp2fa(),
-							(_: any) => {
-								if (_.message) {
-									switch (_.code) {
-										case 60008:
-											form.error("code", I18n.localuser.badCode());
-											break;
-										case 400:
-											form.error("password", I18n.localuser.badPassword());
-											break;
-									}
-								} else {
-									genSecurity();
-									this.mfa_enabled = true;
-									security.returnFromSub();
-								}
+							() => {
+								genSecurity();
+								this.mfa_enabled = true;
+								security.returnFromSub();
 							},
 							{
 								fetchURL: this.info.api + "/users/@me/mfa/totp/enable/",
 								headers: this.headers,
 							},
 						);
+						form.onErrorBody = (e) => {
+							// 60008: a wrong code; 400: the server's INVALID_PASSWORD.
+							if (e.code === 60008) form.error("code", I18n.localuser.badCode());
+							else if (e.code === 400) form.error("password", I18n.localuser.badPassword());
+							else return false;
+							return true;
+						};
 						form.addTitle(I18n.localuser.setUp2faInstruction());
 						form.addText(I18n.localuser["2faCodeGive"](secret));
 						form.addTextInput(I18n.localuser["password:"](), "password", {
@@ -3799,15 +3793,9 @@ class Localuser {
 		{
 			const deleteAccount = settings.addButton(I18n.localuser.deleteAccount()).addForm(
 				"",
-				(e) => {
-					if ("message" in e) {
-						if (typeof e.message === "string") {
-							throw new FormError(password, e.message);
-						}
-					} else {
-						this.userinfo.remove();
-						window.location.href = "/";
-					}
+				() => {
+					this.userinfo.remove();
+					window.location.href = "/";
 				},
 				{
 					headers: this.headers,
@@ -3824,6 +3812,9 @@ class Localuser {
 			const password = deleteAccount.addTextInput(I18n.localuser["password:"](), "password", {
 				password: true,
 			});
+			deleteAccount.onErrorBody = (e) => {
+				if (typeof e.message === "string") throw new FormError(password, e.message);
+			};
 			deleteAccount.addPreprocessor((obj) => {
 				if ("shrek" in obj) {
 					if (obj.shrek !== I18n.localuser.sillyDeleteConfirmPhrase()) {
@@ -3975,13 +3966,10 @@ class Localuser {
 					const form = devPortal.addSubForm(
 						I18n.localuser.createApp(),
 						(json: any) => {
-							if (json.message) form.error("name", json.message);
-							else {
-								devPortal.returnFromSub();
-								this.manageApplication(json.id, devPortal, () => {
-									form.options.deleteElm(button);
-								});
-							}
+							devPortal.returnFromSub();
+							this.manageApplication(json.id, devPortal, () => {
+								form.options.deleteElm(button);
+							});
 						},
 						{
 							fetchURL: this.info.api + "/applications",
@@ -3989,6 +3977,11 @@ class Localuser {
 							method: "POST",
 						},
 					);
+					form.onErrorBody = (e) => {
+						if (typeof e.message !== "string") return false;
+						form.error("name", e.message);
+						return true;
+					};
 
 					form.addTextInput("Name:", "name", {required: true});
 					form.addSelect(

@@ -180,17 +180,11 @@ class Direct extends Guild {
 				const float = new Float("");
 				const form = float.options.addForm(
 					"",
-					(e: any) => {
-						if (e.code === 404) {
-							throw new FormError(text, I18n.friends.notfound());
-						} else if (e.code === 400) {
-							throw new FormError(text, e.message.split("Error: ")[1]);
-						} else {
-							const box = text.input.deref();
-							if (!box) return;
-							box.value = "";
-							box.placeholder = I18n.friends.requestsent();
-						}
+					() => {
+						const box = text.input.deref();
+						if (!box) return;
+						box.value = "";
+						box.placeholder = I18n.friends.requestsent();
 					},
 					{
 						method: "POST",
@@ -199,6 +193,13 @@ class Direct extends Guild {
 					},
 				);
 				const text = form.addTextInput(I18n.friends.addfriendpromt(), "username");
+				form.onErrorBody = (e, status) => {
+					if (status === 404 || e.code === 404) throw new FormError(text, I18n.friends.notfound());
+					// Spacebar's messages are plain ("You already sent a friend request").
+					if (typeof e.message === "string") {
+						throw new FormError(text, e.message.split("Error: ")[1] ?? e.message);
+					}
+				};
 				form.addPreprocessor((obj: any) => {
 					const [username, discriminator] = obj.username.split("#");
 					obj.username = username;

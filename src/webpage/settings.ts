@@ -2065,12 +2065,8 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 				const form = better.options.addForm(
 					"",
 					(res: any) => {
-						if (res.message) {
-							throw new FormError(ti, res.message);
-						} else {
-							resolution(res);
-							better.hide();
-						}
+						resolution(res);
+						better.hide();
 					},
 					{
 						fetchURL: api + "/auth/mfa/totp",
@@ -2086,6 +2082,9 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 					e.ticket = json.ticket;
 				});
 				const ti = form.addTextInput("", "code");
+				form.onErrorBody = (res) => {
+					if (typeof res.message === "string") throw new FormError(ti, res.message);
+				};
 				better.show().parentElement!.style.zIndex = "200";
 			});
 		}
@@ -2396,6 +2395,9 @@ class Form implements OptionsElement<object> {
 		this.preprocessor = func;
 	}
 	onFormError = (_: FormError) => {};
+	/** Answers an error response (non-2xx) instead of onSubmit: throw a FormError to show it on a
+	 * field, or return true once handled; otherwise the server's message shows in a popup. */
+	onErrorBody?: (body: any, status: number) => boolean | void;
 	subbmitting = false;
 	/** URLs with a request still unanswered: a second tap waits, but a form re-pointed at
 	 * another URL (login after picking another instance) may send there. */
@@ -2531,16 +2533,22 @@ class Form implements OptionsElement<object> {
 							return await onSubmit(tried);
 						}
 					}
-					if (json.errors) {
-						if (this.errors(json)) {
-							return;
-						}
-					} else if (status === 500) {
-						this.error([...this.names].at(-1)?.[0] ?? "", json.message ?? "internal server error");
+					if (json.errors && this.errors(json)) {
 						return;
 					}
-					if (Math.floor(json.code / 100) === 4 && json.message && typeof json.message === "string") {
-						this.showPrimError(json.message);
+					// An error answer is never a success: the form's own handler gets it first.
+					if (status < 200 || status >= 300) {
+						try {
+							if (this.onErrorBody?.(json, status)) return;
+						} catch (e) {
+							if (e instanceof FormError) {
+								this.handleError(e);
+								return;
+							}
+							console.error(e);
+						}
+						const message = typeof json.message === "string" ? json.message : undefined;
+						this.showPrimError(message ?? I18n.requestFailed(String(status)));
 						return;
 					}
 					await onSubmit(json);
@@ -2577,14 +2585,11 @@ class Form implements OptionsElement<object> {
 		}
 		for (const error of Object.keys(errors.errors)) {
 			const elm = this.names.get(error);
-			if (elm) {
-				const ref = this.options.html.get(elm);
-				if (ref && ref.deref()) {
-					const html = ref.deref() as HTMLDivElement;
-					const errorMessage = errors.errors[error]._errors[0].message;
-					this.makeError(html, errorMessage);
-					return true;
-				}
+			const errorMessage = errors.errors[error]?._errors?.[0]?.message;
+			if (elm && typeof errorMessage === "string" && this.options.html.get(elm)?.deref()) {
+				// Through handleError, so the form's onFormError (e.g. closing a loading dialog) runs.
+				this.handleError(new FormError(elm, errorMessage));
+				return true;
 			}
 		}
 		return false;

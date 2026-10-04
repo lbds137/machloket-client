@@ -108,10 +108,8 @@ export async function makeLogin(
 					window.location.href = "/channels/@me";
 				}
 			} else {
-				//@ts-ignore
-				//TODO just type this to get rid of the ignore :P
-				const message = res.errors.at(0)._errors[0].message;
-				throw new FormError(password, message);
+				// A success without a session: nothing to log in with.
+				throw new FormError(password, I18n.requestFailed("no token"));
 			}
 		},
 		{
@@ -123,6 +121,12 @@ export async function makeLogin(
 			vsmaller: true,
 		},
 	);
+	// Field errors on login/password are placed by Form itself; any other refusal lands here.
+	form.onErrorBody = (res: {message?: unknown; errors?: {[key: string]: {_errors?: {message?: string}[]}}}) => {
+		const fieldMessage = Object.values(res.errors ?? {})[0]?._errors?.[0]?.message;
+		const message = fieldMessage ?? res.message;
+		if (typeof message === "string") throw new FormError(password, message);
+	};
 	form.addPreprocessor((sent) => {
 		// The submit must not reach an unvalidated origin: that is how a typo'd instance hung
 		// the app at the loading screen (the button is gated, but Enter submitted anyway).
