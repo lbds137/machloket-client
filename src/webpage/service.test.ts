@@ -26,3 +26,20 @@ it("registers /service.js the way the app does, and it activates", async () => {
 
 	expect(registration.active?.scriptURL).toMatch(/\/service\.js$/);
 });
+
+it("in the default mode (no worker), a message to the worker returns instead of polling forever", async () => {
+	const {getLocalSettings} = await import("./utils/storage/localSettings");
+	const {ServiceWorkerMode} = await import("./utils/storage/localSettings");
+	expect(getLocalSettings().serviceWorkerMode).toBe(ServiceWorkerMode.Unregistered);
+	const port = SW.port;
+	SW.port = undefined;
+	try {
+		const outcome = await Promise.race([
+			SW.postMessage({code: "isDev", dev: false} as never).then(() => "returned"),
+			new Promise((res) => setTimeout(() => res("still polling"), 500)),
+		]);
+		expect(outcome).toBe("returned");
+	} finally {
+		SW.port = port;
+	}
+});

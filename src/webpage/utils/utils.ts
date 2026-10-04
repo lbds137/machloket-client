@@ -967,6 +967,9 @@ export class SW {
 	static needsUpdate = false;
 	static async postMessage(message: messageTo) {
 		if (!("serviceWorker" in navigator)) return;
+		// The default mode never starts the worker, so no port will come: don't wait for one.
+		// (A port from a worker started before a switch to that mode still delivers.)
+		if (!this.port && getLocalSettings().serviceWorkerMode == ServiceWorkerMode.Unregistered) return;
 		while (!this.port) {
 			await new Promise((res) => setTimeout(res, 100));
 		}
