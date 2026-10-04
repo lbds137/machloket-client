@@ -337,7 +337,7 @@ class Channel extends SnowFlake {
 			body: JSON.stringify({
 				channel_overrides: {
 					[this.id]: {
-						message_notifications: this.mentions,
+						message_notifications: this.message_notifications,
 						muted: false,
 						mute_config,
 						channel_id: this.id,
@@ -374,7 +374,7 @@ class Channel extends SnowFlake {
 				body: JSON.stringify({
 					channel_overrides: {
 						[this.id]: {
-							message_notifications: this.mentions,
+							message_notifications: this.message_notifications,
 							muted: true,
 							mute_config,
 							channel_id: this.id,
