@@ -30,9 +30,10 @@ menu.addButton(
 		if (this.composer) {
 			options.addText(I18n.media.composer(this.composer));
 		}
-		{
-			const mins = Math.floor((await this.length) / 60000);
-			const seconds = Math.round(((await this.length) - mins * 60000) / 1000);
+		const length = await this.length;
+		if (Number.isFinite(length)) {
+			const mins = Math.floor(length / 60000);
+			const seconds = Math.round((length - mins * 60000) / 1000);
 			options.addText(I18n.media.length(mins + "", seconds + ""));
 		}
 
@@ -128,7 +129,7 @@ function makePlayBox(
 				"left",
 			);
 			player.addListener(thing.src, followUpdates, div);
-			let int = setInterval((_) => {}, 1000);
+			let int: ReturnType<typeof setInterval> | undefined;
 			if (typeof mor !== "string") {
 				const cmor = mor;
 				const audioo = new Audio(cmor.src);
@@ -139,7 +140,7 @@ function makePlayBox(
 					if (button.classList.contains("svg-pause")) {
 						player.addUpdate(cmor.src, {type: "playing", time: audioo.currentTime * 1000});
 					}
-				}, 100) as unknown as number;
+				}, 100);
 				audioo.onplay = () => {
 					player.addUpdate(cmor.src, {type: "play"});
 				};
@@ -229,6 +230,10 @@ function makePlayBox(
 			};
 			async function regenTime(curTime: number = 0) {
 				const len = await med.length;
+				if (!Number.isFinite(len)) {
+					time.textContent = timeToString(curTime);
+					return;
+				}
 				bar.disabled = false;
 				bar.max = "" + len / 1000;
 
@@ -241,6 +246,22 @@ function makePlayBox(
 	return div;
 }
 
+/**
+ * An ID3 text frame: its first byte names the encoding (0 Latin-1, 1 UTF-16 with a byte-order
+ * mark, 2 UTF-16BE, 3 UTF-8), then the text, maybe NUL-terminated.
+ */
+function decodeId3Text(frame: Uint8Array) {
+	const [encoding] = frame;
+	let bytes = frame.subarray(1);
+	let label = ["latin1", "utf-16le", "utf-16be", "utf-8"][encoding] ?? "utf-8";
+	if (encoding === 1 && bytes[0] === 0xfe && bytes[1] === 0xff) label = "utf-16be";
+	if (encoding === 1 || encoding === 2) {
+		if ((bytes[0] === 0xff && bytes[1] === 0xfe) || (bytes[0] === 0xfe && bytes[1] === 0xff)) {
+			bytes = bytes.subarray(2);
+		}
+	}
+	return new TextDecoder(label).decode(bytes).replace(/\0+$/, "");
+}
 interface media {
 	src: string;
 	filename: string;
@@ -340,7 +361,9 @@ class MediaPlayer {
 		try {
 			const head = String.fromCharCode(await prog.next(), await prog.next(), await prog.next());
 			if (head === "ID3") {
-				const version = (await prog.next()) + (await prog.next()) * 256;
+				// Major version, then a revision byte that never changes the layout (2.4.1 reads like 2.4.0).
+				const version = await prog.next();
+				await prog.next();
 
 				if (version === 2) {
 					//TODO I'm like 90% I can ignore *all* of the flags, but I need to check more sometime
@@ -388,16 +411,6 @@ class MediaPlayer {
 						const url = urlmaker.createObjectURL(blob);
 						output.img = {url, description};
 					}
-					function decodeText(buf: ArrayBuffer) {
-						let str = new TextDecoder().decode(buf);
-						if (str.startsWith("\u0000")) {
-							str = str.slice(1, str.length);
-						}
-						if (str.endsWith("\u0000")) {
-							str = str.slice(0, str.length - 1);
-						}
-						return str;
-					}
 					const mapmap = {
 						TT2: "title",
 						TP1: "artist",
@@ -410,12 +423,12 @@ class MediaPlayer {
 						const temp = mappy.get(key);
 						if (temp) {
 							//@ts-ignore TS is being weird about this idk why
-							output[ind] = decodeText(temp);
+							output[ind] = decodeId3Text(temp);
 						}
 					}
 					const tye = mappy.get("TYE");
 					if (tye) {
-						output.year = +decodeText(tye.buffer);
+						output.year = +decodeId3Text(tye);
 					}
 					//TODO more thoroughly check if these two are the same format
 				} else if (version === 3 || version === 4) {
@@ -435,7 +448,12 @@ class MediaPlayer {
 							await prog.next(),
 						);
 						const sizeArr = await prog.get8BitArray(4);
-						const size = (sizeArr[0] << 24) + (sizeArr[1] << 16) + (sizeArr[2] << 8) + sizeArr[3];
+						// v2.4 frame sizes are synchsafe (7 bits a byte) like the tag's; v2.3's are plain,
+						// and unsigned (a "<< 24" would go negative).
+						const size =
+							version === 4
+								? (sizeArr[0] << 21) + (sizeArr[1] << 14) + (sizeArr[2] << 7) + sizeArr[3]
+								: sizeArr[0] * 2 ** 24 + (sizeArr[1] << 16) + (sizeArr[2] << 8) + sizeArr[3];
 
 						const flags = await prog.get8BitArray(2);
 						const compression = !!(flags[1] & 0b10000000);
@@ -483,16 +501,6 @@ class MediaPlayer {
 						const url = urlmaker.createObjectURL(blob);
 						output.img = {url, description};
 					}
-					function decodeText(buf: ArrayBuffer) {
-						let str = new TextDecoder().decode(buf);
-						if (str.startsWith("\u0000")) {
-							str = str.slice(1, str.length);
-						}
-						if (str.endsWith("\u0000")) {
-							str = str.slice(0, str.length - 1);
-						}
-						return str;
-					}
 					const mapmap = {
 						TIT2: "title",
 						TPE1: "artist",
@@ -505,16 +513,16 @@ class MediaPlayer {
 						const temp = mappy.get(key);
 						if (temp) {
 							//@ts-ignore TS is being weird about this idk why
-							output[ind] = decodeText(temp);
+							output[ind] = decodeId3Text(temp);
 						}
 					}
 					const TYER = mappy.get("TYER");
 					if (TYER) {
-						output.year = +decodeText(TYER.buffer);
+						output.year = +decodeId3Text(TYER);
 					}
 					const TLEN = mappy.get("TLEN");
 					if (TLEN) {
-						output.length = +decodeText(TLEN.buffer);
+						output.length = +decodeId3Text(TLEN);
 					}
 				}
 			} //TODO implement more metadata types
@@ -527,9 +535,15 @@ class MediaPlayer {
 				output.length = new Promise<number>(async (res) => {
 					const audio = document.createElement("audio");
 					audio.src = url;
-					audio.onloadeddata = (_) => {
+					audio.onloadedmetadata = (_) => {
 						output.length = audio.duration * 1000;
 						res(audio.duration * 1000);
+					};
+					// A file the browser can't decode has no length: NaN, which the player and
+					// "More info" show as unknown instead of waiting forever.
+					audio.onerror = () => {
+						output.length = NaN;
+						res(NaN);
 					};
 					audio.load();
 				});
