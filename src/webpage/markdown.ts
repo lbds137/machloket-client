@@ -11,6 +11,7 @@ import {externalUrl} from "./utils/netUtils.js";
 const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
 const BULLET_CHARS = new Set("*+- ");
 const LINK_END_CHARS = new Set("\\<>|[] \n(){}");
+const TRAILING_LINK_PUNCTUATION = new Set(".,:;\"'");
 /** Longest tail after "<t:" ("1234567890123456:R>"), with room to spare. */
 const MAX_TIMESTAMP_TAIL = 32;
 /**
@@ -620,11 +621,13 @@ class MarkDown {
 				let j = i + 4;
 				while (j < txt.length && !LINK_END_CHARS.has(txt[j])) j++;
 				let build = txt.slice(i, j);
-				if (build.endsWith(".") && (j >= txt.length || txt[j] === " " || txt[j] === "\n")) {
+				// Trailing punctuation belongs to the sentence, not the link (Discord's rule).
+				while (build.length > "http".length && TRAILING_LINK_PUNCTUATION.has(build.at(-1)!)) {
 					build = build.slice(0, -1);
 					j--;
 				}
-				if (URL.canParse(build)) {
+				// Only web links: "httpx://", "http+foo:" and "http:foo" parse as URLs but aren't ones.
+				if (/^https?:\/\//.test(build) && URL.canParse(build) && ALLOWED_PROTOCOLS.has(new URL(build).protocol)) {
 					build = normalizeInviteLink(build);
 					appendcurrent();
 					const a = document.createElement("a");

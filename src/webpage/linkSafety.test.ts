@@ -361,3 +361,25 @@ describe("pasting into the composer", () => {
 		expect(MarkDown.lastCopy?.raw).toBe("Title\nbody\nnext");
 	});
 });
+
+describe("a bare link in a message", () => {
+	const links = (txt: string) =>
+		Array.from(new MarkDown(txt, undefined).makeHTML().querySelectorAll("a")).map((a) => a.textContent);
+
+	const text = (txt: string) => new MarkDown(txt, undefined).makeHTML().textContent;
+
+	it("is only made for web links", () => {
+		expect(links("see httpx://example.com/a and http+foo://example.com")).toEqual([]);
+		expect(links("see http:example.com")).toEqual([]);
+		expect(text("see httpx://example.com/a")).toBe("see httpx://example.com/a");
+		expect(links("see https://example.com/a")).toEqual(["https://example.com/a"]);
+	});
+
+	it("leaves trailing punctuation out, as Discord does", () => {
+		expect(links("look: https://example.com/a, then")).toEqual(["https://example.com/a"]);
+		expect(text("look: https://example.com/a, then")).toBe("look: https://example.com/a, then");
+		expect(links('"https://example.com/a";')).toEqual(["https://example.com/a"]);
+		expect(links("https://example.com/a...")).toEqual(["https://example.com/a"]);
+		expect(links("https://example.com/a?")).toEqual(["https://example.com/a?"]);
+	});
+});
