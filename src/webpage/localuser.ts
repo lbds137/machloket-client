@@ -5830,6 +5830,8 @@ class Localuser {
 		const prom2 = new Promise<Member | undefined>(async (res) => {
 			const json = await this.resolvemember(id, guildid);
 			if (!json) {
+				// Not a member yet (or the lookup failed): the next call asks again.
+				this.getMemberMap.delete(uid);
 				res(undefined);
 				return;
 			}
@@ -6060,19 +6062,22 @@ class Localuser {
 				const refreshes = this.urlsToRefresh;
 				this.urlsToRefresh = [];
 				delete this.refreshTimeOut;
-				const res = await fetch(this.info.api + "/attachments/refresh-urls", {
-					method: "POST",
-					body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
-					headers: this.headers,
-				});
-				const body: {
-					refreshed_urls: string[];
-				} = await res.json();
-				let i = 0;
-				for (const url of body.refreshed_urls) {
-					refreshes[i][1](url);
-					i++;
+				let refreshed: string[] = [];
+				try {
+					const res = await fetch(this.info.api + "/attachments/refresh-urls", {
+						method: "POST",
+						body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
+						headers: this.headers,
+					});
+					if (res.ok) {
+						const body: {refreshed_urls?: string[]} = await res.json();
+						refreshed = body.refreshed_urls ?? [];
+					}
+				} catch (e) {
+					console.error("Couldn't refresh attachment URLs:", e);
 				}
+				// A URL the server didn't refresh keeps its old form rather than waiting forever.
+				refreshes.forEach(([url, settle], i) => settle(refreshed[i] ?? url));
 			}, 100);
 		}
 		return new Promise((res) => {
