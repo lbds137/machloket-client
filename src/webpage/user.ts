@@ -959,16 +959,7 @@ class User extends SnowFlake {
 
 	userupdate(json: userjson): void {
 		const up = json.username !== this.username;
-		if (json.avatar !== this.avatar) {
-			Array.from(document.getElementsByClassName("userid:" + this.id)).forEach((element) => {
-				const img = element as safeImg;
-				if ("setSrcs" in element) {
-					img.setSrcs(this.getpfpsrc());
-				} else {
-					console.warn("element didn't have setSrcs property");
-				}
-			});
-		}
+		const avatarChanged = json.avatar !== this.avatar;
 		for (const key of Object.keys(json)) {
 			if (key === "bio") {
 				const bioText = json[key] == null ? "" : String(json[key]);
@@ -981,6 +972,17 @@ class User extends SnowFlake {
 			(this as any)[key] = (json as any)[key];
 		}
 		this.bio ??= new MarkDown("", this.localuser);
+		// After the loop, so getpfpsrc() reads the new avatar.
+		if (avatarChanged) {
+			Array.from(document.getElementsByClassName("userid:" + this.id)).forEach((element) => {
+				const img = element as safeImg;
+				if ("setSrcs" in element) {
+					img.setSrcs(this.getpfpsrc());
+				} else {
+					console.warn("element didn't have setSrcs property");
+				}
+			});
+		}
 		if ("rights" in this) {
 			if (
 				this === this.localuser.user &&
