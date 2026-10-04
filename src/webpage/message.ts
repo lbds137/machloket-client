@@ -108,6 +108,12 @@ function sameReactionEmoji(
 	return emoji.id ? reaction.id === emoji.id : !reaction.id && reaction.name === emoji.name;
 }
 
+/** A reaction's emoji as a URL path segment: `name:id` for a custom emoji, the encoded
+ * character(s) for a unicode one. */
+export function reactionPathSegment(emoji: {name?: string; id?: string}) {
+	return emoji.id ? `${emoji.name}:${emoji.id}` : encodeURIComponent(emoji.name ?? "");
+}
+
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];
@@ -449,10 +455,12 @@ class Message extends SnowFlake {
 					curSelect.classList.add("current");
 					if (!users) {
 						const f = await fetch(
-							`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reaction.emoji.name}?limit=50&type=0`,
+							`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactionPathSegment(reaction.emoji)}?limit=50&type=0`,
 							{headers: this.headers},
 						);
-						users = ((await f.json()) as userjson[]).map((_) => new User(_, this.localuser));
+						const body: unknown = await f.json().catch(() => []);
+						// An error answer (not a list) shows nobody rather than throwing.
+						users = (Array.isArray(body) ? (body as userjson[]) : []).map((_) => new User(_, this.localuser));
 					}
 					list.innerHTML = "";
 					list.append(
@@ -1439,7 +1447,7 @@ class Message extends SnowFlake {
 			};
 			this.channel.getmessage(this.message_reference?.message_id!).then((_) => {
 				if (!_) return;
-				poll.textContent = _!.poll!.question!.text;
+				poll.textContent = _.poll?.question?.text ?? "";
 			});
 
 			if (a1) {
@@ -1464,7 +1472,7 @@ class Message extends SnowFlake {
 			resBody.classList.add("embed", "flexltr", "pollresembed");
 			const res = document.createElement("div");
 			res.classList.add("flexttb");
-			const m = new Map((this.embeds[0].json.fields ?? []).map((f) => [f.name, f.value] as const));
+			const m = new Map((this.embeds[0]?.json.fields ?? []).map((f) => [f.name, f.value] as const));
 			if (m.has("victor_answer_text")) {
 				const ans = document.createElement("span");
 				ans.textContent = m.get("victor_answer_text") + "";
@@ -1871,10 +1879,11 @@ class Message extends SnowFlake {
 			const h = new Hover(async () => {
 				//TODO this can't be real, name conflicts must happen, but for now it's fine
 				const f = await fetch(
-					`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${thing.emoji.name}?limit=3&type=0`,
+					`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactionPathSegment(thing.emoji)}?limit=3&type=0`,
 					{headers: this.headers},
 				);
-				const json = (await f.json()) as userjson[];
+				const body: unknown = await f.json().catch(() => []);
+				const json = Array.isArray(body) ? (body as userjson[]) : [];
 				let build = "";
 				let users = json.map((_) => new User(_, this.localuser));
 				//FIXME this is a spacebar bug, I can't fix this the api ignores limit and just sends everything.

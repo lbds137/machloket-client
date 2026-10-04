@@ -108,7 +108,9 @@ class File {
 				if (!animated || !this.owner || fullScreen) return;
 				const url = new URL(this.url).origin + new URL(this.url).pathname;
 				const span = document.createElement("span");
-				span.classList.add("favorited");
+				// Same star as an embedded gif's: filled only when it's already a favorite.
+				span.classList.add("svg-gifstar");
+				if (this.owner.localuser.favorites.hasGif(url)) span.classList.add("favorited");
 				div.append(span);
 
 				span.onclick = () => {

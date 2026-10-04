@@ -31,3 +31,13 @@ describe("a notification sound that fails to load", () => {
 		expect(fetchSpy).toHaveBeenCalledTimes(2);
 	});
 });
+
+describe("who reacted", () => {
+	it("asks for a custom emoji by name:id and a unicode one encoded", async () => {
+		const {reactionPathSegment} = await import("./message");
+
+		expect(reactionPathSegment({name: "partyblob", id: "900"})).toBe("partyblob:900");
+		expect(reactionPathSegment({name: "👍"})).toBe(encodeURIComponent("👍"));
+		expect(reactionPathSegment({name: "a/b?c"})).toBe("a%2Fb%3Fc");
+	});
+});
