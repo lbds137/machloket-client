@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -234,5 +234,130 @@ describe("a channel link rendered by an account that failed to start", () => {
 		const broken = {guildids: new Map()} as unknown as Parameters<typeof MarkDown.safeLink>[2];
 		const a = document.createElement("a");
 		expect(() => MarkDown.safeLink(a, `${location.origin}/channels/111/222`, broken)).not.toThrow();
+	});
+});
+
+describe("pasting into the composer", () => {
+	const mounted: HTMLElement[] = [];
+	beforeEach(() => {
+		MarkDown.lastCopy = undefined;
+	});
+	afterEach(() => {
+		for (const el of mounted.splice(0)) el.remove();
+	});
+	function mount<T extends HTMLElement>(el: T) {
+		document.body.append(el);
+		mounted.push(el);
+		return el;
+	}
+	function composer() {
+		const box = mount(document.createElement("div"));
+		box.contentEditable = "true";
+		const session = {user: {}, info: {}, channelids: new Map(), getUser: async () => ({name: "alice", bind: () => {}})};
+		const md = new MarkDown("", session as never, {keep: true});
+		md.giveBox(box);
+		box.focus();
+		const range = new Range();
+		range.selectNodeContents(box);
+		range.collapse(false);
+		getSelection()!.removeAllRanges();
+		getSelection()!.addRange(range);
+		return {box, md};
+	}
+	function paste(box: HTMLElement, data: Record<string, string>) {
+		const dt = new DataTransfer();
+		for (const [type, value] of Object.entries(data)) dt.setData(type, value);
+		box.dispatchEvent(new ClipboardEvent("paste", {clipboardData: dt, bubbles: true, cancelable: true}));
+	}
+	/** A rendered message: "ping ", a mention chip, a custom emoji and an attachment image. */
+	function message() {
+		const msg = mount(document.createElement("div"));
+		msg.append("ping ");
+		const chip = document.createElement("span");
+		chip.setAttribute("real", "<@123>");
+		chip.textContent = "@alice";
+		const emoji = document.createElement("img");
+		emoji.className = "md-emoji";
+		emoji.alt = "<:wave:456>";
+		const picture = document.createElement("img");
+		picture.alt = "@everyone";
+		msg.append(chip, " ", emoji, picture);
+		return msg;
+	}
+	function copy(node: Node, event: "copy" | "cut" = "copy") {
+		const range = new Range();
+		range.selectNodeContents(node);
+		getSelection()!.removeAllRanges();
+		getSelection()!.addRange(range);
+		document.dispatchEvent(new ClipboardEvent(event, {clipboardData: new DataTransfer(), bubbles: true}));
+	}
+
+	it("takes what the page showed, not a hidden mention it carried", () => {
+		const {box, md} = composer();
+		paste(box, {
+			"text/plain": "hi there",
+			"text/html": '<p>hi <span real="@everyone">there</span><span style="display:none">@here</span></p>',
+		});
+		expect(md.txt).toBe("hi there");
+	});
+
+	it("pastes nothing from a markup-only clipboard", () => {
+		const {box, md} = composer();
+		paste(box, {"text/html": '<span real="@everyone">hi</span>'});
+		expect(box.textContent).toBe("");
+		expect(md.txt ?? "").toBe("");
+	});
+
+	it("keeps the mention and emoji of a message copied in this client, not an image's own alt", () => {
+		copy(message());
+		const {box, md} = composer();
+		// The browser's clipboard text: labels and every image alt, its own spacing (nbsp, CRLF).
+		paste(box, {"text/plain": "ping @alice <:wave:456>@everyone\r\n"});
+		expect(md.txt).toBe("ping <@123> <:wave:456>");
+	});
+
+	it("keeps the mention after a cut, not only a copy", () => {
+		const msg = message();
+		copy(msg, "cut");
+		const {box, md} = composer();
+		paste(box, {"text/plain": "ping @alice <:wave:456>@everyone"});
+		expect(md.txt).toBe("ping <@123> <:wave:456>");
+	});
+
+	it("uses the clipboard's own text when it isn't what was copied here", () => {
+		copy(message());
+		const {box, md} = composer();
+		paste(box, {"text/plain": "something else"});
+		expect(md.txt).toBe("something else");
+	});
+
+	it("forgets the last copy when a later copy has no page selection (an input's text)", () => {
+		copy(message());
+		getSelection()!.removeAllRanges();
+		document.dispatchEvent(new ClipboardEvent("copy", {clipboardData: new DataTransfer(), bubbles: true}));
+		expect(MarkDown.lastCopy).toBeUndefined();
+		const {box, md} = composer();
+		paste(box, {"text/plain": "ping @alice <:wave:456>@everyone"});
+		expect(md.txt).toBe("ping @alice <:wave:456>@everyone");
+	});
+
+	it("still matches a clipboard text that leaves image alts out", () => {
+		copy(message());
+		const {box, md} = composer();
+		paste(box, {"text/plain": "ping @alice"});
+		expect(md.txt).toBe("ping <@123> <:wave:456>");
+	});
+
+	it("keeps copied messages and headings on their own lines", () => {
+		const log = mount(document.createElement("div"));
+		const first = document.createElement("div");
+		const heading = document.createElement("h1");
+		heading.textContent = "Title";
+		first.append(heading, "body");
+		const second = document.createElement("div");
+		second.textContent = "next";
+		log.append(first, second);
+		copy(log);
+		expect(MarkDown.lastCopy?.raw).toBe("Title\nbody\nnext");
 	});
 });

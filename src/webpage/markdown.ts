@@ -1128,13 +1128,12 @@ class MarkDown {
 				_.preventDefault();
 				return;
 			}
+			// Only the plain text is read: markup can hide text (display:none, `real`, alt) that the
+			// copied page never showed. A markup-only clipboard pastes nothing.
+			const plain = types.includes("text/plain") ? _.clipboardData.getData("text/plain") : "";
 			let txt = "";
-			if (types.includes("text/html")) {
-				const data = _.clipboardData.getData("text/html");
-				const html = new DOMParser().parseFromString(data, "text/html");
-				txt = MarkDown.gatherBoxText(html.body);
-			} else if (types.includes("text/plain")) {
-				txt = _.clipboardData.getData("text/plain");
+			if (plain) {
+				txt = MarkDown.pastedText(plain);
 			} else {
 				_.preventDefault();
 				return;
@@ -1218,6 +1217,65 @@ class MarkDown {
 			restore(backspace);
 		}
 		this.onUpdate(text, formatted);
+	}
+	/**
+	 * The last selection copied or cut inside this client: its text as shown, with and without image
+	 * alts (browsers differ on putting alts in the clipboard text), and as sent (mention and
+	 * custom-emoji syntax; other images' alt text is sender-written, so it is left out).
+	 */
+	static lastCopy?: {shown: string; bare: string; raw: string};
+	static rememberCopy() {
+		this.lastCopy = undefined;
+		const selection = getSelection();
+		if (!selection || !selection.rangeCount || selection.isCollapsed) return;
+		// Select-all over a long channel: not worth cloning; the paste keeps its plain text.
+		if (selection.toString().length > 20000) return;
+		type Copied = {shown: string; bare: string; raw: string};
+		const blocks = ["DIV", "P", "LI", "UL", "OL", "PRE", "BLOCKQUOTE", "H1", "H2", "H3", "H4", "H5", "H6", "TR", "HR"];
+		const walk = (node: Node): Copied => {
+			if (node instanceof Text) return {shown: node.data, bare: node.data, raw: node.data};
+			if (!(node instanceof Element)) return {shown: "", bare: "", raw: ""};
+			if (node.tagName === "BR") return {shown: "\n", bare: "\n", raw: "\n"};
+			if (node.hasAttribute("real")) {
+				const label = node.textContent ?? "";
+				return {shown: label, bare: label, raw: node.getAttribute("real") ?? ""};
+			}
+			if (node instanceof HTMLImageElement) {
+				return {shown: node.alt, bare: "", raw: node.classList.contains("md-emoji") ? node.alt : ""};
+			}
+			const out: Copied = {shown: "", bare: "", raw: ""};
+			let afterBlock = false;
+			for (const child of Array.from(node.childNodes)) {
+				// Separate messages, headings and other blocks stay on their own lines.
+				const block = child instanceof Element && blocks.includes(child.tagName);
+				if ((block || afterBlock) && out.raw && !out.raw.endsWith("\n")) {
+					out.shown += "\n";
+					out.bare += "\n";
+					out.raw += "\n";
+				}
+				const part = walk(child);
+				out.shown += part.shown;
+				out.bare += part.bare;
+				out.raw += part.raw;
+				afterBlock = block;
+			}
+			return out;
+		};
+		const holder = document.createElement("div");
+		holder.append(selection.getRangeAt(0).cloneContents());
+		this.lastCopy = walk(holder);
+	}
+	/**
+	 * Pasted plain text, upgraded to the copied mentions and emoji only when it is what was last
+	 * copied in this client (compared without whitespace, which the clipboard lays out its own way).
+	 */
+	static pastedText(plain: string) {
+		const key = (a: string) => a.replace(/\s/g, "");
+		const copied = this.lastCopy;
+		if (copied && key(plain) && (key(copied.shown) === key(plain) || key(copied.bare) === key(plain))) {
+			return copied.raw;
+		}
+		return plain;
 	}
 	static gatherBoxText(element: HTMLElement): string {
 		if (element.tagName.toLowerCase() === "img") {
@@ -1389,6 +1447,8 @@ class MarkDown {
 	}
 	*/
 }
+document.addEventListener("copy", () => MarkDown.rememberCopy());
+document.addEventListener("cut", () => MarkDown.rememberCopy());
 
 /**
  * The chip (an element with a `real` raw-text attribute) right before (or after) a collapsed
