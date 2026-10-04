@@ -2658,12 +2658,23 @@ class Localuser {
 		badge.hidden = false;
 		badge.textContent = count > 99 ? "+99" : `${count}`;
 	}
+	/** What the open inbox shows, cheaply: a dispatch that leaves it unchanged (typing,
+	 * presence) needs no rebuild, which would refetch every channel's preview. */
+	private inboxKey(tab: inboxTab) {
+		const channels = this.inboxChannels(tab);
+		// lastreadmessageid: the preview is the first UNREAD message, which a partial ack moves.
+		const row = (c: Channel) =>
+			[c.id, c.mentions, c.lastmessageid, c.lastreadmessageid, this.inboxTitle(c), this.inboxSubtitle(c)].join(":");
+		return tab + "|" + channels.map(row).join(",");
+	}
+	private inboxRenderedKey?: string;
 	refreshInboxMenu() {
 		if (!this.inboxMenu || !document.body.contains(this.inboxMenu)) {
 			this.inboxMenu = undefined;
 			return;
 		}
-		this.renderInboxMenu(this.inboxTab, this.inboxMenu);
+		if (this.inboxKey(this.inboxTab) === this.inboxRenderedKey) return;
+		this.renderInboxMenu(this.inboxTab, this.inboxMenu, true);
 	}
 	async inboxClick(rect: DOMRect) {
 		if (this.inboxMenu && document.body.contains(this.inboxMenu)) {
@@ -2681,10 +2692,12 @@ class Localuser {
 		this.inboxMenu = menu;
 		this.renderInboxMenu(this.inboxTab, menu);
 	}
-	private async renderInboxMenu(tab: inboxTab, menu: HTMLDivElement) {
+	/** `keepVisible`: a refresh leaves the current list up until the new one is built, so rows
+	 * don't flicker to "Loading..." and move under the user's finger. */
+	private async renderInboxMenu(tab: inboxTab, menu: HTMLDivElement, keepVisible = false) {
 		const token = ++this.inboxBuildToken;
 		this.inboxTab = tab;
-		menu.innerHTML = "";
+		this.inboxRenderedKey = this.inboxKey(tab);
 
 		const tabRow = document.createElement("div");
 		tabRow.classList.add("flexltr", "inboxTabRow");
@@ -2711,7 +2724,6 @@ class Localuser {
 		markAll.classList.add("inboxMarkAll");
 		markAll.textContent = I18n.inbox.markAllAsRead();
 		tabRow.append(unreadTab, mentionsTab, markAll);
-		menu.append(tabRow);
 
 		const list = document.createElement("div");
 		list.classList.add("flexttb", "inboxList");
@@ -2719,12 +2731,21 @@ class Localuser {
 		loading.classList.add("inboxEmpty");
 		loading.textContent = "Loading...";
 		list.append(loading);
-		menu.append(list);
+		if (!keepVisible) menu.replaceChildren(tabRow, list);
 
-		const entries = await this.buildInboxEntries(tab);
+		let entries: inboxEntry[];
+		try {
+			entries = await this.buildInboxEntries(tab);
+		} catch (e) {
+			// A preview fetch failed: the next dispatch tries again.
+			console.error(e);
+			if (token === this.inboxBuildToken) this.inboxRenderedKey = undefined;
+			return;
+		}
 		if (token !== this.inboxBuildToken || this.inboxMenu !== menu) {
 			return;
 		}
+		if (keepVisible) menu.replaceChildren(tabRow, list);
 
 		markAll.disabled = entries.length === 0;
 		markAll.onclick = (event) => {
