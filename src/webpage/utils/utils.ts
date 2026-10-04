@@ -417,12 +417,16 @@ const localInstancesFetch = fetch(new URL("/instances.json", window.location.ori
 		});
 	},
 );
+function iconUrl(icon: string | undefined) {
+	if (!icon || !URL.canParse(icon, window.location.origin)) return undefined;
+	return new URL(icon, window.location.origin).href;
+}
 function normalizeLocalInstance(instance: LocalInstance) {
 	return {
 		name: instance.name,
 		description: instance.description,
 		descriptionLong: undefined,
-		image: instance.icon ? new URL(instance.icon, window.location.origin).href : undefined,
+		image: iconUrl(instance.icon),
 		url: instance.url.replaceAll("{hostname}", window.location.hostname),
 		display: true,
 		online: undefined,
@@ -430,18 +434,26 @@ function normalizeLocalInstance(instance: LocalInstance) {
 		urls: undefined,
 	};
 }
+/** Normalizes the list and indexes each instance's name to its URL, so a typed name resolves. */
+export function indexInstances(json: LocalInstance[]) {
+	const list = json.map(normalizeLocalInstance);
+	for (const instance of list) {
+		const name = instance.name.toLowerCase();
+		if (name !== instance.url.toLowerCase()) stringURLMap.set(name, instance.url);
+	}
+	return list;
+}
+// Never rejects, and never waits on translations: instance lookups settle even if they fail to load.
+const instancesIndexed = localInstancesFetch.then(indexInstances).catch((e) => {
+	console.error("Couldn't load the instance list:", e);
+	return [];
+});
 // Never rejects: a missing or broken list leaves the picker empty instead of stalling it.
-export const instancefetch = localInstancesFetch
-	.then(async (json: LocalInstance[]) => {
-		await I18n.done;
-		instances = json.map(normalizeLocalInstance);
-		instancesLoaded = true;
-	})
-	.catch((e) => {
-		console.error("Couldn't load the instance list:", e);
-		instances = [];
-		instancesLoaded = true;
-	});
+export const instancefetch = instancesIndexed.then(async (list) => {
+	await I18n.done;
+	instances = list;
+	instancesLoaded = true;
+});
 
 const catalogBotsUrl = "https://sbar.fyi/api/catalog/bots";
 type CatalogBot = {
@@ -521,17 +533,8 @@ export async function getapiurls(str: string): Promise<InstanceUrls | null> {
 
 //region Instance list
 export async function getInstanceInfo(str: string): Promise<InstanceInfo | null> {
-	// wait for it to be loaded...? Where is this even comming from?
-	if (stringURLMap.size == 0) {
-		await new Promise<void>((res, _) => {
-			let intervalId = setInterval(() => {
-				if (stringURLMap.size !== 0) {
-					clearInterval(intervalId);
-					res();
-				}
-			}, 10);
-		});
-	}
+	// The name index fills when the list loads; an empty or failed list still settles.
+	await instancesIndexed;
 
 	console.info("Checking if we already know", str, "in our instance lists:", {
 		stringURLMap,
@@ -684,17 +687,8 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 		return str.includes("api") ? str : str.endsWith("/") ? str + "api" : str + "/api";
 	}
 	if (!URL.canParse(str)) {
-		if (stringURLMap.size === 0) {
-			await new Promise<void>((res) => {
-				let intervalID = setInterval(() => {
-					if (stringURLMap.size !== 0) {
-						clearInterval(intervalID);
-						res();
-					}
-				}, 100);
-			});
-		}
-		const val = stringURLMap.get(str);
+		await instancesIndexed;
+		const val = stringURLMap.get(str.toLowerCase());
 		if (val) {
 			str = val;
 		} else {

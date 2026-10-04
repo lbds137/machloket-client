@@ -2,7 +2,6 @@ import {
 	checkInstance,
 	getDefaultInstanceUrl,
 	getInstances,
-	getStringURLMapPair,
 	isInstanceListLoaded,
 	instancefetch,
 	InstanceInfo,
@@ -1407,7 +1406,6 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 
 		const json = getInstances();
 
-		const [stringURLMap, stringURLsMap] = getStringURLMapPair();
 		if (!isInstanceListLoaded()) {
 			instancefetch.then(this.genDataList.bind(this));
 			return;
@@ -1437,17 +1435,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			option.disabled = instance.online === false;
 			const url = getInstanceUrl(instance);
 			option.value = url || "";
-			if (url) {
-				const name = instance.name.toLowerCase();
-				if (name !== url.toLowerCase()) {
-					stringURLMap.set(name, url);
-				}
-				if (instance.urls) {
-					stringURLsMap.set(url.toLowerCase(), instance.urls);
-				}
-			} else {
-				option.disabled = true;
-			}
+			if (!url) option.disabled = true;
 			if (instance.description) {
 				option.label = instance.description;
 			} else {
@@ -1483,17 +1471,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			option.disabled = instance.online === false;
 			const url = getInstanceUrl(instance);
 			option.value = url || "";
-			if (url) {
-				const name = instance.name.toLowerCase();
-				if (name !== url.toLowerCase()) {
-					stringURLMap.set(name, url);
-				}
-				if (instance.urls) {
-					stringURLsMap.set(url.toLowerCase(), instance.urls);
-				}
-			} else {
-				option.disabled = true;
-			}
+			if (!url) option.disabled = true;
 			if (instance.description) {
 				option.label = instance.description;
 			} else {
