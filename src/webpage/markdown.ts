@@ -6,6 +6,7 @@ import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
 import {normalizeInviteLink} from "./utils/inviteUtils.js";
+import {externalUrl} from "./utils/netUtils.js";
 
 const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
 const BULLET_CHARS = new Set("*+- ");
@@ -1261,6 +1262,8 @@ class MarkDown {
 		]);
 	}
 	static isTrustedHost(host: string) {
+		// A host-less link (an older build could save "" as trusted) is never trusted.
+		if (!host) return false;
 		if (this.trustedDomains.has(host)) return true;
 		for (const domain of this.trustedDomains) {
 			if (domain.startsWith("*.") || domain.startsWith("*")) {
@@ -1309,6 +1312,9 @@ class MarkDown {
 					}
 				}
 			}
+			// Bot embeds, link buttons and instance data reach here unfiltered: anything but a
+			// web or mail link stays inert (javascript:/data: would run in this origin).
+			if (!externalUrl(url)) return;
 			if (elm instanceof HTMLAnchorElement && this.isTrustedHost(Url.host)) {
 				elm.href = url;
 				elm.target = "_blank";
@@ -1324,6 +1330,12 @@ class MarkDown {
 				if (_.button === 2) return;
 				function open() {
 					const proxy = window.open(url, "_blank");
+					// The opened page must not reach back into this one (window.opener).
+					// (The fresh window is still same-origin about:blank, so this is writable;
+					// the guard covers a browser that has already navigated it.)
+					try {
+						if (proxy) proxy.opener = null;
+					} catch {}
 					if (proxy && _.button === 1) {
 						proxy.focus();
 					} else if (proxy) {
@@ -1345,8 +1357,10 @@ class MarkDown {
 					options.addButtonInput("", I18n.goThereTrust(), () => {
 						open();
 						full.hide();
-						this.trustedDomains.add(Url.host);
-						this.saveTrusted();
+						if (Url.host) {
+							this.trustedDomains.add(Url.host);
+							this.saveTrusted();
+						}
 					});
 					full.show();
 					full.background.deref()!.style.zIndex = "300";

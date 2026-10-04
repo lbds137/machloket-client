@@ -31,7 +31,7 @@ import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
 import {CDNParams} from "./utils/cdnParams.js";
-import {cssUrl, trimTrailingSlashes} from "./utils/netUtils.js";
+import {cssUrl, externalUrl, trimTrailingSlashes} from "./utils/netUtils.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
@@ -64,6 +64,41 @@ userVolMenu.addSlider(
 		},
 	},
 );
+/** The public badge ids in a user's public_flags, in bit order. */
+export function badgeIdsFromFlags(publicFlags: number): string[] {
+	const ids = [
+		"staff",
+		"partner",
+		"certified_moderator",
+		"hypesquad",
+		"hypesquad_house_1",
+		"hypesquad_house_2",
+		"hypesquad_house_3",
+		"bug_hunter_level_1",
+		"bug_hunter_level_2",
+		"active_developer",
+		"verified_developer",
+		"early_supporter",
+		"premium",
+		"guild_booster_lvl1",
+		"guild_booster_lvl2",
+		"guild_booster_lvl3",
+		"guild_booster_lvl4",
+		"guild_booster_lvl5",
+		"guild_booster_lvl6",
+		"guild_booster_lvl7",
+		"guild_booster_lvl8",
+		"guild_booster_lvl9",
+		"bot_commands",
+		"automod",
+		"application_guild_subscription",
+		"legacy_username",
+		"quest_completed",
+	];
+	// Bit-indexed over the known ids: shifting the value itself never ends once the sign bit
+	// is set (>> is arithmetic, -1 stays -1), and bits past the list have no id.
+	return ids.filter((_, bit) => (publicFlags & (1 << bit)) !== 0);
+}
 class User extends SnowFlake {
 	private static customBadgeSource: Promise<customBadgeFile | null> | null = null;
 	private static customBadgeCache = new Map<string, customBadgeEntry[]>();
@@ -1139,45 +1174,7 @@ class User extends SnowFlake {
 		}
 	}
 	async getBadges() {
-		let i = 0;
-		let flagbits = this.public_flags;
-		const ids = [
-			"staff",
-			"partner",
-			"certified_moderator",
-			"hypesquad",
-			"hypesquad_house_1",
-			"hypesquad_house_2",
-			"hypesquad_house_3",
-			"bug_hunter_level_1",
-			"bug_hunter_level_2",
-			"active_developer",
-			"verified_developer",
-			"early_supporter",
-			"premium",
-			"guild_booster_lvl1",
-			"guild_booster_lvl2",
-			"guild_booster_lvl3",
-			"guild_booster_lvl4",
-			"guild_booster_lvl5",
-			"guild_booster_lvl6",
-			"guild_booster_lvl7",
-			"guild_booster_lvl8",
-			"guild_booster_lvl9",
-			"bot_commands",
-			"automod",
-			"application_guild_subscription",
-			"legacy_username",
-			"quest_completed",
-		];
-		let badgeids: string[] = [];
-		while (flagbits !== 0) {
-			if (flagbits & 1) {
-				badgeids.push(ids[i]);
-			}
-			flagbits >>= 1;
-			i++;
-		}
+		let badgeids = badgeIdsFromFlags(this.public_flags);
 		if (this.badge_ids) {
 			badgeids = badgeids.concat(this.badge_ids);
 		}
@@ -1290,9 +1287,10 @@ class User extends SnowFlake {
 
 		if (botInfo.maintainer) {
 			const maintainer = document.createElement("p");
-			if (botInfo.maintainer_link) {
+			const maintainerUrl = botInfo.maintainer_link ? externalUrl(botInfo.maintainer_link) : null;
+			if (maintainerUrl) {
 				const maintainerLink = document.createElement("a");
-				maintainerLink.href = botInfo.maintainer_link;
+				maintainerLink.href = maintainerUrl.href;
 				maintainerLink.target = "_blank";
 				maintainerLink.rel = "noopener noreferrer";
 				maintainerLink.textContent = botInfo.maintainer;
@@ -1711,8 +1709,9 @@ class User extends SnowFlake {
 				}
 				const hover = new Hover(hovertxt);
 				hover.addEvent(badge);
-				if (badgejson.link && badge instanceof HTMLAnchorElement) {
-					badge.href = badgejson.link;
+				const badgeLink = badgejson.link ? externalUrl(badgejson.link) : null;
+				if (badgeLink && badge instanceof HTMLAnchorElement) {
+					badge.href = badgeLink.href;
 				}
 				badgediv.append(badge);
 			}
@@ -2054,8 +2053,9 @@ class User extends SnowFlake {
 				}
 				const hover = new Hover(hovertxt);
 				hover.addEvent(badge);
-				if (badgejson.link && badge instanceof HTMLAnchorElement) {
-					badge.href = badgejson.link;
+				const badgeLink = badgejson.link ? externalUrl(badgejson.link) : null;
+				if (badgeLink && badge instanceof HTMLAnchorElement) {
+					badge.href = badgeLink.href;
 				}
 				badgediv.append(badge);
 			}

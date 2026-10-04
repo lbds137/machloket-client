@@ -4,7 +4,7 @@ import {ImagesDisplay} from "./disimg.js";
 import {makePlayBox, MediaPlayer} from "./media.js";
 import {I18n} from "./i18n.js";
 import {createImg} from "./utils/utils.js";
-import {CDN_LINK_MARGIN_MS} from "./utils/netUtils.js";
+import {attachmentUrl, CDN_LINK_MARGIN_MS} from "./utils/netUtils.js";
 class File {
 	readonly owner: Message | null;
 	id: string;
@@ -272,10 +272,12 @@ class File {
 		const nametd = document.createElement("td");
 		if (src) {
 			const a = document.createElement("a");
-			a.href = src;
+			const safeSrc = attachmentUrl(src);
+			if (safeSrc) a.href = safeSrc;
 			if (url)
 				url.then((_) => {
-					a.href = _;
+					const refreshed = attachmentUrl(_);
+					if (refreshed) a.href = refreshed;
 				});
 			a.textContent = this.filename;
 			nametd.append(a);

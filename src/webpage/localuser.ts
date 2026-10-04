@@ -76,6 +76,7 @@ import {
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
+import {externalUrl} from "./utils/netUtils.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
 import {showCommandStatus} from "./interactions/commandStatus.js";
@@ -98,6 +99,14 @@ interface CustomHTMLDivElement extends HTMLDivElement {
 }
 
 MarkDown.emoji = Emoji;
+
+/** A fresh TOTP shared secret for 2FA setup: 32 base32 characters (160 bits, RFC 4226's
+ * recommended size) from the platform CSPRNG. */
+export function newTotpSecret(): string {
+	const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+	// 32 divides 256, so masking a byte to 5 bits is unbiased.
+	return Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => alphabet[b & 31]).join("");
+}
 
 class Localuser {
 	badges = new Map<
@@ -3402,10 +3411,7 @@ class Localuser {
 					});
 				} else {
 					addToGrid(I18n.localuser["2faEnable"](), async () => {
-						let secret = "";
-						for (let i = 0; i < 18; i++) {
-							secret += "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"[Math.floor(Math.random() * 32)];
-						}
+						const secret = newTotpSecret();
 						const form = security.addSubForm(
 							I18n.localuser.setUp2fa(),
 							() => {
@@ -3669,7 +3675,10 @@ class Localuser {
 										},
 									);
 									const connectionJSON = await connectionRes.json();
-									window.open(connectionJSON.url, "_blank", "noopener noreferrer");
+									const authorizeUrl = externalUrl(connectionJSON.url);
+									if (authorizeUrl) {
+										window.open(authorizeUrl.href, "_blank", "noopener noreferrer");
+									}
 								});
 							} else {
 								container.classList.add("disabled");

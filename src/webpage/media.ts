@@ -2,12 +2,15 @@ import {Contextmenu} from "./contextmenu.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {ProgressiveArray} from "./utils/progessiveLoad.js";
+import {attachmentUrl} from "./utils/netUtils.js";
 const menu = new Contextmenu<media, undefined>("media");
 menu.addButton(
 	() => I18n.media.download(),
 	function () {
+		const src = attachmentUrl(this.src);
+		if (!src) return;
 		const a = document.createElement("a");
-		a.href = this.src;
+		a.href = src;
 		a.download = this.filename;
 		a.click();
 	},

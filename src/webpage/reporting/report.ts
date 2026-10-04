@@ -6,6 +6,7 @@ import {Member} from "../member.js";
 import {Message} from "../message.js";
 import {User} from "../user.js";
 import {removeAni} from "../utils/utils.js";
+import {externalUrl} from "../utils/netUtils.js";
 import {
 	buttonTypes,
 	report,
@@ -301,7 +302,8 @@ class ReportNode {
 					const button = document.createElement("button");
 					button.textContent = data.link_text;
 					button.onclick = () => {
-						window.open(data.url, "_blank")?.focus();
+						const url = externalUrl(data.url);
+						if (url) window.open(url.href, "_blank", "noopener");
 					};
 					return button;
 				})

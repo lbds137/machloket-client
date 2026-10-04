@@ -76,3 +76,33 @@ it("the account's own link refresh uses the same expiry margin", async () => {
 	expect(await Localuser.prototype.refreshIfNeeded.call(self, fresh)).toBe(fresh);
 	expect(await Localuser.prototype.refreshIfNeeded.call(self, at(Date.now() - 2000))).toContain("&fresh");
 });
+
+it("leaves a non-web attachment url off the file card's link", async () => {
+	// Attachment urls come from the instance; a javascript: one would run on click.
+	const file = new File(
+		{
+			id: "2",
+			filename: "evil.txt",
+			content_type: "text/plain",
+			size: 1,
+			url: "javascript:alert(1)",
+		} as never,
+		null,
+	);
+
+	const card = file.createunknown(Promise.resolve("javascript:alert(2)"));
+	await Promise.resolve();
+
+	const link = card.querySelector("a")!;
+	expect(link.getAttribute("href")).toBeNull();
+});
+
+it("keeps web and local-preview (blob:) attachment links", () => {
+	for (const url of ["https://cdn.test/a.txt", "blob:http://localhost/abc"]) {
+		const card = new File(
+			{id: "3", filename: "a.txt", content_type: "text/plain", size: 1, url} as never,
+			null,
+		).createunknown();
+		expect(card.querySelector("a")!.getAttribute("href")).toBe(url);
+	}
+});

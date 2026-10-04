@@ -8,6 +8,15 @@ import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {CDNParams} from "./utils/cdnParams.js";
 
+/** The player iframe's src for a video embed, or null when the url isn't a YouTube video. */
+export function youtubeEmbedSrc(videoUrl: string): string | null {
+	if (!URL.canParse(videoUrl)) return null;
+	const url = new URL(videoUrl);
+	// The scheme check is the point: javascript://youtube.com/… parses with host youtube.com.
+	if (url.protocol !== "https:" || url.host !== "youtube.com") return null;
+	return url.href + "?autoplay=1";
+}
+
 class Embed {
 	type: string;
 	owner: Message;
@@ -461,11 +470,11 @@ class Embed {
 			if (this.json.video) {
 				img.onclick = async () => {
 					if (this.json.video) {
-						const url = new URL(this.json.video.url);
-						if (url.host !== "youtube.com") return;
+						const src = youtubeEmbedSrc(this.json.video.url);
+						if (!src) return;
 						img.remove();
 						const iframe = document.createElement("iframe");
-						iframe.src = this.json.video.url + "?autoplay=1";
+						iframe.src = src;
 						iframe.allowFullscreen = true;
 						if (this.json.thumbnail.width && this.json.thumbnail.height) {
 							iframe.style.width = this.json.thumbnail.width + "px";

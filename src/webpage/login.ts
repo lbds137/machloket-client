@@ -2,7 +2,7 @@ import {InstanceInfo, adduser, Specialuser} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
-import {trimTrailingSlashes} from "./utils/netUtils";
+import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 function generateRecArea(recover = document.getElementById("recover")) {
 	if (!recover) return;
 	recover.innerHTML = "";
@@ -101,12 +101,9 @@ export async function makeLogin(
 					dialog.hide();
 					return;
 				}
-				const redir = new URLSearchParams(window.location.search).get("goback");
-				if (redir && (!URL.canParse(redir) || new URL(redir).host === window.location.host)) {
-					window.location.href = redir;
-				} else {
-					window.location.href = "/channels/@me";
-				}
+				window.location.href = postLoginRedirect(
+					new URLSearchParams(window.location.search).get("goback"),
+				);
 			} else {
 				// A success without a session: nothing to log in with.
 				throw new FormError(password, I18n.requestFailed("no token"));
