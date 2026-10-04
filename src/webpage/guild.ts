@@ -1558,16 +1558,42 @@ class Guild extends SnowFlake {
 		this.emojis = json.emojis || [];
 		this.headers = this.owner.headers;
 		this.welcomeScreen = json.welcome_screen;
-		this.properties.features = json.features;
-		if (this.properties.icon !== json.icon) {
-			this.properties.icon = json.icon;
-			if (this.HTMLicon) {
-				const divy = this.generateGuildIcon();
-				this.HTMLicon.replaceWith(divy);
-				this.HTMLicon = divy;
-			}
+		const iconChanged = this.properties.icon !== json.icon || this.properties.name !== json.name;
+		// The payload is the whole guild object; its collections and relations have their own events and stores.
+		const {
+			emojis,
+			roles,
+			stickers,
+			channels,
+			members,
+			threads,
+			voice_states,
+			presences,
+			bans,
+			invites,
+			webhooks,
+			owner,
+			afk_channel,
+			rules_channel,
+			system_channel,
+			public_updates_channel,
+			widget_channel,
+			template,
+			...properties
+		} = json as extendedProperties & Record<string, unknown>;
+		Object.assign(this.properties, properties);
+		// Spacebar sends an unset channel as an absent key, not null.
+		for (const key of ["afk_channel_id", "system_channel_id", "rules_channel_id", "public_updates_channel_id"]) {
+			if (!(key in json)) (this.properties as Record<string, unknown>)[key] = null;
 		}
-		this.roleids = new Map();
+		if (iconChanged && this.HTMLicon) {
+			const divy = this.generateGuildIcon();
+			this.HTMLicon.replaceWith(divy);
+			this.HTMLicon = divy;
+		}
+		if (this.owner.lookingguild === this) {
+			(document.getElementById("serverName") as HTMLElement).textContent = this.properties.name;
+		}
 		this.banner = json.banner;
 	}
 	constructor(json: guildjson | -1, owner: Localuser, member: memberjson | User | null) {
