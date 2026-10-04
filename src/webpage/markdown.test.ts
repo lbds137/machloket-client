@@ -107,19 +107,23 @@ describe("parsing hostile or nested input", () => {
 	});
 
 	it("doesn't re-scan to the end of the message for every unmatched [ or <:", () => {
-		// Compared with plain text of the same length rendered just before, so a busy test run
-		// slows both alike (the quadratic scans took ~20x as long).
+		// Compared with plain text of the same length, each the best of 5 runs, so a busy test
+		// run's pauses don't count (the quadratic scans took ~10-20x as long).
 		const time = (txt: string) => {
-			const t0 = performance.now();
-			render(txt);
-			return performance.now() - t0;
+			let best = Infinity;
+			for (let k = 0; k < 5; k++) {
+				const t0 = performance.now();
+				render(txt);
+				best = Math.min(best, performance.now() - t0);
+			}
+			return best;
 		};
 		render("[a](https://example.com) <:x:12345678901> <t:1>"); // warm up
-		for (const txt of ["[".repeat(4000), "<:".repeat(2000), "<t:".repeat(1333)]) {
-			const plain = Math.max(time("a".repeat(txt.length)), 5);
-			expect(time(txt) / plain, JSON.stringify(txt.slice(0, 3))).toBeLessThan(6);
+		for (const txt of ["[".repeat(8000), "<:".repeat(4000), "<t:".repeat(2666)]) {
+			const plain = Math.max(time("a".repeat(txt.length)), 2);
+			expect(time(txt) / plain, JSON.stringify(txt.slice(0, 3))).toBeLessThan(4);
 		}
-	});
+	}, 20000); // ~2s of deliberate re-rendering; room for a loaded test run
 
 	it("renders a :word: before the emoji list has loaded", () => {
 		const emoji = MarkDown.emoji!;
