@@ -473,6 +473,13 @@ class Contextmenu<x, y> {
 			(event: TouchEvent) => {
 				x = event.touches[0].pageX;
 				y = event.touches[0].pageY;
+				// Each touch measures its own drag: the last gesture's distance made a still
+				// long-press after any scroll or swipe fail the 10px check.
+				lastx = 0;
+				lasty = 0;
+				// A second finger opens the menu at once; the first finger's hold mustn't
+				// open it again.
+				if (hold) clearTimeout(hold);
 				if (event.touches.length > 1) {
 					event.preventDefault();
 					event.stopImmediatePropagation();
@@ -483,7 +490,6 @@ class Contextmenu<x, y> {
 					hold = setTimeout(() => {
 						if (lastx ** 2 + lasty ** 2 > 10 ** 2) return;
 						this.makemenu(event.touches[0].clientX, event.touches[0].clientY, addinfo, other);
-						console.log(obj);
 					}, 500);
 				}
 			},
@@ -496,6 +502,15 @@ class Contextmenu<x, y> {
 				clearTimeout(hold);
 			}
 			touchEnd(lastx, lasty, event);
+		});
+		// A touch the system took over (e.g. Android's edge back) is no long-press, and the
+		// drag it interrupted ends with no movement: touchEnd(0, 0) lets a drag owner (the
+		// message row's swipe-to-reply) spring back without acting.
+		obj.addEventListener("touchcancel", (event: TouchEvent) => {
+			if (hold) clearTimeout(hold);
+			lastx = 0;
+			lasty = 0;
+			touchEnd(0, 0, event);
 		});
 		obj.addEventListener(
 			"touchmove",

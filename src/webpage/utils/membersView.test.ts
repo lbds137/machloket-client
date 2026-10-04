@@ -3,7 +3,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("../localuser");
-const {installDrawerSwipe} = await import("./drawerSwipe");
+const {installDrawerSwipe, drawerSwipeJustEnded} = await import("./drawerSwipe");
 const {installMembersView, consumeMembersPop, closeMembersOnNavigation} = await import("./membersView");
 
 // The entry's popstate wiring, once for the whole file: the members guard runs before channel
@@ -217,6 +217,38 @@ describe("the closing swipe", () => {
 		const pop = openAndView();
 
 		swipe(membersPanel, [40, 300], [70, 302]);
+		await glide();
+
+		expect(membersShown()).toBe(true);
+		expect(membersPanel.style.transform).toBe("");
+
+		maintoggleIcon.click();
+		await pop;
+	});
+
+	it("a cancelled long drag springs back and keeps the view open", async () => {
+		// A cancel (Android's edge back) isn't the user choosing to close.
+		const pop = openAndView();
+
+		swipe(membersPanel, [40, 300], [180, 304], {hold: true});
+		fire(membersPanel, "touchcancel", [], [at(membersPanel, 180, 304)]);
+		// No trailing click follows a cancel, so there's none to swallow: the next tap counts.
+		expect(drawerSwipeJustEnded()).toBe(false);
+		await glide();
+
+		expect(membersShown()).toBe(true);
+		expect(membersPanel.style.transform).toBe("");
+
+		maintoggleIcon.click();
+		await pop;
+	});
+
+	it("a second finger mid-drag springs the panel back", async () => {
+		const pop = openAndView();
+
+		swipe(membersPanel, [40, 300], [160, 304], {hold: true});
+		const second = new Touch({identifier: 2, target: membersPanel, pageX: 200, pageY: 400});
+		fire(membersPanel, "touchstart", [at(membersPanel, 160, 304), second], [second]);
 		await glide();
 
 		expect(membersShown()).toBe(true);

@@ -407,3 +407,34 @@ describe("a message after its reply swipe", () => {
 		expect(chat.style.transition).toBe("");
 	});
 });
+
+describe("a cancelled drawer drag", () => {
+	it("glides back to rest without switching views", async () => {
+		// Android's edge-back gesture (or any system gesture) cancels the touch mid-drag.
+		const openChat = install();
+
+		swipe(rail, [300, 200], [150, 205], {hold: true});
+		expect(offsetX()).toBe(-150);
+		fire(rail, "touchcancel", [], [at(rail, 150, 205)]);
+		await glide();
+
+		expect(openChat).not.toHaveBeenCalled();
+		expect(offsetX()).toBe(0);
+		expect(panel.style.transition).not.toBe("none");
+	});
+});
+
+describe("a second finger during a drawer drag", () => {
+	it("springs the panel back instead of leaving it mid-offset", async () => {
+		const openChat = install();
+
+		swipe(rail, [300, 200], [150, 205], {hold: true});
+		const second = new Touch({identifier: 2, target: rail, pageX: 50, pageY: 400});
+		fire(rail, "touchstart", [at(rail, 150, 205), second], [second]);
+		await glide();
+
+		expect(openChat).not.toHaveBeenCalled();
+		expect(offsetX()).toBe(0);
+		expect(panel.style.transform).toBe("");
+	});
+});

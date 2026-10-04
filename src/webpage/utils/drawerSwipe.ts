@@ -79,6 +79,7 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 	page.addEventListener(
 		"touchstart",
 		(event) => {
+			const midDrag = mode !== "none" && gesture === "horizontal";
 			// A touch mid-glide lands on the settled state: otherwise it would measure a moving panel,
 			// and the old glide could switch views under the new gesture.
 			finishGlide?.();
@@ -88,6 +89,10 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 			if (event.touches.length !== 1 || overlays.some((o) => o.isShown())) {
 				mode = "none";
 				drawerOwnsIt = false;
+				// A second finger mid-drag ends the drag where it began; nothing else would
+				// settle the panel (its moves and lift now stand down).
+				const panel = midDrag ? drawer.panel() : null;
+				if (panel) finishGlide = settle(panel, 0, undefined);
 				return;
 			}
 			mode = drawer.isOpen() ? "open" : "close";
@@ -158,6 +163,20 @@ export function installDrawerSwipe(page: HTMLElement, drawer: Drawer) {
 		},
 		{capture: true},
 	);
+	// A system gesture (Android's edge back) can cancel the touch mid-drag: the panel glides
+	// back to rest — a cancel isn't the user choosing to switch — instead of staying where the
+	// finger left it, inline transform and all.
+	page.addEventListener(
+		"touchcancel",
+		() => {
+			const dragging = mode !== "none" && gesture === "horizontal";
+			mode = "none";
+			if (!dragging) return;
+			const panel = drawer.panel();
+			if (panel) finishGlide = settle(panel, 0, undefined);
+		},
+		{capture: true},
+	);
 }
 
 /** The overlay's closing swipe: with the overlay shown, a rightward drag slides it out
@@ -178,12 +197,18 @@ export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
 	page.addEventListener(
 		"touchstart",
 		(event) => {
+			const midDrag = claimed && gesture === "horizontal";
 			finishGlide?.();
 			finishGlide = undefined;
 			gesture = "none";
 			claimed = false;
 			deltaX = 0;
-			if (event.touches.length !== 1 || !view.isShown()) return;
+			if (event.touches.length !== 1 || !view.isShown()) {
+				// A second finger mid-drag springs the panel back (as the drawer's does).
+				const panel = midDrag ? view.panel() : null;
+				if (panel) finishGlide = settle(panel, 0, undefined);
+				return;
+			}
 			startX = event.touches[0].pageX;
 			startY = event.touches[0].pageY;
 			travel = view.panel()?.getBoundingClientRect().width ?? 0;
@@ -213,16 +238,17 @@ export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
 		},
 		{passive: false, capture: true},
 	);
-	/** Springs an unfinished drag back where it came from: a lift that didn't switch, or a
-	 * system-cancelled touch, which otherwise leaves the inline transform behind. */
-	const release = () => {
+	/** Ends a drag: a lift past SWITCH_DISTANCE hides the view; a shorter lift, or a
+	 * system-cancelled touch (not the user choosing to close; no trailing click follows it
+	 * either), springs back, which otherwise leaves the inline transform behind. */
+	const release = (cancelled: boolean) => {
 		if (!view.isShown() || gesture !== "horizontal" || !claimed) {
 			gesture = "none";
 			claimed = false;
 			return;
 		}
-		lastSwipeEnd = performance.now();
-		const switching = deltaX > SWITCH_DISTANCE;
+		if (!cancelled) lastSwipeEnd = performance.now();
+		const switching = !cancelled && deltaX > SWITCH_DISTANCE;
 		const target = switching ? travel : 0;
 		gesture = "none";
 		claimed = false;
@@ -231,8 +257,8 @@ export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
 		if (panel) finishGlide = settle(panel, target, commit);
 		else commit?.();
 	};
-	page.addEventListener("touchend", release, {capture: true});
-	page.addEventListener("touchcancel", release, {capture: true});
+	page.addEventListener("touchend", () => release(false), {capture: true});
+	page.addEventListener("touchcancel", () => release(true), {capture: true});
 }
 
 /**
