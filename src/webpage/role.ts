@@ -310,7 +310,11 @@ class RoleList extends Buttons {
 	}
 	private croleUpdate(role: Role | User, perm: Permissions, added: boolean) {
 		if (added) {
-			this.permissions.push([role, perm]);
+			// A row shown before it existed on the server (@everyone on a channel with no
+			// overwrites) is replaced by the saved one, not doubled.
+			const existing = this.permissions.findIndex((r) => r[0].id === role.id);
+			if (existing === -1) this.permissions.push([role, perm]);
+			else this.permissions[existing] = [role, perm];
 		} else {
 			this.permissions = this.permissions.filter((r) => r[0] !== role);
 		}

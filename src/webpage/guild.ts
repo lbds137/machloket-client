@@ -760,7 +760,7 @@ class Guild extends SnowFlake {
 				const reason = opt.addTextInput(I18n.member["reason:"](), () => {});
 				opt.addTextInput(I18n.guild.idSel(), async (id) => {
 					const headers = structuredClone(this.headers);
-					(headers as any)["x-audit-log-reason"] = reason.value;
+					if (reason.value) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason.value);
 					const ret = await fetch(`${this.info.api}/guilds/${this.id}/bans/${id}`, {
 						method: "PUT",
 						headers,
@@ -1212,7 +1212,7 @@ class Guild extends SnowFlake {
 						);
 						opt.addButtonInput("", I18n.onboarding.deleteChannel(), () => {
 							welcomeScreen.welcome_channels = welcomeScreen.welcome_channels.filter(
-								({channel_id}) => channel_id !== channel_id,
+								(entry) => entry.channel_id !== channel_id,
 							);
 							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
 								method: "PATCH",

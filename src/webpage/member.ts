@@ -634,18 +634,18 @@ class Member extends SnowFlake {
 	}
 	timeoutAPI(reason: string, length: number) {
 		const headers = structuredClone(this.guild.headers);
-		(headers as any)["x-audit-log-reason"] = reason;
+		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
 		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
 			body: JSON.stringify({
-				communication_disabled_until: new Date(length + Date.now()) + "",
+				communication_disabled_until: new Date(length + Date.now()).toISOString(),
 			}),
 		});
 	}
 	kickAPI(reason: string) {
 		const headers = structuredClone(this.guild.headers);
-		(headers as any)["x-audit-log-reason"] = reason;
+		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
 		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "DELETE",
 			headers,
@@ -681,7 +681,7 @@ class Member extends SnowFlake {
 	}
 	banAPI(reason: string) {
 		const headers = structuredClone(this.guild.headers);
-		(headers as any)["x-audit-log-reason"] = reason;
+		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
 		fetch(`${this.info.api}/guilds/${this.guild.id}/bans/${this.id}`, {
 			method: "PUT",
 			headers,

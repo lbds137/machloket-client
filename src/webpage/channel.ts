@@ -673,6 +673,12 @@ class Channel extends SnowFlake {
 
 			(async () => {
 				const list = await this.getOverwrites();
+				// A channel with no overwrites still offers @everyone to edit; nothing is written
+				// until an edit is saved.
+				if (list.length === 0) {
+					const everyone = this.guild.roleids.get(this.guild.id);
+					if (everyone) list.push([everyone, new Permissions("0", "0")]);
+				}
 
 				s1.options.push(
 					new RoleList(list, this.guild, this.updateRolePermissions.bind(this), this),
@@ -1012,12 +1018,6 @@ class Channel extends SnowFlake {
 		return false;
 	}
 	get canMessage(): boolean {
-		if (this.permission_overwritesar.length === 0 && this.hasPermission("MANAGE_CHANNELS")) {
-			const role = this.guild.roles.find((_) => _.name === "@everyone");
-			if (role) {
-				this.addRoleToPerms(role);
-			}
-		}
 		return this.isThread()
 			? this.hasPermission("SEND_MESSAGES_IN_THREADS")
 			: this.hasPermission("SEND_MESSAGES");
