@@ -130,8 +130,16 @@ class Emoji {
 					toptext.append(name, desc);
 					top.append(this.getHTML(true, false), toptext);
 
+					const show = () => {
+						document.body.append(div);
+						Contextmenu.keepOnScreen(div);
+						Contextmenu.declareMenu(div);
+					};
 					if (!lookup?.guild) {
+						// No source server to show: the card is just the emoji, marked private.
 						desc.textContent = I18n.emoji.found.private();
+						div.append(top);
+						show();
 						return;
 					}
 					const guild = localuser.guildids.get(lookup.guild?.id as string);
@@ -192,10 +200,7 @@ class Emoji {
 						guildText,
 					);
 					div.append(top, h3, guildRow);
-
-					document.body.append(div);
-					Contextmenu.keepOnScreen(div);
-					Contextmenu.declareMenu(div);
+					show();
 				};
 
 			return emojiElem;

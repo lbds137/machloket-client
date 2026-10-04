@@ -369,11 +369,6 @@ class TextInput implements OptionsElement<string> {
 		input.value = this.value;
 		input.type = this.password ? "password" : "text";
 		input.oninput = this.onChange.bind(this);
-		input.onkeyup = () => {
-			let textValue = input.value;
-			textValue = textValue.replace(/ /g, this.spaceReplace);
-			input.value = textValue;
-		};
 		this.input = new WeakRef(input);
 		div.append(input);
 		return div;
@@ -382,6 +377,14 @@ class TextInput implements OptionsElement<string> {
 		this.owner.changed();
 		const input = this.input.deref();
 		if (input) {
+			// Replaced on input, not keyup: a paste, a touch keyboard or the last keystroke
+			// otherwise kept its spaces in the stored value.
+			if (this.spaceReplace !== " " && input.value.includes(" ")) {
+				const caret = input.selectionStart;
+				const before = caret === null ? "" : input.value.slice(0, caret).replace(/ /g, this.spaceReplace);
+				input.value = input.value.replace(/ /g, this.spaceReplace);
+				if (caret !== null) input.setSelectionRange(before.length, before.length);
+			}
 			const value = input.value as string;
 			this.onchange(value);
 			this.value = value;

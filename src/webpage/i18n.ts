@@ -24,23 +24,22 @@ class I18n {
 			}
 		}
 
-		const json = (await (
-			await fetch(new URL(`./translations/${lang}.json`, import.meta.url).href)
-		).json()) as translation;
+		// English ships in the bundle, so a failed fetch (offline cold start, a deploy mid-update)
+		// falls back to it instead of leaving `done` pending and the app blank.
+		const en = bundledEn as unknown as translation;
 		const translations: translation[] = [];
-		translations.push(json);
 		if (lang !== "en") {
-			translations.push(
-				(await (
-					await fetch(new URL(`./translations/en.json`, import.meta.url).href)
-				).json()) as translation,
-			);
+			try {
+				const answer = await fetch(new URL(`./translations/${lang}.json`, import.meta.url).href);
+				if (!answer.ok) throw new Error(`${answer.status}`);
+				translations.push((await answer.json()) as translation);
+			} catch (e) {
+				console.error(`Couldn't load the ${lang} translation, using English:`, e);
+				lang = "en";
+			}
 		}
-		const en = translations.find(
-			(_) => (_["@metadata"] as translation)?.locale === "en",
-		) as translation;
-		const weirdObj = transForm(en);
-		Object.assign(this, weirdObj);
+		translations.push(en);
+		Object.assign(this, transForm(en));
 		this.lang = lang;
 		this.translations = translations;
 
@@ -162,9 +161,9 @@ function transForm(inobj: translation, path: string = "") {
 	return obj;
 }
 
-import jsonType from "./../../translations/en.json";
+import bundledEn from "./../../translations/en.json";
 import {getPreferences, setPreferences} from "./utils/storage/userPreferences";
-type beforeType = typeof jsonType;
+type beforeType = typeof bundledEn;
 
 type DoTheThing<T> = {
 	[K in keyof T]: T[K] extends string ? (...args: string[]) => string : DoTheThing<T[K]>;

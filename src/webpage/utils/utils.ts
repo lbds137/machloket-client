@@ -171,7 +171,8 @@ export class Specialuser {
 		const info = getBulkInfo();
 		delete info.users[this.uid];
 		if (info.currentuser === this.uid) {
-			const user = info.users[0];
+			// `users` is keyed by uid, not an array.
+			const user = Object.values(info.users)[0];
 			if (user) {
 				info.currentuser = new Specialuser(user).uid;
 			} else {

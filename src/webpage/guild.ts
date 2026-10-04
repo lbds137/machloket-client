@@ -1453,7 +1453,7 @@ class Guild extends SnowFlake {
 					target_user_id: null,
 					max_age: expires + "",
 					max_uses: uses,
-					temporary: uses !== 0,
+					temporary: false,
 				}),
 			})
 				.then((_) => _.json())

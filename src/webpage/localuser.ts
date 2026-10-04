@@ -3366,8 +3366,9 @@ class Localuser {
 						const form = security.addSubForm(
 							I18n.localuser.setUp2fa(),
 							() => {
-								genSecurity();
+								// The grid's 2FA button reads mfa_enabled: set it before rebuilding.
 								this.mfa_enabled = true;
+								genSecurity();
 								security.returnFromSub();
 							},
 							{
