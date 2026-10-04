@@ -324,7 +324,7 @@ class Embed {
 		const div = document.createElement("div");
 		div.classList.add("embed", "inviteEmbed", "flexttb");
 		const json1 = this.json.invite;
-		(async () => {
+		const load = async () => {
 			let json: invitejson;
 			let info: {cdn: string; api: string};
 			if (!this.invcache) {
@@ -426,8 +426,34 @@ class Embed {
 					}
 				}
 			};
-		})();
+		};
+		// A preview fetches from the instance the link names (one of the instance list's or a
+		// logged-in account's, picked by the sender), so every viewer would contact that third
+		// party as the message renders. Invites to this account's own instance load straight
+		// away; any other waits for a tap.
+		if (json1 && !this.invcache && !this.isOwnInstance(json1.url)) {
+			const host = URL.canParse(json1.url) ? new URL(json1.url).host : json1.url;
+			const label = document.createElement("span");
+			label.textContent = I18n.invite.otherInstance(host);
+			const show = document.createElement("button");
+			show.textContent = I18n.invite.showPreview();
+			show.classList.add("acceptinvbutton");
+			show.onclick = () => {
+				show.disabled = true;
+				load().then(() => {
+					label.remove();
+					show.remove();
+				});
+			};
+			div.append(label, show);
+		} else {
+			load();
+		}
 		return div;
+	}
+	private isOwnInstance(url: string) {
+		const own = this.localuser?.info?.wellknown;
+		return URL.canParse(url) && !!own && URL.canParse(own) && new URL(url).origin === new URL(own).origin;
 	}
 	generateArticle() {
 		const colordiv = document.createElement("div");

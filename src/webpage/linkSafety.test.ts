@@ -415,3 +415,42 @@ describe("a rich embed's images", () => {
 		expect(srcs).toEqual(["https://bot.example/a.png", "https://bot.example/i.png", "https://bot.example/f.png"]);
 	});
 });
+
+describe("an invite embed", () => {
+	async function render(instanceUrl: string) {
+		const {Embed} = await import("./embed");
+		type Args = ConstructorParameters<typeof Embed>;
+		const fetchSpy = vi.fn(async () => new Response("{}", {status: 404}));
+		vi.stubGlobal("fetch", fetchSpy);
+		const localuser = {info: {wellknown: "https://home.example", api: "https://home.example/api/v9"}, guildids: new Map()};
+		const embed = new Embed(
+			{type: "link", url: `${instanceUrl}/invite/abc`} as unknown as Args[0],
+			{channel: {guild: {localuser}}} as unknown as Args[1],
+		);
+		embed.type = "invite";
+		embed.json.invite = {url: instanceUrl, code: "abc"};
+		const html = embed.generateHTML();
+		await new Promise((res) => setTimeout(res, 0));
+		return {html, fetchSpy};
+	}
+	afterEach(() => vi.unstubAllGlobals());
+
+	it("to another instance contacts it only after a tap", async () => {
+		const {html, fetchSpy} = await render("https://other.example");
+		await new Promise((res) => setTimeout(res, 50));
+		expect(fetchSpy).not.toHaveBeenCalled();
+		expect(html.textContent).toContain("other.example");
+		const show = html.querySelector("button");
+		expect(show).not.toBeNull();
+		show!.click();
+		await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+	});
+
+	it("to this account's own instance still loads straight away (any path on it)", async () => {
+		for (const url of ["https://home.example", "https://home.example/"]) {
+			const {html, fetchSpy} = await render(url);
+			expect(html.querySelector("button.acceptinvbutton")).toBeNull();
+			await vi.waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+		}
+	});
+});

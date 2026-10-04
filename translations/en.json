@@ -508,6 +508,8 @@
 		"never": "Never",
 		"noAccount": "Create an account to accept the invite",
 		"notFound": "Invite could not be found",
+		"otherInstance": "Invite to a server on $1",
+		"showPreview": "Show invite",
 		"subtext": "to $1 in $2",
 		"used": "Used $1"
 	},
