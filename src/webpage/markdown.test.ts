@@ -88,3 +88,68 @@ describe("a link url that doesn't parse", () => {
 		expect(html.querySelector(".username")?.textContent).toBe("bot");
 	});
 });
+
+describe("parsing hostile or nested input", () => {
+	const render = (txt: string) => new MarkDown(txt, undefined).makeHTML();
+
+	it("still reads masked links and timestamps", () => {
+		const link = render("see [docs](https://example.com/a) after").querySelector("a");
+		expect(link?.textContent).toBe("docs");
+		expect(link?.title).toContain("https://example.com/a");
+		expect(render("[x](<https://example.com/b>)").querySelector("a")?.textContent).toBe("x");
+		expect(render("[no] (https://example.com/c)").querySelector("a")?.textContent).not.toBe("no");
+		const time = render("at <t:0:d> ok").textContent ?? "";
+		expect(time).not.toContain("<t:");
+		expect(time.endsWith(" ok")).toBe(true);
+		expect(render("<t:12345678901234567:d>").textContent).toBe("<t:12345678901234567:d>");
+		// The longest valid timestamp still fits the bounded look-ahead.
+		expect(render("<t:0000000000000001:R>").textContent).not.toContain("<t:");
+	});
+
+	it("doesn't re-scan to the end of the message for every unmatched [ or <:", () => {
+		// Compared with plain text of the same length rendered just before, so a busy test run
+		// slows both alike (the quadratic scans took ~20x as long).
+		const time = (txt: string) => {
+			const t0 = performance.now();
+			render(txt);
+			return performance.now() - t0;
+		};
+		render("[a](https://example.com) <:x:12345678901> <t:1>"); // warm up
+		for (const txt of ["[".repeat(4000), "<:".repeat(2000), "<t:".repeat(1333)]) {
+			const plain = Math.max(time("a".repeat(txt.length)), 5);
+			expect(time(txt) / plain, JSON.stringify(txt.slice(0, 3))).toBeLessThan(6);
+		}
+	});
+
+	it("renders a :word: before the emoji list has loaded", () => {
+		const emoji = MarkDown.emoji!;
+		const loaded = emoji.emojis;
+		const cached = MarkDown._emojiMap;
+		emoji.emojis = undefined as unknown as typeof loaded;
+		MarkDown._emojiMap = null;
+		try {
+			expect(render("hi :smile: and <t:0:d>").textContent).toContain(":smile:");
+		} finally {
+			emoji.emojis = loaded;
+			MarkDown._emojiMap = cached;
+		}
+	});
+
+	it("shows a quote or heading line whose content fails to render as its text, not nothing", () => {
+		const original = MarkDown.prototype.markdown;
+		const spy = vi.spyOn(MarkDown.prototype, "markdown").mockImplementation(function (this: InstanceType<typeof MarkDown>, txt, opts) {
+			if (txt === "boom") throw new Error("render failed");
+			return original.call(this, txt, opts);
+		});
+		const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			const html = render("first\n> boom\nlast");
+			expect(html.textContent).toContain("boom");
+			expect(html.textContent).toContain("last");
+			expect(logged).toHaveBeenCalled();
+		} finally {
+			spy.mockRestore();
+			logged.mockRestore();
+		}
+	});
+});

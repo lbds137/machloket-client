@@ -10,6 +10,13 @@ import {normalizeInviteLink} from "./utils/inviteUtils.js";
 const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
 const BULLET_CHARS = new Set("*+- ");
 const LINK_END_CHARS = new Set("\\<>|[] \n(){}");
+/** Longest tail after "<t:" ("1234567890123456:R>"), with room to spare. */
+const MAX_TIMESTAMP_TAIL = 32;
+/**
+ * How far past "<:" / "<a:" to look for the ">". Discord caps names at 32 chars but Spacebar sets
+ * no limit, so this allows ~268-char names (":", a 30-digit id and ">" take the rest).
+ */
+const MAX_EMOJI_TAIL = 300;
 const NUMBERS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 const ANGLE_INVALID = new Set([">", "<"]);
 const ALLOWED_PROTOCOLS = new Set(["https:", "http:"]);
@@ -87,7 +94,8 @@ class MarkDown {
 	}
 	static _emojiMap: Map<string, {name: string; emoji: string}> | null = null;
 	static getEmoji(name: string): {name: string; emoji: string} | undefined {
-		if (!this._emojiMap && this.emoji) {
+		// Before emoji.bin has loaded there is no list yet: build the map on a later call.
+		if (!this._emojiMap && this.emoji?.emojis) {
 			this._emojiMap = new Map();
 			for (const group of this.emoji.emojis) {
 				for (const e of group.emojis) {
@@ -211,19 +219,22 @@ class MarkDown {
 					const start = i;
 					for (; i < txt.length && txt[i] !== "\n"; i++) {}
 					const build = txt.slice(start, i);
-					try {
-						if (stdsize) {
-							element = document.createElement("span");
-						}
-						if (keep) {
-							element.append(keepys);
-						}
-						element.appendChild(this.markdown(build, {keep, stdsize}));
-						span.append(element);
-					} finally {
-						i -= 1;
-						continue;
+					if (stdsize) {
+						element = document.createElement("span");
 					}
+					if (keep) {
+						element.append(keepys);
+					}
+					try {
+						element.appendChild(this.markdown(build, {keep, stdsize}));
+					} catch (e) {
+						// Show the line's own text rather than lose it (this used to drop it silently).
+						console.error("markdown: couldn't render a line", e);
+						element.append(build);
+					}
+					span.append(element);
+					i -= 1;
+					continue;
 				}
 				if (BULLET_CHARS.has(txt[i + 1])) {
 					let list = document.createElement("ul");
@@ -605,15 +616,9 @@ class MarkDown {
 				txt[i + 2] === "t" &&
 				txt[i + 3] === "p"
 			) {
-				let build = "http";
 				let j = i + 4;
-				for (; txt[j] !== undefined; j++) {
-					const char = txt[j];
-					if (LINK_END_CHARS.has(char)) {
-						break;
-					}
-					build += char;
-				}
+				while (j < txt.length && !LINK_END_CHARS.has(txt[j])) j++;
+				let build = txt.slice(i, j);
 				if (build.endsWith(".") && (j >= txt.length || txt[j] === " " || txt[j] === "\n")) {
 					build = build.slice(0, -1);
 					j--;
@@ -796,17 +801,12 @@ class MarkDown {
 				}
 			}
 			if (txt[i] === "<" && txt[i + 1] === "t" && txt[i + 2] === ":") {
-				let found = false;
-				let build = "<t:";
-				let j = i + 3;
-				for (; txt[j] !== void 0; j++) {
-					build += txt[j];
-
-					if (txt[j] === ">") {
-						found = true;
-						break;
-					}
-				}
+				// A timestamp is at most "<t:" + 16 digits + ":X>"; looking further for the ">" only
+				// makes a run of "<t:" quadratic.
+				const close = txt.slice(i + 3, i + 3 + MAX_TIMESTAMP_TAIL).indexOf(">");
+				const found = close !== -1;
+				const j = found ? i + 3 + close : txt.length;
+				const build = txt.slice(i, j + 1);
 				const parts = build.match(/^<t:([0-9]{1,16})(:([tTdDfFRS]))?>$/);
 
 				if (found && parts) {
@@ -907,17 +907,12 @@ class MarkDown {
 				(txt[i + 1] === ":" || (txt[i + 1] === "a" && txt[i + 2] === ":" && this.owner))
 			) {
 				const Emoji = MarkDown.emoji;
-				let found = false;
-				let build = txt[i + 1] === "a" ? "<a:" : "<:";
-				let j = i + (txt[i + 1] === "a" ? 3 : 2);
-				for (; txt[j] !== void 0; j++) {
-					build += txt[j];
-
-					if (txt[j] === ">") {
-						found = true;
-						break;
-					}
-				}
+				// Bounded like timestamps: a custom emoji's name and id fit well inside the limit.
+				const start = i + (txt[i + 1] === "a" ? 3 : 2);
+				const close = txt.slice(start, start + MAX_EMOJI_TAIL).indexOf(">");
+				const found = close !== -1;
+				const j = found ? start + close : txt.length;
+				const build = txt.slice(i, j + 1);
 
 				if (found && Emoji) {
 					const parts = build.match(/^<(a)?:\w+:(\d{10,30})>$/);
@@ -968,37 +963,16 @@ class MarkDown {
 			}
 
 			if (txt[i] == "[" && !keep) {
+				// "[text](http...)": the first "]" must open "(http" and the first ")" after it closes.
+				// indexOf, not a char-by-char string build: a run of "[" re-scans to the end each time.
 				let partsFound = 0;
-				let j = i + 1;
-				let build = "[";
-				for (; txt[j] !== void 0; j++) {
-					build += txt[j];
-
-					if (partsFound === 0 && txt[j] === "]") {
-						if (
-							(txt[j + 1] === "(" &&
-								txt[j + 2] === "h" &&
-								txt[j + 3] === "t" &&
-								txt[j + 4] === "t" &&
-								txt[j + 5] === "p" &&
-								(txt[j + 6] === "s" || txt[j + 6] === ":")) ||
-							(txt[j + 1] === "(" &&
-								txt[j + 2] === "<" &&
-								txt[j + 3] === "h" &&
-								txt[j + 4] === "t" &&
-								txt[j + 5] === "t" &&
-								txt[j + 6] === "p" &&
-								(txt[j + 7] === "s" || txt[j + 7] === ":"))
-						) {
-							partsFound++;
-						} else {
-							break;
-						}
-					} else if (partsFound === 1 && txt[j] === ")") {
-						partsFound++;
-						break;
-					}
+				const textEnd = txt.indexOf("]", i + 1);
+				let j = textEnd;
+				if (textEnd !== -1 && /^\(<?http[s:]/.test(txt.slice(textEnd + 1, textEnd + 8))) {
+					j = txt.indexOf(")", textEnd + 1);
+					if (j !== -1) partsFound = 2;
 				}
+				const build = partsFound === 2 ? txt.slice(i, j + 1) : "";
 				if (partsFound === 2) {
 					appendcurrent();
 
