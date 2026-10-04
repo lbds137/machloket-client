@@ -2103,14 +2103,21 @@ class Channel extends SnowFlake {
 		document.getElementById("searchOptions")?.replaceChildren();
 		typebox.focus();
 	}
+	/** The command whose POST is in flight: a second Enter or send tap must not run it twice. */
+	private submittingCommand?: Command;
 	async submitCommand() {
 		const cmd = this.curCommand;
-		if (!cmd) return;
-		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		if (await cmd.submit(typebox, this)) {
-			// Only tear down what's still there: the user may have bailed (or started
-			// something else) while the POST was in flight.
-			if (this.curCommand === cmd) this.exitCommand();
+		if (!cmd || this.submittingCommand === cmd) return;
+		this.submittingCommand = cmd;
+		try {
+			const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+			if (await cmd.submit(typebox, this)) {
+				// Only tear down what's still there: the user may have bailed (or started
+				// something else) while the POST was in flight.
+				if (this.curCommand === cmd) this.exitCommand();
+			}
+		} finally {
+			if (this.submittingCommand === cmd) this.submittingCommand = undefined;
 		}
 	}
 	startCommand(command: Command, branch?: string) {
