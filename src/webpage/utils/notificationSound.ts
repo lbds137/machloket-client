@@ -98,22 +98,25 @@ export class NotificationSoundManager {
 		if (loading) return loading;
 
 		const promise = (async () => {
-			let data: ArrayBuffer;
-			if (path.startsWith("idb://")) {
-				const key = path.slice(6);
-				const ab = await getSoundArrayBuffer(key);
-				if (!ab) throw new Error("Sound not found in IndexedDB: " + key);
-				data = ab;
-			} else {
-				const response = await fetch(path);
-				data = await response.arrayBuffer();
+			try {
+				let data: ArrayBuffer;
+				if (path.startsWith("idb://")) {
+					const key = path.slice(6);
+					const ab = await getSoundArrayBuffer(key);
+					if (!ab) throw new Error("Sound not found in IndexedDB: " + key);
+					data = ab;
+				} else {
+					const response = await fetch(path);
+					if (!response.ok) throw new Error(`Sound ${path}: ${response.status}`);
+					data = await response.arrayBuffer();
+				}
+				const buffer = await this.context.decodeAudioData(data);
+				this.buffers.set(path, buffer);
+				return buffer;
+			} finally {
+				// A failed load (offline, a 404 page) is not remembered: the next play tries again.
+				this.loadingBuffers.delete(path);
 			}
-			const buffer = await this.context.decodeAudioData(data);
-
-			this.buffers.set(path, buffer);
-			this.loadingBuffers.delete(path);
-
-			return buffer;
 		})();
 
 		this.loadingBuffers.set(path, promise);

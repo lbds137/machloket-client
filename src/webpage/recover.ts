@@ -1,7 +1,17 @@
 import {I18n} from "./i18n.js";
 import {Dialog, FormError} from "./settings.js";
+import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
 await I18n.done;
-const info = JSON.parse(localStorage.getItem("instanceinfo") as string);
+/** The instance to recover on: the one last picked on the login page, else the list's default
+ * (a reset link opened on a fresh browser has no picked instance). */
+async function recoveryInstance(): Promise<{api: string} | null> {
+	const picked = JSON.parse(localStorage.getItem("instanceinfo") ?? "null");
+	if (picked?.api) return picked;
+	await instancefetch;
+	const url = getDefaultInstanceUrl();
+	return url ? await getapiurls(url) : null;
+}
+let info: {api: string};
 
 function makeMenu2(email: string | void) {
 	const d2 = new Dialog("");
@@ -90,12 +100,19 @@ function makeMenu1() {
 	});
 	d.show(false);
 }
-if (window.location.pathname.startsWith("/reset"))
-	if (
-		window.location.href.split("#").length == 2 &&
-		new URLSearchParams(window.location.href.split("#")[1]).has("token")
-	) {
-		makeMenu2();
+if (window.location.pathname.startsWith("/reset")) {
+	const found = await recoveryInstance();
+	if (!found) {
+		new Dialog(I18n.requestFailed("no instance")).show(false);
 	} else {
-		makeMenu1();
+		info = found;
+		if (
+			window.location.href.split("#").length == 2 &&
+			new URLSearchParams(window.location.href.split("#")[1]).has("token")
+		) {
+			makeMenu2();
+		} else {
+			makeMenu1();
+		}
 	}
+}

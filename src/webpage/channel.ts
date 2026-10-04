@@ -4166,8 +4166,12 @@ class Channel extends SnowFlake {
 		} catch (e) {
 			console.error("Failed to play notification sound:", e);
 		}
-		if ("Notification" in window && Notification.permission === "granted") {
-			NotificationHandler.sendMessageNotification(message);
+		// iOS Safari outside an installed PWA has no Notification at all.
+		if (!("Notification" in window)) return;
+		if (Notification.permission === "granted") {
+			NotificationHandler.sendMessageNotification(message).catch((e) =>
+				console.error("Couldn't show the notification:", e),
+			);
 		} else if (Notification.permission !== "denied") {
 			Notification.requestPermission().then(() => {
 				if (deep === 3) {
