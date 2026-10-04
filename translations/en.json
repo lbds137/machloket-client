@@ -497,6 +497,7 @@
 		"inviteLinkCode": "Invite link/code",
 		"inviteMaker": "Invite maker",
 		"invitedBy": "You've been invited by $1",
+		"invitedTo": "You've been invited to join $1",
 		"joinUsing": "Join a guild using an invite",
 		"loginOrCreateAccount": "Login or create an account ⇌",
 		"longInvitedBy": "$1 invited you to join $2",

@@ -509,7 +509,13 @@ class Guild extends SnowFlake {
 		if (this.id !== "@me") {
 			return new Promise<Member[]>((res) => {
 				const nonce = Math.floor(Math.random() * 10 ** 8) + "";
-				this.localuser.ws!.send(
+				const ws = this.localuser.ws;
+				// Disconnected: nothing to ask, so no match rather than a search that never answers.
+				if (!ws) {
+					res([]);
+					return;
+				}
+				ws.send(
 					JSON.stringify({
 						op: 8,
 						d: {
@@ -551,6 +557,9 @@ class Guild extends SnowFlake {
 									),
 								);
 							}
+						} else {
+							// No match answers with an empty chunk: the search is over.
+							res([]);
 						}
 						return [];
 					},
@@ -1174,7 +1183,7 @@ class Guild extends SnowFlake {
 						const channels = this.channels.filter((channel) => {
 							if (channel.isThread()) return false;
 							if (channel.type === 4) return false;
-							if (welcomeScreen.welcome_channels.find((c) => c.emoji_id === channel.id))
+							if (welcomeScreen.welcome_channels.find((c) => c.channel_id === channel.id))
 								return false;
 							return true;
 						});
@@ -1444,6 +1453,8 @@ class Guild extends SnowFlake {
 		};
 		div.append(copycontainer);
 		const update = () => {
+			// No channel an invite can point at (no text channels): nothing to make.
+			if (!channel) return;
 			fetch(`${this.info.api}/channels/${channel.id}/invites`, {
 				method: "POST",
 				headers: this.headers,
@@ -1458,6 +1469,11 @@ class Guild extends SnowFlake {
 			})
 				.then((_) => _.json())
 				.then((json) => {
+					// A refusal (no invite permission) has no code: show why, not ".../i/undefined".
+					if (typeof json.code !== "string") {
+						text.textContent = typeof json.message === "string" ? json.message : "";
+						return;
+					}
 					const params = new URLSearchParams("");
 					params.set("instance", this.info.wellknown);
 					const encoded = params.toString();

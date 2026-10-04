@@ -382,7 +382,9 @@ class Embed {
 
 			div.append(iconrow);
 			const h2 = document.createElement("h2");
-			h2.textContent = I18n.invite.invitedBy(json.inviter.username);
+			h2.textContent = json.inviter
+				? I18n.invite.invitedBy(json.inviter.username)
+				: I18n.invite.invitedTo(guild.name);
 			div.append(h2);
 			const button = document.createElement("button");
 			button.textContent = I18n.invite.accept();

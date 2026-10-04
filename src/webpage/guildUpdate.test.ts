@@ -121,3 +121,29 @@ describe("GUILD_UPDATE", () => {
 		expect(header.textContent).toBe("Other server");
 	});
 });
+
+describe("searching members", () => {
+	it("a search with no match answers with no members instead of never", async () => {
+		const searchMap = new Map<string, (chunk: unknown) => void>();
+		const ws = {send: () => {}};
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: GUILD_ID,
+			owner: {ws, searchMap},
+		}) as InstanceType<typeof Guild>;
+
+		const search = guild.searchMembers(10, "nobody");
+		const [answer] = searchMap.values();
+		answer({chunk_index: 0, chunk_count: 1, nonce: "n", members: [], presences: []});
+
+		expect(await Promise.race([search, new Promise((res) => setTimeout(() => res("hung"), 500))])).toEqual([]);
+	});
+
+	it("while disconnected, a search answers with no members", async () => {
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: GUILD_ID,
+			owner: {ws: undefined, searchMap: new Map()},
+		}) as InstanceType<typeof Guild>;
+
+		expect(await Promise.race([guild.searchMembers(10, "x"), new Promise((res) => setTimeout(() => res("hung"), 500))])).toEqual([]);
+	});
+});

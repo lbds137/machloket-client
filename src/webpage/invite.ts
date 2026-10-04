@@ -61,10 +61,10 @@ if (window.location.pathname.startsWith("/invite"))
 				const guildjson = json.guild;
 				guildinfo = guildjson;
 				document.getElementById("invitename")!.textContent = guildjson.name;
-				document.getElementById("invitedescription")!.textContent = I18n.invite.longInvitedBy(
-					json.inviter.username,
-					guildjson.name,
-				);
+				// An invite can have no inviter (a vanity or system invite).
+				document.getElementById("invitedescription")!.textContent = json.inviter
+					? I18n.invite.longInvitedBy(json.inviter.username, guildjson.name)
+					: I18n.invite.invitedTo(guildjson.name);
 				if (guildjson.discovery_splash) {
 					const img = createImg(
 						`${urls!.cdn}/discovery-splashes/${guildjson.id}/${guildjson.discovery_splash}.png`,

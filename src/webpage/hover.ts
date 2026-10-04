@@ -63,7 +63,6 @@ class Hover {
 		}).observe(elm, {childList: true});
 		Hover.map.get(elm)?.();
 		Hover.map.set(elm, () => {
-			alert("happened");
 			clearTimeout(timeOut);
 			this.elm2.remove();
 		});
