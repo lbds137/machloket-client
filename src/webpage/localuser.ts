@@ -529,8 +529,6 @@ class Localuser {
 							},
 						}),
 					);
-					this.resume_gateway_url = undefined;
-					this.session_id = undefined;
 				} else {
 					ws.send(
 						JSON.stringify({
@@ -568,7 +566,7 @@ class Localuser {
 							build = "";
 							await this.handleEvent(temp);
 
-							if (temp.op === 0 && temp.t === "READY") {
+							if (temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
 								console.log("in here?");
 								returny();
 							}
@@ -619,7 +617,7 @@ class Localuser {
 					}
 
 					await this.handleEvent(temp as readyjson);
-					if (temp.op === 0 && temp.t === "READY") {
+					if (temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
 						returny();
 					}
 				} catch (e) {
@@ -634,6 +632,7 @@ class Localuser {
 			this.ws = undefined;
 			this.stopHeartbeat();
 			console.log("WebSocket closed with code " + event.code);
+			this.abandonMemberRequests();
 			if (
 				(event.code > 1000 && event.code < 1016 && this.errorBackoff === 0) ||
 				(wsCodesRetry.has(event.code) && this.errorBackoff === 0)
@@ -647,9 +646,6 @@ class Localuser {
 			this.unload();
 			(document.getElementById("loading") as HTMLElement).classList.remove("doneloading");
 			(document.getElementById("loading") as HTMLElement).classList.add("loading");
-			this.fetchingmembers.clear();
-			this.noncemap.clear();
-			this.noncebuild.clear();
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			if (
 				(event.code > 1000 && event.code < 1016) ||
@@ -781,6 +777,9 @@ class Localuser {
 		if (getDeveloperSettings().gatewayLogging) console.debug(temp);
 		if (temp.s) this.lastSequence = temp.s;
 		if (temp.op === 9 && this.ws) {
+			// The session can't be resumed: the reconnect identifies afresh.
+			this.resume_gateway_url = undefined;
+			this.session_id = undefined;
 			this.errorBackoff = 0;
 			this.ws.close(4041);
 		}
@@ -892,6 +891,12 @@ class Localuser {
 				}
 				case "READY":
 					await this.gottenReady(temp as readyjson);
+					break;
+				case "RESUMED":
+					// A good connection again, so the next drop may resume too; member lookups the
+					// dropped socket abandoned go out on this one.
+					this.errorBackoff = 0;
+					this.getmembers();
 					break;
 				case "MESSAGE_UPDATE": {
 					temp.d.guild_id ??= "@me";
@@ -5919,12 +5924,22 @@ class Localuser {
 			this.noncemap.delete(chunk.nonce);
 		}
 	}
+	/** Settles the member lookups a dropped socket will never answer as "no reply", leaving their
+	 * users waiting so the next getmembers() asks again. */
+	abandonMemberRequests() {
+		const pending = [...this.noncemap.values()];
+		this.noncemap.clear();
+		this.noncebuild.clear();
+		this.fetchingmembers.clear();
+		for (const settle of pending) settle([[], []]);
+	}
 	async getmembers() {
 		const promise = new Promise((res) => {
 			setTimeout(res, 10);
 		});
 		await promise; //allow for more to be sent at once :P
-		if (this.ws) {
+		// A socket still connecting can't send; RESUMED or READY asks once it's up.
+		if (this.ws?.readyState === WebSocket.OPEN) {
 			this.waitingmembers.forEach(async (value, guildid) => {
 				const keys = value.keys();
 				if (this.fetchingmembers.has(guildid)) {

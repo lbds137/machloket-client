@@ -1256,6 +1256,12 @@ type wsjson =
 				version: number; //I don't think this really matters lol
 			};
 			s: number;
+	  }
+	| {
+			op: 0;
+			t: "RESUMED";
+			d: unknown;
+			s: number;
 	  };
 
 export interface interactionCreate {
