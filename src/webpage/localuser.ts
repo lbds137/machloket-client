@@ -825,6 +825,13 @@ class Localuser {
 						const label = this.commandNonceLabels.get(temp.d.nonce);
 						if (label && temp.d.id) {
 							this.interactionIdLabels.set(temp.d.id, label);
+							this.commandNonceLabels.delete(temp.d.nonce);
+							// Replies render near their command; a long session keeps only the
+							// most recent labels (a Map iterates oldest first).
+							if (this.interactionIdLabels.size > 200) {
+								const oldest = this.interactionIdLabels.keys().next().value;
+								if (oldest !== undefined) this.interactionIdLabels.delete(oldest);
+							}
 						}
 					}
 					break;
@@ -5290,6 +5297,27 @@ class Localuser {
 			md,
 		);
 	}
+	/** Each search-result row's command, for commit-on-space by base name. */
+	private rowCommands?: WeakMap<Element, Command>;
+	/** Space after a typed command name commits it, as Discord does ("/character" + space). An
+	 * exact row ("/name" or "/name sub") commits as a click on it would. A command made only of
+	 * subcommands has no "/name" row, so its base name starts it with the branch picker open. */
+	commitTypedCommand(text: string, rows: HTMLDivElement): boolean {
+		const names = [...rows.querySelectorAll<HTMLElement>(".commandRowName")];
+		const exact = names.find((span) => span.textContent === text);
+		if (exact) {
+			exact.click();
+			return true;
+		}
+		const base = names.find(
+			(span) => span.querySelector(".commandRowBase")?.textContent === text,
+		);
+		const command = base && this.rowCommands?.get(base.closest(".commandRow") as Element);
+		if (!command) return false;
+		this.MDSearchOptions([], "", rows);
+		this.channelfocus?.startCommand(command);
+		return true;
+	}
 	/** A search-result row for a slash command: the owning app's icon, the "/name" (plus its
 	 * sub path — subcommands list individually), and the app's name — with several bots in a
 	 * guild, a bare name doesn't say whose command it is. The name span's text is exactly
@@ -5302,6 +5330,7 @@ class Localuser {
 		const app = apps?.find((_) => _.id === command.applicationId);
 		const row = document.createElement("span");
 		row.classList.add("commandRow");
+		(this.rowCommands ??= new WeakMap()).set(row, command);
 		row.append(appIconElm(this, app));
 		const name = document.createElement("span");
 		name.classList.add("commandRowName");

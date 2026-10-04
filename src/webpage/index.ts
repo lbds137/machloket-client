@@ -325,17 +325,12 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 
 		if (event.key === " ") {
-			// Space commits an exact command match, as Discord does ("/character" + space).
-			// The command's name lives in the row's .commandRowName span (exactly "/name");
-			// mention rows carry no such span, which keeps this from touching their popup.
-			const rows = document.getElementById("searchOptions");
+			// Space commits a typed command name, as Discord does ("/character" + space).
+			// Only command rows carry .commandRowName, which keeps this off mention popups.
+			const rows = document.getElementById("searchOptions") as HTMLDivElement | null;
 			if (rows?.childElementCount) {
 				const text = MarkDown.gatherBoxText(typebox).trim();
-				const match = [...rows.querySelectorAll<HTMLSpanElement>(".commandRowName")].find(
-					(span) => span.textContent === text,
-				);
-				if (match) {
-					(match.closest("span") as HTMLElement).click();
+				if (thisUser.commitTypedCommand(text, rows)) {
 					event.preventDefault();
 					return;
 				}

@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {captureRequests} from "../test/setup";
 import {API, dmMessage, messageIn} from "../test/interactionFixture";
 
@@ -108,5 +108,40 @@ describe("component and command interactions in a DM", () => {
 			channel_id: "200",
 			application_id: "300",
 		});
+	});
+});
+
+describe("a reply in a DM", () => {
+	it("sends no '@me' guild_id in its message_reference", async () => {
+		const {Channel} = await import("../channel");
+		const {message, channel} = dmMessage();
+		const bodies: unknown[] = [];
+		class FakeXHR {
+			upload = {onprogress: null};
+			responseType = "";
+			status = 200;
+			response = {};
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			open() {}
+			setRequestHeader() {}
+			send(body: string) {
+				bodies.push(JSON.parse(body));
+				queueMicrotask(() => this.onload?.());
+			}
+		}
+		vi.stubGlobal("XMLHttpRequest", FakeXHR);
+		try {
+			const sender = Object.assign({makeFakeMessage: async () => undefined}, channel);
+			await Channel.prototype.sendMessage.call(sender as never, "hi", {
+				replyingto: message,
+			});
+		} finally {
+			vi.unstubAllGlobals();
+		}
+		expect(bodies).toHaveLength(1);
+		const ref = (bodies[0] as {message_reference: Record<string, unknown>}).message_reference;
+		expect(ref).toMatchObject({channel_id: "200", message_id: "500"});
+		expect(ref).not.toHaveProperty("guild_id", "@me");
 	});
 });

@@ -488,11 +488,17 @@ export class Command extends SnowFlake {
 		}
 	}
 	/** Unhides the next hidden REQUIRED chip (document order = option order); an optional
-	 * field joins only by an explicit pick from the option popup. */
+	 * field joins only by an explicit pick from the option popup. One unanswered required field
+	 * shows at a time: while one is in view, nothing more reveals (stateChange runs per
+	 * keystroke, so without this every key in a filled field revealed one more). */
 	revealNext(channel: Channel) {
 		const box = this.boxes.get(channel);
 		if (!box) return;
 		const states = this.state.get(channel);
+		for (const chip of box.querySelectorAll(".commandinput:not(.commandHidden)")) {
+			const option = this.resolveOption(chip.getAttribute("commandName") || "", states);
+			if (option?.required && !option.filled(this.getState(option, channel) ?? "")) return;
+		}
 		for (const chip of box.querySelectorAll(".commandinput.commandHidden")) {
 			const option = this.resolveOption(chip.getAttribute("commandName") || "", states);
 			if (option?.required) {
@@ -539,7 +545,10 @@ export class Command extends SnowFlake {
 				: undefined
 			: pickedBranch?.localizedName;
 		const input = chip.querySelector("input");
-		if (input && display) input.value = display;
+		if (input && display) {
+			input.value = display;
+			branchShown.set(input, display);
+		}
 		this.stateChange(branch, channel, picked);
 		branch.renderLeaves(chip, picked, channel);
 	}
@@ -1183,6 +1192,11 @@ class EntityOption extends Option {
 		const hit = this.collect(channel).find((_) => _.value === state);
 		return hit ? hit.display : state;
 	}
+	/** Per input: the text the state last followed (a typed query or a pick's display). A keyup
+	 * that leaves the text as it was — Enter, Tab, an arrow — must not touch the state or the
+	 * popup: rewriting the state to "@Name" would lose the picked id, and rebuilding the popup
+	 * would reset its selection and make the sending Enter pick again. */
+	private followed = new WeakMap<HTMLInputElement, string>();
 	displayCandidates(input: HTMLInputElement, channel: Channel) {
 		this.owner.localuser.MDSearchOptions(
 			this.candidates(channel, input.value).map((c) => {
@@ -1192,6 +1206,7 @@ class EntityOption extends Option {
 					undefined,
 					() => {
 						input.value = c.display;
+						this.followed.set(input, c.display);
 						this.owner.stateChange(this, channel, c.value);
 						return true;
 					},
@@ -1221,11 +1236,14 @@ class EntityOption extends Option {
 						? I18n.commands.placeholderRole()
 						: I18n.commands.placeholderMentionable();
 		input.value = this.describe(channel, state);
+		this.followed.set(input, input.value);
 		input.onkeydown = (e) => {
 			chipBackspace(div, input, channel, e);
 		};
 		input.onkeyup = (e) => {
 			chipExit(div, input, this.owner, channel, e);
+			if (this.followed.get(input) === input.value) return;
+			this.followed.set(input, input.value);
 			this.owner.stateChange(this, channel, input.value);
 			this.displayCandidates(input, channel);
 		};
@@ -1240,13 +1258,24 @@ class EntityOption extends Option {
 		throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 	}
 }
+/** Per branch-picker input: the text its popup was last built for, or a pick displayed (the
+ * popup's own pick or prePick's). A keyup that leaves the text unchanged — an arrow, Enter,
+ * Tab — must not rebuild the popup: that resets the selection, and after a pick it re-offers
+ * the branch so the sending Enter picks again. */
+const branchShown = new WeakMap<HTMLInputElement, string>();
 /** Upload ref ids must differ across the picks of one command: the server pairs each option's
  * value with its data.attachments entry by id. */
 let attachmentRefIds = 0;
 class AttachmentOption extends Option {
 	owner: Command;
-	/** Per channel: the upload behind the state's ref id (the channel's own upload flow). */
-	uploads = new WeakMap<Channel, {filename: string; upload_filename: string}>();
+	/** Per channel: the latest upload and its ref id. It counts only while the state still holds
+	 * that id — a sent or abandoned command reseeds the state, and the upload stays behind. */
+	uploads = new WeakMap<Channel, {id: string; filename: string; upload_filename: string}>();
+	/** The upload behind `state`, if `state` is still this channel's latest pick. */
+	private uploadFor(channel: Channel, state: string) {
+		const upload = this.uploads.get(channel);
+		return upload && upload.id === state ? upload : undefined;
+	}
 	constructor(optionjson: commandOptionJson, owner: Command) {
 		super(optionjson);
 		this.owner = owner;
@@ -1258,19 +1287,23 @@ class AttachmentOption extends Option {
 		if (!file) return;
 		const [entry] = await channel.uploadFile([file], [++attachmentRefIds + ""]);
 		if (!entry) return;
-		this.uploads.set(channel, {filename: file.name, upload_filename: entry.upload_filename});
+		this.uploads.set(channel, {
+			id: entry.id,
+			filename: file.name,
+			upload_filename: entry.upload_filename,
+		});
 		this.owner.stateChange(this, channel, entry.id);
 	}
 	/** The data.attachments entry pairing this option's value with its upload; a value with
 	 * nothing uploaded behind it (a pasted id) is refused, as the server would refuse it. */
 	attachmentEntry(channel: Channel, state: string) {
-		const upload = this.uploads.get(channel);
+		const upload = this.uploadFor(channel, state);
 		if (!/^\d+$/.test(state) || !upload) {
 			throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 		}
 		return {id: state, filename: upload.filename, uploaded_filename: upload.upload_filename};
 	}
-	toHTML(_state: string, channel: Channel): HTMLElement {
+	toHTML(state: string, channel: Channel): HTMLElement {
 		const div = document.createElement("div");
 		div.contentEditable = "false";
 		div.classList.add("flexltr", "commandinput");
@@ -1283,7 +1316,7 @@ class AttachmentOption extends Option {
 		const input = document.createElement("input");
 		input.type = "file";
 		const status = document.createElement("span");
-		const uploaded = this.uploads.get(channel);
+		const uploaded = this.uploadFor(channel, state);
 		if (uploaded) status.textContent = uploaded.filename;
 		input.onchange = async () => {
 			const files = Array.from(input.files || []);
@@ -1363,13 +1396,18 @@ class SubCommandOption extends Option {
 	getValue(state: string) {
 		return state;
 	}
-	/** The wire entry: the picked subcommand nesting the leaf entries. */
-	wireEntry(state: string, leaves: {value: unknown; type: number; name: string}[]) {
-		return {name: state, type: 1, options: leaves} as {
-			name: string;
-			type: number;
-			options: unknown[];
-		};
+	/** The wire entry: the picked subcommand nesting the leaf entries, inside its group when the
+	 * pick is "group/sub". The shape comes from the PICK, not from this chip's class: a command
+	 * may mix top-level subcommands and groups, and its one chip is whichever came first. */
+	wireEntry(
+		state: string,
+		leaves: {value: unknown; type: number; name: string}[],
+	): {name: string; type: number; options: unknown[]} {
+		if (state.includes("/")) {
+			const [groupName, subName] = state.split("/");
+			return {name: groupName, type: 2, options: [{name: subName, type: 1, options: leaves}]};
+		}
+		return {name: state, type: 1, options: leaves};
 	}
 	/** Removes every option chip after `div` (the previous branch's leaves). */
 	clearFollowing(div: HTMLElement) {
@@ -1451,7 +1489,9 @@ class SubCommandOption extends Option {
 		input.value = state;
 		// A group command picks twice: the group, then its subcommand.
 		let group: SubCommandGroupOption | undefined;
+		branchShown.set(input, input.value);
 		const offer = () => {
+			branchShown.set(input, input.value);
 			const entries =
 				group === undefined
 					? this.branches()
@@ -1484,6 +1524,7 @@ class SubCommandOption extends Option {
 											? branch.name
 											: group.name + "/" + branch.name;
 									input.value = branch.localizedName;
+									branchShown.set(input, input.value);
 									this.owner.stateChange(this, channel, picked);
 									this.renderLeaves(div, picked, channel);
 								}
@@ -1499,7 +1540,7 @@ class SubCommandOption extends Option {
 		};
 		input.onkeyup = (e) => {
 			chipExit(div, input, this.owner, channel, e);
-			offer();
+			if (input.value !== branchShown.get(input)) offer();
 		};
 		input.oninput = offer;
 
@@ -1522,13 +1563,4 @@ class SubCommandOption extends Option {
 		return div;
 	}
 }
-class SubCommandGroupOption extends SubCommandOption {
-	wireEntry(state: string, leaves: {value: unknown; type: number; name: string}[]) {
-		const [groupName, subName] = state.split("/");
-		return {
-			name: groupName,
-			type: 2,
-			options: [{name: subName, type: 1, options: leaves}],
-		};
-	}
-}
+class SubCommandGroupOption extends SubCommandOption {}

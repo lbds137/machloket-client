@@ -1767,3 +1767,220 @@ describe("progressive composer model", () => {
 		}
 	});
 });
+
+describe("keyboard and sequence regressions (GLM-week audit)", () => {
+	/** A popup host, the way the app's #searchOptions exists for MDSearchOptions. */
+	function popupHost() {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		return searchOptions;
+	}
+	/** One keystroke the way the browser delivers it: the chip input's own keyup, then the
+	 * typebox's bubbled handler (index.ts runs localuser.handleKeyUp). */
+	function key(input: HTMLInputElement, localuser: {handleKeyUp: (e: KeyboardEvent) => boolean}, k: string) {
+		input.dispatchEvent(new KeyboardEvent("keyup", {key: k}));
+		return localuser.handleKeyUp(new KeyboardEvent("keyup", {key: k}));
+	}
+
+	it("a command mixing a top-level subcommand and a group wires the PICKED branch's shape", async () => {
+		const options: commandOptionJson[] = [
+			{type: 1, name: "plain", description: ""},
+			{
+				type: 2,
+				name: "grp",
+				description: "",
+				options: [{type: 1, name: "s", description: ""}],
+			},
+		];
+		for (const [order, picked, wire] of [
+			[options, "grp/s", {name: "grp", type: 2, options: [{name: "s", type: 1, options: []}]}],
+			[[...options].reverse(), "plain", {name: "plain", type: 1, options: []}],
+		] as const) {
+			const sent = captureRequests(API + "/interactions");
+			const {localuser, channel} = messageIn("@me");
+			const command = new Command(commandJson([...order]), localuser);
+			command.state.set(channel as never, [{option: command.options[0], state: picked}]);
+			await command.submit(document.createElement("div"), channel as never);
+			expect(sent).toHaveLength(1);
+			expect((sent[0] as {data: {options: unknown}}).data.options).toEqual([wire]);
+		}
+	});
+
+	it("an entity pick survives the Enter that sends: the id stays and Enter reaches submit", async () => {
+		const searchOptions = popupHost();
+		const {localuser, channel} = messageIn("1553128655016763450");
+		(channel as unknown as {guild: unknown}).guild = {
+			id: "1553128655016763450",
+			members: [
+				{id: "1553128655016763451", user: {username: "Tzurot"}, compare: (n: string) => (n ? 1 : 0)},
+			],
+			roles: [],
+			channels: [],
+		};
+		const command = new Command(
+			commandJson([{type: 6, name: "who", description: "", required: true}]),
+			localuser,
+		);
+		const chip = command.options[0].toHTML("", channel as never);
+		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
+		const input = chip.querySelector("input") as HTMLInputElement;
+		try {
+			input.value = "Tz";
+			key(input, localuser, "z");
+			// Enter picks the highlighted row (focus stays in the input)…
+			expect(key(input, localuser, "Enter")).toBe(true);
+			expect(command.getState(command.options[0], channel as never)).toBe("1553128655016763451");
+			expect(input.value).toBe("@Tzurot");
+			// …and the NEXT Enter is the send: nothing re-picks, the id is intact.
+			expect(key(input, localuser, "Enter")).toBe(false);
+			expect(command.getState(command.options[0], channel as never)).toBe("1553128655016763451");
+			expect(searchOptions.childElementCount).toBe(0);
+		} finally {
+			searchOptions.remove();
+		}
+	});
+
+	it("arrow keys move the branch popup's selection; Enter picks the selected row", async () => {
+		const searchOptions = popupHost();
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "a", description: ""},
+				{type: 1, name: "b", description: ""},
+				{type: 1, name: "c", description: ""},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			await new Promise((r) => setTimeout(r, 0));
+			const input = html.querySelector(".commandinput input") as HTMLInputElement;
+			// Rows render a, b, c top-down with the top selected; two downs land on c.
+			key(input, localuser, "ArrowDown");
+			key(input, localuser, "ArrowDown");
+			key(input, localuser, "Enter");
+			expect(command.getState(command.options[0], channel as never)).toBe("c");
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("a picked branch survives the Enter that sends", async () => {
+		const searchOptions = popupHost();
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "browse", description: ""},
+				{type: 1, name: "bump", description: ""},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			await new Promise((r) => setTimeout(r, 0));
+			const input = html.querySelector(".commandinput input") as HTMLInputElement;
+			expect(key(input, localuser, "Enter")).toBe(true);
+			expect(command.getState(command.options[0], channel as never)).toBe("browse");
+			await new Promise((r) => setTimeout(r, 0));
+			// The pick re-rendered nothing to choose: the next Enter falls through to submit.
+			expect(key(input, localuser, "Enter")).toBe(false);
+			expect(command.getState(command.options[0], channel as never)).toBe("browse");
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("a branch chosen from the picker's '/name sub' row survives the Enter that sends", async () => {
+		const searchOptions = popupHost();
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 1, name: "browse", description: ""},
+				{type: 1, name: "bump", description: ""},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			command.prePick(channel as never, "browse");
+			await new Promise((r) => setTimeout(r, 0));
+			const input = html.querySelector(".commandinput input") as HTMLInputElement;
+			expect(key(input, localuser, "Enter")).toBe(false);
+			expect(searchOptions.childElementCount).toBe(0);
+			expect(command.getState(command.options[0], channel as never)).toBe("browse");
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("each keystroke in a filled field reveals nothing more; the NEXT field waits for its turn", async () => {
+		const {localuser, channel} = messageIn("100");
+		const command = new Command(
+			commandJson([
+				{type: 3, name: "a", description: "", required: true},
+				{type: 3, name: "b", description: "", required: true},
+				{type: 3, name: "c", description: "", required: true},
+			]),
+			localuser,
+		);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const shown = () =>
+				[...html.querySelectorAll(".commandinput")].map((c) => !c.classList.contains("commandHidden"));
+			const a = html.querySelector(".commandinput input") as HTMLInputElement;
+			const seen: boolean[][] = [];
+			for (const ch of ["h", "he", "hel"]) {
+				a.value = ch;
+				a.dispatchEvent(new KeyboardEvent("keyup", {key: ch.at(-1)}));
+				seen.push(shown());
+			}
+			expect(seen).toEqual([
+				[true, true, false],
+				[true, true, false],
+				[true, true, false],
+			]);
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("a sent attachment does not haunt the command's next run", async () => {
+		const {localuser, channel} = messageIn("100");
+		(channel as unknown as {uploadFile: unknown}).uploadFile = async () => [
+			{id: "0", upload_url: "http://dm.test/up/0", upload_filename: "77/0/kitten.png"},
+		];
+		const command = new Command(
+			commandJson([{type: 11, name: "image", description: ""}]),
+			localuser,
+		);
+		captureRequests(API + "/interactions");
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const option = command.options[0] as unknown as {
+				pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
+			};
+			await option.pick([new File(["png"], "kitten.png", {type: "image/png"})], channel);
+			await expect(command.submit(html, channel as never)).resolves.toBe(true);
+			// The next /image in this channel starts clean: no filename on an empty option.
+			command.render(html, channel as never);
+			const chip = html.querySelector(".commandinput[commandName='image']") as HTMLElement;
+			expect(chip.textContent).not.toContain("kitten.png");
+		} finally {
+			html.remove();
+		}
+	});
+});

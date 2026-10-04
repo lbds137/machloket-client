@@ -36,6 +36,7 @@ import {Sticker} from "./sticker.js";
 import {CustomHTMLDivElement} from "./index.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {Command} from "./interactions/commands.js";
+import {wireGuildId} from "./interactions/compontents.js";
 import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
@@ -3811,7 +3812,8 @@ class Channel extends SnowFlake {
 		let replyjson: any;
 		if (replyingto) {
 			replyjson = {
-				guild_id: replyingto.guild.id,
+				// A DM reply names no guild ("@me" is the client's pseudo-guild, not a wire id).
+				guild_id: wireGuildId(replyingto.guild),
 				channel_id: replyingto.channel.id,
 				message_id: replyingto.id,
 			};

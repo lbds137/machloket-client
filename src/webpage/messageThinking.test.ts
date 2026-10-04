@@ -60,4 +60,14 @@ describe("deferred (loading) messages", () => {
 
 		expect(div.classList.contains("thinking")).toBe(false);
 	});
+
+	it("re-rendering a still-deferred bubble shows its label once", () => {
+		// Neighbours regenerate whenever a message arrives, so a defer re-renders while loading.
+		const message = loadingMessage(1 << 7, "");
+		const div = document.createElement("div");
+		message.generateMessage(undefined, false, div);
+		message.generateMessage(undefined, false, div);
+
+		expect(div.querySelectorAll("span")).toHaveLength(1);
+	});
 });

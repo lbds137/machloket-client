@@ -147,6 +147,12 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 	showAllBtn.onclick = () => renderInvites(true);
 	inviteMenu.addHTMLArea(showAllBtn);
 }
+/** One scope's command index: the fetch (shared while in flight) and, once it succeeded, its
+ * commands for synchronous readers. */
+type CommandIndexEntry = {
+	promise: Promise<{apps: applicationJson[]; commands: Command[]}>;
+	settled?: Command[];
+};
 class Guild extends SnowFlake {
 	owner!: Localuser;
 	headers!: Localuser["headers"];
@@ -2237,42 +2243,51 @@ class Guild extends SnowFlake {
 			}),
 		});
 	}
-	commands?: Command[];
-	commandProm?: Promise<unknown>;
+	/** The apps behind the latest command list asked for (the popup's icons and app names). */
 	apps?: applicationJson[];
-	async getApps() {
-		if (this.commandProm) {
-			await this.commandProm;
+	/** Command indexes by scope: "" is the guild's own; in "@me" each DM channel has its own,
+	 * since each DM has its own bot set. A fetch in flight is shared; a failed one is dropped
+	 * so the next ask retries instead of serving "no commands" for the session. */
+	private commandIndexes?: Map<string, CommandIndexEntry>;
+	private commandIndex(channelId?: string) {
+		const scope = this.id === "@me" ? (channelId ?? "") : "";
+		this.commandIndexes ??= new Map();
+		const indexes = this.commandIndexes;
+		let entry = indexes.get(scope);
+		if (!entry) {
+			const fetched = this.getCommandsFetch(this.id === "@me" ? channelId : undefined);
+			const made: CommandIndexEntry = {
+				promise: fetched.then(
+					({ok, apps, commands}) => {
+						if (ok) made.settled = commands;
+						else if (indexes.get(scope) === made) indexes.delete(scope);
+						return {apps, commands};
+					},
+					() => {
+						if (indexes.get(scope) === made) indexes.delete(scope);
+						return {apps: [], commands: []};
+					},
+				),
+			};
+			entry = made;
+			indexes.set(scope, entry);
 		}
-		if (this.apps) {
-			return this.commands;
-		} else {
-			const prom = this.getCommandsFetch();
-			this.commandProm = prom;
-			const {apps, commands} = await prom;
-			this.commands = commands;
-			this.apps = apps;
-			return apps;
-		}
+		return entry.promise;
 	}
+	/** The slash popup's commands: chat-input only; context-menu commands (USER 2, MESSAGE 3)
+	 * have their own menus. `channelId` scopes a DM's list to that DM's bots. */
 	async getCommands(channelId?: string) {
-		// A DM context always refetches: each DM has its own bot set, so the per-guild cache
-		// would serve one DM's commands inside every other.
-		if (this.id !== "@me" && this.commandProm) {
-			await this.commandProm;
-		}
-		if (this.commands && !(this.id === "@me" && channelId)) {
-			return this.commands.filter((_) => _.type === 1);
-		} else {
-			const prom = this.getCommandsFetch(channelId);
-			this.commandProm = prom;
-			const {apps, commands} = await prom;
-			this.commands = commands;
-			this.apps = apps;
-			// The slash popup offers only chat-input commands; context-menu commands (USER 2,
-			// MESSAGE 3) stay in this.commands for their own menus.
-			return commands.filter((_) => _.type === 1);
-		}
+		const {apps, commands} = await this.commandIndex(channelId);
+		this.apps = apps;
+		return commands.filter((_) => _.type === 1);
+	}
+	/** MESSAGE context-menu commands for `channelId`'s scope, synchronously: what has already
+	 * been fetched (a menu can't wait). An unfetched scope starts its fetch and reads empty. */
+	cachedContextCommands(channelId: string): Command[] {
+		const scope = this.id === "@me" ? channelId : "";
+		const settled = this.commandIndexes?.get(scope)?.settled;
+		if (!settled) void this.commandIndex(channelId);
+		return (settled ?? []).filter((_) => _.type === 3);
 	}
 
 	async getCommandsFetch(channelId?: string) {
@@ -2286,25 +2301,32 @@ class Guild extends SnowFlake {
 					"/users/@me/application-command-index" +
 					(channelId ? `?channel_id=${channelId}` : "")
 				: this.info.api + `/guilds/${this.id}/application-command-index`;
-		const json = (await (
-			await fetch(url, {
-				headers: this.headers,
-			})
-		).json()) as {application_commands?: commandJson[]; applications?: applicationJson[]};
-		// A non-200 answer is an error body with neither field: no commands, not a crash.
+		const res = await fetch(url, {
+			headers: this.headers,
+		});
+		// A non-200 answer is an error body with neither field (or a proxy's HTML page): no
+		// commands, not a crash — and `ok: false`, so the caller doesn't cache it.
+		let json: {application_commands?: commandJson[]; applications?: applicationJson[]} = {};
+		try {
+			json = await res.json();
+		} catch {
+			return {ok: false, apps: [], commands: []};
+		}
 		// An app registering a command both globally and per-guild makes the index carry both
-		// rows (global first); keep one per (app, name) — either id invokes — or the picker
-		// offers every command twice.
+		// rows (global first); keep one per (app, type, name) — either id invokes — or the
+		// picker offers every command twice. The type is part of the key: a user or message
+		// command may share a slash command's name.
 		const seen = new Set<string>();
 		const commands = (json.application_commands ?? [])
 			.filter((raw) => {
-				const key = raw.application_id + "/" + raw.name;
+				const key = raw.application_id + "/" + raw.type + "/" + raw.name;
 				if (seen.has(key)) return false;
 				seen.add(key);
 				return true;
 			})
 			.map((_) => new Command(_, this.localuser));
 		return {
+			ok: res.ok,
 			apps: json.applications ?? [],
 			commands,
 		};

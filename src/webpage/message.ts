@@ -172,8 +172,8 @@ class Message extends SnowFlake {
 		Message.contextmenu.addButton(
 			() => I18n.message.apps(),
 			function (this: Message) {
-				const guild = this.channel.guild;
-				const commands = (guild.commands ?? []).filter((_) => _.type === 3);
+				// Scoped to this channel: in DMs each channel has its own bots.
+				const commands = this.channel.guild.cachedContextCommands(this.channel.id);
 				if (commands.length === 1) {
 					void commands[0].submitContext(this.id, this.channel);
 					return;
@@ -189,11 +189,9 @@ class Message extends SnowFlake {
 			},
 			{
 				visible: function () {
-					const guild = this.channel.guild;
-					// Warm the command cache: the first open may precede the fetch, later ones
-					// see the stored list.
-					void guild.getCommands().catch(() => {});
-					return (guild.commands ?? []).some((_) => _.type === 3);
+					// The first open may precede the fetch (this starts it); later ones see the
+					// stored list.
+					return this.channel.guild.cachedContextCommands(this.channel.id).length > 0;
 				},
 			},
 		);
@@ -894,7 +892,8 @@ class Message extends SnowFlake {
 			div.classList.add("messagediv", "thinking");
 			const label = document.createElement("span");
 			label.textContent = I18n.message.thinking(this.author.username);
-			div.append(label);
+			// Replace, not append: neighbours regenerate while this is still loading.
+			div.replaceChildren(label);
 			return div;
 		}
 		if (!premessage && !dupe) {

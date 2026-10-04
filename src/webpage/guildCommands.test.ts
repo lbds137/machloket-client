@@ -129,6 +129,98 @@ describe("application-command index fetch", () => {
 		expect(names).toContain("random");
 		expect(names).not.toContain("Inspect Message");
 	});
+
+	it("a context-menu command sharing a slash command's name doesn't swallow it", async () => {
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Echo"}],
+					application_commands: [
+						{id: "2", type: 2, application_id: "300", name: "profile", description: "", dm_permission: true},
+						{id: "1", type: 1, application_id: "300", name: "profile", description: "", dm_permission: true},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		const guild = guildWithId("1554722916606791818");
+
+		const commands = (await guild.getCommands()) as unknown as {name: string}[];
+
+		expect(commands.map((c) => c.name)).toEqual(["profile"]);
+	});
+
+	it("a failed index fetch is not cached: the next ask fetches again", async () => {
+		let calls = 0;
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () => {
+			calls++;
+			return calls === 1
+				? new Response("<html>502 Bad Gateway</html>", {status: 502})
+				: new Response(
+						JSON.stringify({
+							applications: [],
+							application_commands: [
+								{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+							],
+						}),
+						{headers: {"Content-Type": "application/json"}},
+					);
+		});
+		const guild = guildWithId("1554722916606791818");
+
+		expect(await guild.getCommands()).toEqual([]);
+		const again = (await guild.getCommands()) as unknown as {name: string}[];
+
+		expect(calls).toBe(2);
+		expect(again.map((c) => c.name)).toEqual(["random"]);
+	});
+
+	it("each DM keeps its own command list, fetched once, and the Apps menu reads that DM's", async () => {
+		const perChannel: Record<string, {name: string; type: number}[]> = {
+			A: [
+				{name: "alpha", type: 1},
+				{name: "Inspect A", type: 3},
+			],
+			B: [
+				{name: "beta", type: 1},
+				{name: "Inspect B", type: 3},
+			],
+		};
+		const urls: string[] = [];
+		const inner = globalThis.fetch;
+		globalThis.fetch = (async (input: RequestInfo | URL) => {
+			const url = new URL(String(input));
+			urls.push(url.search);
+			const list = perChannel[url.searchParams.get("channel_id") ?? ""] ?? [];
+			return new Response(
+				JSON.stringify({
+					applications: [],
+					application_commands: list.map((c, i) => ({
+						id: String(i + 1),
+						application_id: "300",
+						description: "",
+						dm_permission: true,
+						...c,
+					})),
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			);
+		}) as typeof fetch;
+		const direct = guildWithId("@me");
+		const names = (list: unknown) => (list as {name: string}[]).map((c) => c.name);
+
+		try {
+			expect(names(await direct.getCommands("A"))).toEqual(["alpha"]);
+			expect(names(await direct.getCommands("B"))).toEqual(["beta"]);
+			expect(names(await direct.getCommands("A"))).toEqual(["alpha"]);
+			expect(names(direct.cachedContextCommands("A"))).toEqual(["Inspect A"]);
+			expect(names(direct.cachedContextCommands("B"))).toEqual(["Inspect B"]);
+		} finally {
+			globalThis.fetch = inner;
+		}
+		// One fetch per DM, not one per ask.
+		expect(urls).toEqual(["?channel_id=A", "?channel_id=B"]);
+	});
 });
 
 describe("command picker rows", () => {
@@ -457,6 +549,83 @@ describe("command picker rows", () => {
 			expect(box.childElementCount).toBe(0);
 			// No handlers stuck holding the keyboard: Enter falls through to sending.
 			expect(localuser.keyup(new KeyboardEvent("keyup", {key: "Enter"}))).toBe(false);
+		} finally {
+			box.remove();
+		}
+	});
+});
+
+describe("space commits a typed command name", () => {
+	async function picker(options: commandJsonT["options"]) {
+		const {Localuser} = await import("./localuser");
+		const {Command} = await import("./interactions/commands.js");
+		const started: {name: string; branch?: string}[] = [];
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			lookingguild: {
+				getCommands: async () => [
+					new Command(
+						{
+							id: "1",
+							type: 1,
+							application_id: "300",
+							name: "character",
+							description: "",
+							dm_permission: true,
+							nsfw: false,
+							global_popularity_rank: 0,
+							version: "1",
+							handler: 1,
+							options,
+						},
+						localuser,
+					),
+				],
+				apps: [],
+			},
+			channelfocus: {
+				startCommand: (command: {name: string}, branch?: string) =>
+					started.push({name: command.name, branch}),
+			},
+			info: {cdn: "http://cdn.test"},
+		});
+		const box = document.createElement("div");
+		document.body.append(box);
+		await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
+			.findCommands("character", box, {} as never);
+		return {localuser, box, started};
+	}
+
+	it("a command made only of subcommands starts on its base name, branch picker open", async () => {
+		const {localuser, box, started} = await picker([
+			{type: 1, name: "browse", description: ""},
+			{type: 1, name: "view", description: ""},
+		]);
+		try {
+			expect(localuser.commitTypedCommand("/character", box)).toBe(true);
+			expect(started).toEqual([{name: "character", branch: undefined}]);
+		} finally {
+			box.remove();
+		}
+	});
+
+	it("an exact '/name sub' still commits that subcommand", async () => {
+		const {localuser, box, started} = await picker([
+			{type: 1, name: "browse", description: ""},
+			{type: 1, name: "view", description: ""},
+		]);
+		try {
+			expect(localuser.commitTypedCommand("/character view", box)).toBe(true);
+			expect(started).toEqual([{name: "character", branch: "view"}]);
+		} finally {
+			box.remove();
+		}
+	});
+
+	it("a partial name commits nothing", async () => {
+		const {localuser, box, started} = await picker([{type: 1, name: "browse", description: ""}]);
+		try {
+			expect(localuser.commitTypedCommand("/char", box)).toBe(false);
+			expect(started).toEqual([]);
 		} finally {
 			box.remove();
 		}

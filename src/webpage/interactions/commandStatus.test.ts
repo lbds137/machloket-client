@@ -120,3 +120,28 @@ describe("a slash command's progress above the composer", () => {
 		expect(status()?.textContent ?? "").toBe("");
 	});
 });
+
+describe("the 'used /command' label maps stay bounded", () => {
+	it("the echo moves a label from its nonce to its interaction id", async () => {
+		const channel = {id: "200"};
+		const user = session(channel);
+		user.registerCommandNonce("77", channel as never, "walk browse");
+
+		await user.handleEvent(event("INTERACTION_CREATE", "77") as never);
+
+		expect(user.interactionIdLabels.get("9")).toBe("walk browse");
+		expect(user.commandNonceLabels.has("77")).toBe(false);
+	});
+
+	it("a long session keeps only the most recent interaction labels", async () => {
+		const channel = {id: "200"};
+		const user = session(channel);
+		for (let i = 0; i < 300; i++) {
+			user.registerCommandNonce("n" + i, channel as never, "cmd " + i);
+			await user.handleEvent(event("INTERACTION_CREATE", "n" + i, {id: "i" + i}) as never);
+		}
+
+		expect(user.interactionIdLabels.size).toBeLessThanOrEqual(200);
+		expect(user.interactionIdLabels.get("i299")).toBe("cmd 299");
+	});
+});
