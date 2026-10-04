@@ -272,3 +272,78 @@ describe("register", () => {
 		expect(user.serverurls.api).toBe("http://register.test/api/v9");
 	});
 });
+
+describe("InstancePicker gate edges (GLM-week audit)", () => {
+	it("an edit invalidates the picker at once, not after the debounce", async () => {
+		await instancefetch;
+		addInstance("http://first.test", 0);
+		const {picker, button} = pickerWithButton();
+		const div = picker.generateHTML();
+		const input = div.querySelector<HTMLInputElement>("input")!;
+		input.value = "http://first.test";
+		await picker.validate();
+		expect(picker.validationState).toBe("ok");
+		expect(button.disabled).toBe(false);
+
+		input.value = "http://first.tes";
+		input.dispatchEvent(new KeyboardEvent("keyup", {key: "Backspace"}));
+
+		// Within the 500ms debounce, an Enter must not log in on the previous check's "ok".
+		expect(picker.validationState).toBe("pending");
+		expect(button.disabled).toBe(true);
+	});
+
+	it("a key that edits nothing keeps the check; a check in flight never lands after an edit", async () => {
+		await instancefetch;
+		addInstance("http://kept.test", 0);
+		addInstance("http://slow.test", 300);
+		const {picker, button} = pickerWithButton();
+		const div = picker.generateHTML();
+		const input = div.querySelector<HTMLInputElement>("input")!;
+		input.value = "http://kept.test";
+		await picker.validate();
+
+		input.dispatchEvent(new KeyboardEvent("keyup", {key: "Tab"}));
+		expect(picker.validationState).toBe("ok");
+		expect(button.disabled).toBe(false);
+
+		input.value = "http://slow.test";
+		const inFlight = picker.validate();
+		input.value = "http://slow.tes";
+		input.dispatchEvent(new KeyboardEvent("keyup", {key: "Backspace"}));
+		await inFlight;
+		expect(picker.validationState).toBe("pending");
+		expect(button.disabled).toBe(true);
+	});
+
+	it("a locked (?instance=) picker ignores suggestion rows", async () => {
+		await instancefetch;
+		const before = location.href;
+		history.replaceState(history.state, "", "?instance=http%3A%2F%2Flocked.test");
+		try {
+			const {picker} = pickerWithButton();
+			const div = picker.generateHTML();
+			const input = div.querySelector<HTMLInputElement>("input")!;
+			expect(input.readOnly).toBe(true);
+			const row = div.querySelector<HTMLDivElement>(".instancesuggest div");
+			row?.dispatchEvent(new MouseEvent("mousedown", {bubbles: true}));
+			expect(input.value).toBe("http://locked.test");
+		} finally {
+			history.replaceState(history.state, "", before);
+		}
+	});
+
+	it("an instance marked offline offers no suggestion row", async () => {
+		await instancefetch;
+		const list = getInstances() as unknown as Record<string, unknown>[];
+		list.push({name: "Down", url: "http://down.test", display: true, online: false});
+		try {
+			const {picker} = pickerWithButton();
+			const div = picker.generateHTML();
+			const rows = [...div.querySelectorAll<HTMLDivElement>(".instancesuggest div")];
+			expect(rows.some((r) => r.textContent?.includes("down.test"))).toBe(false);
+		} finally {
+			list.pop();
+		}
+	});
+});

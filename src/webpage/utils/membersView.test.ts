@@ -36,6 +36,8 @@ beforeEach(() => {
 			<label for="maintoggle" id="maintoggleicon"><span class="chev"></span></label>
 			<span id="channelTitle"><span id="channelname">#general</span><span id="channelTopic">the topic</span></span>
 			<label for="memberlisttoggle" id="memberlisttoggleicon"><span></span></label>
+			<div id="pinnedMDiv"></div>
+			<div id="inboxMDiv"></div>
 		</div>
 		<div id="mainarea" style="position: absolute; top: 40px; left: 0; width: 360px; height: 560px">
 			<div class="message">hello</div>
@@ -156,6 +158,15 @@ describe("closing the members view", () => {
 		expect(membersShown()).toBe(false);
 		expect((history.state as {machloketMembersView?: boolean} | null)?.machloketMembersView)
 			.not.toBe(true);
+	});
+
+	it("the header's pins and inbox close it first, so they act on the chat", async () => {
+		for (const id of ["pinnedMDiv", "inboxMDiv"]) {
+			const pop = openAndView();
+			(page.querySelector("#" + id) as HTMLElement).click();
+			expect(membersShown()).toBe(false);
+			await pop;
+		}
 	});
 });
 

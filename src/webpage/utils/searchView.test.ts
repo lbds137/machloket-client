@@ -167,6 +167,31 @@ describe("opening the search view", () => {
 		expect(page.classList.contains("mobileMembersOpen")).toBe(false);
 		expect(searchShown()).toBe(true);
 	});
+
+	it("opening it over the members view leaves its own marker current; one back closes it", async () => {
+		// The previous test's close leaves a traversal queued; let it land, then re-seat.
+		await settle();
+		history.pushState({testBase: true}, "", location.href);
+		installAll();
+		(page.querySelector("#channelTitle") as HTMLElement)!.click();
+		await settle();
+
+		searchX.click();
+		await settle();
+
+		// The members close must not traverse history under the search push: the marker
+		// the view's back relies on is the current entry.
+		expect((history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView).toBe(
+			true,
+		);
+		const pop = popArmed();
+		history.back();
+		await pop;
+		await settle();
+		expect(boxHome()).toBe(true);
+		expect(navStates).toEqual([]);
+		expect((history.state as {testBase?: boolean} | null)?.testBase).toBe(true);
+	});
 });
 
 describe("closing the search view", () => {

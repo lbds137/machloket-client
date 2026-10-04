@@ -1322,6 +1322,14 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		div.append(suggest);
 		let cur = 0;
 		input.onkeyup = async () => {
+			// A key that edits nothing (Tab, arrows, the submitting Enter) leaves the check alone.
+			if (input.value === this.checkedValue) return;
+			// The edit voids the last check NOW: through the debounce an Enter would otherwise
+			// submit on the previous value's "ok" (and a check still in flight must not land).
+			this.checkedValue = undefined;
+			++this.validation;
+			this.validationState = "pending";
+			if (this.button) this.button.disabled = true;
 			const thiscur = ++cur;
 			await new Promise((res) => setTimeout(res, 500));
 			if (thiscur === cur) {
@@ -1340,7 +1348,10 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 	/** Whether the CURRENT input value has passed an instance check. Submission is gated on
 	 * this: an unvalidated origin used to log straight into a dead endpoint and hang. */
 	validationState: "pending" | "invalid" | "ok" = "pending";
+	/** The input value the latest check ran on (undefined once an edit voids it). */
+	checkedValue?: string;
 	async validate() {
+		this.checkedValue = this.input.value;
 		const validation = ++this.validation;
 		const isLatest = () => validation === this.validation;
 		if (this.button) this.button.disabled = true;
@@ -1442,7 +1453,8 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			} else {
 				option.label = instance.name;
 			}
-			if (suggest && url) {
+			// An offline instance is no pick (the default-instance choice skips it too).
+			if (suggest && url && instance.online !== false) {
 				// Native datalists are inconsistent (the arrow does nothing until the list is
 				// loaded, and some platforms hide it entirely): render the same entries as
 				// plain rows. mousedown, because click lands after the input loses focus.
@@ -1450,7 +1462,8 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 				row.textContent = instance.name + " — " + url;
 				row.onmousedown = (e) => {
 					e.preventDefault();
-					if (!picker) return;
+					// A ?instance= link locks the input; a row must not unlock it by the side.
+					if (!picker || picker.input.readOnly) return;
 					picker.input.value = url;
 					picker.input.dispatchEvent(new KeyboardEvent("keyup"));
 				};

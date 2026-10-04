@@ -81,6 +81,18 @@ export function closeMembersOnNavigation() {
 	if (membersOpen()) setMembersOpen(false);
 }
 
+/**
+ * Another view takes the screen from this one (the search view): the view closes WITHOUT a
+ * history traversal — a back() queued here would land after the caller's pushState in the
+ * same task and pop the caller's entry instead of ours. Returns true when our marker is the
+ * current entry, so the caller can take it over (replaceState) as its own.
+ */
+export function handOffMembersView(): boolean {
+	if (!membersOpen()) return false;
+	page?.classList.remove("mobileMembersOpen");
+	return backEntryIsOurs();
+}
+
 export function installMembersView(pageEl: HTMLElement) {
 	page = pageEl;
 	installed = true;
@@ -102,10 +114,11 @@ export function installMembersView(pageEl: HTMLElement) {
 		setMembersOpen(false);
 	});
 
-	// The header's other actions (pins, inbox, search) act on the chat, which this view
-	// covers; on Discord's app the overlay owns the screen. A tap on them closes the view
-	// first (capture, before their own handlers) and lets the action proceed on the chat.
-	for (const id of ["pinnedMDiv", "inboxMDiv", "searchMeta"]) {
+	// The header's other actions (pins, inbox) act on the chat, which this view covers; on
+	// Discord's app the overlay owns the screen. A tap on them closes the view first
+	// (capture, before their own handlers) and lets the action proceed on the chat. The
+	// search view takes the screen over itself (handOffMembersView).
+	for (const id of ["pinnedMDiv", "inboxMDiv"]) {
 		document.getElementById(id)?.addEventListener(
 			"click",
 			() => {

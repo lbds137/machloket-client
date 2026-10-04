@@ -6,7 +6,7 @@
 // side panel and this panel's swipe machinery, and only one is ever open — opening either
 // closes the other.
 
-import {closeMembersOnNavigation} from "./membersView.js";
+import {handOffMembersView} from "./membersView.js";
 import {installOverlaySwipe} from "./drawerSwipe.js";
 
 /** What the view needs from its installer (index.ts): resetting the query touches the MarkDown
@@ -106,8 +106,9 @@ function setSearchOpen(open: boolean) {
 	if (open === searchOpen()) return;
 	if (open) {
 		// The members view shares this panel and is reachable under this view's own trigger
-		// (the header stays tappable while members is open); only one of them may show.
-		closeMembersOnNavigation();
+		// (the header stays tappable while members is open); only one of them may show. It
+		// hands over without a traversal, and its marker, when current, becomes ours.
+		const tookMembersEntry = handOffMembersView();
 		const sideContainDiv = document.getElementById("sideContainDiv");
 		if (!sideContainDiv) return;
 		// Search-panel residue would keep the reveal selector from matching (hideSearchDiv
@@ -138,7 +139,9 @@ function setSearchOpen(open: boolean) {
 		// upper one handed the lower to goToState, which only understands channel states —
 		// a TypeError and a dead press (the review's blocker). consumeSearchPop's skip rule
 		// is the backstop for any adjacency that still slips through.
-		if (!backEntryIsOurs()) {
+		if (tookMembersEntry) {
+			history.replaceState({machloketSearchView: true}, "", location.href);
+		} else if (!backEntryIsOurs()) {
 			history.pushState({machloketSearchView: true}, "", location.href);
 		}
 		page.classList.add("mobileSearchOpen");
