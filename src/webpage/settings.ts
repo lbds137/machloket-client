@@ -1487,6 +1487,7 @@ export {Dialog};
 class Options implements OptionsElement<void> {
 	name: string;
 	haschanged = false;
+	private saveBar?: HTMLElement;
 	options: OptionsElement<any>[];
 	readonly owner: Buttons | Options | Form | Float;
 	readonly ltr: boolean;
@@ -1894,8 +1895,10 @@ class Options implements OptionsElement<void> {
 			this.owner.changed();
 			return;
 		}
-		if (!this.haschanged) {
+		// Switching tabs removes the bar without saving; the next edit shows it again.
+		if (!this.haschanged || !this.saveBar?.isConnected) {
 			const div = document.createElement("div");
+			this.saveBar = div;
 			div.classList.add("flexltr", "savediv");
 			const span = document.createElement("span");
 			div.append(span);
