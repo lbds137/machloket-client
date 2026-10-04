@@ -1282,6 +1282,16 @@ class MarkDown {
 
 		localStorage.setItem("trustedDomains", domains);
 	}
+	/** A link click that should act: not a right click, not inside a spoiler still hidden. */
+	static isLiveClick(elm: HTMLElement, e: MouseEvent) {
+		let parent: HTMLElement | null = elm;
+		while (parent) {
+			if (parent.classList.contains("unspoiled")) break;
+			if (parent.classList.contains("spoiler")) return false;
+			parent = parent.parentElement;
+		}
+		return e.button !== 2;
+	}
 	static safeLink(
 		elm: HTMLElement,
 		url: string,
@@ -1294,14 +1304,21 @@ class MarkDown {
 		// throwing broke rendering of the whole message around it.
 		if (URL.canParse(url)) {
 			const Url = new URL(url);
-			if (localuser) {
-				const [_, _2, ...path] = Url.pathname.split("/");
-
+			const [, root, ...path] = Url.pathname.split("/");
+			// Only a /channels/ link on this client's origin or the instance's jumps in-app; the
+			// same path on any other host stays an external link, not a "#channel" lookalike.
+			// (`info` is unset on an account that failed to start.)
+			const wellknown = localuser?.info?.wellknown;
+			const ownOrigin =
+				Url.origin === location.origin ||
+				(!!wellknown && URL.canParse(wellknown) && Url.origin === new URL(wellknown).origin);
+			if (localuser && root === "channels" && ownOrigin) {
 				const guild = localuser.guildids.get(path[0]);
 				const channel = guild?.getChannel(path[1]);
 				if (channel) {
 					const message = isNaN(+path[2]) ? undefined : path[2];
-					elm.onmouseup = (_) => {
+					elm.onmouseup = (e) => {
+						if (!MarkDown.isLiveClick(elm, e)) return;
 						if (message) channel.focus(message);
 						else channel.goToBottom();
 					};
@@ -1321,13 +1338,7 @@ class MarkDown {
 				return;
 			}
 			elm.onmouseup = (_) => {
-				let parent: HTMLElement | null = elm;
-				while (parent) {
-					if (parent.classList.contains("unspoiled")) break;
-					if (parent.classList.contains("spoiler")) return;
-					parent = parent.parentElement;
-				}
-				if (_.button === 2) return;
+				if (!MarkDown.isLiveClick(elm, _)) return;
 				function open() {
 					const proxy = window.open(url, "_blank");
 					// The opened page must not reach back into this one (window.opener).

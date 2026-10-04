@@ -188,3 +188,51 @@ describe("server-sent member and guild fields", () => {
 		expect(guild.properties.name).toBe("b");
 	});
 });
+
+describe("a link that jumps to a channel in-app", () => {
+	const goToBottom = vi.fn();
+	const channel = {name: "general", goToBottom, focus: vi.fn()};
+	const localuser = {
+		guildids: new Map([["111", {getChannel: (id: string) => (id === "222" ? channel : undefined)}]]),
+		info: {wellknown: "https://instance.example"},
+	} as unknown as Parameters<typeof MarkDown.safeLink>[2];
+	const label = (url: string) => MarkDown.safeLink(document.createElement("a"), url, localuser);
+
+	afterEach(() => goToBottom.mockClear());
+
+	it("is recognised on this client's own origin and the instance's", async () => {
+		const {I18n} = await import("./i18n");
+		await I18n.done;
+		expect(label(`${location.origin}/channels/111/222`)).toBe(I18n.channelLink("general"));
+		expect(label("https://instance.example/channels/111/222")).toBe(I18n.channelLink("general"));
+	});
+
+	it("isn't faked by a lookalike path on another host or outside /channels/", () => {
+		expect(label("https://evil.example/channels/111/222")).toBeUndefined();
+		expect(label(`${location.origin}/x/111/222`)).toBeUndefined();
+	});
+
+	it("ignores a right click and a click inside an unrevealed spoiler", () => {
+		const spoiler = document.createElement("span");
+		spoiler.classList.add("spoiler");
+		const a = document.createElement("a");
+		spoiler.append(a);
+		MarkDown.safeLink(a, `${location.origin}/channels/111/222`, localuser);
+		a.dispatchEvent(new MouseEvent("mouseup", {button: 0}));
+		expect(goToBottom).not.toHaveBeenCalled();
+
+		spoiler.classList.add("unspoiled");
+		a.dispatchEvent(new MouseEvent("mouseup", {button: 2}));
+		expect(goToBottom).not.toHaveBeenCalled();
+		a.dispatchEvent(new MouseEvent("mouseup", {button: 0}));
+		expect(goToBottom).toHaveBeenCalledOnce();
+	});
+});
+
+describe("a channel link rendered by an account that failed to start", () => {
+	it("doesn't throw when the session has no instance info", () => {
+		const broken = {guildids: new Map()} as unknown as Parameters<typeof MarkDown.safeLink>[2];
+		const a = document.createElement("a");
+		expect(() => MarkDown.safeLink(a, `${location.origin}/channels/111/222`, broken)).not.toThrow();
+	});
+});
