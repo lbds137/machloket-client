@@ -78,8 +78,8 @@ export class Favorites {
 		store.current.emojiReactionFrecency ||= {};
 		store.current.guildAndChannelFrecency ||= {};
 		store.current.sticker_frecency ||= {};
-		store.current.favorite_stickers = [];
-		store.current.favorite_emojis = [];
+		store.current.favorite_stickers ||= [];
+		store.current.favorite_emojis ||= [];
 		function deapClone(clone: any) {
 			const val = JSON.parse(JSON.stringify(clone));
 			return val;
@@ -268,8 +268,8 @@ export class Favorites {
 		}
 
 		if (diffs.favorite_stickers?.sticker_ids) {
-			const oldKeys = new Set(Object.keys(old.favorite_stickers.sticker_ids));
-			const newKeys = new Set(Object.keys(this.favorite_stickers));
+			const oldKeys = new Set(old.favorite_stickers.sticker_ids);
+			const newKeys = new Set(this.favorite_stickers);
 			const removedKeys = oldKeys.difference(newKeys);
 			const addedKeys = newKeys.difference(oldKeys);
 
@@ -286,8 +286,8 @@ export class Favorites {
 		}
 
 		if (diffs.favorite_emojis?.emojis) {
-			const oldKeys = new Set(Object.keys(old.favorite_emojis.emojis));
-			const newKeys = new Set(Object.keys(this.favorite_emojis));
+			const oldKeys = new Set(old.favorite_emojis.emojis);
+			const newKeys = new Set(this.favorite_emojis);
 			const removedKeys = oldKeys.difference(newKeys);
 			const addedKeys = newKeys.difference(oldKeys);
 

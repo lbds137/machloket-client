@@ -115,8 +115,8 @@ function makePlayBox(
 			let audio: HTMLAudioElement | undefined = undefined;
 
 			if (!thing) {
-				const span = document.createElement("span");
-				span.textContent = I18n.media.notFound();
+				// The player's own title said "Loading..." until now.
+				title.textContent = I18n.media.notFound();
 				return;
 			}
 			menu.bindContextmenu(
@@ -311,7 +311,7 @@ class MediaPlayer {
 			this.elm.append((this.curAudio = makePlayBox(audio, this, time)));
 		}
 	}
-	static cache = new Map<string, media | Promise<media>>();
+	static cache = new Map<string, media | Promise<media | null>>();
 	static async IdentifyFile(url: string | media): Promise<media | null> {
 		if (url instanceof Object) {
 			return url;
@@ -320,10 +320,19 @@ class MediaPlayer {
 		if (cValue) {
 			return cValue;
 		}
-		let resMedio = (_: media) => {};
-		this.cache.set(url, new Promise<media>((res) => (resMedio = res)));
+		let resMedio = (_: media | null) => {};
+		this.cache.set(url, new Promise<media | null>((res) => (resMedio = res)));
 		const prog = new ProgressiveArray(url, {method: "get"});
-		await prog.ready;
+		try {
+			await prog.ready;
+		} catch (e) {
+			// A failed load (an expired link, a dropped connection) isn't remembered: the next
+			// render asks again, and everyone waiting on this one hears "not found".
+			console.error(e);
+			this.cache.delete(url);
+			resMedio(null);
+			return null;
+		}
 
 		const output: Partial<media> = {
 			src: url,

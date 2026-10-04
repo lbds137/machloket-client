@@ -268,15 +268,31 @@ export class Discovery {
 		});
 	}
 	async join(guild: guildjson["properties"]) {
-		await fetch(this.info.api + "/guilds/" + guild.id + "/members/@me", {
-			method: "PUT",
-			headers: this.headers,
-		});
-		let guildObj = this.localuser.guildids.get(guild.id);
-		while (!guildObj) {
-			guildObj = this.localuser.guildids.get(guild.id);
-			await new Promise((res) => setTimeout(res, 100));
+		let message: string | undefined;
+		try {
+			const res = await fetch(this.info.api + "/guilds/" + guild.id + "/members/@me", {
+				method: "PUT",
+				headers: this.headers,
+			});
+			if (!res.ok) {
+				const body = (await res.json().catch(() => ({}))) as {message?: unknown};
+				message = typeof body.message === "string" ? body.message : `${res.status}`;
+			}
+		} catch (e) {
+			message = e instanceof Error ? e.message : String(e);
 		}
+		// A refused join (banned, full, offline) says why instead of waiting forever.
+		if (message !== undefined) {
+			new Dialog(I18n.requestFailed(message)).show();
+			return;
+		}
+		// The server's GUILD_CREATE adds the guild; give it a while, not forever.
+		let guildObj = this.localuser.guildids.get(guild.id);
+		for (let waited = 0; !guildObj && waited < 15000; waited += 100) {
+			await new Promise((res) => setTimeout(res, 100));
+			guildObj = this.localuser.guildids.get(guild.id);
+		}
+		if (!guildObj) return;
 		guildObj.loadGuild();
 		guildObj.loadChannel();
 	}

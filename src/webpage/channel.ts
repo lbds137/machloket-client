@@ -3249,8 +3249,14 @@ class Channel extends SnowFlake {
 	topid!: string;
 	beforeProm?: Promise<void>;
 	beforeProms = new Map<string, () => void>();
+	/** Resolves once the page before `id` lands (or fails); several callers can wait on one id. */
+	private waitForBefore(id: string) {
+		return new Promise<void>((res) => {
+			const earlier = this.beforeProms.get(id);
+			this.beforeProms.set(id, earlier ? () => (earlier(), res()) : res);
+		});
+	}
 	async grabBefore(id: string) {
-		if (this.beforeProm) return this.beforeProm;
 		if (this.topid && id === this.topid) {
 			return;
 		}
@@ -3261,8 +3267,11 @@ class Channel extends SnowFlake {
 		}
 		if (!tempy) return;
 		id = tempy;
+		// A page is already loading: wait for this id's turn (the loader pages any id still
+		// waiting when it finishes) instead of taking the other id's page as this one's.
+		if (this.beforeProm) return this.idToPrev.has(id) ? undefined : this.waitForBefore(id);
 		// Registered before the fetch starts, under the id the page links from.
-		const waiter = new Promise<void>((res) => this.beforeProms.set(id, res));
+		const waiter = this.waitForBefore(id);
 		this.beforeProm = new Promise<void>(async (res) => {
 			const messages = await this.fetchHistoryPage("before=" + id);
 			if (!messages) {

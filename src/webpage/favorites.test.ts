@@ -94,3 +94,39 @@ describe("favorites startSync", () => {
 		expect(favorites.emojiReactFreq()).toEqual([["probeemoji", expect.objectContaining({score: 100})]]);
 	});
 });
+
+describe("favorites merge with the server", () => {
+	it("a favorite added locally survives a sync (ids, not array indexes, are compared)", () => {
+		const favorites = favoritesWithStore() as unknown as {
+			old: {favorite_emojis: {emojis: string[]}};
+			favorite_emojis: string[];
+			saveDifs: (diffs: object, save?: boolean) => void;
+			getFavoriteEmojis: () => string[];
+		};
+		favorites.old.favorite_emojis.emojis = ["a", "b"];
+		favorites.favorite_emojis = ["a", "b", "c"];
+
+		favorites.saveDifs({favorite_emojis: {emojis: ["a", "b"]}}, false);
+
+		expect(favorites.favorite_emojis).toEqual(["a", "b", "c"]);
+	});
+});
+
+describe("favorites on reload", () => {
+	it("keeps the saved favorite emojis and stickers (the next sync would read them as removed)", () => {
+		const favorites = favoritesWithStore() as unknown as {
+			owner: {perminfo: {favoriteStore: {current: {favorite_emojis: string[]; favorite_stickers: string[]}}}};
+			loadFromLocal: () => void;
+			favorite_emojis: string[];
+			favorite_stickers: string[];
+		};
+		const store = favorites.owner.perminfo.favoriteStore;
+		store.current.favorite_emojis = ["e1"];
+		store.current.favorite_stickers = ["s1"];
+
+		favorites.loadFromLocal();
+
+		expect(favorites.favorite_emojis).toEqual(["e1"]);
+		expect(favorites.favorite_stickers).toEqual(["s1"]);
+	});
+});
