@@ -244,7 +244,7 @@ class MarkDown {
 							for (; j < txt.length && txt[j] !== "\n"; j++) {}
 							const arr = txt.slice(start, j);
 							i = j;
-							const line = this.markdown(arr);
+							const line = this.markdown(arr, {keep, stdsize});
 							if (keep) {
 								if (!first) {
 									current.textContent += "\n";
@@ -336,26 +336,34 @@ class MarkDown {
 				let find = 0;
 				let j = i + count;
 				let init = true;
+				// A ``` block's first word is a language tag only when a newline ends it (Discord's
+				// rule): "```hello world```" is all content. Held here until that's known.
+				let lang = "";
 				for (; txt[j] !== undefined && (txt[j] !== "\n" || count === 3) && find !== count; j++) {
 					if (txt[j] === "`") {
 						find++;
 					} else {
 						if (find !== 0) {
-							build += "`".repeat(find);
+							if (init && count === 3) lang += "`".repeat(find);
+							else build += "`".repeat(find);
 							find = 0;
 						}
 						if (init && count === 3) {
-							if (txt[j] === " " || txt[j] === "\n") {
+							if (txt[j] === "\n") {
 								init = false;
-							}
-							if (keep) {
-								build += txt[j];
+								if (keep) build += lang + "\n";
+							} else if (txt[j] === " ") {
+								init = false;
+								build += lang + " ";
+							} else {
+								lang += txt[j];
 							}
 							continue;
 						}
 						build += txt[j];
 					}
 				}
+				if (init) build += lang;
 				if (stdsize) {
 					build = build.replaceAll("\n", "");
 				}
@@ -1039,46 +1047,29 @@ class MarkDown {
 		const up = r < 0;
 		const time = Math.abs(r);
 
-		let seconds = Math.round(time / 1000);
-		const round = time % 1000;
-		let minutes = Math.floor(seconds / 60);
-		seconds -= minutes * 60;
-		let hours = Math.floor(minutes / 60);
-		minutes -= hours * 60;
-		let days = Math.floor(hours / 24);
-		hours -= days * 24;
-		let years = Math.floor(days / 24);
-		days -= years * 365;
-
-		const formatter = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
-		if (years) {
-			if (nextUpdate) {
-				const ti = round + (seconds + (minutes + (hours + days * 24) * 60) * 60) * 1000;
-				setTimeout(nextUpdate, up ? 1000 * 60 * 60 * 24 * 365 - ti : ti);
-			}
-			return formatter.format(up ? years : -years, "year");
-		} else if (days) {
-			if (nextUpdate) {
-				const ti = round + (seconds + (minutes + hours * 60) * 60) * 1000;
-				setTimeout(nextUpdate, up ? 1000 * 60 * 60 * 24 - ti : ti);
-			}
-			return formatter.format(up ? days : -days, "days");
-		} else if (hours) {
-			if (nextUpdate) {
-				const ti = round + (seconds + minutes * 60) * 1000;
-				setTimeout(nextUpdate, up ? 1000 * 60 * 60 - ti : ti);
-			}
-			return formatter.format(up ? hours : -hours, "hours");
-		} else if (minutes) {
-			if (nextUpdate) {
-				const ti = round + seconds * 1000;
-				setTimeout(nextUpdate, up ? 1000 * 60 - ti : ti);
-			}
-			return formatter.format(up ? minutes : -minutes, "minutes");
-		} else {
-			if (nextUpdate) setTimeout(nextUpdate, up ? 1000 - round : round);
-			return formatter.format(up ? seconds : -seconds, "seconds");
+		const DAY = 86_400_000;
+		const [unit, unitMs]: [Intl.RelativeTimeFormatUnit, number] =
+			time >= 365 * DAY
+				? ["year", 365 * DAY]
+				: time >= DAY
+					? ["day", DAY]
+					: time >= 3_600_000
+						? ["hour", 3_600_000]
+						: time >= 60_000
+							? ["minute", 60_000]
+							: ["second", 1000];
+		const count = Math.floor(time / unitMs);
+		if (nextUpdate) {
+			// The label changes with the count: a past time's count grows at the next whole
+			// unit, a future time's shrinks once the part-unit remainder runs out. Clamped to
+			// setTimeout's range (a delay past 2^31-1 ms fires at once, so callers that re-arm
+			// from the callback spun).
+			const into = time % unitMs;
+			const delay = up ? into : unitMs - into;
+			setTimeout(nextUpdate, Math.min(Math.max(delay, 1000), 2 ** 31 - 1));
 		}
+		const formatter = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
+		return formatter.format(up ? count : -count, unit);
 	}
 	static unspoil(e: any): void {
 		e.currentTarget.classList.remove("spoiler");

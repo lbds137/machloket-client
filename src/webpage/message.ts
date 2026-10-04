@@ -99,6 +99,15 @@ export function getClientLabelFromNonce(nonce?: string): string | undefined {
 	return undefined;
 }
 
+/** Whether a reaction's emoji is `emoji`: a custom emoji by id (two guilds can share a
+ * name), a unicode one by name. */
+function sameReactionEmoji(
+	reaction: {name?: string; id?: string},
+	emoji: {name?: string; id?: string},
+) {
+	return emoji.id ? reaction.id === emoji.id : !reaction.id && reaction.name === emoji.name;
+}
+
 class Message extends SnowFlake {
 	static contextmenu = new Contextmenu<Message, void>("message menu");
 	stickers!: Sticker[];
@@ -483,9 +492,8 @@ class Message extends SnowFlake {
 		if (emoji instanceof Emoji && !emoji.id && emoji.emoji) {
 			emoji = emoji.emoji;
 		}
-		let remove = !!this.reactions.find((_) =>
-			typeof emoji === "string" ? _.emoji.name === emoji : _.emoji.name === emoji.name,
-		)?.me;
+		const target = typeof emoji === "string" ? {name: emoji} : {name: emoji.name, id: emoji.id};
+		let remove = !!this.reactions.find((_) => sameReactionEmoji(_.emoji, target))?.me;
 
 		let reactiontxt: string;
 		if (emoji instanceof Emoji) {
@@ -1491,6 +1499,7 @@ class Message extends SnowFlake {
 			const pollbody = document.createElement("div");
 			pollbody.classList.add("flexttb", "pollBody");
 			let voted = false;
+			let firstRender = true;
 			const genPoll = () => {
 				if (!this.poll) return;
 				pollbody.textContent = "";
@@ -1507,7 +1516,7 @@ class Message extends SnowFlake {
 								.filter((_) => _),
 						}),
 					});
-					voted = !!r.values.length;
+					voted = [...r.values()].some((answer) => answer.me_voted);
 				};
 				if (!this.poll.results) this.poll.results = {is_finalized: false, answer_counts: []};
 				const r = new Map((this.poll.results?.answer_counts ?? []).map((_) => [_.id, _] as const));
@@ -1515,7 +1524,12 @@ class Message extends SnowFlake {
 				question.textContent = this.poll.question.text;
 				pollbody.append(question);
 				let ccount = [...r.values()].reduce((e, l) => e + +l.me_voted, 0);
+				// A vote already cast shows the results, single-choice included (as on reload).
+				// Only the first render's me_voted is the server's: later ones can carry a
+				// single-choice pick that hasn't been submitted yet.
 				if (this.poll.allow_multiselect) voted = !!ccount;
+				else if (firstRender && ccount) voted = true;
+				firstRender = false;
 				for (const a of this.poll.answers) {
 					const aarea = document.createElement("div");
 					aarea.classList.add("flexltr", "answerArea");
@@ -1896,7 +1910,7 @@ class Message extends SnowFlake {
 	}
 	reactionAdd(data: {name: string; id?: string}, member: Member | {id: string}) {
 		for (const thing of this.reactions) {
-			if (thing.emoji.name === data.name || (thing.emoji.id === data.id && data.id)) {
+			if (sameReactionEmoji(thing.emoji, data)) {
 				thing.count++;
 				if (member.id === this.localuser.user.id) {
 					thing.me = true;
@@ -1915,19 +1929,15 @@ class Message extends SnowFlake {
 	reactionRemove(data: {name: string; id?: string}, id: string) {
 		for (const i in this.reactions) {
 			const thing = this.reactions[i];
-			console.log(thing, data);
-			if (thing.emoji.name === data.name || (thing.emoji.id === data.id && data.id)) {
+			if (sameReactionEmoji(thing.emoji, data)) {
 				thing.count--;
 				if (thing.count === 0) {
 					this.reactions.splice(Number(i), 1);
-					this.updateReactions();
-					return;
-				}
-				if (id === this.localuser.user.id) {
+				} else if (id === this.localuser.user.id) {
 					thing.me = false;
-					this.updateReactions();
-					return;
 				}
+				this.updateReactions();
+				return;
 			}
 		}
 	}
@@ -1938,10 +1948,7 @@ class Message extends SnowFlake {
 	reactionRemoveEmoji(emoji: Emoji) {
 		for (const i in this.reactions) {
 			const reaction = this.reactions[i];
-			if (
-				(reaction.emoji.id && reaction.emoji.id == emoji.id) ||
-				(!reaction.emoji.id && reaction.emoji.name == emoji.name)
-			) {
+			if (sameReactionEmoji(reaction.emoji, emoji)) {
 				this.reactions.splice(Number(i), 1);
 				this.updateReactions();
 				break;
