@@ -35,6 +35,7 @@ import {cssUrl, externalUrl, trimTrailingSlashes} from "./utils/netUtils.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
+import {assignableKey} from "./utils/assignableKey.js";
 
 type customBadgeDefinition = {
 	important?: boolean;
@@ -995,7 +996,7 @@ class User extends SnowFlake {
 				this.bio = new MarkDown(bioText, this.localuser);
 				continue;
 			}
-			if (key === "id") {
+			if (key === "id" || !assignableKey(this, key)) {
 				continue;
 			}
 			// A badge added since the profile load is in no cached definition yet. Payloads repeat

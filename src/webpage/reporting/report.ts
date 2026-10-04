@@ -119,6 +119,10 @@ export class ReportMenu {
 		}
 	}
 	private async send(takeToScreen: boolean) {
+		// The report menu names its own postback URL; the session token goes only to the instance.
+		if (this.postbackUrl.origin !== new URL(this.info.api).origin) {
+			throw new Error("Report postback URL is outside the instance: " + this.postbackUrl.origin);
+		}
 		const obj: Omit<reportPut, "name"> = {
 			version: "1.0",
 			variant: this.variant,

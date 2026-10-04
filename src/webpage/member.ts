@@ -7,6 +7,7 @@ import {I18n} from "./i18n.js";
 import {Dialog, Options, Settings} from "./settings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
+import {assignableKey} from "./utils/assignableKey.js";
 
 class Member extends SnowFlake {
 	static already = {};
@@ -347,7 +348,7 @@ class Member extends SnowFlake {
 	update(memberjson: memberjson) {
 		const changeNick = this.nick !== memberjson.nick;
 		for (const key of Object.keys(memberjson)) {
-			if (key === "guild" || key === "owner" || key === "user") {
+			if (key === "guild" || key === "owner" || key === "user" || !assignableKey(this, key)) {
 				continue;
 			}
 			if (key === "communication_disabled_until") {

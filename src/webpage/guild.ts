@@ -36,6 +36,7 @@ import {Hover} from "./hover.js";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {assignableKey} from "./utils/assignableKey.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	invDiv.classList.add("inviteGrid");
@@ -1599,7 +1600,9 @@ class Guild extends SnowFlake {
 			template,
 			...properties
 		} = json as extendedProperties & Record<string, unknown>;
-		Object.assign(this.properties, properties);
+		for (const [key, value] of Object.entries(properties)) {
+			if (assignableKey(this.properties, key)) (this.properties as Record<string, unknown>)[key] = value;
+		}
 		// Spacebar sends an unset channel as an absent key, not null.
 		for (const key of ["afk_channel_id", "system_channel_id", "rules_channel_id", "public_updates_channel_id"]) {
 			if (!(key in json)) (this.properties as Record<string, unknown>)[key] = null;

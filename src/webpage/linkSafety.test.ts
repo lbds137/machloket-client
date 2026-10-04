@@ -132,3 +132,59 @@ describe("attachmentUrl", () => {
 		}
 	});
 });
+
+describe("server-sent user fields", () => {
+	it("a __proto__ key can't re-point the user's prototype, and getter-only keys don't throw", async () => {
+		const {User} = await import("./user");
+		const user = Object.assign(Object.create(User.prototype), {id: "u1", username: "a", avatar: null, owner: {}, nameChange: () => {}});
+
+		user.userupdate(JSON.parse('{"id":"u1","username":"b","__proto__":{"evil":true},"localuser":{}}'));
+
+		expect(Object.getPrototypeOf(user)).toBe(User.prototype);
+		expect(user.evil).toBeUndefined();
+		expect(user.username).toBe("b");
+	});
+});
+
+describe("report postback", () => {
+	it("refuses to send the session token to a URL outside the instance", async () => {
+		const {ReportMenu} = await import("./reporting/report");
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const menu = Object.assign(Object.create(ReportMenu.prototype), {
+			owner: {info: {api: "https://chat.example/api/v9"}, headers: {Authorization: "secret"}},
+			postbackUrl: new URL("https://evil.example/collect"),
+		});
+
+		await expect(menu.submit(false)).rejects.toThrow(/outside the instance/);
+		expect(fetchSpy).not.toHaveBeenCalled();
+		fetchSpy.mockRestore();
+	});
+});
+
+describe("server-sent member and guild fields", () => {
+	it("a member update's __proto__ key can't re-point the member's prototype", async () => {
+		const {Member} = await import("./member");
+		const member = Object.assign(Object.create(Member.prototype), {id: "u1", nick: "a", nameChange: () => {}});
+
+		member.update(JSON.parse('{"nick":"a","__proto__":{"evil":true},"localuser":{}}'));
+
+		expect(Object.getPrototypeOf(member)).toBe(Member.prototype);
+		expect(member.evil).toBeUndefined();
+	});
+
+	it("a guild update's __proto__ key can't re-point the guild's properties", async () => {
+		const {Guild} = await import("./guild");
+		const properties = {name: "a", icon: "i", features: []};
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "g1",
+			owner: {headers: {}},
+			properties,
+			roleids: new Map(),
+		});
+
+		guild.update(JSON.parse('{"id":"g1","name":"b","icon":"i","features":[],"__proto__":{"evil":true}}'));
+
+		expect(Object.getPrototypeOf(guild.properties)).toBe(Object.prototype);
+		expect(guild.properties.name).toBe("b");
+	});
+});
