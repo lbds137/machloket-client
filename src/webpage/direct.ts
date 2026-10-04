@@ -551,6 +551,11 @@ class Group extends Channel {
 	}
 	updateChannel(json: channeljson): void {
 		super.updateChannel(json);
+		// A DM's JSON names no guild, and an unnamed group has no name: keep the DM's own.
+		this.guild_id = "@me";
+		this.name = json.name || this.defaultName();
+		const span = this.nameSpan.deref();
+		if (span) span.textContent = this.name;
 		this.owner_id = json.owner_id;
 		this.icon = json.icon;
 		this.makeIcon();
@@ -711,7 +716,8 @@ class Group extends Channel {
 		if (this.mentions) {
 			{
 				const noti = this.noti?.deref();
-				if (noti) {
+				// A badge removed when mentions hit 0 may still be alive (not yet collected).
+				if (noti?.isConnected) {
 					noti.textContent = this.mentions + "";
 					return;
 				}
