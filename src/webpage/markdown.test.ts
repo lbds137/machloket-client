@@ -68,3 +68,23 @@ describe("MarkDown.relTime", () => {
 		}
 	});
 });
+
+describe("a link url that doesn't parse", () => {
+	it("leaves the element inert instead of throwing", () => {
+		const a = document.createElement("a");
+		expect(() => MarkDown.safeLink(a, "not a url")).not.toThrow();
+		expect(a.getAttribute("href")).toBeNull();
+		expect(a.onmouseup).toBeNull();
+	});
+
+	it("doesn't stop a bot's rich embed from rendering", async () => {
+		const {Embed} = await import("./embed");
+		type Args = ConstructorParameters<typeof Embed>;
+		const embed = new Embed(
+			{type: "rich", author: {name: "bot", url: "not a url"}} as Args[0],
+			{} as Args[1],
+		);
+		const html = embed.generateHTML();
+		expect(html.querySelector(".username")?.textContent).toBe("bot");
+	});
+});

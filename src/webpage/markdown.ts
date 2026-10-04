@@ -1313,6 +1313,8 @@ class MarkDown {
 		if (elm instanceof HTMLAnchorElement) {
 			elm.rel = "noopener noreferrer";
 		}
+		// A url that doesn't parse (bots and servers send these) leaves the element inert;
+		// throwing broke rendering of the whole message around it.
 		if (URL.canParse(url)) {
 			const Url = new URL(url);
 			if (localuser) {
@@ -1376,8 +1378,6 @@ class MarkDown {
 					full.background.deref()!.style.zIndex = "300";
 				}
 			};
-		} else {
-			throw new Error(url + " is not a valid URL");
 		}
 	}
 	/*
