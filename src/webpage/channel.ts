@@ -43,10 +43,20 @@ import {NotificationSoundManager} from "./utils/notificationSound.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
-async function createMachloketNonce(): Promise<string> {
-	const Rev = await (await fetch("/getupdates")).text();
-	const shortRev = Rev.slice(0, 7);
-	return btoa(`machloket-${shortRev}|${Math.floor(Date.now() / 1000)}`);
+let shortRev: Promise<string> | undefined;
+/** Unique per send: the server answers a repeated nonce with the earlier message, so two sends
+ * within a second must not share one. */
+export async function createMachloketNonce(): Promise<string> {
+	shortRev ??= fetch("/getupdates")
+		.then((res) => res.text())
+		.then((rev) => rev.slice(0, 7))
+		.catch(() => {
+			// Offline: no revision, and the next send asks again.
+			shortRev = undefined;
+			return "unknown";
+		});
+	const unique = crypto.getRandomValues(new Uint32Array(1))[0].toString(36);
+	return btoa(`machloket-${await shortRev}|${Math.floor(Date.now() / 1000)}|${unique}`);
 }
 
 /** Releases everyone waiting on a history page that won't come. */
@@ -3889,14 +3899,14 @@ class Channel extends SnowFlake {
 			res.responseType = "json";
 			res.onload = () => {
 				if (res.status !== 200) {
+					// Refused (slowmode, permissions, rate limit): the bubble goes and the composer
+					// gets the text back. Only a send that never got an answer offers a retry.
 					ressy("NotOk");
 					onRes("NotOk");
-					fail();
-					const body = res.response as {code: number};
-					if (body.code === 20016) {
+					const body = res.response as {code?: number} | null;
+					if (body?.code === 20016) {
 						this.slowmode(true);
 					}
-					return;
 				} else {
 					ressy("Ok");
 					onRes("Ok");
