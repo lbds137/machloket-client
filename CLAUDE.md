@@ -24,7 +24,7 @@ Node 24 (LTS), npm (the repo ships `package-lock.json`; don't switch it to pnpm)
 
 - **The gate before every commit:** `npm run check && npm test && npm run build`.
 - Tests are Vitest in browser mode (`vite.config.js` → `test`). The app's modules import each other in cycles that only evaluate correctly under native browser ESM; Vitest's default module runner (tried with happy-dom) fails at import. A test imports `./localuser` before anything else, in the entry's order (see `src/webpage/instancePicker.test.ts`). `src/webpage/test/setup.ts` answers instance discovery in memory (`addInstance`, `acceptLogins`); other same-origin requests reach the Vitest server. First run on a new machine: `npx playwright install chromium`.
-- The instance list is only `src/webpage/public/instances.json`. `{hostname}` in a `url` is replaced with the host serving the client.
+- The instance list is `src/webpage/public/instances.json`. A git-ignored `docs/local/instances.json`, when present, is merged in at build and dev-serve time with its entries first (they become the default pick; `utils/instanceOverlay.ts`). `{hostname}` in a `url` is replaced with the host serving the client.
 - Dev only: `/login?instance=` hits a Vite module-resolution error; use `/login.html?instance=`. Production builds are unaffected.
 - The build is Vite (`vite.config.js`), the only pipeline; the pre-Vite one (`build.ts`, the Node server, the Dockerfile) was removed.
 

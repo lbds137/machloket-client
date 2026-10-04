@@ -11,6 +11,21 @@ import {
 	rmSync,
 } from "fs";
 import {execSync} from "child_process";
+import {mergeInstanceLists} from "./src/webpage/utils/instanceOverlay.ts";
+
+// A deployment's own instances (git-ignored, so public builds and CI never see one) lead the
+// served instance list: the picker's default is then that deployment's instance. See
+// instanceOverlay.ts. The public file itself is never rewritten.
+const instanceOverlayPath = resolve(__dirname, "docs/local/instances.json");
+function servedInstances() {
+	const publicList = JSON.parse(
+		readFileSync(resolve(__dirname, "src/webpage/public/instances.json"), "utf-8"),
+	);
+	const overlay = existsSync(instanceOverlayPath)
+		? JSON.parse(readFileSync(instanceOverlayPath, "utf-8"))
+		: undefined;
+	return JSON.stringify(mergeInstanceLists(publicList, overlay), null, "\t") + "\n";
+}
 
 // Extra hostnames the dev/preview servers accept (a reverse proxy may forward the original
 // Host). Comma-separated env var, so no deployment's hostnames live in the repo:
@@ -113,6 +128,7 @@ function generateBuildFiles() {
 	const revision = getBuildVersion();
 
 	writeFileSync(resolve(distDir, "getupdates"), revision);
+	writeFileSync(resolve(distDir, "instances.json"), servedInstances());
 	patchStylesheetCacheBusting(distDir, revision);
 
 	writeFileSync(
@@ -177,6 +193,16 @@ const buildPlugin = () => ({
 	configureServer(server) {
 		generateLangs();
 		server.middlewares.use(clientRouteFallback);
+		// Read per request, so an edited overlay shows up on the next page load.
+		server.middlewares.use((req, res, next) => {
+			if ((req.url || "").split("?")[0] !== "/instances.json") return next();
+			res.setHeader("Content-Type", "application/json");
+			try {
+				res.end(servedInstances());
+			} catch (err) {
+				next(err);
+			}
+		});
 	},
 	// The production preview needs the same client-route rewrites: without them a deep link
 	// 404s (bare static serving) or lands on the marketing index.html instead of the app.
