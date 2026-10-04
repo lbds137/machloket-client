@@ -2835,7 +2835,7 @@ class Channel extends SnowFlake {
 				"",
 				"/channels/" + this.guild_id + "/" + this.id + (aroundMessage ? `/${aroundMessage}` : ""),
 			);
-			// A navigation push closes the mobile members view (Lila's call, Discord's app
+			// A navigation push closes the mobile members view (the owner's call, Discord's app
 			// behavior) — AFTER the push: the view's marker entry is then no longer top, so
 			// the close issues no history.back() of its own (a same-task back-then-push
 			// interleave would let the traversal swallow the entry just pushed). The buried

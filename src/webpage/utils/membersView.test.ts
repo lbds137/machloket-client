@@ -295,7 +295,7 @@ describe("what a tap on the title is not", () => {
 	});
 });
 
-describe("navigation closes the view (Lila's call, Discord's app behavior)", () => {
+describe("navigation closes the view (the owner's call, Discord's app behavior)", () => {
 	it("pushes the channel entry, then closes the view over it — and the entry stays current", async () => {
 		openAndView();
 
