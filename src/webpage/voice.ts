@@ -104,10 +104,11 @@ class VoiceFactory {
 	}
 	joinVoice(channelId: string, guildId: string, self_mute = false) {
 		const voice = this.voiceChannels.get(channelId);
+		// Already in (or joining) this call: leaving and rejoining would race the leave's echo.
+		if (voice && voice === this.currentVoice && voice.open) return voice;
 		this.mute = self_mute;
-		if (this.currentVoice && this.currentVoice.ws) {
-			this.currentVoice.leave();
-		}
+		// Also when the old call is still connecting (no socket yet): leave() is a no-op once left.
+		this.currentVoice?.leave();
 		this.curChan = channelId;
 		this.curGuild = guildId;
 		if (!voice) throw new Error(`Voice ${channelId} does not exist`);
@@ -1392,10 +1393,16 @@ a=rtcp-mux\r`;
 		}
 	}
 	session_id?: string;
+	/** A first join waits for the voice server's URL; another state update meanwhile (a mute
+	 * toggle) must not open a second socket. */
+	private connecting = false;
 	async startWS(session_id: string, server_id: string) {
+		if (this.connecting) return;
 		if (!this.urlobj.url) {
 			this.status = "waitingURL";
+			this.connecting = true;
 			await this.urlobj.geturl;
+			this.connecting = false;
 			if (!this.open) {
 				this.leave();
 				return;
@@ -1408,7 +1415,8 @@ a=rtcp-mux\r`;
 		this.ws = ws;
 		this.setupMic();
 		ws.onclose = () => {
-			this.leave();
+			// A socket from an earlier join closing late must not end the current one.
+			if (this.ws === ws) this.leave();
 		};
 		this.status = "wsOpen";
 		ws.addEventListener("message", (m) => {
@@ -1447,6 +1455,8 @@ a=rtcp-mux\r`;
 	}
 	onLeave = () => {};
 	async leave() {
+		// Idempotent: the server's echo of a leave (and a closing socket) call it again.
+		if (!this.open && !this.ws) return;
 		console.warn("leave");
 		this.open = false;
 		this.status = "left";
@@ -1479,7 +1489,8 @@ a=rtcp-mux\r`;
 		this.ssrcMap = new Map();
 		this.fingerprint = undefined;
 		this.users = new Map();
-		if (!this.settings.stream) this.owner.disconect();
+		// Only the call you're in may tell the gateway you left; after a switch that's another one.
+		if (!this.settings.stream && this.owner.currentVoice === this) this.owner.disconect();
 		this.vidusers = new Map();
 		this.videos = new Map();
 		if (this.cammera) this.cammera.stop();
