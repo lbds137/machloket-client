@@ -49,6 +49,12 @@ async function createMachloketNonce(): Promise<string> {
 	return btoa(`machloket-${shortRev}|${Math.floor(Date.now() / 1000)}`);
 }
 
+/** Releases everyone waiting on a history page that won't come. */
+function settleWaiters(waiters: Map<string, () => void>) {
+	for (const res of waiters.values()) res();
+	waiters.clear();
+}
+
 class Channel extends SnowFlake {
 	editing!: Message | null;
 	type!: number;
@@ -690,14 +696,25 @@ class Channel extends SnowFlake {
 					if (this.idToPrev.has(id)) {
 						return this.idToPrev.get(id);
 					} else {
+						const failures = this.historyFailures;
 						await this.grabBefore(id);
+						// A failed page isn't the top of the channel: the scroller retries later.
+						// (Any failure while this caller waited counts: a second caller shares the
+						// first one's fetch, and a pending send's id pages from a real one.)
+						if (!this.idToPrev.has(id) && this.historyFailures !== failures) {
+							throw new Error("history page failed");
+						}
 						return this.idToPrev.get(id);
 					}
 				} else {
 					if (this.idToNext.has(id)) {
 						return this.idToNext.get(id);
 					} else if (this.lastmessage?.id !== id) {
+						const failures = this.historyFailures;
 						await this.grabAfter(id);
+						if (!this.idToNext.has(id) && this.historyFailures !== failures) {
+							throw new Error("history page failed");
+						}
 						return this.idToNext.get(id);
 					} else {
 					}
@@ -3148,12 +3165,17 @@ class Channel extends SnowFlake {
 		}
 		if (!tempy) return;
 		id = tempy;
+		const waiter = new Promise<void>((res) => this.afterProms.set(id, res));
 		this.afterProm = new Promise(async (res) => {
-			const messages = (await (
-				await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&after=" + id, {
-					headers: this.headers,
-				})
-			).json()) as messagejson[];
+			const messages = await this.fetchHistoryPage("after=" + id);
+			if (!messages) {
+				this.historyFailures++;
+				// As in grabBefore: nothing recorded, every waiter released, asked again later.
+				settleWaiters(this.afterProms);
+				this.afterProm = undefined;
+				res();
+				return;
+			}
 			let i = 0;
 			let previd: string = id;
 			for (const response of messages) {
@@ -3187,7 +3209,7 @@ class Channel extends SnowFlake {
 				const res = this.afterProms.get(previd);
 				if (res) {
 					res();
-					this.beforeProms.delete(previd);
+					this.afterProms.delete(previd);
 				}
 			}
 			res();
@@ -3197,7 +3219,7 @@ class Channel extends SnowFlake {
 				this.grabAfter(id);
 			}
 		});
-		return new Promise<void>((res) => this.afterProms.set(id, res));
+		return waiter;
 	}
 	async getArround(id: string) {
 		if (!this.messages.has(id)) {
@@ -3215,26 +3237,26 @@ class Channel extends SnowFlake {
 		if (this.topid && id === this.topid) {
 			return;
 		}
+		// Pending (fake) sends sit above real history: page from the newest real message.
+		let tempy: string | undefined = id;
+		while (tempy && tempy.includes("fake")) {
+			tempy = this.idToPrev.get(tempy);
+		}
+		if (!tempy) return;
+		id = tempy;
+		// Registered before the fetch starts, under the id the page links from.
+		const waiter = new Promise<void>((res) => this.beforeProms.set(id, res));
 		this.beforeProm = new Promise<void>(async (res) => {
-			let tempy: string | undefined = id;
-			while (tempy && tempy.includes("fake")) {
-				tempy = this.idToPrev.get(tempy);
-			}
-			if (!tempy) {
-				const res2 = this.beforeProms.get(id);
-				res2?.();
+			const messages = await this.fetchHistoryPage("before=" + id);
+			if (!messages) {
+				this.historyFailures++;
+				// A failed page (network, 429, 5xx) records nothing: the ids stay unlinked, so
+				// the scroller asks again on the next scroll instead of waiting forever.
+				settleWaiters(this.beforeProms);
+				this.beforeProm = undefined;
 				res();
 				return;
 			}
-			id = tempy;
-			const messages = (await (
-				await fetch(
-					this.info.api + "/channels/" + this.id + "/messages?before=" + id + "&limit=100",
-					{
-						headers: this.headers,
-					},
-				)
-			).json()) as messagejson[];
 			let previd = id;
 			let i = 0;
 			for (const response of messages) {
@@ -3283,7 +3305,26 @@ class Channel extends SnowFlake {
 				this.grabBefore(id);
 			}
 		});
-		return new Promise<void>((res) => this.beforeProms.set(id, res));
+		return waiter;
+	}
+	/** Counts failed history pages, so a scroller lookup that came back unlinked can tell a
+	 * failure (retry later) from the channel's real end. */
+	private historyFailures = 0;
+	/** One page of this channel's history, or undefined when the request failed (network
+	 * error, an error status, a body that isn't a message list). */
+	private async fetchHistoryPage(query: string): Promise<messagejson[] | undefined> {
+		try {
+			const res = await fetch(
+				this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
+				{headers: this.headers},
+			);
+			if (!res.ok) return undefined;
+			const json: unknown = await res.json();
+			return Array.isArray(json) ? (json as messagejson[]) : undefined;
+		} catch (e) {
+			console.error(e);
+			return undefined;
+		}
 	}
 	async buildmessages(id: string | void) {
 		this.infinitefocus = false;

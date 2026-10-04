@@ -391,7 +391,15 @@ class InfiniteScroller {
 				break;
 			} else {
 				limit = 75;
-				const id = await this.getIDFromOffset(top, 1);
+				let id: string | undefined;
+				try {
+					id = await this.getIDFromOffset(top, 1);
+				} catch (e) {
+					// A page that failed to load isn't the top: link nothing, and the next
+					// scroll asks again.
+					console.error(e);
+					break;
+				}
 				this.addLink(top, id);
 
 				if (id) {
@@ -428,7 +436,13 @@ class InfiniteScroller {
 				break;
 			} else {
 				limit = 75;
-				const id = await this.getIDFromOffset(bottom, -1);
+				let id: string | undefined;
+				try {
+					id = await this.getIDFromOffset(bottom, -1);
+				} catch (e) {
+					console.error(e); // as in fillInTop: not the bottom, asked again later
+					break;
+				}
 				this.addLink(id, bottom);
 
 				if (id) {
@@ -451,11 +465,17 @@ class InfiniteScroller {
 		if (this.filling) return;
 
 		const fill = new Promise<void>(async (res) => {
-			await Promise.all([this.fillInTop(), this.fillInBottom()]);
-			if (this.filling === fill) {
-				this.filling = undefined;
+			try {
+				await Promise.all([this.fillInTop(), this.fillInBottom()]);
+			} catch (e) {
+				// Whatever threw, the fill ends: a fill that never settles wedges every later one.
+				console.error(e);
+			} finally {
+				if (this.filling === fill) {
+					this.filling = undefined;
+				}
+				res();
 			}
-			res();
 		});
 		this.filling = fill;
 		await fill;
