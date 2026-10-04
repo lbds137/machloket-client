@@ -24,6 +24,7 @@ import {
 	Specialuser,
 	debounce,
 } from "./utils/utils.js";
+import {CDN_LINK_MARGIN_MS} from "./utils/netUtils.js";
 import {
 	channeljson,
 	expSessionJson,
@@ -6058,7 +6059,7 @@ class Localuser {
 		const urlObj = new URL(url);
 		if (urlObj.host === new URL(this.info.cdn).host) {
 			if (urlObj.searchParams.get("ex")) {
-				if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >= Date.now() - 5000) {
+				if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) > Date.now() + CDN_LINK_MARGIN_MS) {
 					return url;
 				}
 			}

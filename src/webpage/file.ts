@@ -4,6 +4,7 @@ import {ImagesDisplay} from "./disimg.js";
 import {makePlayBox, MediaPlayer} from "./media.js";
 import {I18n} from "./i18n.js";
 import {createImg} from "./utils/utils.js";
+import {CDN_LINK_MARGIN_MS} from "./utils/netUtils.js";
 class File {
 	readonly owner: Message | null;
 	id: string;
@@ -76,10 +77,11 @@ class File {
 				div.classList.add("messageimgdiv");
 				img.onclick = () => {
 					if (this.owner) {
-						const full = new ImagesDisplay(
-							this.files || this.owner.attachments,
-							(this.files || this.owner.attachments).indexOf(this),
+						// The viewer steps through the images only, not the videos and files beside them.
+						const images = (this.files || this.owner.attachments).filter((f) =>
+							f.content_type.startsWith("image/"),
 						);
+						const full = new ImagesDisplay(images, images.indexOf(this));
 						full.show();
 					} else {
 						const full = new ImagesDisplay([this]);
@@ -176,7 +178,7 @@ class File {
 		if (!this.owner) return;
 		const urlObj = new URL(url);
 		if (urlObj.host === new URL(this.owner.info.cdn).host) {
-			if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >= Date.now() - 5000) {
+			if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) > Date.now() + CDN_LINK_MARGIN_MS) {
 				return;
 			}
 			const newUrl = this.owner.localuser.refreshURL(url);
