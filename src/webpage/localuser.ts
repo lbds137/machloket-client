@@ -774,7 +774,8 @@ class Localuser {
 		} catch (e) {
 			console.error(e);
 		}
-		if (temp.d._trace) this.handleTrace(temp.d._trace);
+		// Discord-shaped frames (op 11 among them) can carry `d: null`.
+		if (temp.d?._trace) this.handleTrace(temp.d._trace);
 		if (getDeveloperSettings().gatewayLogging) console.debug(temp);
 		if (temp.s) this.lastSequence = temp.s;
 		if (temp.op === 9 && this.ws) {
@@ -1193,17 +1194,24 @@ class Localuser {
 			// An absent interval would arm ~4ms spam timers and NaN the watchdog's math —
 			// fall back to Discord's typical 41.25s.
 			const interval = temp.d?.heartbeat_interval || 41250;
-			this.heartbeat_interval = interval;
 			// Heartbeats keep their OWN schedule. The old chain sent the next beat only from
 			// inside an ACK handler — no ACK, no further beats, and a half-open socket (a
 			// bounced server whose close never reached the client) read as healthy forever.
+			// The first beat is a plain op 1; the scheduled ones are op-40 QoS beats, which
+			// the server treats as heartbeats and also records the foregrounded state from.
 			this.stopHeartbeat();
 			this.heartbeatTimer = setInterval(() => {
 				if (!this.ws) {
 					this.stopHeartbeat();
 					return;
 				}
-				this.ws.send(JSON.stringify({op: 1, d: this.lastSequence}));
+				const reasons = this.generateReasons();
+				this.ws.send(
+					JSON.stringify({
+						op: 40,
+						d: {seq: this.lastSequence, qos: {ver: 27, active: !!reasons.length, reasons}},
+					}),
+				);
 			}, interval);
 			this.ws.send(JSON.stringify({op: 1, d: this.lastSequence}));
 			// The watchdog converts silence into a close event the reconnect path handles:
@@ -1214,18 +1222,9 @@ class Localuser {
 				}
 			}, Math.max(interval, 5_000));
 		} else if (temp.op === 11) {
-			setTimeout((_: any) => {
-				if (!this.ws) return;
-				const reasons = this.generateReasons();
-
-				if (this.connectionSucceed === 0) this.connectionSucceed = Date.now();
-				this.ws.send(
-					JSON.stringify({
-						op: 40,
-						d: {seq: this.lastSequence, qos: {ver: 27, active: !!reasons.length, reasons}},
-					}),
-				);
-			}, this.heartbeat_interval);
+			// An ACK only marks the connection good. Sending a beat from here would start a
+			// second chain beside the interval — one more per interval, since every beat is ACKed.
+			if (this.connectionSucceed === 0) this.connectionSucceed = Date.now();
 		} else {
 			console.log("Unhandled case " + temp.d, temp);
 		}
@@ -1430,7 +1429,6 @@ class Localuser {
 		}
 	}
 
-	heartbeat_interval: number = 0;
 	updateChannel(json: channeljson): void {
 		const guild = this.guildids.get(json.guild_id || "@me");
 		if (guild) {
