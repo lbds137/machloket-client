@@ -1604,8 +1604,9 @@ class Channel extends SnowFlake {
 				this.info.api + "/channels/" + this.id + "/messages?limit=1&around=" + id,
 				{headers: this.headers},
 			);
-			const json = await gety.json();
-			if (json.length === 0) {
+			// A refusal (403, 404, 429) answers with an error object, not a list.
+			const json = gety.ok ? await gety.json() : undefined;
+			if (!Array.isArray(json) || json.length === 0) {
 				return undefined;
 			}
 			return new Message(json[0], this);
@@ -1643,8 +1644,11 @@ class Channel extends SnowFlake {
 			const loading = document.getElementById("loadingdiv") as HTMLDivElement;
 			Channel.regenLoadingMessages();
 			loading.classList.add("loading");
-			await prom;
-			loading.classList.remove("loading");
+			try {
+				await prom;
+			} finally {
+				loading.classList.remove("loading");
+			}
 		}
 
 		if (this.localuser.channelfocus !== this) {

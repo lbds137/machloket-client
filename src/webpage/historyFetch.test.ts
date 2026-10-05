@@ -1,4 +1,4 @@
-import {afterEach, describe, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, onTestFinished, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -113,5 +113,32 @@ describe("the message scroller after a failed page", () => {
 		expect(asked.filter((id) => id === "5").length).toBeGreaterThanOrEqual(2);
 		expect(host.textContent).toContain("message 4");
 		host.remove();
+	});
+});
+
+describe("jumping to a message the instance won't give", () => {
+	it("reads an error answer as no message, not as a message", async () => {
+		const channel = channelWith([]);
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+			Response.json({message: "Missing Access", code: 50001}, {status: 403}),
+		);
+
+		expect(await channel.getmessage("5")).toBeUndefined();
+	});
+
+	it("takes the loading skeleton down when the lookup fails", async () => {
+		const loading = document.createElement("div");
+		loading.id = "loadingdiv";
+		document.body.append(loading);
+		onTestFinished(() => loading.remove());
+		const channel = channelWith([]);
+		// Slower than the 300 ms after which the skeleton shows, then the network drops.
+		vi.spyOn(channel, "getMessages").mockReturnValueOnce(
+			new Promise((_, rej) => setTimeout(() => rej(new TypeError("Failed to fetch")), 400)),
+		);
+
+		await channel.focus("5").catch(() => {});
+
+		expect(loading.classList.contains("loading")).toBe(false);
 	});
 });
