@@ -54,7 +54,7 @@ export class Track {
 			if (thing instanceof AVoice) {
 				const vol = thing.getNumber(time - cur);
 				if (vol !== 0) {
-					av += mixAudio(av, vol);
+					av = mixAudio(av, vol);
 				}
 			} else {
 				cur += thing;

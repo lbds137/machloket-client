@@ -73,7 +73,7 @@ class TestProcessor extends AudioWorkletProcessor {
 			for (const play of mplays) {
 				const vol = play[1].getNumber((play[0][0] / sampleRate) * 1000) * play[2];
 				if (vol !== 0) {
-					av += mixAudio(av, vol);
+					av = mixAudio(av, vol);
 				}
 
 				play[0][0]++;

@@ -140,7 +140,8 @@ class AVoice {
 		let state = read.read8();
 		switch (state) {
 			case 0:
-				return "" + read.readFloat32();
+				// Parenthesised: a negative constant can be a power's base, (-5)**2.
+				return `(${read.readFloat32()})`;
 			case 1:
 				return "t";
 			case 2:
