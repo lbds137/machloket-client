@@ -9,6 +9,14 @@ export function trimTrailingSlashes(uri: string) {
 	return uri.replace(/\/+$/, "");
 }
 
+/** Whether a URL's host is this machine (by name or address), judged on the host alone. */
 export function isLoopback(str: string) {
-	return str.includes("localhost") || str.includes("127.0.0.1");
+	if (!URL.canParse(str)) return false;
+	const host = new URL(str).hostname;
+	return (
+		host === "localhost" ||
+		host.endsWith(".localhost") ||
+		/^127(\.\d{1,3}){3}$/.test(host) ||
+		host === "[::1]"
+	);
 }

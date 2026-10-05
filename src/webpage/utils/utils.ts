@@ -605,8 +605,7 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 				clicked = true;
 				if (urls == null) throw new Error("Unexpected undefined, exiting");
 				const temp = new URL(wellknown);
-				temp.port = "";
-				const newOrigin = temp.host;
+				const newOrigin = temp.hostname;
 				const protocol = temp.protocol;
 				const tempurls = {
 					api: new URL(urls.api),
@@ -618,13 +617,15 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 				tempurls.api.protocol = protocol;
 
 				tempurls.cdn.host = newOrigin;
-				tempurls.api.protocol = protocol;
+				tempurls.cdn.protocol = protocol;
 
 				tempurls.gateway.host = newOrigin;
 				tempurls.gateway.protocol = temp.protocol === "http:" ? "ws:" : "wss:";
 
 				tempurls.wellknown.host = newOrigin;
 				tempurls.wellknown.protocol = protocol;
+				// Setting `host` without a port keeps the old (loopback) one: take the site's own port.
+				for (const url of Object.values(tempurls)) url.port = temp.port;
 
 				try {
 					if (
