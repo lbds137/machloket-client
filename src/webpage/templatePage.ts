@@ -1,17 +1,26 @@
 import {I18n} from "./i18n.js";
 import {templateSkim} from "./jsontypes.js";
-import {getapiurls} from "./utils/utils.js";
+import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
+import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 if (window.location.pathname.startsWith("/template"))
 	(async () => {
 		const users = getBulkUsers();
-		const well = new URLSearchParams(window.location.search).get("instance");
+		await instancefetch;
+		// Without ?instance=, the default instance (as the oauth2 page does).
+		const well =
+			new URLSearchParams(window.location.search).get("instance") || getDefaultInstanceUrl();
+		if (!well) {
+			await I18n.done;
+			document.getElementById("usetemplate")!.textContent = I18n.htmlPages.noAccount();
+			return;
+		}
 		const joinable: Specialuser[] = [];
 
 		for (const key in users.users) {
 			if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 				const user: Specialuser = users.users[key];
-				if (well && user.serverurls.wellknown.includes(well)) {
+				if (well && sameInstance(user.serverurls.wellknown, well)) {
 					joinable.push(user);
 				}
 				console.log(user);
@@ -27,7 +36,7 @@ if (window.location.pathname.startsWith("/template"))
 				for (const key in users.users) {
 					if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 						const user: Specialuser = users.users[key];
-						if (user.serverurls.api.includes(out.api)) {
+						if (sameApi(user.serverurls.api, out.api)) {
 							joinable.push(user);
 						}
 						console.log(user);
@@ -48,12 +57,13 @@ if (window.location.pathname.startsWith("/template"))
 
 		fetch(`${urls!.api}/guilds/templates/${code}`, {
 			method: "GET",
-			headers: {
-				Authorization: joinable[0].token,
-			},
+			// Signed out, the instance may refuse (Spacebar wants a token here): name no template
+			// then, rather than an undefined one. The button still leads to sign-in.
+			headers: joinable[0] ? {Authorization: joinable[0].token} : {},
 		})
-			.then((response) => response.json())
+			.then((response) => (response.ok ? response.json() : undefined))
 			.then((json) => {
+				if (!json) return;
 				const template = json as templateSkim;
 				document.getElementById("templatename")!.textContent = I18n.useTemplate(template.name);
 				document.getElementById("templatedescription")!.textContent = template.description;

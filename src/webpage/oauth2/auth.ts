@@ -2,6 +2,7 @@ import {I18n} from "../i18n.js";
 import {getapiurls, getDefaultInstanceUrl, instancefetch} from "../utils/utils.js";
 import {getBulkUsers, Specialuser} from "../utils/utils.js";
 import {Permissions} from "../permissions.js";
+import {sameApi, sameInstance} from "../utils/instanceMatch.js";
 type botjsonfetch = {
 	guilds: {
 		id: string;
@@ -56,7 +57,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 	for (const key in users.users) {
 		if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 			const user: Specialuser = users.users[key];
-			if (well && user.serverurls.wellknown.includes(well)) {
+			if (well && sameInstance(user.serverurls.wellknown, well)) {
 				joinable.push(user);
 			}
 			console.log(user);
@@ -72,7 +73,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 			for (const key in users.users) {
 				if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 					const user: Specialuser = users.users[key];
-					if (user.serverurls.api.includes(out.api)) {
+					if (sameApi(user.serverurls.api, out.api)) {
 						joinable.push(user);
 					}
 					console.log(user);

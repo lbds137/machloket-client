@@ -2,6 +2,7 @@ import {I18n} from "./i18n.js";
 import {AccountSwitcher} from "./utils/switcher.js";
 import {createImg, getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
+import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 if (window.location.pathname.startsWith("/invite"))
 	(async () => {
 		const users = getBulkUsers();
@@ -11,7 +12,7 @@ if (window.location.pathname.startsWith("/invite"))
 		for (const key in users.users) {
 			if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 				const user: Specialuser = users.users[key];
-				if (well && user.serverurls.wellknown.includes(well)) {
+				if (well && sameInstance(user.serverurls.wellknown, well)) {
 					joinable.push(user);
 				}
 				console.log(user);
@@ -27,7 +28,7 @@ if (window.location.pathname.startsWith("/invite"))
 				for (const key in users.users) {
 					if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 						const user: Specialuser = users.users[key];
-						if (user.serverurls.api.includes(out.api)) {
+						if (sameApi(user.serverurls.api, out.api)) {
 							joinable.push(user);
 						}
 						console.log(user);
@@ -98,7 +99,7 @@ if (window.location.pathname.startsWith("/invite"))
 			console.log("showing!");
 			const user = await new AccountSwitcher(
 				(user) => {
-					return !!(well && user.serverurls.wellknown.includes(well));
+					return !!(well && sameInstance(user.serverurls.wellknown, well));
 				},
 				{
 					loginText: () => I18n.login.login(),
