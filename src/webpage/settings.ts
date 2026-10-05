@@ -742,32 +742,46 @@ class AsyncMultiSelect implements OptionsElement<string[]> {
 		reses.classList.add("flexttb", "reses");
 		searchBox.append(input, reses);
 		let opts = [] as searchRes[];
-		const search = async () => {
+		let picked = false;
+		const pick = (opt: searchRes) => {
+			if (picked) return;
+			picked = true;
+			removeAni(searchBox);
+			this.value.push(opt.value);
+			this.nmap.push(opt.name);
+			done();
+		};
+		// Only the newest search renders: an older, slower answer must not replace it.
+		let searches = 0;
+		let latest = Promise.resolve();
+		const runSearch = async () => {
+			const run = ++searches;
 			const res = await this.searchFunc(input.value || "", this.value);
+			if (run !== searches) return;
 			reses.textContent = "";
 			opts = res;
 			for (const opt of opts) {
 				const span = document.createElement("span");
 				span.textContent = opt.name;
-				span.onmousedown = () => {
-					removeAni(searchBox);
-					this.value.push(opt.value);
-					this.nmap.push(opt.name);
-					done();
-				};
+				span.onmousedown = () => pick(opt);
 				reses.append(span);
 			}
 			input.onblur = async () => {
 				removeAni(searchBox);
 			};
 		};
+		const search = () => (latest = runSearch());
 
-		input.onkeyup = (e) => {
-			if (e.key === "Enter" && opts[0]) {
-				removeAni(searchBox);
-				this.value.push(opts[0].value);
-				this.nmap.push(opts[0].name);
-				done();
+		input.onkeyup = async (e) => {
+			if (e.key === "Enter") {
+				// The top result for what's typed now, not for an earlier keystroke: wait until
+				// no newer search started while waiting.
+				let waited;
+				do {
+					waited = latest;
+					await waited;
+				} while (waited !== latest);
+				if (opts[0]) pick(opts[0]);
 			} else {
 				search();
 			}
@@ -793,6 +807,8 @@ class SelectInput implements OptionsElement<number> {
 	index: number;
 	select!: WeakRef<HTMLSelectElement>;
 	radio: boolean;
+	private static radioGroups = 0;
+	private readonly radioGroup = "selectInput" + SelectInput.radioGroups++;
 	get value() {
 		return this.index;
 	}
@@ -837,7 +853,8 @@ class SelectInput implements OptionsElement<number> {
 				const input = document.createElement("input");
 				input.classList.add("radio");
 				input.type = "radio";
-				input.name = this.label;
+				// Two radio selects with the same label must not share one group.
+				input.name = this.radioGroup;
 				input.value = thing;
 				map.set(input, i);
 				if (i === this.index) {
@@ -2030,7 +2047,13 @@ class FormError extends Error {
 		this.elem = elem;
 	}
 }
-async function handle2fa(json: any, api: string): Promise<false | any> {
+/** The second login step's answer, or false when it was cancelled or refused (a refusal's
+ * reason goes to `onRefused`). */
+async function handle2fa(
+	json: any,
+	api: string,
+	onRefused: (message: string) => void,
+): Promise<false | any> {
 	if (json.ticket) {
 		if (json.webauthn) {
 			const challenge = JSON.parse(json.webauthn)
@@ -2044,12 +2067,15 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 			);
 			console.log(challenge);
 			const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
-			const credential = (await navigator.credentials.get({publicKey: options})) as unknown as {
+			// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
+			const credential = (await navigator.credentials
+				.get({publicKey: options})
+				.catch(() => null)) as unknown as {
 				rawId: ArrayBuffer;
 				response: {
 					[key: string]: ArrayBuffer;
 				};
-			};
+			} | null;
 			if (!credential) return false;
 			function toBase64(buf: ArrayBuffer) {
 				return btoa(String.fromCharCode(...new Uint8Array(buf)));
@@ -2069,8 +2095,16 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 					"Content-Type": "application/json",
 				},
 				body: JSON.stringify({code: JSON.stringify(res), ticket: json.ticket}),
-			});
-			if (!resObj.ok) return false;
+			}).catch(() => undefined);
+			if (!resObj?.ok) {
+				const body = await resObj?.json().catch(() => null);
+				onRefused(
+					typeof body?.message === "string"
+						? body.message
+						: I18n.requestFailed(resObj ? "HTTP " + resObj.status : "offline"),
+				);
+				return false;
+			}
 			const jsonRes = await resObj.json();
 			return jsonRes;
 		} else {
@@ -2099,6 +2133,8 @@ async function handle2fa(json: any, api: string): Promise<false | any> {
 				form.onErrorBody = (res) => {
 					if (typeof res.message === "string") throw new FormError(ti, res.message);
 				};
+				// Dismissed (outside tap, Escape): no second factor.
+				better.onhide = () => resolution(false);
 				better.show().parentElement!.style.zIndex = "200";
 			});
 		}
@@ -2550,10 +2586,12 @@ class Form implements OptionsElement<object> {
 					}
 					const match = fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
 					if (match && this.tfaCheck) {
-						const tried = await handle2fa(json, match[0]);
+						const tried = await handle2fa(json, match[0], (m) => this.showPrimError(m));
 						if (tried) {
 							return await onSubmit(tried);
 						}
+						// A second factor cancelled or refused: the first step alone isn't a success.
+						if (json.ticket) return;
 					}
 					if (json.errors && this.errors(json)) {
 						return;
@@ -2782,6 +2820,9 @@ class Settings extends Buttons {
 			html.addEventListener("animationend", (e: AnimationEvent) => {
 				if (e.animationName === "bg-out") html.remove();
 			});
+			// bg-out takes 0.2 s; with animations off it never ends, and the invisible overlay
+			// would keep taking every click.
+			setTimeout(() => html.remove(), 500);
 			this.html = null;
 		}
 	}
