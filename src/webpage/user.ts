@@ -34,6 +34,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {trimTrailingSlashes} from "./utils/netUtils.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
+import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
 
 type customBadgeDefinition = {
 	important?: boolean;
@@ -1344,7 +1345,7 @@ class User extends SnowFlake {
 	}
 	private addBotConfigButton(userbody: HTMLDivElement, closeProfile: () => void) {
 		if (!this.bot || this.webhook) return;
-		const storageKey = "botConfigs_" + new URL(this.info.api).host;
+		const host = new URL(this.info.api).host;
 		const btn = document.createElement("button");
 		btn.textContent = "Config";
 		btn.classList.add("contextbutton");
@@ -1354,19 +1355,18 @@ class User extends SnowFlake {
 			closeProfile();
 			const d = new Dialog("Bot Config");
 			const opt = d.options;
-			const configs: Record<string, number> = JSON.parse(localStorage.getItem(storageKey) || "{}");
+			const configs = getBotConfigs(host);
 			const flags = configs[this.id] || 0;
-			const FLAG_HIDE_WEBHOOK = 1;
 			const box = opt.addCheckboxInput('Hide "WEBHOOK" tag in chat', () => {}, {
-				initState: !!(flags & FLAG_HIDE_WEBHOOK),
+				initState: !!(flags & BOT_HIDE_TAG),
 			});
 			box.onchange = (v) => {
 				if (v) {
-					configs[this.id] = (configs[this.id] || 0) | FLAG_HIDE_WEBHOOK;
+					configs[this.id] = (configs[this.id] || 0) | BOT_HIDE_TAG;
 				} else {
-					configs[this.id] = (configs[this.id] || 0) & ~FLAG_HIDE_WEBHOOK;
+					configs[this.id] = (configs[this.id] || 0) & ~BOT_HIDE_TAG;
 				}
-				localStorage.setItem(storageKey, JSON.stringify(configs));
+				setBotConfigs(host, configs);
 			};
 			d.show();
 		};

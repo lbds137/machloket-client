@@ -28,6 +28,7 @@ import {Components} from "./interactions/compontents.js";
 import {ImagesDisplay} from "./disimg";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
+import {BOT_HIDE_TAG, getBotConfigs} from "./utils/storage/botConfigs.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 
 /** Discord's "used /command" pill on an interaction reply line: a slash glyph and the
@@ -1174,11 +1175,7 @@ class Message extends SnowFlake {
 					const appId = this.author.webhook?.application_id;
 					if (
 						!appId ||
-						!(
-							JSON.parse(localStorage.getItem("botConfigs_" + new URL(this.info.api).host) || "{}")[
-								appId
-							] & 1
-						)
+						!((getBotConfigs(new URL(this.info.api).host)[appId] ?? 0) & BOT_HIDE_TAG)
 					) {
 						const username = document.createElement("span");
 						username.classList.add("bot");
