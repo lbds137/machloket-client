@@ -27,6 +27,7 @@ import {Guild} from "./guild.js";
 import {showChangelogPopup} from "./changelog.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import type * as C from "./typeChecker/chekerIndex.js";
+import {pickFiles} from "./utils/filePicker.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -770,23 +771,17 @@ if (window.location.pathname.startsWith("/channels")) {
 		},
 	);
 	umenu.addButton(I18n.upload(), () => {
-		const input = document.createElement("input");
-		input.type = "file";
-		input.click();
-		input.multiple = true;
-		console.log("clicked");
+		// No open channel: no picker, rather than one whose picks go nowhere.
 		if (!thisUser.channelfocus) return;
-		input.onchange = () => {
-			if (input.files) {
-				for (const file of Array.from(input.files)) {
-					const fileInstance = File.initFromBlob(file);
-					const html = fileInstance.upHTML(images, imagesHtml, file);
-					pasteImageElement.appendChild(html);
-					images.push(file);
-					imagesHtml.set(file, html);
-				}
+		pickFiles((files) => {
+			for (const file of files) {
+				const fileInstance = File.initFromBlob(file);
+				const html = fileInstance.upHTML(images, imagesHtml, file);
+				pasteImageElement.appendChild(html);
+				images.push(file);
+				imagesHtml.set(file, html);
 			}
-		};
+		});
 	});
 	umenu.bindContextmenu(
 		document.getElementById("upload")!,
