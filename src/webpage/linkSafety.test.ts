@@ -153,9 +153,12 @@ describe("report postback", () => {
 		const menu = Object.assign(Object.create(ReportMenu.prototype), {
 			owner: {info: {api: "https://chat.example/api/v9"}, headers: {Authorization: "secret"}},
 			postbackUrl: new URL("https://evil.example/collect"),
+			errorNode: vi.fn(),
 		});
 
-		await expect(menu.submit(false)).rejects.toThrow(/outside the instance/);
+		// Refused before any request, and the menu shows its failure screen.
+		await menu.submit(false);
+		expect(menu.errorNode).toHaveBeenCalled();
 		expect(fetchSpy).not.toHaveBeenCalled();
 		fetchSpy.mockRestore();
 	});
