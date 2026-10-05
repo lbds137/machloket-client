@@ -151,3 +151,28 @@ it("shows an option's icon, not its object", () => {
 	expect(root.querySelector(".optionIcon")).not.toBeNull();
 	expect(root.textContent).not.toContain("[object Object]");
 });
+
+it("filters the list without regard to case", () => {
+	const select = new FancySelect([
+		{label: "Alpha", value: "a", default: false},
+		{label: "beta", value: "b", description: "Second Letter", default: false},
+		{label: "gamma", value: "G-3", default: false},
+	]);
+	const {root, input} = mount(select);
+	const shown = () =>
+		[...root.querySelectorAll<HTMLElement>(".fancyOptions > div")].map(
+			(row) => row.querySelector(".flexttb")!.firstChild!.textContent,
+		);
+
+	input.value = "ALPHA";
+	input.dispatchEvent(new Event("input"));
+	expect(shown()).toEqual(["Alpha"]);
+
+	input.value = "second";
+	input.dispatchEvent(new Event("input"));
+	expect(shown()).toEqual(["beta"]);
+
+	input.value = "g-3";
+	input.dispatchEvent(new Event("input"));
+	expect(shown()).toEqual(["gamma"]);
+});

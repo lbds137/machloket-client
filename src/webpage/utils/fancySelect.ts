@@ -62,15 +62,13 @@ export class FancySelect {
 				div.prepend(span);
 			}
 		};
-		const genList = (filter: string) => {
+		const genList = (typed: string) => {
 			options.innerHTML = "";
 			options.classList.remove("removeElm");
+			const filter = typed.toLocaleLowerCase();
+			const matches = (text: string | undefined) => !!text?.toLocaleLowerCase().includes(filter);
 			for (const option of this.options) {
-				if (
-					!option.label.includes(filter) &&
-					!option.description?.includes(filter) &&
-					!option.value.includes(filter)
-				) {
+				if (!matches(option.label) && !matches(option.description) && !matches(option.value)) {
 					continue;
 				}
 				const div = document.createElement("div");
