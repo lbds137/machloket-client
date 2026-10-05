@@ -1,5 +1,6 @@
 import {I18n} from "./i18n";
 import {setTheme, SW} from "./utils/utils";
+import {reloadIfWorkerServes} from "./utils/notFoundReload";
 if (document.getElementById("404-page")) {
 	await setTheme();
 	await I18n.done;
@@ -24,15 +25,11 @@ if (document.getElementById("404-page")) {
 			event();
 		};
 	}
-	while (true) {
-		await new Promise((res) => setTimeout(res, 100));
-
-		if (SW.worker) {
-			const valid = await SW.isValid(window.location.href);
-			if (valid) {
-				window.location.reload();
-			}
-			break;
-		}
-	}
+	await reloadIfWorkerServes({
+		url: window.location.href,
+		hasWorker: () => SW.worker?.state === "activated",
+		isValid: (url) => SW.isValid(url),
+		reload: () => window.location.reload(),
+		storage: () => sessionStorage,
+	});
 }
