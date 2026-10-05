@@ -4232,7 +4232,7 @@ class Channel extends SnowFlake {
 	notititle(message: Message): string {
 		return message.author.username + " > " + this.guild.properties.name + " > " + this.name;
 	}
-	notify(message: Message, deep = 0) {
+	notify(message: Message) {
 		if (this.muted) return;
 
 		if (this.localuser.status === "dnd") return;
@@ -4261,12 +4261,13 @@ class Channel extends SnowFlake {
 				console.error("Couldn't show the notification:", e),
 			);
 		} else if (Notification.permission !== "denied") {
-			Notification.requestPermission().then(() => {
-				if (deep === 3) {
-					return;
-				}
-				this.notify(message, deep + 1);
-			});
+			// Asked once per message: a dismissed prompt doesn't re-ask (or replay the sound).
+			Notification.requestPermission()
+				.then((permission) => {
+					if (permission !== "granted") return;
+					return NotificationHandler.sendMessageNotification(message);
+				})
+				.catch((e) => console.error("Couldn't show the notification:", e));
 		}
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
