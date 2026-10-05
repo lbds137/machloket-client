@@ -130,3 +130,91 @@ describe("favorites on reload", () => {
 		expect(favorites.favorite_stickers).toEqual(["s1"]);
 	});
 });
+
+describe("favorites edits", () => {
+	it("favouriting the same emoji or sticker twice keeps one", async () => {
+		const favorites = favoritesWithStore();
+		captureRequests(SYNC_URL, () => Response.json({settings: {}}));
+
+		await favorites.favoriteEmoji("🦊");
+		await favorites.favoriteEmoji("🦊");
+		await favorites.favoriteSticker("700");
+		await favorites.favoriteSticker("700");
+
+		expect(favorites.favoriteEmojis().filter((e) => e === "🦊")).toHaveLength(1);
+		const stickers = (favorites as unknown as {favorite_stickers: string[]}).favorite_stickers;
+		expect(stickers.filter((s) => s === "700")).toHaveLength(1);
+	});
+
+	it("a gif favourited after a removal takes a new place, not a kept one's", async () => {
+		const favorites = favoritesWithStore();
+		captureRequests(SYNC_URL, () => Response.json({settings: {}}));
+		const gif = {src: "s", width: 1, height: 1};
+
+		await favorites.favoriteGif("a", gif);
+		await favorites.favoriteGif("b", gif);
+		await favorites.removeFavoriteGif("a");
+		await favorites.favoriteGif("c", gif);
+
+		const gifs = (favorites as unknown as {gifs: Record<string, {order: number}>}).gifs;
+		const orders = Object.values(gifs).map((g) => g.order);
+		expect(new Set(orders).size).toBe(orders.length);
+	});
+
+	it("a save that can't read the server's favourites first doesn't overwrite them, and doesn't throw", async () => {
+		const favorites = favoritesWithStore();
+		let calls = 0;
+		const written = captureRequests(SYNC_URL, () =>
+			calls++ === 0 ? new Response("<html>bad gateway</html>", {status: 502}) : Response.json({}),
+		);
+
+		await expect(favorites.favoriteEmoji("🦊")).resolves.toBeUndefined();
+
+		expect(written.filter((body) => body !== undefined)).toHaveLength(0);
+	});
+});
+
+describe("favorites decay", () => {
+	it("a large score decays to a smaller positive score", async () => {
+		const favorites = favoritesWithStore();
+		Object.assign(favorites, {
+			lastDecay: Date.now() - 48 * 3600 * 1000,
+			emojiFrecency: {"🦊": {totalUses: 1, recentUses: [], frecency: 1, score: 3e9}},
+		});
+
+		await favorites.decayScore(false);
+
+		const score = (favorites as unknown as {emojiFrecency: Record<string, {score: number}>})
+			.emojiFrecency["🦊"].score;
+		expect(score).toBeGreaterThan(0);
+		expect(score).toBeLessThan(3e9);
+	});
+
+	it("an entry the server sent without a score decays to 0, not NaN", async () => {
+		const favorites = favoritesWithStore();
+		Object.assign(favorites, {
+			lastDecay: Date.now() - 48 * 3600 * 1000,
+			emojiFrecency: {"🦊": {totalUses: 1, recentUses: [], frecency: 1}},
+		});
+
+		await favorites.decayScore(false);
+
+		const fox = (favorites as unknown as {emojiFrecency: Record<string, {score: number}>})
+			.emojiFrecency["🦊"];
+		expect(fox.score).toBe(0);
+	});
+
+	it("sticker scores decay like emoji scores", async () => {
+		const favorites = favoritesWithStore();
+		Object.assign(favorites, {
+			lastDecay: Date.now() - 48 * 3600 * 1000,
+			sticker_frecency: {"700": {totalUses: 1, recentUses: [], frecency: 1, score: 1000}},
+		});
+
+		await favorites.decayScore(false);
+
+		const sticker = (favorites as unknown as {sticker_frecency: Record<string, {score: number}>})
+			.sticker_frecency["700"];
+		expect(sticker.score).toBeLessThan(1000);
+	});
+});

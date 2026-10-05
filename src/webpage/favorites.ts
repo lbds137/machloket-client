@@ -144,7 +144,14 @@ export class Favorites {
 		this.owner.perminfo.favoriteStore = save;
 	}
 	async saveNetwork() {
-		await this.startSync(false);
+		// Merge the server's copy first: writing without it would undo another device's
+		// changes. Can't read it (offline, an error page): keep the save pending for next time.
+		try {
+			if (!(await this.startSync(false))) return;
+		} catch (e) {
+			console.error("Couldn't sync favourites before saving:", e);
+			return;
+		}
 		const body: {settings: favandfreqimp} = {
 			settings: {
 				favoriteGifs: {
@@ -171,17 +178,21 @@ export class Favorites {
 			method: "PATCH",
 			headers: this.headers,
 			body: JSON.stringify(body),
-		});
-		if (res.ok) {
+		}).catch(() => undefined);
+		if (res?.ok) {
 			this.needsSave = saveImportance.no;
 			this.lastSave = Date.now();
+		} else {
+			console.error("Couldn't save favourites:", res ? "HTTP " + res.status : "offline");
 		}
 	}
-	async startSync(save = true) {
-		const sat = fetch(this.info.api + "/users/@me/settings-proto/2/json", {
+	/** Merges the server's favourites in. False when the server didn't answer with them. */
+	async startSync(save = true): Promise<boolean> {
+		const sat = await fetch(this.info.api + "/users/@me/settings-proto/2/json", {
 			headers: this.headers,
 		});
-		const res: {settings: Partial<favandfreq>} = await (await sat).json();
+		if (!sat.ok) return false;
+		const res: {settings: Partial<favandfreq>} = await sat.json();
 		//TODO remove this eventually
 		delete this.emojiReactionFrecency["undefined"];
 		delete this.store.current.emojiReactionFrecency["undefined"];
@@ -190,6 +201,7 @@ export class Favorites {
 		// was throwing "Cannot convert undefined or null to object" here).
 		delete res.settings?.emojiReactionFrecency?.emojis?.["undefined"];
 		this.saveDifs(res.settings ?? {}, save);
+		return true;
 	}
 	async setup() {
 		try {
@@ -417,6 +429,7 @@ export class Favorites {
 	}
 
 	async favoriteSticker(id: string) {
+		if (this.favorite_stickers.includes(id)) return;
 		this.favorite_stickers.push(id);
 		await this.save(saveImportance.high);
 	}
@@ -426,6 +439,7 @@ export class Favorites {
 	}
 
 	async favoriteEmoji(idorname: string) {
+		if (this.favorite_emojis.includes(idorname)) return;
 		this.favorite_emojis.push(idorname);
 		await this.save(saveImportance.high);
 	}
@@ -443,7 +457,8 @@ export class Favorites {
 			width: Math.round(gif.width),
 			height: Math.round(gif.height),
 			format: "GIF_TYPE_IMAGE",
-			order: Object.keys(this.gifs).length + 1,
+			// After the last one (a count would reuse a removed gif's place).
+			order: Math.max(0, ...Object.values(this.gifs).map((g) => g.order || 0)) + 1,
 		};
 		await this.save(saveImportance.high);
 	}
@@ -461,18 +476,15 @@ export class Favorites {
 		// Did some math and I found I liked these values for g and n
 		// f\left(x\right)=\left(\frac{x}{g}+1\right)^{-n}
 		const decay = (delta / 20 + 1) ** -0.35;
-		Object.values(this.emojiFrecency).forEach((emoji) => {
-			emoji.score *= decay;
-			emoji.score ^= 0;
-		});
-		Object.values(this.emojiReactionFrecency).forEach((emoji) => {
-			emoji.score *= decay;
-			emoji.score ^= 0;
-		});
-		Object.values(this.guildAndChannelFrecency).forEach((thing) => {
-			thing.score *= decay;
-			thing.score ^= 0;
-		});
+		for (const kind of [
+			this.emojiFrecency,
+			this.emojiReactionFrecency,
+			this.guildAndChannelFrecency,
+			this.sticker_frecency,
+		]) {
+			// Whole numbers (Math.trunc: `^= 0` wrapped scores past 2^31 negative).
+			for (const thing of Object.values(kind)) thing.score = Math.trunc(thing.score * decay) || 0;
+		}
 		this.lastDecay = Date.now();
 		if (save) await this.save(saveImportance.low);
 	}
