@@ -464,20 +464,26 @@ class Member extends SnowFlake {
 		const maybe = user.members.get(guild);
 		if (!user.members.has(guild)) {
 			const membpromise = guild.localuser.resolvemember(user.id, guild.id);
-			const promise = new Promise<Member | undefined>(async (res) => {
+			const promise = (async (): Promise<Member | undefined> => {
 				const membjson = await membpromise;
-				if (membjson === undefined) {
-					return res(undefined);
-				} else {
-					const member = new Member(membjson, guild);
-					const map = guild.localuser.presences;
-					member.getPresence(map.get(member.id));
-					map.delete(member.id);
-					res(member);
-					guild.localuser.memberListQue();
-					return member;
+				if (membjson === undefined) return undefined;
+				// The REST member shape has no top-level id; its user carries it.
+				const id = membjson.id || membjson.user?.id;
+				let member: Member;
+				try {
+					if (!id) throw new Error("no id and no user");
+					member = new Member({...membjson, id}, guild);
+				} catch (e) {
+					// Settle as no member: every later lookup for this user awaits this promise.
+					console.error("[Member.resolveMember] unusable member", e);
+					return undefined;
 				}
-			});
+				const map = guild.localuser.presences;
+				member.getPresence(map.get(member.id));
+				map.delete(member.id);
+				guild.localuser.memberListQue();
+				return member;
+			})();
 			user.members.set(guild, promise);
 			const member = await promise;
 			if (member) {
