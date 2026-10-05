@@ -72,12 +72,85 @@ describe("a message the server refuses", () => {
 	it("a slowmode refusal starts the slowmode countdown", async () => {
 		vi.stubGlobal("XMLHttpRequest", fakeXHR(429, {code: 20016, message: "Slowmode"}));
 		const {channel} = sendingChannel();
+		Object.defineProperty(channel, "localuser", {value: {channelfocus: channel}});
 		const answers: string[] = [];
 
 		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
 		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
 
 		expect(channel.slowmode).toHaveBeenCalledWith(true);
+	});
+});
+
+describe("the composer's send-error notice", () => {
+	let realbox: HTMLDivElement;
+	afterEach(() => realbox.remove());
+	function mountComposer() {
+		realbox = document.createElement("div");
+		realbox.id = "realbox";
+		realbox.innerHTML = '<div class="outerTypeBox"></div>';
+		document.body.append(realbox);
+	}
+	const notice = () => realbox.querySelector(".sendError")?.textContent ?? null;
+	/** A sending channel that is the one on screen. */
+	function focusedChannel() {
+		const {channel} = sendingChannel();
+		const localuser = {channelfocus: channel as unknown};
+		Object.defineProperty(channel, "localuser", {value: localuser});
+		return channel;
+	}
+	async function refuse(channel: InstanceType<typeof Channel>, status: number, body: unknown) {
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(status, body));
+		const answers: string[] = [];
+		void channel.sendMessage("hi", {nonce: "n" + Math.random()}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
+	}
+
+	it("shows the server's reason for a refused send, and clears on the next send", async () => {
+		mountComposer();
+		const channel = focusedChannel();
+		await refuse(channel, 403, {code: 50013, message: "Missing Permissions"});
+		expect(notice()).toBe("Missing Permissions");
+
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(200, {id: "1"}));
+		void channel.sendMessage("again", {nonce: "n2"});
+		await vi.waitFor(() => expect(notice()).toBeNull());
+	});
+
+	it("says something even when the refusal has no readable reason", async () => {
+		mountComposer();
+		const channel = focusedChannel();
+		await refuse(channel, 500, null);
+		expect(notice()).toBeTruthy();
+	});
+
+	it("leaves a slowmode refusal to the slowmode countdown", async () => {
+		mountComposer();
+		const channel = focusedChannel();
+		await refuse(channel, 429, {code: 20016, message: "Slowmode"});
+		expect(notice()).toBeNull();
+	});
+
+	it("isn't shown over another channel's composer when the user has moved on", async () => {
+		mountComposer();
+		const channel = focusedChannel();
+		(channel.localuser as {channelfocus: unknown}).channelfocus = {};
+		await refuse(channel, 403, {code: 50013, message: "Missing Permissions"});
+		expect(notice()).toBeNull();
+		// Nor the slowmode countdown.
+		await refuse(channel, 429, {code: 20016, message: "Slowmode"});
+		expect(channel.slowmode).not.toHaveBeenCalled();
+	});
+
+	it("spells out an invalid-form refusal (a too-long message)", async () => {
+		mountComposer();
+		const channel = focusedChannel();
+		await refuse(channel, 400, {
+			code: 50035,
+			message: "Invalid Form Body",
+			errors: {content: {_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 2000 or fewer in length."}]}},
+		});
+		expect(notice()).toBe("Must be 2000 or fewer in length.");
 	});
 });
 

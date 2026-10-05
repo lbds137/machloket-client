@@ -8199,3 +8199,11 @@ textarea.interactionModalInput {
 	font-weight: 700;
 	margin-right: 0.15em;
 }
+
+/* Why the server refused the last send, above the composer until the next send. */
+.sendError {
+	overflow-wrap: anywhere;
+	padding: 0 4px 4px;
+	color: var(--red);
+	font-size: 0.875rem;
+}

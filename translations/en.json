@@ -148,6 +148,7 @@
 		"selectCatName": "Name of category",
 		"selectName": "Name of channel",
 		"selectType": "Select channel type",
+		"sendFailed": "Your message couldn't be sent.",
 		"settings": "Settings",
 		"settingsFor": "Settings for $1",
 		"slowmode": "Slowmode:",

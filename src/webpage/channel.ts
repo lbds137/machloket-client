@@ -59,6 +59,30 @@ export async function createMachloketNonce(): Promise<string> {
 	return btoa(`machloket-${await shortRev}|${Math.floor(Date.now() / 1000)}|${unique}`);
 }
 
+/**
+ * A refused send's reason as the user should read it: an invalid form (50035) says what was
+ * wrong (its nested `errors[...]._errors[].message`, e.g. a too-long message), anything else the
+ * server's message, or a generic line when the body has none.
+ */
+function sendErrorText(body: {code?: number; message?: unknown; errors?: unknown} | null): string {
+	if (body?.code === 50035 && body.errors) {
+		const found: string[] = [];
+		const walk = (node: unknown) => {
+			if (!node || typeof node !== "object") return;
+			for (const [key, value] of Object.entries(node)) {
+				if (key === "_errors" && Array.isArray(value)) {
+					for (const e of value) if (typeof e?.message === "string") found.push(e.message);
+				} else {
+					walk(value);
+				}
+			}
+		};
+		walk(body.errors);
+		if (found.length) return found.join(" ");
+	}
+	return typeof body?.message === "string" && body.message ? body.message : I18n.channel.sendFailed();
+}
+
 /** Releases everyone waiting on a history page that won't come. */
 function settleWaiters(waiters: Map<string, () => void>) {
 	for (const res of waiters.values()) res();
@@ -2924,6 +2948,8 @@ class Channel extends SnowFlake {
 		this.guild.prevchannel = this;
 		this.guild.perminfo.prevchannel = this.id;
 		this.localuser.channelfocus = this;
+		// A refused send's notice belongs to the channel it happened in.
+		Channel.clearSendError();
 
 		if (this.isThread() && !this.member) {
 			this.parent?.createguildHTML();
@@ -3846,6 +3872,20 @@ class Channel extends SnowFlake {
 			const int = setInterval(tick, 1000);
 		}
 	}
+	/** Why the server refused the last send, shown above the composer until the next send. */
+	static showSendError(text: string) {
+		const realbox = document.getElementById("realbox");
+		if (!realbox) return;
+		Channel.clearSendError();
+		const notice = document.createElement("div");
+		notice.classList.add("sendError");
+		notice.setAttribute("role", "alert");
+		notice.textContent = text;
+		realbox.prepend(notice);
+	}
+	static clearSendError() {
+		document.querySelectorAll("#realbox .sendError").forEach((el) => el.remove());
+	}
 	async sendMessage(
 		content: string,
 		{
@@ -3876,6 +3916,7 @@ class Channel extends SnowFlake {
 		) {
 			return;
 		}
+		Channel.clearSendError();
 		let replyjson: any;
 		if (replyingto) {
 			replyjson = {
@@ -3919,9 +3960,15 @@ class Channel extends SnowFlake {
 					// gets the text back. Only a send that never got an answer offers a retry.
 					ressy("NotOk");
 					onRes("NotOk");
-					const body = res.response as {code?: number} | null;
-					if (body?.code === 20016) {
-						this.slowmode(true);
+					const body = res.response as {code?: number; message?: unknown; errors?: unknown} | null;
+					// Only over this channel's composer: a reply that lands after the user moved on
+					// would otherwise sit under another channel's box.
+					if (this.localuser?.channelfocus === this) {
+						if (body?.code === 20016) {
+							this.slowmode(true);
+						} else {
+							Channel.showSendError(sendErrorText(body));
+						}
 					}
 				} else {
 					ressy("Ok");
