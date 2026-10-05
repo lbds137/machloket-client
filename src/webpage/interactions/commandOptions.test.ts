@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {captureRequests} from "../test/setup";
 import {API, messageIn} from "../test/interactionFixture";
 import type {commandJson as commandJsonT, commandOptionJson} from "../jsontypes.js";
@@ -34,7 +34,11 @@ function commandWith(options: commandOptionJson[], states: Record<string, string
 		.filter((option) => option.name in states)
 		.map((option) => ({option, state: states[option.name]}));
 	command.state.set(channel as never, entries);
-	return {sent, run: () => command.submit(document.createElement("div"), channel as never)};
+	return {
+		sent,
+		localuser,
+		run: () => command.submit(document.createElement("div"), channel as never),
+	};
 }
 
 describe("typed slash-command options", () => {
@@ -2023,4 +2027,42 @@ describe("keyboard and sequence regressions (GLM-week audit)", () => {
 			html.remove();
 		}
 	});
+});
+
+describe("a slash command that isn't sent", () => {
+	const forgotten = (localuser: ReturnType<typeof messageIn>["localuser"]) => {
+		expect(localuser.interactionNonces.size).toBe(0);
+		expect(localuser.commandChannels.size).toBe(0);
+		expect(localuser.commandNonceLabels.size).toBe(0);
+	};
+
+	it("forgets its nonce when an option blocks it", async () => {
+		const {run, localuser} = commandWith(
+			[{type: 4, name: "count", description: "", required: true, max_value: 10}],
+			{count: "11"},
+		);
+
+		await expect(run()).resolves.toBe(false);
+		forgotten(localuser);
+	});
+
+	it("forgets its nonce when the instance can't be reached", async () => {
+		const {run, localuser} = commandWith(
+			[{type: 4, name: "count", description: "", required: true}],
+			{count: "4"},
+		);
+		vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+
+		await expect(run()).resolves.toBe(false);
+		forgotten(localuser);
+	});
+});
+
+it("a command with nothing collected to send keeps no nonce", async () => {
+	const {localuser, channel} = messageIn("@me");
+	const command = new Command(commandJson([]), localuser);
+
+	await command.submit(document.createElement("div"), channel as never);
+
+	expect(localuser.interactionNonces.size).toBe(0);
 });

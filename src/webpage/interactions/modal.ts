@@ -70,6 +70,8 @@ export type ModalHost = {
 	markdownOwner?: Localuser | Channel;
 	/** Called with the submit's nonce, so the bot's answer (or its failure) can be shown. */
 	trackSubmit?: (nonce: string) => void;
+	/** Called with a tracked submit's nonce when it was refused or lost: no answer will come. */
+	forgetSubmit?: (nonce: string) => void;
 };
 
 type Submit = {
@@ -420,6 +422,7 @@ export class InteractionModal {
 
 		this.sending = true;
 		this.submitButton.disabled = true;
+		let tracked: string | undefined;
 		try {
 			const body: Record<string, unknown> = {
 				type: 5,
@@ -436,19 +439,23 @@ export class InteractionModal {
 			};
 			// The server checks this against the opener's message: none when a slash command opened it.
 			if (this.host.openerMessageId) body.message_id = this.host.openerMessageId;
-			this.host.trackSubmit?.(body.nonce as string);
+			tracked = body.nonce as string;
+			this.host.trackSubmit?.(tracked);
 			const response = await fetch(this.host.api + "/interactions", {
 				method: "POST",
 				headers: this.host.headers,
 				body: JSON.stringify(body),
 			});
 			if (response.ok) {
+				tracked = undefined; // accepted: its answer is on the way
 				await this.close();
 				return true;
 			}
+			this.host.forgetSubmit?.(tracked);
 			this.showServerErrors(await response.json().catch(() => ({})));
 			return false;
 		} catch (e) {
+			if (tracked) this.host.forgetSubmit?.(tracked);
 			this.formError.textContent = I18n.interactions.failed() + ": " + (e as Error).message;
 			return false;
 		} finally {

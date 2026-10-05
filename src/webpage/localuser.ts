@@ -747,6 +747,12 @@ class Localuser {
 		if (channel) this.commandChannels.set(nonce, channel);
 		if (label) this.commandNonceLabels.set(nonce, label);
 	}
+	/** A command that never reached the bot: no event will come for its nonce. */
+	forgetCommandNonce(nonce: string) {
+		this.interactionNonces.delete(nonce);
+		this.commandChannels.delete(nonce);
+		this.commandNonceLabels.delete(nonce);
+	}
 	relationshipsUpdate = () => {};
 	rights: Rights;
 	updateRights(rights: string | number) {
@@ -856,6 +862,10 @@ class Localuser {
 						trackSubmit: (nonce) => {
 							if (opener) this.registerInterNonce(nonce, opener);
 							else this.registerCommandNonce(nonce, channel);
+						},
+						forgetSubmit: (nonce) => {
+							this.interNonceMap.delete(nonce);
+							this.forgetCommandNonce(nonce);
 						},
 					}).show();
 					break;

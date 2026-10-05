@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it, onTestFinished, vi} from "vitest";
 import {captureRequests} from "../test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -212,6 +212,33 @@ describe("InteractionModal", () => {
 		expect(document.contains(root)).toBe(true);
 		expect(q(".interactionModalFormError").textContent).toContain("Unknown interaction");
 	});
+
+	for (const [label, answer] of [
+		["refused", () => Response.json({code: 10062, message: "Unknown interaction"}, {status: 404})],
+		["lost", () => Promise.reject(new TypeError("Failed to fetch"))],
+	] as const) {
+		it(`forgets a ${label} submit's nonce: no answer will come for it`, async () => {
+			onTestFinished(() => {
+				vi.restoreAllMocks();
+			});
+			if (label === "lost") vi.spyOn(globalThis, "fetch").mockImplementation(answer as never);
+			else captureRequests(API + "/interactions", answer as () => Response);
+			const tracked: string[] = [];
+			const forgotten: string[] = [];
+			const modal = new InteractionModal(sampleModal(), {
+				...host(),
+				trackSubmit: (nonce) => tracked.push(nonce),
+				forgetSubmit: (nonce) => forgotten.push(nonce),
+			});
+			root = modal.show();
+			q<HTMLInputElement>('input[value="dry"]').click();
+
+			expect(await modal.submit()).toBe(false);
+
+			expect(tracked).toHaveLength(1);
+			expect(forgotten).toEqual(tracked);
+		});
+	}
 
 	it("submits a legacy action-row text input as an action row", async () => {
 		const sent = captureRequests(API + "/interactions");

@@ -582,10 +582,8 @@ export class Command extends SnowFlake {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
 		try {
 			const states = this.state.get(channel);
-			if (!states) {
-				this.localuser.registerCommandNonce(nonce, channel);
-				return true;
-			}
+			// Nothing collected (the box was cleared): nothing is sent, so no nonce to track.
+			if (!states) return true;
 			// The "used /command" label: the command's path with the picked branch.
 			const branchLabel = states.find(
 				(_) => _ instanceof Object && _.option instanceof SubCommandOption,
@@ -678,9 +676,7 @@ export class Command extends SnowFlake {
 				// The nonce will never resolve now; drop it from both gates — the modal
 				// suppression Set and the command-status channel map — so a late
 				// INTERACTION_FAILURE can't stack "did not respond" on the real error.
-				this.localuser.interactionNonces.delete(nonce);
-				this.localuser.commandChannels.delete(nonce);
-				this.localuser.commandNonceLabels.delete(nonce);
+				this.localuser.forgetCommandNonce(nonce);
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;
@@ -690,9 +686,9 @@ export class Command extends SnowFlake {
 			}
 			this.state.delete(channel);
 		} catch (e) {
+			// Blocked by an option, or the POST never left the browser: nothing was sent.
+			this.localuser.forgetCommandNonce(nonce);
 			if (e instanceof OptionError) {
-				// A validation-blocked submit never sends; its label map entry dies with it.
-				this.localuser.commandNonceLabels.delete(nonce);
 				const message = e.message;
 				const error = document.createElement("span");
 				error.classList.add("commandError");
@@ -745,9 +741,7 @@ export class Command extends SnowFlake {
 				} catch {
 					// A non-JSON body keeps the bare status.
 				}
-				this.localuser.interactionNonces.delete(nonce);
-				this.localuser.commandChannels.delete(nonce);
-				this.localuser.commandNonceLabels.delete(nonce);
+				this.localuser.forgetCommandNonce(nonce);
 				const error = document.createElement("span");
 				error.classList.add("commandError");
 				error.textContent = message;
@@ -757,6 +751,7 @@ export class Command extends SnowFlake {
 			}
 			return true;
 		} catch (e) {
+			this.localuser.forgetCommandNonce(nonce);
 			if (e instanceof Error) {
 				// Same as the slash path: a POST that never left the browser shows why.
 				const error = document.createElement("span");
