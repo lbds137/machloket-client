@@ -1,5 +1,10 @@
 import type {messageFrom, messageTo} from "./utils/serviceType";
 
+// Registered as /service.js?notifications in the default mode (utils.ts, SW.register): it only
+// shows and opens notifications (Android Chrome has no `new Notification`), and leaves fetches
+// and caches alone. Without a fetch listener the browser doesn't route requests through it.
+const notificationsOnly = new URL(self.location.href).searchParams.has("notifications");
+
 async function deleteoldcache() {
 	await caches.delete("cache");
 }
@@ -37,7 +42,7 @@ async function swStorageGet() {
 		(await (await (await caches.open("save")).match("/save"))?.text()) || "{}",
 	) as Record<string, number>;
 }
-swStorageGet().then(async (_) => {
+async function pruneCdnCache(_: Record<string, number>) {
 	function pathToTime(str: string): number {
 		return swStorage[str] ?? 0;
 	}
@@ -54,7 +59,8 @@ swStorageGet().then(async (_) => {
 			size -= thing[0];
 		}
 	}
-});
+}
+if (!notificationsOnly) swStorageGet().then(pruneCdnCache);
 async function swStorageSave() {
 	const c = await caches.open("save");
 	c.put("/save", new Response(JSON.stringify(swStorage)));
@@ -109,10 +115,12 @@ async function putInCache(request: URL | string, response: Response) {
 }
 
 let lastcache: string;
-self.addEventListener("activate", async () => {
-	console.log("Service Worker activated");
-	checkCache();
-});
+if (!notificationsOnly) {
+	self.addEventListener("activate", async () => {
+		console.log("Service Worker activated");
+		checkCache();
+	});
+}
 async function tryToClose() {
 	const portArr = [...ports];
 	if (portArr.length) {
@@ -250,7 +258,7 @@ async function refreshUrl(url: URL, port: MessagePort): Promise<string> {
 	});
 	return new Promise((res) => promURLMap.set(url.toString(), res));
 }
-self.addEventListener("fetch", async (e) => {
+async function onFetch(e: Event) {
 	const event = e as FetchEvent;
 	const host = URL.canParse(event.request.url) && new URL(event.request.url).host;
 	let req = event.request;
@@ -320,6 +328,43 @@ self.addEventListener("fetch", async (e) => {
 	} catch (e) {
 		console.error(e);
 	}
+}
+if (!notificationsOnly) self.addEventListener("fetch", onFetch);
+// A notifications-only worker (it holds no caches), and a caching one leaving the default mode,
+// take over at once instead of waiting until every window the old worker controls has closed.
+self.addEventListener("install", () => {
+	const sw = self as unknown as ServiceWorkerGlobalScope;
+	const active = sw.registration.active;
+	if (
+		notificationsOnly ||
+		(active && new URL(active.scriptURL).searchParams.has("notifications"))
+	) {
+		sw.skipWaiting();
+	}
+});
+// A tap goes to the app's window, which runs the handler it kept under the tag
+// (notificationHandler.ts), or opens the channel itself; with no window left, the
+// notification's channel opens in a new one.
+self.addEventListener("notificationclick", (e) => {
+	const event = e as NotificationEvent;
+	const sw = self as unknown as ServiceWorkerGlobalScope;
+	event.notification.close();
+	const {tag} = event.notification;
+	const url: unknown = event.notification.data?.url;
+	const channelId: unknown = event.notification.data?.channelId;
+	event.waitUntil(
+		(async () => {
+			const windows = await sw.clients.matchAll({type: "window", includeUncontrolled: true});
+			const app =
+				windows.find((w) => new URL(w.url).pathname.startsWith("/channels")) ?? windows[0];
+			if (app) {
+				app.postMessage({code: "notificationClick", tag, channelId});
+				await app.focus();
+			} else if (typeof url === "string") {
+				await sw.clients.openWindow(url);
+			}
+		})(),
+	);
 });
 const ports = new Set<MessagePort>();
 let dev = false;

@@ -25,6 +25,7 @@ import "./404.js";
 import {Channel} from "./channel.js";
 import {Guild} from "./guild.js";
 import {showChangelogPopup} from "./changelog.js";
+import {NotificationHandler} from "./notificationHandler.js";
 import type * as C from "./typeChecker/chekerIndex.js";
 
 if (window.location.pathname === "/app") {
@@ -210,6 +211,12 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 		//console.log(e.state,"state:3")
 	});
+	// A notification shown before this page loaded (Android: the worker shows them) still
+	// opens its channel when tapped.
+	NotificationHandler.openChannel = (channelId) => {
+		thisUser.goToChannel(channelId).catch(console.error);
+	};
+	NotificationHandler.listenForClicks();
 	let nonceMap = new Map<string, string>();
 	//@ts-expect-error unused right now, not needed
 	function getNonce(id: string) {

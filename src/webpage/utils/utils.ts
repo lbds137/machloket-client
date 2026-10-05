@@ -1057,9 +1057,48 @@ export class SW {
 	 * A module worker: Vite emits service.ts as an ES module (dev and build), whose `export {}`
 	 * is a syntax error in a classic worker. Browsers without module service workers fail this
 	 * registration and run without one.
+	 *
+	 * `notificationsOnly` registers it as a worker that leaves fetches and caches alone
+	 * (service.ts reads the query).
 	 */
-	static register() {
-		return navigator.serviceWorker.register("/service.js", {scope: "/", type: "module"});
+	static register(notificationsOnly = false) {
+		const url = notificationsOnly ? "/service.js?notifications" : "/service.js";
+		return navigator.serviceWorker.register(url, {scope: "/", type: "module"});
+	}
+	/**
+	 * The registration that shows notifications where the page may not construct them
+	 * (Android Chrome). The default mode starts no worker, so it gets a notifications-only one;
+	 * the other modes' worker (start) serves. Rejects rather than waiting forever (not
+	 * `navigator.serviceWorker.ready`, which never settles without a worker and, once settled,
+	 * keeps answering with a registration that may since have been unregistered).
+	 */
+	static async notificationRegistration(): Promise<ServiceWorkerRegistration> {
+		let registration = await navigator.serviceWorker.getRegistration();
+		if (!registration) {
+			if (getLocalSettings().serviceWorkerMode != ServiceWorkerMode.Unregistered) {
+				throw new Error("No service worker is running to show the notification");
+			}
+			registration = await SW.register(true);
+		}
+		const worker = registration.installing ?? registration.waiting;
+		if (!registration.active && worker) {
+			await new Promise<void>((res, rej) => {
+				const timeout = setTimeout(
+					() => rej(new Error("The service worker didn't activate in time")),
+					10_000,
+				);
+				worker.addEventListener("statechange", () => {
+					if (worker.state === "activated") {
+						clearTimeout(timeout);
+						res();
+					} else if (worker.state === "redundant") {
+						clearTimeout(timeout);
+						rej(new Error("The service worker didn't activate"));
+					}
+				});
+			});
+		}
+		return registration;
 	}
 	static async start() {
 		if (!("serviceWorker" in navigator)) return;
