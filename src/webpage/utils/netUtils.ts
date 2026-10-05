@@ -20,3 +20,9 @@ export function isLoopback(str: string) {
 		host === "[::1]"
 	);
 }
+
+/** A CSS `url()` for a URL from the server: quotes, backslashes and line breaks are escaped,
+ * so the value can't end the url() early and add another. */
+export function cssUrl(url: string) {
+	return `url("${url.replace(/["\\\n\r\f]/g, (c) => "\\" + c.charCodeAt(0).toString(16) + " ")}")`;
+}

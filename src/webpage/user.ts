@@ -31,7 +31,7 @@ import {Channel} from "./channel.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings";
 import {ReportMenu} from "./reporting/report.js";
 import {CDNParams} from "./utils/cdnParams.js";
-import {trimTrailingSlashes} from "./utils/netUtils.js";
+import {cssUrl, trimTrailingSlashes} from "./utils/netUtils.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
@@ -1229,7 +1229,7 @@ class User extends SnowFlake {
 	static getLink(con: ConnectionJson): string | void {
 		switch (con.type) {
 			case "steam": {
-				return `https://steamcommunity.com/profiles/${con.external_id}`;
+				return `https://steamcommunity.com/profiles/${encodeURIComponent(con.external_id)}`;
 			}
 		}
 	}
@@ -1947,7 +1947,7 @@ class User extends SnowFlake {
 					if (conic.icon_url) {
 						const span = document.createElement("span");
 						span.classList.add("conImg", "svgicon", "conProfImg");
-						span.style.setProperty("mask", `url("${conic.icon_url}")`);
+						span.style.setProperty("mask", cssUrl(conic.icon_url));
 						//span.alt = key;
 						conDiv.append(span);
 					} else {

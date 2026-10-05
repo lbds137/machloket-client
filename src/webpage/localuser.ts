@@ -24,7 +24,7 @@ import {
 	Specialuser,
 	debounce,
 } from "./utils/utils.js";
-import {CDN_LINK_MARGIN_MS} from "./utils/netUtils.js";
+import {CDN_LINK_MARGIN_MS, cssUrl} from "./utils/netUtils.js";
 import {
 	channeljson,
 	expSessionJson,
@@ -1910,7 +1910,7 @@ class Localuser {
 				//https://cdn.discordapp.com/banners/677271830838640680/fab8570de5bb51365ba8f36d7d3627ae.webp?size=240
 				banner.style.setProperty(
 					"background-image",
-					`linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 40%), url(${this.info.cdn}/banners/${guild.id}/${guild.banner + new CDNParams({expectedSize: 128})})`,
+					`linear-gradient(rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0) 40%), ${cssUrl(`${this.info.cdn}/banners/${guild.id}/${guild.banner + new CDNParams({expectedSize: 128})}`)}`,
 				);
 				banner.classList.add("Banner");
 				//background-image:
@@ -3653,7 +3653,7 @@ class Localuser {
 							if (connection.icon_url) {
 								const span = document.createElement("span");
 								span.classList.add("conImg", "svgicon");
-								span.style.setProperty("mask", `url("${connection.icon_url}")`);
+								span.style.setProperty("mask", cssUrl(connection.icon_url));
 								//span.alt = key;
 								container.append(span);
 							} else {
@@ -3692,7 +3692,7 @@ class Localuser {
 							if (connectionObj.icon_url) {
 								const span = document.createElement("span");
 								span.classList.add("conImg", "svgicon");
-								span.style.setProperty("mask", `url("${connectionObj.icon_url}")`);
+								span.style.setProperty("mask", cssUrl(connectionObj.icon_url));
 								//span.alt = key;
 								topRow.append(span);
 							}
