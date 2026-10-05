@@ -93,7 +93,8 @@ class User extends SnowFlake {
 		sku_id: string;
 	} | null;
 
-	resolving: false | Promise<any> = false;
+	/** This user's profile badges, loaded into localuser.badges once (reset by new badge_ids). */
+	private profileBadges: Promise<boolean> | undefined;
 	get headers() {
 		return this.localuser.headers;
 	}
@@ -779,35 +780,31 @@ class User extends SnowFlake {
 		return await Member.resolveMember(this, guild);
 	}
 
-	async getUserProfile(): Promise<any> {
-		return await fetch(
-			`${this.info.api}/users/${this.id.replace(
-				"#clone",
-				"",
-			)}/profile?with_mutual_guilds=true&with_mutual_friends=true`,
-			{
-				headers: this.localuser.headers,
-			},
-		).then((res) => res.json());
+	async getBadge(id: string) {
+		if (!this.localuser.badges.has(id)) {
+			const load = (this.profileBadges ??= this.loadProfileBadges());
+			// A failed load lets the next popup retry, unless newer badge ids started another.
+			if (!(await load) && this.profileBadges === load) this.profileBadges = undefined;
+		}
+		return this.localuser.badges.get(id);
 	}
 
-	async getBadge(id: string) {
-		if (this.localuser.badges.has(id)) {
-			return this.localuser.badges.get(id);
-		} else {
-			if (this.resolving) {
-				await this.resolving;
-				return this.localuser.badges.get(id);
-			}
-
-			const prom = await this.getUserProfile();
-			this.resolving = prom;
-			const badges = prom.badges;
-			this.resolving = false;
+	/** Whether the profile's badge definitions were loaded. */
+	private async loadProfileBadges(): Promise<boolean> {
+		try {
+			const res = await fetch(`${this.info.api}/users/${this.id.replace("#clone", "")}/profile`, {
+				headers: this.localuser.headers,
+			});
+			const badges: unknown = res.ok ? (await res.json())?.badges : undefined;
+			if (!Array.isArray(badges)) throw new Error("no badges in the profile: HTTP " + res.status);
 			for (const badge of badges) {
 				this.localuser.badges.set(badge.id, badge);
 			}
-			return this.localuser.badges.get(id);
+			return true;
+		} catch (e) {
+			// This popup shows the badges already known.
+			console.warn(e);
+			return false;
 		}
 	}
 
@@ -964,6 +961,14 @@ class User extends SnowFlake {
 			}
 			if (key === "id") {
 				continue;
+			}
+			// A badge added since the profile load is in no cached definition yet. Payloads repeat
+			// the same ids (every message's author), so only a change counts.
+			if (
+				key === "badge_ids" &&
+				JSON.stringify(json.badge_ids) !== JSON.stringify(this.badge_ids)
+			) {
+				this.profileBadges = undefined;
 			}
 			(this as any)[key] = (json as any)[key];
 		}
