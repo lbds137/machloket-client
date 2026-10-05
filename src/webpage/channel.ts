@@ -4252,23 +4252,30 @@ class Channel extends SnowFlake {
 		this.permission_overwritesar.push([role.id, perm]);
 	}
 	async updateRolePermissions(id: string, perms: Permissions) {
-		const permission = this.permission_overwrites.get(id);
-		if (permission) {
-			permission.allow = perms.allow;
-			permission.deny = perms.deny;
-		} else {
-			//this.permission_overwrites.set(id,perms);
-		}
-		await fetch(this.info.api + "/channels/" + this.id + "/permissions/" + id, {
+		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
+		const {allow, deny} = perms;
+		const res = await fetch(this.info.api + "/channels/" + this.id + "/permissions/" + id, {
 			method: "PUT",
 			headers: this.headers,
 			body: JSON.stringify({
-				allow: perms.allow.toString(),
-				deny: perms.deny.toString(),
+				allow: allow.toString(),
+				deny: deny.toString(),
 				id,
 				type: this.localuser.userMap.get(id) ? 1 : 0,
 			}),
-		});
+		}).catch(() => undefined);
+		// Refused, e.g. bits one doesn't hold (403 50013): the overwrite stays as it was.
+		if (!res?.ok) {
+			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			return;
+		}
+		const permission = this.permission_overwrites.get(id);
+		if (permission) {
+			permission.allow = allow;
+			permission.deny = deny;
+		} else {
+			//this.permission_overwrites.set(id,perms);
+		}
 	}
 }
 Channel.setupcontextmenu();

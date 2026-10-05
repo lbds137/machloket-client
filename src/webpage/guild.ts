@@ -2266,26 +2266,25 @@ class Guild extends SnowFlake {
 		return role;
 	}
 	async updateRolePermissions(id: string, perms: Permissions) {
+		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
+		const {allow, deny} = perms;
 		const role = this.roleids.get(id);
 		if (!role) {
 			return;
 		}
-		role.permissions.allow = perms.allow;
-		role.permissions.deny = perms.deny;
-
-		await fetch(this.info.api + "/guilds/" + this.id + "/roles/" + role.id, {
+		// Only the permissions: re-sending the rest would send the icon's hash where the server
+		// takes an upload.
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/roles/" + role.id, {
 			method: "PATCH",
 			headers: this.headers,
-			body: JSON.stringify({
-				color: role.color,
-				hoist: role.hoist,
-				icon: role.icon,
-				mentionable: role.mentionable,
-				name: role.name,
-				permissions: role.permissions.allow.toString(),
-				unicode_emoji: role.unicode_emoji,
-			}),
-		});
+			body: JSON.stringify({permissions: allow.toString()}),
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			return;
+		}
+		role.permissions.allow = allow;
+		role.permissions.deny = deny;
 	}
 	/** The apps behind the latest command list asked for (the popup's icons and app names). */
 	apps?: applicationJson[];
