@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 await import("./localuser");
 const {Permissions} = await import("./permissions");
 
@@ -72,5 +72,32 @@ describe("permission bit layout", () => {
 		const perms = new Permissions((1n << 13n).toString());
 		expect(perms.hasPermission("MANAGE_MESSAGES")).toBe(true);
 		expect(perms.hasPermission("SEND_MESSAGES")).toBe(false);
+	});
+});
+
+describe("an unknown permission name", () => {
+	it("is reported, not read as some other bit", () => {
+		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+		// Every bit set: a mis-mapped name would read as granted.
+		const perms = new Permissions((2n ** 60n - 1n).toString(), "0");
+
+		expect(perms.getPermission("NOT_A_PERMISSION")).toBe(0);
+		expect(perms.hasPermission("NOT_A_PERMISSION", false)).toBe(false);
+		perms.setPermission("NOT_A_PERMISSION", 1);
+		expect(perms.allow).toBe(2n ** 60n - 1n);
+		expect(errors).toHaveBeenCalledTimes(3);
+		errors.mockRestore();
+	});
+
+	it("is reported for an instance right too", async () => {
+		const {Rights} = await import("./rights");
+		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+		const rights = new Rights((2n ** 40n - 1n).toString());
+
+		expect(rights.getPermission("NOT_A_RIGHT")).toBe(false);
+		expect(rights.hasPermission("NOT_A_RIGHT", false)).toBe(false);
+		rights.setPermission("NOT_A_RIGHT", 1);
+		expect(errors).toHaveBeenCalledTimes(3);
+		errors.mockRestore();
 	});
 });

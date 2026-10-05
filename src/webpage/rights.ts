@@ -92,19 +92,27 @@ class Rights {
 		"CREATE_REGISTRATION_TOKENS",
 	] as const;
 	getPermission(name: string): boolean {
-		if (undefined === Rights.permisions.indexOf(name as any)) {
+		// indexOf answers -1 for a name not in the list, which would read a shifted bit.
+		const bit = Rights.permisions.indexOf(name as any);
+		if (bit === -1) {
 			console.error(name + " is not found in map", Rights.permisions);
+			return false;
 		}
-		return this.getPermissionbit(Rights.permisions.indexOf(name as any), this.allow);
+		return this.getPermissionbit(bit, this.allow);
 	}
 	hasPermission(name: string, adminOverride = true): boolean {
-		if (this.getPermissionbit(Rights.permisions.indexOf(name as any), this.allow)) return true;
+		const bit = Rights.permisions.indexOf(name as any);
+		if (bit === -1) {
+			console.error(name + " is not found in map", Rights.permisions);
+			return false;
+		}
+		if (this.getPermissionbit(bit, this.allow)) return true;
 		if (name !== "OPERATOR" && adminOverride) return this.hasPermission("OPERATOR");
 		return false;
 	}
 	setPermission(name: string, setto: number): void {
 		const bit = Rights.permisions.indexOf(name as any);
-		if (bit === undefined) {
+		if (bit === -1) {
 			return console.error(
 				"Tried to set permission to " + setto + " for " + name + " but it doesn't exist",
 			);

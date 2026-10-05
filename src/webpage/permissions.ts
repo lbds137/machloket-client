@@ -149,12 +149,15 @@ class Permissions {
 		advanced: ["ADMINISTRATOR"],
 	} as const;
 	getPermission(name: string): number {
-		if (undefined === Permissions.permisions.indexOf(name as any)) {
+		// indexOf answers -1 for a name not in the list, which would read a shifted bit.
+		const bit = Permissions.permisions.indexOf(name as any);
+		if (bit === -1) {
 			console.error(name + " is not found in map", Permissions.permisions);
+			return 0;
 		}
-		if (this.getPermissionbit(Permissions.permisions.indexOf(name as any), this.allow)) {
+		if (this.getPermissionbit(bit, this.allow)) {
 			return 1;
-		} else if (this.getPermissionbit(Permissions.permisions.indexOf(name as any), this.deny)) {
+		} else if (this.getPermissionbit(bit, this.deny)) {
 			return -1;
 		} else {
 			return 0;
@@ -166,13 +169,18 @@ class Permissions {
 				"This function may of been used in error, think about using getPermision instead",
 			);
 		}
-		if (this.getPermissionbit(Permissions.permisions.indexOf(name as any), this.allow)) return true;
+		const bit = Permissions.permisions.indexOf(name as any);
+		if (bit === -1) {
+			console.error(name + " is not found in map", Permissions.permisions);
+			return false;
+		}
+		if (this.getPermissionbit(bit, this.allow)) return true;
 		if (name !== "ADMINISTRATOR" && adminOverride) return this.hasPermission("ADMINISTRATOR");
 		return false;
 	}
 	setPermission(name: string, setto: number): void {
 		const bit = Permissions.permisions.indexOf(name as any);
-		if (bit === undefined) {
+		if (bit === -1) {
 			return console.error(
 				"Tried to set permission to " + setto + " for " + name + " but it doesn't exist",
 			);
