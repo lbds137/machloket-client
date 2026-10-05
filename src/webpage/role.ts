@@ -253,6 +253,8 @@ class RoleList extends Buttons {
 	readonly options: Options;
 	onchange: (id: string, perms: Permissions) => void;
 	curid?: string;
+	/** The header's "Delete Role" (guild roles only), shown only for a role one may delete. */
+	deleteButton?: HTMLButtonElement;
 	get info() {
 		return this.guild.info;
 	}
@@ -301,6 +303,7 @@ class RoleList extends Buttons {
 				if (role) this.deleteRole(role);
 			};
 			options.headerActions.push(deleteBtn);
+			this.deleteButton = deleteBtn;
 		}
 		for (const i of permissions) {
 			this.buttons.push([i[0].name, i[0].id]);
@@ -511,10 +514,20 @@ class RoleList extends Buttons {
 		opt.addButtonInput("", I18n.yes(), async () => {
 			opt.removeAll();
 			opt.addText(I18n.role.deleting());
-			await fetch(role.info.api + "/guilds/" + this.guild.id + "/roles/" + role.id, {
+			const status = await fetch(role.info.api + "/guilds/" + this.guild.id + "/roles/" + role.id, {
 				method: "DELETE",
 				headers: this.guild.headers,
-			});
+			}).then(
+				(res) => (res.ok ? undefined : "HTTP " + res.status),
+				() => "offline",
+			);
+			if (status) {
+				// Refused (e.g. a role above one's own): the role stays, and so does the view.
+				opt.removeAll();
+				opt.addText(I18n.requestFailed(status));
+				opt.addButtonInput("", I18n.ok(), () => dio.hide());
+				return;
+			}
 			if (this.curid === role.id) {
 				const id = this.permissions.filter((_) => _[0].id !== role.id)[0][0].id;
 				const elm = this.htmlarea.deref();
@@ -754,6 +767,14 @@ class RoleList extends Buttons {
 				this.options.name = role[0].name;
 				this.options.haschanged = false;
 			}
+		}
+		if (this.deleteButton) {
+			const role = arr?.[0];
+			this.deleteButton.hidden = !(
+				role instanceof Role &&
+				role.id !== this.guild.id &&
+				role.canManage()
+			);
 		}
 		this.options.subOptions = undefined;
 		return this.options.generateHTML();
