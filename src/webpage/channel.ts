@@ -3862,31 +3862,29 @@ class Channel extends SnowFlake {
 			this.hasPermission("MANAGE_CHANNELS")
 		)
 			return;
-		let m: Message | undefined = this.lastSentMessage || this.lastmessage;
-		if (!this.lastSentMessage) {
-			while (m) {
-				if (m.author.id === this.localuser.user.id) {
-					this.lastSentMessage = m;
-					break;
-				}
-				m = this.messages.get(this.idToNext.get(m.id) as string);
+		let m: Message | undefined = this.lastSentMessage;
+		if (!m) {
+			// The user's newest loaded message: back from the newest one.
+			let older = this.lastmessage;
+			while (older && older.author.id !== this.localuser.user.id) {
+				older = this.messages.get(this.idToPrev.get(older.id) as string);
 			}
+			m = this.lastSentMessage = older;
 		}
 
 		if (!m && bad) {
+			// Refused for slowmode with none loaded: ask for the user's newest in this channel.
 			const q = new URLSearchParams([
 				["author_id", this.localuser.user.id],
 				["limit", "1"],
 			]);
-			const {
-				messages: [message],
-			} = (await (
-				await fetch(this.info.api + "/guilds/" + this.guild.id + "/messages/search/?" + q, {
-					headers: this.headers,
-				})
-			).json()) as {messages: messagejson[]};
-			m = new Message(message, this);
-			this.lastSentMessage = m;
+			const res = await fetch(this.info.api + "/channels/" + this.id + "/messages/search/?" + q, {
+				headers: this.headers,
+			});
+			// Search answers Discord's shape: each hit is a list (the message, with context).
+			const json = res.ok ? ((await res.json()) as {messages?: messagejson[][]}) : undefined;
+			const message = json?.messages?.[0]?.[0];
+			if (message) m = this.lastSentMessage = new Message(message, this, true);
 		}
 		if (!m) return;
 		const t = m.getTimeStamp();
