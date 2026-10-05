@@ -914,7 +914,7 @@ class Channel extends SnowFlake {
 				return;
 			}
 			div.remove();
-			document.removeEventListener("click", l);
+			document.removeEventListener("mouseup", l);
 		};
 		document.addEventListener("mouseup", l);
 		// The panel's one line of text: loading, a failure, or no pins.

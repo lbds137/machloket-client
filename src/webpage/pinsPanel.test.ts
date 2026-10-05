@@ -52,3 +52,16 @@ it("says so when the pins can't be loaded, and loads them on the next open", asy
 	expect(fetchMock).toHaveBeenCalledTimes(2);
 	expect(panel().textContent).toBe(I18n.noPins());
 });
+
+it("stops listening once a click outside closes it", async () => {
+	const added = vi.spyOn(document, "addEventListener");
+	const removed = vi.spyOn(document, "removeEventListener");
+	const channel = Object.assign(fakeChannel(), {pinnedMessages: []});
+
+	await channel.pinnedClick(new DOMRect(0, 0, 10, 10));
+	const [, listener] = added.mock.calls.find(([type]) => type === "mouseup")!;
+	document.body.dispatchEvent(new MouseEvent("mouseup", {bubbles: true}));
+
+	expect(panel()).toBeNull();
+	expect(removed).toHaveBeenCalledWith("mouseup", listener);
+});
