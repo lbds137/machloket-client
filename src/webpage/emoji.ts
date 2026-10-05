@@ -10,13 +10,14 @@ import {removeAni} from "./utils/utils.js";
 
 //I need to recompile the emoji format for translation
 class Emoji {
+	/** The unicode emoji by group: empty until emoji.bin has loaded. */
 	static emojis: {
 		name: string;
 		emojis: {
 			name: string;
 			emoji: string;
 		}[];
-	}[];
+	}[] = [];
 	name: string;
 	id?: string;
 	emoji?: string;
@@ -75,13 +76,17 @@ class Emoji {
 
 		const res = await fetch(localuser.info.api + `/emojis/${id}/source`, {
 			headers: localuser.headers,
-		});
-		if (res.status === 403) {
+		}).catch(() => undefined);
+		// Hidden or gone is an answer worth keeping; a passing failure (offline, 429, 5xx) is
+		// asked again next time.
+		if (res?.status === 403 || res?.status === 404) {
 			map.set(id, undefined);
 			return undefined;
 		}
-		const json = (await res.json()) as emojiSource;
-		map.set(id, json);
+		const json = res?.ok
+			? ((await res.json().catch(() => undefined)) as emojiSource | undefined)
+			: undefined;
+		if (json) map.set(id, json);
 		return json;
 	}
 	getHTML(bigemoji: boolean = false, click = true) {
@@ -283,6 +288,10 @@ class Emoji {
 			if (emj) {
 				return new Emoji(emj, localuser);
 			}
+		}
+		// Not in the list (newer than it, or a variant) and not an id: still that emoji.
+		if (!/^\d+$/.test(idOrString)) {
+			return new Emoji({name: idOrString, emoji: idOrString}, localuser);
 		}
 		return new Emoji(
 			{
