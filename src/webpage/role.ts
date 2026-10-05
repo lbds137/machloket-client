@@ -125,13 +125,27 @@ class Role extends SnowFlake {
 		}
 		return Role.numberToColor(this.color);
 	}
+	/**
+	 * > 0 when `a` ranks above `b`, as the server ranks roles: @everyone (the guild's id) lowest,
+	 * then by position, equal positions by id with the older (lower) id above.
+	 */
+	static compare(
+		guildId: string,
+		a: {id: string; position: number},
+		b: {id: string; position: number},
+	) {
+		if (a.id === b.id) return 0;
+		if (a.id === guildId) return -1;
+		if (b.id === guildId) return 1;
+		if (a.position !== b.position) return a.position - b.position;
+		return BigInt(a.id) < BigInt(b.id) ? 1 : -1;
+	}
+	/** Whether this member may edit, delete, grant or take this role: only below their own top role. */
 	canManage() {
-		if (this.guild.member.hasPermission("MANAGE_ROLES")) {
-			let max = -Infinity;
-			this.guild.member.roles.forEach((r) => (max = Math.max(max, r.position)));
-			return this.position <= max || this.guild.properties.owner_id === this.guild.member.id;
-		}
-		return false;
+		const me = this.guild.member;
+		if (!me.hasPermission("MANAGE_ROLES")) return false;
+		if (this.guild.properties.owner_id === me.id) return true;
+		return me.roles.some((r) => Role.compare(this.guild.id, r, this) > 0);
 	}
 }
 export {Role};
@@ -697,7 +711,9 @@ class RoleList extends Buttons {
 						RoleList.guildrolemenu.bindContextmenu(button, this, role);
 					}
 				} else {
-					if (role instanceof User || role.canManage()) {
+					// A channel overwrite has no role-hierarchy rule on the server, only MANAGE_ROLES
+					// in that channel.
+					if (role instanceof User || this.channel.hasPermission("MANAGE_ROLES")) {
 						RoleList.channelrolemenu.bindContextmenu(button, this, role);
 					}
 				}
