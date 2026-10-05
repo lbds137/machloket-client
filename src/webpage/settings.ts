@@ -1072,6 +1072,8 @@ class FileInput implements OptionsElement<FileList | null | undefined> {
 					this.onchange(null);
 				}
 				this.value = null;
+				// So picking the same file again is a change.
+				input.value = "";
 				this.owner.changed();
 			};
 			innerDiv.append(button);
@@ -1080,8 +1082,11 @@ class FileInput implements OptionsElement<FileList | null | undefined> {
 		return div;
 	}
 	onChange() {
-		this.owner.changed();
 		const input = this.input.deref();
+		// A picker closed without a file keeps the earlier pick (the browser may have emptied
+		// the input's list, but the FileList kept in `value` still holds it).
+		if (input && !input.files?.length) return;
+		this.owner.changed();
 		if (input) {
 			this.value = input.files;
 			if (this.onchange) {
@@ -1096,7 +1101,8 @@ class FileInput implements OptionsElement<FileList | null | undefined> {
 	submit() {
 		const input = this.input.deref();
 		if (input) {
-			this.onSubmit(input.files);
+			// The last pick, or null once cleared (remove the file), whatever the input holds now.
+			this.onSubmit(this.value === undefined ? input.files : this.value);
 		}
 	}
 }
@@ -1128,6 +1134,8 @@ class ImageInput extends FileInput {
 				this.onchange(null);
 			}
 			this.value = null;
+			// So picking the same file again is a change.
+			input.value = "";
 			this.owner.changed();
 			hasimg = false;
 			genImg();
@@ -1135,7 +1143,7 @@ class ImageInput extends FileInput {
 		this.clearbutton = button;
 
 		input.addEventListener("change", () => {
-			if (!input.files) return;
+			if (!input.files?.length) return;
 			const reader = new FileReader();
 			reader.onload = (imgf) => {
 				const res = imgf.target?.result;
@@ -2450,13 +2458,17 @@ class Form implements OptionsElement<object> {
 					}
 					if (options.files === "one") {
 						console.log(input.value);
+						// A picker closed without a file leaves the field unchanged.
+						if (input.value?.length === 0) continue;
 						if (input.value) {
 							const reader = new FileReader();
-							const promise = new Promise<void>((res) => {
+							const promise = new Promise<void>((res, rej) => {
 								reader.onload = () => {
 									(build as any)[thing] = reader.result;
 									res();
 								};
+								reader.onerror = reader.onabort = () =>
+									rej(new FormError(input, I18n.settings.fileReadFailed()));
 							});
 							reader.readAsDataURL(input.value[0]);
 							promises.push(promise);
@@ -2478,7 +2490,11 @@ class Form implements OptionsElement<object> {
 				(build as any)[thing] = input.value;
 			}
 			console.log("middle2");
-			await Promise.allSettled(promises);
+			const unread = (await Promise.allSettled(promises)).find((r) => r.status === "rejected");
+			if (unread) {
+				this.handleError(unread.reason);
+				return;
+			}
 			try {
 				this.preprocessor(build);
 			} catch (e) {
