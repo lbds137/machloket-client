@@ -372,7 +372,7 @@ class Channel extends SnowFlake {
 			}),
 		});
 		this.mute_config = mute_config;
-		this.html?.deref()?.classList.remove("muted");
+		this.showMuteState();
 		this.unreads();
 		this.guild.unreads();
 	}
@@ -409,7 +409,7 @@ class Channel extends SnowFlake {
 				}),
 			});
 			this.mute_config = mute_config;
-			this.html?.deref()?.classList.add("muted");
+			this.showMuteState();
 			dio.hide();
 			this.unreads();
 			this.guild.unreads();
@@ -418,6 +418,17 @@ class Channel extends SnowFlake {
 	}
 	get muted() {
 		return !!this.mute_config && new Date(this.mute_config.end_time).getTime() > Date.now();
+	}
+	private muteTimer?: ReturnType<typeof setTimeout>;
+	/** Shows the row muted while the mute lasts, and unmuted once it runs out. */
+	private showMuteState(div = this.html?.deref()) {
+		clearTimeout(this.muteTimer);
+		if (!div) return;
+		div.classList.toggle("muted", this.muted);
+		if (!this.muted) return;
+		const left = new Date(this.mute_config!.end_time).getTime() - Date.now();
+		// A timer can't wait past 2^31-1 ms (~24.8 days): a longer mute checks again then.
+		this.muteTimer = setTimeout(() => this.showMuteState(), Math.min(left, 2 ** 31 - 1));
 	}
 	icon?: string;
 	iconUrl() {
@@ -1156,15 +1167,7 @@ class Channel extends SnowFlake {
 		const div = this.html?.deref() || document.createElement("div");
 		div.innerHTML = "";
 
-		if (this.muted) {
-			div.classList.add("muted");
-			setTimeout(
-				() => {
-					div.classList.remove("muted");
-				},
-				Math.min((this.mute_config?.end_time as number) - Date.now(), 2147483647),
-			);
-		}
+		this.showMuteState(div);
 
 		this.html = new WeakRef(div);
 		if (!this.visible) {
