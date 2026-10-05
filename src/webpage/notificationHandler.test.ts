@@ -154,3 +154,48 @@ it("with a caching mode on but no worker running, a notification fails instead o
 		setLocalSettings(settings);
 	}
 });
+
+it("a clump that keeps getting messages stays one notification, past its first 3 s", async () => {
+	vi.useFakeTimers();
+	const tags: string[] = [];
+	const bodies: string[] = [];
+	vi.stubGlobal(
+		"Notification",
+		class extends EventTarget {
+			static permission = "granted";
+			constructor(_title: string, options: NotificationOptions) {
+				super();
+				tags.push(options.tag!);
+				bodies.push(options.body!);
+			}
+			close() {}
+		},
+	);
+	try {
+		const channel = fakeMessage().message.channel;
+		const send = (id: string) =>
+			NotificationHandler.sendMessageNotification({
+				...fakeMessage().message,
+				id,
+				channel,
+			} as Message);
+		// Four singles, then the clump.
+		for (const id of ["a", "b", "c", "d", "e"]) await send(id);
+		// More of the burst, each within 3 s of the last but ending past the first's 3 s.
+		await vi.advanceTimersByTimeAsync(2000);
+		await send("f");
+		await vi.advanceTimersByTimeAsync(2000);
+		await send("g");
+
+		const clumpTags = tags.slice(4);
+		expect(clumpTags).toHaveLength(3);
+		expect(new Set(clumpTags).size).toBe(1);
+		// Counted from the first message of the burst.
+		expect(bodies.slice(4)[0]).toContain("5");
+		expect(bodies.at(-1)).toContain("7");
+	} finally {
+		vi.useRealTimers();
+		NotificationHandler.channelMap.clear();
+		NotificationHandler.channelSuperMap.clear();
+	}
+});

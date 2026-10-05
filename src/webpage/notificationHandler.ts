@@ -122,18 +122,24 @@ export class NotificationHandler {
 		if (!notiSet) return false;
 		if (!sup) {
 			if (notiSet.size < 4) return false;
-			sup = [notiSet.size - 1, 0 as any, Math.random()];
+			// Counts the notifications it replaces; this message adds itself below.
+			sup = [notiSet.size, 0 as any, Math.random()];
 			this.channelSuperMap.set(message.channel, sup);
 		}
 
 		[...notiSet].forEach((_) => _.close());
 
-		let [count, cancel, rand] = sup;
-		sup[0]++;
-		clearInterval(cancel);
-		// Before the show, which can be slow or fail: the clump must still end.
-		setTimeout(() => {
-			this.channelSuperMap.delete(message.channel);
+		const clump = sup;
+		const count = ++clump[0];
+		const rand = clump[2];
+		// Each message restarts the clump's 3 s: an earlier message's timer must not end it.
+		// Set before the show, which can be slow or fail: the clump must still end. A clump
+		// ended by a tap may already be replaced by a newer one, which its timer leaves alone.
+		clearTimeout(clump[1]);
+		clump[1] = setTimeout(() => {
+			if (this.channelSuperMap.get(message.channel) === clump) {
+				this.channelSuperMap.delete(message.channel);
+			}
 		}, 3000);
 		return this.show(
 			message.channel.notititle(message),
