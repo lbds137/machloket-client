@@ -3394,63 +3394,80 @@ class Channel extends SnowFlake {
 		await this.tryfocusinfinate(id, !!id);
 	}
 	infinitefocus = false;
+	/** The generation of this channel's latest build, the one `infinitefocus` belongs to. */
+	private buildGen = 0;
 	async tryfocusinfinate(id: string | void, flash = false) {
-		const gid = ++Channel.genid;
-		if (typeof id === "string" && !this.messages.has(id)) await this.getmessage(id);
+		// Claimed before the jump target's lookup: a message arriving meanwhile would otherwise
+		// start its own build, at the last-read message, in the jump's place.
 		if (this.infinitefocus) return;
 		this.infinitefocus = true;
-		const messages = document.getElementById("scrollWrap") as HTMLDivElement;
-		const messageContainers = Array.from(messages.getElementsByClassName("messagecontainer"));
-		for (const thing of messageContainers) {
-			thing.remove();
-		}
+		const gid = ++Channel.genid;
+		this.buildGen = gid;
+		// Overtaken (a channel switch, or getHTML re-opening this channel): the claim goes too,
+		// unless a newer build of this channel holds it now.
+		const abandon = () => {
+			if (this.buildGen === gid) this.infinitefocus = false;
+		};
 		const loading = document.getElementById("loadingdiv") as HTMLDivElement;
-		const removetitle = document.getElementById("removetitle");
-		//messages.innerHTML="";
-		if (!id) {
-			if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) {
-				id = this.lastreadmessageid;
-			} else if (this.lastreadmessageid && (id = this.findClosest(this.lastreadmessageid))) {
-			} else if (this.lastmessageid && this.messages.has(this.lastmessageid)) {
-				id = this.goBackIds(this.lastmessageid, 50);
+		try {
+			if (typeof id === "string" && !this.messages.has(id)) await this.getmessage(id);
+			if (gid !== Channel.genid) return abandon();
+			const messages = document.getElementById("scrollWrap") as HTMLDivElement;
+			const messageContainers = Array.from(messages.getElementsByClassName("messagecontainer"));
+			for (const thing of messageContainers) {
+				thing.remove();
 			}
-		}
-		if (!id) {
-			if (!removetitle) {
-				const title = document.createElement("h2");
-				title.id = "removetitle";
-				title.textContent = I18n.noMessages();
-				title.classList.add("titlespace", "messagecontainer");
-				messages.append(title);
+			const removetitle = document.getElementById("removetitle");
+			//messages.innerHTML="";
+			if (!id) {
+				if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) {
+					id = this.lastreadmessageid;
+				} else if (this.lastreadmessageid && (id = this.findClosest(this.lastreadmessageid))) {
+				} else if (this.lastmessageid && this.messages.has(this.lastmessageid)) {
+					id = this.goBackIds(this.lastmessageid, 50);
+				}
 			}
-			this.infinitefocus = false;
+			if (!id) {
+				if (!removetitle) {
+					const title = document.createElement("h2");
+					title.id = "removetitle";
+					title.textContent = I18n.noMessages();
+					title.classList.add("titlespace", "messagecontainer");
+					messages.append(title);
+				}
+				this.infinitefocus = false;
+				loading.classList.remove("loading");
+				return;
+			} else if (removetitle) {
+				removetitle.remove();
+			}
+			if (this.localuser.channelfocus !== this) {
+				this.infinitefocus = false;
+				return;
+			}
+			Channel.clearScrollWrapLeaks();
+			const div = await this.infinite.getDiv(id, flash);
+			if (gid !== Channel.genid) return abandon();
+			messages.append(div);
+			/*
+			await this.infinite.watchForChange().then(async (_) => {
+				//await new Promise(resolve => setTimeout(resolve, 0));
+
+				await this.infinite.focus(id, falsh); //if someone could figure out how to make this work correctly without this, that's be great :P
+
+
+				this.infinite.focus(id, falsh, true);
+			});
+			*/
+			await this.focus(id, flash);
 			loading.classList.remove("loading");
-			return;
-		} else if (removetitle) {
-			removetitle.remove();
+			//this.infinite.focus(id.id,false);
+		} catch (e) {
+			abandon();
+			// The skeleton belongs to whichever build is newest.
+			if (gid === Channel.genid) loading?.classList.remove("loading");
+			throw e;
 		}
-		if (this.localuser.channelfocus !== this) {
-			return;
-		}
-		Channel.clearScrollWrapLeaks();
-		const div = await this.infinite.getDiv(id, flash);
-		if (gid !== Channel.genid) {
-			return;
-		}
-		messages.append(div);
-		/*
-		await this.infinite.watchForChange().then(async (_) => {
-			//await new Promise(resolve => setTimeout(resolve, 0));
-
-			await this.infinite.focus(id, falsh); //if someone could figure out how to make this work correctly without this, that's be great :P
-
-
-			this.infinite.focus(id, falsh, true);
-		});
-		*/
-		await this.focus(id, flash);
-		loading.classList.remove("loading");
-		//this.infinite.focus(id.id,false);
 	}
 	private goBackIds(id: string, back: number, returnifnotexistant = true): string | undefined {
 		while (back !== 0) {
