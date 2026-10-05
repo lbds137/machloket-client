@@ -2706,6 +2706,7 @@ class Channel extends SnowFlake {
 		headContainer.append(post);
 
 		post.onclick = () => {
+			let posting = false;
 			const postF = async () => {
 				if (this.flags & (1 << 4) && !tagList.length) {
 					showError(I18n.forum.errors.tagsReq());
@@ -2716,8 +2717,13 @@ class Channel extends SnowFlake {
 					showError(I18n.forum.errors.requireText());
 					return;
 				}
-				const res = (await (
-					await fetch(this.info.api + "/channels/" + this.id + "/threads", {
+				// One post per tap: a second tap while this one is out would post it twice.
+				if (posting) return;
+				posting = true;
+				post.disabled = true;
+				let created: string | undefined;
+				try {
+					const res = await fetch(this.info.api + "/channels/" + this.id + "/threads", {
 						method: "POST",
 						headers: this.headers,
 						body: JSON.stringify({
@@ -2727,9 +2733,20 @@ class Channel extends SnowFlake {
 								content,
 							},
 						}),
-					})
-				).json()) as channeljson;
-				this.localuser.goToChannel(res.id);
+					});
+					const json = (await res.json().catch(() => null)) as channeljson | null;
+					if (!res.ok || !json?.id) {
+						showError(sendErrorText(json as Parameters<typeof sendErrorText>[0]));
+						return;
+					}
+					created = json.id;
+				} catch {
+					showError(I18n.requestFailed("offline"));
+				} finally {
+					posting = false;
+					post.disabled = false;
+				}
+				if (created) this.localuser.goToChannel(created);
 			};
 			post.onclick = postF;
 			post.textContent = I18n.forum.post();

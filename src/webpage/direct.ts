@@ -110,17 +110,19 @@ class Direct extends Guild {
 		);
 		dio.hide();
 		if (invited && invited.size !== 0) {
-			const {id}: {id: string} = await (
-				await fetch(this.localuser.info.api + "/users/@me/channels", {
-					method: "POST",
-					headers: this.headers,
-					body: JSON.stringify({
-						recipients: [...invited].map((_) => _.id),
-					}),
-				})
-			).json();
-			this.localuser.goToChannel(id);
-			dio.hide();
+			const res = await fetch(this.localuser.info.api + "/users/@me/channels", {
+				method: "POST",
+				headers: this.headers,
+				body: JSON.stringify({
+					recipients: [...invited].map((_) => _.id),
+				}),
+			}).catch(() => undefined);
+			const json = res?.ok ? ((await res.json().catch(() => null)) as {id?: string} | null) : null;
+			if (!json?.id) {
+				new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+				return;
+			}
+			this.localuser.goToChannel(json.id);
 		}
 	}
 	noChannel(addstate: boolean) {
