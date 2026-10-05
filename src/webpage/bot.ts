@@ -106,11 +106,13 @@ class Bot {
 			const pronounbox = settingsLeft.addTextInput(
 				I18n.pronouns(),
 				(_) => {
-					if (newpronouns || newbio || changed) {
+					// An emptied box ("") is a change to save; a colour goes only once one is picked
+					// ("transparent", no accent, isn't a number).
+					if (newpronouns !== undefined || newbio !== undefined || changed) {
 						this.updateProfile({
 							pronouns: newpronouns,
 							bio: newbio,
-							accent_color: Number.parseInt("0x" + color.substr(1), 16),
+							...(changed ? {accent_color: Number.parseInt(color.slice(1), 16)} : {}),
 						});
 					}
 				},
@@ -131,7 +133,7 @@ class Bot {
 			});
 
 			if (bot.accent_color) {
-				color = "#" + bot.accent_color.toString(16);
+				color = "#" + bot.accent_color.toString(16).padStart(6, "0");
 			} else {
 				color = "transparent";
 			}
