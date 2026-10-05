@@ -2139,7 +2139,7 @@ class Localuser {
 				initText: folder.name,
 			});
 			const color = opt.addColorInput(I18n.folder.color(), () => {}, {
-				initColor: "#" + (folder.color || 0).toString(16),
+				initColor: Role.numberToColor(folder.color || 0),
 			});
 			opt.addButtonInput("", I18n.submit(), async () => {
 				folder.name = name.value;
@@ -3047,11 +3047,12 @@ class Localuser {
 			const pronounbox = settingsLeft.addTextInput(
 				I18n.pronouns(),
 				(_) => {
-					if (newpronouns !== undefined || newbio !== undefined || changed !== undefined) {
+					// A colour goes only once one is picked ("transparent", no accent, isn't a number).
+					if (newpronouns !== undefined || newbio !== undefined || changed) {
 						this.updateProfile({
 							pronouns: newpronouns,
 							bio: newbio,
-							accent_color: Number.parseInt("0x" + color.substring(1), 16),
+							...(changed ? {accent_color: Number.parseInt(color.slice(1), 16)} : {}),
 						});
 					}
 				},
@@ -3072,7 +3073,7 @@ class Localuser {
 			});
 
 			if (this.user.accent_color) {
-				color = "#" + this.user.accent_color.toString(16);
+				color = Role.numberToColor(this.user.accent_color);
 			} else {
 				color = "transparent";
 			}
@@ -3083,7 +3084,7 @@ class Localuser {
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;
-				hypouser.accent_color = Number.parseInt("0x" + _.substring(1), 16);
+				hypouser.accent_color = Number.parseInt(_.slice(1), 16);
 				changed = true;
 				regen();
 			});

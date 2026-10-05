@@ -298,11 +298,11 @@ class Member extends SnowFlake {
 					regen();
 				}
 			});
-			let changed = false;
 			const pronounbox = settingsLeft.addTextInput(
 				I18n.pronouns(),
 				(_) => {
-					if (newpronouns !== undefined || newbio !== undefined || changed !== undefined) {
+					// The server profile has no accent colour field: a picked colour previews only.
+					if (newpronouns !== undefined || newbio !== undefined || nick !== undefined) {
 						this.updateProfile({
 							pronouns: newpronouns,
 							bio: newbio,
@@ -326,7 +326,7 @@ class Member extends SnowFlake {
 				hypomember.bio = _;
 				regen();
 			});
-			color = (this.accent_color ? "#" + this.accent_color.toString(16) : "transparent") as string;
+			color = this.accent_color ? Role.numberToColor(this.accent_color) : "transparent";
 
 			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
 				initColor: color,
@@ -334,8 +334,7 @@ class Member extends SnowFlake {
 			colorPicker.watchForChange((_) => {
 				console.log();
 				color = _;
-				hypomember.accent_color = Number.parseInt("0x" + _.substring(1));
-				changed = true;
+				hypomember.accent_color = Number.parseInt(_.slice(1), 16);
 				regen();
 			});
 		}
