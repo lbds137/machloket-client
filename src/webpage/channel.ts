@@ -80,7 +80,9 @@ function sendErrorText(body: {code?: number; message?: unknown; errors?: unknown
 		walk(body.errors);
 		if (found.length) return found.join(" ");
 	}
-	return typeof body?.message === "string" && body.message ? body.message : I18n.channel.sendFailed();
+	return typeof body?.message === "string" && body.message
+		? body.message
+		: I18n.channel.sendFailed();
 }
 
 /** Releases everyone waiting on a history page that won't come. */
@@ -2312,27 +2314,32 @@ class Channel extends SnowFlake {
 		opt.addHTMLArea(tags);
 		d.show();
 	}
+	/** The most threads one post-data request may name (the server caps its schema to match). */
+	static readonly postDataBatch = 100;
 	async fetchForum() {
-		const arr = (await (
-			await fetch(this.info.api + "/channels/" + this.id + "/post-data", {
+		const ids = this.children.map(({id}) => id);
+		// One batch at a time: a big forum otherwise fires all its batches at once.
+		for (let start = 0; start < ids.length; start += Channel.postDataBatch) {
+			const res = await fetch(this.info.api + "/channels/" + this.id + "/post-data", {
 				method: "POST",
 				headers: this.headers,
-				body: JSON.stringify({thread_ids: this.children.map(({id}) => id)}),
-			})
-		).json()) as {
-			threads: Record<string, {first_message: null | messagejson; owner: null | memberjson}>;
-		};
-		for (const [id, {first_message, owner}] of Object.entries(arr.threads)) {
-			const child = this.children.find(({id: cid}) => cid === id);
-			if (!child) continue;
-			if (owner) Member.new(owner, this.guild);
-			if (first_message) {
-				const m = this.localuser.messages.get(first_message.id);
-				if (!m) this.localuser.messages.set(first_message.id, new Message(first_message, child));
+				body: JSON.stringify({thread_ids: ids.slice(start, start + Channel.postDataBatch)}),
+			});
+			if (!res.ok) throw new Error(`Forum post data failed: HTTP ${res.status}`);
+			const arr = (await res.json()) as {
+				threads: Record<string, {first_message: null | messagejson; owner: null | memberjson}>;
+			};
+			for (const [id, {first_message, owner}] of Object.entries(arr.threads)) {
+				const child = this.children.find(({id: cid}) => cid === id);
+				if (!child) continue;
+				if (owner) Member.new(owner, this.guild);
+				if (first_message) {
+					const m = this.localuser.messages.get(first_message.id);
+					if (!m) this.localuser.messages.set(first_message.id, new Message(first_message, child));
+				}
 			}
 		}
 		this.hasFetchedForForum = true;
-		return;
 	}
 
 	umap = new Map<string, [number, string]>();
