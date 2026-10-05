@@ -90,6 +90,9 @@ export class ReportMenu {
 		first.render();
 
 		document.body.append(background);
+		// Focused, so Escape (a key event goes to the focused element) reaches its handler.
+		background.tabIndex = 0;
+		background.focus();
 	}
 	static async makeReport(type: reportTypes, localuser: Localuser, infoMap: InfoMap = {}) {
 		const res = await fetch(localuser.info.api + "/reporting/menu/" + type, {
@@ -99,7 +102,22 @@ export class ReportMenu {
 		const json = (await res.json()) as report;
 		return new ReportMenu(json, localuser, infoMap);
 	}
+	private submitting = false;
+	/** Sends the report once, however often Submit is tapped (or auto-submit fires with it). */
 	async submit(takeToScreen = true) {
+		if (this.submitting) return;
+		this.submitting = true;
+		try {
+			await this.send(takeToScreen);
+		} catch (e) {
+			// Nothing to report on (the message or guild it was opened for is missing).
+			console.error(e);
+			this.errorNode();
+		} finally {
+			this.submitting = false;
+		}
+	}
+	private async send(takeToScreen: boolean) {
 		const obj: Omit<reportPut, "name"> = {
 			version: "1.0",
 			variant: this.variant,
@@ -166,21 +184,27 @@ export class ReportMenu {
 				realBody = m;
 				break;
 			}
+			default:
+				// A kind of report this client can't fill in (stage_channel, first_dm, widget…):
+				// sending would post an empty body.
+				this.errorNode();
+				return;
 		}
 		const res = await fetch(this.postbackUrl, {
 			method: "POST",
 			headers: this.localuser.headers,
 			body: JSON.stringify(realBody),
-		});
-		if (res.ok) {
+		}).catch(() => undefined);
+		if (res?.ok) {
 			if (takeToScreen) {
 				const suc = this.reportNodes[this.successNodeId];
 				if (!suc) throw new Error("unable to find suc node");
 				suc.render();
 			}
 		} else {
-			const json = await res.json();
-			this.errorNode(json?.message);
+			// A refusal's body may not be JSON (a proxy's error page); a lost request has none.
+			const json = await res?.json().catch(() => null);
+			this.errorNode(typeof json?.message === "string" ? json.message : undefined);
 		}
 	}
 	errorNode(message?: string) {
@@ -191,7 +215,10 @@ export class ReportMenu {
 	}
 	gatherElements() {
 		let elms: Record<string, string[]> = {};
-		for (const node of this.nodes) {
+		// The screens passed through, and the one Submit is on.
+		const visited =
+			this.node && !this.nodes.includes(this.node) ? [...this.nodes, this.node] : this.nodes;
+		for (const node of visited) {
 			elms = {
 				...node.gatherElements(),
 				...elms,
@@ -220,7 +247,7 @@ class ReportNode {
 		this.subheader = json.subheader;
 		this.key = json.key;
 		this.buttonType = json.button?.type;
-		this.buttonTarget = json.button?.target || undefined;
+		this.buttonTarget = json.button?.target ?? undefined;
 		this.elements = json.elements.map((_) => new ReportElement(_, this));
 		this.reportType = json.report_type;
 		this.children = json.children;
