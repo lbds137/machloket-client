@@ -3213,19 +3213,16 @@ class Channel extends SnowFlake {
 		});
 	}
 	async grabAfter(id: string) {
-		if (this.idToNext.has(id)) {
-			return;
-		}
-		if (id === this.lastmessage?.id) {
-			return;
-		}
-		if (this.afterProm) return this.waitForAfter(id);
+		// Pending (fake) sends have no history after them: page from the newest real message.
 		let tempy: string | undefined = id;
 		while (tempy && tempy.includes("fake")) {
 			tempy = this.idToPrev.get(tempy);
 		}
 		if (!tempy) return;
 		id = tempy;
+		if (this.idToNext.has(id) || id === this.lastmessage?.id) return;
+		// A page is already loading: wait for this id's turn under the id a page links from.
+		if (this.afterProm) return this.waitForAfter(id);
 		const waiter = this.waitForAfter(id);
 		this.afterProm = new Promise(async (res) => {
 			const messages = await this.fetchHistoryPage("after=" + id);

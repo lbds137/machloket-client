@@ -72,3 +72,52 @@ it("going forward, two callers waiting on the same id while another page loads b
 	expect(await settles(second)).toBe("settled");
 	expect(await settles(third)).toBe("settled");
 });
+
+it("going forward, a pending send's id waiting while a page loads settles without refetching", async () => {
+	const channel = channelWith(["5"]);
+	channel.idToPrev.set("fake0.1", "1"); // a pending send sits after message 1
+	let land!: () => void;
+	const fetchMock = vi
+		.spyOn(globalThis, "fetch")
+		.mockImplementationOnce(
+			() => new Promise((res) => (land = () => res(Response.json([{id: "5"}])))),
+		)
+		.mockImplementation(() => Promise.resolve(Response.json([])));
+	const settles = (p: Promise<unknown>) =>
+		Promise.race([
+			p.then(() => "settled"),
+			new Promise((res) => setTimeout(() => res("hung"), 1500)),
+		]);
+
+	const first = channel.grabAfter("1");
+	const pending = channel.grabAfter("fake0.1");
+	land();
+
+	expect(await settles(first)).toBe("settled");
+	expect(await settles(pending)).toBe("settled");
+	expect(fetchMock).toHaveBeenCalledTimes(1);
+});
+
+it("going forward, a pending send after the newest message waits for nothing", async () => {
+	const channel = channelWith([]);
+	Object.assign(channel, {lastmessage: {id: "1"}});
+	channel.idToPrev.set("fake0.2", "1"); // a send pending after the newest message, 1
+	let land!: () => void;
+	const fetchMock = vi
+		.spyOn(globalThis, "fetch")
+		.mockImplementationOnce(() => new Promise((res) => (land = () => res(Response.json([])))))
+		.mockImplementation(() => Promise.resolve(Response.json([])));
+	const settles = (p: Promise<unknown>) =>
+		Promise.race([
+			p.then(() => "settled"),
+			new Promise((res) => setTimeout(() => res("hung"), 1500)),
+		]);
+
+	const loading = channel.grabAfter("0"); // a page loading meanwhile
+	const pending = channel.grabAfter("fake0.2");
+	land();
+
+	expect(await settles(loading)).toBe("settled");
+	expect(await settles(pending)).toBe("settled");
+	expect(fetchMock).toHaveBeenCalledTimes(1);
+});
