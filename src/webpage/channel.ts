@@ -2365,11 +2365,16 @@ class Channel extends SnowFlake {
 			["offset", offset + ""],
 			["tag", filters.tags.join(",")],
 		]);
-		const res = (await (
-			await fetch(this.info.api + "/channels/" + this.id + "/threads/search?" + search, {
-				headers: this.headers,
-			})
-		).json()) as {
+		const response = await fetch(
+			this.info.api + "/channels/" + this.id + "/threads/search?" + search,
+			{headers: this.headers},
+		);
+		// Refused (429, 403…): nothing learned, so the posts already loaded are the list for now.
+		if (!response.ok) {
+			console.error(`Forum post search failed: HTTP ${response.status}`);
+			return;
+		}
+		const res = (await response.json()) as {
 			threads: channeljson[];
 			members: memberjson[];
 			messages: messagejson[];
@@ -2442,14 +2447,10 @@ class Channel extends SnowFlake {
 				}
 			});
 		match.sort((c1, c2) => {
-			if (filters.sortActive) {
-				return +(Number(c1.lastmessageid || c1.id) > Number(c2.lastmessageid || c2.id)) ^
-					+filters.recentFirst
-					? 1
-					: -1;
-			} else {
-				return +(Number(c1.id) > Number(c2.id)) ^ +filters.recentFirst ? 1 : -1;
-			}
+			const order = filters.sortActive
+				? SnowFlake.compareIds(c1.lastmessageid || c1.id, c2.lastmessageid || c2.id)
+				: SnowFlake.compareIds(c1.id, c2.id);
+			return filters.recentFirst ? -order : order;
 		});
 
 		return [match.slice(offset, offset + 25), !!match.at(offset + 25)] as const;
@@ -2493,6 +2494,11 @@ class Channel extends SnowFlake {
 
 			await renderDiv(match, more);
 		};
+		// A changed filter or sort is a new list: it starts at its first page.
+		const refilter = () => {
+			offset = 0;
+			return flipPage(0);
+		};
 
 		const renderDiv = async (threads: Channel[], more: boolean) => {
 			div.innerHTML = "";
@@ -2509,7 +2515,7 @@ class Channel extends SnowFlake {
 				opts.sortby.recent(),
 				() => {
 					this.forumFilters.sortActive = true;
-					flipPage(0);
+					refilter();
 				},
 				{
 					icon: {
@@ -2521,7 +2527,7 @@ class Channel extends SnowFlake {
 				opts.sortby.posted(),
 				() => {
 					this.forumFilters.sortActive = false;
-					flipPage(0);
+					refilter();
 				},
 				{
 					icon: {
@@ -2536,7 +2542,7 @@ class Channel extends SnowFlake {
 				opts.sortOrder.recent(),
 				() => {
 					this.forumFilters.recentFirst = true;
-					flipPage(0);
+					refilter();
 				},
 				{
 					icon: {
@@ -2549,7 +2555,7 @@ class Channel extends SnowFlake {
 				opts.sortOrder.old(),
 				() => {
 					this.forumFilters.recentFirst = false;
-					flipPage(0);
+					refilter();
 				},
 				{
 					icon: {
@@ -2564,7 +2570,7 @@ class Channel extends SnowFlake {
 				opts.tagMatch.some(),
 				() => {
 					this.forumFilters.tagMatchAll = false;
-					flipPage(0);
+					refilter();
 				},
 				{
 					icon: {css: this.forumFilters.tagMatchAll ? "svg-noSelect" : "svg-select"},
@@ -2574,7 +2580,7 @@ class Channel extends SnowFlake {
 				opts.tagMatch.all(),
 				() => {
 					this.forumFilters.tagMatchAll = true;
-					flipPage(0);
+					refilter();
 				},
 				{
 					icon: {
@@ -2609,7 +2615,7 @@ class Channel extends SnowFlake {
 						this.forumFilters.tags.push(tag.id);
 						this.forumFilters.tags.sort();
 					}
-					flipPage(0);
+					refilter();
 				};
 				tags.append(html);
 				allMenu.addButton(
@@ -2621,7 +2627,7 @@ class Channel extends SnowFlake {
 							this.forumFilters.tags.push(tag.id);
 							this.forumFilters.tags.sort();
 						}
-						flipPage(0);
+						refilter();
 					},
 					{
 						icon: {css: this.forumFilters.tags.includes(tag.id) ? "svg-select" : "svg-noSelect"},
