@@ -480,10 +480,13 @@ class InfiniteScroller {
 		this.filling = fill;
 		await fill;
 
+		// Once the list is on the page, check whether it fills it. A list deleted or replaced
+		// meanwhile (a channel switch) never will be: stop waiting for it.
+		const div = this.div;
 		(async () => {
-			while (true) {
-				if (this.div && this.div.parentElement) {
-					if (this.div.parentElement.clientHeight !== this.div.clientHeight) this.reachesBottom();
+			while (div && this.div === div) {
+				if (div.parentElement) {
+					if (div.parentElement.clientHeight !== div.clientHeight) this.reachesBottom();
 					break;
 				}
 				await new Promise((res) => setTimeout(res, 100));
