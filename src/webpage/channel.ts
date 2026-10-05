@@ -3205,6 +3205,13 @@ class Channel extends SnowFlake {
 	}
 	afterProm?: Promise<void>;
 	afterProms = new Map<string, () => void>();
+	/** Resolves once the page after `id` lands (or fails); several callers can wait on one id. */
+	private waitForAfter(id: string) {
+		return new Promise<void>((res) => {
+			const earlier = this.afterProms.get(id);
+			this.afterProms.set(id, earlier ? () => (earlier(), res()) : res);
+		});
+	}
 	async grabAfter(id: string) {
 		if (this.idToNext.has(id)) {
 			return;
@@ -3212,14 +3219,14 @@ class Channel extends SnowFlake {
 		if (id === this.lastmessage?.id) {
 			return;
 		}
-		if (this.afterProm) return new Promise<void>((res) => this.afterProms.set(id, res));
+		if (this.afterProm) return this.waitForAfter(id);
 		let tempy: string | undefined = id;
 		while (tempy && tempy.includes("fake")) {
 			tempy = this.idToPrev.get(tempy);
 		}
 		if (!tempy) return;
 		id = tempy;
-		const waiter = new Promise<void>((res) => this.afterProms.set(id, res));
+		const waiter = this.waitForAfter(id);
 		this.afterProm = new Promise(async (res) => {
 			const messages = await this.fetchHistoryPage("after=" + id);
 			if (!messages) {

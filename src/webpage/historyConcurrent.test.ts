@@ -48,3 +48,27 @@ describe("two history lookups at once", () => {
 		expect(channel.idToPrev.get("5")).toBe("4");
 	});
 });
+
+it("going forward, two callers waiting on the same id while another page loads both settle", async () => {
+	const channel = channelWith(["5"]);
+	let land!: () => void;
+	vi.spyOn(globalThis, "fetch")
+		.mockImplementationOnce(
+			() => new Promise((res) => (land = () => res(Response.json([{id: "5"}])))),
+		)
+		.mockImplementation(() => Promise.resolve(Response.json([])));
+	const settles = (p: Promise<unknown>) =>
+		Promise.race([
+			p.then(() => "settled"),
+			new Promise((res) => setTimeout(() => res("hung"), 1500)),
+		]);
+
+	const first = channel.grabAfter("1");
+	const second = channel.grabAfter("5"); // both arrive while the page after 1 is in flight
+	const third = channel.grabAfter("5");
+	land();
+
+	expect(await settles(first)).toBe("settled");
+	expect(await settles(second)).toBe("settled");
+	expect(await settles(third)).toBe("settled");
+});
