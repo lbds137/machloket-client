@@ -201,7 +201,7 @@ export class Discovery {
 					render(offset - limit);
 				};
 			}
-			if (offset + json.guilds.length <= json.total) {
+			if (offset + json.guilds.length < json.total) {
 				const next = document.createElement("button");
 				next.textContent = I18n.search.next();
 				buttonRow.append(next);
