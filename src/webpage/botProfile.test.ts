@@ -87,3 +87,16 @@ it("a bot's dark accent colour opens as a full colour in the picker", () => {
 
 	expect(pickerOpened[2]).toEqual({initColor: "#0000ff"});
 });
+
+it("picking a second avatar frees the first one's preview", () => {
+	const options = Object.getPrototypeOf(new Settings("").addButton("probe"));
+	const files = vi.spyOn(options, "addFileInput");
+	const revoked = vi.spyOn(URL, "revokeObjectURL");
+	openProfile({});
+	const avatar = files.mock.results[0].value as {onchange: (files: File[]) => void};
+
+	avatar.onchange([new File(["a"], "a.png")]);
+	avatar.onchange([new File(["b"], "b.png")]);
+
+	expect(revoked).toHaveBeenCalledTimes(1);
+});

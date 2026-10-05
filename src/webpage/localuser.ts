@@ -79,6 +79,7 @@ import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
 import {showCommandStatus} from "./interactions/commandStatus.js";
+import {previewURL} from "./utils/previewURL.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -2971,6 +2972,7 @@ class Localuser {
 			});
 			const hypotheticalProfile = document.createElement("div");
 			let file: undefined | File | null;
+			const avatarPreview = previewURL();
 			let newpronouns: string | undefined;
 			let newbio: string | undefined;
 			const hypouser = this.user.clone();
@@ -2999,6 +3001,7 @@ class Localuser {
 			finput.watchForChange((_) => {
 				if (!_) {
 					file = null;
+					avatarPreview(null);
 					hypouser.avatar = null;
 					hypouser.hypotheticalpfp = true;
 					regen();
@@ -3006,13 +3009,14 @@ class Localuser {
 				}
 				if (_.length) {
 					file = _[0];
-					const blob = URL.createObjectURL(file);
+					const blob = avatarPreview(file);
 					hypouser.avatar = blob;
 					hypouser.hypotheticalpfp = true;
 					regen();
 				}
 			});
 			let bfile: undefined | File | null;
+			const bannerPreview = previewURL();
 			const binput = settingsLeft.addImageInput(
 				I18n.uploadBanner(),
 				(_) => {
@@ -3030,6 +3034,7 @@ class Localuser {
 			binput.watchForChange((_) => {
 				if (!_) {
 					bfile = null;
+					bannerPreview(null);
 					hypouser.banner = undefined;
 					hypouser.hypotheticalbanner = true;
 					regen();
@@ -3037,7 +3042,7 @@ class Localuser {
 				}
 				if (_.length) {
 					bfile = _[0];
-					const blob = URL.createObjectURL(bfile);
+					const blob = bannerPreview(bfile);
 					hypouser.banner = blob;
 					hypouser.hypotheticalbanner = true;
 					regen();

@@ -6,6 +6,7 @@ import {highMemberJSON, memberjson, presencejson} from "./jsontypes.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Options, Settings} from "./settings.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {previewURL} from "./utils/previewURL.js";
 
 class Member extends SnowFlake {
 	static already = {};
@@ -215,6 +216,7 @@ class Member extends SnowFlake {
 		if (this.hasPermission("CHANGE_NICKNAME")) {
 			const hypotheticalProfile = document.createElement("div");
 			let file: undefined | File | null = undefined;
+			const avatarPreview = previewURL();
 			let newpronouns: string | undefined;
 			let newbio: string | undefined;
 			let nick: string | undefined;
@@ -253,6 +255,7 @@ class Member extends SnowFlake {
 			finput.watchForChange((_) => {
 				if (!_) {
 					file = null;
+					avatarPreview(null);
 					hypomember.avatar = undefined;
 					hypomember.hypotheticalpfp = true;
 					regen();
@@ -260,7 +263,7 @@ class Member extends SnowFlake {
 				}
 				if (_.length) {
 					file = _[0];
-					const blob = URL.createObjectURL(file);
+					const blob = avatarPreview(file);
 					hypomember.avatar = blob;
 					hypomember.hypotheticalpfp = true;
 					console.log(hypomember.getpfpsrc());
@@ -268,6 +271,7 @@ class Member extends SnowFlake {
 				}
 			});
 			let bfile: undefined | File | null;
+			const bannerPreview = previewURL();
 			const binput = settingsLeft.addImageInput(
 				I18n.uploadBanner(),
 				(_) => {
@@ -285,6 +289,7 @@ class Member extends SnowFlake {
 			binput.watchForChange((_) => {
 				if (!_) {
 					bfile = null;
+					bannerPreview(null);
 					hypomember.banner = undefined;
 					hypomember.hypotheticalbanner = true;
 					regen();
@@ -292,7 +297,7 @@ class Member extends SnowFlake {
 				}
 				if (_.length) {
 					bfile = _[0];
-					const blob = URL.createObjectURL(bfile);
+					const blob = bannerPreview(bfile);
 					hypomember.banner = blob;
 					hypomember.hypotheticalbanner = true;
 					regen();

@@ -8,6 +8,7 @@ import {PermissionToggle} from "./role.js";
 import {Permissions} from "./permissions.js";
 import {I18n} from "./i18n.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {previewURL} from "./utils/previewURL.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
@@ -36,6 +37,7 @@ class Bot {
 			const hypotheticalProfile = document.createElement("div");
 
 			let file: undefined | File | null;
+			const avatarPreview = previewURL();
 			let newpronouns: string | undefined;
 			let newbio: string | undefined;
 			const hypouser = bot.clone();
@@ -63,6 +65,7 @@ class Bot {
 			finput.watchForChange((_) => {
 				if (!_) {
 					file = null;
+					avatarPreview(null);
 					hypouser.avatar = null;
 					hypouser.hypotheticalpfp = true;
 					regen();
@@ -70,13 +73,14 @@ class Bot {
 				}
 				if (_.length) {
 					file = _[0];
-					const blob = URL.createObjectURL(file);
+					const blob = avatarPreview(file);
 					hypouser.avatar = blob;
 					hypouser.hypotheticalpfp = true;
 					regen();
 				}
 			});
 			let bfile: undefined | File | null;
+			const bannerPreview = previewURL();
 			const binput = settingsLeft.addFileInput(
 				I18n.uploadBanner(),
 				(_) => {
@@ -89,6 +93,7 @@ class Bot {
 			binput.watchForChange((_) => {
 				if (!_) {
 					bfile = null;
+					bannerPreview(null);
 					hypouser.banner = undefined;
 					hypouser.hypotheticalbanner = true;
 					regen();
@@ -96,7 +101,7 @@ class Bot {
 				}
 				if (_.length) {
 					bfile = _[0];
-					const blob = URL.createObjectURL(bfile);
+					const blob = bannerPreview(bfile);
 					hypouser.banner = blob;
 					hypouser.hypotheticalbanner = true;
 					regen();
