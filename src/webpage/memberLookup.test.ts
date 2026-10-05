@@ -64,3 +64,40 @@ describe("attachment URL refresh", () => {
 		expect(refreshed).toEqual(["https://cdn.test/a.png", "https://cdn.test/b.png"]);
 	});
 });
+
+describe("member lookup failures", () => {
+	/** Settles with the lookup's outcome, or "still waiting" after a second. */
+	function outcome(p: Promise<unknown>) {
+		return Promise.race([
+			p.then(
+				(m) => m,
+				(e) => "rejected: " + e,
+			),
+			new Promise((res) => setTimeout(() => res("still waiting"), 1000)),
+		]);
+	}
+
+	it("a lookup whose request fails settles as no member, and the next call asks again", async () => {
+		const user = lookupUser();
+		const resolvemember = vi.fn(async () => {
+			throw new Error("socket closed");
+		});
+		user.resolvemember = resolvemember;
+
+		expect(await outcome(user.getMember("u1", "g1"))).toBeUndefined();
+		expect(await outcome(user.getMember("u1", "g1"))).toBeUndefined();
+		expect(resolvemember).toHaveBeenCalledTimes(2);
+	});
+
+	it("an answer the client can't build settles as no member, and the next call asks again", async () => {
+		const user = lookupUser();
+		(user.guildids.get("g1") as unknown as {localuser: unknown}).localuser = user;
+		// Neither a user object nor a known user: Member.new refuses it.
+		const resolvemember = vi.fn(async () => ({id: "u1", roles: []}) as never);
+		user.resolvemember = resolvemember;
+
+		expect(await outcome(user.getMember("u1", "g1"))).toBeUndefined();
+		expect(await outcome(user.getMember("u1", "g1"))).toBeUndefined();
+		expect(resolvemember).toHaveBeenCalledTimes(2);
+	});
+});

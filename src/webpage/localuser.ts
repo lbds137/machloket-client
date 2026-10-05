@@ -5844,16 +5844,18 @@ class Localuser {
 		const uid = id + "-" + guildid;
 		const prom = this.getMemberMap.get(uid);
 		if (prom) return prom;
-		const prom2 = new Promise<Member | undefined>(async (res) => {
-			const json = await this.resolvemember(id, guildid);
-			if (!json) {
-				// Not a member yet (or the lookup failed): the next call asks again.
-				this.getMemberMap.delete(uid);
-				res(undefined);
-				return;
+		const prom2 = (async (): Promise<Member | undefined> => {
+			try {
+				const json = await this.resolvemember(id, guildid);
+				const member = json && (await Member.new(json, guild));
+				if (member) return member;
+			} catch (e) {
+				console.error("[getMember]", e);
 			}
-			res(Member.new(json, guild));
-		});
+			// Not a member yet, or the lookup or its answer failed: the next call asks again.
+			this.getMemberMap.delete(uid);
+			return undefined;
+		})();
 		this.getMemberMap.set(uid, prom2);
 		return prom2;
 	}
