@@ -106,12 +106,13 @@ class VoiceFactory {
 		const voice = this.voiceChannels.get(channelId);
 		// Already in (or joining) this call: leaving and rejoining would race the leave's echo.
 		if (voice && voice === this.currentVoice && voice.open) return voice;
+		// Before anything changes: a channel with no voice leaves the current call as it was.
+		if (!voice) throw new Error(`Voice ${channelId} does not exist`);
 		this.mute = self_mute;
 		// Also when the old call is still connecting (no socket yet): leave() is a no-op once left.
 		this.currentVoice?.leave();
 		this.curChan = channelId;
 		this.curGuild = guildId;
-		if (!voice) throw new Error(`Voice ${channelId} does not exist`);
 		voice.join();
 		this.currentVoice = voice;
 		this.onJoin(voice);
@@ -258,6 +259,8 @@ class VoiceFactory {
 		if (prev && prev !== this.voiceChannels.get(update.channel_id)) {
 			prev.disconnect(update.user_id);
 			this.onLeave(prev);
+			// Forgotten, so a repeated "left" doesn't leave again.
+			this.userMap.delete(update.user_id);
 		}
 		const voice = this.voiceChannels.get(update.channel_id);
 		if (voice) {
@@ -353,6 +356,13 @@ class Voice {
 			this.ws.send(JSON.stringify({op: 3, d: 10}));
 		}
 	}
+	/** One pending heartbeat per call: a leave clears it, so it can't fire on the next call's
+	 * socket and start a second chain. */
+	private aliveTimer?: ReturnType<typeof setTimeout>;
+	private scheduleAlive(ms: number) {
+		clearTimeout(this.aliveTimer);
+		this.aliveTimer = setTimeout(() => this.sendAlive(), ms);
+	}
 	users = new Map<number, string>();
 	vidusers = new Map<number, string>();
 	readonly speakingMap = new Map<string, number>();
@@ -362,15 +372,10 @@ class Voice {
 		if (userid === this.userid) {
 			this.leave();
 		}
-		const ssrc = this.speakingMap.get(userid);
-
-		if (ssrc) {
-			this.users.set(ssrc, "");
-			for (const thing of this.ssrcMap) {
-				if (thing[1] === ssrc) {
-					this.ssrcMap.delete(thing[0]);
-				}
-			}
+		// Their audio slot by SSRC (speakingMap holds the speaking flags, not SSRCs; ssrcMap is
+		// our own senders'). Blanked, not deleted: slots are matched to receivers by position.
+		for (const [ssrc, id] of this.users) {
+			if (id === userid) this.users.set(ssrc, "");
 		}
 		this.speakingMap.delete(userid);
 		this.userids.delete(userid);
@@ -396,11 +401,11 @@ class Voice {
 					break;
 				case 6:
 					this.time = json.d.t;
-					setTimeout(this.sendAlive.bind(this), this.timeout);
+					this.scheduleAlive(this.timeout);
 					break;
 				case 8:
 					this.timeout = json.d.heartbeat_interval;
-					setTimeout(this.sendAlive.bind(this), 1000);
+					this.scheduleAlive(1000);
 					break;
 				case 12:
 					await this.figureRecivers();
@@ -472,8 +477,10 @@ class Voice {
 			//this.vidusers.set(out.rtx_ssrc, this.userid);
 			console.log(out);
 		} else {
-			const i = [...this.vidusers].findIndex((_) => _[1] === this.userid);
-			this.vidusers.delete(i);
+			// No camera: drop our own video entry (keyed by SSRC, not position).
+			for (const [ssrc, id] of this.vidusers) {
+				if (id === this.userid) this.vidusers.delete(ssrc);
+			}
 		}
 		const pc = this.pc;
 		if (!pc) throw new Error("pc isn't defined");
@@ -890,9 +897,12 @@ a=rtcp-mux\r`;
 
 		this.micNode.connect(analyser);
 		const array = new Float32Array(1);
-		const interval = setInterval(() => {
+		// One speaking check at a time, also across a quick leave and rejoin.
+		clearInterval(this.micInterval);
+		const interval = (this.micInterval = setInterval(() => {
 			if (!this.ws) {
 				clearInterval(interval);
+				return;
 			}
 			if (!this.owner.mute) analyser.getFloatFrequencyData(array);
 			const value = this.owner.mute ? -Infinity : array[0] + 65;
@@ -907,8 +917,9 @@ a=rtcp-mux\r`;
 				this.speaking = true;
 				this.sendSpeaking();
 			}
-		}, 500);
+		}, 500));
 	}
+	private micInterval?: ReturnType<typeof setInterval>;
 	async sendSpeaking() {
 		if (!this.ws) return;
 		const pair = this.ssrcMap.entries().next().value;
@@ -1036,6 +1047,8 @@ a=rtcp-mux\r`;
 	videoStarted = false;
 	async startVideo(caml: MediaStream) {
 		while (!this.cam) {
+			// Left before the connection (and its camera track) came up.
+			if (!this.open) return;
 			await new Promise((res) => setTimeout(res, 100));
 		}
 		console.warn("test test test test video sent!");
@@ -1328,7 +1341,11 @@ a=rtcp-mux\r`;
 			atr: Map<string, Set<string>>;
 		} = {medias: [], atr: currentA};
 		for (const line of sdp.split("\n")) {
-			const [code, setinfo] = line.split("=");
+			// Split at the first "=" only: values contain more (a=fmtp:111 minptime=10).
+			const eq = line.indexOf("=");
+			if (eq === -1) continue;
+			const code = line.slice(0, eq);
+			const setinfo = line.slice(eq + 1);
 			switch (code) {
 				case "v":
 					out.version = Number(setinfo);
@@ -1460,6 +1477,8 @@ a=rtcp-mux\r`;
 		console.warn("leave");
 		this.open = false;
 		this.status = "left";
+		clearTimeout(this.aliveTimer);
+		clearInterval(this.micInterval);
 		if (!this.settings.stream) this.owner.video = false;
 		this.onLeave();
 
