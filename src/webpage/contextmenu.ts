@@ -225,7 +225,7 @@ class ContextMenuSlider<x, y> implements menuPart<x, y> {
 			const slider = document.createElement("input");
 			slider.type = "range";
 			sliderDiv.append(slider);
-			slider.value = this.startVal?.(obj1, obj2) + "" || "100";
+			slider.value = String(this.startVal?.(obj1, obj2) ?? 100);
 			slider.oninput = () => {
 				this.slider(obj1, obj2, +slider.value);
 			};

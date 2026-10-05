@@ -81,3 +81,21 @@ describe("a second finger", () => {
 		expect(opened).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe("sliders", () => {
+	const rendered = (opts: {startVal?: () => number}) => {
+		const menu = new Contextmenu<undefined, undefined>("slider test");
+		menu.addSlider("Volume", () => {}, undefined, undefined, opts);
+		const div = document.createElement("div");
+		menu.buttons[0].makeContextHTML(undefined, undefined, div, [], new WeakSet());
+		return div.querySelector("input")!;
+	};
+
+	it("start at 100 when there's no start value", () => {
+		expect(rendered({}).value).toBe("100");
+	});
+
+	it("start at the given value", () => {
+		expect(rendered({startVal: () => 30}).value).toBe("30");
+	});
+});
