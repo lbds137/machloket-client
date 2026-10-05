@@ -779,11 +779,24 @@ class Localuser {
 		});
 	}
 	relChangeUpdateMap = new Map<string, (() => void)[]>();
-	async relationChange(id: string): Promise<void> {
+	/** Resolves on the next RELATIONSHIP_ADD/REMOVE for `id`. Aborting `signal` withdraws the
+	 * wait (the promise then never settles), for a change that was refused and won't come. */
+	async relationChange(id: string, signal?: AbortSignal): Promise<void> {
 		const arr = this.relChangeUpdateMap.get(id) || [];
 		const {promise, resolve} = Promise.withResolvers<void>();
 		arr.push(resolve);
 		this.relChangeUpdateMap.set(id, arr);
+		signal?.addEventListener(
+			"abort",
+			() => {
+				const waiting = this.relChangeUpdateMap.get(id);
+				if (!waiting) return;
+				const left = waiting.filter((r) => r !== resolve);
+				if (left.length) this.relChangeUpdateMap.set(id, left);
+				else this.relChangeUpdateMap.delete(id);
+			},
+			{once: true},
+		);
 		return promise;
 	}
 	conectionChange = () => {};

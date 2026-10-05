@@ -292,45 +292,41 @@ class User extends SnowFlake {
 			}
 		}
 
-		await fetch(this.info.api + "/users/@me/channels", {
+		const res = await fetch(this.info.api + "/users/@me/channels", {
 			method: "POST",
 			body: JSON.stringify({recipients: [this.id]}),
 			headers: this.localuser.headers,
-		})
-			.then((res) => res.json())
-			.then((json) => {
-				return this.localuser.goToChannel(json.id);
-			});
-		if (message) {
-			for (const dm of (this.localuser.guildids.get("@me") as Direct).channels) {
-				if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
-					dm.sendMessage(message, {
-						attachments: [],
-						embeds: [],
-						replyingto: null,
-						sticker_ids: [],
-					});
-					return;
-				}
-			}
+		}).catch(() => undefined);
+		const json = res?.ok ? ((await res.json().catch(() => null)) as {id?: string} | null) : null;
+		if (!json?.id) {
+			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			return;
 		}
-		return;
+		// Resolves once CHANNEL_CREATE has added the DM, so it can be looked up here.
+		await this.localuser.goToChannel(json.id);
+		if (message) {
+			await this.localuser.channelids.get(json.id)?.sendMessage(message, {
+				attachments: [],
+				embeds: [],
+				replyingto: null,
+				sticker_ids: [],
+			});
+		}
 	}
 	async changeRelationship(type: 0 | 1 | 2 | 3 | 4 | 5) {
-		const relChange = this.localuser.relationChange(this.id);
-		if (type !== 0) {
-			await fetch(`${this.info.api}/users/@me/relationships/${this.id}`, {
-				method: "PUT",
-				headers: this.owner.headers,
-				body: JSON.stringify({
-					type,
-				}),
-			});
-		} else {
-			await fetch(`${this.info.api}/users/@me/relationships/${this.id}`, {
-				method: "DELETE",
-				headers: this.owner.headers,
-			});
+		// Registered before the request: the gateway event can arrive before the response.
+		const refused = new AbortController();
+		const relChange = this.localuser.relationChange(this.id, refused.signal);
+		const url = `${this.info.api}/users/@me/relationships/${this.id}`;
+		const res = await (
+			type !== 0
+				? fetch(url, {method: "PUT", headers: this.owner.headers, body: JSON.stringify({type})})
+				: fetch(url, {method: "DELETE", headers: this.owner.headers})
+		).catch(() => undefined);
+		if (!res?.ok) {
+			refused.abort();
+			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			return;
 		}
 		await relChange;
 	}
