@@ -143,6 +143,46 @@ describe("typed slash-command options", () => {
 		expect(sent).toHaveLength(0);
 	});
 
+	it("text longer than max_length blocks the send", async () => {
+		const {sent, run} = commandWith(
+			[{type: 3, name: "note", description: "", required: true, min_length: 2, max_length: 5}],
+			{note: "too long"},
+		);
+
+		await expect(run()).resolves.toBe(false);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("text shorter than min_length blocks the send", async () => {
+		const {sent, run} = commandWith(
+			[{type: 3, name: "note", description: "", required: true, min_length: 2, max_length: 5}],
+			{note: "a"},
+		);
+
+		await expect(run()).resolves.toBe(false);
+		expect(sent).toHaveLength(0);
+	});
+
+	it("text within min_length and max_length is sent", async () => {
+		const {sent, run} = commandWith(
+			[{type: 3, name: "note", description: "", required: true, min_length: 2, max_length: 5}],
+			{note: "four"},
+		);
+
+		await run();
+		expect(sent).toHaveLength(1);
+	});
+
+	it("an emoji counts as one character, and the limits themselves are allowed", async () => {
+		const {sent, run} = commandWith(
+			[{type: 3, name: "note", description: "", required: true, min_length: 2, max_length: 2}],
+			{note: "😀😀"},
+		);
+
+		await run();
+		expect(sent).toHaveLength(1);
+	});
+
 	it("an empty optional option is omitted from the send", async () => {
 		const {sent, run} = commandWith(
 			[

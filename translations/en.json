@@ -221,6 +221,8 @@
 		"notInteger": "$1 must be a whole number",
 		"numberMin": "$1 must be at least $2",
 		"numberMax": "$1 must be at most $2",
+		"textMin": "$1 must be at least $2 characters",
+		"textMax": "$1 must be at most $2 characters",
 		"placeholderUser": "User",
 		"placeholderChannel": "Channel",
 		"placeholderRole": "Role",

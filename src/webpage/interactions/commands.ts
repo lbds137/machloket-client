@@ -885,7 +885,7 @@ class StringOption extends Option {
 		super(optionjson);
 		this.owner = owner;
 		this.minLeng = optionjson.min_length || 0;
-		this.maxLeng = optionjson.min_length || 6000;
+		this.maxLeng = optionjson.max_length || 6000;
 		this.choices = optionjson.choices;
 		this.autocomplete = optionjson.autocomplete || false;
 	}
@@ -975,6 +975,14 @@ class StringOption extends Option {
 				return choice.value;
 			}
 			throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
+		}
+		// Counted in characters as typed, not UTF-16 units (an emoji is one).
+		const length = [...state].length;
+		if (length < this.minLeng) {
+			throw new OptionError(I18n.commands.textMin(this.localizedName, String(this.minLeng)));
+		}
+		if (length > this.maxLeng) {
+			throw new OptionError(I18n.commands.textMax(this.localizedName, String(this.maxLeng)));
 		}
 		return state;
 	}
