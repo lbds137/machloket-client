@@ -17,10 +17,7 @@ export function recentFirst<T extends {name: string}>(
  * command name. */
 export function bumpCommandRecency(key: string) {
 	try {
-		const recency = JSON.parse(localStorage.getItem("commandRecency") ?? "{}") as Record<
-			string,
-			number
-		>;
+		const recency = getCommandRecency();
 		recency[key] = Date.now();
 		localStorage.setItem("commandRecency", JSON.stringify(recency));
 	} catch {
@@ -28,9 +25,14 @@ export function bumpCommandRecency(key: string) {
 	}
 }
 
+/** The stored recency; anything else stored there (corrupt, or not a map) reads as none. */
 export function getCommandRecency(): Record<string, number> {
 	try {
-		return JSON.parse(localStorage.getItem("commandRecency") ?? "{}") as Record<string, number>;
+		const stored: unknown = JSON.parse(localStorage.getItem("commandRecency") ?? "{}");
+		if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
+		return Object.fromEntries(
+			Object.entries(stored).filter(([, at]) => typeof at === "number"),
+		) as Record<string, number>;
 	} catch {
 		return {};
 	}
