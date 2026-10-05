@@ -141,7 +141,8 @@ describe("swiping the drawer shut", () => {
 		await glide();
 
 		expect(panel.style.transform).toBe("");
-		expect(panel.style.transition).toBe("");
+		// The transition comes back a frame after the glide ends; a loaded machine renders that frame late.
+		await vi.waitFor(() => expect(panel.style.transition).toBe(""));
 	});
 
 	it("finishes an opening glide at once when a new touch lands mid-glide", async () => {
@@ -404,7 +405,7 @@ describe("a message after its reply swipe", () => {
 		swipe(chat, [300, 300], [200, 302]);
 		await new Promise((res) => setTimeout(res, 300));
 
-		expect(chat.style.transition).toBe("");
+		await vi.waitFor(() => expect(chat.style.transition).toBe(""));
 	});
 });
 
@@ -420,7 +421,7 @@ describe("a cancelled drawer drag", () => {
 
 		expect(openChat).not.toHaveBeenCalled();
 		expect(offsetX()).toBe(0);
-		expect(panel.style.transition).not.toBe("none");
+		await vi.waitFor(() => expect(panel.style.transition).toBe(""));
 	});
 });
 
