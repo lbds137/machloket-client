@@ -733,6 +733,7 @@ class Localuser {
 	registerInterNonce(nonce: string, thing: Message) {
 		this.interNonceMap.set(nonce, thing);
 		this.interactionNonces.add(nonce);
+		this.dropOldNonces();
 	}
 	/** Where each slash command was sent, to show its progress above that channel's composer. */
 	commandChannels = new Map<string, Channel>();
@@ -746,12 +747,24 @@ class Localuser {
 		this.interactionNonces.add(nonce);
 		if (channel) this.commandChannels.set(nonce, channel);
 		if (label) this.commandNonceLabels.set(nonce, label);
+		this.dropOldNonces();
 	}
 	/** A command that never reached the bot: no event will come for its nonce. */
 	forgetCommandNonce(nonce: string) {
 		this.interactionNonces.delete(nonce);
 		this.commandChannels.delete(nonce);
 		this.commandNonceLabels.delete(nonce);
+	}
+	/**
+	 * Answered interactions are never told apart from pending ones (the order of a bot's
+	 * events isn't settled), so the oldest are dropped past 200: long answered by then.
+	 */
+	private dropOldNonces() {
+		while (this.interactionNonces.size > 200) {
+			const oldest = this.interactionNonces.values().next().value as string;
+			this.forgetCommandNonce(oldest);
+			this.interNonceMap.delete(oldest);
+		}
 	}
 	relationshipsUpdate = () => {};
 	rights: Rights;

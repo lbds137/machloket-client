@@ -2066,3 +2066,18 @@ it("a command with nothing collected to send keeps no nonce", async () => {
 
 	expect(localuser.interactionNonces.size).toBe(0);
 });
+
+it("keeps at most the 200 newest interaction nonces, oldest dropped first", () => {
+	const {localuser, channel, message} = messageIn("@me");
+	for (let i = 0; i < 50; i++) localuser.registerInterNonce("m" + i, message);
+	for (let i = 0; i < 200; i++) localuser.registerCommandNonce("c" + i, channel as never, "x");
+	for (let i = 0; i < 50; i++) localuser.registerInterNonce("n" + i, message);
+
+	expect(localuser.interactionNonces.size).toBe(200);
+	expect(localuser.interNonceMap.has("m49")).toBe(false); // a button's, pushed out first
+	expect(localuser.interactionNonces.has("c49")).toBe(false);
+	expect(localuser.commandChannels.has("c49")).toBe(false);
+	expect(localuser.commandNonceLabels.has("c49")).toBe(false);
+	expect(localuser.interactionNonces.has("c50")).toBe(true);
+	expect(localuser.interNonceMap.has("n49")).toBe(true);
+});
