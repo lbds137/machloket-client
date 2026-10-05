@@ -67,7 +67,6 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 
 		div.onclick = () => {
 			const opt = inviteMenu.addSubOptions(invite.code);
-			const inviter = new User(invite.inviter, guild.localuser);
 
 			opt.addMDText(
 				new MarkDown(
@@ -95,8 +94,11 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 			}
 			opt.addText(I18n.invite.expires(expires));
 
-			opt.addText(I18n.webhooks.createdBy());
-			opt.addHTMLArea(inviter.createWidget(guild));
+			// A system or vanity invite has no inviter (the server leaves the field out).
+			if (invite.inviter) {
+				opt.addText(I18n.webhooks.createdBy());
+				opt.addHTMLArea(new User(invite.inviter, guild.localuser).createWidget(guild));
+			}
 
 			opt.addButtonInput("", I18n.delete(), async () => {
 				if (

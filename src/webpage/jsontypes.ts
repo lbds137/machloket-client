@@ -964,7 +964,8 @@ type invitejson = {
 	flags: number;
 	guild: guildjson["properties"];
 	channel: channeljson;
-	inviter: userjson;
+	/** Left out for an invite no one made (system, vanity). */
+	inviter?: userjson;
 };
 type presencejson = {
 	status: string;
