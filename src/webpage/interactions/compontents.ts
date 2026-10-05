@@ -42,6 +42,29 @@ abstract class compObj {
 	get localuser() {
 		return this.owner.owner.localuser;
 	}
+	/**
+	 * Sends a click or a pick. The bot's answer arrives as gateway events keyed by `nonce`;
+	 * a request the instance refuses or never gets shows on the message as a failed
+	 * interaction, as a bot's own failure does, and its nonce is forgotten.
+	 */
+	protected async postInteraction(nonce: string, body: object) {
+		const message = this.message;
+		if (message) this.localuser.registerInterNonce(nonce, message);
+		const res = await fetch(this.info.api + "/interactions", {
+			method: "POST",
+			headers: this.headers,
+			body: JSON.stringify(body),
+		}).catch(() => undefined);
+		if (res?.ok) return;
+		this.localuser.interNonceMap.delete(nonce);
+		this.localuser.interactionNonces.delete(nonce);
+		message?.interactionEvents({
+			op: 0,
+			t: "INTERACTION_FAILURE",
+			d: {id: "", nonce, reason_code: 0},
+			s: 0,
+		});
+	}
 }
 /**
  * A DM channel's owning "guild" is the "@me" pseudo-guild; the interaction wire carries no
@@ -302,24 +325,19 @@ class Button extends compObj {
 	}
 	async clickEvent() {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-		if (this.message) this.localuser.registerInterNonce(nonce, this.message);
-		await fetch(this.info.api + "/interactions", {
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify({
-				type: this.message ? 3 : 5,
-				nonce: nonce,
-				guild_id: wireGuildId(this.guild),
-				channel_id: this.channel.id,
-				message_flags: this.message?.flags,
-				message_id: this.message?.id,
-				application_id: this.bot.id,
-				session_id: this.localuser.session_id,
-				data: {
-					component_type: 2,
-					custom_id: this.custom_id,
-				},
-			}),
+		await this.postInteraction(nonce, {
+			type: this.message ? 3 : 5,
+			nonce: nonce,
+			guild_id: wireGuildId(this.guild),
+			channel_id: this.channel.id,
+			message_flags: this.message?.flags,
+			message_id: this.message?.id,
+			application_id: this.bot.id,
+			session_id: this.localuser.session_id,
+			data: {
+				component_type: 2,
+				custom_id: this.custom_id,
+			},
 		});
 	}
 	getHTML() {
@@ -375,25 +393,20 @@ class Select extends compObj {
 	}
 	async submit(values: string[]) {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-		if (this.message) this.localuser.registerInterNonce(nonce, this.message);
-		await fetch(this.info.api + "/interactions", {
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify({
-				type: this.message ? 3 : 5,
-				nonce: nonce,
-				guild_id: wireGuildId(this.guild),
-				channel_id: this.channel.id,
-				message_flags: this.message?.flags,
-				message_id: this.message?.id,
-				application_id: this.bot.id,
-				session_id: this.localuser.session_id,
-				data: {
-					component_type: 3,
-					custom_id: this.custom_id,
-					values,
-				},
-			}),
+		await this.postInteraction(nonce, {
+			type: this.message ? 3 : 5,
+			nonce: nonce,
+			guild_id: wireGuildId(this.guild),
+			channel_id: this.channel.id,
+			message_flags: this.message?.flags,
+			message_id: this.message?.id,
+			application_id: this.bot.id,
+			session_id: this.localuser.session_id,
+			data: {
+				component_type: 3,
+				custom_id: this.custom_id,
+				values,
+			},
 		});
 	}
 	getHTML() {
