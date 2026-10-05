@@ -121,3 +121,22 @@ it("going forward, a pending send after the newest message waits for nothing", a
 	expect(await settles(pending)).toBe("settled");
 	expect(fetchMock).toHaveBeenCalledTimes(1);
 });
+
+it("going forward, a page that reaches loaded history links to it rather than ending there", async () => {
+	const channel = channelWith(["5"]); // 5 is loaded already: the page joins the loaded tail
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json([{id: "5"}]));
+
+	await channel.grabAfter("1");
+
+	expect(channel.idToNext.get("1")).toBe("5");
+});
+
+it("going forward, an empty page means nothing newer", async () => {
+	const channel = channelWith([]);
+	vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json([]));
+
+	await channel.grabAfter("1");
+
+	expect(channel.idToNext.has("1")).toBe(true);
+	expect(channel.idToNext.get("1")).toBeUndefined();
+});

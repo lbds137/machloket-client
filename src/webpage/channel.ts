@@ -3234,7 +3234,6 @@ class Channel extends SnowFlake {
 				res();
 				return;
 			}
-			let i = 0;
 			let previd: string = id;
 			for (const response of messages) {
 				let messager: Message;
@@ -3258,9 +3257,10 @@ class Channel extends SnowFlake {
 				if (willbreak) {
 					break;
 				}
-				i++;
 			}
-			if (i === 0) {
+			// Only an empty page means nothing newer: a page whose first message is already loaded
+			// has just linked to it.
+			if (messages.length === 0) {
 				this.idToNext.set(id, undefined);
 			}
 			{
