@@ -54,29 +54,12 @@ function makeMenu2(email: string | void) {
 function makeMenu1() {
 	const d = new Dialog("");
 	d.options.addTitle(I18n.login.recovery());
-	let area: HTMLElement | undefined = undefined;
 	const opt = d.float.options.addForm(
 		"",
 		(e) => {
 			if (Object.keys(e).length === 0) {
 				d.hide();
 				makeMenu2(email.value);
-			} else if ("captcha_sitekey" in e && typeof e.captcha_sitekey === "string") {
-				if (area) {
-					const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}}).hcaptcha;
-					hc?.reset?.();
-				} else {
-					area = document.createElement("div");
-					opt.addHTMLArea(area);
-					const capty = document.createElement("div");
-					capty.classList.add("h-captcha");
-
-					capty.setAttribute("data-sitekey", e.captcha_sitekey);
-					const script = document.createElement("script");
-					script.src = "https://js.hcaptcha.com/1/api.js";
-					area.append(script);
-					area.append(capty);
-				}
 			}
 		},
 		{
@@ -88,16 +71,6 @@ function makeMenu1() {
 		},
 	);
 	const email = opt.addTextInput(I18n.htmlPages.emailField(), "login");
-	opt.addPreprocessor((e) => {
-		if (area) {
-			try {
-				//@ts-expect-error
-				e.captcha_key = area.children[1].children[1].value;
-			} catch (e) {
-				console.error(e);
-			}
-		}
-	});
 	d.show(false);
 }
 if (window.location.pathname.startsWith("/reset")) {
