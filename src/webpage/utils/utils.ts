@@ -637,7 +637,7 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 				try {
 					//TODO make this a promise race for when the server just never responds
 					//TODO maybe try to strip ports as another way to fix it
-					if (!(await fetch(urls.api + "ping")).ok) {
+					if (!(await fetch(urls.api + (urls.api.endsWith("/") ? "" : "/") + "ping")).ok) {
 						res(null);
 						menu.hide();
 						return;
