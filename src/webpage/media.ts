@@ -269,7 +269,12 @@ function decodeId3Text(frame: Uint8Array) {
 			bytes = bytes.subarray(2);
 		}
 	}
-	return new TextDecoder(label).decode(bytes).replace(/\0+$/, "");
+	return new TextDecoder(label)
+		.decode(bytes)
+		// v2.4 text frames may hold several NUL-separated values; show them all.
+		.split("\0")
+		.filter((value) => value !== "")
+		.join(" / ");
 }
 interface media {
 	src: string;
@@ -528,6 +533,12 @@ class MediaPlayer {
 					const TYER = mappy.get("TYER");
 					if (TYER) {
 						output.year = +decodeId3Text(TYER);
+					}
+					// v2.4 retired TYER for TDRC (an ISO-ish recording time); its first four
+					// digits are the year.
+					const TDRC = mappy.get("TDRC");
+					if (!output.year && TDRC) {
+						output.year = +decodeId3Text(TDRC).slice(0, 4);
 					}
 					const TLEN = mappy.get("TLEN");
 					if (TLEN) {
