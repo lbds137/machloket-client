@@ -34,6 +34,7 @@ function channelWith(ids: string[]) {
 
 afterEach(() => {
 	vi.restoreAllMocks();
+	Channel.historyCooldownUntil = 0;
 });
 
 describe("a failed history fetch", () => {
@@ -142,6 +143,62 @@ describe("the message scroller after a failed page", () => {
 		expect(asked.filter((id) => id === "5").length).toBeGreaterThanOrEqual(2);
 		expect(host.textContent).toContain("message 4");
 		host.remove();
+	});
+});
+
+describe("a rate-limited history fetch", () => {
+	it("waits out the window once, retries, and the page lands", async () => {
+		const channel = channelWith(["9", "8"]);
+		const fetchMock = vi.spyOn(globalThis, "fetch");
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 0.1}, {status: 429})),
+		);
+		fetchMock.mockImplementationOnce(() => Promise.resolve(Response.json([{id: "9"}, {id: "8"}])));
+
+		expect(await within(channel.grabBefore("10"))).toBe("settled");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+		expect(channel.idToPrev.get("10")).toBe("9");
+	});
+
+	it("while the window lasts, further ticks fail fast instead of re-requesting", async () => {
+		const channel = channelWith(["9", "8"]);
+		const fetchMock = vi.spyOn(globalThis, "fetch");
+		// The window's first caller: 429, and its own retry hits ANOTHER 429 — the window stays.
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 0.2}, {status: 429})),
+		);
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 0.2}, {status: 429})),
+		);
+
+		const first = channel.grabBefore("10");
+		await new Promise((res) => setTimeout(res, 50)); // inside the first caller's wait
+		// A second tick inside the window asks the endpoint nothing.
+		const second = channel.grabBefore("10");
+		expect(await within(second)).toBe("settled");
+		expect(fetchMock.mock.calls.length).toBe(2);
+		expect(channel.idToPrev.has("10")).toBe(false);
+
+		expect(await within(first)).toBe("settled");
+		expect(fetchMock.mock.calls.length).toBe(2);
+	});
+
+	it("once the window passes, the next tick asks again", async () => {
+		const channel = channelWith(["9", "8"]);
+		const fetchMock = vi.spyOn(globalThis, "fetch");
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 0.05}, {status: 429})),
+		);
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 0.05}, {status: 429})),
+		);
+		await within(channel.grabBefore("10"));
+		expect(channel.idToPrev.has("10")).toBe(false);
+
+		await new Promise((res) => setTimeout(res, 80)); // past the window
+		fetchMock.mockImplementationOnce(() => Promise.resolve(Response.json([{id: "9"}, {id: "8"}])));
+		await within(channel.grabBefore("10"));
+		expect(channel.idToPrev.get("10")).toBe("9");
 	});
 });
 

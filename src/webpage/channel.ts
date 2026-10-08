@@ -3441,14 +3441,44 @@ class Channel extends SnowFlake {
 	/** Counts failed history pages, so a scroller lookup that came back unlinked can tell a
 	 * failure (retry later) from the channel's real end. */
 	private historyFailures = 0;
+	/** The rate-limit window shared by every channel's history loop (test-visible: the
+	 * suite resets it). */
+	static historyCooldownUntil = 0;
+	/** A 429's wait: Spacebar's body carries retry_after in SECONDS. Capped for sanity. */
+	private static async rateLimitWait(res: Response, cap = 30_000): Promise<number> {
+		let seconds = 5;
+		try {
+			const body = (await res.json()) as {retry_after?: number};
+			if (typeof body.retry_after === "number" && body.retry_after >= 0) seconds = body.retry_after;
+		} catch {
+			// A non-JSON 429 keeps the default.
+		}
+		return Math.min(seconds * 1000, cap);
+	}
 	/** One page of this channel's history, or undefined when the request failed (network
 	 * error, an error status, a body that isn't a message list). */
 	private async fetchHistoryPage(query: string): Promise<messagejson[] | undefined> {
+		// A rate-limited window is shared: ticks inside it fail fast instead of re-issuing
+		// the same request on every scroll tick, while the caller that hit the limit waits
+		// (capped) and retries once itself.
+		if (Date.now() < Channel.historyCooldownUntil) return undefined;
 		try {
-			const res = await fetch(
+			let res = await fetch(
 				this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
 				{headers: this.headers},
 			);
+			if (res.status === 429) {
+				const wait = await Channel.rateLimitWait(res);
+				Channel.historyCooldownUntil = Date.now() + wait;
+				await new Promise((r) => setTimeout(r, wait));
+				res = await fetch(
+					this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
+					{headers: this.headers},
+				);
+				// The retry's answer owns the window now: a second 429 keeps it, anything
+				// else (including a network error) releases the other ticks.
+				if (res.status !== 429) Channel.historyCooldownUntil = 0;
+			}
 			if (!res.ok) return undefined;
 			const json: unknown = await res.json();
 			return Array.isArray(json) ? (json as messagejson[]) : undefined;
