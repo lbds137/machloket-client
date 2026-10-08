@@ -643,6 +643,7 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 					}
 				} catch {
 					res(null);
+					menu.hide();
 					return;
 				}
 				res(urls);

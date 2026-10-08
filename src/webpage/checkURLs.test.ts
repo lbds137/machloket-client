@@ -65,4 +65,20 @@ describe("checkURLs", () => {
 		]);
 		expect(outcome).toBe("settled");
 	});
+
+	it("the No answer's failed ping takes the dialog down", async () => {
+		stubMixedOriginInstance();
+		// Offline instance: the ping the No answer issues rejects.
+		const pings = captureRequests("http://127.0.0.1:3001/api/v9/ping", () => {
+			throw new Error("offline");
+		});
+
+		// getApiUrlsV2 swallows checkURLs' null (filed defect), so the promise's value
+		// says nothing; the dialog coming down with the refusal is the observable.
+		getapiurls(WELLKNOWN);
+		await vi.waitFor(() => clickDialogButton(I18n.no()));
+
+		expect(pings.length).toBe(1);
+		await vi.waitFor(() => expect(document.querySelector(".background")).toBeNull());
+	});
 });
