@@ -4285,22 +4285,27 @@ class Channel extends SnowFlake {
 	notititle(message: Message): string {
 		return message.author.username + " > " + this.guild.properties.name + " > " + this.name;
 	}
+	/** The notification gates: channel/guild mute, DND, the per-channel setting, blocked author. */
+	notiGates(message: Message): boolean {
+		if (this.muted) return false;
+		if (this.localuser.status === "dnd") return false;
+		if (this.guild.muted) return false;
+		if (this.trueNotiValue === "none") return false;
+		if (this.trueNotiValue === "mentions" && !message.mentionsuser(this.localuser.user)) {
+			return false;
+		}
+		return message.author.relationshipType != 2;
+	}
+	/** One in-flight browser prompt however many messages burst in while unset. */
+	private static permissionPrompt?: Promise<NotificationPermission>;
+	private askPermission(): Promise<NotificationPermission> {
+		Channel.permissionPrompt ??= Notification.requestPermission().finally(() => {
+			Channel.permissionPrompt = undefined;
+		});
+		return Channel.permissionPrompt;
+	}
 	notify(message: Message) {
-		if (this.muted) return;
-
-		if (this.localuser.status === "dnd") return;
-
-		if (this.guild.muted) {
-			return;
-		}
-		if (this.trueNotiValue === "none") {
-			return;
-		} else if (this.trueNotiValue === "mentions" && !message.mentionsuser(this.localuser.user)) {
-			return;
-		}
-		if (message.author.relationshipType == 2) {
-			return;
-		}
+		if (!this.notiGates(message)) return;
 
 		try {
 			void NotificationSoundManager.playFromPreferences();
@@ -4314,13 +4319,14 @@ class Channel extends SnowFlake {
 				console.error("Couldn't show the notification:", e),
 			);
 		} else if (Notification.permission !== "denied") {
-			// Asked once per message: a dismissed prompt doesn't re-ask (or replay the sound).
-			Notification.requestPermission()
-				.then((permission) => {
-					if (permission !== "granted") return;
-					return NotificationHandler.sendMessageNotification(message);
-				})
-				.catch((e) => console.error("Couldn't show the notification:", e));
+			// Bursts share one prompt; a dismissed one doesn't re-ask for THIS message
+			// (or replay the sound) — a later message may ask afresh.
+			void this.askPermission().then((permission) => {
+				if (permission !== "granted") return;
+				// The prompt can outlive the gate state (muted mid-prompt): re-check.
+				if (!this.notiGates(message)) return;
+				return NotificationHandler.sendMessageNotification(message);
+			}).catch((e) => console.error("Couldn't show the notification:", e));
 		}
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
