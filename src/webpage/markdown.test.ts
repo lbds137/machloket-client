@@ -157,3 +157,19 @@ describe("parsing hostile or nested input", () => {
 		}
 	});
 });
+
+describe("a mailto link's leaving dialog", () => {
+	it("shows the address, not a blank host", () => {
+		const a = document.createElement("a");
+		MarkDown.safeLink(a, "mailto:lila@example.org");
+		a.dispatchEvent(new MouseEvent("mouseup", {button: 0, bubbles: true}));
+
+		try {
+			// The dialog opened (a refused/no-op handler would fail here too).
+			expect(document.querySelector(".background")).not.toBeNull();
+			expect(document.body.textContent).toContain("lila@example.org");
+		} finally {
+			document.querySelectorAll(".background").forEach((e) => e.remove());
+		}
+	});
+});

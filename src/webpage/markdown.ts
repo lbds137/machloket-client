@@ -1419,7 +1419,9 @@ class MarkDown {
 				} else {
 					const full = new Dialog("");
 					full.options.addTitle(I18n.leaving());
-					full.options.addText(I18n.goingToURL(Url.host));
+					// A mailto has no host; its opaque path is the address, so the dialog doesn't
+					// render a blank.
+					full.options.addText(I18n.goingToURL(Url.host || Url.pathname));
 					const options = full.options.addOptions("", {ltr: true});
 					options.addButtonInput("", I18n.nevermind(), () => full.hide());
 					options.addButtonInput("", I18n.goThere(), () => {
