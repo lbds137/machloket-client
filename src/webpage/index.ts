@@ -26,6 +26,7 @@ import {Channel} from "./channel.js";
 import {Guild} from "./guild.js";
 import {showChangelogPopup} from "./changelog.js";
 import {NotificationHandler} from "./notificationHandler.js";
+import {installNotifyBanner} from "./notifyBanner.js";
 import {pickFiles} from "./utils/filePicker.js";
 
 if (window.location.pathname === "/app") {
@@ -40,6 +41,8 @@ if (window.location.pathname.startsWith("/channels")) {
 	Localuser.loadFont();
 
 	I18n.translatePage();
+
+	installNotifyBanner();
 
 	const userInfoElement = document.getElementById("userinfo") as HTMLDivElement;
 	userInfoElement.addEventListener("click", (event) => {

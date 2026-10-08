@@ -8207,3 +8207,22 @@ textarea.interactionModalInput {
 	color: var(--red);
 	font-size: 0.875rem;
 }
+
+#notifyBanner {
+	align-items: center;
+	flex-shrink: 0;
+	gap: 8px;
+	margin: 8px 16px 0;
+	padding: 8px 12px;
+	border-radius: 4px;
+	background: var(--typebox-bg);
+}
+
+/* .flexltr's display:flex would beat the UA's [hidden] rule (#gimmefile precedent). */
+#notifyBanner[hidden] {
+	display: none;
+}
+
+#notifyBanner button {
+	cursor: pointer;
+}
