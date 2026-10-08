@@ -582,30 +582,30 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 				if (clicked) return;
 				clicked = true;
 				if (urls == null) throw new Error("Unexpected undefined, exiting");
-				const temp = new URL(wellknown);
-				const newOrigin = temp.hostname;
-				const protocol = temp.protocol;
-				const tempurls = {
-					api: new URL(urls.api),
-					cdn: new URL(urls.cdn),
-					gateway: new URL(urls.gateway),
-					wellknown: new URL(urls.wellknown),
-				};
-				tempurls.api.host = newOrigin;
-				tempurls.api.protocol = protocol;
-
-				tempurls.cdn.host = newOrigin;
-				tempurls.cdn.protocol = protocol;
-
-				tempurls.gateway.host = newOrigin;
-				tempurls.gateway.protocol = temp.protocol === "http:" ? "ws:" : "wss:";
-
-				tempurls.wellknown.host = newOrigin;
-				tempurls.wellknown.protocol = protocol;
-				// Setting `host` without a port keeps the old (loopback) one: take the site's own port.
-				for (const url of Object.values(tempurls)) url.port = temp.port;
-
 				try {
+					const temp = new URL(wellknown);
+					const newOrigin = temp.hostname;
+					const protocol = temp.protocol;
+					const tempurls = {
+						api: new URL(urls.api),
+						cdn: new URL(urls.cdn),
+						gateway: new URL(urls.gateway),
+						wellknown: new URL(urls.wellknown),
+					};
+					tempurls.api.host = newOrigin;
+					tempurls.api.protocol = protocol;
+
+					tempurls.cdn.host = newOrigin;
+					tempurls.cdn.protocol = protocol;
+
+					tempurls.gateway.host = newOrigin;
+					tempurls.gateway.protocol = temp.protocol === "http:" ? "ws:" : "wss:";
+
+					tempurls.wellknown.host = newOrigin;
+					tempurls.wellknown.protocol = protocol;
+					// Setting `host` without a port keeps the old (loopback) one: take the site's own port.
+					for (const url of Object.values(tempurls)) url.port = temp.port;
+
 					if (
 						!(
 							await fetch(
@@ -617,18 +617,17 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 						menu.hide();
 						return;
 					}
+					res({
+						api: tempurls.api.toString(),
+						cdn: tempurls.cdn.toString(),
+						gateway: tempurls.gateway.toString(),
+						wellknown: tempurls.wellknown.toString(),
+					});
+					menu.hide();
 				} catch {
 					res(null);
 					menu.hide();
-					return;
 				}
-				res({
-					api: tempurls.api.toString(),
-					cdn: tempurls.cdn.toString(),
-					gateway: tempurls.gateway.toString(),
-					wellknown: tempurls.wellknown.toString(),
-				});
-				menu.hide();
 			});
 			const no = opt.addButtonInput("", I18n.no(), async () => {
 				if (clicked) return;

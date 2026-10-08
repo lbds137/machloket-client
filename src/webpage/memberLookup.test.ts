@@ -101,3 +101,23 @@ describe("member lookup failures", () => {
 		expect(resolvemember).toHaveBeenCalledTimes(2);
 	});
 });
+
+describe("the queued member-list refresh", () => {
+	it("a refresh that throws doesn't leave the queue flag set", async () => {
+		vi.useFakeTimers();
+		try {
+			const user = lookupUser();
+			vi.spyOn(console, "error").mockImplementation(() => {});
+			user.memberListUpdate = vi.fn(async () => {
+				throw new Error("boom");
+			});
+
+			user.memberListQue();
+			await vi.advanceTimersByTimeAsync(150);
+
+			expect(user.listque).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});

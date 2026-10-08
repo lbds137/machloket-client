@@ -390,7 +390,11 @@ class Voice {
 			const json: webRTCSocket = JSON.parse(data);
 			switch (json.op) {
 				case 2:
-					this.startWebRTC();
+					// makeOffer rejects on failure; nothing else consumes it
+					this.startWebRTC().catch((e) => {
+						console.error("startWebRTC failed", e);
+						this.status = "conectionFailed";
+					});
 					break;
 				case 4:
 					this.continueWebRTC(json);
@@ -950,15 +954,19 @@ a=rtcp-mux\r`;
 			if (this.pc?.localDescription?.sdp) return {sdp: this.pc?.localDescription?.sdp};
 			return this.off;
 		}
-		return (this.off = new Promise<RTCSessionDescriptionInit>(async (res) => {
+		const off = (this.off = (async () => {
 			if (!this.pc) throw new Error("stupid");
 			console.error("stupid!");
-			const offer = await this.pc.createOffer({
+			return await this.pc.createOffer({
 				offerToReceiveAudio: true,
 				offerToReceiveVideo: true,
 			});
-			res(offer);
-		}));
+		})());
+		// A failed offer is dropped, so the next ask makes a new one instead of replaying the failure.
+		off.catch(() => {
+			if (this.off === off) this.off = undefined;
+		});
+		return off;
 	}
 	async figureRecivers() {
 		await new Promise((res) => setTimeout(res, 500));

@@ -1527,8 +1527,13 @@ class Localuser {
 		}
 		this.listque = true;
 		setTimeout(async () => {
-			await this.memberListUpdate();
-			this.listque = false;
+			try {
+				await this.memberListUpdate();
+			} catch (e) {
+				console.error(e);
+			} finally {
+				this.listque = false;
+			}
 		}, 100);
 	}
 	async memberListUpdate(list: memberlistupdatejson | void) {

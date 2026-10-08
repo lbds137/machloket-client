@@ -83,6 +83,35 @@ describe("a failed history fetch", () => {
 	});
 });
 
+describe("a history page whose messages can't be built", () => {
+	// {id: "7"} isn't loaded and has no author, so building its Message throws mid-page.
+	it("going back settles, and the next scroll-up asks again", async () => {
+		const channel = channelWith([]);
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json([{id: "7"}]));
+
+		expect(await within(channel.grabBefore("10"))).toBe("settled");
+		expect(channel.beforeProm).toBeUndefined();
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		expect(await within(channel.grabBefore("10"))).toBe("settled");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
+	it("going forward settles, and the next scroll-down asks again", async () => {
+		const channel = channelWith([]);
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json([{id: "7"}]));
+
+		expect(await within(channel.grabAfter("10"))).toBe("settled");
+		expect(channel.afterProm).toBeUndefined();
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+
+		expect(await within(channel.grabAfter("10"))).toBe("settled");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+});
+
 describe("the message scroller after a failed page", () => {
 	it("finishes rendering, and doesn't take the failure for the top of the channel", async () => {
 		let fail = true;

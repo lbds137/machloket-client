@@ -46,4 +46,23 @@ describe("checkURLs", () => {
 		await expect(result).resolves.toMatchObject({api: "http://127.0.0.1:3001/api/v9"});
 		expect(pings.length).toBe(1);
 	});
+
+	it("the Yes answer settles when the well-known's urls can't be rebuilt", async () => {
+		// A well-known without a cdn base url: Yes rebuilds every url, and `new URL(undefined)` throws.
+		captureRequests(`${WELLKNOWN}/.well-known/spacebar/client`, () =>
+			Response.json({
+				api: {baseUrl: "http://127.0.0.1:3001"},
+				gateway: {baseUrl: "ws://127.0.0.1:3001"},
+				cdn: {},
+			}),
+		);
+		const result = getapiurls(WELLKNOWN);
+		await vi.waitFor(() => clickDialogButton(I18n.yes()));
+
+		const outcome = await Promise.race([
+			result.then(() => "settled"),
+			new Promise<string>((res) => setTimeout(() => res("hung"), 1500)),
+		]);
+		expect(outcome).toBe("settled");
+	});
 });

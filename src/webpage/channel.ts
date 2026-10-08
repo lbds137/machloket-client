@@ -3280,47 +3280,56 @@ class Channel extends SnowFlake {
 				res();
 				return;
 			}
-			let previd: string = id;
-			for (const response of messages) {
-				let messager: Message;
-				let willbreak = false;
-				if (this.messages.has(response.id)) {
-					messager = this.messages.get(response.id) as Message;
-					willbreak = true;
-				} else {
-					messager = new Message(response, this);
-				}
-				this.idToPrev.set(messager.id, previd);
-				this.idToNext.set(previd, messager.id);
+			try {
+				let previd: string = id;
+				for (const response of messages) {
+					let messager: Message;
+					let willbreak = false;
+					if (this.messages.has(response.id)) {
+						messager = this.messages.get(response.id) as Message;
+						willbreak = true;
+					} else {
+						messager = new Message(response, this);
+					}
+					this.idToPrev.set(messager.id, previd);
+					this.idToNext.set(previd, messager.id);
 
-				const res = this.afterProms.get(previd);
-				if (res) {
-					res();
-					this.afterProms.delete(previd);
-				}
+					const res = this.afterProms.get(previd);
+					if (res) {
+						res();
+						this.afterProms.delete(previd);
+					}
 
-				previd = messager.id;
-				if (willbreak) {
-					break;
+					previd = messager.id;
+					if (willbreak) {
+						break;
+					}
 				}
-			}
-			// Only an empty page means nothing newer: a page whose first message is already loaded
-			// has just linked to it.
-			if (messages.length === 0) {
-				this.idToNext.set(id, undefined);
-			}
-			{
-				const res = this.afterProms.get(previd);
-				if (res) {
-					res();
-					this.afterProms.delete(previd);
+				// Only an empty page means nothing newer: a page whose first message is already loaded
+				// has just linked to it.
+				if (messages.length === 0) {
+					this.idToNext.set(id, undefined);
 				}
-			}
-			res();
-			this.afterProm = undefined;
-			if (this.afterProms.size !== 0) {
-				const [id] = this.afterProms.entries().next().value as [string, () => void];
-				this.grabAfter(id);
+				{
+					const res = this.afterProms.get(previd);
+					if (res) {
+						res();
+						this.afterProms.delete(previd);
+					}
+				}
+				res();
+				this.afterProm = undefined;
+				if (this.afterProms.size !== 0) {
+					const [id] = this.afterProms.entries().next().value as [string, () => void];
+					this.grabAfter(id);
+				}
+			} catch (e) {
+				// A page whose messages can't be built fails like a page that never came.
+				console.error(e);
+				this.historyFailures++;
+				settleWaiters(this.afterProms);
+				this.afterProm = undefined;
+				res();
 			}
 		});
 		return waiter;
@@ -3370,52 +3379,61 @@ class Channel extends SnowFlake {
 				res();
 				return;
 			}
-			let previd = id;
-			let i = 0;
-			for (const response of messages) {
-				let messager: Message;
-				if (this.messages.has(response.id)) {
-					messager = this.messages.get(response.id) as Message;
-				} else {
-					messager = new Message(response, this);
-				}
+			try {
+				let previd = id;
+				let i = 0;
+				for (const response of messages) {
+					let messager: Message;
+					if (this.messages.has(response.id)) {
+						messager = this.messages.get(response.id) as Message;
+					} else {
+						messager = new Message(response, this);
+					}
 
-				this.idToNext.set(messager.id, previd);
-				this.idToPrev.set(previd, messager.id);
+					this.idToNext.set(messager.id, previd);
+					this.idToPrev.set(previd, messager.id);
 
-				const res = this.beforeProms.get(previd);
-				if (res) {
-					res();
-					this.beforeProms.delete(previd);
-				}
+					const res = this.beforeProms.get(previd);
+					if (res) {
+						res();
+						this.beforeProms.delete(previd);
+					}
 
-				previd = messager.id;
+					previd = messager.id;
 
-				if (i < 99) {
-					this.topid = previd;
-				}
+					if (i < 99) {
+						this.topid = previd;
+					}
 
-				i++;
-			}
-			if (i < 100) {
-				this.allthewayup = true;
-				if (i === 0) {
-					this.topid = id;
-					this.idToPrev.set(id, undefined);
+					i++;
 				}
-			}
-			{
-				const res = this.beforeProms.get(previd);
-				if (res) {
-					res();
-					this.beforeProms.delete(previd);
+				if (i < 100) {
+					this.allthewayup = true;
+					if (i === 0) {
+						this.topid = id;
+						this.idToPrev.set(id, undefined);
+					}
 				}
-			}
-			this.beforeProm = undefined;
-			res();
-			if (this.beforeProms.size !== 0) {
-				const [id] = this.beforeProms.entries().next().value as [string, () => void];
-				this.grabBefore(id);
+				{
+					const res = this.beforeProms.get(previd);
+					if (res) {
+						res();
+						this.beforeProms.delete(previd);
+					}
+				}
+				this.beforeProm = undefined;
+				res();
+				if (this.beforeProms.size !== 0) {
+					const [id] = this.beforeProms.entries().next().value as [string, () => void];
+					this.grabBefore(id);
+				}
+			} catch (e) {
+				// As in grabAfter: a page that can't be built fails like one that never came.
+				console.error(e);
+				this.historyFailures++;
+				settleWaiters(this.beforeProms);
+				this.beforeProm = undefined;
+				res();
 			}
 		});
 		return waiter;
