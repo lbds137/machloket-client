@@ -2348,12 +2348,30 @@ class Guild extends SnowFlake {
 		// picker offers every command twice. The type is part of the key: a user or message
 		// command may share a slash command's name.
 		const seen = new Set<string>();
+		// Discord parity: a command whose default_member_permissions the member doesn't hold
+		// isn't offered (admins pass everything). DMs have no member — the server scopes
+		// their index already.
+		const memberBits = this.id === "@me" ? undefined : this.member?.usableBits();
+		const ADMINISTRATOR = 1n << BigInt(Permissions.permisions.indexOf("ADMINISTRATOR"));
 		const commands = (json.application_commands ?? [])
 			.filter((raw) => {
 				const key = raw.application_id + "/" + raw.type + "/" + raw.name;
 				if (seen.has(key)) return false;
 				seen.add(key);
 				return true;
+			})
+			.filter((raw) => {
+				if (memberBits === undefined) return true;
+				// The owner is admin without the bit (isAdmin()'s owner branch).
+				if (
+					this.properties?.owner_id !== undefined &&
+					this.member?.user?.id === this.properties.owner_id
+				) {
+					return true;
+				}
+				if ((memberBits & ADMINISTRATOR) === ADMINISTRATOR) return true;
+				const mask = BigInt(raw.default_member_permissions || "0");
+				return (memberBits & mask) === mask;
 			})
 			.map((_) => new Command(_, this.localuser));
 		return {

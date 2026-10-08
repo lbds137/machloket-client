@@ -698,6 +698,14 @@ class Member extends SnowFlake {
 			headers,
 		});
 	}
+	/** The member's permission bits: every role's allow mask OR'd together. */
+	usableBits(): bigint {
+		let allow = 0n;
+		for (const thing of this.roles) {
+			allow |= thing.permissions.allow;
+		}
+		return allow;
+	}
 	hasPermission(name: string, adminOver = true): boolean {
 		if (this.isAdmin() && adminOver) {
 			return true;

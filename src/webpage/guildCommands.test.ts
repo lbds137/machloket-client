@@ -221,6 +221,105 @@ describe("application-command index fetch", () => {
 		// One fetch per DM, not one per ask.
 		expect(urls).toEqual(["?channel_id=A", "?channel_id=B"]);
 	});
+
+	it("a command whose default permissions the member lacks isn't offered", async () => {
+		const {Member} = await import("./member");
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Echo"}],
+					application_commands: [
+						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+						// MANAGE_MESSAGES (bit 13) required:
+						{id: "2", type: 1, application_id: "300", name: "purge", description: "", dm_permission: true, default_member_permissions: "8192"},
+						// ADMINISTRATOR (bit 3) required:
+						{id: "3", type: 1, application_id: "300", name: "wipe", description: "", dm_permission: true, default_member_permissions: "8"},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		// The member holds MANAGE_MESSAGES only — no ADMINISTRATOR bit.
+		const member = Object.create(Member.prototype);
+		Object.defineProperty(member, "roles", {value: [{permissions: {allow: 8192n}}]});
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "1554722916606791818",
+			owner: {
+				info: {api: API_ROOT},
+				headers: {"Content-Type": "application/json", Authorization: "token"},
+			},
+			member,
+		}) as InstanceType<typeof Guild>;
+
+		const {commands} = await guild.getCommandsFetch();
+
+		expect(commands.map((c) => c.name)).toEqual(["random", "purge"]);
+	});
+
+	it("an administrator is offered everything the index carries", async () => {
+		const {Member} = await import("./member");
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Echo"}],
+					application_commands: [
+						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+						// Not the admin bit: only the administrator shortcut can pass this.
+						{id: "2", type: 1, application_id: "300", name: "wipe", description: "", dm_permission: true, default_member_permissions: "8192"},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		const member = Object.create(Member.prototype);
+		Object.defineProperty(member, "roles", {value: [{permissions: {allow: 8n}}]});
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "1554722916606791818",
+			owner: {
+				info: {api: API_ROOT},
+				headers: {"Content-Type": "application/json", Authorization: "token"},
+			},
+			member,
+		}) as InstanceType<typeof Guild>;
+
+		const {commands} = await guild.getCommandsFetch();
+
+		expect(commands.map((c) => c.name)).toEqual(["random", "wipe"]);
+	});
+
+	it("the guild owner is offered everything without needing an admin-role bit", async () => {
+		const {Member} = await import("./member");
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Echo"}],
+					application_commands: [
+						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+						{id: "2", type: 1, application_id: "300", name: "purge", description: "", dm_permission: true, default_member_permissions: "8192"},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		// A fresh guild's owner: no roles beyond @everyone, no admin bit anywhere —
+		// isAdmin() still calls them admin.
+		const member = Object.create(Member.prototype);
+		Object.defineProperty(member, "roles", {value: []});
+		Object.defineProperty(member, "user", {value: {id: "me"}});
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "1554722916606791818",
+			properties: {owner_id: "me"},
+			owner: {
+				info: {api: API_ROOT},
+				headers: {"Content-Type": "application/json", Authorization: "token"},
+			},
+			member,
+		}) as InstanceType<typeof Guild>;
+
+		const {commands} = await guild.getCommandsFetch();
+
+		expect(commands.map((c) => c.name)).toEqual(["random", "purge"]);
+	});
 });
 
 describe("command picker rows", () => {
