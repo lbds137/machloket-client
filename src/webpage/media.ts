@@ -140,6 +140,12 @@ function makePlayBox(
 				audioo.autoplay = true;
 				audioo.currentTime = ctime / 1000;
 				int = setInterval(() => {
+					if (!document.contains(div)) {
+						// The box was re-rendered or removed mid-play: stop ticking (and playing).
+						clearInterval(int);
+						audioo.pause();
+						return;
+					}
 					if (button.classList.contains("svg-pause")) {
 						player.addUpdate(cmor.src, {type: "playing", time: audioo.currentTime * 1000});
 					}
