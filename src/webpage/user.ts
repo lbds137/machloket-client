@@ -1312,7 +1312,7 @@ class User extends SnowFlake {
 			const info = document.createElement("div");
 			info.classList.add("explorerInfo");
 			const title = document.createElement("h4");
-			title.textContent = "Bot";
+			title.textContent = I18n.user.bot();
 			info.appendChild(title);
 			const row = document.createElement("div");
 			row.style.display = "flex";
@@ -1346,17 +1346,17 @@ class User extends SnowFlake {
 		if (!this.bot || this.webhook) return;
 		const host = new URL(this.info.api).host;
 		const btn = document.createElement("button");
-		btn.textContent = "Config";
+		btn.textContent = I18n.user.config();
 		btn.classList.add("contextbutton");
 		btn.style.marginTop = "4px";
 		btn.onclick = (e) => {
 			e.stopPropagation();
 			closeProfile();
-			const d = new Dialog("Bot Config");
+			const d = new Dialog(I18n.user.botConfig());
 			const opt = d.options;
 			const configs = getBotConfigs(host);
 			const flags = configs[this.id] || 0;
-			const box = opt.addCheckboxInput('Hide "WEBHOOK" tag in chat', () => {}, {
+			const box = opt.addCheckboxInput(I18n.user.hideWebhookTag(), () => {}, {
 				initState: !!(flags & BOT_HIDE_TAG),
 			});
 			box.onchange = (v) => {

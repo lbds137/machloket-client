@@ -1060,7 +1060,11 @@
 		"unban": "Unban $1",
 		"unblock": "Unblock user",
 		"viewProfile": "View profile",
-		"viewBot": "View Bot"
+		"viewBot": "View Bot",
+		"bot": "Bot",
+		"config": "Config",
+		"botConfig": "Bot Config",
+		"hideWebhookTag": "Hide \"WEBHOOK\" tag in chat"
 	},
 	"userping": {
 		"resolving": "resolving user",
