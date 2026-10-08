@@ -79,3 +79,95 @@ it("a refused post search still shows the posts already loaded", async () => {
 	expect(view.querySelectorAll(".postProbe")).toHaveLength(3);
 	view.remove();
 });
+
+it("a dead network still shows the posts already loaded", async () => {
+	vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+	const posts = Array.from({length: 3}, (_, i) => ({
+		id: String(1553128655016763450n + BigInt(i)),
+		name: "post " + i,
+		appliedTags: [],
+		renderThread: async () =>
+			Object.assign(document.createElement("div"), {className: "postProbe"}),
+	}));
+	const forum = Object.assign(Object.create(Channel.prototype), {
+		id: "300",
+		owner: {info: {api: "http://forum.test/api/v9"}},
+		headers: {},
+		children: posts,
+		availableTags: [],
+		hasAllThreads: false,
+		hasFetchedForForum: true,
+		umap: new Map(),
+		search: [],
+		forumFilters: {recentFirst: true, sortActive: false, tagMatchAll: false, tags: []},
+	}) as InstanceType<typeof Channel>;
+	const view = document.createElement("div");
+	document.body.append(view);
+
+	await forum.forumSearch("", view);
+
+	expect(view.querySelectorAll(".postProbe")).toHaveLength(3);
+	view.remove();
+});
+
+it("a 2xx answer that is not the expected JSON still shows the posts already loaded", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(
+		new Response("<html>proxy error page</html>", {status: 200}),
+	);
+	const posts = Array.from({length: 3}, (_, i) => ({
+		id: String(1553128655016763450n + BigInt(i)),
+		name: "post " + i,
+		appliedTags: [],
+		renderThread: async () =>
+			Object.assign(document.createElement("div"), {className: "postProbe"}),
+	}));
+	const forum = Object.assign(Object.create(Channel.prototype), {
+		id: "300",
+		owner: {info: {api: "http://forum.test/api/v9"}},
+		headers: {},
+		children: posts,
+		availableTags: [],
+		hasAllThreads: false,
+		hasFetchedForForum: true,
+		umap: new Map(),
+		search: [],
+		forumFilters: {recentFirst: true, sortActive: false, tagMatchAll: false, tags: []},
+	}) as InstanceType<typeof Channel>;
+	const view = document.createElement("div");
+	document.body.append(view);
+
+	await forum.forumSearch("", view);
+
+	expect(view.querySelectorAll(".postProbe")).toHaveLength(3);
+	view.remove();
+});
+
+it("a 2xx null body still shows the posts already loaded", async () => {
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(null, {status: 200}));
+	const posts = Array.from({length: 3}, (_, i) => ({
+		id: String(1553128655016763450n + BigInt(i)),
+		name: "post " + i,
+		appliedTags: [],
+		renderThread: async () =>
+			Object.assign(document.createElement("div"), {className: "postProbe"}),
+	}));
+	const forum = Object.assign(Object.create(Channel.prototype), {
+		id: "300",
+		owner: {info: {api: "http://forum.test/api/v9"}},
+		headers: {},
+		children: posts,
+		availableTags: [],
+		hasAllThreads: false,
+		hasFetchedForForum: true,
+		umap: new Map(),
+		search: [],
+		forumFilters: {recentFirst: true, sortActive: false, tagMatchAll: false, tags: []},
+	}) as InstanceType<typeof Channel>;
+	const view = document.createElement("div");
+	document.body.append(view);
+
+	await forum.forumSearch("", view);
+
+	expect(view.querySelectorAll(".postProbe")).toHaveLength(3);
+	view.remove();
+});

@@ -2365,22 +2365,42 @@ class Channel extends SnowFlake {
 			["offset", offset + ""],
 			["tag", filters.tags.join(",")],
 		]);
-		const response = await fetch(
-			this.info.api + "/channels/" + this.id + "/threads/search?" + search,
-			{headers: this.headers},
-		);
+		let response: Response;
+		try {
+			response = await fetch(
+				this.info.api + "/channels/" + this.id + "/threads/search?" + search,
+				{headers: this.headers},
+			);
+		} catch (e) {
+			// No answer at all (offline, dead socket): nothing learned either, so the
+			// posts already loaded are the list for now - like any refusal below.
+			console.error("Forum post search failed:", e);
+			return;
+		}
 		// Refused (429, 403…): nothing learned, so the posts already loaded are the list for now.
 		if (!response.ok) {
 			console.error(`Forum post search failed: HTTP ${response.status}`);
 			return;
 		}
-		const res = (await response.json()) as {
+		let res: {
 			threads: channeljson[];
 			members: memberjson[];
 			messages: messagejson[];
 			total_results: number;
 			has_more: boolean;
 		};
+		try {
+			res = await response.json();
+		} catch {
+			// A 2xx body that isn't JSON at all (a proxy's error page): nothing learned.
+			console.error("Forum post search: the answer is not JSON");
+			return;
+		}
+		if (!res || !Array.isArray(res.threads) || !Array.isArray(res.messages) || !Array.isArray(res.members)) {
+			// A well-formed body of the wrong shape: nothing learned, not a crash.
+			console.error("Forum post search: the answer has an unexpected shape");
+			return;
+		}
 		for (const threadjson of res.threads) {
 			if (this.localuser.channelids.has(threadjson.id)) continue;
 			const thread = new Channel(threadjson, this.guild);
