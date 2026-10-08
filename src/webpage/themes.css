@@ -200,3 +200,30 @@ body {
 	--loading-text: var(--secondary-text);
 	--embed-bg-side: color-mix(in srgb, var(--embed-bg), black);
 }
+
+/* True-black AMOLED mode (the Onyx look). */
+.Onyx-theme {
+	color-scheme: dark;
+	--primary-button-bg: color-mix(in srgb, #777777 10%, var(--accent-color));
+	--primary-bg: #000000;
+	--primary-hover: #101010;
+	--primary-text: #f2f2f2;
+	--primary-text-soft: #949494;
+
+	--secondary-bg: #0c0c0c;
+	--secondary-hover: #161616;
+
+	--servers-bg: #000000;
+	--channels-bg: #050505;
+	--channel-selected: #1c1c1c;
+	--typebox-bg: #111214;
+
+	--button-bg: #1e1f22;
+	--button-hover: #2a2b2f;
+	--spoiler-bg: #000000;
+	--link: #5ca9ed;
+
+	--primary-text-prominent: #ffffff;
+	--dock-bg: #000000;
+	--card-bg: #000000;
+}
