@@ -6026,8 +6026,8 @@ class Localuser {
 					const nonce = "" + Math.floor(Math.random() * 100000000000);
 					this.noncemap.set(nonce, res);
 					this.noncebuild.set(nonce, [[], [], []]);
-					if (!this.ws) return;
-					this.ws.send(
+					// The OPEN check above runs in the same synchronous turn; tsc can't see it here.
+					this.ws!.send(
 						JSON.stringify({
 							op: 8,
 							d: {
