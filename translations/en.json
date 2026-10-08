@@ -121,7 +121,7 @@
 	"bot": "BOT",
 	"botGuilds": "Guilds bot is in:",
 	"botSettings": "Bot Settings",
-	"botExplorerTitle": "Spacebar Explorer",
+	"botExplorerTitle": "A catalog bot with this name",
 	"botExplorerLink": "Open on Spacebar Explorer",
 	"botExplorerMaintainer": "Maintainer: $1",
 	"cancel": "Cancel",
@@ -731,6 +731,9 @@
 	"noStickers": "That's unfortunate, there are no stickers for you to use!",
 	"notiClump": "You've gotten $1 notifications from $2",
 	"notiVolume": "Notification volume:",
+	"notifyBannerDismiss": "Dismiss",
+	"notifyBannerEnable": "Enable",
+	"notifyBannerText": "Don't miss messages — enable notifications",
 	"otherAt": "$1 at $2",
 	"permissions": {
 		"descriptions": {

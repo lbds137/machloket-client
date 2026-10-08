@@ -100,3 +100,21 @@ it("picking a second avatar frees the first one's preview", () => {
 
 	expect(revoked).toHaveBeenCalledTimes(1);
 });
+
+it("the catalog card says the match is by name", async () => {
+	captureRequests("https://sbar.fyi/api/catalog/bots", () =>
+		Response.json([{id: "bolt", name: "bolt", short: "A test bot."}]),
+	);
+	const bot = Object.assign(Object.create(User.prototype), {
+		bot: true,
+		username: "bolt",
+	}) as InstanceType<typeof User>;
+	const body = document.createElement("div");
+
+	await (bot as unknown as {appendExplorerBotInfo(b: HTMLElement): Promise<void>})
+		.appendExplorerBotInfo(body);
+
+	const title = body.querySelector("h4")!;
+	expect(title.textContent).toBe("A catalog bot with this name");
+	expect(body.textContent).toContain("A test bot.");
+});

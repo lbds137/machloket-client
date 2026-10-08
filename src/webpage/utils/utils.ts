@@ -467,19 +467,26 @@ type CatalogBot = {
 	short?: string;
 	description?: string;
 };
-export const botCatalogFetch = fetch(catalogBotsUrl)
-	.then(async (res) => {
-		if (!res.ok) {
-			throw new Error("Failed to fetch bot catalog");
-		}
-		return (await res.json()) as CatalogBot[];
-	})
-	.catch(() => {
-		return [] as CatalogBot[];
-	});
+let botCatalog: Promise<CatalogBot[]> | undefined;
+/** The catalog is fetched only when a bot profile first asks — a third-party request the
+ * user never asked for shouldn't ride every app start. One fetch per session; a failure
+ * is cached as an empty catalog. */
+function fetchBotCatalog(): Promise<CatalogBot[]> {
+	botCatalog ??= fetch(catalogBotsUrl)
+		.then(async (res) => {
+			if (!res.ok) {
+				throw new Error("Failed to fetch bot catalog");
+			}
+			return (await res.json()) as CatalogBot[];
+		})
+		.catch(() => {
+			return [] as CatalogBot[];
+		});
+	return botCatalog;
+}
 
 export async function getExplorerBotByUsername(username: string): Promise<CatalogBot | undefined> {
-	const bots = await botCatalogFetch;
+	const bots = await fetchBotCatalog();
 	return bots.find((bot) => bot.name.toLowerCase() === username.toLowerCase());
 }
 
