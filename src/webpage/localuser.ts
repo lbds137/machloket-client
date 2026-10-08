@@ -810,11 +810,6 @@ class Localuser {
 	}
 	conectionChange = () => {};
 	async handleEvent(temp: wsjson) {
-		try {
-			window.checker?.checkEvent(temp);
-		} catch (e) {
-			console.error(e);
-		}
 		// Discord-shaped frames (op 11 among them) can carry `d: null`.
 		if (temp.d?._trace) this.handleTrace(temp.d._trace);
 		if (getDeveloperSettings().gatewayLogging) console.debug(temp);

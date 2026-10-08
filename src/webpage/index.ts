@@ -26,7 +26,6 @@ import {Channel} from "./channel.js";
 import {Guild} from "./guild.js";
 import {showChangelogPopup} from "./changelog.js";
 import {NotificationHandler} from "./notificationHandler.js";
-import type * as C from "./typeChecker/chekerIndex.js";
 import {pickFiles} from "./utils/filePicker.js";
 
 if (window.location.pathname === "/app") {
@@ -34,17 +33,6 @@ if (window.location.pathname === "/app") {
 }
 export interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
-}
-declare global {
-	interface Window {
-		checker?: typeof C.Check;
-	}
-}
-if (localStorage.getItem("checkTypes")) {
-	const i = (await import(
-		"/typeChecker/chekerIndex.js" as "./typeChecker/chekerIndex.js"
-	)) as typeof C;
-	window.checker = i.Check;
 }
 if (window.location.pathname.startsWith("/channels")) {
 	let templateID = new URLSearchParams(window.location.search).get("templateID");
