@@ -2252,22 +2252,6 @@ class Guild extends SnowFlake {
 			.then((_) => _.json())
 			.then((_) => this.goToChannelDelay(_.id));
 	}
-	async createRole(name: string) {
-		const fetched = await fetch(this.info.api + "/guilds/" + this.id + "roles", {
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify({
-				name,
-				color: 0,
-				permissions: "0",
-			}),
-		});
-		const json = await fetched.json();
-		const role = new Role(json, this);
-		this.roleids.set(role.id, role);
-		this.roles.push(role);
-		return role;
-	}
 	async updateRolePermissions(id: string, perms: Permissions) {
 		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
 		const {allow, deny} = perms;
