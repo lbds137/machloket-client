@@ -708,10 +708,21 @@ export class Command extends SnowFlake {
 		}
 		return true;
 	}
+	private submittingContext = false;
 	/** A context-menu command (USER 2 / MESSAGE 3) invoked on `target_id`: the same type-2 POST
 	 * as a slash command, but the data names the target and carries no options (the server
-	 * builds the resolved entities and rejects a missing target). Returns false when refused. */
+	 * builds the resolved entities and rejects a missing target). Returns false when refused -
+	 * or when a send is already in flight, so a double tap fires the command once. */
 	async submitContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
+		if (this.submittingContext) return false;
+		this.submittingContext = true;
+		try {
+			return await this.sendContext(target_id, channel, anchor);
+		} finally {
+			this.submittingContext = false;
+		}
+	}
+	private async sendContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
 		this.localuser.registerCommandNonce(nonce, channel, this.name);
 		try {
