@@ -489,17 +489,6 @@ export function getExplorerBotUrl(botId: string): string {
 
 const stringURLMap = new Map<string, string>();
 
-const stringURLsMap = new Map<
-	string,
-	{
-		wellknown: string;
-		api: string;
-		cdn: string;
-		gateway: string;
-		login?: string;
-	}
->();
-
 export interface InstanceUrls {
 	admin?: string;
 	api: string;
@@ -539,22 +528,11 @@ export async function getInstanceInfo(str: string): Promise<InstanceInfo | null>
 
 	console.info("Checking if we already know", str, "in our instance lists:", {
 		stringURLMap,
-		stringURLsMap,
 	});
 
 	if (stringURLMap.has(str.toLowerCase())) {
 		console.warn("OOH WE GOT STRING->URL MAP ENTRY FOR", str, "!!!!", stringURLMap.get(str));
 		return (await getapiurls(stringURLMap.get(str.toLowerCase())!)) as InstanceInfo;
-	}
-
-	if (stringURLsMap.has(str.toLowerCase())) {
-		console.warn(
-			"WE GOT URL->INSTANCE MAP ENTRY FOR ",
-			str,
-			"!!!!!!!!!!11",
-			stringURLsMap.get(str.toLowerCase()),
-		);
-		return stringURLsMap.get(str.toLowerCase()) as InstanceInfo;
 	}
 
 	return null;
@@ -693,21 +671,8 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 		const val = stringURLMap.get(str.toLowerCase());
 		if (val) {
 			str = val;
-		} else {
-			const val = stringURLsMap.get(str);
-			if (val) {
-				const response = await fetch(val.api + (val.api.endsWith("/") ? "" : "/") + "ping");
-				if (response.ok) {
-					if (val.login) {
-						return val as InstanceUrls;
-					} else {
-						val.login = val.api;
-						return val as InstanceUrls;
-					}
-				}
-			} else if (!str.match(/^https?:\/\//gm)) {
-				str = "https://" + str;
-			}
+		} else if (!str.match(/^https?:\/\//gm)) {
+			str = "https://" + str;
 		}
 	}
 	str = trimTrailingSlashes(str);
@@ -746,20 +711,7 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 		};
 		fixApi();
 	} catch {
-		const val = stringURLsMap.get(str);
-		if (val) {
-			const response = await fetch(trimTrailingSlashes(val.api) + "/ping");
-			if (response.ok) {
-				if (val.login) {
-					urls = val as InstanceUrls;
-					fixApi();
-				} else {
-					val.login = val.api;
-					urls = val as InstanceUrls;
-					fixApi();
-				}
-			}
-		}
+		// No domains answer; urls stays unset and the caller falls back.
 	}
 	if (urls) {
 		const check = await checkURLs(str, urls);
@@ -1192,8 +1144,8 @@ export function isInstanceListLoaded() {
 	return instancesLoaded;
 }
 
-export function getStringURLMapPair() {
-	return [stringURLMap, stringURLsMap] as const;
+export function getStringURLMap() {
+	return stringURLMap;
 }
 
 export function debounce<T extends (...args: any[]) => any>(

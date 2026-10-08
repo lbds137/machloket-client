@@ -4,7 +4,7 @@ import {addInstance} from "./test/setup";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first) — same bootstrap as instancePicker.test.ts.
 await import("./localuser");
-const {getapiurls, getStringURLMapPair, indexInstances, instancefetch} = await import("./utils/utils");
+const {getapiurls, getStringURLMap, indexInstances, instancefetch} = await import("./utils/utils");
 
 const ORIGIN = "http://typed.test";
 
@@ -17,25 +17,23 @@ describe("instance list", () => {
 	it("a typed instance URL resolves even when the list gave no name shortcuts", async () => {
 		await instancefetch;
 		addInstance(ORIGIN);
-		const [names, urls] = getStringURLMapPair();
-		const saved = [new Map(names), new Map(urls)] as const;
+		const names = getStringURLMap();
+		const saved = new Map(names);
 		names.clear();
-		urls.clear();
 		try {
 			const result = await within(getapiurls(ORIGIN));
 
 			expect(result).not.toBe("timeout");
 			expect(result).toMatchObject({api: ORIGIN + "/api/v9"});
 		} finally {
-			saved[0].forEach((v, k) => names.set(k, v));
-			saved[1].forEach((v, k) => urls.set(k, v));
+			saved.forEach((v, k) => names.set(k, v));
 		}
 	});
 
 	it("indexes each listed name to its URL once the list loads, without the picker", async () => {
 		await instancefetch;
 
-		expect(getStringURLMapPair()[0].get("spacebar")).toBe("https://spacebar.test");
+		expect(getStringURLMap().get("spacebar")).toBe("https://spacebar.test");
 	});
 
 	it("one entry with an unusable icon drops that icon, not the whole list", () => {
