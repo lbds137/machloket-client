@@ -2096,7 +2096,15 @@ async function handle2fa(
 				);
 				return false;
 			}
-			const jsonRes = await resObj.json();
+			let jsonRes: unknown;
+			try {
+				jsonRes = await resObj.json();
+			} catch {
+				// A 2xx body that isn't our JSON (a proxy's error page): say so instead of
+				// rejecting out of the login.
+				onRefused(I18n.requestFailed("HTTP " + resObj.status + ", bad body"));
+				return false;
+			}
 			return jsonRes;
 		} else {
 			return new Promise<boolean>((resolution) => {

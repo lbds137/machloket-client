@@ -161,4 +161,20 @@ describe("security-key second factor", () => {
 		expect(loggedIn).not.toHaveBeenCalled();
 		expect(document.body.textContent).toContain("Invalid security key");
 	});
+
+	it("a 2xx key answer with a junk body refuses visibly instead of rejecting", async () => {
+		const {form, loggedIn} = loginForm();
+		const buf = new ArrayBuffer(1);
+		vi.spyOn(navigator.credentials, "get").mockResolvedValue({
+			rawId: buf,
+			response: {authenticatorData: buf, clientDataJSON: buf, signature: buf},
+		} as never);
+		captureRequests("http://key.test/api/auth/mfa/webauthn", () =>
+			new Response("<html>proxy error</html>", {status: 200}),
+		);
+
+		await expect(form.submit()).resolves.toBeUndefined();
+		expect(loggedIn).not.toHaveBeenCalled();
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200, bad body"));
+	});
 });
