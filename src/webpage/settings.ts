@@ -1459,16 +1459,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 			if (instance.display === false) {
 				continue;
 			}
-			const option = document.createElement("option");
-			option.disabled = instance.online === false;
 			const url = getInstanceUrl(instance);
-			option.value = url || "";
-			if (!url) option.disabled = true;
-			if (instance.description) {
-				option.label = instance.description;
-			} else {
-				option.label = instance.name;
-			}
 			// An offline instance is no pick (the default-instance choice skips it too).
 			if (suggest && url && instance.online !== false) {
 				// Native datalists are inconsistent (the arrow does nothing until the list is
