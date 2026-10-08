@@ -468,6 +468,11 @@ class Contextmenu<x, y> {
 		let hold: NodeJS.Timeout | undefined;
 		let x!: number;
 		let y!: number;
+		// A second finger poisons touches[0] (it re-indexes when the first lifts), and a drag
+		// riding under the two-finger menu must not act: the gesture stays suppressed —
+		// springs back, never fires the drag owner's end — until the next one-finger
+		// touchstart.
+		let multitouch = false;
 		obj.addEventListener(
 			"touchstart",
 			(event: TouchEvent) => {
@@ -477,12 +482,15 @@ class Contextmenu<x, y> {
 				// long-press after any scroll or swipe fail the 10px check.
 				lastx = 0;
 				lasty = 0;
+				multitouch = event.touches.length > 1;
 				// A second finger opens the menu at once; the first finger's hold mustn't
 				// open it again.
 				if (hold) clearTimeout(hold);
-				if (event.touches.length > 1) {
+				if (multitouch) {
 					event.preventDefault();
 					event.stopImmediatePropagation();
+					// Any drag the first finger had going dies here (the message row springs back).
+					touchEnd(0, 0, event);
 					this.makemenu(event.touches[0].clientX, event.touches[0].clientY, addinfo, other);
 				} else {
 					//
@@ -501,6 +509,13 @@ class Contextmenu<x, y> {
 			if (hold) {
 				clearTimeout(hold);
 			}
+			if (multitouch) {
+				// A finger lifting out of a multi-finger gesture: spring back, don't act.
+				lastx = 0;
+				lasty = 0;
+				touchEnd(0, 0, event);
+				return;
+			}
 			touchEnd(lastx, lasty, event);
 		});
 		// A touch the system took over (e.g. Android's edge back) is no long-press, and the
@@ -510,11 +525,15 @@ class Contextmenu<x, y> {
 			if (hold) clearTimeout(hold);
 			lastx = 0;
 			lasty = 0;
+			multitouch = false;
 			touchEnd(0, 0, event);
 		});
 		obj.addEventListener(
 			"touchmove",
 			(event: TouchEvent) => {
+				if (multitouch || event.touches.length > 1) {
+					return;
+				}
 				lastx = event.touches[0].pageX - x;
 				lasty = event.touches[0].pageY - y;
 				touchDrag(lastx, lasty, event);

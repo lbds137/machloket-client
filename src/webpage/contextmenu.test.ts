@@ -80,6 +80,83 @@ describe("a second finger", () => {
 
 		expect(opened).toHaveBeenCalledTimes(1);
 	});
+
+	it("kills an in-flight reply swipe: no lift of either finger acts on it", () => {
+		const el = document.createElement("div");
+		document.body.append(el);
+		const menu = new Contextmenu<undefined, undefined>("two-finger drag test");
+		const opened = vi.spyOn(menu, "makemenu").mockImplementation(() => undefined);
+		let replied = false;
+		menu.bindContextmenu(
+			el,
+			undefined,
+			undefined,
+			() => {},
+			(x) => {
+				// The message row's rule: a drag ending past -40 replies.
+				if (x < -40) replied = true;
+			},
+		);
+
+		// Finger A swipes left, short of the reply threshold…
+		fire(el, "touchstart", [at(el, 200, 100)], [at(el, 200, 100)]);
+		fire(el, "touchmove", [at(el, 170, 100)], [at(el, 170, 100)]);
+		// …finger B lands on the row (the two-finger menu), A lifts, B drifts, B lifts.
+		const b = new Touch({
+			identifier: 2,
+			target: el,
+			pageX: 220,
+			pageY: 140,
+			clientX: 220,
+			clientY: 140,
+		});
+		fire(el, "touchstart", [at(el, 200, 100), b], [b]);
+		fire(el, "touchend", [b], [at(el, 200, 100)]);
+		// B is touches[0] now; x re-seated at B's landing, so B's drift left of it reads as a
+		// hard swipe — and B's lift fires it as a reply.
+		fire(el, "touchmove", [at(el, 140, 140)], [at(el, 140, 140)]);
+		fire(el, "touchend", [], [at(el, 140, 140)]);
+
+		expect(replied).toBe(false);
+		expect(opened).toHaveBeenCalledTimes(1);
+	});
+
+	it("doesn't stick: the next one-finger swipe still replies", () => {
+		const el = document.createElement("div");
+		document.body.append(el);
+		const menu = new Contextmenu<undefined, undefined>("two-finger release test");
+		vi.spyOn(menu, "makemenu").mockImplementation(() => undefined);
+		let replied = false;
+		menu.bindContextmenu(
+			el,
+			undefined,
+			undefined,
+			() => {},
+			(x) => {
+				if (x < -40) replied = true;
+			},
+		);
+
+		// A full two-finger gesture…
+		fire(el, "touchstart", [at(el, 200, 100)], [at(el, 200, 100)]);
+		const b = new Touch({
+			identifier: 2,
+			target: el,
+			pageX: 220,
+			pageY: 140,
+			clientX: 220,
+			clientY: 140,
+		});
+		fire(el, "touchstart", [at(el, 200, 100), b], [b]);
+		fire(el, "touchend", [b], [at(el, 200, 100)]);
+		fire(el, "touchend", [], [b]);
+		// …then a fresh one-finger swipe past the threshold.
+		fire(el, "touchstart", [at(el, 200, 100)], [at(el, 200, 100)]);
+		fire(el, "touchmove", [at(el, 150, 100)], [at(el, 150, 100)]);
+		fire(el, "touchend", [], [at(el, 150, 100)]);
+
+		expect(replied).toBe(true);
+	});
 });
 
 describe("sliders", () => {
