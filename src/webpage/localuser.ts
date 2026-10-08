@@ -926,6 +926,7 @@ class Localuser {
 					temp.d.guild_id ??= "@me";
 					const channel = this.channelids.get(temp.d.channel_id);
 					if (!channel) break;
+					this.invalidateInboxPreview(channel);
 					const message = channel.messages.get(temp.d.id);
 					if (!message) break;
 					message.deleteEvent();
@@ -944,6 +945,7 @@ class Localuser {
 					temp.d.guild_id ??= "@me";
 					const channel = this.channelids.get(temp.d.channel_id);
 					if (!channel) break;
+					this.invalidateInboxPreview(channel);
 					const message = channel.messages.get(temp.d.id);
 					if (!message) break;
 					message.giveData(temp.d);
@@ -2500,6 +2502,17 @@ class Localuser {
 		}
 		this.refreshInboxBadge();
 		this.refreshInboxMenu();
+	}
+	/** An edit or delete in an unread/mentioned channel can change the open inbox's preview
+	 * (the rendered key carries ids and counts, not content): drop the key so the dispatch's
+	 * refreshInboxMenu rebuilds instead of skipping. */
+	private invalidateInboxPreview(channel: Channel) {
+		if (
+			this.inboxChannels(this.inboxTab).includes(channel) &&
+			(channel.hasunreads || channel.mentions > 0)
+		) {
+			this.inboxRenderedKey = undefined;
+		}
 	}
 	private inboxChannels(tab: inboxTab) {
 		const dms = (this.guildids.get("@me") as Direct | undefined)?.channels || [];
