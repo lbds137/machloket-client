@@ -258,6 +258,29 @@ describe("the closing swipe", () => {
 		await pop;
 	});
 
+	it("after the second finger lifts, the first finger's next move doesn't re-claim the drag", async () => {
+		const pop = openAndView();
+
+		// Finger A drags the panel rightward and keeps hold…
+		swipe(membersPanel, [40, 300], [160, 304], {hold: true});
+		// …finger B lands (the spring-back), B lifts, A (still down) moves again.
+		const second = new Touch({identifier: 2, target: membersPanel, pageX: 200, pageY: 400});
+		fire(membersPanel, "touchstart", [at(membersPanel, 160, 304), second], [second]);
+		fire(membersPanel, "touchend", [at(membersPanel, 160, 304)], [second]);
+		fire(membersPanel, "touchmove", [at(membersPanel, 260, 304)], [at(membersPanel, 260, 304)]);
+
+		// The re-claim would snap the panel to A's original start (260 - 40 = 220px) with no
+		// transition, jolting the glide; suppressed, it stays on the spring-back to 0.
+		expect(membersPanel.style.transition).not.toBe("none");
+		expect(membersPanel.style.transform).not.toBe("translateX(220px)");
+		await glide();
+		expect(membersShown()).toBe(true);
+		expect(membersPanel.style.transform).toBe("");
+
+		maintoggleIcon.click();
+		await pop;
+	});
+
 	it("with members closed, a right swipe still goes to the drawer", async () => {
 		const {closeChat} = install();
 

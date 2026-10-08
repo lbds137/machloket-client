@@ -187,6 +187,10 @@ export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
 	let gesture: "none" | "horizontal" | "vertical" = "none";
 	/** Whether this touch actually dragged the panel (only the closing direction does). */
 	let claimed = false;
+	/** A multi-finger (or hidden-view) touchstart rejects the gesture; the finger that is still
+	 * down must not re-claim from its old start on its next move — that would jolt the glide
+	 * that just took over. Cleared by the next one-finger touchstart on a shown view. */
+	let suppressed = false;
 	let startX = 0;
 	let startY = 0;
 	let deltaX = 0;
@@ -205,10 +209,12 @@ export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
 			deltaX = 0;
 			if (event.touches.length !== 1 || !view.isShown()) {
 				// A second finger mid-drag springs the panel back (as the drawer's does).
+				suppressed = true;
 				const panel = midDrag ? view.panel() : null;
 				if (panel) finishGlide = settle(panel, 0, undefined);
 				return;
 			}
+			suppressed = false;
 			startX = event.touches[0].pageX;
 			startY = event.touches[0].pageY;
 			travel = view.panel()?.getBoundingClientRect().width ?? 0;
@@ -218,7 +224,7 @@ export function installOverlaySwipe(page: HTMLElement, view: Overlay) {
 	page.addEventListener(
 		"touchmove",
 		(event) => {
-			if (!view.isShown() || event.touches.length !== 1) return;
+			if (suppressed || !view.isShown() || event.touches.length !== 1) return;
 			const dx = event.touches[0].pageX - startX;
 			const dy = event.touches[0].pageY - startY;
 			if (gesture === "none" && (Math.abs(dx) > SLOP || Math.abs(dy) > SLOP)) {
