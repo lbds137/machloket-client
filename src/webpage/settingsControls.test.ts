@@ -118,6 +118,21 @@ describe("member search box", () => {
 
 		expect(ams.value).toEqual(["ab"]);
 	});
+
+	it("a failing search shows the failure in the box and Enter picks nothing", async () => {
+		const {ams, type} = openBox(async () => {
+			throw new TypeError("offline");
+		});
+		await after(30);
+		type("ab");
+		type("ab", "Enter");
+		await after(100);
+
+		expect(document.querySelector(".amsBox .reses")!.textContent).toContain(
+			I18n.requestFailed("offline"),
+		);
+		expect(ams.value).toEqual([]);
+	});
 });
 
 describe("security-key second factor", () => {

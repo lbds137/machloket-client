@@ -756,7 +756,20 @@ class AsyncMultiSelect implements OptionsElement<string[]> {
 		let latest = Promise.resolve();
 		const runSearch = async () => {
 			const run = ++searches;
-			const res = await this.searchFunc(input.value || "", this.value);
+			let res: searchRes[];
+			try {
+				res = await this.searchFunc(input.value || "", this.value);
+			} catch (e) {
+				// A failing search (offline, refused) shows the failure in the box and
+				// picks nothing on Enter; typing again retries.
+				if (run !== searches) return;
+				opts = [];
+				reses.textContent = "";
+				const err = document.createElement("span");
+				err.textContent = I18n.requestFailed(e instanceof Error ? e.message : String(e));
+				reses.append(err);
+				return;
+			}
 			if (run !== searches) return;
 			reses.textContent = "";
 			opts = res;
