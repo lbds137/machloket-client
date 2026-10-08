@@ -8,6 +8,7 @@ const {Guild} = await import("./guild");
 const {Channel} = await import("./channel");
 const {Permissions} = await import("./permissions");
 const {Dialog} = await import("./settings");
+const {PermissionToggle, RoleList} = await import("./role");
 
 const API = "http://perms.test/api/v9";
 
@@ -90,4 +91,68 @@ it("opening another role while a save is in flight doesn't give the saved role i
 	await saving;
 
 	expect(role.permissions.allow).toBe(8n);
+});
+
+/** A RoleList-shaped editor over one stored role pair, with a real toggle row attached. */
+function editorOf(
+	stored: InstanceType<typeof Permissions>,
+	editing: InstanceType<typeof Permissions>,
+) {
+	const list = Object.assign(Object.create(RoleList.prototype), {
+		curid: "r1",
+		permission: editing,
+		permissions: [[{id: "r1", name: "Mods"}, stored]],
+		onchange: () => undefined,
+		options: {subOptions: undefined, haschanged: true, changed: () => {}},
+		permToggles: [],
+	}) as InstanceType<typeof RoleList>;
+	const toggle = new PermissionToggle(
+		{name: "VIEW_CHANNEL", readableName: "View channel", description: ""},
+		editing,
+		list.options,
+	);
+	list.permToggles.push(toggle);
+	const button = toggle.generateHTML().querySelector("button")!;
+	return {list, toggle, button};
+}
+
+it("a refused save puts the editor back on the stored bits", async () => {
+	captureRequests(API + "/guilds/g1/roles/r1", () => new Response(null, {status: 403}));
+	const {guild} = guildWithRole();
+	const stored = new Permissions("1");
+	const editing = new Permissions("1");
+	const {list, button} = editorOf(stored, editing);
+	list.onchange = guild.updateRolePermissions.bind(guild);
+
+	button.click();
+	expect(editing.getPermission("VIEW_CHANNEL")).toBe(1);
+
+	await list.save();
+
+	expect(editing.getPermission("VIEW_CHANNEL")).toBe(0);
+	expect(editing.allow).toBe(1n);
+	expect(button.classList.contains("active")).toBe(false);
+	expect(list.options.haschanged).toBe(false);
+});
+
+it("an edit made while a refused save is in flight isn't reverted", async () => {
+	let release!: (v: boolean) => void;
+	const stored = new Permissions("1");
+	const editing = new Permissions("1");
+	const {list, button} = editorOf(stored, editing);
+	list.onchange = () =>
+		new Promise<boolean>((res) => {
+			release = res;
+		});
+
+	button.click();
+	const saving = list.save();
+	// Newer than the refused save: the revert must not stomp it.
+	editing.setPermission("SEND_MESSAGES", 1);
+	release(false);
+	await saving;
+
+	expect(editing.getPermission("SEND_MESSAGES")).toBe(1);
+	expect(editing.getPermission("VIEW_CHANNEL")).toBe(1);
+	expect(list.options.haschanged).toBe(true);
 });

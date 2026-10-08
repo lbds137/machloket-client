@@ -165,6 +165,10 @@ class PermissionToggle implements OptionsElement<number> {
 	permissions: Permissions;
 	owner: Options;
 	value!: number;
+	// The rendered controls, kept so a refused save can re-class them from the shared bits.
+	private permBtns?: HTMLButtonElement[];
+	private permStates?: readonly number[];
+	private permToggle?: HTMLButtonElement;
 	constructor(roleJSON: PermissionToggle["rolejson"], permissions: Permissions, owner: Options) {
 		this.rolejson = roleJSON;
 		this.permissions = permissions;
@@ -213,6 +217,9 @@ class PermissionToggle implements OptionsElement<number> {
 				btns.push(btn);
 				control.append(btn);
 			}
+			this.permBtns = btns;
+			this.permStates = states;
+			this.permToggle = undefined;
 		} else {
 			const toggle = document.createElement("button");
 			toggle.classList.add("permSwitch");
@@ -228,6 +235,8 @@ class PermissionToggle implements OptionsElement<number> {
 			thumb.classList.add("permSwitchThumb");
 			toggle.append(thumb);
 			control.append(toggle);
+			this.permToggle = toggle;
+			this.permBtns = undefined;
 		}
 
 		container.append(control);
@@ -242,6 +251,17 @@ class PermissionToggle implements OptionsElement<number> {
 		return wrapper;
 	}
 	submit() {}
+
+	/** Re-classes the rendered control from the shared bits (a refused save reverts them). */
+	refresh() {
+		const state = this.permissions.getPermission(this.rolejson.name);
+		if (this.permBtns && this.permStates) {
+			const states = this.permStates;
+			this.permBtns.forEach((b, i) => b.classList.toggle("active", state === states[i]));
+		} else if (this.permToggle) {
+			this.permToggle.classList.toggle("active", state === 1);
+		}
+	}
 }
 
 class RoleList extends Buttons {
@@ -251,7 +271,9 @@ class RoleList extends Buttons {
 	readonly channel: false | Channel;
 	declare buttons: [string, string][];
 	readonly options: Options;
-	onchange: (id: string, perms: Permissions) => void;
+	onchange: (id: string, perms: Permissions) => boolean | Promise<boolean> | void;
+	/** The permission rows this list rendered, for a refused save's re-sync. */
+	permToggles: PermissionToggle[] = [];
 	curid?: string;
 	/** The header's "Delete Role" (guild roles only), shown only for a role one may delete. */
 	deleteButton?: HTMLButtonElement;
@@ -291,7 +313,9 @@ class RoleList extends Buttons {
 			for (const permName of permNames) {
 				const info = Array.from(Permissions.info()).find((_) => _.name === permName);
 				if (!info) continue;
-				catOptions.options.push(new PermissionToggle(info, this.permission, catOptions));
+				const t = new PermissionToggle(info, this.permission, catOptions);
+				catOptions.options.push(t);
+				this.permToggles.push(t);
 			}
 		}
 		if (!channel) {
@@ -779,9 +803,26 @@ class RoleList extends Buttons {
 		this.options.subOptions = undefined;
 		return this.options.generateHTML();
 	}
-	save() {
+	async save() {
 		if (this.options.subOptions || !this.curid) return;
-		this.onchange(this.curid, this.permission);
+		const sentAllow = this.permission.allow;
+		const sentDeny = this.permission.deny;
+		const ok = await this.onchange(this.curid, this.permission);
+		if (ok !== false) return;
+		// Flips made while the save was in flight are newer than the refusal; only an
+		// untouched editor goes back to the stored bits.
+		if (this.permission.allow !== sentAllow || this.permission.deny !== sentDeny) return;
+		this.refusedSave();
+	}
+
+	/** A refused save: the editor was showing the refused bits; back to the stored ones. */
+	private refusedSave() {
+		const arr = this.permissions.find((_) => _[0].id === this.curid);
+		if (!arr) return;
+		this.permission.allow = arr[1].allow;
+		this.permission.deny = arr[1].deny;
+		this.options.haschanged = false;
+		for (const t of this.permToggles) t.refresh();
 	}
 }
 export {RoleList, PermissionToggle};

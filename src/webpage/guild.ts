@@ -2252,12 +2252,12 @@ class Guild extends SnowFlake {
 			.then((_) => _.json())
 			.then((_) => this.goToChannelDelay(_.id));
 	}
-	async updateRolePermissions(id: string, perms: Permissions) {
+	async updateRolePermissions(id: string, perms: Permissions): Promise<boolean> {
 		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
 		const {allow, deny} = perms;
 		const role = this.roleids.get(id);
 		if (!role) {
-			return;
+			return true;
 		}
 		// Only the permissions: re-sending the rest would send the icon's hash where the server
 		// takes an upload.
@@ -2268,10 +2268,11 @@ class Guild extends SnowFlake {
 		}).catch(() => undefined);
 		if (!res?.ok) {
 			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
-			return;
+			return false;
 		}
 		role.permissions.allow = allow;
 		role.permissions.deny = deny;
+		return true;
 	}
 	/** The apps behind the latest command list asked for (the popup's icons and app names). */
 	apps?: applicationJson[];
