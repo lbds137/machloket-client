@@ -7035,12 +7035,20 @@ fieldset input[type="radio"] {
 		flex: 1;
 		width: 100%;
 		min-width: 0;
+		/* The empty-box hint is position:absolute (`.searchBox:empty::after`, top:4px); the
+			box must be its positioned ancestor or the hint straddles the row's top border. */
+		position: relative;
 		/* The ≤1000px `.searching #searchBox` rule ties this one on specificity, and its
 			36px right margin (a leftover of the old header squeeze) went uncontested when the
 			row carried .searching — the other properties win by source order; margin must be
 			zeroed explicitly. */
 		margin: 0;
 		padding: 8px 10px 14px 10px;
+	}
+
+	.searchViewRow .searchBox:empty::after {
+		top: 50%;
+		transform: translateY(-50%);
 	}
 
 	.searchViewRow .searchClear {
