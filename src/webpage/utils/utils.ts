@@ -72,7 +72,6 @@ export function setDefaults() {
 				currentuser: null,
 				users: {},
 				preferences: {
-					theme: "Dark",
 					notifications: false,
 					notisound: "three",
 				},
@@ -92,13 +91,11 @@ export function setDefaults() {
 	);
 	if (userinfos.preferences === undefined) {
 		userinfos.preferences = {
-			theme: "Dark",
 			notifications: false,
 			notisound: "three",
 		};
 	}
 	if (userinfos.preferences && userinfos.preferences.notisound === undefined) {
-		console.warn("uhoh");
 		userinfos.preferences.notisound = "three";
 	}
 	localStorage.setItem("userinfos", JSON.stringify(userinfos));
