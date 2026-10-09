@@ -40,6 +40,7 @@ import {wireGuildId} from "./interactions/compontents.js";
 import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
+import {fetchRetryOnce, retryAfterMs} from "./utils/rateLimit.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -357,7 +358,7 @@ class Channel extends SnowFlake {
 			selected_time_window: -1,
 			end_time: 0,
 		};
-		fetch(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
+		fetchRetryOnce(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
 			method: "PATCH",
 			headers: this.headers,
 			body: JSON.stringify({
@@ -394,7 +395,7 @@ class Channel extends SnowFlake {
 				selected_time_window: time,
 				end_time: Math.floor(new Date(Date.now() + time * 1000).getTime()),
 			};
-			fetch(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
+			fetchRetryOnce(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify({
@@ -3217,6 +3218,12 @@ class Channel extends SnowFlake {
 		const j = await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100", {
 			headers: this.headers,
 		});
+		if (j.status === 429) {
+			// A rate limit says nothing about where the channel's history ends: arm the window
+			// the paging loop shares, and leave the channel unloaded.
+			Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(j));
+			return;
+		}
 
 		const response = (await j.json()) as messagejson[];
 		if (response.length !== 100) {
@@ -3446,14 +3453,7 @@ class Channel extends SnowFlake {
 	static historyCooldownUntil = 0;
 	/** A 429's wait: Spacebar's body carries retry_after in SECONDS. Capped for sanity. */
 	private static async rateLimitWait(res: Response, cap = 30_000): Promise<number> {
-		let seconds = 5;
-		try {
-			const body = (await res.json()) as {retry_after?: number};
-			if (typeof body.retry_after === "number" && body.retry_after >= 0) seconds = body.retry_after;
-		} catch {
-			// A non-JSON 429 keeps the default.
-		}
-		return Math.min(seconds * 1000, cap);
+		return retryAfterMs(429, await res.text().catch(() => null), cap)!;
 	}
 	/** One page of this channel's history, or undefined when the request failed (network
 	 * error, an error status, a body that isn't a message list). */
@@ -3843,21 +3843,21 @@ class Channel extends SnowFlake {
 		};
 	}
 	async uploadFile(files: globalThis.File[], ids?: string[]) {
-		const urls = (await (
-			await fetch(this.info.api + "/channels/" + this.id + "/attachments", {
-				headers: this.headers,
-				body: JSON.stringify({
-					files: files.map((file, index) => {
-						return {
-							file_size: file.size,
-							filename: file.name,
-							id: ids?.[index] ?? index + "",
-						};
-					}),
+		const slots = await fetchRetryOnce(this.info.api + "/channels/" + this.id + "/attachments", {
+			headers: this.headers,
+			body: JSON.stringify({
+				files: files.map((file, index) => {
+					return {
+						file_size: file.size,
+						filename: file.name,
+						id: ids?.[index] ?? index + "",
+					};
 				}),
-				method: "POST",
-			})
-		).json()) as {
+			}),
+			method: "POST",
+		});
+		if (!slots.ok) throw new Error("attachment upload failed: " + slots.status);
+		const urls = (await slots.json()) as {
 			attachments: {
 				id: string;
 				upload_url: string;

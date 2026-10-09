@@ -81,6 +81,7 @@ import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
 import {showCommandStatus} from "./interactions/commandStatus.js";
 import {previewURL} from "./utils/previewURL.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -207,7 +208,7 @@ class Localuser {
 			})
 			.watchForChange(async (i) => {
 				const status = selection[i];
-				await fetch(user.info.api + "/users/@me/settings", {
+				await fetchRetryOnce(user.info.api + "/users/@me/settings", {
 					body: JSON.stringify({
 						status,
 					}),
@@ -2156,7 +2157,7 @@ class Localuser {
 			}
 		});
 
-		await fetch(this.info.api + "/users/@me/settings", {
+		await fetchRetryOnce(this.info.api + "/users/@me/settings", {
 			method: "PATCH",
 			headers: this.headers,
 			body: JSON.stringify({guild_folders}),

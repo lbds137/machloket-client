@@ -3,6 +3,23 @@ import {AccountSwitcher} from "./utils/switcher.js";
 import {createImg, getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
+/** Joins the guild behind `code`; `ok` says whether the server took it. */
+export async function acceptInvite(
+	api: string,
+	code: string,
+	token: string,
+): Promise<{ok: boolean; message?: string}> {
+	const res = await fetchRetryOnce(`${api}/invites/${code}`, {
+		method: "POST",
+		headers: {
+			Authorization: token,
+		},
+	});
+	if (res.ok) return {ok: true};
+	const json = (await res.json().catch(() => undefined)) as {message?: string} | undefined;
+	return {ok: false, message: json?.message ?? `${res.status}`};
+}
 if (window.location.pathname.startsWith("/invite"))
 	(async () => {
 		const users = getBulkUsers();
@@ -120,12 +137,9 @@ if (window.location.pathname.startsWith("/invite"))
 						]),
 				},
 			).show();
-			fetch(`${urls!.api}/invites/${code}`, {
-				method: "POST",
-				headers: {
-					Authorization: user.token,
-				},
-			}).then(() => {
+			acceptInvite(urls!.api, code, user.token).then((result) => {
+				// The in-app accept shows the server's message in its form; this page has no form.
+				if (!result.ok) return alert(result.message);
 				users.currentuser = user.uid;
 				sessionStorage.setItem("currentuser", user.uid);
 				localStorage.setItem("userinfos", JSON.stringify(users));
