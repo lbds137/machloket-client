@@ -227,3 +227,35 @@ body {
 	--dock-bg: #000000;
 	--card-bg: #000000;
 }
+
+/* Fuzzy Blue — the Fuzzy client's pastel-on-black palette (donor: fuzzy-blue.json). */
+.Fuzzy-theme {
+	color-scheme: dark;
+	--primary-button-bg: color-mix(in srgb, #777777 10%, var(--accent-color));
+	--primary-bg: #101212;
+	--primary-hover: #121515;
+	--primary-text: #e8fbff;
+	--primary-text-soft: #a8acaf;
+
+	--secondary-bg: #0b0d0d;
+	--secondary-hover: #0d1010;
+
+	--servers-bg: #080a0a;
+	--channels-bg: #0b0d0d;
+	--channel-selected: #121515;
+	--typebox-bg: #151a1a;
+
+	--button-bg: #151a1a;
+	--button-hover: #212626;
+	--spoiler-bg: #000000;
+	--link: #9ce6ff;
+
+	--primary-text-prominent: #f2fdff;
+	--dock-bg: #0b0d0d;
+	--card-bg: #0b0d0d;
+
+	--red: #ff6e6e;
+	--green: #95ff82;
+	--blue: #85a7ff;
+	--yellow: #ffc382;
+}

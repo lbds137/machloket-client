@@ -3157,7 +3157,7 @@ class Localuser {
 			const prefs = await getPreferences();
 			const tas = settings.addButton(I18n.localuser.themesAndSounds());
 			{
-				const themes = ["Dark", "WHITE", "Light", "Dark-Accent", "Onyx"];
+				const themes = ["Dark", "WHITE", "Light", "Dark-Accent", "Onyx", "Fuzzy"];
 				tas.addSelect(
 					I18n.localuser["theme:"](),
 					async (_) => {

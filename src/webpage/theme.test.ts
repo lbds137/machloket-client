@@ -22,3 +22,9 @@ it("Onyx is the default theme for fresh accounts", async () => {
 
 	expect(new UserPreferences().theme).toBe(ThemeOption.Onyx);
 });
+
+it("setTheme applies the Fuzzy body class the picker writes", async () => {
+	await setTheme("Fuzzy");
+
+	expect(document.body.className).toBe("Fuzzy-theme");
+});

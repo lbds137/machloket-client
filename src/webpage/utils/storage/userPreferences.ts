@@ -18,6 +18,7 @@ export const enum ThemeOption {
 	Light = "Light",
 	DarkAccent = "Dark-Accent",
 	Onyx = "Onyx",
+	Fuzzy = "Fuzzy",
 }
 export const ThemeOptionValues = [
 	ThemeOption.Dark,
@@ -25,6 +26,7 @@ export const ThemeOptionValues = [
 	ThemeOption.Light,
 	ThemeOption.DarkAccent,
 	ThemeOption.Onyx,
+	ThemeOption.Fuzzy,
 ];
 
 export class UserPreferences {
