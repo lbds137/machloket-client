@@ -16,6 +16,7 @@ import {
 import {MarkDown} from "../markdown";
 import {Message} from "../message.js";
 import {FancySelect} from "../utils/fancySelect.js";
+import {fetchRetryOnce} from "../utils/rateLimit.js";
 import {File} from "../file.js";
 
 abstract class compObj {
@@ -50,7 +51,7 @@ abstract class compObj {
 	protected async postInteraction(nonce: string, body: object) {
 		const message = this.message;
 		if (message) this.localuser.registerInterNonce(nonce, message);
-		const res = await fetch(this.info.api + "/interactions", {
+		const res = await fetchRetryOnce(this.info.api + "/interactions", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify(body),

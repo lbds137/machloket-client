@@ -2,6 +2,7 @@ import {I18n} from "../i18n.js";
 import {MarkDown} from "../markdown.js";
 import {Dialog} from "../settings.js";
 import {removeAni} from "../utils/utils.js";
+import {fetchRetryOnce} from "../utils/rateLimit.js";
 import type {Channel} from "../channel.js";
 import type {Localuser} from "../localuser.js";
 
@@ -441,7 +442,7 @@ export class InteractionModal {
 			if (this.host.openerMessageId) body.message_id = this.host.openerMessageId;
 			tracked = body.nonce as string;
 			this.host.trackSubmit?.(tracked);
-			const response = await fetch(this.host.api + "/interactions", {
+			const response = await fetchRetryOnce(this.host.api + "/interactions", {
 				method: "POST",
 				headers: this.host.headers,
 				body: JSON.stringify(body),

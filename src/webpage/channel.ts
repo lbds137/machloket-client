@@ -912,6 +912,17 @@ class Channel extends SnowFlake {
 		return this.owner.info;
 	}
 	pinnedMessages?: Message[];
+	/** This channel's pinned messages; a 429 waits and asks again once. Throws on an error
+	 * answer or a non-list. */
+	async fetchPinnedMessages(): Promise<messagejson[]> {
+		const res = await fetchRetryOnce(`${this.info.api}/channels/${this.id}/pins`, {
+			headers: this.headers,
+		});
+		if (!res.ok) throw new Error(`Loading pins answered ${res.status}`);
+		const pinnedM = (await res.json()) as messagejson[];
+		if (!Array.isArray(pinnedM)) throw new Error("Loading pins answered a non-list");
+		return pinnedM;
+	}
 	async pinnedClick(rect: DOMRect) {
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "pinnedMessages");
@@ -937,12 +948,7 @@ class Channel extends SnowFlake {
 			status.textContent = I18n.pinsLoading();
 			div.append(status);
 			try {
-				const res = await fetch(`${this.info.api}/channels/${this.id}/pins`, {
-					headers: this.headers,
-				});
-				if (!res.ok) throw new Error(`Loading pins answered ${res.status}`);
-				const pinnedM = (await res.json()) as messagejson[];
-				if (!Array.isArray(pinnedM)) throw new Error("Loading pins answered a non-list");
+				const pinnedM = await this.fetchPinnedMessages();
 				this.pinnedMessages = pinnedM.map((_) => {
 					if (this.messages.has(_.id)) {
 						return this.messages.get(_.id) as Message;

@@ -30,6 +30,7 @@ import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {BOT_HIDE_TAG, getBotConfigs} from "./utils/storage/botConfigs.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
 
 /** Discord's "used /command" pill on an interaction reply line: a slash glyph and the
  * command's path ("walk browse"), no other chrome. */
@@ -113,6 +114,22 @@ function sameReactionEmoji(
  * character(s) for a unicode one. */
 export function reactionPathSegment(emoji: {name?: string; id?: string}) {
 	return emoji.id ? `${emoji.name}:${emoji.id}` : encodeURIComponent(emoji.name ?? "");
+}
+
+/** Up to `limit` users who reacted to `message` with `emoji`. An error answer (not a list)
+ * is nobody rather than a throw. A 429 waits and asks again once (the reactions popup);
+ * `retry: false` asks once (the hover preview, whose tooltip mustn't outlive the mouse). */
+export async function fetchReactionUsers(
+	message: Message,
+	emoji: {name?: string; id?: string},
+	limit: number,
+	{retry = true}: {retry?: boolean} = {},
+): Promise<userjson[]> {
+	const url = `${message.info.api}/channels/${message.channel.id}/messages/${message.id}/reactions/${reactionPathSegment(emoji)}?limit=${limit}&type=0`;
+	const init = {headers: message.headers};
+	const f = await (retry ? fetchRetryOnce(url, init) : fetch(url, init));
+	const body: unknown = await f.json().catch(() => []);
+	return Array.isArray(body) ? (body as userjson[]) : [];
 }
 
 class Message extends SnowFlake {
@@ -322,12 +339,8 @@ class Message extends SnowFlake {
 		);
 		Message.contextmenu.addButton(
 			() => I18n.pinMessage(),
-			async function (this: Message) {
-				const f = await fetch(`${this.info.api}/channels/${this.channel.id}/pins/${this.id}`, {
-					method: "PUT",
-					headers: this.headers,
-				});
-				if (!f.ok) alert(I18n.unableToPin());
+			function (this: Message) {
+				return this.setPinned(true);
 			},
 			{
 				icon: {
@@ -343,12 +356,8 @@ class Message extends SnowFlake {
 
 		Message.contextmenu.addButton(
 			() => I18n.unpinMessage(),
-			async function (this: Message) {
-				const f = await fetch(`${this.info.api}/channels/${this.channel.id}/pins/${this.id}`, {
-					method: "DELETE",
-					headers: this.headers,
-				});
-				if (!f.ok) alert(I18n.unableToPin());
+			function (this: Message) {
+				return this.setPinned(false);
 			},
 			{
 				icon: {
@@ -455,13 +464,11 @@ class Message extends SnowFlake {
 					curSelect = button;
 					curSelect.classList.add("current");
 					if (!users) {
-						const f = await fetch(
-							`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactionPathSegment(reaction.emoji)}?limit=50&type=0`,
-							{headers: this.headers},
+						users = (await fetchReactionUsers(this, reaction.emoji, 50)).map(
+							(_) => new User(_, this.localuser),
 						);
-						const body: unknown = await f.json().catch(() => []);
-						// An error answer (not a list) shows nobody rather than throwing.
-						users = (Array.isArray(body) ? (body as userjson[]) : []).map((_) => new User(_, this.localuser));
+						// A 429 wait can outlast a click on another reaction: keep the list, don't show it.
+						if (curSelect !== button) return;
 					}
 					list.innerHTML = "";
 					list.append(
@@ -504,28 +511,27 @@ class Message extends SnowFlake {
 		const target = typeof emoji === "string" ? {name: emoji} : {name: emoji.name, id: emoji.id};
 		let remove = !!this.reactions.find((_) => sameReactionEmoji(_.emoji, target))?.me;
 
-		let reactiontxt: string;
-		if (emoji instanceof Emoji) {
-			if (emoji.id) {
-				reactiontxt = `${emoji.name}:${emoji.id}`;
-			} else {
-				reactiontxt = encodeURIComponent(emoji.name);
-			}
-		} else {
-			reactiontxt = encodeURIComponent(emoji);
-		}
+		const reactiontxt = reactionPathSegment(target);
 		if (!remove) {
 			this.localuser.favorites.addReactEmoji(
 				emoji instanceof Emoji ? emoji.id || (emoji.emoji as string) : emoji,
 			);
 		}
-		fetch(
+		fetchRetryOnce(
 			`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactiontxt}/@me`,
 			{
 				method: remove ? "DELETE" : "PUT",
 				headers: this.headers,
 			},
 		);
+	}
+	/** Pins or unpins this message; a refusal says so. */
+	async setPinned(pinned: boolean) {
+		const f = await fetchRetryOnce(`${this.info.api}/channels/${this.channel.id}/pins/${this.id}`, {
+			method: pinned ? "PUT" : "DELETE",
+			headers: this.headers,
+		});
+		if (!f.ok) alert(I18n.unableToPin());
 	}
 
 	giveData(messagejson: messagejson) {
@@ -771,15 +777,22 @@ class Message extends SnowFlake {
 	getUnixTime(): number {
 		return new Date(this.timestamp).getTime();
 	}
+	/** Counts this message's edits, so a newer one cancels an older one's 429 retry. */
+	private editSeq?: number;
 	async edit(content: string) {
 		if (content === this.content.textContent) {
 			return;
 		}
-		return await fetch(this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id, {
-			method: "PATCH",
-			headers: this.headers,
-			body: JSON.stringify({content}),
-		});
+		const seq = (this.editSeq = (this.editSeq ?? 0) + 1);
+		return await fetchRetryOnce(
+			this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id,
+			{
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({content}),
+			},
+			{shouldRetry: () => seq === this.editSeq},
+		);
 	}
 	async delete() {
 		await fetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {
@@ -1875,12 +1888,7 @@ class Message extends SnowFlake {
 			}
 			const h = new Hover(async () => {
 				//TODO this can't be real, name conflicts must happen, but for now it's fine
-				const f = await fetch(
-					`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactionPathSegment(thing.emoji)}?limit=3&type=0`,
-					{headers: this.headers},
-				);
-				const body: unknown = await f.json().catch(() => []);
-				const json = Array.isArray(body) ? (body as userjson[]) : [];
+				const json = await fetchReactionUsers(this, thing.emoji, 3, {retry: false});
 				let build = "";
 				let users = json.map((_) => new User(_, this.localuser));
 				//FIXME this is a spacebar bug, I can't fix this the api ignores limit and just sends everything.

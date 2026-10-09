@@ -6,6 +6,7 @@ import {Localuser} from "../localuser.js";
 import {SnowFlake} from "../snowflake.js";
 import {wireGuildId} from "./compontents.js";
 import {removeAni} from "../utils/utils.js";
+import {fetchRetryOnce} from "../utils/rateLimit.js";
 
 /** One pickable row of the command list: the command itself, or one branch of a subcommand
  * command — Discord lists every runnable path ("/name sub", "/name group sub"), never a
@@ -626,7 +627,7 @@ export class Command extends SnowFlake {
 				? [branch.option.wireEntry(branch.state, leafEntries)]
 				: leafEntries;
 
-			const res = await fetch(this.info.api + "/interactions", {
+			const res = await fetchRetryOnce(this.info.api + "/interactions", {
 				method: "POST",
 				headers: this.headers,
 				body: JSON.stringify({
@@ -726,7 +727,7 @@ export class Command extends SnowFlake {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
 		this.localuser.registerCommandNonce(nonce, channel, this.name);
 		try {
-			const res = await fetch(this.info.api + "/interactions", {
+			const res = await fetchRetryOnce(this.info.api + "/interactions", {
 				method: "POST",
 				headers: this.headers,
 				body: JSON.stringify({
