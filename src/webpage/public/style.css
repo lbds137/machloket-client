@@ -980,6 +980,12 @@ select {
 	margin-top: 4px;
 }
 
+/* The Clear button shares the row with the image; without nowrap it wraps mid-word. */
+.fileinputdiv button {
+	white-space: nowrap;
+	flex: none;
+}
+
 input[type="file"] {
 	flex: 1 0;
 	margin-top: 4px;
@@ -5154,6 +5160,12 @@ ul {
 	flex-grow: 0;
 	align-items: center;
 	overflow-x: auto;
+	/* The categories scroll by swipe; the bar itself just clutters the row's edge. */
+	scrollbar-width: none;
+}
+
+.emojirow::-webkit-scrollbar {
+	display: none;
 }
 
 .emojiSelect {
@@ -6766,6 +6778,9 @@ fieldset input[type="radio"] {
 	#searchBox {
 		width: 0;
 		padding: 0;
+		/* The 0.1in side margins would otherwise hold a dead gap between the pin and
+			this icon in the closed header. */
+		margin: 0;
 	}
 
 	.searchBox:empty::after {

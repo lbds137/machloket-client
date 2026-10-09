@@ -3171,7 +3171,7 @@ class Localuser {
 				);
 			}
 			{
-				tas.addTitle(sectionLabel("localuser.notificationSoundSection", "Notification sound"));
+				tas.addText(sectionLabel("localuser.notificationSoundSection", "Notification sound"));
 				const getSoundNames = () =>
 					NotificationSoundManager.getAvailableSounds(prefs).map((s) => s.name);
 				let soundNames = getSoundNames();

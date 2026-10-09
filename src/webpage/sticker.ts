@@ -125,6 +125,7 @@ class Sticker extends SnowFlake {
 
 		const search = document.createElement("input");
 		search.type = "text";
+		search.placeholder = I18n.search.search();
 		topBar.append(search);
 
 		let html: HTMLElement | undefined = undefined;

@@ -16,3 +16,9 @@ it("setTheme applies the Onyx body class the picker writes", async () => {
 
 	expect(document.body.className).toBe("Onyx-theme");
 });
+
+it("Onyx is the default theme for fresh accounts", async () => {
+	const {UserPreferences, ThemeOption} = await import("./utils/storage/userPreferences");
+
+	expect(new UserPreferences().theme).toBe(ThemeOption.Onyx);
+});
