@@ -473,6 +473,9 @@ class Contextmenu<x, y> {
 		// springs back, never fires the drag owner's end — until the next one-finger
 		// touchstart.
 		let multitouch = false;
+		// The menu a long-press opened is that gesture's whole action: its lift must not also
+		// click the element (a member row would open its profile under the menu).
+		let held = false;
 		obj.addEventListener(
 			"touchstart",
 			(event: TouchEvent) => {
@@ -483,6 +486,7 @@ class Contextmenu<x, y> {
 				lastx = 0;
 				lasty = 0;
 				multitouch = event.touches.length > 1;
+				held = false;
 				// A second finger opens the menu at once; the first finger's hold mustn't
 				// open it again.
 				if (hold) clearTimeout(hold);
@@ -497,6 +501,7 @@ class Contextmenu<x, y> {
 					event.stopImmediatePropagation();
 					hold = setTimeout(() => {
 						if (lastx ** 2 + lasty ** 2 > 10 ** 2) return;
+						held = true;
 						this.makemenu(event.touches[0].clientX, event.touches[0].clientY, addinfo, other);
 					}, 500);
 				}
@@ -516,6 +521,10 @@ class Contextmenu<x, y> {
 				touchEnd(0, 0, event);
 				return;
 			}
+			if (held) {
+				held = false;
+				event.preventDefault();
+			}
 			touchEnd(lastx, lasty, event);
 		});
 		// A touch the system took over (e.g. Android's edge back) is no long-press, and the
@@ -526,6 +535,7 @@ class Contextmenu<x, y> {
 			lastx = 0;
 			lasty = 0;
 			multitouch = false;
+			held = false;
 			touchEnd(0, 0, event);
 		});
 		obj.addEventListener(
