@@ -1009,6 +1009,7 @@
 		"totalTime": "$2: $1ms",
 		"traces": "$1 ($2ms) $3"
 	},
+	"tryAgain": "Try again",
 	"typing": "$2 {{PLURAL:$1|is|are}} typing",
 	"unableToConnect": "Unable to connect to the Spacebar server. Please try logging out and back in.",
 	"unableToPin": "Unable to pin message",

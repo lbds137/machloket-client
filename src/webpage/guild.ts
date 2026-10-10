@@ -37,6 +37,7 @@ import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	invDiv.classList.add("inviteGrid");
@@ -2053,11 +2054,11 @@ class Guild extends SnowFlake {
 			}
 		}
 		this.unreads();
-		fetch(this.info.api + "/read-states/ack-bulk", {
+		fetchRetryOnce(this.info.api + "/read-states/ack-bulk", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify(build),
-		});
+		}).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 	}
 	hasRole(r: Role | string) {
 		console.log("this should run");

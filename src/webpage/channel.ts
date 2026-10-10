@@ -40,7 +40,7 @@ import {wireGuildId} from "./interactions/compontents.js";
 import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
-import {fetchRetryOnce, retryAfterMs} from "./utils/rateLimit.js";
+import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -1412,11 +1412,11 @@ class Channel extends SnowFlake {
 		}
 		this.mentions = 0;
 		console.log(this.trueLastMessageid);
-		fetch(this.info.api + "/channels/" + this.id + "/messages/" + this.trueLastMessageid + "/ack", {
+		fetchRetryOnce(this.info.api + "/channels/" + this.id + "/messages/" + this.trueLastMessageid + "/ack", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify({}),
-		});
+		}).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 		const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
 		this.lastreadmessageid = this.trueLastMessageid;
 		this.guild.unreads();
@@ -3678,10 +3678,15 @@ class Channel extends SnowFlake {
 			return;
 		}
 		this.typing = Date.now() + 6000;
-		fetch(this.info.api + "/channels/" + this.id + "/typing", {
-			method: "POST",
-			headers: this.headers,
-		});
+		// Best-effort: a retry after the typing window died would announce typing that stopped.
+		fetchRetryOnce(
+			this.info.api + "/channels/" + this.id + "/typing",
+			{
+				method: "POST",
+				headers: this.headers,
+			},
+			{shouldRetry: () => Date.now() < this.typing},
+		).catch(() => {});
 	}
 	get trueNotiValue() {
 		const val = this.notification;
@@ -3875,7 +3880,7 @@ class Channel extends SnowFlake {
 		// still in flight loses the upload (the server pairs by id at submit time, once).
 		await Promise.all(
 			urls.attachments.map(async ({upload_url}, index) => {
-				const res = await fetch(upload_url, {
+				const res = await fetchRetryOnce(upload_url, {
 					body: files[index],
 					method: "PUT",
 				});
@@ -4070,21 +4075,39 @@ class Channel extends SnowFlake {
 			funcs?.progress(e.total, e.loaded);
 		};
 
+		const resend = () => {
+			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
+			res.setRequestHeader("Authorization", this.headers.Authorization);
+			if (ctype) {
+				res.setRequestHeader("Content-type", ctype);
+			}
+			res.send(rbody);
+		};
 		const fail = () => {
 			console.warn("failed");
-			funcs?.failed(() => {
-				res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
-				res.setRequestHeader("Authorization", this.headers.Authorization);
-				if (ctype) {
-					res.setRequestHeader("Content-type", ctype);
-				}
-				res.send(rbody);
-			});
+			funcs?.failed(resend);
 		};
 
+		let rateLimitRetried = false;
 		const promiseHandler = (resolve: () => void) => {
 			res.responseType = "json";
 			res.onload = () => {
+				if (res.status === 429 && !rateLimitRetried) {
+					const limit = res.response as {code?: number; retry_after?: unknown} | null;
+					// Slowmode (20016) has its own countdown and no retry; any other 429 waits out
+					// the window and re-sends once, the bubble staying in flight meanwhile.
+					if (limit?.code !== 20016) {
+						rateLimitRetried = true;
+						setTimeout(() => {
+							try {
+								resend();
+							} catch {
+								fail();
+							}
+						}, retryAfterMsFromBody(limit));
+						return;
+					}
+				}
 				if (res.status !== 200) {
 					// Refused (slowmode, permissions, rate limit): the bubble goes and the composer
 					// gets the text back. Only a send that never got an answer offers a retry.

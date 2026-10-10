@@ -11,6 +11,7 @@ import {Emoji} from "./emoji.js";
 import {I18n} from "./i18n.js";
 import {Localuser} from "./localuser.js";
 import {MarkDown} from "./markdown.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
 
 interface OptionsElement<x> {
 	generateHTML(): HTMLElement;
@@ -2093,7 +2094,7 @@ async function handle2fa(
 				rawId: toBase64(credential.rawId),
 				response,
 			};
-			const resObj = await fetch(api + "/auth/mfa/webauthn", {
+			const resObj = await fetchRetryOnce(api + "/auth/mfa/webauthn", {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -2573,7 +2574,7 @@ class Form implements OptionsElement<object> {
 					// hold the guard, so closing one leaves the form sendable.
 					this.inFlight.add(fetchURL);
 					try {
-						const res = await fetch(fetchURL, {
+						const res = await fetchRetryOnce(fetchURL, {
 							method: this.method,
 							body: JSON.stringify(build),
 							headers: this.headers,

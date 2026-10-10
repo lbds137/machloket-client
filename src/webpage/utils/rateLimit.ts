@@ -2,14 +2,21 @@
  * SECONDS (a number, or a numeric string); a missing or unreadable body waits 5 s. Capped for sanity. */
 export function retryAfterMs(status: number, bodyText: string | null, cap = 30_000): number | null {
 	if (status !== 429) return null;
-	let seconds = 5;
+	let body: unknown = null;
 	try {
-		const raw = (JSON.parse(bodyText ?? "") as {retry_after?: unknown}).retry_after;
-		const retry = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw;
-		if (typeof retry === "number" && retry >= 0) seconds = retry;
+		body = JSON.parse(bodyText ?? "");
 	} catch {
 		// A non-JSON 429 keeps the default.
 	}
+	return retryAfterMsFromBody(body, cap);
+}
+
+/** The same window read from a body that is already parsed (the XHR path's `response`). */
+export function retryAfterMsFromBody(body: unknown, cap = 30_000): number {
+	let seconds = 5;
+	const raw = (body as {retry_after?: unknown} | null | undefined)?.retry_after;
+	const retry = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw;
+	if (typeof retry === "number" && retry >= 0) seconds = retry;
 	return Math.min(seconds * 1000, cap);
 }
 

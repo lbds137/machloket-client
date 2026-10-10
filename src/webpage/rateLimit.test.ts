@@ -5,7 +5,7 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Channel} = await import("./channel");
-const {retryAfterMs} = await import("./utils/rateLimit");
+const {retryAfterMs, retryAfterMsFromBody} = await import("./utils/rateLimit");
 const {acceptInvite} = await import("./invite");
 const {Message, fetchReactionUsers} = await import("./message");
 const {Components} = await import("./interactions/compontents");
@@ -101,6 +101,40 @@ describe("retryAfterMs", () => {
 	});
 });
 
+describe("retryAfterMsFromBody", () => {
+	it("reads a numeric retry_after as seconds", () => {
+		// PIN: the send path hands over its parsed XHR response, same contract as the text reader.
+		expect(retryAfterMsFromBody({retry_after: 2})).toBe(2000);
+	});
+	it("accepts a numeric string", () => {
+		// PIN: Spacebar may send the window as a string.
+		expect(retryAfterMsFromBody({retry_after: "1.5"})).toBe(1500);
+	});
+	it("defaults to 5 s when the window is missing or the body is null", () => {
+		// PIN: an unreadable 429 still waits.
+		expect(retryAfterMsFromBody({})).toBe(5000);
+		expect(retryAfterMsFromBody(null)).toBe(5000);
+	});
+	it("defaults to 5 s for a negative window", () => {
+		// PIN: a negative window is unreadable, not a zero wait.
+		expect(retryAfterMsFromBody({retry_after: -1})).toBe(5000);
+	});
+	it("defaults to 5 s for an empty-string window", () => {
+		// PIN: "" is not 0 (Number("") is 0, which would retry at once).
+		expect(retryAfterMsFromBody({retry_after: ""})).toBe(5000);
+		expect(retryAfterMsFromBody({retry_after: "  "})).toBe(5000);
+	});
+	it("defaults to 5 s for a NaN window", () => {
+		// PIN: NaN fails the >= 0 test, so it is unreadable, not a zero or NaN-ms wait.
+		expect(retryAfterMsFromBody({retry_after: NaN})).toBe(5000);
+		expect(retryAfterMsFromBody({retry_after: "soon"})).toBe(5000);
+	});
+	it("caps the wait at 30 s", () => {
+		// PIN: one slow server can't park a send for minutes.
+		expect(retryAfterMsFromBody({retry_after: 600})).toBe(30000);
+	});
+});
+
 describe("the first history page of a channel", () => {
 	it("a 429 isn't the channel's top, and arms the shared cooldown", async () => {
 		captureRequests(API + "/channels/c1/messages", () =>
@@ -137,6 +171,35 @@ describe("an attachment upload slot", () => {
 
 		await expect(channelAt().uploadFile([file])).rejects.toThrow(/429/);
 		expect(asked).toHaveLength(2);
+	});
+});
+
+describe("an attachment upload's byte stream (the PUT)", () => {
+	const slot = () =>
+		Response.json({
+			attachments: [{id: "0", upload_url: "http://limit.test/put", upload_filename: "up/x"}],
+		});
+	const file = new File(["hi"], "x.txt");
+
+	// RED: at HEAD the 429 PUT is final, so uploadFile rejects with "attachment upload failed: 429".
+	it("a 429 waits its window, puts again once, and the upload lands", async () => {
+		const slots = captureRequests(API + "/channels/c1/attachments", slot);
+		const puts = captureRequests("http://limit.test/put", sequence(limited, () => new Response(null, {status: 200})));
+
+		const got = await channelAt().uploadFile([file]);
+
+		expect(puts).toHaveLength(2);
+		expect(slots).toHaveLength(1);
+		expect(got[0].upload_filename).toBe("up/x");
+	});
+
+	// RED: at HEAD the PUT is asked once (the rejection already matches; the count is what fails).
+	it("a second 429 throws an error that names the status", async () => {
+		captureRequests(API + "/channels/c1/attachments", slot);
+		const puts = captureRequests("http://limit.test/put", limited);
+
+		await expect(channelAt().uploadFile([file])).rejects.toThrow(/attachment upload failed: 429/);
+		expect(puts).toHaveLength(2);
 	});
 });
 

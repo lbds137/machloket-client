@@ -175,3 +175,75 @@ describe("form submit", () => {
 		expect(calls).toHaveLength(1);
 	});
 });
+
+describe("a form the server rate-limits", () => {
+	const limited = (message?: string) =>
+		json({...(message ? {message} : {}), retry_after: 0.01}, 429);
+	/** Answers each call with the next of `answers`. */
+	function inTurn(...answers: (() => Response)[]) {
+		return () => answers.shift()!();
+	}
+
+	// RED: at HEAD the 429 is final: onSubmit never runs and the form posted once.
+	it("a 429 waits its window, posts again once, and the success lands", async () => {
+		const sent = captureRequests(URL_, inTurn(() => limited(), () => json({token: "t"})));
+		const {form, calls} = postingForm();
+
+		await form.submit();
+
+		await vi.waitFor(() => expect(calls).toEqual([{token: "t"}]));
+		expect(sent).toHaveLength(2);
+		expect(unhandled).toEqual([]);
+	});
+
+	// RED: at HEAD the message already shows (the existing error path); the post count is what fails.
+	it("a second 429 shows the server's message and never reaches onSubmit", async () => {
+		const sent = captureRequests(URL_, () => limited("Slow down"));
+		const {form, calls} = postingForm();
+
+		await form.submit();
+
+		await vi.waitFor(() => expect(sent).toHaveLength(2));
+		await settle();
+		expect(calls).toEqual([]);
+		expect(document.body.textContent).toContain("Slow down");
+	});
+
+	// RED: at HEAD the webauthn probe's 429 is final, so the login is refused after one probe.
+	it("a rate-limited webauthn probe waits its window, asks again once, and the login proceeds", async () => {
+		const api = "http://form.test/api";
+		captureRequests(api + "/auth/login", () =>
+			json({
+				ticket: "tk",
+				webauthn: JSON.stringify({publicKey: {challenge: "abc=", allowCredentials: [{id: "id=", type: "public-key"}]}}),
+			}),
+		);
+		const probes = captureRequests(
+			api + "/auth/mfa/webauthn",
+			inTurn(() => limited(), () => json({token: "t"})),
+		);
+		// A signed assertion, without a key to touch.
+		// (Not vi.stubGlobal: its unstub would take the suite's fetch stub with it.)
+		const realKey = globalThis.PublicKeyCredential;
+		Object.assign(globalThis, {PublicKeyCredential: {parseRequestOptionsFromJSON: (options: unknown) => options}});
+		const buffer = () => new Uint8Array([1, 2]).buffer;
+		const getKey = vi.spyOn(navigator.credentials, "get").mockResolvedValue({
+			rawId: buffer(),
+			response: {authenticatorData: buffer(), clientDataJSON: buffer(), signature: buffer()},
+		} as never);
+		const calls: unknown[] = [];
+		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
+			fetchURL: api + "/auth/login",
+			method: "POST",
+		});
+
+		try {
+			await form.submit();
+			await vi.waitFor(() => expect(calls).toEqual([{token: "t"}]));
+			expect(probes).toHaveLength(2);
+		} finally {
+			Object.assign(globalThis, {PublicKeyCredential: realKey});
+			getKey.mockRestore();
+		}
+	});
+});

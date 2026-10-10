@@ -24,6 +24,39 @@ function fakeXHR(status: number, response: unknown) {
 	};
 }
 
+/**
+ * An XMLHttpRequest whose sends answer in turn from `answers` (the last answer repeats once they
+ * run out, so an extra send shows up in `sent`). `sent` holds every request body, in order.
+ */
+function fakeXHRSequence(answers: {status: number; response: unknown}[]) {
+	const sent: unknown[] = [];
+	class FakeXHR {
+		status = 0;
+		response: unknown = null;
+		responseType = "";
+		upload = {onprogress: null};
+		onload: (() => void) | null = null;
+		onerror: (() => void) | null = null;
+		open() {}
+		setRequestHeader() {}
+		send(body: unknown) {
+			const answer = answers[Math.min(sent.length, answers.length - 1)];
+			sent.push(body);
+			this.status = answer.status;
+			this.response = answer.response;
+			queueMicrotask(() => this.onload?.());
+		}
+	}
+	return {XHR: FakeXHR, sent};
+}
+
+/** One animation frame: real time, so it still ticks while setTimeout is faked. */
+const frame = () => new Promise<void>((res) => requestAnimationFrame(() => res()));
+/** Waits (in frames, not timers) until `sent` holds `count` requests. */
+async function untilSent(sent: unknown[], count: number) {
+	for (let i = 0; i < 60 && sent.length < count; i++) await frame();
+}
+
 /** A channel whose pending-message bubble is a set of spies. */
 function sendingChannel() {
 	const bubble = {progress: vi.fn(), failed: vi.fn(), void: vi.fn()};
@@ -40,22 +73,44 @@ function sendingChannel() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("a message the server refuses", () => {
-	for (const [label, response] of [
-		["slowmode (a JSON error body)", {code: 20016, message: "Slowmode"}],
-		["a body that isn't JSON", null],
-	] as const) {
-		it(`(${label}) removes its bubble once, with no retry left on a removed bubble`, async () => {
-			vi.stubGlobal("XMLHttpRequest", fakeXHR(429, response));
-			const {channel, bubble} = sendingChannel();
-			const answers: string[] = [];
+	it("(slowmode (a JSON error body)) removes its bubble once, with no retry left on a removed bubble", async () => {
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(429, {code: 20016, message: "Slowmode"}));
+		const {channel, bubble} = sendingChannel();
+		const answers: string[] = [];
 
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
+
+		expect(bubble.void).toHaveBeenCalledTimes(1);
+		expect(bubble.failed).not.toHaveBeenCalled();
+	});
+
+	// MODIFY: a 429 whose body isn't JSON used to answer NotOk at once; it now waits the 5 s
+	// default, asks once more, and the second answer is final.
+	it("(a body that isn't JSON) removes its bubble once, after one retry, with no retry left on a removed bubble", async () => {
+		const {XHR, sent} = fakeXHRSequence([
+			{status: 429, response: null},
+			{status: 429, response: null},
+		]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel, bubble} = sendingChannel();
+		const answers: string[] = [];
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+		try {
 			void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
-			await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
+			await untilSent(sent, 1);
+			await vi.advanceTimersByTimeAsync(5000);
+			await untilSent(sent, 2);
+			await frame();
+		} finally {
+			vi.useRealTimers();
+		}
 
-			expect(bubble.void).toHaveBeenCalledTimes(1);
-			expect(bubble.failed).not.toHaveBeenCalled();
-		});
-	}
+		expect(sent).toHaveLength(2);
+		expect(answers).toEqual(["NotOk"]);
+		expect(bubble.void).toHaveBeenCalledTimes(1);
+		expect(bubble.failed).not.toHaveBeenCalled();
+	});
 
 	it("settles the send, so a caller awaiting it (opening a DM with a message) isn't stuck", async () => {
 		vi.stubGlobal("XMLHttpRequest", fakeXHR(403, {code: 50013, message: "Missing Permissions"}));
@@ -79,6 +134,199 @@ describe("a message the server refuses", () => {
 		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
 
 		expect(channel.slowmode).toHaveBeenCalledWith(true);
+	});
+});
+
+describe("a send the server rate-limits", () => {
+	let realbox: HTMLDivElement | undefined;
+	afterEach(() => {
+		realbox?.remove();
+		realbox = undefined;
+		vi.useRealTimers();
+	});
+	function mountComposer() {
+		realbox = document.createElement("div");
+		realbox.id = "realbox";
+		realbox.innerHTML = '<div class="outerTypeBox"></div>';
+		document.body.append(realbox);
+	}
+	const notice = () => realbox?.querySelector(".sendError")?.textContent ?? null;
+	/** A sending channel that is the one on screen. */
+	function focusedChannel() {
+		const {channel, bubble} = sendingChannel();
+		Object.defineProperty(channel, "localuser", {value: {channelfocus: channel}});
+		return {channel, bubble};
+	}
+	const ok = {status: 200, response: {id: "1"}};
+
+	// RED: at HEAD the 429 answers NotOk at once (send 1x, bubble voided).
+	it("a rate-limited send waits out the window and sends again", async () => {
+		mountComposer();
+		const {XHR, sent} = fakeXHRSequence([{status: 429, response: {retry_after: 0.01}}, ok]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		// The nonce is minted for real here; stub its revision lookup so it is deterministic
+		// (a live lookup would fill the revision cache before the "message nonce" suite runs).
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel, bubble} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
+
+		expect(sent).toHaveLength(2);
+		expect(typeof sent[0]).toBe("string");
+		// The retry is the same request: a new nonce would let the server post it twice.
+		expect(sent[1]).toBe(sent[0]);
+		expect(bubble.void).not.toHaveBeenCalled();
+		expect(channel.slowmode).not.toHaveBeenCalled();
+		expect(notice()).toBeNull();
+	});
+
+	// RED: at HEAD the first 429 answers NotOk and shows the notice during what should be the wait.
+	it("still refuses when the retry is rate-limited again, and says so only at the end", async () => {
+		mountComposer();
+		const {XHR, sent} = fakeXHRSequence([
+			{status: 429, response: {retry_after: 0.3}},
+			{status: 429, response: {message: "You are being rate limited", retry_after: 0.01}},
+		]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel, bubble} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(sent).toHaveLength(1));
+		await new Promise((res) => setTimeout(res, 100));
+		// Inside the server's window: nothing is final yet.
+		expect(answers).toEqual([]);
+		expect(notice()).toBeNull();
+
+		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
+		expect(sent).toHaveLength(2);
+		expect(bubble.void).toHaveBeenCalledTimes(1);
+		expect(notice()).toBe("You are being rate limited");
+	});
+
+	// PIN: passes at HEAD; the fix must keep a slowmode 429 out of the retry.
+	it("a slowmode rate limit is not retried", async () => {
+		const {XHR, sent} = fakeXHRSequence([{status: 429, response: {code: 20016, message: "Slowmode"}}, ok]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
+		// Room for a wrongly scheduled retry to show up.
+		await new Promise((res) => setTimeout(res, 100));
+
+		expect(sent).toHaveLength(1);
+		expect(channel.slowmode).toHaveBeenCalledWith(true);
+	});
+
+	// RED: at HEAD an unreadable 429 answers NotOk at once, so no second send ever follows.
+	it("an unreadable body waits out the 5 s default and retries", async () => {
+		const {XHR, sent} = fakeXHRSequence([{status: 429, response: null}, ok]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel} = focusedChannel();
+		const answers: string[] = [];
+		// Only the timers: sendMessage awaits requestAnimationFrame, which must stay real.
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		await untilSent(sent, 1);
+		await frame();
+		await vi.advanceTimersByTimeAsync(4900);
+		expect(sent).toHaveLength(1);
+		expect(answers).toEqual([]);
+
+		await vi.advanceTimersByTimeAsync(100);
+		await untilSent(sent, 2);
+		await frame();
+
+		expect(sent).toHaveLength(2);
+		expect(answers).toEqual(["Ok"]);
+	});
+
+	// RED: at HEAD an attachment send's 429 answers NotOk at once too (the second XHR open).
+	it("an attachment send is retried the same way", async () => {
+		const {XHR, sent} = fakeXHRSequence([{status: 429, response: {retry_after: 0.01}}, ok]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel, bubble} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage(
+			"hi",
+			{nonce: "n1", attachments: [new Blob(["x"], {type: "text/plain"})]},
+			(r) => answers.push(r),
+		);
+		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
+
+		expect(sent).toHaveLength(2);
+		expect(sent[0]).toBeInstanceOf(FormData);
+		expect(sent[1]).toBeInstanceOf(FormData);
+		expect(bubble.void).not.toHaveBeenCalled();
+	});
+
+	/** An XMLHttpRequest whose first send answers a 429 and whose second send fails as `how`. */
+	function fakeXHRRetryFailing(how: "throws" | "errors") {
+		let sends = 0;
+		class FakeXHR {
+			status = 0;
+			response: unknown = null;
+			responseType = "";
+			upload = {onprogress: null};
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			open() {}
+			setRequestHeader() {}
+			send() {
+				sends++;
+				if (sends === 1) {
+					this.status = 429;
+					this.response = {retry_after: 0.01};
+					queueMicrotask(() => this.onload?.());
+				} else if (how === "throws") {
+					throw new Error("offline");
+				} else {
+					queueMicrotask(() => this.onerror?.());
+				}
+			}
+		}
+		return {XHR: FakeXHR, sends: () => sends};
+	}
+
+	// RED: at HEAD there is no resend at all: the 429 voids the bubble and `failed` never fires
+	// (verified red against HEAD before the fix landed).
+	// It also pins the try/catch around the timer's resend: without it the throw escapes the
+	// timer and the bubble sits in flight forever.
+	it("a retry whose send throws fails the bubble, and never voids it", async () => {
+		const {XHR, sends} = fakeXHRRetryFailing("throws");
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel, bubble} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+
+		expect(sends()).toBe(2);
+		expect(bubble.void).not.toHaveBeenCalled();
+		expect(answers).toEqual([]);
+	});
+
+	// RED: at HEAD there is no resend at all, so the retry's own network failure never happens
+	// (verified red against HEAD before the fix landed).
+	// and `failed` is never called.
+	it("a retry that fails at the network fails the bubble, and never voids it", async () => {
+		const {XHR, sends} = fakeXHRRetryFailing("errors");
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		const {channel, bubble} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+
+		expect(sends()).toBe(2);
+		expect(bubble.void).not.toHaveBeenCalled();
+		expect(answers).toEqual([]);
 	});
 });
 

@@ -5,6 +5,7 @@ import {guildjson} from "./jsontypes.js";
 import {ReportMenu} from "./reporting/report.js";
 import {Dialog} from "./settings.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {createImg} from "./utils/utils.js";
 
@@ -112,106 +113,142 @@ export class Discovery {
 		buttonRow.classList.add("flexltr");
 
 		const render = async (offset = 0) => {
-			guilds.textContent = I18n.guild.loadingDiscovery();
+			let switching = false;
 			const limit = 50;
-			const res = await fetch(
-				`${this.info.api}/discoverable-guilds?limit=${limit}&offset=${offset}`,
-				{
-					headers: this.headers,
-				},
-			);
+			// Back (when a page precedes this one) and Try again replace the page's own buttons.
+			const showFailure = (why: string) => {
+				title.textContent = "";
+				guilds.textContent = I18n.requestFailed(why);
+				buttonRow.textContent = "";
+				const again = document.createElement("button");
+				again.textContent = I18n.tryAgain();
+				buttonRow.append(again);
+				again.onclick = () => {
+					if (switching) return;
+					switching = true;
+					render(offset);
+				};
+				if (offset !== 0) {
+					const back = document.createElement("button");
+					back.textContent = I18n.search.back();
+					buttonRow.append(back);
+					back.onclick = () => {
+						if (switching) return;
+						switching = true;
+						render(offset - limit);
+					};
+				}
+				content.appendChild(guilds);
+				content.appendChild(buttonRow);
+			};
+			try {
+				guilds.textContent = I18n.guild.loadingDiscovery();
+				const res = await fetchRetryOnce(
+					`${this.info.api}/discoverable-guilds?limit=${limit}&offset=${offset}`,
+					{
+						headers: this.headers,
+					},
+				);
+				if (!res.ok) {
+					// Fire-and-forget from the page buttons: say why here, nothing above catches.
+					const refusal = (await res.json().catch(() => ({}))) as {message?: unknown} | null;
+					showFailure(typeof refusal?.message === "string" ? refusal.message : `${res.status}`);
+					return;
+				}
 
-			const json = (await res.json()) as {guilds: guildjson["properties"][]; total: number};
-			console.log([...json.guilds], json.guilds);
-			guilds.textContent = "";
+				const json = (await res.json()) as {guilds: guildjson["properties"][]; total: number};
+				guilds.textContent = "";
 
-			title.textContent = I18n.guild.disoveryTitle(json.total + "");
+				title.textContent = I18n.guild.disoveryTitle(json.total + "");
 
-			content.appendChild(guilds);
+				content.appendChild(guilds);
 
-			json.guilds.forEach((guild) => {
-				const content = document.createElement("div");
+				json.guilds.forEach((guild) => {
+					const content = document.createElement("div");
 
-				this.context.bindContextmenu(content, guild.id, () => {
-					const div = document.createElement("div");
-					div.classList.add("flexltr");
+					this.context.bindContextmenu(content, guild.id, () => {
+						const div = document.createElement("div");
+						div.classList.add("flexltr");
+						const img = this.getIconURL(guild);
+						img.classList.add("icon");
+						img.crossOrigin = "anonymous";
+
+						img.alt = "";
+						div.appendChild(img);
+
+						const name = document.createElement("h3");
+						name.textContent = guild.name;
+						div.appendChild(name);
+						return div;
+					});
+					content.classList.add("discovery-guild");
+					const banner = this.getBannerURL(guild);
+					if (banner) {
+						banner.classList.add("banner");
+						banner.crossOrigin = "anonymous";
+						banner.alt = "";
+						content.appendChild(banner);
+					}
+
+					const nameContainer = document.createElement("div");
+					nameContainer.classList.add("flex");
 					const img = this.getIconURL(guild);
 					img.classList.add("icon");
 					img.crossOrigin = "anonymous";
 
 					img.alt = "";
-					div.appendChild(img);
+					nameContainer.appendChild(img);
 
 					const name = document.createElement("h3");
 					name.textContent = guild.name;
-					div.appendChild(name);
-					return div;
+					nameContainer.appendChild(name);
+					content.appendChild(nameContainer);
+					const desc = document.createElement("p");
+					desc.textContent = guild.description;
+					content.appendChild(desc);
+
+					content.addEventListener("click", async () => {
+						let guildObj = this.localuser.guildids.get(guild.id);
+						if (guildObj) {
+							guildObj.loadGuild();
+							guildObj.loadChannel();
+							return;
+						}
+						if (await this.confirmJoin(guild)) {
+							await this.join(guild);
+						}
+					});
+					guilds.appendChild(content);
 				});
-				content.classList.add("discovery-guild");
-				const banner = this.getBannerURL(guild);
-				if (banner) {
-					banner.classList.add("banner");
-					banner.crossOrigin = "anonymous";
-					banner.alt = "";
-					content.appendChild(banner);
+
+				buttonRow.textContent = "";
+
+				if (offset !== 0) {
+					const back = document.createElement("button");
+					back.textContent = I18n.search.back();
+					buttonRow.append(back);
+					back.onclick = () => {
+						if (switching) return;
+						switching = true;
+						render(offset - limit);
+					};
 				}
-
-				const nameContainer = document.createElement("div");
-				nameContainer.classList.add("flex");
-				const img = this.getIconURL(guild);
-				img.classList.add("icon");
-				img.crossOrigin = "anonymous";
-
-				img.alt = "";
-				nameContainer.appendChild(img);
-
-				const name = document.createElement("h3");
-				name.textContent = guild.name;
-				nameContainer.appendChild(name);
-				content.appendChild(nameContainer);
-				const desc = document.createElement("p");
-				desc.textContent = guild.description;
-				content.appendChild(desc);
-
-				content.addEventListener("click", async () => {
-					let guildObj = this.localuser.guildids.get(guild.id);
-					if (guildObj) {
-						guildObj.loadGuild();
-						guildObj.loadChannel();
-						return;
-					}
-					if (await this.confirmJoin(guild)) {
-						await this.join(guild);
-					}
-				});
-				guilds.appendChild(content);
-			});
-
-			let switching = false;
-
-			buttonRow.textContent = "";
-
-			if (offset !== 0) {
-				const back = document.createElement("button");
-				back.textContent = I18n.search.back();
-				buttonRow.append(back);
-				back.onclick = () => {
-					if (switching) return;
-					switching = true;
-					render(offset - limit);
-				};
+				if (offset + json.guilds.length < json.total) {
+					const next = document.createElement("button");
+					next.textContent = I18n.search.next();
+					buttonRow.append(next);
+					next.onclick = () => {
+						if (switching) return;
+						switching = true;
+						render(offset + limit);
+					};
+				}
+				content.append(buttonRow);
+			} catch (e) {
+				// No answer, or a 2xx that isn't JSON; same wording as Form's unreadable-body path.
+				console.error(e);
+				showFailure(e instanceof Error ? e.message : String(e));
 			}
-			if (offset + json.guilds.length < json.total) {
-				const next = document.createElement("button");
-				next.textContent = I18n.search.next();
-				buttonRow.append(next);
-				next.onclick = () => {
-					if (switching) return;
-					switching = true;
-					render(offset + limit);
-				};
-			}
-			content.append(buttonRow);
 		};
 
 		render();
@@ -270,7 +307,7 @@ export class Discovery {
 	async join(guild: guildjson["properties"]) {
 		let message: string | undefined;
 		try {
-			const res = await fetch(this.info.api + "/guilds/" + guild.id + "/members/@me", {
+			const res = await fetchRetryOnce(this.info.api + "/guilds/" + guild.id + "/members/@me", {
 				method: "PUT",
 				headers: this.headers,
 			});
