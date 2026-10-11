@@ -117,6 +117,8 @@ function makePlayBox(
 		if (url) mor = await url;
 		MediaPlayer.IdentifyFile(mor).then((thing) => {
 			let audio: HTMLAudioElement | undefined = undefined;
+			// The element before its data has loaded (`audio` is only set on loadeddata).
+			let loading: HTMLAudioElement | undefined = undefined;
 
 			if (!thing) {
 				// The player's own title said "Loading..." until now.
@@ -136,6 +138,7 @@ function makePlayBox(
 			if (typeof mor !== "string") {
 				const cmor = mor;
 				const audioo = new Audio(cmor.src);
+				loading = audioo;
 				audioo.load();
 				audioo.autoplay = true;
 				audioo.currentTime = ctime / 1000;
@@ -205,6 +208,9 @@ function makePlayBox(
 						audio.pause();
 						audio.src = "";
 						player.end();
+					} else if (loading) {
+						// Ended before it loaded: pause it, or it autoplays over the next track once loaded.
+						loading.pause();
 					}
 					button.classList.add("svg-play");
 					button.classList.remove("svg-pause");
@@ -257,9 +263,10 @@ function makePlayBox(
 
 /**
  * An ID3 text frame: its first byte names the encoding (0 Latin-1, 1 UTF-16 with a byte-order
- * mark, 2 UTF-16BE, 3 UTF-8), then the text, maybe NUL-terminated.
+ * mark, 2 UTF-16BE, 3 UTF-8), then the text, maybe NUL-terminated. Below v2.4 the text ends at
+ * its first NUL; only v2.4 lets a frame hold several NUL-separated values.
  */
-function decodeId3Text(frame: Uint8Array) {
+function decodeId3Text(frame: Uint8Array, version: number) {
 	const [encoding] = frame;
 	let bytes = frame.subarray(1);
 	let label = ["latin1", "utf-16le", "utf-16be", "utf-8"][encoding] ?? "utf-8";
@@ -269,9 +276,13 @@ function decodeId3Text(frame: Uint8Array) {
 			bytes = bytes.subarray(2);
 		}
 	}
-	return new TextDecoder(label)
-		.decode(bytes)
-		// v2.4 text frames may hold several NUL-separated values; show them all.
+	const text = new TextDecoder(label).decode(bytes);
+	if (version < 4) {
+		// Before v2.4 the bytes after the first terminator are not a second value: drop them.
+		return text.split("\0")[0];
+	}
+	// v2.4 text frames may hold several NUL-separated values; show them all.
+	return text
 		.split("\0")
 		.filter((value) => value !== "")
 		.join(" / ");
@@ -437,12 +448,12 @@ class MediaPlayer {
 						const temp = mappy.get(key);
 						if (temp) {
 							//@ts-ignore TS is being weird about this idk why
-							output[ind] = decodeId3Text(temp);
+							output[ind] = decodeId3Text(temp, version);
 						}
 					}
 					const tye = mappy.get("TYE");
 					if (tye) {
-						output.year = +decodeId3Text(tye);
+						output.year = +decodeId3Text(tye, version);
 					}
 					//TODO more thoroughly check if these two are the same format
 				} else if (version === 3 || version === 4) {
@@ -527,22 +538,22 @@ class MediaPlayer {
 						const temp = mappy.get(key);
 						if (temp) {
 							//@ts-ignore TS is being weird about this idk why
-							output[ind] = decodeId3Text(temp);
+							output[ind] = decodeId3Text(temp, version);
 						}
 					}
 					const TYER = mappy.get("TYER");
 					if (TYER) {
-						output.year = +decodeId3Text(TYER);
+						output.year = +decodeId3Text(TYER, version);
 					}
 					// v2.4 retired TYER for TDRC (an ISO-ish recording time); its first four
 					// digits are the year.
 					const TDRC = mappy.get("TDRC");
 					if (!output.year && TDRC) {
-						output.year = +decodeId3Text(TDRC).slice(0, 4);
+						output.year = +decodeId3Text(TDRC, version).slice(0, 4);
 					}
 					const TLEN = mappy.get("TLEN");
 					if (TLEN) {
-						output.length = +decodeId3Text(TLEN);
+						output.length = +decodeId3Text(TLEN, version);
 					}
 				}
 			} //TODO implement more metadata types

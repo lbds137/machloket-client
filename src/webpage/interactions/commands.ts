@@ -707,22 +707,29 @@ export class Command extends SnowFlake {
 		}
 		return true;
 	}
-	/** Target ids with a context send in flight. Created on first use, not at construction:
-	 * the test fixtures build commands without running field initializers. */
-	private submittingContext?: Set<string>;
+	/** Context sends in flight, per channel: a command-index refetch builds new Command objects
+	 * for the same command, but the channel the menu was opened in persists, and a double tap can
+	 * land on either object. Keyed by channel, not by instance or localuser, so the state survives
+	 * a refetch and a finished channel's entries go with it. */
+	private static readonly contextInFlight = new WeakMap<Channel, Set<string>>();
 	/** A context-menu command (USER 2 / MESSAGE 3) invoked on `target_id`: the same type-2 POST
 	 * as a slash command, but the data names the target and carries no options (the server
 	 * builds the resolved entities and rejects a missing target). Returns false when refused -
-	 * or when a send to this same target is already in flight, so a double tap fires the
-	 * command once. A different target is not blocked by the first. */
+	 * or when a send of this same command to this same target is already in flight, so a double
+	 * tap fires the command once. A different target or command is not blocked by the first. */
 	async submitContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
-		this.submittingContext ??= new Set();
-		if (this.submittingContext.has(target_id)) return false;
-		this.submittingContext.add(target_id);
+		const key = `${this.applicationId}/${this.id}/${target_id}`;
+		let inFlight = Command.contextInFlight.get(channel);
+		if (!inFlight) {
+			inFlight = new Set<string>();
+			Command.contextInFlight.set(channel, inFlight);
+		}
+		if (inFlight.has(key)) return false;
+		inFlight.add(key);
 		try {
 			return await this.sendContext(target_id, channel, anchor);
 		} finally {
-			this.submittingContext.delete(target_id);
+			inFlight.delete(key);
 		}
 	}
 	private async sendContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {

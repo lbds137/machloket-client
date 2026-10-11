@@ -93,6 +93,17 @@ describe("form submit", () => {
 		expect(calls).toEqual([]);
 	});
 
+	it("a JSON array body fails cleanly too (an array is not an answer object)", async () => {
+		captureRequests(URL_, () => new Response("[]", {status: 200}));
+		const {form, calls} = postingForm();
+
+		await form.submit();
+		await settle();
+
+		expect(unhandled).toEqual([]);
+		expect(calls).toEqual([]);
+	});
+
 	it("an error answer never reaches onSubmit; its message is shown", async () => {
 		captureRequests(URL_, () => json({code: 60008, message: "Invalid two-factor code"}, 400));
 		const {form, calls} = postingForm();

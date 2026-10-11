@@ -3,25 +3,24 @@ import {AccountSwitcher} from "./utils/switcher.js";
 import {createImg, getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
-import {fetchRetryOnce} from "./utils/rateLimit.js";
-/** Joins the guild behind `code`; `ok` says whether the flow may navigate, and an existing
- * member counts. The server's already-member refusal is a generic HTTPError (400) with no
- * code, so its message is the only key. */
-export async function acceptInvite(
-	api: string,
-	code: string,
-	token: string,
-): Promise<{ok: boolean; message?: string}> {
-	const res = await fetchRetryOnce(`${api}/invites/${code}`, {
-		method: "POST",
-		headers: {
-			Authorization: token,
-		},
+import {acceptInvite} from "./utils/acceptInvite.js";
+// Re-exported: the accept lives in utils (no page side effects), and this page's tests import it here.
+export {acceptInvite};
+/** How long an accept waits for the invite's details before it lands on the home page. */
+export const GUILD_WAIT_MS = 3000;
+/** The page's navigation, behind an object so a test can observe where an accept lands. */
+export const pageNav = {
+	go(href: string) {
+		window.location.href = href;
+	},
+};
+/** The invite's guild once its details load: undefined if they fail or take longer than `ms`. */
+function guildWithin(loaded: Promise<any>, ms: number): Promise<any> {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	const late = new Promise<undefined>((resolve) => {
+		timer = setTimeout(() => resolve(undefined), ms);
 	});
-	if (res.ok) return {ok: true};
-	const json = (await res.json().catch(() => undefined)) as {message?: string} | undefined;
-	if (/already a member/i.test(json?.message ?? "")) return {ok: true};
-	return {ok: false, message: json?.message ?? `${res.status}`};
+	return Promise.race([loaded.catch(() => undefined), late]).finally(() => clearTimeout(timer));
 }
 if (window.location.pathname.startsWith("/invite"))
 	(async () => {
@@ -66,9 +65,8 @@ if (window.location.pathname.startsWith("/invite"))
 		}
 
 		const code = window.location.pathname.split("/")[2];
-		let guildinfo: any;
-
-		fetch(`${urls!.api}/invites/${code}`, {
+		// Resolves to the invite's guild once the details have shown; the accept waits on it.
+		const guildLoaded = fetch(`${urls!.api}/invites/${code}`, {
 			method: "GET",
 		})
 			.then((response) => response.json())
@@ -77,10 +75,9 @@ if (window.location.pathname.startsWith("/invite"))
 					document.getElementById("AcceptInvite")?.remove();
 					document.getElementById("invitename")!.textContent = I18n.invite.notFound();
 					document.getElementById("invitedescription")!.textContent = "";
-					return;
+					return undefined;
 				}
 				const guildjson = json.guild;
-				guildinfo = guildjson;
 				document.getElementById("invitename")!.textContent = guildjson.name;
 				// An invite can have no inviter (a vanity or system invite).
 				document.getElementById("invitedescription")!.textContent = json.inviter
@@ -113,6 +110,7 @@ if (window.location.pathname.startsWith("/invite"))
 					div.classList.add("inviteGuild");
 					document.getElementById("inviteimg")!.append(div);
 				}
+				return guildjson;
 			});
 
 		async function showAccounts() {
@@ -140,13 +138,16 @@ if (window.location.pathname.startsWith("/invite"))
 						]),
 				},
 			).show();
-			acceptInvite(urls!.api, code, user.token).then((result) => {
+			acceptInvite(urls!.api, code, user.token).then(async (result) => {
 				// The in-app accept shows the server's message in its form; this page has no form.
 				if (!result.ok) return alert(result.message);
 				users.currentuser = user.uid;
 				sessionStorage.setItem("currentuser", user.uid);
 				localStorage.setItem("userinfos", JSON.stringify(users));
-				window.location.href = "/channels/" + guildinfo.id;
+				// The details may still be loading (or have failed): wait a while for them rather than
+				// read an unset guild or stall. With no guild to name, the home page is where the join lands.
+				const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
+				pageNav.go("/channels/" + (guildinfo?.id ?? "@me"));
 			});
 		}
 

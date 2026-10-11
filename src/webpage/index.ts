@@ -572,6 +572,11 @@ if (window.location.pathname.startsWith("/channels")) {
 		const channelWrapper = document.getElementById("channelw") as HTMLDivElement;
 		const mainArea = document.getElementById("mainarea") as HTMLDivElement;
 		const maintoggle = document.getElementById("maintoggle") as HTMLInputElement | null;
+		// --app-height is latched to a px snapshot of visualViewport.height on EVERY mobile
+		// browser, overriding the 100svh default in style.css. interactive-widget=resizes-content
+		// (app.html) makes the layout viewport itself resize with the keyboard so the snapshot
+		// tracks it; the latch is still the height source, and a missed or mid-animation event
+		// can latch a stale height until the next resize.
 		const updateViewportHeight = () => {
 			document.documentElement.style.setProperty(
 				"--app-height",

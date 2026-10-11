@@ -251,7 +251,7 @@ describe("application-command index fetch", () => {
 			member,
 		}) as InstanceType<typeof Guild>;
 
-		const {commands} = await guild.getCommandsFetch();
+		const commands = await guild.getCommands();
 
 		expect(commands.map((c) => c.name)).toEqual(["random", "purge"]);
 	});
@@ -282,7 +282,7 @@ describe("application-command index fetch", () => {
 			member,
 		}) as InstanceType<typeof Guild>;
 
-		const {commands} = await guild.getCommandsFetch();
+		const commands = await guild.getCommands();
 
 		expect(commands.map((c) => c.name)).toEqual(["random", "wipe"]);
 	});
@@ -316,7 +316,7 @@ describe("application-command index fetch", () => {
 			member,
 		}) as InstanceType<typeof Guild>;
 
-		const {commands} = await guild.getCommandsFetch();
+		const commands = await guild.getCommands();
 
 		expect(commands.map((c) => c.name)).toEqual(["random", "purge"]);
 	});
@@ -354,7 +354,7 @@ describe("application-command index fetch", () => {
 			member,
 		}) as InstanceType<typeof Guild>;
 
-		const {commands} = await guild.getCommandsFetch();
+		const commands = await guild.getCommands();
 
 		expect(commands.map((c) => c.name)).toEqual(["random", "nullperms"]);
 	});

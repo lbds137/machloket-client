@@ -101,24 +101,57 @@ describe("a second finger", () => {
 		// Finger A swipes left, short of the reply threshold…
 		fire(el, "touchstart", [at(el, 200, 100)], [at(el, 200, 100)]);
 		fire(el, "touchmove", [at(el, 170, 100)], [at(el, 170, 100)]);
-		// …finger B lands on the row (the two-finger menu), A lifts, B drifts, B lifts.
+		// …finger B lands LEFT of A on the row (the two-finger menu), A lifts, B drifts left,
+		// B lifts. B's drift is 140 - 160 = -20 from its landing, -60 from A's 200: only the
+		// second reading would reply, so the gesture must stay suppressed to pass.
 		const b = new Touch({
 			identifier: 2,
 			target: el,
-			pageX: 220,
+			pageX: 160,
 			pageY: 140,
-			clientX: 220,
+			clientX: 160,
 			clientY: 140,
 		});
 		fire(el, "touchstart", [at(el, 200, 100), b], [b]);
 		fire(el, "touchend", [b], [at(el, 200, 100)]);
-		// B is touches[0] now; x re-seated at B's landing, so B's drift left of it reads as a
-		// hard swipe — and B's lift fires it as a reply.
+		// After A lifts, B is touches[0] and one finger is down again, but multitouch still
+		// gates touchmove, so the drift is never measured.
 		fire(el, "touchmove", [at(el, 140, 140)], [at(el, 140, 140)]);
 		fire(el, "touchend", [], [at(el, 140, 140)]);
 
 		expect(replied).toBe(false);
 		expect(opened).toHaveBeenCalledTimes(1);
+	});
+
+	it("a drag after a cancel measures from the first finger's landing, not the second's", () => {
+		const el = document.createElement("div");
+		document.body.append(el);
+		const menu = new Contextmenu<undefined, undefined>("two-finger cancel test");
+		vi.spyOn(menu, "makemenu").mockImplementation(() => undefined);
+		const ended = vi.fn();
+		menu.bindContextmenu(el, undefined, undefined, () => {}, ended);
+
+		// A lands at (200,100) and moves to (190,100) before B lands at (160,140). Code, not
+		// arithmetic from a reviewer: a one-finger touchmove only sets lastx (x stays at A's
+		// landing); the second touchstart re-seats x at touches[0], which is still A, at its
+		// CURRENT (190,100). So the drift measured from B's lift is:
+		//   re-seat at A's current position (x=190):  140 - 190 = -50   (the code)
+		//   no re-seat (x still A's landing 200):      140 - 200 = -60
+		//   seat at B's landing (x=160):               140 - 160 = -20
+		fire(el, "touchstart", [at(el, 200, 100)], [at(el, 200, 100)]);
+		fire(el, "touchmove", [at(el, 190, 100)], [at(el, 190, 100)]);
+		const b = new Touch({identifier: 2, target: el, pageX: 160, pageY: 140, clientX: 160, clientY: 140});
+		fire(el, "touchstart", [at(el, 190, 100), b], [b]);
+		// The system cancels the touch: multitouch clears, and a drag can measure again.
+		fire(el, "touchcancel", [], [b]);
+		// B is the only finger left and drifts to (140,140); its lift ends the drag.
+		const b2 = new Touch({identifier: 2, target: el, pageX: 140, pageY: 140, clientX: 140, clientY: 140});
+		fire(el, "touchmove", [b2], [b2]);
+		fire(el, "touchend", [], [b2]);
+
+		// -50 is the re-seat at A's position when B landed (see above). The other mechanisms give
+		// -60 (no re-seat) and -20 (seat at B), so this one value tells all three apart.
+		expect(ended.mock.lastCall?.[0]).toBe(-50);
 	});
 
 	it("doesn't stick: the next one-finger swipe still replies", () => {

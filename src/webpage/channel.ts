@@ -41,6 +41,7 @@ import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
+import {hideNotifyBanner} from "./notifyBanner.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -4437,9 +4438,16 @@ class Channel extends SnowFlake {
 	/** One in-flight browser prompt however many messages burst in while unset. */
 	private static permissionPrompt?: Promise<NotificationPermission>;
 	private askPermission(): Promise<NotificationPermission> {
-		Channel.permissionPrompt ??= Notification.requestPermission().finally(() => {
-			Channel.permissionPrompt = undefined;
-		});
+		Channel.permissionPrompt ??= Notification.requestPermission()
+			.then((permission) => {
+				// A decision (granted or denied) is in: the enable bar has nothing left to ask. "default"
+				// is no decision: a gesture-gated browser showed nothing, so the bar stays for its tap.
+				if (permission !== "default") hideNotifyBanner();
+				return permission;
+			})
+			.finally(() => {
+				Channel.permissionPrompt = undefined;
+			});
 		return Channel.permissionPrompt;
 	}
 	notify(message: Message) {

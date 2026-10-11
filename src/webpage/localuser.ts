@@ -82,6 +82,7 @@ import {InteractionModal} from "./interactions/modal.js";
 import {showCommandStatus} from "./interactions/commandStatus.js";
 import {previewURL} from "./utils/previewURL.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {acceptInvite} from "./utils/acceptInvite.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -2395,14 +2396,10 @@ class Localuser {
 				} else {
 					parsed = e.code;
 				}
-				const json = await (
-					await fetch(this.info.api + "/invites/" + parsed, {
-						method: "POST",
-						headers: this.headers,
-					})
-				).json();
-				if (json.message) {
-					throw new FormError(text, json.message);
+				// Already a member counts as joined (acceptInvite's ok): the dialog hides.
+				const result = await acceptInvite(this.info.api, parsed, this.headers.Authorization);
+				if (!result.ok) {
+					throw new FormError(text, result.message ?? "");
 				}
 				full.hide();
 			});

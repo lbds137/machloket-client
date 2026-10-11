@@ -468,10 +468,11 @@ class Contextmenu<x, y> {
 		let hold: NodeJS.Timeout | undefined;
 		let x!: number;
 		let y!: number;
-		// A second finger poisons touches[0] (it re-indexes when the first lifts), and a drag
-		// riding under the two-finger menu must not act: the gesture stays suppressed —
-		// springs back, never fires the drag owner's end — until the next one-finger
-		// touchstart.
+		// On multi-touch, a second touchstart re-seats x/y at the FIRST finger's position (touches[0]
+		// is still that finger), and touchEnd(0, 0) still fires on the lift, but x is unobservable
+		// in this two-finger path. A drag riding under the two-finger menu must not act: the gesture
+		// stays suppressed (springs back, never fires the drag owner's end) until the next
+		// one-finger touchstart.
 		let multitouch = false;
 		// The menu a long-press opened is that gesture's whole action: its lift must not also
 		// click the element (a member row would open its profile under the menu).

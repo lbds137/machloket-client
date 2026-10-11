@@ -7,6 +7,7 @@ import {I18n} from "./i18n.js";
 import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {acceptInvite} from "./utils/acceptInvite.js";
 
 /** The player iframe's src for a video embed, or null when the url isn't a YouTube video. */
 export function youtubeEmbedSrc(videoUrl: string): string | null {
@@ -406,16 +407,18 @@ class Embed {
 			div.append(button);
 			button.onclick = (_) => {
 				if (this.localuser.info.api.startsWith(info.api)) {
-					fetch(this.localuser.info.api + "/invites/" + json.code, {
-						method: "POST",
-						headers: this.localuser.headers,
-					})
-						.then((r) => r.json())
-						.then((_) => {
-							if (_.message) {
-								alert(_.message);
-							}
-						});
+					acceptInvite(
+						this.localuser.info.api,
+						json.code,
+						this.localuser.headers.Authorization,
+					).then((result) => {
+						// Already a member opens the guild rather than alerting the refusal.
+						if (result.alreadyMember) {
+							this.localuser.loadGuild(guild.id);
+						} else if (!result.ok) {
+							alert(result.message);
+						}
+					});
 				} else {
 					if (this.json.invite) {
 						const params = new URLSearchParams("");

@@ -1419,9 +1419,24 @@ class MarkDown {
 				} else {
 					const full = new Dialog("");
 					full.options.addTitle(I18n.leaving());
-					// A mailto has no host; its opaque path is the address, so the dialog doesn't
-					// render a blank.
-					full.options.addText(I18n.goingToURL(Url.host || Url.pathname));
+					// A mailto has no host: its address is the path (percent-encoded, so decoded
+					// for display) and/or RFC 6068 `to=` query values. Neither leaves a blank.
+					const decode = (raw: string) => {
+						try {
+							return decodeURIComponent(raw);
+						} catch {
+							return raw;
+						}
+					};
+					// The to= values are split by hand: URLSearchParams reads a `+` as a space, but
+					// RFC 6068 keeps it literal in an address (to=a+tag@b.c).
+					const to = Url.search
+						.slice(1)
+						.split("&")
+						.filter((pair) => pair.startsWith("to="))
+						.map((pair) => decode(pair.slice("to=".length)));
+					const shown = Url.host || [decode(Url.pathname), ...to].filter(Boolean).join(", ");
+					full.options.addText(I18n.goingToURL(shown));
 					const options = full.options.addOptions("", {ltr: true});
 					options.addButtonInput("", I18n.nevermind(), () => full.hide());
 					options.addButtonInput("", I18n.goThere(), () => {

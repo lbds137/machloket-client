@@ -2,6 +2,13 @@ import {I18n} from "./i18n.js";
 
 const DISMISS_KEY = "notifyBannerDismissed";
 
+/** Hides the bar once a permission request has settled, however it was asked (the bar's own
+ * tap, or a message's prompt in Channel.notify). */
+export function hideNotifyBanner() {
+	const banner = document.getElementById("notifyBanner");
+	if (banner) banner.hidden = true;
+}
+
 /** The "enable notifications" bar: browsers want requestPermission from a user gesture,
  * so the gateway-driven ask is often silently ignored — the bar's tap is the gesture.
  * Shows only while the permission is genuinely unset; dismissing sticks. */

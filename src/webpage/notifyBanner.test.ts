@@ -53,7 +53,7 @@ it("stays hidden when the permission is already decided", () => {
 
 		expect(banner.hidden).toBe(true);
 		// Computed, not just the property: the bar must not render (style.css's own
-		// #notifyBanner[hidden] rule does this).
+		// #notifyBanner[hidden] rule does this; notifyBannerStylesheet.test.ts pins that rule).
 		expect(getComputedStyle(banner).display).toBe("none");
 		banner.remove();
 	}

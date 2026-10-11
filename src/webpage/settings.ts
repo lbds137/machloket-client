@@ -2118,6 +2118,12 @@ async function handle2fa(
 				onRefused(I18n.requestFailed("HTTP " + resObj.status + ", bad body"));
 				return false;
 			}
+			// Valid JSON that isn't an object (null, a bare string or number, an array)
+			// is just as unusable as unparseable text: refuse it the same way.
+			if (typeof jsonRes !== "object" || jsonRes === null || Array.isArray(jsonRes)) {
+				onRefused(I18n.requestFailed("HTTP " + resObj.status + ", bad body"));
+				return false;
+			}
 			return jsonRes;
 		} else {
 			return new Promise<boolean>((resolution) => {
@@ -2582,7 +2588,7 @@ class Form implements OptionsElement<object> {
 						const text = await res.text();
 						// An empty success (204) is still a success.
 						json = text === "" ? {} : JSON.parse(text);
-						if (typeof json !== "object" || json === null) {
+						if (typeof json !== "object" || json === null || Array.isArray(json)) {
 							throw new TypeError("expected a JSON object, got " + text.slice(0, 40));
 						}
 					} catch (e) {
