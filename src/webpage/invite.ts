@@ -4,7 +4,9 @@ import {createImg, getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
-/** Joins the guild behind `code`; `ok` says whether the server took it. */
+/** Joins the guild behind `code`; `ok` says whether the flow may navigate, and an existing
+ * member counts. The server's already-member refusal is a generic HTTPError (400) with no
+ * code, so its message is the only key. */
 export async function acceptInvite(
 	api: string,
 	code: string,
@@ -18,6 +20,7 @@ export async function acceptInvite(
 	});
 	if (res.ok) return {ok: true};
 	const json = (await res.json().catch(() => undefined)) as {message?: string} | undefined;
+	if (/already a member/i.test(json?.message ?? "")) return {ok: true};
 	return {ok: false, message: json?.message ?? `${res.status}`};
 }
 if (window.location.pathname.startsWith("/invite"))

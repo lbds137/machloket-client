@@ -156,3 +156,112 @@ it("an edit made while a refused save is in flight isn't reverted", async () => 
 	expect(editing.getPermission("VIEW_CHANNEL")).toBe(1);
 	expect(list.options.haschanged).toBe(true);
 });
+
+it("a save whose role vanished is not a success", async () => {
+	const {guild} = guildWithRole();
+	// Nothing was sent: the caller must not record the editor's bits as accepted.
+	expect(await guild.updateRolePermissions("missing", new Permissions("8"))).toBe(false);
+});
+
+it("opening another role while a save is in flight leaves that role's stored pair alone", async () => {
+	let answer!: () => void;
+	captureRequests(
+		API + "/guilds/g1/roles/r1",
+		() => new Promise<Response>((res) => (answer = () => res(Response.json({})))),
+	);
+	const {guild, role} = guildWithRole();
+	const storedB = new Permissions("2");
+	const editing = new Permissions("8");
+	const list = Object.assign(Object.create(RoleList.prototype), {
+		curid: "r1",
+		permission: editing,
+		permissions: [
+			[{id: "r1", name: "Mods"}, role.permissions],
+			[{id: "r2", name: "Admins"}, storedB],
+		],
+		onchange: guild.updateRolePermissions.bind(guild),
+		options: {subOptions: undefined, haschanged: true, changed: () => {}},
+		permToggles: [],
+	}) as InstanceType<typeof RoleList>;
+
+	const saving = list.save();
+	await vi.waitFor(() => expect(answer).toBeDefined());
+	list.curid = "r2"; // the user opened role B while A's save was still in flight
+	answer();
+	await saving;
+
+	// A's save belongs to A: B's stored pair must not take A's bits.
+	expect([storedB.allow, storedB.deny]).toEqual([2n, 0n]);
+	expect(role.permissions.allow).toBe(8n);
+});
+
+it("a refusal that lands after a role switch leaves the editor on the role now shown", async () => {
+	let answer!: (r: Response) => void;
+	captureRequests(
+		API + "/guilds/g1/roles/r1",
+		() => new Promise<Response>((res) => (answer = res)),
+	);
+	const {guild, role} = guildWithRole(); // A's stored pair
+	// B stores what A's save is sending, so the untouched-editor check can't tell the switch.
+	const storedB = new Permissions("8");
+	const editing = new Permissions("8");
+	const list = Object.assign(Object.create(RoleList.prototype), {
+		curid: "r1",
+		permission: editing,
+		permissions: [
+			[{id: "r1", name: "Mods"}, role.permissions],
+			[{id: "r2", name: "Admins"}, storedB],
+		],
+		onchange: guild.updateRolePermissions.bind(guild),
+		options: {subOptions: undefined, haschanged: true, changed: () => {}},
+		permToggles: [],
+	}) as InstanceType<typeof RoleList>;
+
+	const saving = list.save();
+	await vi.waitFor(() => expect(answer).toBeDefined());
+	list.curid = "r2"; // B opened mid-save; the editor re-classes to B's stored bits
+	editing.allow = 8n;
+	editing.deny = 0n;
+	answer(new Response(null, {status: 403}));
+	await saving;
+
+	// The refusal belongs to A: nothing reverts onto the editor now showing B.
+	expect(editing.allow).toBe(8n);
+	expect(list.options.haschanged).toBe(true);
+	expect(role.permissions.allow).toBe(1n);
+});
+
+it("a channel with no overwrites: a refused second save keeps the first save's bit", async () => {
+	let n = 0;
+	captureRequests(API + "/channels/c1/permissions/g1", () =>
+		++n === 1 ? Response.json({}) : new Response(null, {status: 403}),
+	);
+	const channel = Object.assign(Object.create(Channel.prototype), {
+		id: "c1",
+		headers: {},
+		permission_overwrites: new Map(), // no overwrites yet
+		owner: {info: {api: API}, localuser: {userMap: new Map()}},
+	}) as InstanceType<typeof Channel>;
+	// What channel.ts's settings build for an overwrite-less channel: @everyone with a fresh pair.
+	const stored = new Permissions("0", "0");
+	const editing = new Permissions("0", "0");
+	const list = Object.assign(Object.create(RoleList.prototype), {
+		curid: "g1",
+		permission: editing,
+		permissions: [[{id: "g1", name: "@everyone"}, stored]],
+		onchange: channel.updateRolePermissions.bind(channel),
+		options: {subOptions: undefined, haschanged: true, changed: () => {}},
+		permToggles: [],
+	}) as InstanceType<typeof RoleList>;
+
+	editing.setPermission("VIEW_CHANNEL", 1);
+	await list.save(); // 200: the server now holds VIEW_CHANNEL allowed
+	expect(n).toBe(1);
+
+	editing.setPermission("SEND_MESSAGES", 1);
+	await list.save(); // 403
+	expect(n).toBe(2);
+
+	// The server holds VIEW_CHANNEL; the editor should still show it after the refusal.
+	expect(editing.getPermission("VIEW_CHANNEL")).toBe(1);
+});

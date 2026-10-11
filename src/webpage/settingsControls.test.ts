@@ -84,6 +84,20 @@ describe("member search box", () => {
 		return {ams, type, html};
 	}
 
+	it("a box whose searches all fail still closes on blur", async () => {
+		openBox(async () => {
+			throw new TypeError("offline");
+		});
+		await after(50);
+		const input = document.querySelector<HTMLInputElement>(".amsBox input")!;
+		expect(document.querySelector(".amsBox .reses")!.textContent).toContain(I18n.requestFailed("offline"));
+		// The blur handler belongs to the box, set when it is built, not to a search that succeeded.
+		expect(input.onblur).not.toBeNull();
+		// And the handler must actually close the box, not merely exist.
+		input.blur();
+		await vi.waitFor(() => expect(document.querySelector(".amsBox")).toBeNull());
+	});
+
 	it("shows the newest search's results, not a slower older one's", async () => {
 		const {type} = openBox();
 		type("a");

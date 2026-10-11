@@ -275,3 +275,26 @@ describe("jumping to a message the instance won't give", () => {
 		expect(loading.classList.contains("loading")).toBe(false);
 	});
 });
+
+describe("a history page that throws part-way through building", () => {
+	// The fault is the fixture shape itself: `new Message({id: "7"})` crashes in giveData
+	// on the missing author. If Message ever tolerates that, replace this with explicit
+	// fault injection — the assertions below must not go green by accident.
+	it("a page that fails part-way leaves the scroller able to retry", async () => {
+		const channel = channelWith(["9"]);
+		Object.assign(channel, {lastmessage: undefined});
+		channel.setUpInfiniteScroller();
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
+			Response.json([{id: "9"}, {id: "7"}]),
+		);
+
+		await channel.grabBefore("10");
+		// Nothing from a failed page is recorded — not even the id the throw came after.
+		expect(channel.idToPrev.has("10")).toBe(false);
+		const outcome = await channel.infinite
+			.getIDFromOffset("9", 1)
+			.then((v) => (v === undefined ? "top" : "id " + v), () => "retry later");
+		expect(outcome).toBe("retry later");
+	});
+});

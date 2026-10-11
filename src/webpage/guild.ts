@@ -2258,7 +2258,8 @@ class Guild extends SnowFlake {
 		const {allow, deny} = perms;
 		const role = this.roleids.get(id);
 		if (!role) {
-			return true;
+			// Nothing was sent, so the caller must revert rather than record the bits as accepted.
+			return false;
 		}
 		// Only the permissions: re-sending the rest would send the icon's hash where the server
 		// takes an upload.
@@ -2371,6 +2372,10 @@ class Guild extends SnowFlake {
 					return true;
 				}
 				if ((memberBits & ADMINISTRATOR) === ADMINISTRATOR) return true;
+				// "0" — any numeric string worth 0n, the server's rule too — is Discord's admins-only;
+				// null, absent or empty means everyone. Unparseable fails closed instead of crashing the list.
+				if (raw.default_member_permissions && !/^\d+$/.test(raw.default_member_permissions)) return false;
+				if (raw.default_member_permissions && BigInt(raw.default_member_permissions) === 0n) return false;
 				const mask = BigInt(raw.default_member_permissions || "0");
 				return (memberBits & mask) === mask;
 			})

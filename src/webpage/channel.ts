@@ -3426,16 +3426,16 @@ class Channel extends SnowFlake {
 				return;
 			}
 			try {
+				// Every message is built before any link, waiter or topid write: a page that
+				// throws while building leaves the channel untouched for the retry.
+				const built = messages.map((response) =>
+					this.messages.has(response.id)
+						? (this.messages.get(response.id) as Message)
+						: new Message(response, this),
+				);
 				let previd = id;
 				let i = 0;
-				for (const response of messages) {
-					let messager: Message;
-					if (this.messages.has(response.id)) {
-						messager = this.messages.get(response.id) as Message;
-					} else {
-						messager = new Message(response, this);
-					}
-
+				for (const messager of built) {
 					this.idToNext.set(messager.id, previd);
 					this.idToPrev.set(previd, messager.id);
 

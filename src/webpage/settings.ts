@@ -742,6 +742,8 @@ class AsyncMultiSelect implements OptionsElement<string[]> {
 		const reses = document.createElement("div");
 		reses.classList.add("flexttb", "reses");
 		searchBox.append(input, reses);
+		// Set once, not per search: a blur must close the box even when no search has run.
+		input.onblur = () => removeAni(searchBox);
 		let opts = [] as searchRes[];
 		let picked = false;
 		const pick = (opt: searchRes) => {
@@ -780,9 +782,6 @@ class AsyncMultiSelect implements OptionsElement<string[]> {
 				span.onmousedown = () => pick(opt);
 				reses.append(span);
 			}
-			input.onblur = async () => {
-				removeAni(searchBox);
-			};
 		};
 		const search = () => (latest = runSearch());
 

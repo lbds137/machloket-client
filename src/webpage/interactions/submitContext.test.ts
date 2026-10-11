@@ -40,4 +40,18 @@ describe("submitContext", () => {
 		expect(bodies.length).toBe(1);
 		expect(bodies[0]).toMatchObject({type: 2, data: {id: "555", target_id: "42"}});
 	});
+
+	it("the same context command on two different messages sends both", async () => {
+		const bodies = captureRequests("http://test.local/api/v9/interactions");
+		const channel = {id: "200", owner: {id: "100"}};
+		const cmd = command();
+
+		await Promise.all([
+			cmd.submitContext("42", channel as never),
+			cmd.submitContext("43", channel as never),
+		]);
+
+		// One POST in flight for target 42 must not swallow the invoke on target 43.
+		expect(bodies).toMatchObject([{data: {target_id: "42"}}, {data: {target_id: "43"}}]);
+	});
 });

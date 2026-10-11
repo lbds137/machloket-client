@@ -805,19 +805,33 @@ class RoleList extends Buttons {
 	}
 	async save() {
 		if (this.options.subOptions || !this.curid) return;
+		// The role this save is for: the editor may open another role while the save is in flight.
+		const id = this.curid;
 		const sentAllow = this.permission.allow;
 		const sentDeny = this.permission.deny;
-		const ok = await this.onchange(this.curid, this.permission);
-		if (ok !== false) return;
+		const ok = await this.onchange(id, this.permission);
+		if (ok !== false) {
+			// The server took the sent bits: they become the stored pair, so a later refusal
+			// reverts to them and not to the bits before this save.
+			const arr = this.permissions.find((_) => _[0].id === id);
+			if (arr) {
+				arr[1].allow = sentAllow;
+				arr[1].deny = sentDeny;
+			}
+			return;
+		}
+		// The editor may have moved to another role while the save was in flight; a revert
+		// would rewrite the role now showing, and the saved role's stored pair is untouched.
+		if (this.curid !== id) return;
 		// Flips made while the save was in flight are newer than the refusal; only an
 		// untouched editor goes back to the stored bits.
 		if (this.permission.allow !== sentAllow || this.permission.deny !== sentDeny) return;
-		this.refusedSave();
+		this.refusedSave(id);
 	}
 
 	/** A refused save: the editor was showing the refused bits; back to the stored ones. */
-	private refusedSave() {
-		const arr = this.permissions.find((_) => _[0].id === this.curid);
+	private refusedSave(id: string) {
+		const arr = this.permissions.find((_) => _[0].id === id);
 		if (!arr) return;
 		this.permission.allow = arr[1].allow;
 		this.permission.deny = arr[1].deny;

@@ -320,6 +320,44 @@ describe("application-command index fetch", () => {
 
 		expect(commands.map((c) => c.name)).toEqual(["random", "purge"]);
 	});
+
+	it('a command with default_member_permissions "0" (admins only) isn\'t offered to a plain member', async () => {
+		const {Member} = await import("./member");
+		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
+			new Response(
+				JSON.stringify({
+					applications: [{id: "300", name: "Echo"}],
+					application_commands: [
+						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+						// Discord: "0" disables the command for everyone but owners and admins —
+						// so does anything the server reads as 0n, "00" included.
+						{id: "2", type: 1, application_id: "300", name: "adminonly", description: "", dm_permission: true, default_member_permissions: "0"},
+						{id: "3", type: 1, application_id: "300", name: "zerozero", description: "", dm_permission: true, default_member_permissions: "00"},
+						// null means everyone.
+						{id: "4", type: 1, application_id: "300", name: "nullperms", description: "", dm_permission: true, default_member_permissions: null},
+					],
+				}),
+				{headers: {"Content-Type": "application/json"}},
+			),
+		);
+		// A plain member: @everyone's usual bits (VIEW_CHANNEL | SEND_MESSAGES), no admin.
+		const member = Object.create(Member.prototype);
+		Object.defineProperty(member, "roles", {value: [{permissions: {allow: (1n << 10n) | (1n << 11n)}}]});
+		Object.defineProperty(member, "user", {value: {id: "me"}});
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "1554722916606791818",
+			properties: {owner_id: "someone-else"},
+			owner: {
+				info: {api: API_ROOT},
+				headers: {"Content-Type": "application/json", Authorization: "token"},
+			},
+			member,
+		}) as InstanceType<typeof Guild>;
+
+		const {commands} = await guild.getCommandsFetch();
+
+		expect(commands.map((c) => c.name)).toEqual(["random", "nullperms"]);
+	});
 });
 
 describe("command picker rows", () => {

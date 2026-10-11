@@ -1,0 +1,34 @@
+import {describe, expect, it} from "vitest";
+import {captureRequests} from "./test/setup";
+
+// The app's modules import each other in cycles that evaluate correctly only in the entry's
+// order (index.ts imports localuser first).
+await import("./localuser");
+const {acceptInvite} = await import("./invite");
+
+const API = "http://invite.test/api/v9";
+
+const refusal = (message: string) => () =>
+	new Response(JSON.stringify({code: 400, message}), {
+		status: 400,
+		headers: {"Content-Type": "application/json"},
+	});
+
+describe("accepting an invite", () => {
+	it("a member who is already in the guild has joined it: the accept is a success", async () => {
+		captureRequests(API + "/invites/abc", refusal("You are already a member of this guild"));
+
+		const result = await acceptInvite(API, "abc", "tok");
+
+		expect(result.ok).toBe(true);
+	});
+
+	it("any other refusal stays a refusal, with the server's message", async () => {
+		captureRequests(API + "/invites/abc", refusal("Invite expired"));
+
+		const result = await acceptInvite(API, "abc", "tok");
+
+		expect(result.ok).toBe(false);
+		expect(result.message).toBe("Invite expired");
+	});
+});
