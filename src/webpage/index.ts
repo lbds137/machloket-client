@@ -5,7 +5,6 @@ import {setTheme} from "./utils/utils.js";
 import {consumeMembersPop, installMembersView} from "./utils/membersView.js";
 import {consumeSearchPop, installSearchView} from "./utils/searchView.js";
 import {MarkDown} from "./markdown.js";
-import {Message} from "./message.js";
 import {File} from "./file.js";
 import {I18n} from "./i18n.js";
 import "./utils/pollyfills.js";
@@ -28,6 +27,7 @@ import {showChangelogPopup} from "./changelog.js";
 import {NotificationHandler} from "./notificationHandler.js";
 import {installNotifyBanner} from "./notifyBanner.js";
 import {pickFiles} from "./utils/filePicker.js";
+import {restoreFailedSend} from "./composerRestore.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -193,7 +193,6 @@ if (window.location.pathname.startsWith("/channels")) {
 	menu.bindContextmenu(document.getElementById("channels") as HTMLDivElement);
 
 	const pasteImageElement = document.getElementById("pasteimage") as HTMLDivElement;
-	let replyingTo: Message | null = null;
 	window.addEventListener("popstate", (e) => {
 		// The mobile members view consumes a back before channel navigation gets it (9c);
 		// the search view's guard runs next, same rule (18b).
@@ -225,7 +224,8 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 		markdown.onUpdate("", false);
 
-		replyingTo = thisUser.channelfocus ? thisUser.channelfocus.replyingto : null;
+		// Per send: a refused earlier send must restore its own reply target, not a later one's.
+		const replyingTo = thisUser.channelfocus ? thisUser.channelfocus.replyingto : null;
 		if (replyingTo?.div) {
 			replyingTo.div.classList.remove("replying");
 		}
@@ -262,18 +262,22 @@ if (window.location.pathname.startsWith("/channels")) {
 				),
 			);
 		} catch {
-			images = attachments;
-			for (const file of images) {
-				const img = imagesHtml.get(file);
-				if (!img) continue;
-				pasteImageElement.append(img);
-			}
-			channel.replyingto = replyingTo;
-			channel.makereplybox();
-			typebox.textContent = content;
-			typebox.markdown.txt = content;
-			typebox.markdown.boxupdate(Infinity);
-			channel.setDraft(content);
+			restoreFailedSend({
+				channel,
+				focused: thisUser.channelfocus,
+				content,
+				attachments,
+				replyingTo,
+				composer: {
+					typebox,
+					pasteImageElement,
+					imagesHtml,
+					getImages: () => images,
+					setImages: (list) => {
+						images = list;
+					},
+				},
+			});
 		}
 		nonceMap.delete(channel.id);
 	}

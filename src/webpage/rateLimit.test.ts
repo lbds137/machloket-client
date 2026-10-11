@@ -5,6 +5,8 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Channel} = await import("./channel");
+const {Localuser} = await import("./localuser");
+const {I18n} = await import("./i18n");
 const {retryAfterMs, retryAfterMsFromBody} = await import("./utils/rateLimit");
 const {acceptInvite} = await import("./invite");
 const {Message, fetchReactionUsers} = await import("./message");
@@ -149,6 +151,144 @@ describe("the first history page of a channel", () => {
 	});
 });
 
+describe("opening a channel whose first history page is rate-limited", () => {
+	// Sessions opened by a test: leaving them at the end cancels any re-ask still pending, so it
+	// can't fire into the next test.
+	const opened: {channelfocus?: unknown}[] = [];
+	afterEach(() => {
+		for (const localuser of opened.splice(0)) localuser.channelfocus = {};
+		document.body.innerHTML = "";
+	});
+
+	/** A channel opened as getHTML opens it (the skeleton up, putmessages then buildmessages),
+	 * whose history endpoint answers `answers` in turn (the last one repeats). */
+	async function openChannel(answers: (() => Response | Promise<Response>)[]) {
+		await I18n.done;
+		document.body.innerHTML = `<div id="loadingdiv" class="loading"></div><div id="scrollWrap"></div>`;
+		let calls = 0;
+		const asked = captureRequests(API + "/channels/c1/messages", () =>
+			answers[Math.min(calls++, answers.length - 1)](),
+		);
+		const builtAround: string[] = [];
+		const localuser: {channelfocus?: unknown} = {};
+		// The channel's json says it has messages (last_message_id m9); no read state yet.
+		const channel = channelAt({
+			owner: {id: "@me", info: {api: API}, unreads: () => {}, localuser},
+			lastmessageid: "m9",
+			infinite: {
+				getDiv: async (id: string) => {
+					builtAround.push(id);
+					return document.createElement("div");
+				},
+				snapBottom: () => () => {},
+			},
+			focus: async () => {},
+			slowmode: async () => {},
+		});
+		localuser.channelfocus = channel;
+		await channel.putmessages();
+		await channel.buildmessages();
+		opened.push(localuser);
+		return {channel, localuser, asked, builtAround};
+	}
+	const page = () => Response.json([{id: "9", author: {}}]);
+	const loading = () => document.getElementById("loadingdiv")!.classList.contains("loading");
+
+	it("doesn't call it empty, and keeps the skeleton up", async () => {
+		await openChannel([limited, page]);
+
+		// The user must not be told that a channel with messages is empty.
+		expect(document.getElementById("removetitle")?.textContent).not.toBe(I18n.noMessages());
+		expect(loading()).toBe(true);
+	});
+
+	it("asks again by itself once the window passes, and builds the page", async () => {
+		const {asked, builtAround} = await openChannel([limited, page]);
+
+		await vi.waitFor(() => expect(builtAround).toEqual(["9"]), {timeout: 1000});
+		expect(asked).toHaveLength(2);
+		expect(loading()).toBe(false);
+	});
+
+	it("a switch to another channel cancels the re-ask", async () => {
+		const {localuser, asked} = await openChannel([limited, page]);
+		localuser.channelfocus = {};
+
+		await new Promise((r) => setTimeout(r, 200)); // well past the 0.05 s window
+
+		expect(asked).toHaveLength(1);
+	});
+
+	it("a channel opened while the re-ask's fetch is in flight is left alone", async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((r) => (release = r));
+		const {localuser, asked, builtAround} = await openChannel([
+			limited,
+			() => gate.then(page),
+		]);
+		await vi.waitFor(() => expect(asked).toHaveLength(2), {timeout: 1000});
+		// The user opens channel B: its getHTML bumps the generation and fills the scroller.
+		const theirs = document.createElement("div");
+		theirs.classList.add("messagecontainer");
+		document.getElementById("scrollWrap")!.append(theirs);
+		localuser.channelfocus = {};
+		const genid = ++Channel.genid;
+
+		release();
+		await new Promise((r) => setTimeout(r, 100));
+
+		expect(Channel.genid).toBe(genid);
+		expect(theirs.isConnected).toBe(true);
+		expect(builtAround).toEqual([]);
+	});
+
+	it("opening the channel again supersedes the pending re-ask", async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((r) => (release = r));
+		const {channel, localuser, asked} = await openChannel([
+			() => Response.json({retry_after: 0.15}, {status: 429}),
+			() => gate.then(page),
+		]);
+		// The user switches away and back: getHTML's build path runs again, and its own
+		// putmessages (held here) is the ask that counts.
+		localuser.channelfocus = {};
+		localuser.channelfocus = channel;
+		Channel.genid++;
+		channel.beginFirstPageOpen();
+		const reopened = channel.putmessages();
+
+		await new Promise((r) => setTimeout(r, 300)); // past the old re-ask's window
+		release();
+		await reopened;
+
+		// The first ask and the reopen's own: the old re-ask sent none of its own.
+		expect(asked).toHaveLength(2);
+	});
+
+	it("re-clicking the channel in view doesn't cancel the re-ask", async () => {
+		const {asked, builtAround} = await openChannel([limited, page]);
+		// getHTML's early return for the channel already in view bumps the generation.
+		Channel.genid++;
+
+		await new Promise((r) => setTimeout(r, 200)); // well past the 0.05 s window
+
+		expect(asked).toHaveLength(2);
+		expect(builtAround).toEqual(["9"]);
+	});
+
+	it("three refusals end in a failed load, not an empty channel", async () => {
+		const {asked, builtAround} = await openChannel([limited]);
+
+		await vi.waitFor(() => expect(asked).toHaveLength(3), {timeout: 1000});
+		await vi.waitFor(() => expect(loading()).toBe(false), {timeout: 1000});
+		await new Promise((r) => setTimeout(r, 200)); // a 4th ask would have come by now
+
+		expect(asked).toHaveLength(3);
+		expect(builtAround).toEqual([]);
+		expect(document.getElementById("removetitle")).toBeNull();
+	});
+});
+
 describe("an attachment upload slot", () => {
 	const slot = () =>
 		Response.json({
@@ -235,6 +375,97 @@ describe("a notification-settings PATCH", () => {
 	});
 });
 
+describe("a newer settings PATCH", () => {
+	afterEach(() => {
+		document.querySelectorAll("dialog, .PopUp").forEach((e) => e.remove());
+	});
+
+	it("an unmute during a mute's 429 window cancels the mute's retry", async () => {
+		await I18n.done;
+		let calls = 0;
+		const sent = captureRequests(API + "/users/@me/guilds/g1/settings", () =>
+			calls++ === 0
+				? Response.json({message: "rate limited", retry_after: 0.3}, {status: 429})
+				: Response.json({}),
+		);
+		const channel = channelAt({showMuteState: () => {}});
+
+		// Mute for 30m through the real dialog: its submit button sends the PATCH.
+		channel.muteChannel();
+		[...document.querySelectorAll("button")]
+			.find((b) => b.textContent === I18n.submit())!
+			.click();
+		await vi.waitFor(() => expect(sent).toHaveLength(1));
+		// The user changes their mind while the mute waits out its window.
+		channel.unmuteChannel();
+		await vi.waitFor(() => expect(sent).toHaveLength(2));
+
+		await new Promise((r) => setTimeout(r, 500)); // past the mute's window
+
+		// The newest PATCH (the unmute) must be the last thing the server hears.
+		const last = sent.at(-1) as {channel_overrides: {c1: {muted: boolean}}};
+		expect(last.channel_overrides.c1.muted).toBe(false);
+		expect(sent).toHaveLength(2);
+	});
+
+	it("a status change during an older status's 429 window cancels the older retry", async () => {
+		await I18n.done;
+		let calls = 0;
+		const sent = captureRequests(API + "/users/@me/settings", () =>
+			calls++ === 0
+				? Response.json({message: "rate limited", retry_after: 0.3}, {status: 429})
+				: Response.json({}),
+		);
+		const user = {
+			info: {api: API},
+			headers: {},
+			status: "online",
+			user: {setstatus: () => {}},
+		} as unknown as InstanceType<typeof Localuser>;
+		Localuser.openStatusDialog(user);
+		const select = document.querySelector("select")!;
+		const pick = (index: number) => {
+			select.selectedIndex = index;
+			select.dispatchEvent(new Event("change"));
+		};
+		// The select's options are online, invisible, dnd, idle.
+		pick(3);
+		await vi.waitFor(() => expect(sent).toHaveLength(1));
+		pick(2);
+		await vi.waitFor(() => expect(sent).toHaveLength(2));
+
+		await new Promise((r) => setTimeout(r, 500)); // past the idle's window
+
+		expect((sent.at(-1) as {status: string}).status).toBe("dnd");
+		expect(sent).toHaveLength(2);
+	});
+
+	it("a folder save during an older save's 429 window cancels the older retry", async () => {
+		let calls = 0;
+		const sent = captureRequests(API + "/users/@me/settings", () =>
+			calls++ === 0
+				? Response.json({message: "rate limited", retry_after: 0.3}, {status: 429})
+				: Response.json({}),
+		);
+		const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
+		const user = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API},
+			headers: {},
+			guildOrder: [folder("old")],
+		}) as InstanceType<typeof Localuser>;
+
+		const older = user.saveGuildOrder();
+		await vi.waitFor(() => expect(sent).toHaveLength(1));
+		user.guildOrder = [folder("new")] as never;
+		const newer = user.saveGuildOrder();
+		await Promise.all([older, newer]);
+
+		await new Promise((r) => setTimeout(r, 500)); // past the older save's window
+		const names = sent.map((b) => (b as {guild_folders: {name: string}[]}).guild_folders[0].name);
+		expect(names).toEqual(["old", "new"]);
+	});
+});
+
 describe("a reaction toggle", () => {
 	it("a 429 waits its window and asks again once", async () => {
 		// reactionToggle encodes a unicode emoji into the path: 🔥 is %F0%9F%94%A5.
@@ -310,6 +541,27 @@ describe("a stale edit", () => {
 		expect(asked).toHaveLength(2);
 		expect(asked[1]).toEqual({content: "B"});
 		expect(b?.ok).toBe(true);
+	});
+});
+
+describe("an edit reverted during an older edit's window", () => {
+	it("cancels the older edit's retry", async () => {
+		const asked = captureRequests(
+			API + "/channels/c1/messages/m1",
+			sequence(
+				() => Response.json({message: "rate limited", retry_after: 0.3}, {status: 429}),
+				() => Response.json({}),
+			),
+		);
+		const message = messageAt(undefined, {content: {textContent: "old"}});
+
+		const a = message.edit("A");
+		await new Promise((r) => setTimeout(r, 100)); // A is waiting out its window
+		// The user reverts: the newest intent is the current text.
+		await message.edit("old");
+		await a;
+
+		expect(asked.filter((b) => (b as {content?: string}).content === "A")).toHaveLength(1);
 	});
 });
 

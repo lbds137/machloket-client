@@ -780,10 +780,12 @@ class Message extends SnowFlake {
 	/** Counts this message's edits, so a newer one cancels an older one's 429 retry. */
 	private editSeq?: number;
 	async edit(content: string) {
+		// Bumped before the no-op return: a newer edit, even one that changes nothing, is the
+		// newest intent and cancels an older edit's pending retry.
+		const seq = (this.editSeq = (this.editSeq ?? 0) + 1);
 		if (content === this.content.textContent) {
 			return;
 		}
-		const seq = (this.editSeq = (this.editSeq ?? 0) + 1);
 		return await fetchRetryOnce(
 			this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id,
 			{

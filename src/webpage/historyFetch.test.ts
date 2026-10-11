@@ -183,6 +183,53 @@ describe("a rate-limited history fetch", () => {
 		expect(fetchMock.mock.calls.length).toBe(2);
 	});
 
+	it("another call's failure doesn't release a window this call didn't arm", async () => {
+		const failing = Object.assign(channelWith(["9", "8"]), {id: "201"});
+		const limiting = Object.assign(channelWith(["9", "8"]), {id: "202"});
+		const third = Object.assign(channelWith(["9", "8"]), {id: "203"});
+		let fail!: () => void;
+		const held = new Promise<Response>((_, rej) => (fail = () => rej(new TypeError("Failed to fetch"))));
+		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+			const url = String(input instanceof Request ? input.url : input);
+			if (url.includes("/channels/201/")) return held;
+			if (url.includes("/channels/203/")) return Promise.resolve(Response.json([{id: "9"}]));
+			return Promise.resolve(Response.json({retry_after: 2}, {status: 429}));
+		});
+		// Call 1 is in flight (no window yet) when call 2 gets its 429 and arms one.
+		const first = failing.grabBefore("10");
+		const second = limiting.grabBefore("10");
+		await new Promise((res) => setTimeout(res, 20));
+		expect(Channel.historyCooldownUntil).toBeGreaterThan(Date.now());
+		// Call 1 now fails on the network: it armed nothing, so it releases nothing.
+		fail();
+		expect(await within(first)).toBe("settled");
+		fetchMock.mockClear();
+
+		// A tick inside call 2's window asks the endpoint nothing.
+		expect(await within(third.grabBefore("10"))).toBe("settled");
+		expect(fetchMock).not.toHaveBeenCalled();
+		void second;
+	});
+
+	it("a retry that is rate-limited again re-arms the window from its own retry_after", async () => {
+		const channel = channelWith(["9", "8"]);
+		const fetchMock = vi.spyOn(globalThis, "fetch");
+		// 429 for 0.1 s, then the retry's own answer: 429 for 2 s.
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 0.1}, {status: 429})),
+		);
+		fetchMock.mockImplementationOnce(() =>
+			Promise.resolve(Response.json({retry_after: 2}, {status: 429})),
+		);
+		expect(await within(channel.grabBefore("10"))).toBe("settled");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+
+		// A paging tick shortly after, inside the second window, asks the endpoint nothing.
+		await new Promise((res) => setTimeout(res, 20));
+		expect(await within(channel.grabBefore("10"))).toBe("settled");
+		expect(fetchMock).toHaveBeenCalledTimes(2);
+	});
+
 	it("once the window passes, the next tick asks again", async () => {
 		const channel = channelWith(["9", "8"]);
 		const fetchMock = vi.spyOn(globalThis, "fetch");

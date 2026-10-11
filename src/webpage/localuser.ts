@@ -193,6 +193,8 @@ class Localuser {
 
 		onswap?.(thisUser);
 	}
+	/** Counts each user's status PATCHes, so a newer one cancels an older one's 429 retry. */
+	private static statusSeq = new WeakMap<Localuser, number>();
 	static openStatusDialog(user: Localuser) {
 		const d = new Dialog(I18n.localuser.status());
 		const opt = d.float.options;
@@ -208,13 +210,21 @@ class Localuser {
 			})
 			.watchForChange(async (i) => {
 				const status = selection[i];
-				await fetchRetryOnce(user.info.api + "/users/@me/settings", {
-					body: JSON.stringify({
-						status,
-					}),
-					headers: user.headers,
-					method: "PATCH",
-				});
+				const seq = (Localuser.statusSeq.get(user) ?? 0) + 1;
+				Localuser.statusSeq.set(user, seq);
+				const res = await fetchRetryOnce(
+					user.info.api + "/users/@me/settings",
+					{
+						body: JSON.stringify({
+							status,
+						}),
+						headers: user.headers,
+						method: "PATCH",
+					},
+					{shouldRetry: () => seq === Localuser.statusSeq.get(user)},
+				);
+				// Applied only once the server took it: a refused or cancelled change isn't shown.
+				if (!res.ok) return;
 				sessionStorage.setItem("status", status);
 				user.user.setstatus(status);
 			});
@@ -2138,7 +2148,10 @@ class Localuser {
 			await this.saveGuildOrder();
 		});
 	}
+	/** Counts guild-folder saves, so a newer one cancels an older one's 429 retry. */
+	private folderSeq?: number;
 	async saveGuildOrder() {
+		const seq = (this.folderSeq = (this.folderSeq ?? 0) + 1);
 		const guild_folders: guildFolder[] = this.guildOrder.map((elm) => {
 			if (elm instanceof Guild) {
 				return {
@@ -2157,11 +2170,15 @@ class Localuser {
 			}
 		});
 
-		await fetchRetryOnce(this.info.api + "/users/@me/settings", {
-			method: "PATCH",
-			headers: this.headers,
-			body: JSON.stringify({guild_folders}),
-		});
+		await fetchRetryOnce(
+			this.info.api + "/users/@me/settings",
+			{
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({guild_folders}),
+			},
+			{shouldRetry: () => seq === this.folderSeq},
+		);
 	}
 	makeGuildIcon(guild: Guild) {
 		const divy = guild.generateGuildIcon();

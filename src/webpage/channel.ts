@@ -353,25 +353,32 @@ class Channel extends SnowFlake {
 			},
 		);
 	}
+	/** Counts this channel's mute and unmute PATCHes, so a newer one cancels an older one's 429 retry. */
+	private muteSeq?: number;
 	unmuteChannel() {
+		const seq = (this.muteSeq = (this.muteSeq ?? 0) + 1);
 		const mute_config = {
 			selected_time_window: -1,
 			end_time: 0,
 		};
-		fetchRetryOnce(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
-			method: "PATCH",
-			headers: this.headers,
-			body: JSON.stringify({
-				channel_overrides: {
-					[this.id]: {
-						message_notifications: this.message_notifications,
-						muted: false,
-						mute_config,
-						channel_id: this.id,
+		fetchRetryOnce(
+			this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings",
+			{
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({
+					channel_overrides: {
+						[this.id]: {
+							message_notifications: this.message_notifications,
+							muted: false,
+							mute_config,
+							channel_id: this.id,
+						},
 					},
-				},
-			}),
-		});
+				}),
+			},
+			{shouldRetry: () => seq === this.muteSeq},
+		);
 		this.mute_config = mute_config;
 		this.showMuteState();
 		this.unreads();
@@ -391,24 +398,29 @@ class Channel extends SnowFlake {
 			time = [1800, 3600, 21600, 43200, 86400, 604800, 2592000, 1 << 30][e];
 		};
 		opt.addButtonInput("", I18n.submit(), () => {
+			const seq = (this.muteSeq = (this.muteSeq ?? 0) + 1);
 			const mute_config = {
 				selected_time_window: time,
 				end_time: Math.floor(new Date(Date.now() + time * 1000).getTime()),
 			};
-			fetchRetryOnce(this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings", {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					channel_overrides: {
-						[this.id]: {
-							message_notifications: this.message_notifications,
-							muted: true,
-							mute_config,
-							channel_id: this.id,
+			fetchRetryOnce(
+				this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings",
+				{
+					method: "PATCH",
+					headers: this.headers,
+					body: JSON.stringify({
+						channel_overrides: {
+							[this.id]: {
+								message_notifications: this.message_notifications,
+								muted: true,
+								mute_config,
+								channel_id: this.id,
+							},
 						},
-					},
-				}),
-			});
+					}),
+				},
+				{shouldRetry: () => seq === this.muteSeq},
+			);
 			this.mute_config = mute_config;
 			this.showMuteState();
 			dio.hide();
@@ -3074,7 +3086,10 @@ class Channel extends SnowFlake {
 		} else {
 			(document.getElementById("typebox") as HTMLDivElement).blur();
 		}
-		if (getMessages) await this.putmessages();
+		if (getMessages) {
+			this.beginFirstPageOpen();
+			await this.putmessages();
+		}
 
 		await prom;
 		if (id !== Channel.genid) {
@@ -3213,6 +3228,20 @@ class Channel extends SnowFlake {
 		});
 		notiselect.show();
 	}
+	/** Set when the opening page of history was rate-limited: the channel is unloaded, not
+	 * empty. */
+	private firstPageRefused = false;
+	/** The opening page's consecutive refusals; an open the user makes starts the count over. */
+	private firstPageRefusals?: number;
+	/** What an open the user makes (getHTML's build path) resets before fetching the opening page. */
+	beginFirstPageOpen() {
+		this.firstPageRefusals = 0;
+		// The open's own fetch supersedes any re-ask still waiting out a window. Called below
+		// getHTML's in-view early return, so a click on the channel already in view leaves it be.
+		this.reaskToken = (this.reaskToken ?? 0) + 1;
+	}
+	/** The most times one open asks for a rate-limited opening page before it gives up. */
+	private static readonly firstPageAttempts = 3;
 	async putmessages() {
 		//TODO swap out with the WS op code
 		if (this.allthewayup) {
@@ -3228,8 +3257,12 @@ class Channel extends SnowFlake {
 			// A rate limit says nothing about where the channel's history ends: arm the window
 			// the paging loop shares, and leave the channel unloaded.
 			Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(j));
+			this.firstPageRefused = true;
+			this.firstPageRefusals = (this.firstPageRefusals ?? 0) + 1;
 			return;
 		}
+		this.firstPageRefused = false;
+		this.firstPageRefusals = 0;
 
 		const response = (await j.json()) as messagejson[];
 		if (response.length !== 100) {
@@ -3468,6 +3501,8 @@ class Channel extends SnowFlake {
 		// the same request on every scroll tick, while the caller that hit the limit waits
 		// (capped) and retries once itself.
 		if (Date.now() < Channel.historyCooldownUntil) return undefined;
+		// Whether this call has put a window up; only a window it armed is its to release.
+		let armed = false;
 		try {
 			let res = await fetch(
 				this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
@@ -3476,20 +3511,30 @@ class Channel extends SnowFlake {
 			if (res.status === 429) {
 				const wait = await Channel.rateLimitWait(res);
 				Channel.historyCooldownUntil = Date.now() + wait;
+				armed = true;
 				await new Promise((r) => setTimeout(r, wait));
 				res = await fetch(
 					this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
 					{headers: this.headers},
 				);
-				// The retry's answer owns the window now: a second 429 keeps it, anything
-				// else (including a network error) releases the other ticks.
-				if (res.status !== 429) Channel.historyCooldownUntil = 0;
+				// The retry's answer owns the window now: a second 429 re-arms it from its own
+				// wait, anything else releases the other ticks (a network error does in the catch).
+				if (res.status === 429) {
+					Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(res));
+				} else {
+					// Released here: a later failure of this call has no window left to clear.
+					Channel.historyCooldownUntil = 0;
+					armed = false;
+				}
 			}
 			if (!res.ok) return undefined;
 			const json: unknown = await res.json();
 			return Array.isArray(json) ? (json as messagejson[]) : undefined;
 		} catch (e) {
 			console.error(e);
+			// A failure after this call armed a window releases it; a failure that armed
+			// nothing leaves another call's window alone.
+			if (armed) Channel.historyCooldownUntil = 0;
 			return undefined;
 		}
 	}
@@ -3498,6 +3543,9 @@ class Channel extends SnowFlake {
 		await this.tryfocusinfinate(id, !!id);
 	}
 	infinitefocus = false;
+	/** Counts this channel's builds, so a pending first-page re-ask can tell a newer build of
+	 * the channel from a click that didn't rebuild it. */
+	private reaskToken?: number;
 	/** The generation of this channel's latest build, the one `infinitefocus` belongs to. */
 	private buildGen = 0;
 	async tryfocusinfinate(id: string | void, flash = false) {
@@ -3507,6 +3555,8 @@ class Channel extends SnowFlake {
 		this.infinitefocus = true;
 		const gid = ++Channel.genid;
 		this.buildGen = gid;
+		// A newer build of this channel supersedes any re-ask still waiting out a window.
+		this.reaskToken = (this.reaskToken ?? 0) + 1;
 		// Overtaken (a channel switch, or getHTML re-opening this channel): the claim goes too,
 		// unless a newer build of this channel holds it now.
 		const abandon = () => {
@@ -3530,6 +3580,35 @@ class Channel extends SnowFlake {
 				} else if (this.lastmessageid && this.messages.has(this.lastmessageid)) {
 					id = this.goBackIds(this.lastmessageid, 50);
 				}
+			}
+			if (!id && this.firstPageRefused) {
+				// Nothing came, but that isn't the channel's emptiness: no title, no recorded end.
+				this.infinitefocus = false;
+				if ((this.firstPageRefusals ?? 0) >= Channel.firstPageAttempts) {
+					// Out of attempts: as after any failed page, the skeleton goes and nothing is
+					// recorded, so the next open asks again.
+					loading.classList.remove("loading");
+					return;
+				}
+				// The skeleton stays up. When the window ends, the channel asks again by the
+				// same two steps getHTML takes, if it is still the one on screen.
+				const wait = Math.max(0, Channel.historyCooldownUntil - Date.now());
+				const token = this.reaskToken;
+				// The token (not the global generation, which any click on the channel in view
+				// bumps) says no newer build of this channel has started; the focus check says
+				// the user is still here. Both are checked again after the fetch.
+				const current = () => this.localuser.channelfocus === this && token === this.reaskToken;
+				setTimeout(async () => {
+					if (!current()) return;
+					try {
+						await this.putmessages();
+						if (!current()) return;
+						await this.buildmessages();
+					} catch (e) {
+						console.error(e);
+					}
+				}, wait);
+				return;
 			}
 			if (!id) {
 				if (!removetitle) {
