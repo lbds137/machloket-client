@@ -12,9 +12,10 @@ afterEach(async () => {
 });
 
 // AUDIT B-F8 (introduced by b0e39bb5): en.json's botExplorerTitle was retitled, but fr, es and nl
-// still carry the old "Spacebar Explorer" string. getTranslation reads the locale file before
-// en, so the stale string shadows the new English. translations.md says other locales fall back
-// to en for missing keys, so each of these locales must give the English title.
+// still carried the old "Spacebar Explorer" string. getTranslation reads the locale file before
+// en, so the stale string shadowed the new English. fr and nl still fall back to en (their keys
+// are dropped); es was finished under B-F10's ruling and now carries its own translation — the
+// bug shape to keep dead is the stale "Spacebar Explorer" title, not "must equal English".
 describe("AUDIT B-F8: botExplorerTitle in the locales that still carry the old string", () => {
 	it.each(["fr", "nl"])("%s shows the English title, not its stale translation", async (lang) => {
 		await I18n.create("en");
@@ -27,17 +28,12 @@ describe("AUDIT B-F8: botExplorerTitle in the locales that still carry the old s
 		expect(I18n.getTranslation("botExplorerTitle")).toBe(english);
 	});
 
-	// es is not selectable in the app today: its translations/es.json has no top-level
-	// readableName, so vite's langs.js omits it and I18n.create("es") falls back to English
-	// (filed separately). So this checks the shadowing on es's own data, layered over en the way
-	// getTranslation layers a loaded locale.
-	it("es's own file does not shadow the English title", async () => {
-		await I18n.create("en");
-		const english = I18n.getTranslation("botExplorerTitle");
-		const es = (await (await fetch(new URL("./translations/es.json", import.meta.url).href)).json()) as unknown;
+	it("es is selectable and shows its own title, never the stale one", async () => {
+		await I18n.create("es");
 
-		I18n.translations = [es as never, ...I18n.translations];
-
-		expect(I18n.getTranslation("botExplorerTitle")).toBe(english);
+		expect(I18n.lang).toBe("es");
+		const title = I18n.getTranslation("botExplorerTitle");
+		expect(title).not.toContain("Spacebar Explorer");
+		expect(title).not.toBe("Explorador de Spacebar");
 	});
 });

@@ -81,6 +81,20 @@ class I18n {
 			throw new Error(msg + " not found");
 		}
 	}
+	/** Intl's plural category for `numb` in the active language (CLDR rules, so e.g. Czech's
+ * "few" is only 2-4 while Polish's reaches 22). The PluralRules object is cached per
+ * language. Only consulted for blocks with three or more alternatives, and only for
+ * languages shipped with such blocks (cs for now) — other locales' data was written for
+ * the positional mapping. */
+	private static pluralRulesByLang = new Map<string, Intl.PluralRules>();
+	private static pluralClass(numb: number): string {
+		let rules = I18n.pluralRulesByLang.get(I18n.lang);
+		if (!rules) {
+			rules = new Intl.PluralRules(I18n.lang);
+			I18n.pluralRulesByLang.set(I18n.lang, rules);
+		}
+		return rules.select(numb);
+	}
 	static fillInBlanks(msg: string, params: string[]): string {
 		msg = msg.replace(/(\$\d+)|({{(.+?)}})/g, (_, dolar, str, match) => {
 			if (dolar) {
@@ -98,6 +112,16 @@ class I18n {
 						const numb = Number(first);
 						if (numb === 0) {
 							return strs[strs.length - 1];
+						}
+						// A block with three or more alternatives can carry a language's middle plural
+						// classes (Czech: 1 / 2-4 / the rest, 12-14 included). Only a language shipped
+						// with such blocks (cs) selects by category; everyone else, and every shorter
+						// block, keeps the positional mapping.
+						if (strs.length > 2 && I18n.lang === "cs") {
+							const cls = this.pluralClass(numb);
+							if (cls === "one") return strs[0];
+							if (cls === "few") return strs[1];
+							return strs[2];
 						}
 						return strs[Math.min(strs.length - 1, numb - 1)];
 					}
