@@ -12,28 +12,43 @@ const GUILD_ID = "1554722916606791818";
 const INDEX = `${API_ROOT}/guilds/${GUILD_ID}/application-command-index`;
 const JSON_HEADERS = {"Content-Type": "application/json"};
 
-const command = (id: string, name: string, perms?: string | null) => ({
+const command = (
+	id: string,
+	name: string,
+	perms?: string | null,
+	permissions?: {
+		user?: boolean;
+		roles?: {[id: string]: boolean};
+		channels?: {[id: string]: boolean};
+	} | null,
+	type = 1,
+) => ({
 	id,
-	type: 1,
+	type,
 	application_id: "300",
 	name,
 	description: "",
 	dm_permission: true,
 	...(perms === undefined ? {} : {default_member_permissions: perms}),
+	...(permissions === undefined ? {} : {permissions}),
 });
 
-const indexBody = (commands: ReturnType<typeof command>[]) =>
+const indexBody = (
+	commands: ReturnType<typeof command>[],
+	applications: {id: string; name: string; owner_id?: string}[] = [{id: "300", name: "Echo"}],
+) =>
 	() =>
 		new Response(
-			JSON.stringify({applications: [{id: "300", name: "Echo"}], application_commands: commands}),
+			JSON.stringify({applications, application_commands: commands}),
 			{headers: JSON_HEADERS},
 		);
 
 /** A member whose roles are `roles` (the Member.roles getter, shadowed as the fixtures do). */
-function memberWith(roles: {permissions: {allow: bigint}}[]) {
+function memberWith(roles: {permissions: {allow: bigint}}[], roleIds?: string[], userId = "me") {
 	const member = Object.create(Member.prototype);
 	Object.defineProperty(member, "roles", {value: roles});
-	Object.defineProperty(member, "user", {value: {id: "me"}});
+	Object.defineProperty(member, "user", {value: {id: userId}});
+	member.roleIds = new Set(roleIds ?? []);
 	return member;
 }
 
@@ -107,5 +122,113 @@ describe('default_member_permissions "0" and null, read through getCommands', ()
 		const guild = guildFor(memberWith([{permissions: {allow: (1n << 10n) | (1n << 11n)}}]));
 
 		expect(names(await guild.getCommands())).toEqual(["random", "nullperms", "absentperms"]);
+	});
+});
+
+describe("per-command permission overrides (2026-10-16 ruling)", () => {
+	const modRoleId = "901";
+	const deniedChannelId = "801";
+	const otherChannelId = "802";
+
+	it("a command with permissions {user:false, roles:{[modRoleId]:true}} is listed for a member holding modRoleId and absent for one who does not", async () => {
+		captureRequests(
+			INDEX,
+			indexBody([
+				command("1", "modonly", null, {user: false, roles: {[modRoleId]: true}}),
+			]),
+		);
+		const modGuild = guildFor(memberWith([{permissions: {allow: 0n}}], [modRoleId]));
+		expect(names(await modGuild.getCommands())).toEqual(["modonly"]);
+
+		const plainGuild = guildFor(memberWith([{permissions: {allow: 0n}}], []));
+		expect(names(await plainGuild.getCommands())).toEqual([]);
+	});
+
+	it("a command with permissions {roles:{[modRoleId]:true}, channels:{[deniedChannelId]:false}} is absent when getCommands is awaited with deniedChannelId and listed when asked with another channel id", async () => {
+		captureRequests(
+			INDEX,
+			indexBody([
+				command("1", "channelscoped", null, {
+					roles: {[modRoleId]: true},
+					channels: {[deniedChannelId]: false},
+				}),
+			]),
+		);
+		const guild = guildFor(memberWith([{permissions: {allow: 0n}}], [modRoleId]));
+		expect(names(await guild.getCommands(deniedChannelId))).toEqual([]);
+		expect(names(await guild.getCommands(otherChannelId))).toEqual(["channelscoped"]);
+	});
+
+	it("app owner bypasses permissions for commands of apps they own", async () => {
+		captureRequests(
+			INDEX,
+			indexBody(
+				[command("1", "owneronly", "0", {user: false})],
+				[{id: "300", name: "Echo", owner_id: "me"}],
+			),
+		);
+		const ownerGuild = guildFor(memberWith([{permissions: {allow: 0n}}]));
+		expect(names(await ownerGuild.getCommands())).toEqual(["owneronly"]);
+
+		const otherMember = memberWith([{permissions: {allow: 0n}}], undefined, "other");
+		const otherGuild = guildFor(otherMember);
+		expect(names(await otherGuild.getCommands())).toEqual([]);
+	});
+});
+
+describe("per-command overrides: precedence against the existing gates", () => {
+	const modRoleId = "901";
+
+	it("an allow override lists the command even where default_member_permissions would not", async () => {
+		captureRequests(
+			INDEX,
+			indexBody([command("1", "modonly", "8192", {roles: {[modRoleId]: true}})]),
+		);
+		const modGuild = guildFor(memberWith([{permissions: {allow: 0n}}], [modRoleId]));
+		expect(names(await modGuild.getCommands())).toEqual(["modonly"]);
+
+		const plainGuild = guildFor(memberWith([{permissions: {allow: 0n}}], []));
+		expect(names(await plainGuild.getCommands())).toEqual([]);
+	});
+
+	it("@everyone rides in roleIds (the guild id): a guild-wide deny hides, a role allow carves out", async () => {
+		captureRequests(
+			INDEX,
+			indexBody([
+				command("1", "nobody", null, {roles: {[GUILD_ID]: false}}),
+				command("2", "modsplus", null, {roles: {[GUILD_ID]: false, [modRoleId]: true}}),
+			]),
+		);
+		const modGuild = guildFor(memberWith([{permissions: {allow: 0n}}], [modRoleId]));
+		expect(names(await modGuild.getCommands())).toEqual(["modsplus"]);
+
+		const plainGuild = guildFor(memberWith([{permissions: {allow: 0n}}], []));
+		expect(names(await plainGuild.getCommands())).toEqual([]);
+	});
+
+	it("an ADMINISTRATOR passes a user:false deny that would hide them", async () => {
+		captureRequests(
+			INDEX,
+			indexBody(
+				[command("1", "nou", null, {user: false}), command("2", "owneronly", "0", {user: false})],
+				[{id: "300", name: "Echo", owner_id: "someone-else"}],
+			),
+		);
+		const adminGuild = guildFor(memberWith([{permissions: {allow: 1n << 3n}}]));
+		expect(names(await adminGuild.getCommands())).toEqual(["nou", "owneronly"]);
+	});
+
+	it("cachedContextCommands applies the same overrides with channelId and owners", async () => {
+		captureRequests(
+			INDEX,
+			indexBody([command("1", "ctxmod", null, {user: false, roles: {[modRoleId]: true}}, 3)]),
+		);
+		const modGuild = guildFor(memberWith([{permissions: {allow: 0n}}], [modRoleId]));
+		await modGuild.getCommands();
+		expect(names(modGuild.cachedContextCommands("801"))).toEqual(["ctxmod"]);
+
+		const plainGuild = guildFor(memberWith([{permissions: {allow: 0n}}], []));
+		await plainGuild.getCommands();
+		expect(names(plainGuild.cachedContextCommands("801"))).toEqual([]);
 	});
 });

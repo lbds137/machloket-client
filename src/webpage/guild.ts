@@ -32,6 +32,7 @@ import {Sticker} from "./sticker.js";
 import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
 import {MarkDown} from "./markdown.js";
 import {Command} from "./interactions/commands.js";
+import {commandAllowedFor} from "./commandPermissions.js";
 import {Hover} from "./hover.js";
 import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
@@ -156,6 +157,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 type CommandIndexEntry = {
 	promise: Promise<{apps: applicationJson[]; commands: Command[]}>;
 	settled?: Command[];
+	appOwners?: Map<string, string>;
 };
 class Guild extends SnowFlake {
 	owner!: Localuser;
@@ -2299,8 +2301,15 @@ class Guild extends SnowFlake {
 			const made: CommandIndexEntry = {
 				promise: fetched.then(
 					({ok, apps, commands}) => {
-						if (ok) made.settled = commands;
-						else if (indexes.get(scope) === made) indexes.delete(scope);
+						if (ok) {
+							made.settled = commands;
+							const appOwners = new Map<string, string>();
+							for (const app of apps ?? []) {
+								const ownerId = (app as {owner_id?: string}).owner_id;
+								if (ownerId) appOwners.set(app.id, ownerId);
+							}
+							made.appOwners = appOwners;
+						} else if (indexes.get(scope) === made) indexes.delete(scope);
 						return {apps, commands};
 					},
 					() => {
@@ -2315,27 +2324,43 @@ class Guild extends SnowFlake {
 		return entry.promise;
 	}
 	/** The slash popup's commands: chat-input only; context-menu commands (USER 2, MESSAGE 3)
-	 * have their own menus. `channelId` scopes a DM's list to that DM's bots. */
+	 * have their own menus. `channelId` scopes a DM's list to that DM's bots, and is the
+	 * channel-tier key for the per-command overrides in a guild. */
 	async getCommands(channelId?: string) {
+		const scope = this.id === "@me" ? (channelId ?? "") : "";
 		const {apps, commands} = await this.commandIndex(channelId);
 		this.apps = apps;
+		const appOwners = this.commandIndexes?.get(scope)?.appOwners;
 		const memberBits = this.id === "@me" ? undefined : this.member?.usableBits();
-		return commands.filter((_) => _.type === 1 && this.memberCanSee(_.rawJson, memberBits));
+		return commands.filter(
+			(_) => _.type === 1 && this.memberCanSee(_.rawJson, memberBits, channelId, appOwners),
+		);
 	}
 	/** MESSAGE context-menu commands for `channelId`'s scope, synchronously: what has already
 	 * been fetched (a menu can't wait). An unfetched scope starts its fetch and reads empty. */
 	cachedContextCommands(channelId: string): Command[] {
 		const scope = this.id === "@me" ? channelId : "";
-		const settled = this.commandIndexes?.get(scope)?.settled;
+		const entry = this.commandIndexes?.get(scope);
+		const settled = entry?.settled;
 		if (!settled) void this.commandIndex(channelId);
 		const memberBits = this.id === "@me" ? undefined : this.member?.usableBits();
-		return (settled ?? []).filter((_) => _.type === 3 && this.memberCanSee(_.rawJson, memberBits));
+		return (settled ?? []).filter(
+			(_) => _.type === 3 && this.memberCanSee(_.rawJson, memberBits, channelId, entry?.appOwners),
+		);
 	}
-	/** Discord parity: a command whose default_member_permissions the member doesn't hold isn't
-	 * offered (admins pass everything). Applied on every read, not at fetch, so a role granted or
-	 * a member attached mid-session counts without refetching the cached index. `memberBits` is
-	 * undefined for DMs and for a guild whose member isn't resolved yet (nothing to filter by). */
-	private memberCanSee(raw: commandJson, memberBits: bigint | undefined): boolean {
+	/** Discord parity: what a member sees of the command index. Per-command overrides first
+	 * (commandAllowedFor's table, after the bypasses: guild owner, ADMINISTRATOR, app owner),
+	 * then a command whose default_member_permissions the member doesn't hold isn't offered
+	 * (admins pass everything). Applied on every read, not at fetch, so a role granted or a
+	 * member attached mid-session counts without refetching the cached index. `memberBits` is
+	 * undefined for DMs and for a guild whose member isn't resolved yet (nothing to filter
+	 * by), which also keeps DM lists unfiltered — the server scopes those. */
+	private memberCanSee(
+		raw: commandJson,
+		memberBits: bigint | undefined,
+		channelId?: string,
+		appOwners?: Map<string, string>,
+	): boolean {
 		if (memberBits === undefined) return true;
 		const ADMINISTRATOR = 1n << BigInt(Permissions.permisions.indexOf("ADMINISTRATOR"));
 		// The owner is admin without the bit (isAdmin()'s owner branch).
@@ -2346,6 +2371,14 @@ class Guild extends SnowFlake {
 			return true;
 		}
 		if ((memberBits & ADMINISTRATOR) === ADMINISTRATOR) return true;
+		// App owner bypass (the member is the owner of the app owning the command).
+		const appOwner = appOwners?.get(raw.application_id);
+		if (appOwner !== undefined && this.member?.user?.id === appOwner) return true;
+		// @everyone's role id is the guild id (Member's roles getter rides it the same way).
+		const roleIds = new Set<string>(this.member?.roleIds ?? []);
+		roleIds.add(this.id);
+		const verdict = commandAllowedFor(raw.permissions, channelId, roleIds);
+		if (verdict !== null) return verdict;
 		// "0" — any numeric string worth 0n, the server's rule too — is Discord's admins-only;
 		// null, absent or empty means everyone. Unparseable fails closed instead of crashing the list.
 		if (raw.default_member_permissions && !/^\d+$/.test(raw.default_member_permissions)) return false;
