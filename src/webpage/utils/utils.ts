@@ -577,7 +577,11 @@ export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
 async function checkURLs(wellknown: string, urls: InstanceUrls) {
 	if (isLoopback(urls.api) !== isLoopback(wellknown)) {
 		return new Promise<InstanceUrls | null>(async (res) => {
-			const menu = new Dialog("");
+			// goAbove: the caller may have raised its own layer (the login dialog sits at
+			// z-index 200, the reconnect splash at 110); at .background's default 102 this
+			// dialog opens underneath it — invisible, unclickable, and the check waits on a
+			// prompt the user cannot see or click (seen live 2026-10-16).
+			const menu = new Dialog("", {goAbove: true});
 			const options = menu.float.options;
 			options.addMDText(new MarkDown(I18n.incorrectURLS(), undefined));
 			const opt = options.addOptions("", {ltr: true});

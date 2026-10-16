@@ -81,4 +81,52 @@ describe("checkURLs", () => {
 		expect(pings.length).toBe(1);
 		await vi.waitFor(() => expect(document.querySelector(".background")).toBeNull());
 	});
+
+	it("the rewrite dialog opens above a caller's raised layer (login raises z-index 200)", async () => {
+		// The login page raises its own dialog to inline z-index 200 before the check runs;
+		// the rewrite dialog must end up at-or-above that AND after it in DOM order (equal
+		// z-index paints later-on-top), or it opens hidden underneath and the check hangs.
+		const loginLayer = document.createElement("div");
+		loginLayer.className = "background";
+		loginLayer.style.zIndex = "200";
+		document.body.append(loginLayer);
+
+		try {
+			stubMixedOriginInstance();
+			// The Yes answer rebuilds every url onto the well-known's own origin and pings that
+			// origin to confirm it answers; stub it so the ping never leaves the test.
+			const pings = captureRequests("http://typed.test/api/v9/ping", () => Response.json({}));
+
+			const result = getapiurls(WELLKNOWN);
+
+			let yes: HTMLButtonElement | undefined;
+			await vi.waitFor(() => {
+				yes = [...document.querySelectorAll("button")].find(
+					(b) => b.textContent === I18n.yes(),
+				);
+				if (!yes) throw new Error("rewrite dialog button not in the DOM yet");
+			});
+
+			// The app stylesheet's .background sits at 102 (style.css) — below the raised
+			// login layer — so the rewrite dialog must carry the raised level itself.
+			const layer = yes!.closest(".background") as HTMLDivElement;
+			expect(Number(layer.style.zIndex)).toBeGreaterThanOrEqual(
+				Number(loginLayer.style.zIndex),
+			);
+			// Equal z-index paints later-on-top: the rewrite dialog must follow the login layer.
+			expect(
+				loginLayer.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING,
+			).toBeTruthy();
+
+			yes!.click();
+			await expect(result).resolves.toMatchObject({api: "http://typed.test/api/v9"});
+			expect(pings.length).toBe(1);
+		} finally {
+			loginLayer.remove();
+			// removeAni completes on an animation the CSS-less test page never runs, so a
+			// hiding dialog can sit in .removeElm; hard-remove leftovers to keep the page
+			// clean for any later test.
+			document.querySelectorAll(".background.removeElm").forEach((elm) => elm.remove());
+		}
+	});
 });
