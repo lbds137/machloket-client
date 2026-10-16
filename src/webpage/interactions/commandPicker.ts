@@ -4,6 +4,7 @@ import {I18n} from "../i18n.js";
 import type {applicationJson} from "../jsontypes.js";
 import type {Localuser} from "../localuser.js";
 import {CDNParams} from "../utils/cdnParams.js";
+import {tokenMatchRatio} from "./labelMatch.js";
 
 /** Discord's command-picker browse view (an empty "/" query): a rail of tabs — Frequently
  * Used first, then one icon per app, alphabetical — beside a body of per-app sections. A
@@ -23,14 +24,16 @@ export function invocationKey(command: Command, inv: CommandInvocation): string 
 	const path = inv.branch ? command.name + " " + inv.branch : command.name;
 	return command.applicationId + "/" + path;
 }
-/** Substring-ratio match on the full label — Command.similar's intent (its own math has an
- * upstream constant-branch quirk in the case-insensitive path; this one stays proportional). */
+/** Ratio match on the full label: exact and case-insensitive substring tiers, then
+ * tokenMatchRatio's per-word tier for word-split queries. Command.similar's intent (its own
+ * math has an upstream constant-branch quirk in the case-insensitive path; this one stays
+ * proportional). */
 export function similarLabel(label: string, search: string): number {
 	if (!search.length) return 0.1;
 	if (label.includes(search)) return search.length / label.length;
 	if (label.toLowerCase().includes(search.toLowerCase()))
 		return search.length / label.length / 1.4;
-	return 0;
+	return tokenMatchRatio(label, search);
 }
 
 /** The app's icon, or its initial when the index carried none. */
