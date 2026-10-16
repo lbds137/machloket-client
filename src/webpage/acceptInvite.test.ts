@@ -31,4 +31,17 @@ describe("accepting an invite", () => {
 		expect(result.ok).toBe(false);
 		expect(result.message).toBe("Invite expired");
 	});
+
+	it("a fresh join names the guild it joined", async () => {
+		captureRequests(API + "/invites/abc", () =>
+			new Response(JSON.stringify({code: "abc", guild_id: "g9", channel_id: "c1"}), {
+				headers: {"Content-Type": "application/json"},
+			}),
+		);
+
+		const result = await acceptInvite(API, "abc", "tok");
+
+		expect(result.ok).toBe(true);
+		expect((result as {guildId?: string}).guildId).toBe("g9");
+	});
 });

@@ -412,10 +412,10 @@ class Embed {
 						json.code,
 						this.localuser.headers.Authorization,
 					).then((result) => {
-						// Already a member opens the guild rather than alerting the refusal.
-						if (result.alreadyMember) {
+						// The accept and the already-member refusal both land in the guild; a real refusal alerts.
+						if (result.ok) {
 							this.localuser.loadGuild(guild.id);
-						} else if (!result.ok) {
+						} else {
 							alert(result.message);
 						}
 					});

@@ -2396,12 +2396,21 @@ class Localuser {
 				} else {
 					parsed = e.code;
 				}
-				// Already a member counts as joined (acceptInvite's ok): the dialog hides.
 				const result = await acceptInvite(this.info.api, parsed, this.headers.Authorization);
 				if (!result.ok) {
 					throw new FormError(text, result.message ?? "");
 				}
 				full.hide();
+				// Joined (or already a member): open the guild, like the invite page does. A fresh join's
+				// response names it; the already-member refusal carries no id, so the code is resolved.
+				if (result.guildId) {
+					this.loadGuild(result.guildId);
+				} else if (result.alreadyMember) {
+					const json = (await fetch(`${this.info.api}/invites/${parsed}`, {headers: this.headers})
+						.then((res) => res.json())
+						.catch(() => undefined)) as {guild_id?: string} | undefined;
+					if (json?.guild_id) this.loadGuild(json.guild_id);
+				}
 			});
 			const text = form.addTextInput(I18n.invite.inviteLinkCode(), "code");
 		}

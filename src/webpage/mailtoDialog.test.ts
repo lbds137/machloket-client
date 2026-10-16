@@ -34,4 +34,11 @@ describe("AUDIT B-F7: the mailto leaving dialog names the address", () => {
 
 		expect(text).toContain("foo@bar.com");
 	});
+
+	// RFC 6068 hfnames are case-insensitive, so TO= is the same header as to=.
+	it("an upper-case TO= query still names the address", () => {
+		const text = dialogTextFor("mailto:?TO=a@b.c");
+
+		expect(text).toContain("a@b.c");
+	});
 });

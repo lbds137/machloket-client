@@ -1433,7 +1433,8 @@ class MarkDown {
 					const to = Url.search
 						.slice(1)
 						.split("&")
-						.filter((pair) => pair.startsWith("to="))
+						// RFC 6068 hfnames are case-insensitive.
+						.filter((pair) => pair.toLowerCase().startsWith("to="))
 						.map((pair) => decode(pair.slice("to=".length)));
 					const shown = Url.host || [decode(Url.pathname), ...to].filter(Boolean).join(", ");
 					full.options.addText(I18n.goingToURL(shown));
