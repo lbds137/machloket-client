@@ -3692,6 +3692,7 @@ class Channel extends SnowFlake {
 		this.type = json.type;
 		if (json.flags !== undefined) this.flags = json.flags;
 		this.name = json.name;
+		this.position = json.position;
 		this.owner_id = json.owner_id;
 		this.icon = json.icon;
 		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
@@ -3747,7 +3748,6 @@ class Channel extends SnowFlake {
 				});
 			}
 		}
-		console.log(pchange, nchange);
 		this.topic = json.topic;
 		this.nsfw = json.nsfw;
 		this.fireEvents();

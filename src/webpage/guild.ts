@@ -1302,94 +1302,101 @@ class Guild extends SnowFlake {
 		if (this.member.hasPermission("MANAGE_WEBHOOKS")) {
 			const webhooks = settings.addButton(I18n.webhooks.base());
 			webhookMenu(this, this.info.api + `/guilds/${this.id}/webhooks`, webhooks);
+		}
+		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const template = settings.addButton(I18n.guild.templates());
-			(async () => {
-				template.addText(I18n.guild.templcateMetaDesc());
-				const generateTemplateArea = (temp: templateSkim) => {
-					const div = document.createElement("div");
-					div.classList.add("flexltr", "templateMiniBox");
-					const code = document.createElement("span");
-
-					code.textContent = temp.code + ` (${temp.name})`;
-
-					const edit = document.createElement("button");
-					edit.textContent = I18n.edit();
-					edit.onclick = () => {
-						const form = template.addSubForm(
-							I18n.guild.editingTemplate(temp.name),
-							(tempy) => {
-								const template = tempy as templateSkim;
-								temp.name = template.name;
-								temp.description = template.description;
-							},
-							{
-								fetchURL: this.info.api + "/guilds/" + this.id + "/templates/" + temp.code,
-								method: "PATCH",
-								headers: this.headers,
-							},
-						);
-						const search = new URLSearchParams([["instance", this.info.wellknown]]);
-						form.addMDText(
-							new MarkDown(
-								I18n.guild.templateURL(
-									window.location.origin + "/template/" + temp.code + "?" + search,
-								),
-								undefined,
-							),
-						);
-
-						const name = form.addTextInput(I18n.guild.templateName(), "name", {
-							initText: temp.name,
-						});
-						form.addMDInput(I18n.guild.templateDesc(), "description", {
-							initText: temp.description,
-						});
-						User.resolve(temp.creator_id, this.localuser).then((_) => {
-							form.addText(I18n.guild.tempCreatedBy());
-							form.addHTMLArea(_.createWidget(this));
-						});
-						form.addText(I18n.guild.tempUseCount((temp.usage_count || 0) + ""));
-						form.addPreprocessor(() => {
-							if (name.value.length < 2) {
-								throw new FormError(name, I18n.guild.templateNameShort());
-							}
-						});
-					};
-
-					div.append(code, edit);
-					template.addHTMLArea(div);
-				};
-				template.addButtonInput("", I18n.guild.createNewTemplate(), () => {
-					const form = template.addSubForm(
-						I18n.guild.createNewTemplate(),
-						(code) => {
-							template.returnFromSub();
-							generateTemplateArea(code as templateSkim);
-						},
-						{
-							fetchURL: this.info.api + "/guilds/" + this.id + "/templates",
-							method: "POST",
-							headers: this.headers,
-						},
-					);
-					form.addText(I18n.guild.templcateMetaDesc());
-					const name = form.addTextInput(I18n.guild.templateName(), "name");
-					form.addMDInput(I18n.guild.templateDesc(), "description");
-					form.addPreprocessor(() => {
-						if (name.value.length < 2) {
-							throw new FormError(name, I18n.guild.templateNameShort());
-						}
-					});
-				});
-				const templates = (await (
-					await fetch(this.info.api + "/guilds/" + this.id + "/templates", {headers: this.headers})
-				).json()) as templateSkim[];
-				for (const temp of templates.reverse()) {
-					generateTemplateArea(temp);
-				}
-			})();
+			this.loadTemplates(template);
 		}
 		settings.show();
+	}
+	/** The Templates settings button's content: the guild's template list, newest first. */
+	private async loadTemplates(template: Options) {
+		template.addText(I18n.guild.templcateMetaDesc());
+		const generateTemplateArea = (temp: templateSkim) => {
+			const div = document.createElement("div");
+			div.classList.add("flexltr", "templateMiniBox");
+			const code = document.createElement("span");
+
+			code.textContent = temp.code + ` (${temp.name})`;
+
+			const edit = document.createElement("button");
+			edit.textContent = I18n.edit();
+			edit.onclick = () => {
+				const form = template.addSubForm(
+					I18n.guild.editingTemplate(temp.name),
+					(tempy) => {
+						const template = tempy as templateSkim;
+						temp.name = template.name;
+						temp.description = template.description;
+					},
+					{
+						fetchURL: this.info.api + "/guilds/" + this.id + "/templates/" + temp.code,
+						method: "PATCH",
+						headers: this.headers,
+					},
+				);
+				const search = new URLSearchParams([["instance", this.info.wellknown]]);
+				form.addMDText(
+					new MarkDown(
+						I18n.guild.templateURL(
+							window.location.origin + "/template/" + temp.code + "?" + search,
+						),
+						undefined,
+					),
+				);
+
+				const name = form.addTextInput(I18n.guild.templateName(), "name", {
+					initText: temp.name,
+				});
+				form.addMDInput(I18n.guild.templateDesc(), "description", {
+					initText: temp.description,
+				});
+				User.resolve(temp.creator_id, this.localuser).then((_) => {
+					form.addText(I18n.guild.tempCreatedBy());
+					form.addHTMLArea(_.createWidget(this));
+				});
+				form.addText(I18n.guild.tempUseCount((temp.usage_count || 0) + ""));
+				form.addPreprocessor(() => {
+					if (name.value.length < 2) {
+						throw new FormError(name, I18n.guild.templateNameShort());
+					}
+				});
+			};
+
+			div.append(code, edit);
+			template.addHTMLArea(div);
+		};
+		template.addButtonInput("", I18n.guild.createNewTemplate(), () => {
+			const form = template.addSubForm(
+				I18n.guild.createNewTemplate(),
+				(code) => {
+					template.returnFromSub();
+					generateTemplateArea(code as templateSkim);
+				},
+				{
+					fetchURL: this.info.api + "/guilds/" + this.id + "/templates",
+					method: "POST",
+					headers: this.headers,
+				},
+			);
+			form.addText(I18n.guild.templcateMetaDesc());
+			const name = form.addTextInput(I18n.guild.templateName(), "name");
+			form.addMDInput(I18n.guild.templateDesc(), "description");
+			form.addPreprocessor(() => {
+				if (name.value.length < 2) {
+					throw new FormError(name, I18n.guild.templateNameShort());
+				}
+			});
+		});
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/templates", {headers: this.headers});
+		const templates = (await res.json().catch(() => undefined)) as templateSkim[] | undefined;
+		if (!Array.isArray(templates)) {
+			template.addText(I18n.requestFailed(`HTTP ${res.status}`));
+			return;
+		}
+		for (const temp of templates.reverse()) {
+			generateTemplateArea(temp);
+		}
 	}
 	onStickerUpdate = (_stickers: Sticker[]) => {};
 	addCommunity(settings: Settings, textChannels: Channel[]) {
