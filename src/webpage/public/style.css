@@ -6783,6 +6783,13 @@ fieldset input[type="radio"] {
 		margin: 0;
 	}
 
+	/* The magnifier rides the input's right end only while searching; with the box closed
+	   it flows after it, so the pin→search gap matches the search→inbox one instead of
+	   accumulating the empty box's reserved space. */
+	.searchMeta:not(.searching) #searchX {
+		position: static;
+	}
+
 	.searchBox:empty::after {
 		content: "";
 	}
@@ -6799,8 +6806,8 @@ fieldset input[type="radio"] {
 	}
 
 	.searchMeta {
+		align-items: center;
 		height: 32px;
-		min-width: 32px;
 		transition: width 0.2s;
 	}
 }
