@@ -1260,7 +1260,6 @@ class Localuser {
 			this.refreshInboxMenu();
 		} else if (temp.op === 10) {
 			if (!this.ws) return;
-			console.log("heartbeat down");
 			// An absent interval would arm ~4ms spam timers and NaN the watchdog's math —
 			// fall back to Discord's typical 41.25s.
 			const interval = temp.d?.heartbeat_interval || 41250;
