@@ -32,6 +32,14 @@ import {BOT_HIDE_TAG, getBotConfigs} from "./utils/storage/botConfigs.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 
+export interface ForwardSnapshot {
+	content?: MarkDown;
+	attachments: File[];
+	embeds: Embed[];
+	timestamp?: string | number;
+	edited_timestamp?: string | null;
+}
+
 /** Discord's "used /command" pill on an interaction reply line: a slash glyph and the
  * command's path ("walk browse"), no other chrome. */
 export function interactionCommandChip(label: string): HTMLElement {
@@ -144,10 +152,12 @@ class Message extends SnowFlake {
 	mention_everyone!: boolean;
 	attachments: File[] = []; //probably should be its own class tbh, should be Attachments[]
 	message_reference?: {
-		guild_id: string;
-		channel_id: string;
-		message_id: string;
+		guild_id?: string;
+		channel_id?: string;
+		message_id?: string;
+		type?: number;
 	};
+	forwardSnapshot?: ForwardSnapshot;
 	type!: number;
 	private timestamp!: number | string;
 	content!: MarkDown;
@@ -235,7 +245,11 @@ class Message extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.author.id === this.localuser.user.id && editTypes.has(this.type);
+					return (
+						this.author.id === this.localuser.user.id &&
+						editTypes.has(this.type) &&
+						this.message_reference?.type !== 1
+					);
 				},
 
 				icon: {
@@ -500,7 +514,7 @@ class Message extends SnowFlake {
 		this.giveData(messagejson);
 		if (!dontStore) {
 			this.owner.messages.set(this.id, this);
-			if (messagejson.referenced_message)
+			if (messagejson.referenced_message && messagejson.message_reference?.type !== 1)
 				this.localuser.giveMessage(messagejson.referenced_message);
 		}
 	}
@@ -578,6 +592,39 @@ class Message extends SnowFlake {
 					this.localuser.channelids.set(thread.id, thread);
 				}
 				this.thread = thread;
+				continue;
+			} else if (thing === "message_snapshots") {
+				const snapshots = messagejson.message_snapshots;
+				if (snapshots && snapshots.length > 0 && snapshots[0]?.message) {
+					const snap = snapshots[0].message;
+					const attachments: File[] = [];
+					if (snap.attachments) {
+						for (const file of snap.attachments) {
+							attachments.push(new File(file, this));
+						}
+					}
+					// The viewer steps through a message's images; without this it would
+					// read the empty outer attachments and open at index -1.
+					for (const file of attachments) {
+						file.files = attachments;
+					}
+					const embeds: Embed[] = [];
+					if (snap.embeds) {
+						for (const emb of snap.embeds) {
+							embeds.push(new Embed(emb, this));
+						}
+					}
+					const content = new MarkDown(snap.content || "", this.channel);
+					this.forwardSnapshot = {
+						content,
+						attachments,
+						embeds,
+						timestamp: snap.timestamp,
+						edited_timestamp: snap.edited_timestamp,
+					};
+				} else {
+					this.forwardSnapshot = undefined;
+				}
 				continue;
 			} else if (thing === "mention_roles") continue;
 			(this as any)[thing] = (messagejson as any)[thing];
@@ -1072,7 +1119,13 @@ class Message extends SnowFlake {
 			}
 		}
 
-		if (this.message_reference && this.type !== 6 && this.type !== 18 && this.type !== 46) {
+		if (
+			this.message_reference &&
+			this.message_reference.type !== 1 &&
+			this.type !== 6 &&
+			this.type !== 18 &&
+			this.type !== 46
+		) {
 			const replyline = document.createElement("div");
 
 			const minipfp = document.createElement("img");
@@ -1089,7 +1142,7 @@ class Message extends SnowFlake {
 
 			replyline.classList.add("flexltr", "replyflex");
 			// TODO: Fix this
-			this.channel.getmessage(this.message_reference.message_id).then((message) => {
+			this.channel.getmessage(this.message_reference.message_id as string).then((message) => {
 				if (!message) {
 					minipfp.remove();
 					username.textContent = I18n.message.deleted();
@@ -1100,14 +1153,20 @@ class Message extends SnowFlake {
 					username.textContent = "Blocked user";
 					return;
 				}
-				if (message.attachments?.length || message.embeds?.length || message.stickers.length) {
+				// A forward previews from its snapshot: the message's own content fields are empty.
+				const fwd = message.forwardSnapshot;
+				if (
+					fwd
+						? fwd.attachments.length || fwd.embeds.length
+						: message.attachments?.length || message.embeds?.length || message.stickers.length
+				) {
 					const b = document.createElement("b");
 					b.innerText = I18n.message.attached();
 					b.style.paddingRight = "4px";
 					reply.append(b);
 				}
 				const author = message.author;
-				reply.appendChild(message.content.makeHTML({stdsize: true}));
+				reply.appendChild((fwd?.content || message.content).makeHTML({stdsize: true}));
 				minipfp.src = author.getpfpsrc();
 
 				author.bind(minipfp, this.guild);
@@ -1126,7 +1185,7 @@ class Message extends SnowFlake {
 			reply.onclick = (_) => {
 				if (!this.message_reference) return;
 				// TODO: FIX this
-				this.channel.focus(this.message_reference.message_id);
+				this.channel.focus(this.message_reference.message_id as string);
 			};
 			div.appendChild(replyline);
 		}
@@ -1281,7 +1340,9 @@ class Message extends SnowFlake {
 				const messaged = this.content.makeHTML();
 				if (!this.embeds.find((_) => _.json.url === messaged.textContent)) {
 					messagedwrap.classList.add("flexttb");
-					messagedwrap.appendChild(messaged);
+					if (this.content.rawString || this.message_reference?.type !== 1) {
+						messagedwrap.appendChild(messaged);
+					}
 					if (!combine && this.edited_timestamp) {
 						const edit = document.createElement("span");
 						edit.classList.add("timestamp");
@@ -1308,6 +1369,82 @@ class Message extends SnowFlake {
 					embeds.appendChild(thing.generateHTML());
 				}
 				messagedwrap.appendChild(embeds);
+			}
+
+			if (this.message_reference?.type === 1) {
+				const forwardBlock = document.createElement("div");
+				forwardBlock.classList.add("forwardBlock");
+
+				const forwardHeader = document.createElement("div");
+				forwardHeader.classList.add("forwardHeader", "flexltr");
+
+				const forwardIcon = document.createElement("span");
+				forwardIcon.classList.add("svgicon", "svg-forward", "forwardIcon");
+
+				const forwardLabel = document.createElement("span");
+				forwardLabel.classList.add("forwardLabel");
+				forwardLabel.textContent = I18n.message.forwarded();
+
+				forwardHeader.append(forwardIcon, forwardLabel);
+
+				const channel = this.message_reference.channel_id
+					? this.localuser.channelids.get(this.message_reference.channel_id)
+					: undefined;
+				if (channel?.name) {
+					// DM channels live under the "@me" pseudo-guild and take no # prefix.
+					const label = channel.guild?.id === "@me" ? channel.name : `#${channel.name}`;
+					const channelSpan = document.createElement("span");
+					channelSpan.classList.add("forwardChannel");
+					channelSpan.textContent = ` • ${label}`;
+					forwardHeader.appendChild(channelSpan);
+				}
+
+				forwardBlock.appendChild(forwardHeader);
+
+				if (this.forwardSnapshot) {
+					const forwardBody = document.createElement("div");
+					forwardBody.classList.add("forwardBody", "flexttb");
+
+					const snap = this.forwardSnapshot;
+					if (snap.content) {
+						snap.content.onUpdate = () => {};
+						const snapMessaged = snap.content.makeHTML();
+						if (!snap.embeds.find((_) => _.json.url === snapMessaged.textContent)) {
+							if (snap.edited_timestamp) {
+								const edit = document.createElement("span");
+								edit.classList.add("timestamp");
+								edit.textContent = I18n.message.edited();
+								const hover = new Hover(new Date(snap.edited_timestamp).toString());
+								hover.addEvent(edit);
+								snapMessaged.append(edit);
+							}
+							if (snap.content.rawString || snap.edited_timestamp) {
+								forwardBody.appendChild(snapMessaged);
+							}
+						}
+					}
+
+					if (snap.attachments?.length) {
+						const attach = document.createElement("div");
+						attach.classList.add("flexltr", "attachments");
+						for (const thing of snap.attachments) {
+							attach.appendChild(thing.getHTML());
+						}
+						forwardBody.appendChild(attach);
+					}
+
+					if (snap.embeds?.length) {
+						const embeds = document.createElement("div");
+						for (const thing of snap.embeds) {
+							embeds.appendChild(thing.generateHTML());
+						}
+						forwardBody.appendChild(embeds);
+					}
+
+					forwardBlock.appendChild(forwardBody);
+				}
+
+				messagedwrap.appendChild(forwardBlock);
 			}
 			//
 		} else if (this.type === 7) {
@@ -1393,7 +1530,7 @@ class Message extends SnowFlake {
 			afterText.textContent = m[0];
 			afterText.onclick = (_) => {
 				if (!this.message_reference) return;
-				this.channel.infinite.focus(this.message_reference.message_id);
+				this.channel.infinite.focus(this.message_reference.message_id as string);
 			};
 			afterText.classList.add("pinText");
 			pinText.append(afterText);
@@ -1798,7 +1935,7 @@ class Message extends SnowFlake {
 						});
 					};
 				}
-				if (this.author === this.localuser.user && this.type !== 46) {
+				if (this.author === this.localuser.user && this.type !== 46 && this.message_reference?.type !== 1) {
 					const container = document.createElement("button");
 					const edit = document.createElement("span");
 					edit.classList.add("svg-edit", "svgicon");

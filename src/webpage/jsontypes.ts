@@ -872,13 +872,36 @@ type messagejson = {
 	};
 	nonce: string;
 	pinned: boolean;
+	flags?: number;
 	type: number;
 	webhook?: webhookInfo;
 	sticker_items?: stickerJson[];
-	message_reference?: string;
+	message_reference?: {
+		message_id?: string;
+		channel_id?: string;
+		guild_id?: string;
+		type?: number;
+	};
+	message_snapshots?: {message: messageSnapshotJson}[];
 	referenced_message?: messagejson;
 	poll?: polljson;
 };
+
+/** The partial message a forward carries: the source's render fields only —
+ * no author, no id (server Message.toSnapshot). */
+type messageSnapshotJson = Pick<
+	messagejson,
+	| "attachments"
+	| "components"
+	| "content"
+	| "edited_timestamp"
+	| "embeds"
+	| "flags"
+	| "mention_roles"
+	| "mentions"
+	| "timestamp"
+	| "type"
+>;
 
 export interface threadMetadata {
 	archived: boolean;

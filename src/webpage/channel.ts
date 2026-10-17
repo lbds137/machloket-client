@@ -1684,7 +1684,7 @@ class Channel extends SnowFlake {
 	}
 	editLast() {
 		let message: Message | undefined = this.lastmessage;
-		while (message && message.author !== this.localuser.user) {
+		while (message && (message.author !== this.localuser.user || message.message_reference?.type === 1)) {
 			message = this.messages.get(this.idToPrev.get(message.id) as string);
 		}
 		if (message) {

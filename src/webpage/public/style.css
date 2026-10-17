@@ -1459,6 +1459,12 @@ textarea:focus {
 	mask-size: contain !important;
 }
 
+.svg-forward {
+	mask: url(./icons/reply.svg);
+	mask-size: contain !important;
+	transform: scaleX(-1);
+}
+
 .svg-delete {
 	mask: url(./icons/delete.svg);
 	mask-size: contain !important;
@@ -4359,6 +4365,43 @@ span .quote:last-of-type .quoteline {
 	.embed {
 		max-width: unset;
 	}
+}
+
+.forwardBlock {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 10px 12px;
+	margin-top: 4px;
+	max-width: 520px;
+	border-left: 4px solid var(--reply-line);
+	border-radius: 4px;
+	background: var(--embed-bg);
+	color: var(--primary-text);
+	font-size: 0.95em;
+}
+
+.forwardHeader {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.85em;
+	font-weight: 600;
+	color: var(--secondary-text);
+	user-select: none;
+}
+
+.forwardIcon {
+	display: inline-block;
+	width: 14px;
+	height: 14px;
+	background: var(--secondary-text);
+}
+
+.forwardBody {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
 }
 
 .slowmodeTimer {
