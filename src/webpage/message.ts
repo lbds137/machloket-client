@@ -271,7 +271,22 @@ class Message extends SnowFlake {
 				},
 			},
 		);
-
+		Message.contextmenu.addButton(
+			() => I18n.message.forward(),
+			function (this: Message) {
+				this.forward();
+			},
+			{
+				icon: {
+					css: "svg-forward",
+				},
+				visible: function () {
+					return (
+						!this.ephemeral && !this.loading && (this.type === 0 || this.type === 19)
+					);
+				},
+			},
+		);
 		Message.contextmenu.addButton(
 			() => I18n.message.reactionAdd(),
 			function (this: Message, _, e: MouseEvent) {
@@ -547,6 +562,75 @@ class Message extends SnowFlake {
 		});
 		if (!f.ok) alert(I18n.unableToPin());
 	}
+	forward(): void {
+		this.openForwardDialog();
+	}
+	async sendForward(target: Channel | {id: string}, dio?: Dialog): Promise<Response | undefined> {
+		return sendForward(this, target, dio);
+	}
+	openForwardDialog() {
+		const dio = new Dialog(I18n.message.forwardTo());
+		const div = document.createElement("div");
+		div.classList.add("flexttb", "friendGroupSelect");
+
+		const allCandidates = this.localuser?.channelids
+			? [...this.localuser.channelids.values()]
+			: [];
+		const allowedCandidates = allCandidates.filter(canSendToChannel);
+
+		const candidateItems = allowedCandidates.map((channel) => ({
+			channel,
+			...getChannelDisplayName(channel),
+		}));
+
+		let sending = false;
+		const makeList = (search: string) => {
+			const query = search.trim().toLowerCase();
+			const filtered = candidateItems.filter((item) => {
+				if (!query) return true;
+				return (
+					item.primary.toLowerCase().includes(query) ||
+					(item.secondary ? item.secondary.toLowerCase().includes(query) : false)
+				);
+			});
+			div.innerHTML = "";
+			for (const item of filtered) {
+				const row = document.createElement("div");
+				row.classList.add("flexltr");
+				row.style.cursor = "pointer";
+
+				const textContainer = document.createElement("div");
+				textContainer.classList.add("flexttb");
+				const primarySpan = document.createElement("span");
+				primarySpan.textContent = item.primary;
+				textContainer.append(primarySpan);
+				if (item.secondary) {
+					const secondarySpan = document.createElement("span");
+					secondarySpan.textContent = item.secondary;
+					secondarySpan.classList.add("subtext");
+					textContainer.append(secondarySpan);
+				}
+				row.append(textContainer);
+
+				row.onclick = () => {
+					if (sending) return;
+					sending = true;
+					void this.sendForward(item.channel, dio).finally(() => {
+						sending = false;
+					});
+				};
+				div.append(row);
+			}
+		};
+
+		const searchInput = dio.options.addTextInput("", () => {});
+		searchInput.onchange = makeList;
+		dio.options.addHTMLArea(div);
+		makeList("");
+
+		dio.show();
+	}
+
 
 	giveData(messagejson: messagejson) {
 		const func = this.channel.infinite.snapBottom();
@@ -2160,5 +2244,88 @@ function updateTimes() {
 		yesterdayStr = yesterday.toLocaleDateString();
 	}
 }
+
+function isDmChannel(channel: Channel): boolean {
+	return (
+		channel.guild_id === "@me" ||
+		channel.guild?.id === "@me" ||
+		channel.type === 1 ||
+		channel.type === 3
+	);
+}
+
+/** Channel types that accept a posted message: text, announcement, DM, group DM, threads. */
+const sendableChannelTypes = new Set([0, 1, 3, 5, 10, 11, 12]);
+
+function canSendToChannel(channel: Channel): boolean {
+	if (isDmChannel(channel)) return true;
+	if (!sendableChannelTypes.has(channel.type)) return false;
+
+	try {
+		// An unloaded member can't be judged yet: keep the row, let the server refuse.
+		if (!channel.guild?.member) return true;
+		// The sidebar's own gate: a channel hidden from you is not a forward target.
+		if (!channel.visible) return false;
+		// Real Channels carry the house getter; test doubles carry hasPermission as a property.
+		const canMessage = (channel as Channel | {canMessage?: boolean}).canMessage;
+		if (typeof canMessage === "boolean") return canMessage;
+		if (typeof channel.hasPermission === "function") {
+			return channel.hasPermission(
+				typeof channel.isThread === "function" && channel.isThread()
+					? "SEND_MESSAGES_IN_THREADS"
+					: "SEND_MESSAGES",
+			);
+		}
+	} catch (e) {
+		console.error("forward target permission check failed", e);
+	}
+	return true;
+}
+
+function getChannelDisplayName(channel: Channel): {primary: string; secondary?: string} {
+	if (isDmChannel(channel)) {
+		let primary = channel.name;
+		if (channel.type === 1 && (channel as any).users?.[0]?.name) {
+			primary = (channel as any).users[0].name;
+		} else if ((channel as any).getname) {
+			primary = (channel as any).getname();
+		}
+		return {primary: primary || channel.id};
+	}
+	const name = channel.name || channel.id;
+	const primary = name.startsWith("#") ? name : `#${name}`;
+	const secondary =
+		channel.guild?.properties?.name && channel.guild.id !== "@me"
+			? channel.guild.properties.name
+			: undefined;
+	return {primary, secondary};
+}
+
+async function sendForward(
+	source: Message,
+	target: Channel | {id: string},
+	dio?: Dialog,
+): Promise<Response | undefined> {
+	const res = await fetchRetryOnce(`${source.info.api}/channels/${target.id}/messages`, {
+		method: "POST",
+		headers: source.headers,
+		body: JSON.stringify({
+			content: "",
+			message_reference: {
+				type: 1,
+				message_id: source.id,
+			},
+		}),
+	}).catch(() => undefined);
+
+	if (res?.ok) {
+		dio?.hide();
+	} else {
+		new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+	}
+	return res;
+}
+
 Message.setup();
-export {Message};
+export {Message, sendForward, canSendToChannel, getChannelDisplayName, isDmChannel};
+

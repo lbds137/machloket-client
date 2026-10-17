@@ -690,6 +690,8 @@
 		"deleted": "Deleted message",
 		"edit": "Edit message",
 		"edited": "(edited)",
+		"forward": "Forward",
+		"forwardTo": "Forward to",
 		"forwarded": "Forwarded",
 		"fullMessage": "Full message:",
 		"pin": "$1 has pinned a message",
