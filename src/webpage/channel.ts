@@ -4012,6 +4012,8 @@ class Channel extends SnowFlake {
 		return canMessage <= Date.now();
 	}
 	async slowmode(bad = false) {
+		// The composer on the page belongs to the open channel; any other channel leaves it alone.
+		if (this !== this.localuser.channelfocus) return;
 		const realbox = document.getElementById("realbox") as HTMLDivElement;
 		Array.from(realbox.getElementsByClassName("slowmodeTimer")).forEach((_) => _.remove());
 		if (this.guild.member) {
@@ -4081,6 +4083,8 @@ class Channel extends SnowFlake {
 			const json = res.ok ? ((await res.json()) as {messages?: messagejson[][]}) : undefined;
 			const message = json?.messages?.[0]?.[0];
 			if (message) m = this.lastSentMessage = new Message(message, this, true);
+			// The user may have opened another channel meanwhile.
+			if (this !== this.localuser.channelfocus) return;
 		}
 		if (!m) return;
 		const t = m.getTimeStamp();

@@ -27,9 +27,10 @@ function slowChannel(history: ReturnType<typeof sent>[]) {
 	const realbox = document.createElement("div");
 	realbox.id = "realbox";
 	document.body.append(realbox);
+	const localuser = {user: me, channelfocus: undefined as unknown};
 	const channel = Object.assign(Object.create(Channel.prototype), {
 		id: "200",
-		owner: {id: "100", info: {api: "http://slow.test/api/v9"}, localuser: {user: me}},
+		owner: {id: "100", info: {api: "http://slow.test/api/v9"}, localuser},
 		headers: {},
 		rate_limit_per_user: 60,
 		messages: new Map(history.map((m) => [m.id, m])),
@@ -39,8 +40,62 @@ function slowChannel(history: ReturnType<typeof sent>[]) {
 		hasPermission: () => false,
 		infinite: {snapBottom() {}},
 	}) as InstanceType<typeof Channel>;
+	// The composer on the page is the open channel's.
+	localuser.channelfocus = channel;
 	return {channel, realbox};
 }
+
+/** Another channel of the same guild, not the open one. */
+function otherChannel(open: InstanceType<typeof Channel>, fields: object) {
+	return Object.assign(Object.create(Channel.prototype), {
+		id: "201",
+		owner: open.owner,
+		...fields,
+	}) as InstanceType<typeof Channel>;
+}
+
+it("another channel's slowmode leaves the open channel's countdown alone", async () => {
+	const {channel: open, realbox} = slowChannel([sent("1", me, Date.now() - 10_000)]);
+	await open.slowmode();
+	const timer = realbox.querySelector(".slowmodeTimer");
+
+	// Updated (or posted in) while the user reads the open one: one with no slowmode, one with
+	// its own countdown running.
+	await otherChannel(open, {rate_limit_per_user: 0}).slowmode();
+	const mine = sent("9", me, Date.now() - 1_000);
+	await otherChannel(open, {
+		rate_limit_per_user: 60,
+		lastSentMessage: mine,
+		hasPermission: () => false,
+	}).slowmode();
+
+	expect(realbox.querySelectorAll(".slowmodeTimer")).toHaveLength(1);
+	expect(realbox.querySelector(".slowmodeTimer")).toBe(timer);
+});
+
+it("a refused send's countdown isn't painted on a channel opened while it looked up", async () => {
+	const {channel, realbox} = slowChannel([sent("2", {id: "u2"}, Date.now() - 5_000)]);
+	let answer!: (r: Response) => void;
+	vi.spyOn(globalThis, "fetch").mockReturnValue(new Promise((r) => (answer = r)));
+	vi.spyOn(Message.prototype, "giveData").mockImplementation(function (
+		this: {timestamp: string},
+		json: {timestamp: string},
+	) {
+		this.timestamp = json.timestamp;
+	});
+	const counting = channel.slowmode(true);
+
+	channel.localuser.channelfocus = otherChannel(channel, {});
+	const mine = {
+		id: SnowFlake.DateToID(new Date(Date.now() - 10_000)),
+		author: {id: "u1", username: "me"},
+		timestamp: new Date(Date.now() - 10_000).toISOString(),
+	};
+	answer(Response.json({messages: [[mine]], total_results: 1}));
+	await counting;
+
+	expect(realbox.querySelector(".slowmodeTimer")).toBeNull();
+});
 
 it("counts down from the user's own last message, even when someone spoke since", async () => {
 	const {channel, realbox} = slowChannel([
