@@ -2063,11 +2063,14 @@ class Guild extends SnowFlake {
 			}
 		}
 		this.unreads();
-		fetchRetryOnce(this.info.api + "/read-states/ack-bulk", {
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify(build),
-		}).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
+		const acked = this.channels.filter((c) => build.read_states.some((s) => s.channel_id === c.id));
+		const sent = new Map(acked.map((c) => [c, c.lastreadmessageid]));
+		fetchRetryOnce(
+			this.info.api + "/read-states/ack-bulk",
+			{method: "POST", headers: this.headers, body: JSON.stringify(build)},
+			// A retry after any of these channels was read further would move it back.
+			{shouldRetry: () => acked.every((c) => c.lastreadmessageid === sent.get(c))},
+		).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 	}
 	hasRole(r: Role | string) {
 		console.log("this should run");

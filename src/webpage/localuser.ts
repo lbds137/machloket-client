@@ -2720,13 +2720,16 @@ class Localuser {
 			return;
 		}
 		channel.mentions = 0;
+		const acked = channel.trueLastMessageid;
 		fetchRetryOnce(
-			this.info.api + "/channels/" + channel.id + "/messages/" + channel.trueLastMessageid + "/ack",
+			this.info.api + "/channels/" + channel.id + "/messages/" + acked + "/ack",
 			{
 				method: "POST",
 				headers: this.headers,
 				body: JSON.stringify({}),
 			},
+			// A retry after a newer ack would move the server's read state back.
+			{shouldRetry: () => channel.lastreadmessageid === acked},
 		).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 		const next = channel.messages.get(
 			channel.idToNext.get(channel.lastreadmessageid as string) as string,

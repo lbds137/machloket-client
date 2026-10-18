@@ -1424,12 +1424,13 @@ class Channel extends SnowFlake {
 			return;
 		}
 		this.mentions = 0;
-		console.log(this.trueLastMessageid);
-		fetchRetryOnce(this.info.api + "/channels/" + this.id + "/messages/" + this.trueLastMessageid + "/ack", {
-			method: "POST",
-			headers: this.headers,
-			body: JSON.stringify({}),
-		}).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
+		const acked = this.trueLastMessageid;
+		fetchRetryOnce(
+			this.info.api + "/channels/" + this.id + "/messages/" + acked + "/ack",
+			{method: "POST", headers: this.headers, body: JSON.stringify({})},
+			// The server's read state goes where it's told: a retry after a newer ack moves it back.
+			{shouldRetry: () => this.lastreadmessageid === acked},
+		).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 		const next = this.messages.get(this.idToNext.get(this.lastreadmessageid as string) as string);
 		this.lastreadmessageid = this.trueLastMessageid;
 		this.guild.unreads();

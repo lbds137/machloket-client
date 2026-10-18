@@ -857,3 +857,36 @@ describe("the reactions popup", () => {
 		list.closest("body > *")!.remove();
 	});
 });
+
+describe("a read ack", () => {
+	it("whose 429 window outlives a newer ack isn't sent again", async () => {
+		const acked: string[] = [];
+		let first = true;
+		for (const id of ["m5", "m9"]) {
+			captureRequests(API + `/channels/c1/messages/${id}/ack`, () => {
+				acked.push(id);
+				if (first) {
+					first = false;
+					return Response.json({message: "rate limited", retry_after: 0.3}, {status: 429});
+				}
+				return new Response(null, {status: 204});
+			});
+		}
+		const channel = channelAt({
+			unreadState: () => true,
+			owner: {id: "g1", info: {api: API}, unreads: () => {}, localuser: {}},
+			infinite: {toBottom: () => {}},
+		}) as InstanceType<typeof Channel> & {trueLastMessageid: string};
+
+		channel.trueLastMessageid = "m5";
+		channel.readbottom();
+		await vi.waitFor(() => expect(acked).toEqual(["m5"]));
+		// The user reads on: a newer ack goes out while m5's retry waits.
+		channel.trueLastMessageid = "m9";
+		channel.readbottom();
+		await new Promise((r) => setTimeout(r, 500)); // past m5's window
+
+		// The server's read state only moves where it's told: m5 again would move it back.
+		expect(acked).toEqual(["m5", "m9"]);
+	});
+});
