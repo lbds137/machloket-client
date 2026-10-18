@@ -3,6 +3,12 @@ import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {ProgressiveArray} from "./utils/progessiveLoad.js";
 import {attachmentUrl} from "./utils/netUtils.js";
+/** A track's length (`ms`) for the More info dialog. */
+function lengthText(ms: number) {
+	// Rounded as a whole first, so 59.6 s reads as a minute rather than "0 minutes and 60 seconds".
+	const total = Math.round(ms / 1000);
+	return I18n.media.length(Math.floor(total / 60) + "", (total % 60) + "");
+}
 const menu = new Contextmenu<media, undefined>("media");
 menu.addButton(
 	() => I18n.media.download(),
@@ -34,11 +40,7 @@ menu.addButton(
 			options.addText(I18n.media.composer(this.composer));
 		}
 		const length = await this.length;
-		if (Number.isFinite(length)) {
-			const mins = Math.floor(length / 60000);
-			const seconds = Math.round((length - mins * 60000) / 1000);
-			options.addText(I18n.media.length(mins + "", seconds + ""));
-		}
+		if (Number.isFinite(length)) options.addText(lengthText(length));
 
 		di.show();
 		if (this.copyright) {
@@ -587,4 +589,4 @@ class MediaPlayer {
 		return output as media;
 	}
 }
-export {MediaPlayer, media, makePlayBox};
+export {MediaPlayer, media, makePlayBox, lengthText};

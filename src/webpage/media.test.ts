@@ -84,3 +84,20 @@ it("a play box removed mid-play stops ticking into the player", async () => {
 	await new Promise((res) => setTimeout(res, 300));
 	expect(player.addUpdate.mock.calls.length).toBe(whileAttached);
 });
+
+it("a track's length reads naturally, one minute and one second included", async () => {
+	const {lengthText} = await import("./media");
+	const {I18n} = await import("./i18n");
+	await I18n.done;
+
+	expect(lengthText(61_000)).toBe("Length: 1 minute and 1 second");
+	expect(lengthText(125_000)).toBe("Length: 2 minutes and 5 seconds");
+});
+
+it("a length just under a minute rounds up to the minute, not to 60 seconds", async () => {
+	const {lengthText} = await import("./media");
+	const {I18n} = await import("./i18n");
+	await I18n.done;
+
+	expect(lengthText(59_600)).toBe("Length: 1 minute and 0 seconds");
+});
