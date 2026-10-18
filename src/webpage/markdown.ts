@@ -421,11 +421,11 @@ class MarkDown {
 					if (txt[j] === "*") {
 						find++;
 					} else {
-						build += txt[j];
 						if (find !== 0) {
 							build += "*".repeat(find);
 							find = 0;
 						}
+						build += txt[j];
 					}
 				}
 				if (find === count && (count != 1 || txt[i + 1] !== " ")) {
@@ -486,11 +486,11 @@ class MarkDown {
 					if (txt[j] === "_") {
 						find++;
 					} else {
-						build += txt[j];
 						if (find !== 0) {
 							build += "_".repeat(find);
 							find = 0;
 						}
+						build += txt[j];
 					}
 				}
 				if (
@@ -547,11 +547,11 @@ class MarkDown {
 					if (txt[j] === "~") {
 						find++;
 					} else {
-						build += txt[j];
 						if (find !== 0) {
 							build += "~".repeat(find);
 							find = 0;
 						}
+						build += txt[j];
 					}
 				}
 				if (find === count) {
@@ -581,11 +581,11 @@ class MarkDown {
 					if (txt[j] === "|") {
 						find++;
 					} else {
-						build += txt[j];
 						if (find !== 0) {
 							build += "|".repeat(find);
 							find = 0;
 						}
+						build += txt[j];
 					}
 				}
 				if (find === count) {

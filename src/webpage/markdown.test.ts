@@ -173,3 +173,20 @@ describe("a mailto link's leaving dialog", () => {
 		}
 	});
 });
+
+describe("a lone marker inside a formatting pair", () => {
+	it("stays where it was typed in the composer", () => {
+		// The box re-renders in keep mode on every keystroke, so a moved marker changes what's sent.
+		expect(kept("**a*b**")).toBe("**a*b**");
+		expect(kept("__my_var__")).toBe("__my_var__");
+		expect(kept("~~a~b~~")).toBe("~~a~b~~");
+		expect(kept("||a|b||")).toBe("||a|b||");
+		expect(kept("***a**b***")).toBe("***a**b***");
+	});
+
+	it("renders italic nested inside bold around the right words", () => {
+		const html = new MarkDown("**Note: *this* matters**", undefined).makeHTML();
+		expect(html.querySelector("b")?.textContent).toBe("Note: this matters");
+		expect(html.querySelector("b i, b em")?.textContent).toBe("this");
+	});
+});
