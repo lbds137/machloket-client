@@ -1012,7 +1012,7 @@ class Channel extends SnowFlake {
 		if (this.isThread() && this.parent) {
 			return this.parent.hasPermission(name, member, "SEND_MESSAGES_IN_THREADS");
 		}
-		if (this.guild.member?.commuicationDisabledLeft()) {
+		if (member.commuicationDisabledLeft()) {
 			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
 			if (!allowSet.has(name)) {
 				return false;
