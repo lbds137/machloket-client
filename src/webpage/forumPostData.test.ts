@@ -1,4 +1,4 @@
-import {expect, it} from "vitest";
+import {expect, it, vi} from "vitest";
 import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -47,4 +47,75 @@ it("a refused batch fails with its status and leaves the forum unfetched", async
 
 	await expect(forum.fetchForum()).rejects.toThrow("HTTP 400");
 	expect(forum.hasFetchedForForum).toBeFalsy();
+});
+
+/** Forum f3 with three posts, every one of them already listed, drawn into a fresh view. */
+function forumWithPosts() {
+	const posts = Array.from({length: 3}, (_, i) => ({
+		id: String(1553128655016763450n + BigInt(i)),
+		name: "post " + i,
+		appliedTags: [],
+		renderThread: async () =>
+			Object.assign(document.createElement("div"), {className: "postProbe"}),
+	}));
+	const forum = Object.assign(Object.create(Channel.prototype), {
+		id: "f3",
+		owner: {info: {api: API}},
+		headers: {},
+		children: posts,
+		availableTags: [],
+		hasAllThreads: true,
+		forumFilters: {recentFirst: true, sortActive: false, tagMatchAll: false, tags: []},
+	}) as InstanceType<typeof Channel>;
+	const view = document.createElement("div");
+	document.body.append(view);
+	return {forum, view};
+}
+
+const button = (view: HTMLElement, text: string) =>
+	[...view.querySelectorAll("button")].find((b) => b.textContent === text);
+
+it("a forum whose post data was refused says why and offers another go", async () => {
+	const {I18n} = await import("./i18n");
+	await I18n.done;
+	const answers = [
+		Response.json({message: "You are being rate limited."}, {status: 429}),
+		Response.json({threads: {}}),
+	];
+	captureRequests(API + "/channels/f3/post-data", () => answers.shift()!);
+	const {forum, view} = forumWithPosts();
+
+	// The view is the outcome (its callers drop the promise), so a rejection is not the test.
+	await forum.forumSearch("", view).catch(() => {});
+
+	expect(view.textContent).toContain(I18n.requestFailed("You are being rate limited."));
+	button(view, I18n.tryAgain())!.click();
+	await vi.waitFor(() => expect(view.querySelectorAll(".postProbe")).toHaveLength(3));
+	view.remove();
+});
+
+it("a forum whose post data never arrived says it's offline", async () => {
+	const {I18n} = await import("./i18n");
+	await I18n.done;
+	captureRequests(API + "/channels/f3/post-data", () =>
+		Promise.reject(new TypeError("Failed to fetch")),
+	);
+	const {forum, view} = forumWithPosts();
+
+	await forum.forumSearch("", view).catch(() => {});
+
+	expect(view.textContent).toContain(I18n.requestFailed("offline"));
+	view.remove();
+});
+
+it("post data that isn't post data says what came back, not offline", async () => {
+	const {I18n} = await import("./i18n");
+	await I18n.done;
+	captureRequests(API + "/channels/f3/post-data", () => new Response("<html>portal</html>"));
+	const {forum, view} = forumWithPosts();
+
+	await forum.forumSearch("", view).catch(() => {});
+
+	expect(view.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	view.remove();
 });

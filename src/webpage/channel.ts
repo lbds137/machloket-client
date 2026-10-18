@@ -43,7 +43,7 @@ import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
-import {formErrors} from "./utils/showRefusal.js";
+import {formErrors, refusalText} from "./utils/showRefusal.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -2344,10 +2344,14 @@ class Channel extends SnowFlake {
 				headers: this.headers,
 				body: JSON.stringify({thread_ids: ids.slice(start, start + Channel.postDataBatch)}),
 			});
-			if (!res.ok) throw new Error(`Forum post data failed: HTTP ${res.status}`);
-			const arr = (await res.json()) as {
-				threads: Record<string, {first_message: null | messagejson; owner: null | memberjson}>;
-			};
+			if (!res.ok) throw new Error(`Forum post data failed: HTTP ${res.status}`, {cause: res});
+			const arr = (await res.json().catch(() => null)) as {
+				threads?: Record<string, {first_message: null | messagejson; owner: null | memberjson}>;
+			} | null;
+			// An answer that isn't post data was still an answer: not "offline".
+			if (!arr?.threads) {
+				throw new Error(`Forum post data unreadable: HTTP ${res.status}`, {cause: res});
+			}
 			for (const [id, {first_message, owner}] of Object.entries(arr.threads)) {
 				const child = this.children.find(({id: cid}) => cid === id);
 				if (!child) continue;
@@ -2517,7 +2521,28 @@ class Channel extends SnowFlake {
 	}
 
 	async forumSearch(text: string, div: HTMLDivElement) {
-		while (!this.hasFetchedForForum) await this.fetchForum();
+		if (!this.hasFetchedForForum) {
+			try {
+				await this.fetchForum();
+			} catch (e) {
+				const refused = e instanceof Error && e.cause instanceof Response ? e.cause : undefined;
+				const reason = await refusalText(refused);
+				// Without the posts' first messages every preview would read as deleted: say why
+				// there's no list, and offer another go (unless another search has fetched it since).
+				if (!this.hasFetchedForForum) {
+					const why = document.createElement("p");
+					why.textContent = reason;
+					const again = document.createElement("button");
+					again.textContent = I18n.tryAgain();
+					again.onclick = () => {
+						again.disabled = true;
+						void this.forumSearch(text, div);
+					};
+					div.replaceChildren(why, again);
+					return;
+				}
+			}
+		}
 		let offset = 0;
 		const flipPage = async (by: number) => {
 			offset += by;
