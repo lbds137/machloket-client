@@ -208,3 +208,28 @@ describe("shortcode emoji", () => {
 		}
 	});
 });
+
+describe("user mentions", () => {
+	/** A message's text as drawn for a user whose friend "Ada" (id 123) is mentioned. */
+	function drawn(txt: string) {
+		const localuser = {
+			user: {id: "me"},
+			getUser: async (id: string) => (id === "123" ? {name: "Ada", bind: () => {}} : undefined),
+		};
+		return new MarkDown(txt, localuser as never).makeHTML();
+	}
+
+	it("the older nickname form <@!id> is a mention too", async () => {
+		const html = drawn("hi <@!123>");
+
+		await vi.waitFor(() => expect(html.querySelector(".mentionMD")?.textContent).toBe("@Ada"));
+		expect(html.textContent).not.toContain("<@!");
+	});
+
+	it("<@> with no id stays text", () => {
+		const html = drawn("hi <@>");
+
+		expect(html.querySelector(".mentionMD")).toBeNull();
+		expect(html.textContent).toBe("hi <@>");
+	});
+});

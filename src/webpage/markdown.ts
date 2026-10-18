@@ -697,7 +697,9 @@ class MarkDown {
 				if ((txt[i + 1] === "@" || txt[i + 1] === "#") && this.localuser) {
 					let id = "";
 					const role = txt[i + 1] === "@" && txt[i + 2] === "&";
-					let j = i + 2 + +role;
+					// <@!id> is the older nickname form of a user mention, which bots still send.
+					const nick = txt[i + 1] === "@" && txt[i + 2] === "!";
+					let j = i + 2 + +(role || nick);
 					for (; txt[j] !== undefined; j++) {
 						const char = txt[j];
 						if (!NUMBERS.has(char)) {
@@ -706,7 +708,7 @@ class MarkDown {
 						id += char;
 					}
 
-					if (txt[j] === ">") {
+					if (txt[j] === ">" && id) {
 						appendcurrent();
 						const last = getCurLast();
 						if (
