@@ -75,6 +75,7 @@ describe("gateway resume", () => {
 		const user = sessionUser();
 		Object.assign(user, {
 			fetchingmembers: new Map(),
+			memberLookupDrops: new Map(),
 			noncemap: new Map(),
 			noncebuild: new Map(),
 			waitingmembers: new Map([["g1", new Map([["u1", () => {}]])]]),

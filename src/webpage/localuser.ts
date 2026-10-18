@@ -1010,6 +1010,7 @@ class Localuser {
 					}
 					break;
 				case "GUILD_DELETE": {
+					this.giveUpMemberLookups(temp.d.id);
 					const guildy = this.guildids.get(temp.d.id);
 					if (guildy) {
 						this.guildids.delete(temp.d.id);
@@ -5987,6 +5988,8 @@ class Localuser {
 		return await promise;
 	}
 	fetchingmembers: Map<string, boolean> = new Map();
+	/** How many sockets in a row closed while this guild's member lookup was in flight. */
+	memberLookupDrops = new Map<string, number>();
 	noncemap: Map<string, (r: [memberjson[], string[]]) => void> = new Map();
 	noncebuild: Map<string, [memberjson[], string[], number[]]> = new Map();
 	searchMap = new Map<
@@ -6038,13 +6041,37 @@ class Localuser {
 		}
 	}
 	/** Settles the member lookups a dropped socket will never answer as "no reply", leaving their
-	 * users waiting so the next getmembers() asks again. */
+	 * users waiting so the next getmembers() asks again; a guild whose lookup was in flight for
+	 * two drops in a row is given up (its waiters get no member, which resolveMember caches for
+	 * the session, as for a user not found) instead of asked again. */
 	abandonMemberRequests() {
 		const pending = [...this.noncemap.values()];
 		this.noncemap.clear();
 		this.noncebuild.clear();
+		// A drop with a guild's lookup not in flight breaks that guild's run.
+		for (const guildid of [...this.memberLookupDrops.keys()]) {
+			if (!this.fetchingmembers.has(guildid)) this.memberLookupDrops.delete(guildid);
+		}
+		for (const guildid of this.fetchingmembers.keys()) {
+			const drops = (this.memberLookupDrops.get(guildid) ?? 0) + 1;
+			if (drops >= 2) {
+				this.giveUpMemberLookups(guildid);
+			} else {
+				this.memberLookupDrops.set(guildid, drops);
+			}
+		}
 		this.fetchingmembers.clear();
 		for (const settle of pending) settle([[], []]);
+	}
+	/** Resolves every queued member waiter for `guildid` with no member and drops its queue. */
+	private giveUpMemberLookups(guildid: string) {
+		const waiting = this.waitingmembers.get(guildid);
+		this.waitingmembers.delete(guildid);
+		this.memberLookupDrops.delete(guildid);
+		if (!waiting) return;
+		for (const waiter of waiting.values()) {
+			waiter?.(undefined);
+		}
 	}
 	async getmembers() {
 		const promise = new Promise((res) => {
@@ -6090,6 +6117,8 @@ class Localuser {
 				});
 				const prom = await promise;
 				const data = prom[0];
+				// A real answer lists every asked id as found or not found; an abandoned one is empty.
+				if (data.length || prom[1].length) this.memberLookupDrops.delete(guildid);
 				for (const thing of data) {
 					if (value.has(thing.id)) {
 						const func = value.get(thing.id);
