@@ -53,7 +53,7 @@ import {VoiceFactory, voiceStatusStr} from "./voice.js";
 import {I18n, langmap} from "./i18n.js";
 import {Emoji} from "./emoji.js";
 import {BUILTIN_NOTIFICATION_SOUNDS, NotificationSoundManager} from "./utils/notificationSound.js";
-import {Message} from "./message.js";
+import {Message, previewContent} from "./message.js";
 import {badgeArr} from "./Dbadges.js";
 import {Rights} from "./rights.js";
 import {Contextmenu} from "./contextmenu.js";
@@ -2597,7 +2597,7 @@ class Localuser {
 		if (!message) {
 			return undefined;
 		}
-		const raw = message.content.rawString.trim().replace(/\s+/g, " ");
+		const raw = previewContent(message).rawString.trim().replace(/\s+/g, " ");
 		if (!raw) {
 			return undefined;
 		}
@@ -2611,7 +2611,7 @@ class Localuser {
 		if (!message) {
 			return "";
 		}
-		const raw = message.content.rawString.trim().replace(/\s+/g, " ");
+		const raw = previewContent(message).rawString.trim().replace(/\s+/g, " ");
 		if (raw.length <= 120) {
 			return raw;
 		}

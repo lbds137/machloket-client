@@ -1,6 +1,6 @@
 import {Channel} from "./channel.js";
 import {I18n} from "./i18n.js";
-import {Message} from "./message.js";
+import {Message, previewContent} from "./message.js";
 import {SW} from "./utils/utils.js";
 
 declare global {
@@ -81,7 +81,7 @@ export class NotificationHandler {
 	}
 	static channelMap = new Map<Channel, Set<{close(): void}>>();
 	static async sendMessageNotification(message: Message) {
-		const html = message.content.makeHTML();
+		const html = previewContent(message).makeHTML();
 		await new Promise<void>((res) => res());
 		let noticontent: string | undefined | null = html.textContent;
 		if (message.embeds[0]) {

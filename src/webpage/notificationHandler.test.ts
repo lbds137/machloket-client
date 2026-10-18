@@ -23,7 +23,7 @@ function fakeMessage() {
 	const message = {
 		localuser,
 		id: "m1",
-		content: {makeHTML: () => ({textContent: "hi"}), textContent: "hi"},
+		content: {makeHTML: () => ({textContent: "hi"}), textContent: "hi", rawString: "hi"},
 		embeds: [],
 		getimages: () => [],
 		author: {getpfpsrc: () => "/icon.png"},
@@ -227,4 +227,27 @@ it("a clump that keeps getting messages stays one notification, past its first 3
 		NotificationHandler.channelMap.clear();
 		NotificationHandler.channelSuperMap.clear();
 	}
+});
+
+it("a forwarded message's notification shows what was forwarded", async () => {
+	vi.stubGlobal("Notification", AndroidNotification);
+	const shown = captureShown();
+	const {message} = fakeMessage();
+	// A forward's own body is empty; what it carries is in its snapshot.
+	Object.assign(message, {
+		content: {makeHTML: () => ({textContent: ""}), textContent: "", rawString: ""},
+		forwardSnapshot: {
+			content: {
+				makeHTML: () => ({textContent: "the forwarded words"}),
+				textContent: "the forwarded words",
+				rawString: "the forwarded words",
+			},
+			attachments: [],
+			embeds: [],
+		},
+	});
+
+	await NotificationHandler.sendMessageNotification(message).catch(() => {});
+
+	expect(shown.at(-1)?.options?.body).toBe("the forwarded words");
 });

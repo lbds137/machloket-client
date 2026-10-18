@@ -40,6 +40,13 @@ export interface ForwardSnapshot {
 	edited_timestamp?: string | null;
 }
 
+/** What a preview of `message` shows: its own text, or for a forward (whose own body is
+ * empty) the forwarded text. */
+export function previewContent(message: {content: MarkDown; forwardSnapshot?: ForwardSnapshot}) {
+	if (message.content.rawString.trim()) return message.content;
+	return message.forwardSnapshot?.content ?? message.content;
+}
+
 /** Discord's "used /command" pill on an interaction reply line: a slash glyph and the
  * command's path ("walk browse"), no other chrome. */
 export function interactionCommandChip(label: string): HTMLElement {
