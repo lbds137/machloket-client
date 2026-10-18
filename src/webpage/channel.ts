@@ -1626,9 +1626,10 @@ class Channel extends SnowFlake {
 			const gety = await fetch(
 				this.info.api + "/channels/" + this.id + "/messages?limit=1&around=" + id,
 				{headers: this.headers},
-			);
-			// A refusal (403, 404, 429) answers with an error object, not a list.
-			const json = gety.ok ? await gety.json() : undefined;
+			).catch(() => undefined);
+			// A refusal (403, 404, 429) answers with an error object, not a list; a failed fetch
+			// or a body that isn't JSON is no message either.
+			const json: unknown = gety?.ok ? await gety.json().catch(() => undefined) : undefined;
 			if (!Array.isArray(json) || json.length === 0) {
 				return undefined;
 			}
@@ -3253,8 +3254,8 @@ class Channel extends SnowFlake {
 		}
 		const j = await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100", {
 			headers: this.headers,
-		});
-		if (j.status === 429) {
+		}).catch(() => undefined);
+		if (j?.status === 429) {
 			// A rate limit says nothing about where the channel's history ends: arm the window
 			// the paging loop shares, and leave the channel unloaded.
 			Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(j));
@@ -3262,10 +3263,17 @@ class Channel extends SnowFlake {
 			this.firstPageRefusals = (this.firstPageRefusals ?? 0) + 1;
 			return;
 		}
+		// Any other failure says no more about where the history ends: refused, not the top.
+		const body: unknown = j?.ok ? await j.json().catch(() => undefined) : undefined;
+		if (!Array.isArray(body)) {
+			this.firstPageRefused = true;
+			this.firstPageRefusals = (this.firstPageRefusals ?? 0) + 1;
+			return;
+		}
 		this.firstPageRefused = false;
 		this.firstPageRefusals = 0;
 
-		const response = (await j.json()) as messagejson[];
+		const response = body as messagejson[];
 		if (response.length !== 100) {
 			this.allthewayup = true;
 		}

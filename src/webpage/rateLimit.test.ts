@@ -149,6 +149,19 @@ describe("the first history page of a channel", () => {
 		expect(channel.allthewayup).toBeFalsy();
 		expect(Channel.historyCooldownUntil).toBeGreaterThan(Date.now());
 	});
+
+	it.each([
+		["a server error", () => Response.json({message: "boom"}, {status: 500})],
+		["a refusal", () => Response.json({code: 50001, message: "Missing Access"}, {status: 403})],
+		["a proxy's error page", () => new Response("<html>bad gateway</html>", {status: 502})],
+	])("%s isn't the channel's top either, and nothing throws", async (_, answer) => {
+		captureRequests(API + "/channels/c1/messages", answer);
+		const channel = channelAt();
+
+		await expect(channel.putmessages()).resolves.toBeUndefined();
+
+		expect(channel.allthewayup).toBeFalsy();
+	});
 });
 
 describe("opening a channel whose first history page is rate-limited", () => {
