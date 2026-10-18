@@ -512,7 +512,8 @@ class User extends SnowFlake {
 					return (
 						!!member &&
 						member?.id !== this.localuser.user.id &&
-						member.guild.member.hasPermission("MANAGE_NICKNAMES")
+						member.guild.member.hasPermission("MANAGE_NICKNAMES") &&
+						member.guild.member.canActOn(member)
 					);
 				},
 			},
@@ -530,7 +531,8 @@ class User extends SnowFlake {
 
 					return (
 						!member.commuicationDisabledLeft() &&
-						member.guild.member.hasPermission("MODERATE_MEMBERS")
+						member.guild.member.hasPermission("MODERATE_MEMBERS") &&
+						member.guild.member.canActOn(member)
 					);
 				},
 				color: "red",
@@ -550,7 +552,8 @@ class User extends SnowFlake {
 
 					return (
 						!!member.commuicationDisabledLeft() &&
-						member.guild.member.hasPermission("MODERATE_MEMBERS")
+						member.guild.member.hasPermission("MODERATE_MEMBERS") &&
+						member.guild.member.canActOn(member)
 					);
 				},
 				color: "red",
@@ -570,10 +573,11 @@ class User extends SnowFlake {
 					if (member.id === us.id) {
 						return false;
 					}
-					if (member.id === member.guild.properties.owner_id) {
-						return false;
-					}
-					return us.hasPermission("KICK_MEMBERS") && this.id !== this.localuser.user.id;
+					return (
+						us.hasPermission("KICK_MEMBERS") &&
+						this.id !== this.localuser.user.id &&
+						us.canActOn(member)
+					);
 				},
 				color: "red",
 			},
@@ -592,10 +596,11 @@ class User extends SnowFlake {
 					if (member.id === us.id) {
 						return false;
 					}
-					if (member.id === member.guild.properties.owner_id) {
-						return false;
-					}
-					return us.hasPermission("BAN_MEMBERS") && this.id !== this.localuser.user.id;
+					return (
+						us.hasPermission("BAN_MEMBERS") &&
+						this.id !== this.localuser.user.id &&
+						us.canActOn(member)
+					);
 				},
 				color: "red",
 			},

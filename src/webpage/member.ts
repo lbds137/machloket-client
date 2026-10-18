@@ -585,6 +585,20 @@ class Member extends SnowFlake {
 		}
 		return this.guild.properties.owner_id === this.user.id;
 	}
+	/** Whether this member may kick, ban, time out or rename `target`: the server's rule
+	 * (RoleHierarchy canActOnMember) is that nobody acts on the owner, the owner acts on anyone,
+	 * and otherwise this member's top role must rank strictly above the target's. */
+	canActOn(target: Member): boolean {
+		const ownerId = this.guild.properties.owner_id;
+		if (target.id === ownerId) return false;
+		if (this.id === ownerId) return true;
+		const top = (member: Member) =>
+			member.roles.reduce<{id: string; position: number}>(
+				(best, role) => (Role.compare(this.guild.id, role, best) > 0 ? role : best),
+				{id: this.guild.id, position: 0},
+			);
+		return Role.compare(this.guild.id, top(this), top(target)) > 0;
+	}
 	bind(html: HTMLElement) {
 		if (html.tagName === "SPAN") {
 			if (!this) {
