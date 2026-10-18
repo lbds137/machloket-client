@@ -57,3 +57,28 @@ it("a member answer the client can't build settles as no member instead of waiti
 	// Later lookups await the same answer.
 	expect(await outcome(Member.resolveMember(user as never, guild as never))).toBeUndefined();
 });
+
+it("a built member keeps the role ids it was sent, and a member update replaces them", async () => {
+	const guild = guildAnswering(async () => ({
+		user: {id: "u1", username: "alice"},
+		roles: ["r1", "r2"],
+		nick: null,
+	}));
+	const user = userOf(guild);
+
+	const member = (await outcome(Member.resolveMember(user as never, guild as never))) as {
+		roleIds: Set<string>;
+		update(json: unknown): void;
+	};
+	expect([...member.roleIds]).toEqual(["r1", "r2"]);
+
+	member.update({roles: ["r3"]});
+	expect([...member.roleIds]).toEqual(["r3"]);
+
+	// The guard still keeps server JSON off the prototype and off methods.
+	const proto = Object.getPrototypeOf(member);
+	const hostile = JSON.parse('{"__proto__": {"polluted": true}, "update": 1}');
+	expect(() => member.update(hostile)).not.toThrow();
+	expect(Object.getPrototypeOf(member)).toBe(proto);
+	expect(typeof member.update).toBe("function");
+});

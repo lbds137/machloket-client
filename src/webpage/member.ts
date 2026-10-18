@@ -348,7 +348,7 @@ class Member extends SnowFlake {
 	update(memberjson: memberjson) {
 		const changeNick = this.nick !== memberjson.nick;
 		for (const key of Object.keys(memberjson)) {
-			if (key === "guild" || key === "owner" || key === "user" || !assignableKey(this, key)) {
+			if (key === "guild" || key === "owner" || key === "user") {
 				continue;
 			}
 			if (key === "communication_disabled_until") {
@@ -373,6 +373,8 @@ class Member extends SnowFlake {
 				this.getPresence(memberjson.presence);
 				continue;
 			}
+			// Only the generic copy needs the guard: `roles` is a getter, handled above.
+			if (!assignableKey(this, key)) continue;
 			(this as any)[key] = (memberjson as any)[key];
 		}
 
