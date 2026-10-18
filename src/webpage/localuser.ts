@@ -6227,13 +6227,20 @@ class Localuser {
 		const userInfo = getBulkInfo();
 		if (!userInfo.instances) userInfo.instances = {};
 		const wellknown = this.info.wellknown;
-		if (!userInfo.instances[wellknown]) {
-			const pingRes = await fetch(this.info.api + "/ping");
-			const pingJSON = await pingRes.json();
-			userInfo.instances[wellknown] = pingJSON;
-			localStorage.setItem("userinfos", JSON.stringify(userInfo));
+		// Only a real ping is kept (an error body kept here once was never asked for again).
+		const isPing = (json: unknown) =>
+			typeof (json as {instance?: {name?: unknown}} | null)?.instance?.name === "string";
+		if (!isPing(userInfo.instances[wellknown])) {
+			const pingRes = await fetch(this.info.api + "/ping").catch(() => undefined);
+			const pingJSON: unknown = pingRes?.ok ? await pingRes.json().catch(() => null) : null;
+			if (isPing(pingJSON)) {
+				userInfo.instances[wellknown] = pingJSON;
+				localStorage.setItem("userinfos", JSON.stringify(userInfo));
+			}
 		}
-		this.instancePing = userInfo.instances[wellknown].instance;
+		if (isPing(userInfo.instances[wellknown])) {
+			this.instancePing = userInfo.instances[wellknown].instance;
+		}
 
 		this.pageTitle("Loading...");
 	}
@@ -6248,12 +6255,24 @@ class Localuser {
 		dialog.show();
 		const res = await fetch(this.info.api + "/policies/stats", {
 			headers: this.headers,
-		});
-		const json = await res.json();
-		dialog.options.addText(I18n.instanceStats.users(json.counts.user));
-		dialog.options.addText(I18n.instanceStats.servers(json.counts.guild));
-		dialog.options.addText(I18n.instanceStats.messages(json.counts.message));
-		dialog.options.addText(I18n.instanceStats.members(json.counts.members));
+		}).catch(() => undefined);
+		const answer = res?.ok
+			? await res
+					.clone()
+					.json()
+					.catch(() => null)
+			: null;
+		const json = answer as {
+			counts?: {user: number; guild: number; message: number; members: number};
+		} | null;
+		if (!json?.counts) {
+			dialog.options.addText(await refusalText(res));
+			return;
+		}
+		dialog.options.addText(I18n.instanceStats.users("" + json.counts.user));
+		dialog.options.addText(I18n.instanceStats.servers("" + json.counts.guild));
+		dialog.options.addText(I18n.instanceStats.messages("" + json.counts.message));
+		dialog.options.addText(I18n.instanceStats.members("" + json.counts.members));
 	}
 
 	async refreshIfNeeded(url: string) {
