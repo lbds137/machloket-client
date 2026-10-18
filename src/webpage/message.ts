@@ -2229,28 +2229,27 @@ let yesterdayStr: string;
 function formatTime(date: Date) {
 	updateTimes();
 	const datestring = date.toLocaleDateString();
-	const formatTime = (date: Date) =>
-		date.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+	const clock = (date: Date) => date.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
 
 	if (datestring === now) {
-		return I18n.todayAt(formatTime(date));
+		return I18n.todayAt(clock(date));
 	} else if (datestring === yesterdayStr) {
-		return I18n.yesterdayAt(formatTime(date));
+		return I18n.yesterdayAt(clock(date));
 	} else {
-		return I18n.otherAt(date.toLocaleDateString(), formatTime(date));
+		return I18n.otherAt(date.toLocaleDateString(), clock(date));
 	}
 }
-let tomorrow = 0;
 updateTimes();
+/** Works "today" and "yesterday" out again whenever the date has changed (either way: a clock
+ * or time zone can move back too). */
 function updateTimes() {
-	if (tomorrow < Date.now()) {
-		const d = new Date();
-		tomorrow = d.setHours(24, 0, 0, 0);
-		now = new Date().toLocaleDateString();
-		const yesterday = new Date(now);
-		yesterday.setDate(new Date().getDate() - 1);
-		yesterdayStr = yesterday.toLocaleDateString();
-	}
+	const today = new Date().toLocaleDateString();
+	if (today === now) return;
+	now = today;
+	// From a Date, not from `now`: a locale's date string doesn't parse back (18/10/2026).
+	const yesterday = new Date();
+	yesterday.setDate(yesterday.getDate() - 1);
+	yesterdayStr = yesterday.toLocaleDateString();
 }
 
 function isDmChannel(channel: Channel): boolean {
@@ -2335,5 +2334,5 @@ async function sendForward(
 }
 
 Message.setup();
-export {Message, sendForward, canSendToChannel, getChannelDisplayName, isDmChannel};
+export {Message, sendForward, canSendToChannel, getChannelDisplayName, isDmChannel, formatTime};
 
