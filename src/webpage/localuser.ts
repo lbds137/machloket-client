@@ -1113,6 +1113,15 @@ class Localuser {
 							}),
 						);
 						this.readysup = temp.d.guilds.length !== 0;
+						// Friends' presences come only here, not as PRESENCE_UPDATEs: without them every
+						// friend reads offline until their status next changes. The server sends the
+						// user object, Discord a user_id.
+						for (const presence of temp.d.merged_presences?.friends ?? []) {
+							const id = presence.user?.id ?? presence.user_id;
+							if (!id) continue;
+							this.presences.set(id, presence);
+							this.userMap.get(id)?.setstatus(presence.status);
+						}
 					}
 					break;
 				case "VOICE_STATE_UPDATE":

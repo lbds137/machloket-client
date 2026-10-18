@@ -306,7 +306,8 @@ interface readySuplemental {
 	d: {
 		merged_presences: {
 			guilds: [];
-			friends: [];
+			/** The server names the friend by `user`, Discord by `user_id`. */
+			friends: (presencejson & {user_id?: string})[];
 		};
 		merged_members: [];
 		lazy_private_channels: [];
