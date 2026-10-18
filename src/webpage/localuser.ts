@@ -4639,7 +4639,20 @@ class Localuser {
 				},
 			);
 			sub.addText(I18n.applications.sure(json.name));
+			this.addOwnerCode(sub);
 		});
+	}
+	/** For an owner action the server gates on the second factor (deleting a guild or an
+	 * application, resetting a bot token): a code field when two-factor is on, a wrong code
+	 * shown there. Without it (turned on elsewhere since) the server's message shows. */
+	addOwnerCode(form: Form) {
+		if (!this.mfa_enabled) return;
+		form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
+		form.onErrorBody = (e) => {
+			if (e.code !== 60008) return false;
+			form.error("code", I18n.localuser.badCode());
+			return true;
+		};
 	}
 	async manageBot(appId = "", container: Form) {
 		const res = await fetch(this.info.api + "/applications/" + appId, {
@@ -4669,20 +4682,28 @@ class Localuser {
 			initImg: bot.getpfpsrc(),
 			clear: true,
 		});
-		form.addButtonInput("", I18n.localuser.resetToken(), async () => {
-			if (!confirm(I18n.localuser.confirmReset())) {
-				return;
-			}
-			const updateRes = await fetch(this.info.api + "/applications/" + appId + "/bot/reset", {
-				method: "POST",
-				headers: this.headers,
-			});
-			const updateJSON = await updateRes.json();
-			text.setText(I18n.localuser.tokenDisplay(updateJSON.token));
-			this.botTokens.set(appId, updateJSON.token);
-			if (this.perminfo.applications[appId]) {
-				this.perminfo.applications[appId] = updateJSON.token;
-			}
+		form.addButtonInput("", I18n.localuser.resetToken(), () => {
+			// Through a form, so a refusal shows and an owner with two-factor on gives a code.
+			const sub = form.addSubForm(
+				I18n.localuser.resetToken(),
+				(updateJSON) => {
+					const {token} = updateJSON as {token: string};
+					text.setText(I18n.localuser.tokenDisplay(token));
+					this.botTokens.set(appId, token);
+					if (this.perminfo.applications[appId]) {
+						this.perminfo.applications[appId] = token;
+					}
+					form.options.returnFromSub();
+				},
+				{
+					fetchURL: this.info.api + "/applications/" + appId + "/bot/reset",
+					submitText: I18n.localuser.resetToken(),
+					method: "POST",
+					headers: this.headers,
+				},
+			);
+			sub.addText(I18n.localuser.confirmReset());
+			this.addOwnerCode(sub);
 		});
 		const text = form.addText(
 			I18n.localuser.tokenDisplay(

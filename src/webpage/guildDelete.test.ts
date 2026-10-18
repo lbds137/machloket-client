@@ -3,7 +3,7 @@ import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
-await import("./localuser");
+const {Localuser} = await import("./localuser");
 const {Guild} = await import("./guild");
 const {Dialog, Options} = await import("./settings");
 const {I18n} = await import("./i18n");
@@ -24,7 +24,7 @@ function confirmDeleteOf(mfa: boolean) {
 		properties: {name: "Home"},
 		headers: {Authorization: "t"},
 		// `localuser` and `info` are getters on the prototype: they read through the owner.
-		owner: {info: {api: API}, mfa_enabled: mfa},
+		owner: Object.assign(Object.create(Localuser.prototype), {info: {api: API}, mfa_enabled: mfa}),
 	});
 	guild.confirmDelete();
 	const form = addForm.mock.results[0].value as {

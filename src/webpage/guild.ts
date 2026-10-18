@@ -1945,15 +1945,7 @@ class Guild extends SnowFlake {
 		});
 		// Keyed "": checked here, never sent.
 		const txt = form.addTextInput(I18n.guild.serverName(), "");
-		if (this.localuser.mfa_enabled) {
-			form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
-		}
-		form.onErrorBody = (e) => {
-			// No code field (two-factor turned on elsewhere since): the server's message shows.
-			if (e.code !== 60008 || !this.localuser.mfa_enabled) return false;
-			form.error("code", I18n.localuser.badCode());
-			return true;
-		};
+		this.localuser.addOwnerCode(form);
 		form.addPreprocessor(() => {
 			if (txt.value !== this.properties.name) throw new FormError(txt, I18n.guild.nameNoMatch());
 		});
