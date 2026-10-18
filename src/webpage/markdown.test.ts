@@ -190,3 +190,21 @@ describe("a lone marker inside a formatting pair", () => {
 		expect(html.querySelector("b i, b em")?.textContent).toBe("this");
 	});
 });
+
+describe("shortcode emoji", () => {
+	it("still resolve once the emoji list loads, after a lookup made before it", () => {
+		const loaded = MarkDown.emoji!.emojis;
+		MarkDown._emojiMap = null;
+		MarkDown.emoji!.emojis = [];
+		try {
+			// Rendering "at 12:30 or 13:00" looks up ":30 or 13:" before emoji.bin has arrived.
+			expect(MarkDown.getEmoji("smile")).toBeUndefined();
+
+			MarkDown.emoji!.emojis = [{name: "people", emojis: [{name: "smile", emoji: "😄"}]}];
+			expect(MarkDown.getEmoji("smile")?.emoji).toBe("😄");
+		} finally {
+			MarkDown.emoji!.emojis = loaded;
+			MarkDown._emojiMap = null;
+		}
+	});
+});

@@ -96,8 +96,8 @@ class MarkDown {
 	}
 	static _emojiMap: Map<string, {name: string; emoji: string}> | null = null;
 	static getEmoji(name: string): {name: string; emoji: string} | undefined {
-		// Before emoji.bin has loaded there is no list yet: build the map on a later call.
-		if (!this._emojiMap && this.emoji?.emojis) {
+		// Before emoji.bin has loaded the list is empty (or unset): build the map on a later call.
+		if (!this._emojiMap && this.emoji?.emojis?.length) {
 			this._emojiMap = new Map();
 			for (const group of this.emoji.emojis) {
 				for (const e of group.emojis) {
