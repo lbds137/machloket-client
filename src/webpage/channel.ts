@@ -3263,19 +3263,32 @@ class Channel extends SnowFlake {
 		if (response.length !== 100) {
 			this.allthewayup = true;
 		}
+		// A live message can land while the page is on its way: the page, made before it, mustn't
+		// wind the channel's newest back (MESSAGE_CREATE has already linked it after the page's).
+		const liveNewer = (pageNewest?: string) => {
+			const known = this.lastmessageid;
+			if (!known || !this.messages.has(known)) return false;
+			if (pageNewest === undefined) return true;
+			try {
+				return BigInt(known) > BigInt(pageNewest);
+			} catch {
+				// A pending send ("fake…" id) is newer than anything the server has.
+				return known !== pageNewest;
+			}
+		};
 		let prev: Message | undefined;
 		for (const thing of response) {
 			const message = new Message(thing, this);
 			if (prev) {
 				this.idToNext.set(message.id, prev.id);
 				this.idToPrev.set(prev.id, message.id);
-			} else {
+			} else if (!liveNewer(message.id)) {
 				this.lastmessage = message;
 				this.setLastMessageId(message.id);
 			}
 			prev = message;
 		}
-		if (!response.length) {
+		if (!response.length && !liveNewer()) {
 			this.lastmessageid = undefined;
 			this.lastreadmessageid = undefined;
 		}
