@@ -24,6 +24,32 @@ const ANGLE_INVALID = new Set([">", "<"]);
 const ALLOWED_PROTOCOLS = new Set(["https:", "http:"]);
 const SPACE_RE = /^\s$/;
 const GRAPHEME_SEG = new Intl.Segmenter("en-US", {granularity: "grapheme"});
+// One emoji grapheme: a pictograph (with any skin tone, VS16 or ZWJ sequence after it), a flag
+// or a keycap. Digits, letters and punctuation aren't.
+const EMOJI_GRAPHEME = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}{2}$|[\d#*]\uFE0F?\u20E3$)/u;
+const CUSTOM_OR_SHORTCODE = /(<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:)/u;
+/** Discord shows a message of emoji alone at jumbo size up to this many emoji. */
+const JUMBO_LIMIT = 30;
+
+/** The emoji a message consists of (each a custom `<:name:id>`, a `:shortcode:` or one emoji),
+ * or undefined when it holds anything else (letters, punctuation, symbols that aren't emoji) or
+ * more than JUMBO_LIMIT of them: such a message renders at text size. */
+function jumboTokens(txt: string): string[] | undefined {
+	const tokens: string[] = [];
+	// split with a capture group: the odd parts are the custom emoji and shortcodes.
+	for (const [i, part] of txt.split(CUSTOM_OR_SHORTCODE).entries()) {
+		if (i % 2) {
+			tokens.push(part);
+			continue;
+		}
+		for (const {segment} of GRAPHEME_SEG.segment(part)) {
+			if (/^\s+$/u.test(segment)) continue;
+			if (!EMOJI_GRAPHEME.test(segment)) return undefined;
+			tokens.push(segment);
+		}
+	}
+	return tokens.length && tokens.length <= JUMBO_LIMIT ? tokens : undefined;
+}
 
 let linkMenu: Contextmenu<string, void> | undefined;
 
@@ -113,52 +139,37 @@ class MarkDown {
 			const span = document.createElement("span");
 			span.classList.add("md-emoji", "bigemojiUni");
 
-			const matched = txt.match(
-				/^((<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|([^\da-zA-Z <>])) *){1,3}$/u,
-			);
-			if (matched) {
-				const map = [
-					...txt.matchAll(/<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:|[^\da-zA-Z <>]+/gu).map(([_]) => _),
-				];
-				const invalid = map.find((str) => {
-					if (str.match(/^:[A-Za-z\d_]+:$/)) return false;
-					if (str.length > 10) return false;
-					if (Array.from(GRAPHEME_SEG.segment(str)).length !== 1) return true;
-					return false;
-				});
-				if (!invalid) {
-					let hasInvalid = false;
-					for (const match of map) {
-						if (match.length > 10) {
-							const parts = match.match(/^<(a)?:\w+:(\d{10,30})>$/);
-							if (parts && parts[2]) {
-								const owner = this.channel ? this.channel.guild : this.localuser;
-								if (!owner) continue;
-								const emoji = new Emoji(
-									{name: match, id: parts[2], animated: Boolean(parts[1])},
-									owner,
-								);
-								span.appendChild(emoji.getHTML(true, !keep));
-								continue;
-							}
-						} else if (match.match(/^:[A-Za-z\d_]+:$/)) {
-							const emojiName = match.slice(1, -1);
-							const systemEmoji = MarkDown.getEmoji(emojiName);
-							if (systemEmoji) {
-								const emoji = new Emoji({name: emojiName, emoji: systemEmoji.emoji}, undefined);
-								span.appendChild(emoji.getHTML(true, !keep));
-								continue;
-							}
-						} else {
-							span.append(match);
+			const tokens = jumboTokens(txt);
+			if (tokens) {
+				let hasInvalid = false;
+				for (const match of tokens) {
+					const parts = match.match(/^<(a)?:\w+:(\d{10,30})>$/);
+					if (parts) {
+						const owner = this.channel ? this.channel.guild : this.localuser;
+						if (!owner) continue;
+						const emoji = new Emoji(
+							{name: match, id: parts[2], animated: Boolean(parts[1])},
+							owner,
+						);
+						span.appendChild(emoji.getHTML(true, !keep));
+						continue;
+					} else if (match.match(/^:[A-Za-z\d_]+:$/)) {
+						const emojiName = match.slice(1, -1);
+						const systemEmoji = MarkDown.getEmoji(emojiName);
+						if (systemEmoji) {
+							const emoji = new Emoji({name: emojiName, emoji: systemEmoji.emoji}, undefined);
+							span.appendChild(emoji.getHTML(true, !keep));
 							continue;
 						}
-						hasInvalid = true;
-						break;
+					} else if (!match.startsWith("<")) {
+						span.append(match);
+						continue;
 					}
-					if (!hasInvalid) {
-						return span;
-					}
+					hasInvalid = true;
+					break;
+				}
+				if (!hasInvalid) {
+					return span;
 				}
 			}
 		}
