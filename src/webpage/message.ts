@@ -40,6 +40,15 @@ export interface ForwardSnapshot {
 	edited_timestamp?: string | null;
 }
 
+/** Whether a message's text is a link that its own image or GIF embed stands in for: Discord
+ * then shows the media alone. Any other card (video, article, link) keeps the link's text. */
+function embedReplacesText(embeds: Embed[], text: string) {
+	return embeds.some(
+		(embed) =>
+			(embed.json.type === "image" || embed.json.type === "gifv") && embed.json.url === text,
+	);
+}
+
 /** What a preview of `message` shows: its own text, or for a forward (whose own body is
  * empty) the forwarded text. */
 export function previewContent(message: {content: MarkDown; forwardSnapshot?: ForwardSnapshot}) {
@@ -1433,7 +1442,7 @@ class Message extends SnowFlake {
 			} else {
 				this.content.onUpdate = () => {};
 				const messaged = this.content.makeHTML();
-				if (!this.embeds.find((_) => _.json.url === messaged.textContent)) {
+				if (!embedReplacesText(this.embeds, messaged.textContent ?? "")) {
 					messagedwrap.classList.add("flexttb");
 					if (this.content.rawString || this.message_reference?.type !== 1) {
 						messagedwrap.appendChild(messaged);
@@ -1504,7 +1513,7 @@ class Message extends SnowFlake {
 					if (snap.content) {
 						snap.content.onUpdate = () => {};
 						const snapMessaged = snap.content.makeHTML();
-						if (!snap.embeds.find((_) => _.json.url === snapMessaged.textContent)) {
+						if (!embedReplacesText(snap.embeds, snapMessaged.textContent ?? "")) {
 							if (snap.edited_timestamp) {
 								const edit = document.createElement("span");
 								edit.classList.add("timestamp");

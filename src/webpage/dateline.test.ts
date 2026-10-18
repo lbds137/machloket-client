@@ -145,4 +145,33 @@ describe("message grouping", () => {
 
 		expect(div.querySelectorAll(".username")).toHaveLength(0);
 	});
+
+	/** A message whose whole text is `url`, with one embed of `type` for that url. */
+	function linkWithEmbed(type: string) {
+		vi.spyOn(Member, "resolveMember").mockResolvedValue(undefined);
+		const url = "https://www.youtube.com/watch?v=abc";
+		const channel = renderableChannel();
+		const message = Object.assign(byAuthor(channel, "600", new Date(2026, 9, 8, 10, 0), author), {
+			content: {
+				makeHTML: () => Object.assign(document.createElement("div"), {textContent: url}),
+				rawString: url,
+				textContent: url,
+				onUpdate: () => {},
+			},
+			embeds: [{json: {type, url}, generateHTML: () => document.createElement("div")}],
+		});
+		return render(message, messageAt(channel, "599", new Date(2026, 9, 8, 9, 0)));
+	}
+
+	it("a link with a video, article, link or rich card under it keeps its text, as on Discord", () => {
+		for (const type of ["video", "article", "link", "rich"]) {
+			expect(linkWithEmbed(type).textContent).toContain("youtube.com/watch");
+		}
+	});
+
+	// A pin, not red-first: a link that is only an image shows the image alone.
+	it("a link to an image or GIF shows the media alone", () => {
+		expect(linkWithEmbed("image").textContent).not.toContain("youtube.com/watch");
+		expect(linkWithEmbed("gifv").textContent).not.toContain("youtube.com/watch");
+	});
 });
