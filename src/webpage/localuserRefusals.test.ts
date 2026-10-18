@@ -323,6 +323,7 @@ it("status picker shows a refusal dialog when the current status PATCH is refuse
 	const setstatus = vi.fn();
 	const user = makeUser({
 		user: {status: "online", setstatus},
+		userinfo: {},
 	});
 	Localuser.openStatusDialog(user);
 	const select = document.querySelector("select")!;
