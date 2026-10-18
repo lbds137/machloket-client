@@ -69,3 +69,23 @@ it("a channel moved into a category leaves the top level", () => {
 	expect(cat.children.filter((c) => c === b)).toHaveLength(1);
 	expect(guild.headchannels).not.toContain(b);
 });
+
+it("a deleted channel inside a category leaves the category too", () => {
+	const {guild, cat, a, b} = guildWithCategory();
+	guild.prevchannel = undefined;
+
+	guild.delChannel({id: "a"});
+
+	expect(cat.children).not.toContain(a);
+	expect(guild.channels).toEqual([cat, b]);
+});
+
+it("deleting a channel the list doesn't hold leaves the others alone", () => {
+	const {guild, cat, a, b} = guildWithCategory();
+	const thread = {id: "t1", position: 0, children: []};
+	guild.owner.channelids.set("t1", thread);
+
+	guild.delChannel({id: "t1"});
+
+	expect(guild.channels).toEqual([cat, a, b]);
+});

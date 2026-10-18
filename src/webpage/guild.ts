@@ -2229,11 +2229,11 @@ class Guild extends SnowFlake {
 		const channel = this.localuser.channelids.get(json.id);
 		this.localuser.channelids.delete(json.id);
 		if (!channel) return;
-		this.channels.splice(this.channels.indexOf(channel), 1);
-		const indexy = this.headchannels.indexOf(channel);
-		if (indexy !== -1) {
-			this.headchannels.splice(indexy, 1);
-		}
+		// A thread isn't in these lists; indexOf's -1 would splice off the last channel.
+		this.channels = this.channels.filter((_) => _ !== channel);
+		this.headchannels = this.headchannels.filter((_) => _ !== channel);
+		const parent = channel.parent;
+		if (parent) parent.children = parent.children.filter((_) => _ !== channel);
 		if (channel === this.prevchannel) {
 			this.prevchannel = undefined;
 		}
