@@ -1292,7 +1292,10 @@ class Message extends SnowFlake {
 			if (premessage !== undefined) {
 				const old = new Date(premessage.timestamp).getTime() / 1000;
 				const newt = new Date(this.timestamp).getTime() / 1000;
-				current = newt - old > 600;
+				// A day divider always starts a new group, so the author is named under it.
+				current =
+					newt - old > 600 ||
+					new Date(premessage.timestamp).toDateString() !== new Date(this.timestamp).toDateString();
 			}
 			const combine =
 				premessage?.author != this.author ||

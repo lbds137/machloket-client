@@ -1,6 +1,7 @@
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 await import("./localuser");
 const {Message} = await import("./message");
+const {Member} = await import("./member");
 const {I18n} = await import("./i18n");
 const {messageIn} = await import("./test/interactionFixture");
 
@@ -102,5 +103,46 @@ describe("message datelines", () => {
 		const div = render(messageAt(channel, "501", when), premessage);
 		expect(markerTexts(div, ".dateline:not(.unreadDateline)")).toEqual([formatted(when)]);
 		expect(markerTexts(div, ".unreadDateline")).toEqual(["NEW"]);
+	});
+});
+
+describe("message grouping", () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	/** A plain message (type 0) by `author`, so it can join the previous one's group. */
+	function byAuthor(channel: unknown, id: string, when: Date, author: object) {
+		return Object.assign(messageAt(channel, id, when), {type: 0, author});
+	}
+	// What naming an author asks of them; the name itself comes from the member.
+	const author = {
+		id: "a1",
+		buildpfp: () => document.createElement("img"),
+		bind: () => {},
+		subName: () => {},
+		getCustomBadges: async () => [],
+	};
+
+	it("a new day starts a new group: the author is named under the day divider", () => {
+		vi.spyOn(Member, "resolveMember").mockResolvedValue(undefined);
+		const channel = renderableChannel();
+		const div = render(
+			byAuthor(channel, "501", new Date(2026, 9, 8, 0, 3), author),
+			byAuthor(channel, "500", new Date(2026, 9, 7, 23, 58), author),
+		);
+
+		expect(div.querySelectorAll(".dateline")).toHaveLength(1);
+		expect(div.querySelectorAll(".username")).toHaveLength(1);
+	});
+
+	// A pin, not red-first: within a day, a message minutes after the author's last joins it.
+	it("the author's next message minutes later on the same day joins the group", () => {
+		vi.spyOn(Member, "resolveMember").mockResolvedValue(undefined);
+		const channel = renderableChannel();
+		const div = render(
+			byAuthor(channel, "501", new Date(2026, 9, 8, 10, 3), author),
+			byAuthor(channel, "500", new Date(2026, 9, 8, 9, 58), author),
+		);
+
+		expect(div.querySelectorAll(".username")).toHaveLength(0);
 	});
 });
