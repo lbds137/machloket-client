@@ -3048,10 +3048,7 @@ class Channel extends SnowFlake {
 			}
 		}
 
-		if (
-			this.nsfw && //@ts-ignore another hack
-			(!this.perminfo.nsfwOk || !this.localuser.user.nsfw_allowed)
-		) {
+		if (this.nsfwGated()) {
 			this.nsfwPannel();
 			return;
 		}
@@ -3070,30 +3067,7 @@ class Channel extends SnowFlake {
 		}
 		this.rendertyping();
 
-		try {
-			(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
-				? "plaintext-only"
-				: "false";
-		} catch {
-			(document.getElementById("typebox") as HTMLDivElement).contentEditable = this.canMessage
-				? "true"
-				: "false";
-		}
-		(document.getElementById("upload") as HTMLElement).style.visibility = this.canMessage
-			? "visible"
-			: "hidden";
-		(document.getElementById("gifTB") as HTMLElement).style.display = this.canMessage
-			? "block"
-			: "none";
-		(document.getElementById("stickerTB") as HTMLElement).style.display = this.canMessage
-			? "block"
-			: "none";
-		(document.getElementById("emojiTB") as HTMLElement).style.display = this.canMessage
-			? "block"
-			: "none";
-		(document.getElementById("mobileSend") as HTMLElement).style.display = this.canMessage
-			? "block"
-			: "none";
+		this.refreshComposerLock();
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "visible";
 		if (!mobile) {
 			(document.getElementById("typebox") as HTMLDivElement).focus();
@@ -3723,6 +3697,7 @@ class Channel extends SnowFlake {
 		this.availableTags =
 			json.available_tags?.map((tag) => new Tag(tag, this)) || this.availableTags;
 		this.slowmode();
+		this.refreshComposerLock();
 
 		const span = this.nameSpan.deref();
 		if (span) span.textContent = this.name;
@@ -4011,6 +3986,43 @@ class Channel extends SnowFlake {
 		let canMessage = t + this.rate_limit_per_user * 1000;
 		return canMessage <= Date.now();
 	}
+	/** Whether the channel is behind the NSFW gate (its panel stands in for the messages). */
+	nsfwGated() {
+		return (
+			this.nsfw && //@ts-ignore another hack
+			(!this.perminfo.nsfwOk || !this.localuser.user.nsfw_allowed)
+		);
+	}
+	/** Locks or unlocks the composer for whether the user may send here now. Only the open
+	 * channel's composer is on the page; a forum has none, and the NSFW gate keeps it locked. */
+	refreshComposerLock() {
+		if (this !== this.localuser.channelfocus || this.isForum() || this.nsfwGated()) return;
+		const canMessage = this.canMessage;
+		try {
+			(document.getElementById("typebox") as HTMLDivElement).contentEditable = canMessage
+				? "plaintext-only"
+				: "false";
+		} catch {
+			(document.getElementById("typebox") as HTMLDivElement).contentEditable = canMessage
+				? "true"
+				: "false";
+		}
+		(document.getElementById("upload") as HTMLElement).style.visibility = canMessage
+			? "visible"
+			: "hidden";
+		(document.getElementById("gifTB") as HTMLElement).style.display = canMessage
+			? "block"
+			: "none";
+		(document.getElementById("stickerTB") as HTMLElement).style.display = canMessage
+			? "block"
+			: "none";
+		(document.getElementById("emojiTB") as HTMLElement).style.display = canMessage
+			? "block"
+			: "none";
+		(document.getElementById("mobileSend") as HTMLElement).style.display = canMessage
+			? "block"
+			: "none";
+	}
 	async slowmode(bad = false) {
 		// The composer on the page belongs to the open channel; any other channel leaves it alone.
 		if (this !== this.localuser.channelfocus) return;
@@ -4029,6 +4041,7 @@ class Channel extends SnowFlake {
 					if (timeTill <= 0 || !document.contains(span)) {
 						if (document.contains(span)) span.remove();
 						clearInterval(int);
+						if (timeTill <= 0) this.refreshComposerLock();
 						return;
 					}
 					span.textContent = I18n.channel.TimeOutCool(formatTime(timeTill));

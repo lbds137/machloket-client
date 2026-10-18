@@ -338,6 +338,7 @@ class Guild extends SnowFlake {
 	}
 	recalcPrivate() {
 		if (this !== this.localuser.lookingguild) return;
+		this.localuser.channelfocus?.refreshComposerLock();
 		this.localuser.channelfocus?.slowmode();
 	}
 	async findAdmin() {
@@ -1555,6 +1556,7 @@ class Guild extends SnowFlake {
 		const role = this.roleids.get(rolej.id) as Role;
 		role.newJson(rolej);
 		this.roleUpdate(role, 0);
+		this.recalcPrivate();
 	}
 	memberupdate(json: memberjson) {
 		// Discord's (and the server's role and nick routes') payload names the member by its user.

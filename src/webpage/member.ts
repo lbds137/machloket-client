@@ -368,6 +368,9 @@ class Member extends SnowFlake {
 					console.error("Member role is incorrectly sent as role object instead of role ID");
 				}
 				this.roleIds = new Set(memberjson.roles);
+				if (this.id === this.localuser.user.id) {
+					this.guild.recalcPrivate();
+				}
 				continue;
 			}
 			if (key === "presence") {
