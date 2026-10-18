@@ -631,7 +631,6 @@ class User extends SnowFlake {
 				visible: (member) => {
 					if (!member) return false;
 					const us = member.guild.member;
-					console.log(us.hasPermission("MANAGE_ROLES"));
 					return us.hasPermission("MANAGE_ROLES") || false;
 				},
 			},
@@ -643,7 +642,8 @@ class User extends SnowFlake {
 					e.stopPropagation();
 					const roles: [Role, string[]][] = [];
 					for (const role of member.roles) {
-						if (!role.canManage()) {
+						// @everyone (the guild's own id) is every member's and can't be taken away.
+						if (!role.canManage() || role.id === member.guild.id) {
 							continue;
 						}
 						roles.push([role, [role.name]]);
@@ -658,7 +658,6 @@ class User extends SnowFlake {
 				visible: (member) => {
 					if (!member) return false;
 					const us = member.guild.member;
-					console.log(us.hasPermission("MANAGE_ROLES"));
 					return us.hasPermission("MANAGE_ROLES") || false;
 				},
 			},
