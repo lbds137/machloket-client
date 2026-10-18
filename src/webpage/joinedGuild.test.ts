@@ -35,3 +35,23 @@ it("a guild already known opens at once", () => {
 	user.guildArrived("g1");
 	expect(loadGuild).not.toHaveBeenCalled();
 });
+
+it("going elsewhere drops the wait, so a late arrival doesn't pull the view back", () => {
+	const {user, loadGuild} = session(["g2"]);
+	loadGuild.mockRestore();
+	const load = vi.spyOn(user, "loadGuild");
+	// loadGuild's own body needs a page; only its entry matters here.
+	load
+		.mockImplementationOnce(Object.getPrototypeOf(user).loadGuild.bind(user))
+		.mockImplementation(() => undefined);
+
+	user.openJoinedGuild("g1");
+	try {
+		user.loadGuild("g2");
+	} catch {
+		// the page-less body throws past the part under test
+	}
+	user.guildArrived("g1");
+
+	expect(load).not.toHaveBeenCalledWith("g1");
+});

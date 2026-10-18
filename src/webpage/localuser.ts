@@ -1937,6 +1937,8 @@ class Localuser {
 		this.loadGuild(id);
 	}
 	loadGuild(id: string, forceReload = false): Guild | undefined {
+		// The user went somewhere else: a joined guild arriving later mustn't pull them back.
+		if (id !== this.joinedGuildId) this.joinedGuildId = undefined;
 		this.searching = false;
 		let guild = this.guildids.get(id);
 		if (!guild) {

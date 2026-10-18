@@ -251,3 +251,18 @@ it("a forwarded message's notification shows what was forwarded", async () => {
 
 	expect(shown.at(-1)?.options?.body).toBe("the forwarded words");
 });
+
+it("a forwarded embed's notification shows the embed's title", async () => {
+	vi.stubGlobal("Notification", AndroidNotification);
+	const shown = captureShown();
+	const {message} = fakeMessage();
+	const empty = {makeHTML: () => ({textContent: ""}), textContent: "", rawString: ""};
+	Object.assign(message, {
+		content: empty,
+		forwardSnapshot: {content: empty, attachments: [], embeds: [{json: {title: "A link's title"}}]},
+	});
+
+	await NotificationHandler.sendMessageNotification(message).catch(() => {});
+
+	expect(shown.at(-1)?.options?.body).toBe("A link's title");
+});

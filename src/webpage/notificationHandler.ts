@@ -84,8 +84,10 @@ export class NotificationHandler {
 		const html = previewContent(message).makeHTML();
 		await new Promise<void>((res) => res());
 		let noticontent: string | undefined | null = html.textContent;
-		if (message.embeds[0]) {
-			noticontent ||= message.embeds[0]?.json.title;
+		// A forward keeps its embeds in the snapshot.
+		const embed = message.embeds[0] ?? message.forwardSnapshot?.embeds[0];
+		if (embed) {
+			noticontent ||= embed.json.title;
 			noticontent ||= message.content.textContent;
 		}
 		noticontent ||= I18n.blankMessage();
