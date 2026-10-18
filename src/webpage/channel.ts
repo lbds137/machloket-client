@@ -43,7 +43,7 @@ import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
-import {formErrors, refusalText} from "./utils/showRefusal.js";
+import {formErrors, refusalText, showRefusal} from "./utils/showRefusal.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -675,30 +675,9 @@ class Channel extends SnowFlake {
 				const descDiv = document.createElement("div");
 				descDiv.textContent = I18n.channel.syncPermsDesc();
 				d.options.addHTMLArea(descDiv);
-				d.options.addButtonInput("", I18n.channel.syncPermsConfirm(), async () => {
+				d.options.addButtonInput("", I18n.channel.syncPermsConfirm(), () => {
 					d.hide();
-					const overwrites: {id: string; type: number; allow: string; deny: string}[] = [];
-					for (const [id, perms] of this.permission_overwrites) {
-						overwrites.push({
-							id,
-							type: this.guild.roleids.has(id) ? 0 : 1,
-							allow: perms.allow.toString(),
-							deny: perms.deny.toString(),
-						});
-					}
-					const promises: Promise<Response>[] = [];
-					for (const child of this.children) {
-						if (child.isThread()) continue;
-						promises.push(
-							fetch(this.info.api + "/channels/" + child.id, {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify({permission_overwrites: overwrites}),
-							}),
-						);
-					}
-					await Promise.all(promises);
-					new Dialog(I18n.channel.syncPermsSuccess()).show();
+					void this.syncPermsToChildren();
 				});
 				d.options.addButtonInput("", I18n.channel.syncPermsCancel(), () => {
 					d.hide();
@@ -2294,6 +2273,34 @@ class Channel extends SnowFlake {
 		tags: [] as string[],
 	};
 	hasFetchedForForum = false;
+	/** Gives this category's channels (not threads) its permission overwrites, then says it did,
+	 * or why a channel didn't take them. */
+	async syncPermsToChildren() {
+		const overwrites: {id: string; type: number; allow: string; deny: string}[] = [];
+		for (const [id, perms] of this.permission_overwrites) {
+			overwrites.push({
+				id,
+				type: this.guild.roleids.has(id) ? 0 : 1,
+				allow: perms.allow.toString(),
+				deny: perms.deny.toString(),
+			});
+		}
+		const promises: Promise<Response | undefined>[] = [];
+		for (const child of this.children) {
+			if (child.isThread()) continue;
+			promises.push(
+				fetch(this.info.api + "/channels/" + child.id, {
+					method: "PATCH",
+					headers: this.headers,
+					body: JSON.stringify({permission_overwrites: overwrites}),
+				}).catch(() => undefined),
+			);
+		}
+		const answers = await Promise.all(promises);
+		const failed = answers.findIndex((res) => !res?.ok);
+		if (failed !== -1) return showRefusal(answers[failed]);
+		new Dialog(I18n.channel.syncPermsSuccess()).show();
+	}
 	editTags() {
 		const d = new Dialog(I18n.threads.editTags());
 		if (!this.appliedTags || !this.parent) return;
