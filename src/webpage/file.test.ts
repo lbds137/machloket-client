@@ -106,3 +106,49 @@ it("keeps web and local-preview (blob:) attachment links", () => {
 		expect(card.querySelector("a")!.getAttribute("href")).toBe(url);
 	}
 });
+
+describe("a video attachment", () => {
+	function videoOf(width: number | undefined, height: number | undefined, fullScreen = false) {
+		const file = new File(
+			{
+				id: "9",
+				filename: "clip.mp4",
+				content_type: "video/mp4",
+				size: 1,
+				url: "http://cdn.test/clip.mp4",
+				width,
+				height,
+			} as never,
+			null,
+		);
+		const html = file.getHTML(false, fullScreen);
+		return (html instanceof HTMLVideoElement ? html : html.querySelector("video"))!;
+	}
+
+	it("is scaled into the same box as an image, keeping its shape", () => {
+		const portrait = videoOf(1080, 1920);
+		expect(portrait.height).toBe(288);
+		expect(portrait.width).toBe(162);
+
+		const landscape = videoOf(1920, 1080);
+		expect(landscape.width).toBe(288);
+		expect(landscape.height).toBe(162);
+	});
+
+	// A pin, not red-first: a video smaller than the box keeps its own size.
+	it("smaller than the box, keeps its size", () => {
+		const small = videoOf(200, 100);
+		expect([small.width, small.height]).toEqual([200, 100]);
+	});
+
+	it("with only one size known, that one is capped to the box", () => {
+		expect(videoOf(undefined, 1920).height).toBe(288);
+		expect(videoOf(1920, undefined).width).toBe(288);
+	});
+
+	// A pin: the full-screen viewer shows the source's own size.
+	it("full screen keeps the source's size", () => {
+		const full = videoOf(1080, 1920, true);
+		expect([full.width, full.height]).toEqual([1080, 1920]);
+	});
+});

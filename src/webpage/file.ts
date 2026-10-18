@@ -150,8 +150,18 @@ class File {
 			//source.type = this.content_type;
 			video.controls = !temp;
 
-			if (this.width) video.width = this.width;
-			if (this.height) video.height = this.height;
+			if (fullScreen) {
+				if (this.width) video.width = this.width;
+				if (this.height) video.height = this.height;
+			} else if (this.width && this.height) {
+				// Scaled into the same box as an image: the source's own size can be a screen tall.
+				video.width = dispWidth as number;
+				video.height = dispHeight;
+			} else if (this.width) {
+				video.width = Math.min(this.width, 96 * 3);
+			} else if (this.height) {
+				video.height = Math.min(this.height, 96 * 3);
+			}
 
 			if (OSpoiler) {
 				const div = document.createElement("div");
