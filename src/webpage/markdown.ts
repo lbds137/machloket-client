@@ -344,6 +344,9 @@ class MarkDown {
 					} else if (!endsLine(i)) {
 						span.append(document.createElement("br"));
 					}
+				} else if (!current.textContent?.endsWith(" ")) {
+					// A one-line preview keeps the words of separate lines apart.
+					current.textContent += " ";
 				}
 				continue;
 			}
@@ -1003,9 +1006,10 @@ class MarkDown {
 
 						if (URL.canParse(parts[2])) {
 							i = j;
+							// A one-line preview shows the link's words, not a live link.
+							linkElem.append(this.markdown(parts[1], {keep, stdsize}));
 							if (!stdsize) {
 								MarkDown.safeLink(linkElem, parts[2]);
-								linkElem.append(this.markdown(parts[1], {keep, stdsize}));
 								linkElem.target = "_blank";
 								linkElem.rel = "noopener noreferrer";
 							}

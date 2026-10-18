@@ -281,3 +281,28 @@ describe("lists and round trips after a code block", () => {
 		expect(MarkDown.gatherBoxText(box)).toBe("```a```\n> q");
 	});
 });
+
+describe("a reply's one-line preview", () => {
+	const preview = (txt: string) =>
+		new MarkDown(txt, undefined, {stdsize: true}).makeHTML().textContent;
+
+	it("keeps a masked link's words", () => {
+		expect(preview("see [the docs](https://example.com/docs) first")).toBe("see the docs first");
+	});
+	it("keeps the words of separate lines apart", () => {
+		expect(preview("line one\nline two")).toBe("line one line two");
+	});
+});
+
+describe("a reply's one-line preview, more", () => {
+	const draw = (txt: string) => new MarkDown(txt, undefined, {stdsize: true}).makeHTML();
+	it("shows a masked link's words without a live link", () => {
+		expect(
+			draw("[docs](https://example.com/docs)").querySelector("a")?.getAttribute("href"),
+		).toBeNull();
+	});
+	it("puts one space between lines, however many breaks", () => {
+		expect(draw("a\n\nb").textContent).toBe("a b");
+		expect(draw("a \nb").textContent).toBe("a b");
+	});
+});
