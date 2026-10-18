@@ -69,9 +69,20 @@ if (window.location.pathname.startsWith("/invite"))
 		const guildLoaded = fetch(`${urls!.api}/invites/${code}`, {
 			method: "GET",
 		})
-			.then((response) => response.json())
+			.catch(() => undefined)
+			.then(async (response) => {
+				if (response?.ok) return await response.json().catch(() => null);
+				// A dead invite is a 404 (code 10006); any other failure says nothing about the
+				// invite, so the page keeps its Accept.
+				if (response?.status === 404) return null;
+				document.getElementById("invitedescription")!.textContent = I18n.requestFailed(
+					response ? "HTTP " + response.status : "offline",
+				);
+				return undefined;
+			})
 			.then((json) => {
-				if (json.code === 404) {
+				if (json === undefined) return undefined;
+				if (!json?.guild) {
 					document.getElementById("AcceptInvite")?.remove();
 					document.getElementById("invitename")!.textContent = I18n.invite.notFound();
 					document.getElementById("invitedescription")!.textContent = "";

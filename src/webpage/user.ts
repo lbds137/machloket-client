@@ -1102,10 +1102,12 @@ class User extends SnowFlake {
 			);
 		let user: User | undefined;
 		if ((user = localuser.userMap.get(id))) return user;
-		const json = await fetch(localuser.info.api.toString() + "/users/" + id + "/profile", {
+		const res = await fetch(localuser.info.api.toString() + "/users/" + id + "/profile", {
 			headers: localuser.headers,
-		}).then((res) => res.json());
-		if (json.code === 404) {
+		});
+		const json = await res.json().catch(() => null);
+		// The server names an unknown user with Discord's 10013 (HTTP 404).
+		if (res.status === 404 || json?.code === 10013) {
 			return new User(
 				{
 					id: "0",
@@ -1124,6 +1126,7 @@ class User extends SnowFlake {
 				localuser,
 			);
 		}
+		if (!res.ok || !json?.user) throw new Error(`user ${id}: HTTP ${res.status}`);
 		return new User(json.user, localuser);
 	}
 

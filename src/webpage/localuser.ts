@@ -240,9 +240,12 @@ class Localuser {
 		if (cache) return cache;
 		const prom = User.resolve(id, this);
 		this.userResMap.set(id, prom);
-		await prom;
-		this.userResMap.delete(id);
-		return prom;
+		try {
+			return await prom;
+		} finally {
+			// A failed lookup isn't remembered: the next caller asks again.
+			this.userResMap.delete(id);
+		}
 	}
 	static generateUserMenu() {
 		const menu = new Contextmenu<Localuser, void>("");
