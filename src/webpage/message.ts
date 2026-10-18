@@ -1782,23 +1782,42 @@ class Message extends SnowFlake {
 			pollbody.classList.add("flexttb", "pollBody");
 			let voted = false;
 			let firstRender = true;
+			/** Each answer's me_voted as the server last took it: a refused vote goes back to it. */
+			let held = new Map<number, boolean>();
+			let heldSeq = 0;
+			let voteSeq = 0;
 			const genPoll = () => {
 				if (!this.poll) return;
 				pollbody.textContent = "";
 				const d = new Date(this.poll.expiry);
 				const expired = +d < Date.now() || this.poll.results?.is_finalized || false;
-				const nupdate = () => {
-					fetch(`${this.info.api}/channels/${this.channel.id}/polls/${this.id}/answers/@me`, {
-						method: "PUT",
-						headers: this.headers,
-						body: JSON.stringify({
-							answer_ids: [...r.values()]
-								.filter((_) => _.me_voted)
-								.map(({id}) => id)
-								.filter((_) => _),
-						}),
-					});
+				const nupdate = async () => {
+					const seq = ++voteSeq;
+					const sent = new Map([...r.values()].map((answer) => [answer.id, answer.me_voted]));
 					voted = [...r.values()].some((answer) => answer.me_voted);
+					const res = await fetch(
+						`${this.info.api}/channels/${this.channel.id}/polls/${this.id}/answers/@me`,
+						{
+							method: "PUT",
+							headers: this.headers,
+							body: JSON.stringify({
+								answer_ids: [...r.values()]
+									.filter((_) => _.me_voted)
+									.map(({id}) => id)
+									.filter((_) => _),
+							}),
+						},
+					).catch(() => undefined);
+					if (res?.ok) {
+						if (seq > heldSeq) [held, heldSeq] = [sent, seq];
+						return;
+					}
+					// A newer vote has gone out since: its answer decides.
+					if (seq !== voteSeq) return;
+					for (const answer of r.values()) answer.me_voted = held.get(answer.id) ?? false;
+					voted = [...r.values()].some((answer) => answer.me_voted);
+					genPoll();
+					await showRefusal(res);
 				};
 				if (!this.poll.results) this.poll.results = {is_finalized: false, answer_counts: []};
 				const r = new Map((this.poll.results?.answer_counts ?? []).map((_) => [_.id, _] as const));
@@ -1811,6 +1830,9 @@ class Message extends SnowFlake {
 				// single-choice pick that hasn't been submitted yet.
 				if (this.poll.allow_multiselect) voted = !!ccount;
 				else if (firstRender && ccount) voted = true;
+				if (firstRender) {
+					held = new Map([...r.values()].map((answer) => [answer.id, answer.me_voted]));
+				}
 				firstRender = false;
 				for (const a of this.poll.answers) {
 					const aarea = document.createElement("div");

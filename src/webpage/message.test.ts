@@ -63,7 +63,10 @@ describe("reactionRemove", () => {
 });
 
 describe("single-choice polls", () => {
-	function pollMessage(answerCounts: {id: number; count: number; me_voted: boolean}[]) {
+	function pollMessage(
+		answerCounts: {id: number; count: number; me_voted: boolean}[],
+		allow_multiselect = false,
+	) {
 		let onPollUpdate: (() => void) | null = null;
 		const m = message({
 			content: {
@@ -79,7 +82,7 @@ describe("single-choice polls", () => {
 					{answer_id: 2, poll_media: {text: "no"}},
 				],
 				expiry: new Date(Date.now() + 86_400_000).toISOString(),
-				allow_multiselect: false,
+				allow_multiselect,
 				results: {is_finalized: false, answer_counts: answerCounts},
 			},
 		});
@@ -118,6 +121,63 @@ describe("single-choice polls", () => {
 	it("show the results on load when the user has already voted", () => {
 		const {div} = pollMessage([{id: 1, count: 1, me_voted: true}]);
 		expect(div.querySelector(".countpollspan")).not.toBeNull();
+		div.remove();
+	});
+
+	const refused = () => Response.json({code: 50013, message: "Missing Permissions"}, {status: 403});
+	const checks = (div: HTMLElement) =>
+		[...div.querySelectorAll<HTMLInputElement>(".answerArea input")].map((c) => c.checked);
+
+	it("a refused vote goes back to the vote the server holds, and says why", async () => {
+		const {I18n} = await import("./i18n");
+		await I18n.done;
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(refused());
+		const {div, update} = pollMessage([]);
+
+		(div.querySelector(".answerArea") as HTMLElement).click();
+		(div.querySelector(".pollBody button") as HTMLButtonElement).click();
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("Missing Permissions")),
+		);
+		update(); // a poll update re-renders it from the same answers
+
+		expect(checks(div)).toEqual([false, false]);
+		expect(div.querySelector(".countpollspan")).toBeNull();
+		div.remove();
+		document.body.replaceChildren();
+	});
+
+	it("a refused multiple-choice tick is taken back", async () => {
+		const {I18n} = await import("./i18n");
+		await I18n.done;
+		vi.spyOn(globalThis, "fetch").mockResolvedValue(refused());
+		const {div} = pollMessage([{id: 2, count: 1, me_voted: true}], true);
+
+		(div.querySelector(".answerArea") as HTMLElement).click();
+
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("Missing Permissions")),
+		);
+		expect(checks(div)).toEqual([false, true]);
+		div.remove();
+		document.body.replaceChildren();
+	});
+
+	it("a refusal for a vote a newer one has replaced changes nothing", async () => {
+		let refuseFirst: () => void = () => {};
+		vi.spyOn(globalThis, "fetch")
+			.mockImplementationOnce(() => new Promise((r) => (refuseFirst = () => r(refused()))))
+			.mockResolvedValueOnce(new Response(null, {status: 204}));
+		const {div} = pollMessage([], true);
+		const [yes, no] = div.querySelectorAll<HTMLElement>(".answerArea");
+
+		yes.click();
+		no.click();
+		refuseFirst();
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(checks(div)).toEqual([true, true]);
+		expect(document.body.textContent).not.toContain("Missing Permissions");
 		div.remove();
 	});
 });
