@@ -12,6 +12,7 @@ import {Dialog, Float, FormError} from "./settings.js";
 import {Discovery} from "./discovery.js";
 import {createImg, mobile} from "./utils/utils.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {showRefusal} from "./utils/showRefusal.js";
 
 class Direct extends Guild {
 	channels: Group[];
@@ -427,11 +428,12 @@ class Group extends Channel {
 			function (user) {
 				return I18n.member.kick(user.name, this.name);
 			},
-			function (user) {
-				fetch(this.info.api + `/channels/${this.id}/recipients/${user.id}`, {
+			async function (user) {
+				const res = await fetch(this.info.api + `/channels/${this.id}/recipients/${user.id}`, {
 					method: "DELETE",
 					headers: this.headers,
-				});
+				}).catch(() => undefined);
+				if (!res?.ok) return showRefusal(res);
 			},
 			{
 				group: "default",
@@ -515,10 +517,11 @@ class Group extends Channel {
 		if (!users) return;
 		const [user] = [...users];
 		if (!user) return;
-		await fetch(this.info.api + "/channels/" + this.id + "/recipients/" + user.id, {
+		const res = await fetch(this.info.api + "/channels/" + this.id + "/recipients/" + user.id, {
 			headers: this.headers,
 			method: "PUT",
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) return showRefusal(res);
 	}
 	edit() {
 		const dio = new Dialog(I18n.group.edit());

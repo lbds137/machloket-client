@@ -1527,8 +1527,8 @@ class Channel extends SnowFlake {
 
 		return div;
 	}
-	createChannel(name: string, type: number) {
-		fetch(this.info.api + "/guilds/" + this.guild.id + "/channels", {
+	async createChannel(name: string, type: number): Promise<boolean> {
+		const res = await fetch(this.info.api + "/guilds/" + this.guild.id + "/channels", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify({
@@ -1537,9 +1537,21 @@ class Channel extends SnowFlake {
 				parent_id: this.id,
 				permission_overwrites: [],
 			}),
-		})
-			.then((_) => _.json())
-			.then((_) => this.guild.goToChannelDelay(_.id));
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		const body = await res
+			.clone()
+			.json()
+			.catch(() => null);
+		if (typeof body?.id !== "string") {
+			await showRefusal(res);
+			return false;
+		}
+		this.guild.goToChannelDelay(body.id);
+		return true;
 	}
 	deleteChannel() {
 		fetch(this.info.api + "/channels/" + this.id, {

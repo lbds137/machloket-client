@@ -84,7 +84,7 @@ import {previewURL} from "./utils/previewURL.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
-import {refusalText} from "./utils/showRefusal.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -3794,14 +3794,20 @@ class Localuser {
 							const input = document.createElement("input");
 							input.type = "checkbox";
 							input.checked = !!con.visibility;
-							input.onchange = () => {
-								fetch(this.info.api + "/users/@me/connections/" + con.type + "/" + con.id, {
-									method: "PATCH",
-									body: JSON.stringify({
-										visibility: input.checked,
-									}),
-									headers: this.headers,
-								});
+							input.onchange = async () => {
+								const visibility = input.checked;
+								const res = await fetch(
+									this.info.api + "/users/@me/connections/" + con.type + "/" + con.id,
+									{
+										method: "PATCH",
+										body: JSON.stringify({visibility}),
+										headers: this.headers,
+									},
+								).catch(() => undefined);
+								if (!res?.ok) {
+									input.checked = !visibility;
+									return showRefusal(res);
+								}
 							};
 
 							const dispRow = document.createElement("div");
@@ -3820,10 +3826,14 @@ class Localuser {
 								d.options.addText(I18n.connections.sureDesc());
 								const row = d.options.addOptions("", {ltr: true});
 								row.addButtonInput("", I18n.yes(), async () => {
-									await fetch(this.info.api + "/users/@me/connections/" + con.type + "/" + con.id, {
-										method: "DELETE",
-										headers: this.headers,
-									});
+									const res = await fetch(
+										this.info.api + "/users/@me/connections/" + con.type + "/" + con.id,
+										{
+											method: "DELETE",
+											headers: this.headers,
+										},
+									).catch(() => undefined);
+									if (!res?.ok) return showRefusal(res);
 									d.hide();
 								});
 								row.addButtonInput("", I18n.no(), () => {

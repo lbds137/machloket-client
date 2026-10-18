@@ -2135,11 +2135,19 @@ class Message extends SnowFlake {
 		const diaolog = new Dialog("");
 		diaolog.options.addTitle(I18n.deleteConfirmPoll());
 		const options = diaolog.options.addOptions("", {ltr: true});
-		options.addButtonInput("", I18n.yes(), () => {
-			fetch(`${this.info.api}/channels/${this.channel.id}/polls/${this.id}/expire`, {
-				headers: this.headers,
-				method: "POST",
-			});
+		let ending = false;
+		options.addButtonInput("", I18n.yes(), async () => {
+			if (ending) return;
+			ending = true;
+			const res = await fetch(
+				`${this.info.api}/channels/${this.channel.id}/polls/${this.id}/expire`,
+				{
+					headers: this.headers,
+					method: "POST",
+				},
+			).catch(() => undefined);
+			ending = false;
+			if (!res?.ok) return showRefusal(res);
 			diaolog.hide();
 		});
 		options.addButtonInput("", I18n.no(), () => {

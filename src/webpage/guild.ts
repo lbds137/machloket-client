@@ -2197,15 +2197,18 @@ class Guild extends SnowFlake {
 			this.localuser.gotoid = id;
 		}
 	}
-	createchannels(func = this.createChannel.bind(this)) {
+	createchannels(
+		func: (name: string, type: number) => Promise<boolean> = this.createChannel.bind(this),
+	) {
 		const options = (["text", "announcement", "voice", "forum"] as const).map((e) =>
 			I18n.channel[e](),
 		);
 
 		const channelselect = new Dialog("");
-		const form = channelselect.options.addForm("", (e: any) => {
-			func(e.name, e.type);
-			channelselect.hide();
+		const form = channelselect.options.addForm("", async (e: any) => {
+			if (await func(e.name, e.type)) {
+				channelselect.hide();
+			}
 		});
 
 		form.addSelect(I18n.channel.selectType(), "type", options, {radio: true}, [0, 5, 2, 15]);
@@ -2216,9 +2219,10 @@ class Guild extends SnowFlake {
 		const category = 4;
 		const channelselect = new Dialog("");
 		const options = channelselect.options;
-		const form = options.addForm("", (e: any) => {
-			this.createChannel(e.name, category);
-			channelselect.hide();
+		const form = options.addForm("", async (e: any) => {
+			if (await this.createChannel(e.name, category)) {
+				channelselect.hide();
+			}
 		});
 		form.addTextInput(I18n.channel.selectCatName(), "name");
 		channelselect.show();
@@ -2252,14 +2256,26 @@ class Guild extends SnowFlake {
 		*/
 		this.printServers();
 	}
-	createChannel(name: string, type: number) {
-		fetch(this.info.api + "/guilds/" + this.id + "/channels", {
+	async createChannel(name: string, type: number): Promise<boolean> {
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify({name, type}),
-		})
-			.then((_) => _.json())
-			.then((_) => this.goToChannelDelay(_.id));
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		const body = await res
+			.clone()
+			.json()
+			.catch(() => null);
+		if (typeof body?.id !== "string") {
+			await showRefusal(res);
+			return false;
+		}
+		this.goToChannelDelay(body.id);
+		return true;
 	}
 	async updateRolePermissions(id: string, perms: Permissions): Promise<boolean> {
 		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.

@@ -8,6 +8,7 @@ import {OptionsElement, Buttons, Dialog, ColorInput} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
 import {Channel} from "./channel.js";
 import {I18n} from "./i18n.js";
+import {showRefusal} from "./utils/showRefusal.js";
 
 class Role extends SnowFlake {
 	permissions: Permissions;
@@ -702,11 +703,11 @@ class RoleList extends Buttons {
 				document.body.append(div);
 				Contextmenu.declareMenu(div);
 				Contextmenu.keepOnScreen(div);
-				bar.onchange = () => {
+				bar.onchange = async () => {
 					div.remove();
 					console.log(bar.value);
 					if (bar.value === "") return;
-					fetch(this.info.api + `/guilds/${this.guild.id}/roles`, {
+					const res = await fetch(this.info.api + `/guilds/${this.guild.id}/roles`, {
 						method: "POST",
 						headers: this.headers,
 						body: JSON.stringify({
@@ -714,7 +715,8 @@ class RoleList extends Buttons {
 							name: bar.value,
 							permissions: "",
 						}),
-					});
+					}).catch(() => undefined);
+					if (!res?.ok) return showRefusal(res);
 				};
 			}
 		};
