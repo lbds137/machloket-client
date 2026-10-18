@@ -1,4 +1,4 @@
-import {expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -36,4 +36,98 @@ it("an edit that changes nothing isn't sent", async () => {
 	await message.edit("**important**");
 
 	expect(sent).toEqual([]);
+});
+
+describe("saving from the editor", () => {
+	afterEach(() => {
+		vi.restoreAllMocks();
+		document.body.replaceChildren();
+	});
+
+	it("a refused edit reopens the editor with what was typed, and says why", async () => {
+		captureRequests(API + "/channels/c1/messages/m3", () =>
+			Response.json({code: 50035, message: "Must be 2000 or fewer in length."}, {status: 400}),
+		);
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const message = Object.assign(messageSaying("old"), {id: "m3"});
+
+		await message.saveEdit("new text");
+
+		expect(reopen).toHaveBeenCalledOnce();
+		expect(message.editDraft).toBe("new text");
+		expect(document.body.textContent).toContain("Must be 2000 or fewer in length.");
+	});
+
+	it("an edit that never reached the server reopens the editor too", async () => {
+		captureRequests(API + "/channels/c1/messages/m4", () =>
+			Promise.reject(new TypeError("Failed to fetch")),
+		);
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const message = Object.assign(messageSaying("old"), {id: "m4"});
+
+		await message.saveEdit("new text");
+
+		expect(reopen).toHaveBeenCalledOnce();
+		expect(message.editDraft).toBe("new text");
+	});
+
+	// A pin, not red-first: a saved edit closes the editor, as before.
+	it("a saved edit doesn't reopen it", async () => {
+		captureRequests(API + "/channels/c1/messages/m5", () => Response.json({}));
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const message = Object.assign(messageSaying("old"), {id: "m5"});
+
+		await message.saveEdit("new text");
+
+		expect(reopen).not.toHaveBeenCalled();
+	});
+
+	const refused = () =>
+		Response.json({code: 50035, message: "Must be 2000 or fewer in length."}, {status: 400});
+
+	it("a refusal leaves alone an editor the user has opened on the message again", async () => {
+		captureRequests(API + "/channels/c1/messages/m6", refused);
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const message = Object.assign(messageSaying("old"), {id: "m6"});
+		const saving = message.saveEdit("new text");
+		Object.assign(message.channel, {editing: message});
+
+		await saving;
+
+		expect(reopen).not.toHaveBeenCalled();
+		expect(message.editDraft).toBeUndefined();
+		expect(document.body.textContent).toContain("Must be 2000 or fewer in length.");
+	});
+
+	it("a refusal doesn't take over another message's open editor", async () => {
+		captureRequests(API + "/channels/c1/messages/m7", refused);
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const message = Object.assign(messageSaying("old"), {id: "m7"});
+		const saving = message.saveEdit("new text");
+		Object.assign(message.channel, {editing: messageSaying("other")});
+
+		await saving;
+
+		expect(reopen).not.toHaveBeenCalled();
+		expect(message.editDraft).toBeUndefined();
+	});
+
+	it("an edit saved after a refused one wins: the refusal neither reopens nor shows", async () => {
+		let answer: (res: Response) => void = () => {};
+		const answers = [
+			new Promise<Response>((r) => (answer = r)),
+			Promise.resolve(Response.json({})),
+		];
+		captureRequests(API + "/channels/c1/messages/m8", () => answers.shift()!);
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const message = Object.assign(messageSaying("old"), {id: "m8"});
+
+		const first = message.saveEdit("first");
+		await message.saveEdit("second");
+		answer(refused());
+		await first;
+
+		expect(reopen).not.toHaveBeenCalled();
+		expect(document.body.textContent).not.toContain("Must be 2000");
+	});
 });

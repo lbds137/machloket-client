@@ -31,6 +31,7 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {BOT_HIDE_TAG, getBotConfigs} from "./utils/storage/botConfigs.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {showRefusal} from "./utils/showRefusal.js";
 
 export interface ForwardSnapshot {
 	content?: MarkDown;
@@ -924,7 +925,8 @@ class Message extends SnowFlake {
 	getUnixTime(): number {
 		return new Date(this.timestamp).getTime();
 	}
-	/** Counts this message's edits, so a newer one cancels an older one's 429 retry. */
+	/** Counts this message's edits, so a newer one cancels an older one's 429 retry and its
+	 * reopened editor. */
 	private editSeq?: number;
 	async edit(content: string) {
 		// Bumped before the no-op return: a newer edit, even one that changes nothing, is the
@@ -943,6 +945,23 @@ class Message extends SnowFlake {
 			},
 			{shouldRetry: () => seq === this.editSeq},
 		);
+	}
+	/** Text the editor opens with instead of the message's own: an edit that didn't save. */
+	editDraft?: string;
+	/** Saves the editor's text (Enter in the editor). When it doesn't save, it says why, and the
+	 * editor reopens with what was typed, unless an editor (this one again, or another message's)
+	 * is open by then: what's typed there is newer. */
+	async saveEdit(text: string) {
+		const saving = this.edit(text);
+		const seq = this.editSeq;
+		const res = await saving.catch(() => null);
+		// Nothing to send, saved, or a newer edit has taken over.
+		if (res === undefined || res?.ok || seq !== this.editSeq) return;
+		if (!this.channel.editing) {
+			this.editDraft = text;
+			this.setEdit();
+		}
+		await showRefusal(res ?? undefined);
 	}
 	async delete() {
 		await fetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {
@@ -1062,6 +1081,8 @@ class Message extends SnowFlake {
 		}
 
 		const editmode = this.channel.editing === this;
+		// The draft lasts while its editor is open (a re-render reseeds it), not past it.
+		if (!editmode) this.editDraft = undefined;
 		// The thinking class belongs to the defer only: a re-render after the real content
 		// arrives must drop it, or the whole reply stays italic forever.
 		div.classList.remove("thinking");
@@ -1407,12 +1428,12 @@ class Message extends SnowFlake {
 				} catch {
 					area.contentEditable = "true";
 				}
-				const md = new MarkDown(this.content.rawString, this.owner, {keep: true});
+				const md = new MarkDown(this.editDraft ?? this.content.rawString, this.owner, {keep: true});
 				area.append(md.makeHTML());
 				area.addEventListener("keyup", (event) => {
 					if (this.localuser.keyup(event)) return;
 					if (event.key === "Enter" && !event.shiftKey) {
-						this.edit(md.rawString);
+						void this.saveEdit(md.rawString);
 						this.channel.editing = null;
 						this.generateMessage();
 					}
