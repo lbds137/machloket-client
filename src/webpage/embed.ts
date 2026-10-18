@@ -9,13 +9,23 @@ import {File} from "./file.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
 
-/** The player iframe's src for a video embed, or null when the url isn't a YouTube video. */
+/** The hosts that serve YouTube's embeddable player. */
+const YOUTUBE_PLAYER_HOSTS = new Set([
+	"youtube.com",
+	"www.youtube.com",
+	"youtube-nocookie.com",
+	"www.youtube-nocookie.com",
+]);
+
+/** The player iframe's src for a video embed, or null when the url isn't YouTube's player. */
 export function youtubeEmbedSrc(videoUrl: string): string | null {
 	if (!URL.canParse(videoUrl)) return null;
 	const url = new URL(videoUrl);
 	// The scheme check is the point: javascript://youtube.com/… parses with host youtube.com.
-	if (url.protocol !== "https:" || url.host !== "youtube.com") return null;
-	return url.href + "?autoplay=1";
+	if (url.protocol !== "https:" || !YOUTUBE_PLAYER_HOSTS.has(url.host)) return null;
+	if (!url.pathname.startsWith("/embed/") || url.username || url.password) return null;
+	url.searchParams.set("autoplay", "1");
+	return url.href;
 }
 
 class Embed {
@@ -507,6 +517,9 @@ class Embed {
 						const iframe = document.createElement("iframe");
 						iframe.src = src;
 						iframe.allowFullscreen = true;
+						// A cross-origin frame may autoplay only when allowed to.
+						iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+						iframe.referrerPolicy = "strict-origin-when-cross-origin";
 						if (this.json.thumbnail.width && this.json.thumbnail.height) {
 							iframe.style.width = this.json.thumbnail.width + "px";
 							iframe.style.height = this.json.thumbnail.height + "px";

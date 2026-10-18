@@ -76,6 +76,35 @@ describe("youtubeEmbedSrc", () => {
 			"https://youtube.com/embed/abc?autoplay=1",
 		);
 	});
+	it("plays the www. form YouTube publishes for its player, and the no-cookie host", () => {
+		expect(youtubeEmbedSrc("https://www.youtube.com/embed/abc")).toBe(
+			"https://www.youtube.com/embed/abc?autoplay=1",
+		);
+		expect(youtubeEmbedSrc("https://www.youtube-nocookie.com/embed/abc")).toBe(
+			"https://www.youtube-nocookie.com/embed/abc?autoplay=1",
+		);
+	});
+	it("adds autoplay to a url that already has a query", () => {
+		expect(youtubeEmbedSrc("https://www.youtube.com/embed/abc?start=30")).toBe(
+			"https://www.youtube.com/embed/abc?start=30&autoplay=1",
+		);
+	});
+	it("frames only YouTube's player, not its other pages", () => {
+		expect(youtubeEmbedSrc("https://youtube.com/watch?v=abc")).toBeNull();
+		expect(youtubeEmbedSrc("https://www.youtube.com/watch?v=abc")).toBeNull();
+		expect(youtubeEmbedSrc("https://evil.youtube.com.example/embed/abc")).toBeNull();
+		expect(youtubeEmbedSrc("https://www.youtube.com/embed")).toBeNull();
+		expect(youtubeEmbedSrc("https://www.youtube.com/embed/../watch")).toBeNull();
+		expect(youtubeEmbedSrc("https://www.youtube.com/embed/%2e%2e/watch")).toBeNull();
+		expect(youtubeEmbedSrc("https://www.youtube.com:444/embed/abc")).toBeNull();
+		expect(youtubeEmbedSrc("https://www.youtube.com./embed/abc")).toBeNull();
+		expect(youtubeEmbedSrc("https://evil@www.youtube.com/embed/abc")).toBeNull();
+	});
+	it("turns autoplay on whatever the url asked, and keeps a fragment", () => {
+		expect(youtubeEmbedSrc("https://www.youtube.com/embed/abc?autoplay=0#t=5")).toBe(
+			"https://www.youtube.com/embed/abc?autoplay=1#t=5",
+		);
+	});
 });
 
 describe("postLoginRedirect: ?goback= stays on this origin", () => {
