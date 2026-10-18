@@ -1558,9 +1558,11 @@ class Guild extends SnowFlake {
 		this.roleUpdate(role, 0);
 	}
 	memberupdate(json: memberjson) {
+		// Discord's (and the server's role and nick routes') payload names the member by its user.
+		const id = json.id ?? json.user?.id;
 		let member: undefined | Member = undefined;
 		for (const thing of this.members) {
-			if (thing.id === json.id) {
+			if (thing.id === id) {
 				member = thing;
 				break;
 			}
@@ -1568,9 +1570,9 @@ class Guild extends SnowFlake {
 
 		if (!member) return;
 		member.update(json);
-		if (member === this.member) {
-			console.log(member);
-			this.loadGuild();
+		// Your own roles changed: redraw the open guild for them; another guild redraws when opened.
+		if (member === this.member && this.localuser.lookingguild === this) {
+			this.localuser.loadGuild(this.id, true);
 		}
 	}
 	deleteRole(id: string) {
