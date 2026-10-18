@@ -12,8 +12,27 @@ let res: () => unknown = () => {};
 /** Languages whose 3+-alternative PLURAL blocks are written one|few|many (checked against the
  * shipped cs, pl and ru files); add one only after reading its blocks. */
 const CATEGORY_PLURAL_LANGS = new Set(["cs", "pl", "ru"]);
+/** Regions whose browsers write a script's language without naming the script (zh-TW, not zh-Hant-TW). */
+const SCRIPT_REGIONS: Record<string, string[]> = {
+	hans: ["cn", "sg", "my"],
+	hant: ["tw", "hk", "mo"],
+};
 class I18n {
 	static lang: string;
+	/** The locale for dates and numbers: the browser's own regional variant of the app's
+	 * language when it lists one (en-GB for "en"), else the app's language itself. A
+	 * translation for one script or region ("zh-hant", "pt-br") only takes a variant of it. */
+	static get locale(): string {
+		const lang = I18n.lang || "en";
+		const [base, sub] = lang.toLowerCase().split("-");
+		const fits = (tag: string) => {
+			const parts = tag.toLowerCase().split("-");
+			if (parts[0] !== base) return false;
+			if (!sub) return true;
+			return parts.includes(sub) || !!SCRIPT_REGIONS[sub]?.some((r) => parts.includes(r));
+		};
+		return navigator.languages.find(fits) ?? lang;
+	}
 	static translations: translation[] = [];
 	static done = new Promise<void>((res2, _reject) => {
 		res = res2;

@@ -49,11 +49,35 @@ describe("triple-backtick code", () => {
 
 describe("MarkDown.relTime", () => {
 	const DAY = 86_400_000;
-	const fmt = () => new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
+	const fmt = () => new Intl.RelativeTimeFormat(I18n.locale, {style: "short"});
 
 	it("labels by days up to a year, then years", () => {
-		expect(MarkDown.relTime(new Date(Date.now() - 30 * DAY))).toBe(fmt().format(-30, "day"));
+		expect(MarkDown.relTime(new Date(Date.now() - 29 * DAY))).toBe(fmt().format(-29, "day"));
+		expect(MarkDown.relTime(new Date(Date.now() - 60 * DAY))).toBe(fmt().format(-2, "month"));
 		expect(MarkDown.relTime(new Date(Date.now() - 400 * DAY))).toBe(fmt().format(-1, "year"));
+	});
+
+	it("labels sub-second offsets as now", () => {
+		expect(MarkDown.relTime(new Date(Date.now() + 200))).toBe(
+			new Intl.RelativeTimeFormat(I18n.locale, {numeric: "auto"}).format(0, "second"),
+		);
+	});
+
+	it("keeps a rendered <t:X:R> timestamp current", () => {
+		vi.useFakeTimers();
+		const host = document.createElement("div");
+		document.body.append(host);
+		try {
+			const unix = Math.floor(Date.now() / 1000) - 50;
+			host.append(new MarkDown(`<t:${unix}:R>`, undefined).makeHTML());
+			vi.advanceTimersByTime(15_000);
+			expect(host.querySelector(".markdown-timestamp")?.textContent).toBe(
+				MarkDown.relTime(new Date(Date.now() - 65_000)),
+			);
+		} finally {
+			host.remove();
+			vi.useRealTimers();
+		}
 	});
 
 	it("schedules the next label change inside setTimeout's range, at the right edge", () => {
@@ -71,6 +95,19 @@ describe("MarkDown.relTime", () => {
 			expect(Math.abs(delay() - 40_000)).toBeLessThan(200);
 			MarkDown.relTime(new Date(Date.now() + 320_000), () => {});
 			expect(Math.abs(delay() - 20_000)).toBeLessThan(200);
+		} finally {
+			timeout.mockRestore();
+		}
+	});
+
+	it("turns 30 days into a month, and re-labels a past time as a year at 365 days, not later", () => {
+		expect(MarkDown.relTime(new Date(Date.now() - 30 * DAY))).toBe(fmt().format(-1, "month"));
+		const timeout = vi.spyOn(globalThis, "setTimeout");
+		try {
+			// 362 days ago reads "12 mo. ago"; the next whole month would be day 390.
+			MarkDown.relTime(new Date(Date.now() - 362 * DAY), () => {});
+			const delay = timeout.mock.calls.at(-1)![1] as number;
+			expect(Math.abs(delay - 3 * DAY)).toBeLessThan(200);
 		} finally {
 			timeout.mockRestore();
 		}

@@ -55,7 +55,7 @@ const markerTexts = (div: HTMLDivElement, selector: string) =>
 	[...div.querySelectorAll(selector)].map((m) => m.textContent?.trim() ?? "");
 
 const formatted = (when: Date) =>
-	Intl.DateTimeFormat(I18n.lang, {year: "numeric", month: "long", day: "2-digit"}).format(when);
+	Intl.DateTimeFormat(I18n.locale, {year: "numeric", month: "long", day: "numeric"}).format(when);
 
 describe("message datelines", () => {
 	it("draws no divider between same-day read messages", () => {
@@ -73,6 +73,23 @@ describe("message datelines", () => {
 		const div = render(messageAt(channel, "501", when), messageAt(channel, "500", new Date(2026, 9, 7, 10, 0)));
 		expect(markerTexts(div, ".dateline:not(.unreadDateline)")).toEqual([formatted(when)]);
 		expect(div.querySelectorAll(".unreadDateline")).toHaveLength(0);
+	});
+
+	it("reads the day without a leading zero, as Discord does", () => {
+		const languages = vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-US"]);
+		const lang = I18n.lang;
+		I18n.lang = "en";
+		try {
+			const channel = renderableChannel();
+			const div = render(
+				messageAt(channel, "501", new Date(2026, 9, 8, 11, 0)),
+				messageAt(channel, "500", new Date(2026, 9, 7, 10, 0)),
+			);
+			expect(markerTexts(div, ".dateline:not(.unreadDateline)")).toEqual(["October 8, 2026"]);
+		} finally {
+			I18n.lang = lang;
+			languages.mockRestore();
+		}
 	});
 
 	it("draws a divider for a week-long gap inside one month (same weekday)", () => {

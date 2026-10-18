@@ -859,55 +859,55 @@ class MarkDown {
 					if (Number.isNaN(dateInput.getTime())) time = build;
 					else {
 						if (parts[3] === "d")
-							time = dateInput.toLocaleString(void 0, {
+							time = dateInput.toLocaleString(I18n.locale, {
 								day: "2-digit",
 								month: "2-digit",
 								year: "numeric",
 							});
 						else if (parts[3] === "D")
-							time = dateInput.toLocaleString(void 0, {
+							time = dateInput.toLocaleString(I18n.locale, {
 								day: "numeric",
 								month: "long",
 								year: "numeric",
 							});
 						else if (!parts[3] || parts[3] === "f")
 							time =
-								dateInput.toLocaleString(void 0, {
+								dateInput.toLocaleString(I18n.locale, {
 									day: "numeric",
 									month: "long",
 									year: "numeric",
 								}) +
 								" " +
-								dateInput.toLocaleString(void 0, {
+								dateInput.toLocaleString(I18n.locale, {
 									hour: "2-digit",
 									minute: "2-digit",
 								});
 						else if (parts[3] === "F")
 							time =
-								dateInput.toLocaleString(void 0, {
+								dateInput.toLocaleString(I18n.locale, {
 									day: "numeric",
 									month: "long",
 									year: "numeric",
 									weekday: "long",
 								}) +
 								" " +
-								dateInput.toLocaleString(void 0, {
+								dateInput.toLocaleString(I18n.locale, {
 									hour: "2-digit",
 									minute: "2-digit",
 								});
 						else if (parts[3] === "t")
-							time = dateInput.toLocaleString(void 0, {
+							time = dateInput.toLocaleString(I18n.locale, {
 								hour: "2-digit",
 								minute: "2-digit",
 							});
 						else if (parts[3] === "T")
-							time = dateInput.toLocaleString(void 0, {
+							time = dateInput.toLocaleString(I18n.locale, {
 								hour: "2-digit",
 								minute: "2-digit",
 								second: "2-digit",
 							});
 						else if (parts[3] === "S")
-							time = dateInput.toLocaleString(void 0, {
+							time = dateInput.toLocaleString(I18n.locale, {
 								year: "numeric",
 								month: "2-digit",
 								day: "2-digit",
@@ -915,29 +915,22 @@ class MarkDown {
 								minute: "2-digit",
 								second: "2-digit",
 							});
-						else if (parts[3] === "R")
-							//TODO make this a little less bad
-							time = MarkDown.relTime(new Date(Number.parseInt(parts[1]) * 1000));
-						else if (parts[3] === "S")
-							time =
-								dateInput.toLocaleString(void 0, {
-									day: "numeric",
-									month: "numeric",
-									year: "numeric",
-								}) +
-								" " +
-								dateInput.toLocaleString(void 0, {
-									hour: "2-digit",
-									minute: "2-digit",
-									second: "2-digit",
-								});
 					}
 
 					const timeElem = document.createElement("span");
 					timeElem.setAttribute("real", build);
 					timeElem.contentEditable = "false";
 					timeElem.classList.add("markdown-timestamp");
-					timeElem.textContent = time;
+					if (parts[3] === "R" && !Number.isNaN(dateInput.getTime())) {
+						const ref = new WeakRef(timeElem);
+						const callback = () => {
+							const el = ref.deref();
+							if (el) el.textContent = MarkDown.relTime(dateInput, callback);
+						};
+						callback();
+					} else {
+						timeElem.textContent = time;
+					}
 					span.appendChild(timeElem);
 					continue;
 				}
@@ -1067,13 +1060,15 @@ class MarkDown {
 		const [unit, unitMs]: [Intl.RelativeTimeFormatUnit, number] =
 			time >= 365 * DAY
 				? ["year", 365 * DAY]
-				: time >= DAY
-					? ["day", DAY]
-					: time >= 3_600_000
-						? ["hour", 3_600_000]
-						: time >= 60_000
-							? ["minute", 60_000]
-							: ["second", 1000];
+				: time >= 30 * DAY
+					? ["month", 30 * DAY]
+					: time >= DAY
+						? ["day", DAY]
+						: time >= 3_600_000
+							? ["hour", 3_600_000]
+							: time >= 60_000
+								? ["minute", 60_000]
+								: ["second", 1000];
 		const count = Math.floor(time / unitMs);
 		if (nextUpdate) {
 			// The label changes with the count: a past time's count grows at the next whole
@@ -1081,10 +1076,15 @@ class MarkDown {
 			// setTimeout's range (a delay past 2^31-1 ms fires at once, so callers that re-arm
 			// from the callback spun).
 			const into = time % unitMs;
-			const delay = up ? into : unitMs - into;
+			let delay = up ? into : unitMs - into;
+			// A year isn't a whole number of 30-day months: a past time turns into "1 yr." first.
+			if (!up && unit === "month") delay = Math.min(delay, 365 * DAY - time);
 			setTimeout(nextUpdate, Math.min(Math.max(delay, 1000), 2 ** 31 - 1));
 		}
-		const formatter = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
+		if (count === 0) {
+			return new Intl.RelativeTimeFormat(I18n.locale, {numeric: "auto"}).format(0, "second");
+		}
+		const formatter = new Intl.RelativeTimeFormat(I18n.locale, {style: "short"});
 		return formatter.format(up ? count : -count, unit);
 	}
 	static unspoil(e: any): void {

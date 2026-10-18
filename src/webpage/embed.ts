@@ -233,7 +233,7 @@ class Embed {
 			}
 			if (this.json?.timestamp) {
 				const span = document.createElement("span");
-				span.textContent = new Date(this.json.timestamp).toLocaleString();
+				span.textContent = new Date(this.json.timestamp).toLocaleString(I18n.locale);
 				footer.append(span);
 			}
 			embed.append(footer);

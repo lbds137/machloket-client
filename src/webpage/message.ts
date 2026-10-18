@@ -1114,7 +1114,10 @@ class Message extends SnowFlake {
 		div.style.setProperty(
 			"--time-text",
 			JSON.stringify(
-				new Date(this.getUnixTime()).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"}),
+				new Date(this.getUnixTime()).toLocaleTimeString(I18n.locale, {
+					hour: "2-digit",
+					minute: "2-digit",
+				}),
 			),
 		);
 
@@ -1407,7 +1410,8 @@ class Message extends SnowFlake {
 							icon.classList.add("svg-timeout");
 							username.after(icon);
 							const date = memb.communication_disabled_until as Date;
-							new Hover(I18n.channel.timedOutUntil(date.toLocaleString())).addEvent(icon);
+							const until = date.toLocaleString(I18n.locale);
+							new Hover(I18n.channel.timedOutUntil(until)).addEvent(icon);
 						}
 					}
 				});
@@ -1964,10 +1968,10 @@ class Message extends SnowFlake {
 				dateline.classList.add("flexltr", "dateline");
 				dateline.append(document.createElement("hr"));
 				const span = document.createElement("span");
-				span.innerText = Intl.DateTimeFormat(I18n.lang, {
+				span.innerText = Intl.DateTimeFormat(I18n.locale, {
 					year: "numeric",
 					month: "long",
-					day: "2-digit",
+					day: "numeric",
 				}).format(thisTime);
 				dateline.append(span);
 				dateline.append(document.createElement("hr"));
@@ -2295,28 +2299,29 @@ let yesterdayStr: string;
 
 function formatTime(date: Date) {
 	updateTimes();
-	const datestring = date.toLocaleDateString();
-	const clock = (date: Date) => date.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+	const datestring = date.toLocaleDateString(I18n.locale);
+	const clock = (date: Date) =>
+		date.toLocaleTimeString(I18n.locale, {hour: "2-digit", minute: "2-digit"});
 
 	if (datestring === now) {
 		return I18n.todayAt(clock(date));
 	} else if (datestring === yesterdayStr) {
 		return I18n.yesterdayAt(clock(date));
 	} else {
-		return I18n.otherAt(date.toLocaleDateString(), clock(date));
+		return I18n.otherAt(date.toLocaleDateString(I18n.locale), clock(date));
 	}
 }
 updateTimes();
 /** Works "today" and "yesterday" out again whenever the date has changed (either way: a clock
  * or time zone can move back too). */
 function updateTimes() {
-	const today = new Date().toLocaleDateString();
+	const today = new Date().toLocaleDateString(I18n.locale);
 	if (today === now) return;
 	now = today;
 	// From a Date, not from `now`: a locale's date string doesn't parse back (18/10/2026).
 	const yesterday = new Date();
 	yesterday.setDate(yesterday.getDate() - 1);
-	yesterdayStr = yesterday.toLocaleDateString();
+	yesterdayStr = yesterday.toLocaleDateString(I18n.locale);
 }
 
 function isDmChannel(channel: Channel): boolean {

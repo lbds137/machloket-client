@@ -23,7 +23,8 @@ function dayFirstDates(separator: string) {
 	});
 }
 
-const clock = (date: Date) => date.toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"});
+const clock = (date: Date) =>
+	date.toLocaleTimeString(I18n.locale, {hour: "2-digit", minute: "2-digit"});
 
 // Days of the month above 12 where it matters, so a day-first date can't pass for a
 // month-first one; then the month and year turning over.
