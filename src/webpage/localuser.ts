@@ -1043,6 +1043,7 @@ class Localuser {
 						);
 						guildy.message_notifications = guildy.properties.default_message_notifications;
 						guildy.showWelcome();
+						this.guildArrived(guildy.id);
 					})();
 					break;
 				case "MESSAGE_REACTION_ADD":
@@ -1918,6 +1919,23 @@ class Localuser {
 		}
 	}
 
+	/** A guild just joined, waiting for its GUILD_CREATE. */
+	private joinedGuildId?: string;
+	/** Opens a guild the user just joined. The join's HTTP answer can beat the gateway's
+	 * GUILD_CREATE, and loadGuild falls back to the DMs for an unknown id: wait for it instead. */
+	openJoinedGuild(id: string) {
+		if (this.guildids.has(id)) {
+			this.joinedGuildId = undefined;
+			this.loadGuild(id);
+		} else {
+			this.joinedGuildId = id;
+		}
+	}
+	guildArrived(id: string) {
+		if (this.joinedGuildId !== id) return;
+		this.joinedGuildId = undefined;
+		this.loadGuild(id);
+	}
 	loadGuild(id: string, forceReload = false): Guild | undefined {
 		this.searching = false;
 		let guild = this.guildids.get(id);
@@ -2420,7 +2438,7 @@ class Localuser {
 				// Joined (or already a member): open the guild, like the invite page does. A fresh join's
 				// response names it; the already-member refusal carries no id, so the code is resolved.
 				if (result.guildId) {
-					this.loadGuild(result.guildId);
+					this.openJoinedGuild(result.guildId);
 				} else if (result.alreadyMember) {
 					const json = (await fetch(`${this.info.api}/invites/${parsed}`, {headers: this.headers})
 						.then((res) => res.json())

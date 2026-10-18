@@ -414,7 +414,8 @@ class Embed {
 					).then((result) => {
 						// The accept and the already-member refusal both land in the guild; a real refusal alerts.
 						if (result.ok) {
-							this.localuser.loadGuild(guild.id);
+							if (result.alreadyMember) this.localuser.loadGuild(guild.id);
+							else this.localuser.openJoinedGuild(guild.id);
 						} else {
 							alert(result.message);
 						}
