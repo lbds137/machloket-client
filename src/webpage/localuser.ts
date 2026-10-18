@@ -84,6 +84,7 @@ import {previewURL} from "./utils/previewURL.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
+import {refusalText} from "./utils/showRefusal.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -5649,7 +5650,7 @@ class Localuser {
 		const genPage = (page: number) => {
 			p.set("offset", page * 50 + "");
 			const guildSearch = this.lookingguild?.id !== "@me";
-			fetch(
+			fetchRetryOnce(
 				this.info.api +
 					`${guildSearch ? `/guilds/${this.lookingguild?.id}` : `/channels/${this.channelfocus?.id}`}/messages/search/?` +
 					p.toString() +
@@ -5659,14 +5660,31 @@ class Localuser {
 				{
 					headers: this.headers,
 				},
+				{shouldRetry: () => this.curSearch === searchy},
 			)
-				.then((_) => _.json())
-				.then((json: {messages: [messagejson][]; total_results: number}) => {
+				.catch(() => undefined)
+				.then(async (res) => {
+					const answer = res?.ok
+						? await res
+								.clone()
+								.json()
+								.catch(() => null)
+						: null;
+					const json = answer as {messages?: [messagejson][]; total_results?: number} | null;
+					const found = Array.isArray(json?.messages) ? json.messages : undefined;
+					const refusal = found ? "" : await refusalText(res);
 					if (this.curSearch !== searchy) {
 						return;
 					}
+					// Not an answer to this search: say why, rather than leave the last one's results.
+					if (!found) {
+						sideDiv.textContent = refusal;
+						sideContainDiv.classList.add("searchDiv");
+						sideContainDiv.classList.remove("hideSearchDiv");
+						return;
+					}
 					//FIXME total_results shall be ignored as it's known to be bad, spacebar bug.
-					const messages = json.messages
+					const messages = found
 						.map(([m]) => {
 							const c = this.channelids.get(m.channel_id);
 							if (!c) return;
