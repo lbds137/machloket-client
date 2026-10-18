@@ -8,6 +8,7 @@ import {Dialog, Options, Settings} from "./settings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {showRefusal} from "./utils/showRefusal.js";
 
 class Member extends SnowFlake {
 	static already = {};
@@ -623,9 +624,8 @@ class Member extends SnowFlake {
 	}
 	kick() {
 		const menu = new Dialog("");
-		const form = menu.options.addForm("", (e: any) => {
-			this.kickAPI(e.reason);
-			menu.hide();
+		const form = menu.options.addForm("", async (e: any) => {
+			if (await this.kickAPI(e.reason)) menu.hide();
 		});
 		form.addTitle(I18n.member.kick(this.name, this.guild.properties.name));
 		form.addTextInput(I18n.member["reason:"](), "reason");
@@ -633,9 +633,8 @@ class Member extends SnowFlake {
 	}
 	timeout() {
 		const menu = new Dialog("");
-		const form = menu.options.addForm("", (e: any) => {
-			this.timeoutAPI(e.reason, e.time);
-			menu.hide();
+		const form = menu.options.addForm("", async (e: any) => {
+			if (await this.timeoutAPI(e.reason, e.time)) menu.hide();
 		});
 		form.addTitle(I18n.member.timeout(this.name));
 		form.addTextInput(I18n.member["reason:"](), "reason");
@@ -649,70 +648,99 @@ class Member extends SnowFlake {
 		);
 		menu.show();
 	}
-	removeTimeout() {
+	async removeTimeout(): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
-		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
 			body: JSON.stringify({
 				communication_disabled_until: null,
 			}),
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
-	timeoutAPI(reason: string, length: number) {
+	async timeoutAPI(reason: string, length: number): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
 		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
-		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
 			body: JSON.stringify({
 				communication_disabled_until: new Date(length + Date.now()).toISOString(),
 			}),
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
-	kickAPI(reason: string) {
+	async kickAPI(reason: string): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
 		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
-		fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "DELETE",
 			headers,
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
 	ban() {
 		const menu = new Dialog("");
-		const form = menu.options.addForm("", (e: any) => {
-			this.banAPI(e.reason);
-			menu.hide();
+		const form = menu.options.addForm("", async (e: any) => {
+			if (await this.banAPI(e.reason)) menu.hide();
 		});
 		form.addTitle(I18n.member.ban(this.name, this.guild.properties.name));
 		form.addTextInput(I18n.member["reason:"](), "reason");
 		menu.show();
 	}
-	addRole(role: Role) {
-		const roles = this.roles.map((_) => _.id);
-		roles.push(role.id);
-		fetch(this.info.api + "/guilds/" + this.guild.id + "/members/" + this.id, {
-			method: "PATCH",
-			headers: this.guild.headers,
-			body: JSON.stringify({roles}),
-		});
+	async addRole(role: Role): Promise<boolean> {
+		const res = await fetch(
+			`${this.info.api}/guilds/${this.guild.id}/members/${this.id}/roles/${role.id}`,
+			{
+				method: "PUT",
+				headers: this.guild.headers,
+			},
+		).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
-	removeRole(role: Role) {
-		let roles = this.roles.map((_) => _.id);
-		roles = roles.filter((_) => _ !== role.id);
-		fetch(this.info.api + "/guilds/" + this.guild.id + "/members/" + this.id, {
-			method: "PATCH",
-			headers: this.guild.headers,
-			body: JSON.stringify({roles}),
-		});
+	async removeRole(role: Role): Promise<boolean> {
+		const res = await fetch(
+			`${this.info.api}/guilds/${this.guild.id}/members/${this.id}/roles/${role.id}`,
+			{
+				method: "DELETE",
+				headers: this.guild.headers,
+			},
+		).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
-	banAPI(reason: string) {
+	async banAPI(reason: string): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
 		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
-		fetch(`${this.info.api}/guilds/${this.guild.id}/bans/${this.id}`, {
+		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/bans/${this.id}`, {
 			method: "PUT",
 			headers,
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
 	/** The member's permission bits: every role's allow mask OR'd together. */
 	usableBits(): bigint {

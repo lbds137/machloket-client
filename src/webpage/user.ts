@@ -36,6 +36,7 @@ import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {showRefusal} from "./utils/showRefusal.js";
 
 type customBadgeDefinition = {
 	important?: boolean;
@@ -724,12 +725,16 @@ class User extends SnowFlake {
 					params.persistInstanceBan = !checked;
 				};
 				const opt = options.addOptions("", {ltr: true});
-				opt.addButtonInput("", I18n.yes(), () => {
-					fetch(this.info.api + "/users/" + this.id + "/delete", {
+				opt.addButtonInput("", I18n.yes(), async () => {
+					const res = await fetch(this.info.api + "/users/" + this.id + "/delete", {
 						headers: this.localuser.headers,
 						method: "POST",
 						body: JSON.stringify(params),
-					});
+					}).catch(() => undefined);
+					if (!res?.ok) {
+						await showRefusal(res);
+						return;
+					}
 					menu.hide();
 				});
 				opt.addButtonInput("", I18n.no(), () => {

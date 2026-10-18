@@ -39,6 +39,7 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {showRefusal} from "./utils/showRefusal.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	invDiv.classList.add("inviteGrid");
@@ -779,9 +780,9 @@ class Guild extends SnowFlake {
 					const ret = await fetch(`${this.info.api}/guilds/${this.id}/bans/${id}`, {
 						method: "PUT",
 						headers,
-					});
-					if (!ret.ok) {
-						new Dialog((await ret.json()).message).show();
+					}).catch(() => undefined);
+					if (!ret?.ok) {
+						await showRefusal(ret);
 						return;
 					}
 					banMenu.returnFromSub();
@@ -842,12 +843,8 @@ class Guild extends SnowFlake {
 					opt.addHTMLArea(userWhoBanned.createWidget(this));
 					//*/
 						opt.addButtonInput("", I18n.user.unban(ban.user.username), async () => {
+							if (!(await this.unban(ban.user.id))) return;
 							bansArr = bansArr.filter((_) => _ !== ban);
-
-							await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + ban.user.id, {
-								headers: this.headers,
-								method: "DELETE",
-							});
 							loadPage(currentPage);
 							banMenu.returnFromSub();
 						});
@@ -1959,6 +1956,18 @@ class Guild extends SnowFlake {
 			full.hide();
 		});
 		full.show();
+	}
+	/** Lifts the ban on `userId`; false (after saying why) when the server refused it. */
+	async unban(userId: string): Promise<boolean> {
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + userId, {
+			headers: this.headers,
+			method: "DELETE",
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
 	get mentions() {
 		let mentions = 0;
