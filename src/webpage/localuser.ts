@@ -659,6 +659,8 @@ class Localuser {
 			this.stopHeartbeat();
 			console.log("WebSocket closed with code " + event.code);
 			this.abandonMemberRequests();
+			// An account switched away from: the screen belongs to the new account now.
+			if (this.swapped) return;
 			// 1000 comes from the server only (this client closes with 40xx): it follows op 7.
 			if (
 				(event.code >= 1000 && event.code < 1016 && this.errorBackoff === 0) ||

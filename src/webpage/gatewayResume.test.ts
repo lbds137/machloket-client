@@ -160,5 +160,21 @@ describe("gateway resume", () => {
 
 			expect(ws.closed).toBe(4000);
 		});
+
+		it("an account switched away from leaves the screen to the new account when its socket closes", async () => {
+			const {user, ws} = await resumedUser();
+			// The switch: the old account is unloaded and marked swapped; the new one loads.
+			user.swapped = true;
+			const loading = document.getElementById("loading")!;
+			const loadDesc = document.getElementById("load-desc")!;
+			loadDesc.textContent = "loaded";
+
+			ws.emit("close", {code: 4040});
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(user.unload).not.toHaveBeenCalled();
+			expect(loading.classList.contains("loading")).toBe(false);
+			expect(loadDesc.textContent).toBe("loaded");
+		});
 	});
 });
