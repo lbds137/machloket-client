@@ -255,29 +255,31 @@ if (window.location.pathname.startsWith("/channels")) {
 					(res) => {
 						if (res === "Ok") {
 							mres();
-						} else {
-							rej();
+							return;
 						}
+						const putBack = restoreFailedSend({
+							channel,
+							focused: thisUser.channelfocus,
+							content,
+							attachments,
+							replyingTo,
+							composer: {
+								typebox,
+								pasteImageElement,
+								imagesHtml,
+								getImages: () => images,
+								setImages: (list) => {
+									images = list;
+								},
+							},
+						});
+						rej();
+						return putBack;
 					},
 				),
 			);
 		} catch {
-			restoreFailedSend({
-				channel,
-				focused: thisUser.channelfocus,
-				content,
-				attachments,
-				replyingTo,
-				composer: {
-					typebox,
-					pasteImageElement,
-					imagesHtml,
-					getImages: () => images,
-					setImages: (list) => {
-						images = list;
-					},
-				},
-			});
+			// The refused send was already restored, or kept as failed, by the callback.
 		}
 		nonceMap.delete(channel.id);
 	}

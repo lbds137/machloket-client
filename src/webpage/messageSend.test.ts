@@ -78,7 +78,7 @@ describe("a message the server refuses", () => {
 		const {channel, bubble} = sendingChannel();
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
 
 		expect(bubble.void).toHaveBeenCalledTimes(1);
@@ -97,7 +97,7 @@ describe("a message the server refuses", () => {
 		const answers: string[] = [];
 		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
 		try {
-			void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+			void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 			await untilSent(sent, 1);
 			await vi.advanceTimersByTimeAsync(5000);
 			await untilSent(sent, 2);
@@ -110,6 +110,31 @@ describe("a message the server refuses", () => {
 		expect(answers).toEqual(["NotOk"]);
 		expect(bubble.void).toHaveBeenCalledTimes(1);
 		expect(bubble.failed).not.toHaveBeenCalled();
+	});
+
+	it("keeps its bubble as failed when the caller couldn't put the message back", async () => {
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(403, {code: 50013, message: "Missing Permissions"}));
+		const {channel, bubble} = sendingChannel();
+
+		// The composer was busy with a newer message, so the refused one has nowhere else to live.
+		void channel.sendMessage("hi", {nonce: "n1"}, () => false);
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+
+		expect(bubble.void).not.toHaveBeenCalled();
+	});
+
+	it("keeps its bubble as failed, and still settles, when putting the message back throws", async () => {
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(403, {code: 50013, message: "Missing Permissions"}));
+		const {channel, bubble} = sendingChannel();
+		vi.spyOn(console, "error").mockImplementation(() => {});
+
+		const settled = channel.sendMessage("hi", {nonce: "n1"}, () => {
+			throw new Error("restore broke");
+		});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+
+		await expect(settled).resolves.toBeUndefined();
+		expect(bubble.void).not.toHaveBeenCalled();
 	});
 
 	it("settles the send, so a caller awaiting it (opening a DM with a message) isn't stuck", async () => {
@@ -130,7 +155,7 @@ describe("a message the server refuses", () => {
 		Object.defineProperty(channel, "localuser", {value: {channelfocus: channel}});
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
 
 		expect(channel.slowmode).toHaveBeenCalledWith(true);
@@ -170,7 +195,7 @@ describe("a send the server rate-limits", () => {
 		const {channel, bubble} = focusedChannel();
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
 
 		expect(sent).toHaveLength(2);
@@ -193,7 +218,7 @@ describe("a send the server rate-limits", () => {
 		const {channel, bubble} = focusedChannel();
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(sent).toHaveLength(1));
 		await new Promise((res) => setTimeout(res, 100));
 		// Inside the server's window: nothing is final yet.
@@ -208,12 +233,15 @@ describe("a send the server rate-limits", () => {
 
 	// PIN: passes at HEAD; the fix must keep a slowmode 429 out of the retry.
 	it("a slowmode rate limit is not retried", async () => {
-		const {XHR, sent} = fakeXHRSequence([{status: 429, response: {code: 20016, message: "Slowmode"}}, ok]);
+		const {XHR, sent} = fakeXHRSequence([
+			{status: 429, response: {code: 20016, message: "Slowmode"}},
+			ok,
+		]);
 		vi.stubGlobal("XMLHttpRequest", XHR);
 		const {channel} = focusedChannel();
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
 		// Room for a wrongly scheduled retry to show up.
 		await new Promise((res) => setTimeout(res, 100));
@@ -231,7 +259,7 @@ describe("a send the server rate-limits", () => {
 		// Only the timers: sendMessage awaits requestAnimationFrame, which must stay real.
 		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await untilSent(sent, 1);
 		await frame();
 		await vi.advanceTimersByTimeAsync(4900);
@@ -256,7 +284,7 @@ describe("a send the server rate-limits", () => {
 		void channel.sendMessage(
 			"hi",
 			{nonce: "n1", attachments: [new Blob(["x"], {type: "text/plain"})]},
-			(r) => answers.push(r),
+			(r) => void answers.push(r),
 		);
 		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
 
@@ -304,7 +332,7 @@ describe("a send the server rate-limits", () => {
 		const {channel, bubble} = focusedChannel();
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
 
 		expect(sends()).toBe(2);
@@ -321,7 +349,7 @@ describe("a send the server rate-limits", () => {
 		const {channel, bubble} = focusedChannel();
 		const answers: string[] = [];
 
-		void channel.sendMessage("hi", {nonce: "n1"}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
 
 		expect(sends()).toBe(2);
@@ -350,7 +378,7 @@ describe("the composer's send-error notice", () => {
 	async function refuse(channel: InstanceType<typeof Channel>, status: number, body: unknown) {
 		vi.stubGlobal("XMLHttpRequest", fakeXHR(status, body));
 		const answers: string[] = [];
-		void channel.sendMessage("hi", {nonce: "n" + Math.random()}, (r) => answers.push(r));
+		void channel.sendMessage("hi", {nonce: "n" + Math.random()}, (r) => void answers.push(r));
 		await vi.waitFor(() => expect(answers).toEqual(["NotOk"]));
 	}
 
@@ -396,7 +424,11 @@ describe("the composer's send-error notice", () => {
 		await refuse(channel, 400, {
 			code: 50035,
 			message: "Invalid Form Body",
-			errors: {content: {_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 2000 or fewer in length."}]}},
+			errors: {
+				content: {
+					_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 2000 or fewer in length."}],
+				},
+			},
 		});
 		expect(notice()).toBe("Must be 2000 or fewer in length.");
 	});

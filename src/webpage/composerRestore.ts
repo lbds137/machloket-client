@@ -21,8 +21,8 @@ export type ComposerParts = {
  *   no draft or saved files of its own by now.
  * - The same channel, the composer still empty: the text, files and reply target come back.
  * - The same channel, but the user has typed or attached since: the composer is left alone
- *   on purpose. Restoring would overwrite the new text, and nothing is lost, because the
- *   failed message stays in the channel to be retried from. */
+ *   on purpose. Restoring would overwrite the new text, and the caller keeps the refused
+ *   message in the channel as failed (retry or delete) whenever this returns false. */
 export function restoreFailedSend(args: {
 	channel: Channel;
 	focused: Channel | undefined;
@@ -30,15 +30,18 @@ export function restoreFailedSend(args: {
 	attachments: Blob[];
 	replyingTo: Message | null;
 	composer: ComposerParts;
-}) {
+}): boolean {
 	const {channel, focused, content, attachments, replyingTo, composer} = args;
 	if (focused !== channel) {
 		// Not over a draft the user wrote in that channel since the send.
-		if (!channel.textSave && !channel.files.length) channel.setDraft(content);
-		return;
+		if (!channel.textSave && !channel.files.length) {
+			channel.setDraft(content);
+			return true;
+		}
+		return false;
 	}
 	const {typebox, pasteImageElement, imagesHtml, getImages, setImages} = composer;
-	if (typebox.textContent || getImages().length) return;
+	if (typebox.textContent || getImages().length) return false;
 	setImages(attachments);
 	for (const file of attachments) {
 		const img = imagesHtml.get(file);
@@ -51,4 +54,5 @@ export function restoreFailedSend(args: {
 	typebox.markdown.txt = content;
 	typebox.markdown.boxupdate(Infinity);
 	channel.setDraft(content);
+	return true;
 }

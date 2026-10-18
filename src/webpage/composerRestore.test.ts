@@ -141,4 +141,40 @@ describe("a refused send", () => {
 		expect(s.setImages).not.toHaveBeenCalled();
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 	});
+
+	it("says whether it put the message back, so the caller knows to keep the failed one", () => {
+		const restore = (
+			prepare: (
+				s: ReturnType<typeof setup>,
+				sent: ReturnType<ReturnType<typeof setup>["channel"]>,
+			) => boolean,
+		) => {
+			const s = setup();
+			const sent = s.channel();
+			const sameChannel = prepare(s, sent);
+			return restoreFailedSend({
+				channel: sent,
+				focused: sameChannel ? sent : s.channel(),
+				content: "hello",
+				attachments: [],
+				replyingTo: null,
+				composer: s,
+			});
+		};
+
+		expect(restore(() => true)).toBe(true);
+		expect(restore(() => false)).toBe(true);
+		expect(
+			restore((_, sent) => {
+				sent.textSave = "second thought";
+				return false;
+			}),
+		).toBe(false);
+		expect(
+			restore((s) => {
+				s.typebox.textContent = "a newer message";
+				return true;
+			}),
+		).toBe(false);
+	});
 });

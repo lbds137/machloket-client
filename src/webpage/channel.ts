@@ -4118,7 +4118,7 @@ class Channel extends SnowFlake {
 			nonce?: string;
 			poll?: creatPollJSON;
 		},
-		onRes = (_e: "Ok" | "NotOk") => {},
+		onRes: (_e: "Ok" | "NotOk") => boolean | void = () => {},
 	) {
 		let ressy = (_e: "Ok" | "NotOk") => {};
 		let resOnce = false;
@@ -4189,10 +4189,17 @@ class Channel extends SnowFlake {
 					}
 				}
 				if (res.status !== 200) {
-					// Refused (slowmode, permissions, rate limit): the bubble goes and the composer
-					// gets the text back. Only a send that never got an answer offers a retry.
-					ressy("NotOk");
-					onRes("NotOk");
+					// Refused: the bubble goes and the composer gets the text back; when the caller
+					// could not put it back, the bubble stays as failed so the message is not lost.
+					let putBack: boolean | void = false;
+					try {
+						putBack = onRes("NotOk");
+					} catch (e) {
+						// A restore that threw put nothing back: keep the message as failed.
+						console.error(e);
+					}
+					if (putBack === false) fail();
+					else ressy("NotOk");
 					const body = res.response as {code?: number; message?: unknown; errors?: unknown} | null;
 					// Only over this channel's composer: a reply that lands after the user moved on
 					// would otherwise sit under another channel's box.
