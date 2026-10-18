@@ -40,6 +40,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	invDiv.classList.add("inviteGrid");
@@ -1460,38 +1461,21 @@ class Guild extends SnowFlake {
 		copy.classList.add("copybutton", "svgicon", "svg-copy");
 		copycontainer.append(copy);
 		copycontainer.onclick = (_) => {
-			if (text.textContent) {
-				navigator.clipboard.writeText(text.textContent);
+			if (holdsInviteLink(text)) {
+				navigator.clipboard.writeText(text.textContent!);
 			}
 		};
 		div.append(copycontainer);
 		const update = () => {
 			// No channel an invite can point at (no text channels): nothing to make.
 			if (!channel) return;
-			fetch(`${this.info.api}/channels/${channel.id}/invites`, {
-				method: "POST",
-				headers: this.headers,
-				body: JSON.stringify({
-					flags: 0,
-					target_type: null,
-					target_user_id: null,
-					max_age: expires + "",
-					max_uses: uses,
-					temporary: false,
-				}),
-			})
-				.then((_) => _.json())
-				.then((json) => {
-					// A refusal (no invite permission) has no code: show why, not ".../i/undefined".
-					if (typeof json.code !== "string") {
-						text.textContent = typeof json.message === "string" ? json.message : "";
-						return;
-					}
-					const params = new URLSearchParams("");
-					params.set("instance", this.info.wellknown);
-					const encoded = params.toString();
-					text.textContent = `https://sbar.fyi/i/${json.code}?${encoded}`;
-				});
+			void showNewInvite(
+				`${this.info.api}/channels/${channel.id}/invites`,
+				this.headers,
+				{max_age: expires, max_uses: uses},
+				this.info.wellknown,
+				text,
+			);
 		};
 
 		options.addTitle(I18n.inviteOptions.title());

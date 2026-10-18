@@ -42,6 +42,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
+import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -473,31 +474,19 @@ class Channel extends SnowFlake {
 		copy.classList.add("copybutton", "svgicon", "svg-copy");
 		copycontainer.append(copy);
 		copycontainer.onclick = (_) => {
-			if (text.textContent) {
-				navigator.clipboard.writeText(text.textContent);
+			if (holdsInviteLink(text)) {
+				navigator.clipboard.writeText(text.textContent!);
 			}
 		};
 		div.append(copycontainer);
 		const update = () => {
-			fetch(`${this.info.api}/channels/${this.id}/invites`, {
-				method: "POST",
-				headers: this.headers,
-				body: JSON.stringify({
-					flags: 0,
-					target_type: null,
-					target_user_id: null,
-					max_age: expires + "",
-					max_uses: uses,
-					temporary: uses !== 0,
-				}),
-			})
-				.then((_) => _.json())
-				.then((json) => {
-					const params = new URLSearchParams("");
-					params.set("instance", this.info.wellknown);
-					const encoded = params.toString();
-					text.textContent = `https://sbar.fyi/i/${json.code}?${encoded}`;
-				});
+			void showNewInvite(
+				`${this.info.api}/channels/${this.id}/invites`,
+				this.headers,
+				{max_age: expires, max_uses: uses},
+				this.info.wellknown,
+				text,
+			);
 		};
 		update();
 		const inviteOptions = new Dialog("", {noSubmit: true});
