@@ -1518,8 +1518,9 @@ class Localuser {
 		const guild = this.guildids.get(json.guild_id || "@me");
 		if (guild) {
 			guild.updateChannel(json);
+			// Forced: the guild is already open, so a plain load would skip the redraw.
 			if (json.guild_id === this.lookingguild?.id) {
-				this.loadGuild(json.guild_id);
+				this.loadGuild(json.guild_id, true);
 			}
 		}
 	}
