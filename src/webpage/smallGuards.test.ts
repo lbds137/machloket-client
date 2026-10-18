@@ -40,4 +40,23 @@ describe("who reacted", () => {
 		expect(reactionPathSegment({name: "👍"})).toBe(encodeURIComponent("👍"));
 		expect(reactionPathSegment({name: "a/b?c"})).toBe("a%2Fb%3Fc");
 	});
+
+	it("keeps a reaction's name and id inside one path segment", async () => {
+		const {reactionPathSegment} = await import("./message");
+		const hostile = "../../a/b/123456789012345678?";
+
+		const segment = reactionPathSegment({name: hostile, id: hostile});
+		expect(segment).not.toMatch(/[/?#]/);
+		expect(new URL(`https://h/api/v9/channels/c/messages/m/reactions/${segment}/@me`).pathname).toMatch(
+			/^\/api\/v9\/channels\/c\/messages\/m\/reactions\/[^/]+\/@me$/,
+		);
+	});
+
+	it("sends nothing for a reaction whose segment would be a dot step", async () => {
+		const {reactionPathSegment} = await import("./message");
+
+		expect(reactionPathSegment({name: ".."})).toBeUndefined();
+		expect(reactionPathSegment({name: "."})).toBeUndefined();
+		expect(reactionPathSegment({name: "..."})).toBe("...");
+	});
 });
