@@ -2162,19 +2162,18 @@ class Guild extends SnowFlake {
 			const parent = channel.parent;
 			channel.updateChannel(json);
 			this.channels = this.channels.sort((a, b) => a.position - b.position);
+			// Moved between categories, or to or from the top level: out of the old list, into the
+			// new one (deleting a category moves each child to the top level first).
 			if (parent !== channel.parent) {
-				if (parent) parent.children.filter((_) => _ !== channel);
-				channel.resolveparent();
-			} else if (parent && !json.parent_id) {
-				this.headchannels.push(channel);
-				for (const thing of this.channels) {
-					thing.children = thing.children.filter((_) => _ !== channel);
-				}
+				if (parent) parent.children = parent.children.filter((_) => _ !== channel);
+				else this.headchannels = this.headchannels.filter((_) => _ !== channel);
+				if (!channel.resolveparent()) this.headchannels.push(channel);
 			}
 
 			for (const channel of this.channels) {
 				channel.children = channel.children.sort((a, b) => a.position - b.position);
 			}
+			this.sortchannels();
 			this.printServers();
 		}
 	}
