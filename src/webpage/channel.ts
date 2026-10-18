@@ -93,6 +93,14 @@ function settleWaiters(waiters: Map<string, () => void>) {
 	waiters.clear();
 }
 
+/** Bits that only qualify a message being sent: lost, like the server drops them, without SEND_MESSAGES. */
+const sendDependent = new Set([
+	"MENTION_EVERYONE",
+	"SEND_TTS_MESSAGES",
+	"ATTACH_FILES",
+	"EMBED_LINKS",
+]);
+
 class Channel extends SnowFlake {
 	editing!: Message | null;
 	type!: number;
@@ -1032,15 +1040,19 @@ class Channel extends SnowFlake {
 		return !!lastmessage && (!lastreadmessage || lastmessage > lastreadmessage) && this.type !== 4;
 	}
 
-	hasPermission(name: string, member = this.guild.member): boolean {
+	/** `sendBit` is the right to send that the bits qualifying a message depend on: a thread
+	 * asks its parent with SEND_MESSAGES_IN_THREADS. */
+	hasPermission(name: string, member = this.guild.member, sendBit = "SEND_MESSAGES"): boolean {
 		if (!member) {
 			return false;
 		}
 		if (member.isAdmin()) {
 			return true;
 		}
+		// Only the owner and the role permission grant it; an overwrite can't.
+		if (name === "ADMINISTRATOR") return false;
 		if (this.isThread() && this.parent) {
-			return this.parent.hasPermission(name, member);
+			return this.parent.hasPermission(name, member, "SEND_MESSAGES_IN_THREADS");
 		}
 		if (this.guild.member?.commuicationDisabledLeft()) {
 			const allowSet = new Set(["READ_MESSAGE_HISTORY", "VIEW_CHANNEL"]);
@@ -1048,31 +1060,30 @@ class Channel extends SnowFlake {
 				return false;
 			}
 		}
-		//if (this.id === "1499557059291885982") debugger;
-
-		const premission = this.permission_overwrites.get(member.id);
-		if (premission) {
-			const perm = premission.getPermission(name);
-			if (perm) {
-				return perm === 1;
-			}
-		}
-
+		// The server's order: the roles' own permissions, then the @everyone overwrite, then the
+		// member's other role overwrites together (an allow on any of them wins over a deny), then
+		// the member's own overwrite.
+		let allowed = member.roles.some((role) => role.permissions.getPermission(name) === 1);
+		const everyone = this.permission_overwrites.get(this.guild.id)?.getPermission(name) ?? 0;
+		if (everyone) allowed = everyone === 1;
+		let roleDeny = false;
+		let roleAllow = false;
 		for (const role of member.roles) {
-			const premission = this.permission_overwrites.get(role.id);
-			if (premission) {
-				const perm = premission.getPermission(name);
-				if (perm) {
-					return perm === 1;
-				}
-			}
+			if (role.id === this.guild.id) continue;
+			const perm = this.permission_overwrites.get(role.id)?.getPermission(name) ?? 0;
+			if (perm === 1) roleAllow = true;
+			else if (perm === -1) roleDeny = true;
 		}
-		for (const role of member.roles) {
-			if (role.permissions.getPermission(name)) {
-				return true;
-			}
-		}
-		return false;
+		if (roleDeny) allowed = false;
+		if (roleAllow) allowed = true;
+		const own = this.permission_overwrites.get(member.id)?.getPermission(name) ?? 0;
+		if (own) allowed = own === 1;
+		if (!allowed) return false;
+		// Implicit rules: a member who can't see the channel holds nothing in it, and without the
+		// right to send, the bits that qualify a message are lost.
+		if (name !== "VIEW_CHANNEL" && !this.hasPermission("VIEW_CHANNEL", member)) return false;
+		if (sendDependent.has(name) && !this.hasPermission(sendBit, member)) return false;
+		return true;
 	}
 	get canMessage(): boolean {
 		return this.isThread()
