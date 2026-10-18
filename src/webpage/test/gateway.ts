@@ -60,6 +60,8 @@ export function gatewayUser() {
 		// An unload keeps every channel's waiting files: a session with no channels keeps none.
 		channelids: new Map(),
 		generateFavicon: () => {},
+		// The account's stored info; IDENTIFY reads its remembered status.
+		userinfo: {status: undefined},
 	});
 	Object.defineProperty(user, "token", {value: "t", writable: true});
 	return user;

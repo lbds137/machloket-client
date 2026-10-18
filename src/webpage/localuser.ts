@@ -164,6 +164,27 @@ class Localuser {
 	set status(status: string) {
 		this.user.setstatus(status);
 	}
+	/** The status this connection's IDENTIFY announced. */
+	private identifiedStatus?: string;
+	/** Shows `status` as this account's, remembers it for the next connect, and announces it on
+	 * this connection unless that's what the connection last announced. A socket that isn't open
+	 * can't send it: the next IDENTIFY carries it, or RESUMED announces it. */
+	announceStatus(status: string) {
+		this.userinfo.status = status;
+		this.user.setstatus(status);
+		if (status === this.identifiedStatus || this.ws?.readyState !== WebSocket.OPEN) return;
+		this.identifiedStatus = status;
+		this.ws?.send(JSON.stringify({op: 3, d: {status, since: null, activities: [], afk: false}}));
+	}
+	/** The account's saved status, from READY's settings. A settings row without one keeps what
+	 * this connection announced (the server would refuse a null status and close the socket). */
+	applySavedStatus(status: unknown) {
+		if (typeof status === "string") {
+			this.announceStatus(status);
+		} else if (this.identifiedStatus) {
+			this.user.setstatus(this.identifiedStatus);
+		}
+	}
 	channelfocus: Channel | undefined;
 	lookingguild: Guild | undefined;
 	guildhtml: Map<string, HTMLDivElement> = new Map();
@@ -268,8 +289,9 @@ class Localuser {
 					if (seq === Localuser.statusSeq.get(user)) await showRefusal(res);
 					return;
 				}
-				sessionStorage.setItem("status", status);
-				user.user.setstatus(status);
+				// The server's settings change may not reach this connection's session, so it's
+				// announced here too.
+				user.announceStatus(status);
 			});
 		d.show();
 	}
@@ -438,7 +460,6 @@ class Localuser {
 		this.guilds = [];
 		this.guildids = new Map();
 		this.user = new User(ready.d.user, this);
-		this.user.setstatus(sessionStorage.getItem("status") || "online");
 		this.resume_gateway_url = ready.d.resume_gateway_url;
 		this.session_id = ready.d.session_id;
 
@@ -466,7 +487,7 @@ class Localuser {
 			this.userinfo.updateLocal();
 		}
 
-		this.status = this.ready.d.user_settings.status;
+		this.applySavedStatus(this.ready.d.user_settings.status);
 		if (this.channelfocus) {
 			void this.channelfocus.infinite.delete();
 		}
@@ -628,6 +649,9 @@ class Localuser {
 						}),
 					);
 				} else {
+					// The server takes this as the session's status. Until READY brings the saved one,
+					// an account with none remembered connects invisible rather than online.
+					this.identifiedStatus = this.userinfo.status ?? "invisible";
 					ws.send(
 						JSON.stringify({
 							op: 2,
@@ -642,7 +666,7 @@ class Localuser {
 								},
 								compress: Boolean(DecompressionStream),
 								presence: {
-									status: sessionStorage.getItem("status") || "online",
+									status: this.identifiedStatus,
 									since: null, //new Date().getTime()
 									activities: [],
 									afk: false,
@@ -1069,6 +1093,8 @@ class Localuser {
 					// dropped socket abandoned go out on this one.
 					this.errorBackoff = 0;
 					this.getmembers();
+					// A status picked while the socket was down goes out now.
+					if (this.userinfo.status) this.announceStatus(this.userinfo.status);
 					if (!this.swapped) {
 						void this.recoveryBanner.refresh();
 					}

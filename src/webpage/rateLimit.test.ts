@@ -434,6 +434,7 @@ describe("a newer settings PATCH", () => {
 			headers: {},
 			status: "online",
 			user: {setstatus: () => {}},
+			announceStatus: () => {},
 		} as unknown as InstanceType<typeof Localuser>;
 		Localuser.openStatusDialog(user);
 		const select = document.querySelector("select")!;

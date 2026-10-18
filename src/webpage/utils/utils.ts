@@ -227,6 +227,14 @@ export class Specialuser {
 			[key: string | number]: jsonParse;
 		};
 	}
+	/** The account's saved status as last seen, so the next connect announces it. */
+	set status(e: string | undefined) {
+		this.json.status = e;
+		this.updateLocal();
+	}
+	get status(): string | undefined {
+		return this.json.status;
+	}
 	set id(e) {
 		this.json.id = e;
 		this.updateLocal();
