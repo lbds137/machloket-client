@@ -656,8 +656,9 @@ class Localuser {
 			this.stopHeartbeat();
 			console.log("WebSocket closed with code " + event.code);
 			this.abandonMemberRequests();
+			// 1000 comes from the server only (this client closes with 40xx): it follows op 7.
 			if (
-				(event.code > 1000 && event.code < 1016 && this.errorBackoff === 0) ||
+				(event.code >= 1000 && event.code < 1016 && this.errorBackoff === 0) ||
 				(wsCodesRetry.has(event.code) && this.errorBackoff === 0)
 			) {
 				this.errorBackoff++;
@@ -677,7 +678,7 @@ class Localuser {
 			(document.getElementById("loading") as HTMLElement).classList.add("loading");
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
 			if (
-				(event.code > 1000 && event.code < 1016) ||
+				(event.code >= 1000 && event.code < 1016) ||
 				wsCodesRetry.has(event.code) ||
 				event.code == 4041
 			) {
@@ -950,6 +951,13 @@ class Localuser {
 					message.deleteEvent();
 					break;
 				}
+				case "MESSAGE_DELETE_BULK": {
+					const channel = this.channelids.get(temp.d.channel_id);
+					if (!channel) break;
+					this.invalidateInboxPreview(channel);
+					for (const id of temp.d.ids) channel.messages.get(id)?.deleteEvent();
+					break;
+				}
 				case "READY":
 					await this.gottenReady(temp as readyjson);
 					break;
@@ -1004,6 +1012,7 @@ class Localuser {
 						this.createChannel(temp.d);
 					}
 					break;
+				case "THREAD_DELETE":
 				case "CHANNEL_DELETE":
 					if (this.initialized) {
 						this.delChannel(temp.d);
@@ -1311,6 +1320,10 @@ class Localuser {
 			// An ACK only marks the connection good. Sending a beat from here would start a
 			// second chain beside the interval — one more per interval, since every beat is ACKed.
 			if (this.connectionSucceed === 0) this.connectionSucceed = Date.now();
+		} else if (temp.op === 7) {
+			// RECONNECT: the server is going away. Closing with a retry code resumes on a new
+			// socket; a server that closes first (with 1000) takes the same path.
+			this.ws?.close(4000);
 		} else {
 			console.log("Unhandled case " + temp.d, temp);
 		}
@@ -1876,16 +1889,15 @@ class Localuser {
 		}
 	}
 	delChannel(json: channeljson): void {
-		let guild_id = json.guild_id;
-		guild_id ??= "@me";
-		const guild = this.guildids.get(guild_id);
-		if (guild) {
-			guild.delChannel(json);
-		}
-
-		if (json.guild_id === this.lookingguild?.id) {
-			this.loadGuild(json.guild_id, true);
-		}
+		// A DM channel's delete carries no guild_id.
+		const guild = this.guildids.get(json.guild_id ?? "@me");
+		if (!guild) return;
+		const focused = this.channelfocus !== undefined && this.channelfocus.id === json.id;
+		guild.delChannel(json);
+		if (guild !== this.lookingguild) return;
+		this.loadGuild(guild.id, true);
+		// The open channel is gone: on to the guild's default one (the friends list in the DMs).
+		if (focused) guild.loadChannel().catch(console.error);
 	}
 	async init() {
 		const parts = window.location.href.split("/");

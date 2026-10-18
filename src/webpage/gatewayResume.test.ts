@@ -98,6 +98,67 @@ describe("gateway resume", () => {
 		await vi.advanceTimersByTimeAsync(20);
 
 		expect(second.sent.filter((m) => m.op === 8)).toHaveLength(1);
-		expect(second.sent.find((m) => m.op === 8)).toMatchObject({d: {guild_id: "g1", user_ids: ["u1"]}});
+		expect(second.sent.find((m) => m.op === 8)).toMatchObject({
+			d: {guild_id: "g1", user_ids: ["u1"]},
+		});
+	});
+
+	describe("a server-requested reconnect", () => {
+		// The give-up path draws into the loading overlay.
+		beforeEach(() => {
+			for (const id of ["loading", "load-desc"]) {
+				const div = document.createElement("div");
+				div.id = id;
+				document.body.append(div);
+			}
+		});
+		afterEach(() => {
+			document.getElementById("loading")?.remove();
+			document.getElementById("load-desc")?.remove();
+		});
+
+		/** A resumed session whose give-up path only records that it gave up. */
+		async function resumedUser() {
+			const user = sessionUser();
+			Object.assign(user, {
+				loaduser: () => {},
+				unload: vi.fn(),
+				// A close abandons the member lookups in flight.
+				fetchingmembers: new Map(),
+				memberLookupDrops: new Map(),
+				noncemap: new Map(),
+				noncebuild: new Map(),
+				waitingmembers: new Map(),
+			});
+			user.initwebsocket(true);
+			const ws = FakeWebSocket.sockets[0];
+			await resumeOn(ws);
+			return {user, ws};
+		}
+
+		it("a server shutting down (op 7, then close 1000) is resumed, not given up on", async () => {
+			const {user, ws} = await resumedUser();
+
+			ws.emit("message", {data: JSON.stringify({op: 7, s: 43, d: 1000})});
+			await vi.advanceTimersByTimeAsync(0);
+			ws.emit("close", {code: 1000});
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(FakeWebSocket.sockets).toHaveLength(2);
+			await resumeOn(FakeWebSocket.sockets[1]);
+			expect(FakeWebSocket.sockets[1].sent.find((m) => m.op === 6)).toMatchObject({
+				d: {session_id: "sess-1"},
+			});
+			expect(user.unload).not.toHaveBeenCalled();
+		});
+
+		it("op 7 closes the socket itself, for a server that waits for the client to go", async () => {
+			const {ws} = await resumedUser();
+
+			ws.emit("message", {data: JSON.stringify({op: 7, d: null})});
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(ws.closed).toBe(4000);
+		});
 	});
 });

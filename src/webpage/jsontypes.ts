@@ -1082,6 +1082,27 @@ type wsjson =
 	  }
 	| {
 			op: 0;
+			d: {
+				ids: string[];
+				channel_id: string;
+				guild_id?: string;
+			};
+			s: number;
+			t: "MESSAGE_DELETE_BULK";
+	  }
+	| {
+			op: 0;
+			d: {
+				id: string;
+				guild_id: string;
+				parent_id: string;
+				type: number;
+			};
+			s: number;
+			t: "THREAD_DELETE";
+	  }
+	| {
+			op: 0;
 			d: ConnectionJson;
 			s: number;
 			t: "USER_CONNECTIONS_UPDATE";
@@ -1289,6 +1310,11 @@ type wsjson =
 			t: "RESUMED";
 			d: unknown;
 			s: number;
+	  }
+	| {
+			op: 7;
+			d?: unknown;
+			s?: number;
 	  };
 
 export interface interactionCreate {
