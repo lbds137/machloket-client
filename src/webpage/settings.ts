@@ -1982,7 +1982,11 @@ class Captcha implements OptionsElement<string> {
 		this.onchange = func;
 	}
 	static hcaptcha?: HTMLDivElement;
-	static async waitForCaptcha(ctype: "hcaptcha") {
+	/** The widget's answer once solved, or undefined if `cancelled` fires first. */
+	static async waitForCaptcha(
+		ctype: "hcaptcha",
+		cancelled?: AbortSignal,
+	): Promise<string | undefined> {
 		switch (ctype) {
 			case "hcaptcha":
 				if (!this.hcaptcha) throw Error("no captcha found");
@@ -1990,19 +1994,23 @@ class Captcha implements OptionsElement<string> {
 				console.log(hcaptcha);
 				//@ts-expect-error
 				while (!hcaptcha.children[1].children.length || !hcaptcha.children[1].children[1].value) {
+					if (cancelled?.aborted) return undefined;
 					await new Promise<void>((res) => setTimeout(res, 100));
 				}
 				//@ts-expect-error
 				return hcaptcha.children[1].children[1].value;
 		}
 	}
-	async makeCaptcha({
-		captcha_sitekey,
-		captcha_service,
-	}: {
-		captcha_sitekey: string;
-		captcha_service: "hcaptcha";
-	}): Promise<string> {
+	async makeCaptcha(
+		{
+			captcha_sitekey,
+			captcha_service,
+		}: {
+			captcha_sitekey: string;
+			captcha_service: "hcaptcha";
+		},
+		cancelled?: AbortSignal,
+	): Promise<string | undefined> {
 		if (!this.div) throw new Error("Div doesn't exist yet to give catpcha");
 		switch (captcha_service) {
 			case "hcaptcha":
@@ -2011,7 +2019,7 @@ class Captcha implements OptionsElement<string> {
 					Captcha.hcaptcha.setAttribute("data-sitekey", captcha_sitekey);
 					const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}}).hcaptcha;
 					hc?.reset?.();
-					return Captcha.waitForCaptcha(captcha_service);
+					return Captcha.waitForCaptcha(captcha_service, cancelled);
 				} else {
 					const capt = document.createElement("div");
 					const capty = document.createElement("div");
@@ -2024,22 +2032,24 @@ class Captcha implements OptionsElement<string> {
 					capt.append(capty);
 					Captcha.hcaptcha = capt;
 					this.div.append(capt);
-					return Captcha.waitForCaptcha(captcha_service);
+					return Captcha.waitForCaptcha(captcha_service, cancelled);
 				}
 		}
 	}
 	static async makeCaptcha(json: {
 		captcha_sitekey: string;
 		captcha_service: "hcaptcha";
-	}): Promise<string> {
+	}): Promise<string | undefined> {
 		const float = new Dialog("", {noSubmit: true});
 		float.options.addTitle(I18n.form.captcha());
 		const cap = float.options.addForm("", () => {}, {traditionalSubmit: true}).addCaptcha();
+		// Dismissed (Escape, or a tap outside): the wait ends, and the form gives up this send.
+		const dismissed = new AbortController();
+		float.onhide = () => dismissed.abort();
 		float.show().parentElement!.style.zIndex = "200";
-		const ret = cap.makeCaptcha(json);
-		await ret;
+		const token = await cap.makeCaptcha(json, dismissed.signal);
 		float.hide();
-		return ret;
+		return token;
 	}
 }
 class FormError extends Error {
@@ -2160,18 +2170,20 @@ async function handle2fa(
 		return false;
 	}
 }
-async function handleCaptcha(json: any, build: any, cap: Captcha | undefined) {
+/** "solved" when the answer asked for a captcha and the user solved it (send again), "dismissed"
+ * when they closed it (give up the send), "none" when no captcha was asked for. */
+async function handleCaptcha(
+	json: any,
+	build: any,
+	cap: Captcha | undefined,
+): Promise<"solved" | "dismissed" | "none"> {
 	if (json.captcha_sitekey) {
-		let token: string;
-		if (cap) {
-			token = await cap.makeCaptcha(json);
-		} else {
-			token = await Captcha.makeCaptcha(json);
-		}
+		const token = cap ? await cap.makeCaptcha(json) : await Captcha.makeCaptcha(json);
+		if (token === undefined) return "dismissed";
 		build.captcha_key = token;
-		return true;
+		return "solved";
 	}
-	return false;
+	return "none";
 }
 export {FormError};
 class Form implements OptionsElement<object> {
@@ -2599,9 +2611,9 @@ class Form implements OptionsElement<object> {
 					} finally {
 						this.inFlight.delete(fetchURL);
 					}
-					if (await handleCaptcha(json, build, this.captcha)) {
-						return await doFetch();
-					}
+					const captcha = await handleCaptcha(json, build, this.captcha);
+					if (captcha === "dismissed") return;
+					if (captcha === "solved") return await doFetch();
 					const match = fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
 					if (match && this.tfaCheck) {
 						const tried = await handle2fa(json, match[0], (m) => this.showPrimError(m));
@@ -2846,4 +2858,4 @@ class Settings extends Buttons {
 	}
 }
 
-export {Settings, OptionsElement, Options, Form, Float};
+export {Settings, OptionsElement, Options, Form, Float, Captcha};
