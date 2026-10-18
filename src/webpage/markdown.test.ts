@@ -282,6 +282,42 @@ describe("lists and round trips after a code block", () => {
 	});
 });
 
+describe("a >>> block quote", () => {
+	it("quotes every line after it, blank lines included", () => {
+		const html = new MarkDown("intro\n>>> one\ntwo\n\nthree", undefined).makeHTML();
+		const quotes = html.querySelectorAll(".quote");
+		expect(quotes).toHaveLength(1);
+		expect(quotes[0].textContent).toBe("onetwothree");
+		expect(quotes[0].querySelectorAll("br")).toHaveLength(3);
+		expect(html.textContent).toBe("introonetwothree");
+	});
+	it("is sent from the composer as typed", () => {
+		const box = document.createElement("div");
+		box.append(new MarkDown("intro\n>>> one\ntwo", undefined, {keep: true}).makeHTML());
+		expect(MarkDown.gatherBoxText(box)).toBe("intro\n>>> one\ntwo");
+	});
+	it("opens at the start of a message, and round-trips blank lines from the composer", () => {
+		expect(new MarkDown(">>> one", undefined).makeHTML().querySelector(".quote")?.textContent).toBe(
+			"one",
+		);
+		const box = document.createElement("div");
+		box.append(new MarkDown(">>> one\n\nthree", undefined, {keep: true}).makeHTML());
+		expect(MarkDown.gatherBoxText(box)).toBe(">>> one\n\nthree");
+	});
+	it("needs a space after it: a newline or tab there stays as typed", () => {
+		for (const typed of [">>>\nfoo", ">>>\tfoo"]) {
+			expect(new MarkDown(typed, undefined).makeHTML().querySelector(".quote")).toBeNull();
+			const box = document.createElement("div");
+			box.append(new MarkDown(typed, undefined, {keep: true}).makeHTML());
+			expect(MarkDown.gatherBoxText(box)).toBe(typed);
+		}
+	});
+	it("previews as one line", () => {
+		const html = new MarkDown(">>> one\ntwo", undefined, {stdsize: true}).makeHTML();
+		expect(html.textContent).toBe("one two");
+	});
+});
+
 describe("a reply's one-line preview", () => {
 	const preview = (txt: string) =>
 		new MarkDown(txt, undefined, {stdsize: true}).makeHTML().textContent;

@@ -195,6 +195,7 @@ class MarkDown {
 				}
 				let element: HTMLElement = document.createElement("span");
 				let keepys = "";
+				let toEnd = false;
 
 				if (!keep && txt[i + 1] === "#") {
 					if (txt[i + 2] === "#") {
@@ -213,6 +214,17 @@ class MarkDown {
 						keepys = "# ";
 						i += 3;
 					}
+				} else if (txt.startsWith(">>> ", i + 1)) {
+					// A ">>> " block quote runs to the end of the message. It needs a space: a newline
+					// or tab after ">>>" would be eaten when the composer sends the text.
+					element = document.createElement("div");
+					const line = document.createElement("div");
+					line.classList.add("quoteline");
+					element.append(line);
+					element.classList.add("quote");
+					keepys = ">>> ";
+					i += 5;
+					toEnd = true;
 				} else if (txt[i + 1] === ">" && txt[i + 2]?.match(SPACE_RE)) {
 					element = document.createElement("div");
 					const line = document.createElement("div");
@@ -232,7 +244,7 @@ class MarkDown {
 						span.appendChild(document.createElement("br"));
 					}
 					const start = i;
-					for (; i < txt.length && txt[i] !== "\n"; i++) {}
+					for (; i < txt.length && (toEnd || txt[i] !== "\n"); i++) {}
 					const build = txt.slice(start, i);
 					if (stdsize) {
 						element = document.createElement("span");
