@@ -921,7 +921,8 @@ class Message extends SnowFlake {
 		// Bumped before the no-op return: a newer edit, even one that changes nothing, is the
 		// newest intent and cancels an older edit's pending retry.
 		const seq = (this.editSeq = (this.editSeq ?? 0) + 1);
-		if (content === this.content.textContent) {
+		// The text as typed, not as rendered: taking out only the formatting is a change.
+		if (content === this.content.rawString) {
 			return;
 		}
 		return await fetchRetryOnce(

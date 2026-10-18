@@ -499,7 +499,7 @@ describe("a message edit", () => {
 			API + "/channels/c1/messages/m1",
 			sequence(limited, () => Response.json({})),
 		);
-		const message = messageAt(undefined, {content: {textContent: "old"}});
+		const message = messageAt(undefined, {content: {textContent: "old", rawString: "old"}});
 
 		const res = await message.edit("new");
 
@@ -525,7 +525,7 @@ describe("a stale edit", () => {
 				() => Response.json({}),
 			),
 		);
-		const message = messageAt(undefined, {content: {textContent: "old"}});
+		const message = messageAt(undefined, {content: {textContent: "old", rawString: "old"}});
 
 		const [a, b] = await Promise.all([message.edit("A"), message.edit("B")]);
 
@@ -543,7 +543,7 @@ describe("a stale edit", () => {
 				() => Response.json({}),
 			),
 		);
-		const message = messageAt(undefined, {content: {textContent: "old"}});
+		const message = messageAt(undefined, {content: {textContent: "old", rawString: "old"}});
 
 		const a = message.edit("A");
 		// A is waiting out its window.
@@ -566,7 +566,7 @@ describe("an edit reverted during an older edit's window", () => {
 				() => Response.json({}),
 			),
 		);
-		const message = messageAt(undefined, {content: {textContent: "old"}});
+		const message = messageAt(undefined, {content: {textContent: "old", rawString: "old"}});
 
 		const a = message.edit("A");
 		await new Promise((r) => setTimeout(r, 100)); // A is waiting out its window
