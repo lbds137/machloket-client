@@ -3855,12 +3855,11 @@ class Localuser {
 		{
 			const manageSessions = settings.addButton(I18n.deviceManage.title());
 			(async () => {
-				const json = (await (
-					await fetch(this.info.api + "/auth/sessions?extended=true", {headers: this.headers})
-				).json()) as {user_sessions: expSessionJson[]};
-				const sorted = json.user_sessions.sort(
-					(a, b) => +new Date(b.last_seen) - +new Date(a.last_seen),
-				);
+				const sorted = await this.fetchSessions();
+				if (typeof sorted === "string") {
+					manageSessions.addText(sorted);
+					return;
+				}
 				const showAllBtn = document.createElement("button");
 				showAllBtn.textContent = I18n.settings.showAll(" ( " + sorted.length + " )");
 				showAllBtn.classList.add("sessionShowAll");
@@ -6248,6 +6247,23 @@ class Localuser {
 		(document.getElementById("channelname") as HTMLSpanElement).textContent = channelName;
 		(document.getElementsByTagName("title")[0] as HTMLTitleElement).textContent =
 			channelName + (guildName ? " | " + guildName : "") + " | " + APP_NAME;
+	}
+	/** The account's sessions, the most recently seen first, or the line saying why there's no list. */
+	async fetchSessions(): Promise<expSessionJson[] | string> {
+		const res = await fetch(this.info.api + "/auth/sessions?extended=true", {
+			headers: this.headers,
+		}).catch(() => undefined);
+		const answer = res?.ok
+			? await res
+					.clone()
+					.json()
+					.catch(() => null)
+			: null;
+		const sessions = (answer as {user_sessions?: unknown} | null)?.user_sessions;
+		if (!Array.isArray(sessions)) return refusalText(res);
+		return (sessions as expSessionJson[]).sort(
+			(a, b) => +new Date(b.last_seen) - +new Date(a.last_seen),
+		);
 	}
 	async instanceStats() {
 		const dialog = new Dialog("");
