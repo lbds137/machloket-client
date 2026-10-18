@@ -981,8 +981,10 @@ type invitejson = {
 	max_age: number;
 	created_at: string;
 	expires_at: string | null;
-	guild_id: string;
-	channel_id: string;
+	/** The older answers' ids; Discord's shapes carry `guild` and `channel` objects instead (an
+	 * older list row has no `channel`). */
+	guild_id?: string;
+	channel_id?: string;
 	inviter_id: string;
 	target_user_id: string | null;
 	target_user_type: string | null;

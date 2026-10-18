@@ -18,8 +18,11 @@ export async function acceptInvite(
 		},
 	});
 	if (res.ok) {
-		const json = (await res.json().catch(() => undefined)) as {guild_id?: string} | undefined;
-		return {ok: true, guildId: json?.guild_id};
+		// Discord's invite object names the guild in `guild`; the older answer had `guild_id`.
+		const json = (await res.json().catch(() => undefined)) as
+			| {guild_id?: string; guild?: {id?: string}}
+			| undefined;
+		return {ok: true, guildId: json?.guild?.id ?? json?.guild_id};
 	}
 	const json = (await res.json().catch(() => undefined)) as {message?: string} | undefined;
 	if (/already a member/i.test(json?.message ?? "")) return {ok: true, alreadyMember: true};

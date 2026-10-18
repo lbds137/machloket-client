@@ -38,7 +38,7 @@ async function openInvite(inv: object) {
 	const guild = {
 		id: "g1",
 		headers: {},
-		channels: [],
+		channels: [{id: "c1", name: "general"}],
 		info: {wellknown: "http://invites.test"},
 		localuser: {userMap: new Map(), guilds: []},
 	};
@@ -46,8 +46,15 @@ async function openInvite(inv: object) {
 	const grid = areas.mock.calls[0][0] as HTMLElement;
 	await vi.waitFor(() => expect(grid.querySelector(".inviteCard")).not.toBeNull());
 	const card = grid.querySelector(".inviteCard") as HTMLElement;
-	return {open: () => card.onclick!(new PointerEvent("click")), widget};
+	return {open: () => card.onclick!(new PointerEvent("click")), widget, card};
 }
+
+it("an invite in Discord's list shape (a channel object, no channel_id) names its channel", async () => {
+	const {channel_id: _, ...rest} = invite("dsc");
+	const {card} = await openInvite({...rest, channel: {id: "c1", name: "general", type: 0}});
+
+	expect(card.querySelector(".inviteChannel")?.textContent).toBe("#general");
+});
 
 it("an invite with no inviter opens its details, without a creator", async () => {
 	const {open, widget} = await openInvite(invite("sys"));

@@ -59,7 +59,9 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 		const maxTxt = invite.max_uses ? "/" + invite.max_uses : "";
 		used.textContent = invite.uses + maxTxt;
 
-		const channel = guild.channels.find((_) => _.id == invite.channel_id);
+		// Discord's list shape has a `channel` object and no `channel_id`.
+		const channelId = invite.channel?.id ?? invite.channel_id;
+		const channel = guild.channels.find((_) => _.id == channelId);
 		if (channel) {
 			const ch = document.createElement("span");
 			ch.classList.add("inviteChannel");

@@ -2459,8 +2459,9 @@ class Localuser {
 				} else if (result.alreadyMember) {
 					const json = (await fetch(`${this.info.api}/invites/${parsed}`, {headers: this.headers})
 						.then((res) => res.json())
-						.catch(() => undefined)) as {guild_id?: string} | undefined;
-					if (json?.guild_id) this.loadGuild(json.guild_id);
+						.catch(() => undefined)) as {guild_id?: string; guild?: {id?: string}} | undefined;
+					const guildId = json?.guild?.id ?? json?.guild_id;
+					if (guildId) this.loadGuild(guildId);
 				}
 			});
 			const text = form.addTextInput(I18n.invite.inviteLinkCode(), "code");
