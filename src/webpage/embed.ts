@@ -243,7 +243,11 @@ class Embed {
 	generateImage() {
 		const div = document.createElement("div");
 		div.classList.add("messageimgdiv");
-		const img = createImg(this.json.thumbnail.proxy_url);
+		// Link previews carry the picture as `thumbnail`; the server's own image embeds as `image`.
+		const pic = this.json.thumbnail ?? this.json.image;
+		if (!pic) return div;
+		const src = pic.proxy_url ?? pic.url;
+		const img = createImg(src);
 		img.classList.add("messageimg");
 		img.style.height = "auto";
 		img.onclick = () => {
@@ -252,7 +256,7 @@ class Embed {
 					{
 						id: "",
 						filename: "",
-						url: this.json.thumbnail.proxy_url,
+						url: src,
 						size: -1,
 						content_type: "image/",
 					},
@@ -261,23 +265,22 @@ class Embed {
 			]);
 			full.show();
 		};
-		let thumbW = this.json.thumbnail.width;
-		let thumbH = this.json.thumbnail.height;
-		if (thumbW) {
+		let thumbW = pic.width;
+		let thumbH = pic.height;
+		// An `image` may come without its size: then the picture keeps its own.
+		if (thumbW && thumbH) {
 			let scale = 1;
 			const max = 96 * 3;
 			scale = Math.max(scale, thumbW / max);
 			scale = Math.max(scale, thumbH / max);
 			thumbW /= scale;
 			thumbH /= scale;
+			img.style.width = thumbW + "px";
 		}
-		img.style.width = thumbW + "px";
-		console.log(this.json, "Image fix");
-
 		img.isAnimated().then((animated) => {
-			if (!animated || !this.owner) return;
-			const url =
-				new URL(this.json.thumbnail.url).origin + new URL(this.json.thumbnail.url).pathname;
+			// A favourite GIF is kept with its size: without one there's no star to offer.
+			if (!animated || !this.owner || !pic.width || !pic.height) return;
+			const url = new URL(pic.url).origin + new URL(pic.url).pathname;
 			const span = document.createElement("span");
 			span.classList.add("svg-gifstar");
 			if (this.owner.localuser.favorites.hasGif(url)) {
@@ -296,8 +299,8 @@ class Embed {
 					span.classList.add("favorited");
 					fav.favoriteGif(url, {
 						src: url,
-						width: this.json.thumbnail.width,
-						height: this.json.thumbnail.height,
+						width: pic.width,
+						height: pic.height,
 					});
 				}
 			};
