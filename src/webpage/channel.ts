@@ -43,6 +43,7 @@ import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
+import {formErrors} from "./utils/showRefusal.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -68,19 +69,8 @@ export async function createMachloketNonce(): Promise<string> {
  * server's message, or a generic line when the body has none.
  */
 function sendErrorText(body: {code?: number; message?: unknown; errors?: unknown} | null): string {
-	if (body?.code === 50035 && body.errors) {
-		const found: string[] = [];
-		const walk = (node: unknown) => {
-			if (!node || typeof node !== "object") return;
-			for (const [key, value] of Object.entries(node)) {
-				if (key === "_errors" && Array.isArray(value)) {
-					for (const e of value) if (typeof e?.message === "string") found.push(e.message);
-				} else {
-					walk(value);
-				}
-			}
-		};
-		walk(body.errors);
+	if (body?.code === 50035) {
+		const found = formErrors(body.errors);
 		if (found.length) return found.join(" ");
 	}
 	return typeof body?.message === "string" && body.message

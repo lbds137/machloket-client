@@ -9,6 +9,7 @@ import {Permissions} from "./permissions.js";
 import {I18n} from "./i18n.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
+import {readDataURL, saveProfile} from "./utils/profileSave.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
@@ -226,48 +227,17 @@ class Bot {
 		settings.show();
 	}
 
-	updatepfp(file: Blob): void {
-		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		reader.onload = () => {
-			fetch(this.info.api + "/users/@me", {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					avatar: reader.result,
-				}),
-			});
-		};
+	/** Each profile save says why when it isn't saved, and resolves to whether it was. */
+	async updatepfp(file: Blob) {
+		const avatar = await readDataURL(file);
+		return saveProfile(this.info.api + "/users/@me", this.headers, {avatar});
 	}
-	updatebanner(file: Blob | null): void {
-		if (file) {
-			const reader = new FileReader();
-			reader.readAsDataURL(file);
-			reader.onload = () => {
-				fetch(this.info.api + "/users/@me", {
-					method: "PATCH",
-					headers: this.headers,
-					body: JSON.stringify({
-						banner: reader.result,
-					}),
-				});
-			};
-		} else {
-			fetch(this.info.api + "/users/@me", {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					banner: null,
-				}),
-			});
-		}
+	async updatebanner(file: Blob | null) {
+		const banner = file && (await readDataURL(file));
+		return saveProfile(this.info.api + "/users/@me", this.headers, {banner});
 	}
 	updateProfile(json: {bio?: string; pronouns?: string; accent_color?: number}) {
-		fetch(this.info.api + "/users/@me/profile", {
-			method: "PATCH",
-			headers: this.headers,
-			body: JSON.stringify(json),
-		});
+		return saveProfile(this.info.api + "/users/@me/profile", this.headers, json);
 	}
 	static InviteMaker(id: string, container: Form, info: Localuser["info"]) {
 		const gen = container.addSubOptions(I18n.UrlGen(), {

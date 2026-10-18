@@ -9,6 +9,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {readDataURL, saveProfile} from "./utils/profileSave.js";
 
 class Member extends SnowFlake {
 	static already = {};
@@ -124,71 +125,21 @@ class Member extends SnowFlake {
 		return this.owner.headers;
 	}
 
-	updatepfp(file: Blob | null): void {
-		const reader = new FileReader();
-		if (file) {
-			reader.readAsDataURL(file);
-			reader.onload = () => {
-				fetch(this.info.api + `/guilds/${this.guild.id}/members/${this.id}/`, {
-					method: "PATCH",
-					headers: this.headers,
-					body: JSON.stringify({
-						avatar: reader.result,
-					}),
-				});
-			};
-		} else {
-			fetch(this.info.api + `/guilds/${this.guild.id}/members/${this.id}/`, {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					avatar: null,
-				}),
-			});
-		}
+	/** Each server-profile save says why when it isn't saved, and resolves to whether it was. */
+	async updatepfp(file: Blob | null) {
+		const avatar = file && (await readDataURL(file));
+		const url = this.info.api + `/guilds/${this.guild.id}/members/${this.id}/`;
+		return saveProfile(url, this.headers, {avatar});
 	}
-	updatebanner(file: Blob | null): void {
-		if (file) {
-			const reader = new FileReader();
-			reader.readAsDataURL(file);
-			reader.onload = () => {
-				fetch(this.info.api + `/guilds/${this.guild.id}/profile/${this.id}`, {
-					method: "PATCH",
-					headers: this.headers,
-					body: JSON.stringify({
-						banner: reader.result,
-					}),
-				});
-			};
-		} else {
-			fetch(this.info.api + `/guilds/${this.guild.id}/profile/${this.id}`, {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					banner: null,
-				}),
-			});
-		}
+	async updatebanner(file: Blob | null) {
+		const banner = file && (await readDataURL(file));
+		const url = this.info.api + `/guilds/${this.guild.id}/profile/${this.id}`;
+		return saveProfile(url, this.headers, {banner});
 	}
 
 	updateProfile(json: {bio?: string | null; pronouns?: string | null; nick?: string | null}) {
-		console.log(JSON.stringify(json));
-		/*
-		if(json.bio===""){
-			json.bio=null;
-		}
-		if(json.pronouns===""){
-			json.pronouns=null;
-		}
-		if(json.nick===""){
-			json.nick=null;
-		}
-		*/
-		fetch(this.info.api + `/guilds/${this.guild.id}/profile/${this.id}`, {
-			method: "PATCH",
-			headers: this.headers,
-			body: JSON.stringify(json),
-		});
+		const url = this.info.api + `/guilds/${this.guild.id}/profile/${this.id}`;
+		return saveProfile(url, this.headers, json);
 	}
 	showEditProfile() {
 		const settings = new Settings("", true);

@@ -83,6 +83,7 @@ import {showCommandStatus} from "./interactions/commandStatus.js";
 import {previewURL} from "./utils/previewURL.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
+import {readDataURL, saveProfile} from "./utils/profileSave.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -3050,58 +3051,17 @@ class Localuser {
 		if (!channel) return;
 		channel.typingStart(typing);
 	}
-	updatepfp(file: Blob | null): void {
-		if (file) {
-			const reader = new FileReader();
-			reader.readAsDataURL(file);
-			reader.onload = () => {
-				fetch(this.info.api + "/users/@me", {
-					method: "PATCH",
-					headers: this.headers,
-					body: JSON.stringify({
-						avatar: reader.result,
-					}),
-				});
-			};
-		} else {
-			fetch(this.info.api + "/users/@me", {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					avatar: null,
-				}),
-			});
-		}
+	/** Each profile save says why when it isn't saved, and resolves to whether it was. */
+	async updatepfp(file: Blob | null) {
+		const avatar = file && (await readDataURL(file));
+		return saveProfile(this.info.api + "/users/@me", this.headers, {avatar});
 	}
-	updatebanner(file: Blob | null): void {
-		if (file) {
-			const reader = new FileReader();
-			reader.readAsDataURL(file);
-			reader.onload = () => {
-				fetch(this.info.api + "/users/@me", {
-					method: "PATCH",
-					headers: this.headers,
-					body: JSON.stringify({
-						banner: reader.result,
-					}),
-				});
-			};
-		} else {
-			fetch(this.info.api + "/users/@me", {
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({
-					banner: null,
-				}),
-			});
-		}
+	async updatebanner(file: Blob | null) {
+		const banner = file && (await readDataURL(file));
+		return saveProfile(this.info.api + "/users/@me", this.headers, {banner});
 	}
 	updateProfile(json: {bio?: string; pronouns?: string; accent_color?: number}) {
-		fetch(this.info.api + "/users/@me/profile", {
-			method: "PATCH",
-			headers: this.headers,
-			body: JSON.stringify(json),
-		});
+		return saveProfile(this.info.api + "/users/@me/profile", this.headers, json);
 	}
 	async getConnections() {
 		return fetch(this.info.api + "/connections", {
