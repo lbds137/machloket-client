@@ -137,9 +137,12 @@ function sameReactionEmoji(
 }
 
 /** A reaction's emoji as a URL path segment: `name:id` for a custom emoji, the encoded
- * character(s) for a unicode one. */
+ * character(s) for a unicode one. Both parts are encoded, and a dot-only segment (which the
+ * URL parser would resolve as a path step) is undefined: the caller sends nothing. */
 export function reactionPathSegment(emoji: {name?: string; id?: string}) {
-	return emoji.id ? `${emoji.name}:${emoji.id}` : encodeURIComponent(emoji.name ?? "");
+	const name = encodeURIComponent(emoji.name ?? "");
+	const segment = emoji.id ? `${name}:${encodeURIComponent(emoji.id)}` : name;
+	return /^(\.|%2e){1,2}$/i.test(segment) ? undefined : segment;
 }
 
 /** Up to `limit` users who reacted to `message` with `emoji`. An error answer (not a list)
@@ -151,7 +154,9 @@ export async function fetchReactionUsers(
 	limit: number,
 	{retry = true}: {retry?: boolean} = {},
 ): Promise<userjson[]> {
-	const url = `${message.info.api}/channels/${message.channel.id}/messages/${message.id}/reactions/${reactionPathSegment(emoji)}?limit=${limit}&type=0`;
+	const segment = reactionPathSegment(emoji);
+	if (segment === undefined) return [];
+	const url = `${message.info.api}/channels/${message.channel.id}/messages/${message.id}/reactions/${segment}?limit=${limit}&type=0`;
 	const init = {headers: message.headers};
 	const f = await (retry ? fetchRetryOnce(url, init) : fetch(url, init));
 	const body: unknown = await f.json().catch(() => []);
@@ -589,6 +594,7 @@ class Message extends SnowFlake {
 		let remove = !!this.reactions.find((_) => sameReactionEmoji(_.emoji, target))?.me;
 
 		const reactiontxt = reactionPathSegment(target);
+		if (reactiontxt === undefined) return;
 		const inFlight = (this.reactionsInFlight ??= new Set());
 		if (inFlight.has(reactiontxt)) return;
 		inFlight.add(reactiontxt);
@@ -2246,8 +2252,9 @@ class Message extends SnowFlake {
 				reaction.classList.add("reactionClosed");
 			}
 			let emoji: HTMLElement;
-			if (thing.emoji.id || /\d{17,21}/.test(thing.emoji.name)) {
-				if (/\d{17,21}/.test(thing.emoji.name)) {
+			// Only a name that IS a snowflake is the id the server mislabelled.
+			if (thing.emoji.id || /^\d{17,21}$/.test(thing.emoji.name)) {
+				if (/^\d{17,21}$/.test(thing.emoji.name)) {
 					thing.emoji.id = thing.emoji.name; //Should stop being a thing once the server fixes this bug
 				}
 				const emo = new Emoji(
