@@ -30,6 +30,24 @@ describe("PLURAL", () => {
 		expect(I18n.fillInBlanks(noun, ["1.5"])).toBe("1.5 členů");
 	});
 
+	// pl and ru ship one|few|many blocks (MediaWiki order) and class 22 as "few", unlike Czech.
+	it("a three-alternative block follows Polish and Russian plural classes", () => {
+		I18n.lang = "pl";
+		const pl = "$1 {{PLURAL:$1|gildia|gildie|gildii}}";
+		expect(I18n.fillInBlanks(pl, ["1"])).toBe("1 gildia");
+		expect(I18n.fillInBlanks(pl, ["3"])).toBe("3 gildie");
+		expect(I18n.fillInBlanks(pl, ["5"])).toBe("5 gildii");
+		expect(I18n.fillInBlanks(pl, ["12"])).toBe("12 gildii");
+		expect(I18n.fillInBlanks(pl, ["22"])).toBe("22 gildie");
+		I18n.lang = "ru";
+		const ru = "$1 {{PLURAL:$1|запись|записи|записей}}";
+		expect(I18n.fillInBlanks(ru, ["1"])).toBe("1 запись");
+		expect(I18n.fillInBlanks(ru, ["3"])).toBe("3 записи");
+		expect(I18n.fillInBlanks(ru, ["11"])).toBe("11 записей");
+		expect(I18n.fillInBlanks(ru, ["21"])).toBe("21 запись");
+		expect(I18n.fillInBlanks(ru, ["25"])).toBe("25 записей");
+	});
+
 	it("a two-alternative block keeps the positional fallback for every language", () => {
 		I18n.lang = "en";
 		expect(I18n.fillInBlanks("$1 {{PLURAL:$1|member|members}}", ["1"])).toBe("1 member");

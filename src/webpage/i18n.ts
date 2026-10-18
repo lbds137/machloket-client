@@ -9,6 +9,9 @@ type translation = {
 	[key: string]: string | translation;
 };
 let res: () => unknown = () => {};
+/** Languages whose 3+-alternative PLURAL blocks are written one|few|many (checked against the
+ * shipped cs, pl and ru files); add one only after reading its blocks. */
+const CATEGORY_PLURAL_LANGS = new Set(["cs", "pl", "ru"]);
 class I18n {
 	static lang: string;
 	static translations: translation[] = [];
@@ -83,9 +86,8 @@ class I18n {
 	}
 	/** Intl's plural category for `numb` in the active language (CLDR rules, so e.g. Czech's
  * "few" is only 2-4 while Polish's reaches 22). The PluralRules object is cached per
- * language. Only consulted for blocks with three or more alternatives, and only for
- * languages shipped with such blocks (cs for now) — other locales' data was written for
- * the positional mapping. */
+ * language. Only consulted for blocks with three or more alternatives, and only for the
+ * languages in CATEGORY_PLURAL_LANGS, whose blocks are written one|few|many. */
 	private static pluralRulesByLang = new Map<string, Intl.PluralRules>();
 	private static pluralClass(numb: number): string {
 		let rules = I18n.pluralRulesByLang.get(I18n.lang);
@@ -114,10 +116,10 @@ class I18n {
 							return strs[strs.length - 1];
 						}
 						// A block with three or more alternatives can carry a language's middle plural
-						// classes (Czech: 1 / 2-4 / the rest, 12-14 included). Only a language shipped
-						// with such blocks (cs) selects by category; everyone else, and every shorter
-						// block, keeps the positional mapping.
-						if (strs.length > 2 && I18n.lang === "cs") {
+						// classes (Czech: 1 / 2-4 / the rest, 12-14 included). Only the languages whose
+						// shipped blocks are written one|few|many select by category; any other (ga's
+						// blocks use named forms), and every shorter block, keeps the positional mapping.
+						if (strs.length > 2 && CATEGORY_PLURAL_LANGS.has(I18n.lang)) {
 							const cls = this.pluralClass(numb);
 							if (cls === "one") return strs[0];
 							if (cls === "few") return strs[1];
