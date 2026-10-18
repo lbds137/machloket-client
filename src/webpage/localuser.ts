@@ -476,6 +476,8 @@ class Localuser {
 
 		this.mdBox();
 
+		// A fresh session: the old one's call can't be reached from the new factory.
+		this.voiceFactory?.teardown();
 		this.voiceFactory = new VoiceFactory(
 			{id: this.user.id},
 			(g) => {
@@ -603,6 +605,7 @@ class Localuser {
 		this.keepWaitingFiles();
 		this.initialized = false;
 		this.recoveryBannerState?.stop();
+		this.voiceFactory?.teardown();
 		this.disconnectComposer();
 		this.outoffocus();
 		this.guilds = [];

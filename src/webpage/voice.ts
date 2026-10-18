@@ -71,6 +71,15 @@ class VoiceFactory {
 		this.curGuild = null;
 		this.sendVoiceState();
 	}
+	/** Ends this factory's call without telling the gateway: its session is gone (logout, an
+	 * account switch, a fresh identify), and a leave sent on the next one could end a call made
+	 * there since. */
+	teardown() {
+		this.curChan = null;
+		this.curGuild = null;
+		void this.currentVoice?.leave();
+		this.currentVoice = undefined;
+	}
 
 	updateSelf() {
 		if (this.currentVoice && this.currentVoice.open) {
