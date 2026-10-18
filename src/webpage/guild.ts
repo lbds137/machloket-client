@@ -1539,6 +1539,9 @@ class Guild extends SnowFlake {
 	updateRole(rolej: rolesjson) {
 		const role = this.roleids.get(rolej.id) as Role;
 		role.newJson(rolej);
+		// A role moved elsewhere (another admin's drag) takes its new rank: colours and the
+		// member list read this order.
+		this.sortRoles();
 		this.roleUpdate(role, 0);
 		this.recalcPrivate();
 	}
