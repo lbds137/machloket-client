@@ -438,6 +438,19 @@ describe("a rich embed's images", () => {
 		expect(html.outerHTML).not.toContain("bot.example");
 	});
 
+	it("show the thumbnail beside the text, and the provider's name above it", async () => {
+		const {html} = await render({
+			provider: {name: "Steam"},
+			title: "A game",
+			thumbnail: {url: "https://bot.example/t.png", proxy_url: "https://cdn.test/external/t"},
+		});
+		expect(html.querySelector<HTMLImageElement>("img.embedThumbnail")?.src).toBe(
+			"https://cdn.test/external/t",
+		);
+		expect(html.querySelector(".provider")?.textContent).toBe("Steam");
+		expect(html.outerHTML).not.toContain("bot.example");
+	});
+
 	it("fall back to the embed's own url when the proxy is missing or empty", async () => {
 		const {srcs} = await render({
 			author: {name: "bot", icon_url: "https://bot.example/a.png"},

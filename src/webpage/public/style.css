@@ -4357,6 +4357,15 @@ span .quote:last-of-type .quoteline {
 	color: var(--secondary-text-soft);
 }
 
+.embed .embedThumbnail {
+	float: right;
+	max-width: 80px;
+	max-height: 80px;
+	margin-left: 16px;
+	border-radius: 4px;
+	object-fit: contain;
+}
+
 .rich-embed {
 	& {
 		width: unset;
@@ -4364,6 +4373,8 @@ span .quote:last-of-type .quoteline {
 
 	.embed {
 		max-width: unset;
+		/* Holds the floated thumbnail inside the card when the text is shorter than it. */
+		display: flow-root;
 	}
 }
 

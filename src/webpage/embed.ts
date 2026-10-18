@@ -116,6 +116,25 @@ class Embed {
 		embed.classList.add("embed");
 		div.append(embed);
 
+		// Discord's small image at the top right, the text flowing beside it.
+		const thumbnail = this.json.thumbnail;
+		if (thumbnail?.url || thumbnail?.proxy_url) {
+			const img = document.createElement("img");
+			img.classList.add("embedThumbnail");
+			const proxied = Boolean(thumbnail.proxy_url);
+			this.localuser.refreshIfNeeded(thumbnail.proxy_url || thumbnail.url).then((url) => {
+				thumbnail[proxied ? "proxy_url" : "url"] = url;
+				img.src = url;
+			});
+			embed.append(img);
+		}
+		if (this.json.provider?.name) {
+			const provider = document.createElement("p");
+			provider.classList.add("provider");
+			provider.textContent = this.json.provider.name;
+			embed.append(provider);
+		}
+
 		if (this.json.author) {
 			const authorline = document.createElement("div");
 			if (this.json.author.icon_url) {
