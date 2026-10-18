@@ -185,6 +185,8 @@ class MarkDown {
 			const nodes = span.childNodes;
 			return nodes[nodes.length - 1];
 		}
+		/** Whether the newline at `at` comes right after a code block, which already ends its line. */
+		const endsLine = (at: number) => getCurLast() instanceof HTMLPreElement && txt[at - 1] === "`";
 		for (let i = 0; i < txt.length; i++) {
 			if (txt[i] === "\n" || i === 0) {
 				let first = i === 0;
@@ -226,7 +228,7 @@ class MarkDown {
 				}
 				if (keepys) {
 					appendcurrent();
-					if (!first && !stdsize) {
+					if (!first && !stdsize && !endsLine(i)) {
 						span.appendChild(document.createElement("br"));
 					}
 					const start = i;
@@ -339,7 +341,7 @@ class MarkDown {
 					appendcurrent();
 					if (keep) {
 						span.append(new Text("\n"));
-					} else {
+					} else if (!endsLine(i)) {
 						span.append(document.createElement("br"));
 					}
 				}
@@ -406,11 +408,9 @@ class MarkDown {
 						if (build.at(-1) === "\n") {
 							build = build.substring(0, build.length - 1);
 						}
-						// A block already ends its line, so a sent message drops the break after it;
-						// the composer keeps it, or the text sent would lose it.
-						if (txt[i] === "\n" && !keep) {
-							i++;
-						}
+						// The newline after the block stays in the text: it starts the next line (a quote or
+						// heading there is recognised), and the composer sends it. A sent message draws no
+						// break for it, since the block already ends its line (see endsLine).
 						pre.textContent = build;
 						span.appendChild(pre);
 					}

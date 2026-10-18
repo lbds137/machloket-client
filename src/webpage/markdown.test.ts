@@ -250,3 +250,34 @@ describe("the composer's text after a code block", () => {
 		expect(MarkDown.gatherBoxText(box)).toBe("```a```\nnext");
 	});
 });
+
+describe("a line right after a code block", () => {
+	it("can open a quote", () => {
+		const html = new MarkDown("```a```\n> quoted", undefined).makeHTML();
+		expect(html.querySelector(".quote")?.textContent).toBe("quoted");
+	});
+	it("can be a heading", () => {
+		const html = new MarkDown("```a```\n# Title", undefined).makeHTML();
+		expect(html.querySelector("h1")?.textContent).toBe("Title");
+	});
+});
+
+describe("blank lines after a code block", () => {
+	it("still show as a blank line", () => {
+		const html = new MarkDown("```a```\n\nnext", undefined).makeHTML();
+		expect(html.querySelectorAll("br")).toHaveLength(1);
+	});
+});
+
+describe("lists and round trips after a code block", () => {
+	it("a bullet list right after a block is a list, with no break before it", () => {
+		const html = new MarkDown("```a```\n- item", undefined).makeHTML();
+		expect(html.querySelector("ul li")?.textContent).toBe("item");
+		expect(html.querySelector("br")).toBeNull();
+	});
+	it("the composer sends a quote after a block as typed", () => {
+		const box = document.createElement("div");
+		box.append(new MarkDown("```a```\n> q", undefined, {keep: true}).makeHTML());
+		expect(MarkDown.gatherBoxText(box)).toBe("```a```\n> q");
+	});
+});
