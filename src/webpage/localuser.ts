@@ -1030,6 +1030,23 @@ class Localuser {
 						this.guildids.delete(temp.d.id);
 						this.guilds.splice(this.guilds.indexOf(guildy), 1);
 						guildy.html.remove();
+						// Its channels and threads go too (a forward must not offer them), and it leaves
+						// the server order (a later reorder would save its id into a folder).
+						for (const [id, channel] of this.channelids) {
+							if (channel.guild === guildy) this.channelids.delete(id);
+						}
+						const servers = document.getElementById("servers");
+						this.guildOrder = this.guildOrder.filter((entry) => {
+							if (entry === guildy) return false;
+							if (entry instanceof Guild) return true;
+							entry.guilds = entry.guilds.filter((g) => g !== guildy);
+							if (entry.guilds.length) return true;
+							// A folder it leaves empty goes, as one emptied by a drag does.
+							for (const html of Array.from(servers?.children ?? [])) {
+								if (this.dragMap.get(html as HTMLElement) === entry) html.remove();
+							}
+							return false;
+						});
 						if (guildy === this.lookingguild) {
 							this.guildids.get("@me")?.loadGuild();
 							this.guildids.get("@me")?.loadChannel();
