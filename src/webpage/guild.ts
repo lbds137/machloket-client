@@ -1934,35 +1934,39 @@ class Guild extends SnowFlake {
 		return Guild.generateGuildIcon(this, autoLink);
 	}
 	confirmDelete() {
-		let confirmname = "";
-
 		const full = new Dialog("");
 		full.options.addTitle(I18n.guild.confirmDelete(this.properties.name));
-		const form = full.options.addForm("", () => {}, {submitText: ""});
+		// Through the form, so a refusal shows; an owner with two-factor on also gives a code.
+		const form = full.options.addForm("", () => full.hide(), {
+			submitText: "",
+			fetchURL: this.info.api + "/guilds/" + this.id + "/delete",
+			method: "POST",
+			headers: this.headers,
+		});
+		// Keyed "": checked here, never sent.
 		const txt = form.addTextInput(I18n.guild.serverName(), "");
-		txt.onchange = (e) => (confirmname = e);
+		if (this.localuser.mfa_enabled) {
+			form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
+		}
+		form.onErrorBody = (e) => {
+			// No code field (two-factor turned on elsewhere since): the server's message shows.
+			if (e.code !== 60008 || !this.localuser.mfa_enabled) return false;
+			form.error("code", I18n.localuser.badCode());
+			return true;
+		};
+		form.addPreprocessor(() => {
+			if (txt.value !== this.properties.name) throw new FormError(txt, I18n.guild.nameNoMatch());
+		});
 
 		const options = form.addOptions("", {ltr: true});
 		options.addButtonInput("", I18n.guild.yesDelete(), () => {
-			if (confirmname !== this.properties.name) {
-				form.handleError(new FormError(txt, I18n.guild.nameNoMatch()));
-				return;
-			}
-			this.delete().then((_) => {
-				full.hide();
-			});
+			void form.submit();
 		});
 
 		options.addButtonInput("", I18n.guild.noDelete(), () => {
 			full.hide();
 		});
 		full.show();
-	}
-	async delete() {
-		return fetch(this.info.api + "/guilds/" + this.id + "/delete", {
-			method: "POST",
-			headers: this.headers,
-		});
 	}
 	get mentions() {
 		let mentions = 0;
