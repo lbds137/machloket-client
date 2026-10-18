@@ -55,6 +55,18 @@ export class NotificationHandler {
 	}
 	/** Opens a channel for a tap this page kept no handler for (set by the app at start). */
 	static openChannel?: (channelId: string) => void;
+	/** Opens a tapped message's channel by id in its account's current session: a reconnect
+	 * since the notification rebuilt every Channel. An account switched away from since opens
+	 * nothing, since the composer now sends as the other account. */
+	static openNotified(message: Message) {
+		const localuser = message.localuser;
+		if (localuser.swapped) return;
+		// Through the guild, which also opens a thread the new session hasn't loaded.
+		const guild = localuser.guildids.get(message.channel.guild.id);
+		if (!guild) return;
+		guild.loadGuild();
+		guild.loadChannel(message.channel.id).catch(console.error);
+	}
 	static listenForClicks() {
 		// Insecure origins (plain-http LAN dev) have no service workers at all.
 		if (this.listeningForClicks || !("serviceWorker" in navigator)) return;
@@ -109,7 +121,7 @@ export class NotificationHandler {
 				tag: message.id,
 			},
 			message.channel,
-			() => message.channel.getHTML(true, true),
+			() => this.openNotified(message),
 		);
 		if (closed) notification?.close();
 	}
@@ -151,7 +163,7 @@ export class NotificationHandler {
 			},
 			message.channel,
 			() => {
-				message.channel.getHTML(true, true);
+				this.openNotified(message);
 				this.channelSuperMap.delete(message.channel);
 			},
 		);

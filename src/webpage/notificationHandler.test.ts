@@ -17,16 +17,27 @@ afterEach(async () => {
 
 function fakeMessage() {
 	const getHTML = vi.fn();
+	const loadChannel = vi.fn(async () => {});
+	const guild = {id: "g1", loadGuild: vi.fn(), loadChannel};
+	const localuser = {swapped: false, guildids: new Map([["g1", guild]])};
 	const message = {
+		localuser,
 		id: "m1",
 		content: {makeHTML: () => ({textContent: "hi"}), textContent: "hi"},
 		embeds: [],
 		getimages: () => [],
 		author: {getpfpsrc: () => "/icon.png"},
 		guild: {},
-		channel: {id: "c1", guild_id: "g1", name: "general", notititle: () => "#general", getHTML},
+		channel: {
+			id: "c1",
+			guild_id: "g1",
+			guild: {id: "g1"},
+			name: "general",
+			notititle: () => "#general",
+			getHTML,
+		},
 	} as unknown as Message;
-	return {message, getHTML};
+	return {message, getHTML, loadChannel, localuser};
 }
 
 /** Android Chrome: the page may not construct notifications at all. */
@@ -70,7 +81,7 @@ it("on Android, a message notification shows through a notifications-only servic
 it("tapping it on Android opens the message's channel", async () => {
 	vi.stubGlobal("Notification", AndroidNotification);
 	captureShown();
-	const {message, getHTML} = fakeMessage();
+	const {message, getHTML, loadChannel} = fakeMessage();
 	await NotificationHandler.sendMessageNotification(message).catch(() => {});
 
 	// The worker's notificationclick hands the tap to the page by tag.
@@ -78,7 +89,25 @@ it("tapping it on Android opens the message's channel", async () => {
 		new MessageEvent("message", {data: {code: "notificationClick", tag: "m1"}}),
 	);
 
-	expect(getHTML).toHaveBeenCalledWith(true, true);
+	// By id through the account: a reconnect since the notification rebuilt every Channel, so
+	// the one the notification saw may be stale.
+	expect(loadChannel).toHaveBeenCalledWith("c1");
+	expect(getHTML).not.toHaveBeenCalled();
+});
+
+it("a tap on an account switched away from since opens nothing", async () => {
+	vi.stubGlobal("Notification", AndroidNotification);
+	captureShown();
+	const {message, getHTML, loadChannel, localuser} = fakeMessage();
+	await NotificationHandler.sendMessageNotification(message).catch(() => {});
+
+	localuser.swapped = true;
+	navigator.serviceWorker.dispatchEvent(
+		new MessageEvent("message", {data: {code: "notificationClick", tag: "m1"}}),
+	);
+
+	expect(loadChannel).not.toHaveBeenCalled();
+	expect(getHTML).not.toHaveBeenCalled();
 });
 
 it("where the page can construct notifications (desktop), it does, and registers no worker", async () => {
