@@ -227,8 +227,16 @@ class Message extends SnowFlake {
 		});
 		Message.setupcmenu();
 	}
+	/** Whether the user can edit this: their own plain message or reply, not a forward or a
+	 * system line (a pin, a join…). */
+	canEdit() {
+		return (
+			this.author.id === this.localuser.user.id &&
+			[0, 19].includes(this.type) &&
+			this.message_reference?.type !== 1
+		);
+	}
 	static setupcmenu() {
-		const editTypes = new Set([0, 19]);
 		Message.contextmenu.addButton(
 			() => I18n.message.apps(),
 			function (this: Message) {
@@ -262,11 +270,7 @@ class Message extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return (
-						this.author.id === this.localuser.user.id &&
-						editTypes.has(this.type) &&
-						this.message_reference?.type !== 1
-					);
+					return this.canEdit();
 				},
 
 				icon: {
@@ -2082,7 +2086,7 @@ class Message extends SnowFlake {
 						});
 					};
 				}
-				if (this.author === this.localuser.user && this.type !== 46 && this.message_reference?.type !== 1) {
+				if (this.canEdit()) {
 					const container = document.createElement("button");
 					const edit = document.createElement("span");
 					edit.classList.add("svg-edit", "svgicon");

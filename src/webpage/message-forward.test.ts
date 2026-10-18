@@ -234,6 +234,26 @@ describe("received forwarded messages (message_snapshots)", () => {
 		expect(normal.div.querySelector(".messageButtons .svg-edit")).not.toBeNull();
 	});
 
+	it("offers no hover edit button on the user's own system lines (a pin, a join)", () => {
+		const {channel} = setupTestChannel();
+
+		const pin = render(
+			forwardJson(channel, {
+				id: "pin-hover",
+				type: 6,
+				author: {id: "me", username: "Me"},
+				message_reference: undefined,
+				message_snapshots: undefined,
+			}),
+			channel,
+		);
+		pin.m.bindButtonEvent();
+		pin.div.dispatchEvent(new Event("mouseenter"));
+
+		expect(pin.div.querySelector(".messageButtons")).not.toBeNull();
+		expect(pin.div.querySelector(".messageButtons .svg-edit")).toBeNull();
+	});
+
 	it("edit-last skips forwards but still edits own normal messages", async () => {
 		const {Channel} = await import("./channel");
 		const {channel} = setupTestChannel();
@@ -267,6 +287,43 @@ describe("received forwarded messages (message_snapshots)", () => {
 		};
 		editLast.call(fakeChannel);
 		expect(fwdEdit).not.toHaveBeenCalled();
+		expect(normalEdit).toHaveBeenCalled();
+	});
+
+	it("edit-last skips the user's own system lines (a pin) for their last real message", async () => {
+		const {Channel} = await import("./channel");
+		const {channel} = setupTestChannel();
+		const own = {
+			author: {id: "me", username: "Me"},
+			message_reference: undefined,
+			message_snapshots: undefined,
+		};
+		const pin = new Message(
+			forwardJson(channel, {id: "pin-last", type: 6, ...own}) as never,
+			channel as never,
+		);
+		const pinEdit = vi.spyOn(pin, "setEdit").mockImplementation(() => {});
+		const normal = new Message(
+			forwardJson(channel, {id: "nm-before", ...own}) as never,
+			channel as never,
+		);
+		const normalEdit = vi.spyOn(normal, "setEdit").mockImplementation(() => {});
+		const editLast = (Channel.prototype as unknown as {editLast: () => void}).editLast;
+
+		editLast.call({
+			lastmessage: pin,
+			messages: new Map([
+				["pin-last", pin],
+				["nm-before", normal],
+			]),
+			idToPrev: new Map([
+				["pin-last", "nm-before"],
+				["nm-before", "0"],
+			]),
+			localuser: {user: pin.author},
+		});
+
+		expect(pinEdit).not.toHaveBeenCalled();
 		expect(normalEdit).toHaveBeenCalled();
 	});
 
