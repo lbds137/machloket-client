@@ -37,6 +37,14 @@ describe("triple-backtick code", () => {
 		expect(kept("```hello world```")).toBe("```hello world```");
 		expect(kept("```js\nlet a```")).toBe("```js\nlet a```");
 	});
+	it("the composer keeps the line break typed after a block", () => {
+		expect(kept("```a```\nnext")).toBe("```a```\nnext");
+	});
+	it("a sent message still starts the next line right under the block", () => {
+		const html = new MarkDown("```a```\nnext", undefined).makeHTML();
+		const after = html.querySelector("pre")?.nextSibling;
+		expect(after?.textContent).toBe("next");
+	});
 });
 
 describe("MarkDown.relTime", () => {
@@ -231,5 +239,14 @@ describe("user mentions", () => {
 
 		expect(html.querySelector(".mentionMD")).toBeNull();
 		expect(html.textContent).toBe("hi <@>");
+	});
+});
+
+describe("the composer's text after a code block", () => {
+	it("goes out with the line break typed after the block, once", () => {
+		const box = document.createElement("div");
+		box.append(new MarkDown("```a```\nnext", undefined, {keep: true}).makeHTML());
+
+		expect(MarkDown.gatherBoxText(box)).toBe("```a```\nnext");
 	});
 });

@@ -406,7 +406,9 @@ class MarkDown {
 						if (build.at(-1) === "\n") {
 							build = build.substring(0, build.length - 1);
 						}
-						if (txt[i] === "\n") {
+						// A block already ends its line, so a sent message drops the break after it;
+						// the composer keeps it, or the text sent would lose it.
+						if (txt[i] === "\n" && !keep) {
 							i++;
 						}
 						pre.textContent = build;
