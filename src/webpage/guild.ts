@@ -2005,20 +2005,22 @@ class Guild extends SnowFlake {
 	}
 	async goToThread(threadId: string) {
 		if (!this.localuser.channelids.has(threadId)) {
-			const channelJson = await (
-				await fetch(this.info.api + "/channels/" + threadId, {
-					headers: this.headers,
-				})
-			).json();
-			if (channelJson.code == 200) {
-				const channel = new Channel(channelJson as channeljson, this);
-				this.localuser.channelids.set(channel.id, channel);
-				channel.resolveparent(this);
-				const par = this.localuser.channelids.get(channel.parent_id as string);
-				par?.createguildHTML();
-			} else {
-				this.loadChannel();
+			const res = await fetch(this.info.api + "/channels/" + threadId, {
+				headers: this.headers,
+			}).catch(() => undefined);
+			const channelJson: channeljson | undefined = res?.ok
+				? await res.json().catch(() => undefined)
+				: undefined;
+			if (!channelJson?.id) {
+				// Gone or not visible: the default channel, and no wait for one that won't come.
+				await this.loadChannel();
+				return;
 			}
+			const channel = new Channel(channelJson, this);
+			this.localuser.channelids.set(channel.id, channel);
+			channel.resolveparent(this);
+			const par = this.localuser.channelids.get(channel.parent_id as string);
+			par?.createguildHTML();
 		}
 		this.localuser.goToChannel(threadId);
 	}
