@@ -7,10 +7,14 @@ await import("./localuser");
 const {makeInviteMenu} = await import("./guild");
 const {Settings} = await import("./settings");
 const {User} = await import("./user");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 const URL_ = "http://invites.test/api/v9/guilds/g1/invites";
+const initialLang = I18n.lang;
 
 afterEach(() => {
+	I18n.lang = initialLang;
 	vi.restoreAllMocks();
 });
 
@@ -46,7 +50,7 @@ async function openInvite(inv: object) {
 	const grid = areas.mock.calls[0][0] as HTMLElement;
 	await vi.waitFor(() => expect(grid.querySelector(".inviteCard")).not.toBeNull());
 	const card = grid.querySelector(".inviteCard") as HTMLElement;
-	return {open: () => card.onclick!(new PointerEvent("click")), widget, card};
+	return {open: () => card.onclick!(new PointerEvent("click")), widget, card, menu};
 }
 
 it("an invite in Discord's list shape (a channel object, no channel_id) names its channel", async () => {
@@ -68,4 +72,24 @@ it("an invite with an inviter opens its details, showing its creator (the contro
 	);
 	expect(open).not.toThrow();
 	expect(widget).toHaveBeenCalledTimes(1);
+});
+
+it("an invite's details format created_at and expires_at with I18n.locale", async () => {
+	vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-GB"]);
+	I18n.lang = "en";
+	const {open, menu} = await openInvite({
+		...invite("exp"),
+		expires_at: "2026-11-05T00:00:00Z",
+	});
+
+	open();
+	const details = menu.generateHTML();
+	const texts = [...details.querySelectorAll(".optionElement > span")].map((s) => s.textContent);
+
+	expect(texts).toContain(
+		I18n.invite.createdAt(new Date("2026-10-04T00:00:00Z").toLocaleDateString("en-GB")),
+	);
+	expect(texts).toContain(
+		I18n.invite.expires(new Date("2026-11-05T00:00:00Z").toLocaleDateString("en-GB")),
+	);
 });

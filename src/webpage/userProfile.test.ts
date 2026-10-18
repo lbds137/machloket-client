@@ -4,8 +4,15 @@ import {afterEach, expect, it, vi} from "vitest";
 // order (index.ts imports localuser first).
 const {Localuser} = await import("./localuser");
 const {Settings} = await import("./settings");
+const {User} = await import("./user");
+const {Member} = await import("./member");
+const {I18n} = await import("./i18n");
+await I18n.done;
+
+const initialLang = I18n.lang;
 
 afterEach(() => {
+	I18n.lang = initialLang;
 	vi.restoreAllMocks();
 });
 
@@ -85,4 +92,66 @@ it("a dark folder colour opens as a full colour in the folder's picker", async (
 
 	expect(color.mock.calls[0][2]).toEqual({initColor: "#0000ff"});
 	document.querySelectorAll("dialog, .PopUp").forEach((e) => e.remove());
+});
+
+it("a full profile formats account creation and server join dates with I18n.locale", async () => {
+	vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-GB"]);
+	I18n.lang = "en";
+	vi.spyOn(User.prototype, "highInfo").mockResolvedValue({
+		mutual_guilds: [],
+		connected_accounts: [],
+	} as never);
+	const localuser = Object.assign(Object.create(Localuser.prototype), {
+		info: {
+			api: "http://profile.test/api/v9",
+			cdn: "http://profile.test",
+			wellknown: "http://profile.test",
+		},
+		headers: {},
+		user: {id: "me"},
+		userMap: new Map(),
+		guilds: [],
+	});
+	const user = new User(
+		{
+			id: "1553128655016763450",
+			username: "alice",
+			discriminator: "0001",
+			avatar: null,
+			bot: false,
+			public_flags: 0,
+			badge_ids: [],
+			accent_color: 0,
+			bio: "",
+			premium_type: 0,
+			premium_since: "",
+			theme_colors: null,
+		},
+		localuser,
+		true,
+	);
+	const member = Object.assign(Object.create(Member.prototype), {
+		id: user.id,
+		user,
+		owner: {id: "g1", roles: [], properties: {name: "Wonderland"}, localuser},
+		roleIds: new Set<string>(),
+		joined_at: "2026-10-04T00:00:00Z",
+		subName: () => {},
+		hasPermission: () => false,
+	});
+
+	const profile = await user.fullProfile(member);
+	await vi.waitFor(() => expect(profile.querySelector(".settingsHTMLArea p")).not.toBeNull());
+	const joinedP = profile.querySelector(".settingsHTMLArea p")!;
+
+	expect(joinedP.parentElement?.childNodes[0]?.textContent).toBe(
+		I18n.profile.joined(new Date(user.getUnixTime()).toLocaleString("en-GB")),
+	);
+	expect(joinedP.textContent).toBe(
+		I18n.profile.joinedMember(
+			"Wonderland",
+			new Date("2026-10-04T00:00:00Z").toLocaleString("en-GB"),
+		),
+	);
+	profile.remove();
 });

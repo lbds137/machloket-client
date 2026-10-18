@@ -160,7 +160,7 @@ async function webhookMenu(
 
 		const createdAt = document.createElement("span");
 		createdAt.textContent = I18n.webhooks.createdAt(
-			new Intl.DateTimeFormat(I18n.lang).format(SnowFlake.stringToUnixTime(hook.id)),
+			new Intl.DateTimeFormat(I18n.locale).format(SnowFlake.stringToUnixTime(hook.id)),
 		);
 
 		const wtype = document.createElement("span");

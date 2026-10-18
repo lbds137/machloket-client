@@ -21,7 +21,10 @@ const hook = {
 	token: "t",
 };
 
+const initialLang = I18n.lang;
+
 afterEach(() => {
+	I18n.lang = initialLang;
 	vi.restoreAllMocks();
 	document.body.replaceChildren();
 });
@@ -150,4 +153,18 @@ it("a refused delete says why and keeps the webhook", async () => {
 		expect(document.body.textContent).toContain(I18n.requestFailed("Missing Permissions")),
 	);
 	expect(hide).not.toHaveBeenCalled();
+});
+
+it("a listed webhook formats its creation date with I18n.locale", async () => {
+	vi.spyOn(navigator, "languages", "get").mockReturnValue(["en-GB"]);
+	I18n.lang = "en";
+	captureRequests(LIST, () => Response.json([hook]));
+
+	openPane();
+	await vi.waitFor(() => expect(document.querySelector(".webhookArea")).not.toBeNull());
+
+	const stamp = Number((BigInt(hook.id) >> 22n) + 1420070400000n);
+	expect(document.querySelector(".webhookArea .flexttb > span")?.textContent).toBe(
+		I18n.webhooks.createdAt(new Intl.DateTimeFormat("en-GB").format(stamp)),
+	);
 });

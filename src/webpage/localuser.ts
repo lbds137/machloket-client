@@ -3885,7 +3885,7 @@ class Localuser {
 						if (line2) {
 							line2 += " • ";
 						}
-						const format = new Intl.RelativeTimeFormat(I18n.lang, {style: "short"});
+						const format = new Intl.RelativeTimeFormat(I18n.locale, {style: "short"});
 						const time = (Date.now() - +new Date(session.last_seen)) / 1000;
 						if (time < 60) {
 							line2 += format.format(-Math.floor(time), "seconds");

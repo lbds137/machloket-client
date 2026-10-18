@@ -93,11 +93,13 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 				opt.addText(I18n.invite.forChannel(channel.name));
 			}
 
-			opt.addText(I18n.invite.createdAt(new Date(invite.created_at).toLocaleDateString(I18n.lang)));
+			opt.addText(
+				I18n.invite.createdAt(new Date(invite.created_at).toLocaleDateString(I18n.locale)),
+			);
 
 			let expires = I18n.invite.never();
 			if (invite.expires_at) {
-				expires = new Date(invite.expires_at).toLocaleDateString(I18n.lang);
+				expires = new Date(invite.expires_at).toLocaleDateString(I18n.locale);
 			}
 			opt.addText(I18n.invite.expires(expires));
 

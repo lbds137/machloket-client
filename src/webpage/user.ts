@@ -1801,7 +1801,9 @@ class User extends SnowFlake {
 
 			const roles = document.createElement("div");
 			const joined = document.createElement("div");
-			joined.textContent = I18n.profile.joined(new Date(this.getUnixTime()).toLocaleString());
+			joined.textContent = I18n.profile.joined(
+				new Date(this.getUnixTime()).toLocaleString(I18n.locale),
+			);
 			infoDiv.append(roles, document.createElement("hr"), joined);
 
 			if (guild) {
@@ -1813,7 +1815,7 @@ class User extends SnowFlake {
 					const p = document.createElement("p");
 					p.textContent = I18n.profile.joinedMember(
 						member.guild.properties.name,
-						new Date(member.joined_at).toLocaleString(),
+						new Date(member.joined_at).toLocaleString(I18n.locale),
 					);
 					joined.append(p);
 
