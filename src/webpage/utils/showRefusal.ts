@@ -19,9 +19,14 @@ export function formErrors(errors: unknown): string[] {
 	return found;
 }
 
-/** Tells the user a request was refused, or never answered, with the server's reason when it
- * gave one: what an invalid form got wrong, else its message. */
+/** Tells the user a request was refused, or never answered (see refusalText). */
 export async function showRefusal(res: Response | undefined) {
+	new Dialog(await refusalText(res)).show();
+}
+
+/** The line saying a request was refused, or never answered, with the server's reason when it
+ * gave one: what an invalid form got wrong, else its message. */
+export async function refusalText(res: Response | undefined) {
 	const body = res
 		? ((await res.json().catch(() => null)) as {
 				code?: unknown;
@@ -37,5 +42,5 @@ export async function showRefusal(res: Response | undefined) {
 			: res
 				? "HTTP " + res.status
 				: "offline";
-	new Dialog(I18n.requestFailed(why)).show();
+	return I18n.requestFailed(why);
 }

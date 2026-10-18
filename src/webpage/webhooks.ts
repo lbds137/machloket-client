@@ -6,6 +6,7 @@ import {Dialog, Options} from "./settings.js";
 import {SnowFlake} from "./snowflake.js";
 import {User} from "./user.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 
 function getWebhookApiRoot(api: string) {
 	const trimmed = api.replace(/\/+$/, "");
@@ -60,50 +61,76 @@ async function webhookMenu(
 	const moveChannels = guild.channels.filter(
 		(_) => _.hasPermission("MANAGE_WEBHOOKS") && _.type !== 4,
 	);
+	function newWebhook() {
+		const nameBox = new Dialog(I18n.webhooks.EnterWebhookName());
+		const options = nameBox.float.options;
+		const defualts = I18n.webhooks.sillyDefaults().split("\n");
+		let channel = channelId || moveChannels[0].id;
+		let name = "";
+		options.addTextInput(
+			I18n.webhooks.name(),
+			(value) => {
+				name = value;
+			},
+			{
+				initText: defualts[Math.floor(Math.random() * defualts.length)],
+			},
+		);
+		if (!channelId) {
+			const select = options.addSelect(
+				I18n.webhooks.channel(),
+				() => {},
+				moveChannels.map((_) => _.name),
+				{
+					defaultIndex: 0,
+				},
+			);
+			select.watchForChange((i: number) => {
+				channel = moveChannels[i].id;
+			});
+		}
+		// One webhook per Submit, however often it's clicked while the first is on its way.
+		let sending = false;
+		options.addButtonInput("", I18n.submit(), async () => {
+			if (sending) return;
+			sending = true;
+			options.submit();
+			const res = await fetch(`${guild.info.api}/channels/${channel}/webhooks/`, {
+				method: "POST",
+				headers: guild.headers,
+				body: JSON.stringify({name}),
+			}).catch(() => undefined);
+			const hook = res?.ok
+				? ((await res
+						.clone()
+						.json()
+						.catch(() => null)) as webhookType | null)
+				: null;
+			sending = false;
+			if (typeof hook?.id !== "string") return showRefusal(res);
+			makeHook(hook);
+			nameBox.hide();
+		});
+		nameBox.show();
+	}
 	async function regenArea() {
 		webhooks.removeAll();
 
-		webhooks.addButtonInput("", I18n.webhooks.newWebHook(), () => {
-			const nameBox = new Dialog(I18n.webhooks.EnterWebhookName());
-			const options = nameBox.float.options;
-			const defualts = I18n.webhooks.sillyDefaults().split("\n");
-			let channel = channelId || moveChannels[0].id;
-			options.addTextInput(
-				I18n.webhooks.name(),
-				async (name) => {
-					const json = await (
-						await fetch(`${guild.info.api}/channels/${channel}/webhooks/`, {
-							method: "POST",
-							headers: guild.headers,
-							body: JSON.stringify({name}),
-						})
-					).json();
-					makeHook(json);
-				},
-				{
-					initText: defualts[Math.floor(Math.random() * defualts.length)],
-				},
-			);
-			if (!channelId) {
-				const select = options.addSelect(
-					I18n.webhooks.channel(),
-					() => {},
-					moveChannels.map((_) => _.name),
-					{
-						defaultIndex: 0,
-					},
-				);
-				select.watchForChange((i: number) => {
-					channel = moveChannels[i].id;
-				});
-			}
-			options.addButtonInput("", I18n.submit(), () => {
-				options.submit();
-				nameBox.hide();
-			});
-			nameBox.show();
-		});
-		const hooks = (await (await fetch(hookURL, {headers: guild.headers})).json()) as webhookType[];
+		// Without a channel to put one in there's no webhook to make.
+		if (channelId || moveChannels.length) {
+			webhooks.addButtonInput("", I18n.webhooks.newWebHook(), newWebhook);
+		}
+		const res = await fetch(hookURL, {headers: guild.headers}).catch(() => undefined);
+		const hooks = res?.ok
+			? ((await res
+					.clone()
+					.json()
+					.catch(() => null)) as unknown)
+			: null;
+		if (!Array.isArray(hooks)) {
+			webhooks.addText(await refusalText(res));
+			return;
+		}
 		for (const hook of hooks) {
 			makeHook(hook);
 		}
@@ -204,14 +231,14 @@ async function webhookMenu(
 				const opt = d.options;
 				opt.addTitle(I18n.webhooks.areYouSureDelete(hook.name));
 				const opt2 = opt.addOptions("", {ltr: true});
-				opt2.addButtonInput("", I18n.yes(), () => {
-					fetch(guild.info.api + "/webhooks/" + hook.id, {
+				opt2.addButtonInput("", I18n.yes(), async () => {
+					const res = await fetch(guild.info.api + "/webhooks/" + hook.id, {
 						method: "DELETE",
 						headers: guild.headers,
-					}).then(() => {
-						d.hide();
-						regenArea();
-					});
+					}).catch(() => undefined);
+					if (!res?.ok) return showRefusal(res);
+					d.hide();
+					regenArea();
 				});
 				opt2.addButtonInput("", I18n.no(), () => {
 					d.hide();
