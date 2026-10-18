@@ -661,8 +661,14 @@ class Localuser {
 				(wsCodesRetry.has(event.code) && this.errorBackoff === 0)
 			) {
 				this.errorBackoff++;
-				this.initwebsocket(true).then(() => {
+				// Without a session the retry identifies, and READY replaces every guild, so
+				// the app is built (again, if one existed), as the backoff path below does. On the
+				// first connect this is the only build: the startup chain waits on the dropped
+				// socket forever.
+				const identifies = !this.resume_gateway_url || !this.session_id;
+				this.initwebsocket(true).then(async () => {
 					this.loaduser();
+					if (identifies) await this.init();
 				});
 				return;
 			}
