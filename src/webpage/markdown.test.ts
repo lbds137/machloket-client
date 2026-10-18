@@ -262,6 +262,50 @@ describe("a line right after a code block", () => {
 	});
 });
 
+describe("a quote or heading right after a code block", () => {
+	it("draws no break before itself, since the block already ends its line", () => {
+		for (const typed of ["```a```\n> q", "```a```\n>>> q", "```a```\n# T", "```a```\n-# s"]) {
+			expect(new MarkDown(typed, undefined).makeHTML().querySelectorAll("br")).toHaveLength(0);
+			const box = document.createElement("div");
+			box.append(new MarkDown(typed, undefined, {keep: true}).makeHTML());
+			expect(MarkDown.gatherBoxText(box)).toBe(typed);
+		}
+	});
+	it("still breaks when text came between the block and the line", () => {
+		expect(new MarkDown("```a```x`\n> q", undefined).makeHTML().querySelectorAll("br")).toHaveLength(1);
+	});
+});
+
+describe("a line-start marker followed by a space", () => {
+	it("still marks its line", () => {
+		const draw = (typed: string) => new MarkDown(typed, undefined).makeHTML();
+		expect(draw("> foo").querySelector(".quote")?.textContent).toBe("foo");
+		expect(draw("# foo").querySelector("h1")?.textContent).toBe("foo");
+		expect(draw("### foo").querySelector("h3")?.textContent).toBe("foo");
+		expect(draw("-# foo").querySelector("small")?.textContent).toBe("foo");
+	});
+	it("previews apart from the line before it, and with no leading space", () => {
+		const preview = (typed: string) =>
+			new MarkDown(typed, undefined, {stdsize: true}).makeHTML().textContent;
+		expect(preview("intro\n> q")).toBe("intro q");
+		expect(preview("intro\n# T")).toBe("intro T");
+		expect(preview("intro\n-# s")).toBe("intro s");
+		expect(preview(">>> one")).toBe("one");
+	});
+});
+
+describe("a line-start marker followed by a newline or tab", () => {
+	it("stays as typed, in the message and from the composer", () => {
+		for (const typed of [">\nfoo", "#\nfoo", "-#\nfoo", "##\tfoo", ">\tfoo"]) {
+			const html = new MarkDown(typed, undefined).makeHTML();
+			expect(html.querySelector(".quote, h1, h2, h3, small")).toBeNull();
+			const box = document.createElement("div");
+			box.append(new MarkDown(typed, undefined, {keep: true}).makeHTML());
+			expect(MarkDown.gatherBoxText(box)).toBe(typed);
+		}
+	});
+});
+
 describe("blank lines after a code block", () => {
 	it("still show as a blank line", () => {
 		const html = new MarkDown("```a```\n\nnext", undefined).makeHTML();
@@ -315,6 +359,10 @@ describe("a >>> block quote", () => {
 	it("previews as one line", () => {
 		const html = new MarkDown(">>> one\ntwo", undefined, {stdsize: true}).makeHTML();
 		expect(html.textContent).toBe("one two");
+	});
+	it("previews apart from the line before it", () => {
+		const html = new MarkDown("intro\n>>> one", undefined, {stdsize: true}).makeHTML();
+		expect(html.textContent).toBe("intro one");
 	});
 });
 

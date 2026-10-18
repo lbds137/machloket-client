@@ -22,7 +22,6 @@ const MAX_EMOJI_TAIL = 300;
 const NUMBERS = new Set(["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]);
 const ANGLE_INVALID = new Set([">", "<"]);
 const ALLOWED_PROTOCOLS = new Set(["https:", "http:"]);
-const SPACE_RE = /^\s$/;
 const GRAPHEME_SEG = new Intl.Segmenter("en-US", {granularity: "grapheme"});
 // One emoji grapheme: a pictograph (with any skin tone, VS16 or ZWJ sequence after it), a flag
 // or a keycap. Digits, letters and punctuation aren't.
@@ -186,7 +185,8 @@ class MarkDown {
 			return nodes[nodes.length - 1];
 		}
 		/** Whether the newline at `at` comes right after a code block, which already ends its line. */
-		const endsLine = (at: number) => getCurLast() instanceof HTMLPreElement && txt[at - 1] === "`";
+		const endsLine = (at: number) =>
+			getCurLast() instanceof HTMLPreElement && !current.textContent && txt[at - 1] === "`";
 		for (let i = 0; i < txt.length; i++) {
 			if (txt[i] === "\n" || i === 0) {
 				let first = i === 0;
@@ -196,20 +196,22 @@ class MarkDown {
 				let element: HTMLElement = document.createElement("span");
 				let keepys = "";
 				let toEnd = false;
+				// Read before `i` moves past a line's marker.
+				const afterBlock = endsLine(i);
 
 				if (!keep && txt[i + 1] === "#") {
 					if (txt[i + 2] === "#") {
-						if (txt[i + 3] === "#" && txt[i + 4]?.match(SPACE_RE)) {
+						if (txt[i + 3] === "#" && txt[i + 4] === " ") {
 							element = document.createElement("h3");
 							keepys = "### ";
 							i += 5;
-						} else if (txt[i + 3]?.match(SPACE_RE)) {
+						} else if (txt[i + 3] === " ") {
 							element = document.createElement("h2");
 							element.classList.add("h2md");
 							keepys = "## ";
 							i += 4;
 						}
-					} else if (txt[i + 2]?.match(SPACE_RE)) {
+					} else if (txt[i + 2] === " ") {
 						element = document.createElement("h1");
 						keepys = "# ";
 						i += 3;
@@ -225,7 +227,7 @@ class MarkDown {
 					keepys = ">>> ";
 					i += 5;
 					toEnd = true;
-				} else if (txt[i + 1] === ">" && txt[i + 2]?.match(SPACE_RE)) {
+				} else if (txt[i + 1] === ">" && txt[i + 2] === " ") {
 					element = document.createElement("div");
 					const line = document.createElement("div");
 					line.classList.add("quoteline");
@@ -233,14 +235,19 @@ class MarkDown {
 					element.classList.add("quote");
 					keepys = "> ";
 					i += 3;
-				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3]?.match(SPACE_RE)) {
+				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3] === " ") {
 					element = document.createElement("small");
 					keepys = "-# ";
 					i += 4;
 				}
 				if (keepys) {
+					if (stdsize && !first && !current.textContent?.endsWith(" ")) {
+						// A one-line preview keeps the words of separate lines apart.
+						current.textContent += " ";
+					}
 					appendcurrent();
-					if (!first && !stdsize && !endsLine(i)) {
+					// The composer keeps the break after a block: it is the newline the text sends.
+					if (!first && !stdsize && (keep || !afterBlock)) {
 						span.appendChild(document.createElement("br"));
 					}
 					const start = i;
