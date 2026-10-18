@@ -795,7 +795,7 @@ class MarkDown {
 										};
 									}
 								} else {
-									mention.textContent = "#unknown";
+									mention.textContent = I18n.channelping.unknown();
 								}
 								break;
 						}

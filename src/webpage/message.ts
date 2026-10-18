@@ -1279,7 +1279,7 @@ class Message extends SnowFlake {
 					return;
 				}
 				if (message.author.relationshipType === 2) {
-					username.textContent = "Blocked user";
+					username.textContent = I18n.friends.bu();
 					return;
 				}
 				// A forward previews from its snapshot: the message's own content fields are empty.

@@ -294,6 +294,9 @@
 	"emojiSelect": "Emoji:",
 	"errorReconnect": "Unable to connect to the server, retrying in **$1** seconds…",
 	"favoriteGifs": "Favorited GIFs",
+	"file": {
+		"size": "Size: $1"
+	},
 	"folder": {
 		"color": "Folder color:",
 		"create": "Create new folder",
@@ -505,6 +508,7 @@
 		"loginOrCreateAccount": "Login or create an account ⇌",
 		"longInvitedBy": "$1 invited you to join $2",
 		"maxUses": "Max uses: $1",
+		"members": "Members: $1",
 		"never": "Never",
 		"noAccount": "Create an account to accept the invite",
 		"notFound": "Invite could not be found",
@@ -1075,6 +1079,9 @@
 	"userping": {
 		"resolving": "resolving user",
 		"unknown": "@unknown-user"
+	},
+	"channelping": {
+		"unknown": "#unknown"
 	},
 	"vc": {
 		"joinForStream": "Join the voice channel to watch",

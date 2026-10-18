@@ -417,7 +417,9 @@ class Embed {
 				guildinfo.append(name);
 
 				const members = document.createElement("span");
-				members.innerText = "#" + json.channel.name + " • Members: " + guild.member_count;
+				const count = guild.member_count?.toLocaleString(I18n.locale);
+				members.innerText =
+					"#" + json.channel.name + (count !== undefined ? " • " + I18n.invite.members(count) : "");
 				guildinfo.append(members);
 				members.classList.add("subtext");
 				iconrow.append(guildinfo);

@@ -300,18 +300,23 @@ class File {
 		const sizetr = document.createElement("tr");
 		const size = document.createElement("td");
 		sizetr.append(size);
-		size.textContent = "Size:" + File.filesizehuman(this.size);
+		size.textContent = I18n.file.size(File.filesizehuman(this.size));
 		size.classList.add("filesize");
 		div.appendChild(sizetr);
 		return div;
 	}
 	static filesizehuman(fsize: number) {
-		const i = fsize == 0 ? 0 : Math.floor(Math.log(fsize) / Math.log(1024));
-		return (
-			Number((fsize / Math.pow(1024, i)).toFixed(2)) * 1 +
-			" " +
-			["Bytes", "Kilobytes", "Megabytes", "Gigabytes", "Terabytes"][i] // I don't think this changes across languages, correct me if I'm wrong
-		);
+		// A missing or broken size shows as 0 rather than throwing out of the message's render.
+		if (!(fsize >= 0)) fsize = 0;
+		const i = fsize < 1 ? 0 : Math.min(4, Math.floor(Math.log(fsize) / Math.log(1024)));
+		const unit = ["byte", "kilobyte", "megabyte", "gigabyte", "terabyte"][i];
+		const unitDisplay = i === 0 ? "long" : "short";
+		return new Intl.NumberFormat(I18n.locale, {
+			style: "unit",
+			unit,
+			unitDisplay,
+			maximumFractionDigits: 2,
+		}).format(fsize / Math.pow(1024, i));
 	}
 }
 
