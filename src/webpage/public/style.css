@@ -7318,6 +7318,25 @@ fieldset input[type="radio"] {
 			width: 0;
 		}
 	}
+
+	/* Discord's app shows who's typing just above the text box, over the last messages. */
+	#typediv {
+		position: relative;
+	}
+
+	#typing {
+		bottom: 100%;
+		left: 0;
+		right: 0;
+		margin-left: 0;
+		padding: 2px 12px;
+		background: var(--primary-bg);
+	}
+
+	/* Above the reply bar too, which sits on the text box's top edge. */
+	#replybox:not(.hideReplyBox) ~ #typediv #typing {
+		bottom: calc(100% + 32px);
+	}
 }
 
 #mobileSend {
