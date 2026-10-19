@@ -79,7 +79,7 @@ import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
 import {externalUrl} from "./utils/netUtils.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
-import {showCommandStatus} from "./interactions/commandStatus.js";
+import {commandFailureText, showCommandStatus} from "./interactions/commandStatus.js";
 import {previewURL} from "./utils/previewURL.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
@@ -774,14 +774,22 @@ class Localuser {
 	commandChannels = new Map<string, Channel>();
 	/** What each sent interaction ran ("walk browse"), for the "used /command" line. */
 	commandNonceLabels = new Map<string, string>();
+	/** Which application's command each nonce sent, to author a local failure message as its bot. */
+	commandApplications = new Map<string, string>();
 	/** The same, keyed by interaction id once the invoker echo names it — the reply message
 	 * knows the interaction id, not the nonce. */
 	interactionIdLabels = new Map<string, string>();
-	/** A slash command's nonce: it has no message of its own. */
-	registerCommandNonce(nonce: string, channel?: Channel, label?: string) {
+	/** A slash command's nonce: it has no message of its own while in flight. */
+	registerCommandNonce(
+		nonce: string,
+		channel?: Channel,
+		label?: string,
+		applicationId?: string,
+	) {
 		this.interactionNonces.add(nonce);
 		if (channel) this.commandChannels.set(nonce, channel);
 		if (label) this.commandNonceLabels.set(nonce, label);
+		if (applicationId) this.commandApplications.set(nonce, applicationId);
 		this.dropOldNonces();
 	}
 	/** A command that never reached the bot: no event will come for its nonce. */
@@ -789,6 +797,7 @@ class Localuser {
 		this.interactionNonces.delete(nonce);
 		this.commandChannels.delete(nonce);
 		this.commandNonceLabels.delete(nonce);
+		this.commandApplications.delete(nonce);
 	}
 	/**
 	 * Answered interactions are never told apart from pending ones (the order of a bot's
@@ -882,20 +891,42 @@ class Localuser {
 						//Punt the events off to the message class
 						m.interactionEvents(temp);
 					} else if (this.commandChannels.has(temp.d.nonce)) {
-						// A slash command's progress, shown while its channel is on screen.
 						const channel = this.commandChannels.get(temp.d.nonce);
-						showCommandStatus(temp, !!this.channelfocus && channel === this.channelfocus);
-						// The echo carries the interaction id: the reply message's "used
-						// /command" line can find this run's label.
-						const label = this.commandNonceLabels.get(temp.d.nonce);
-						if (label && temp.d.id) {
-							this.interactionIdLabels.set(temp.d.id, label);
+						const applicationId = this.commandApplications.get(temp.d.nonce);
+						if (temp.t === "INTERACTION_FAILURE" && applicationId && channel) {
+							const label =
+								this.commandNonceLabels.get(temp.d.nonce) ??
+								this.interactionIdLabels.get(temp.d.id);
 							this.commandNonceLabels.delete(temp.d.nonce);
-							// Replies render near their command; a long session keeps only the
-							// most recent labels (a Map iterates oldest first).
-							if (this.interactionIdLabels.size > 200) {
-								const oldest = this.interactionIdLabels.keys().next().value;
-								if (oldest !== undefined) this.interactionIdLabels.delete(oldest);
+							this.commandApplications.delete(temp.d.nonce);
+							// As on Discord, the failure stays in the channel as a message from the bot; the
+							// composer line says it only if that message can't be built (the bot unresolvable).
+							showCommandStatus(temp, false);
+							channel
+								.addCommandFailure({
+									applicationId,
+									label,
+									interactionId: temp.d.id,
+									text: commandFailureText(temp),
+								})
+								.catch(() =>
+									showCommandStatus(temp, !!this.channelfocus && channel === this.channelfocus),
+								);
+						} else {
+							// A slash command's progress, shown while its channel is on screen.
+							showCommandStatus(temp, !!this.channelfocus && channel === this.channelfocus);
+							// The echo carries the interaction id: the reply message's "used
+							// /command" line can find this run's label.
+							const label = this.commandNonceLabels.get(temp.d.nonce);
+							if (label && temp.d.id) {
+								this.interactionIdLabels.set(temp.d.id, label);
+								this.commandNonceLabels.delete(temp.d.nonce);
+								// Replies render near their command; a long session keeps only the
+								// most recent labels (a Map iterates oldest first).
+								if (this.interactionIdLabels.size > 200) {
+									const oldest = this.interactionIdLabels.keys().next().value;
+									if (oldest !== undefined) this.interactionIdLabels.delete(oldest);
+								}
 							}
 						}
 					}

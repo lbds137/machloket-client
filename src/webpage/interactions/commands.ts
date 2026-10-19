@@ -592,6 +592,7 @@ export class Command extends SnowFlake {
 				channel,
 				this.name +
 					(branchLabel?.state ? " " + branchLabel.state.replace("/", " ") : ""),
+				this.applicationId,
 			);
 			const opts = states.filter((_) => typeof _ !== "string");
 			// A subcommand/group command nests: the picked branch carries the leaf entries.
@@ -734,7 +735,7 @@ export class Command extends SnowFlake {
 	}
 	private async sendContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
-		this.localuser.registerCommandNonce(nonce, channel, this.name);
+		this.localuser.registerCommandNonce(nonce, channel, this.name, this.applicationId);
 		try {
 			const res = await fetchRetryOnce(this.info.api + "/interactions", {
 				method: "POST",

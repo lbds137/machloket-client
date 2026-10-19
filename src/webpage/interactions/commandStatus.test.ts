@@ -1,4 +1,4 @@
-import {beforeEach, describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -26,6 +26,7 @@ function session(focused: object) {
 		interactionNonces: new Set(),
 		commandChannels: new Map(),
 		commandNonceLabels: new Map(),
+		commandApplications: new Map(),
 		interactionIdLabels: new Map(),
 		channelids: new Map(),
 		guilds: [],
@@ -144,4 +145,52 @@ describe("the 'used /command' label maps stay bounded", () => {
 		expect(user.interactionIdLabels.size).toBeLessThanOrEqual(200);
 		expect(user.interactionIdLabels.get("i299")).toBe("cmd 299");
 	});
+});
+
+describe("a slash command the bot never answered", () => {
+	/** A channel that records the local failure message it's asked to show. */
+	const channelWithFailures = () => ({id: "200", addCommandFailure: vi.fn(async () => {})});
+
+	it("leaves a failure message in its channel, naming the command, instead of a composer line", async () => {
+		const channel = channelWithFailures();
+		const user = session(channel);
+		user.registerCommandNonce("77", channel as never, "random", "300");
+		await user.handleEvent(event("INTERACTION_CREATE", "77") as never);
+
+		await user.handleEvent(event("INTERACTION_FAILURE", "77", {reason_code: 2}) as never);
+
+		expect(channel.addCommandFailure).toHaveBeenCalledWith({
+			applicationId: "300",
+			label: "random",
+			interactionId: "9",
+			text: I18n.interactions.noResponse(),
+		});
+		expect(status()?.textContent ?? "").toBe("");
+	});
+
+	it("still leaves it when the failure comes without the echo, or off screen", async () => {
+		const channel = channelWithFailures();
+		const user = session({id: "other"});
+		user.registerCommandNonce("77", channel as never, "random", "300");
+
+		await user.handleEvent(event("INTERACTION_FAILURE", "77", {reason_code: 1}) as never);
+
+		expect(channel.addCommandFailure).toHaveBeenCalledWith({
+			applicationId: "300",
+			label: "random",
+			interactionId: "9",
+			text: I18n.interactions.failed(),
+		});
+	});
+});
+
+it("falls back to the composer line when the failure message can't be built", async () => {
+	const channel = {id: "200", addCommandFailure: vi.fn().mockRejectedValue(new Error("offline"))};
+	const user = session(channel);
+	user.registerCommandNonce("77", channel as never, "random", "300");
+
+	await user.handleEvent(event("INTERACTION_FAILURE", "77", {reason_code: 2}) as never);
+	await new Promise((resolve) => setTimeout(resolve));
+
+	expect(status()?.textContent).toBe(I18n.interactions.noResponse());
 });

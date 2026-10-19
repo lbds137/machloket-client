@@ -3870,6 +3870,72 @@ class Channel extends SnowFlake {
 		}
 	}
 
+	/**
+	 * Leaves a local ephemeral message in this channel when a slash command fails: authored by
+	 * the command's bot, naming the command, with the failure text in red and the ephemeral
+	 * dismiss footer.
+	 */
+	async addCommandFailure({
+		applicationId,
+		label,
+		interactionId,
+		text,
+	}: {
+		applicationId: string;
+		label?: string;
+		interactionId: string;
+		text: string;
+	}) {
+		// A bot's user id is its application's id.
+		const bot = await User.resolve(applicationId, this.localuser);
+		const m = new Message(
+			{
+				author: bot.tojson(),
+				channel_id: this.id,
+				guild_id: this.guild.id,
+				id: "fake" + Math.random(),
+				content: "",
+				timestamp: new Date().toISOString(),
+				edited_timestamp: null,
+				mentions: [],
+				mention_roles: [],
+				mention_everyone: false,
+				attachments: [],
+				tts: false,
+				embeds: [],
+				reactions: [],
+				nonce: "",
+				flags: 1 << 6,
+				type: 20,
+				pinned: false,
+				interaction: {
+					id: interactionId,
+					type: 2,
+					name: label ?? "",
+					user: this.localuser.user.tojson(),
+				},
+			},
+			this,
+		);
+		m.commandFailure = text;
+		if (!this.lastmessageid) {
+			this.topid = m.id;
+		}
+		if (this.lastmessageid) {
+			this.idToNext.set(this.lastmessageid, m.id);
+			this.idToPrev.set(m.id, this.lastmessageid);
+		}
+		this.lastmessage = m;
+		this.setLastMessageId(m.id);
+		if (this === this.localuser.channelfocus) {
+			if (!this.infinitefocus) {
+				await this.tryfocusinfinate();
+			}
+			await this.infinite.addedBottom();
+		}
+		return m;
+	}
+
 	async makeFakeMessage(
 		content: string,
 		files: filejson[] = [],

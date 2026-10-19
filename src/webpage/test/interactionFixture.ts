@@ -22,6 +22,7 @@ export function messageIn(guildId: string) {
 		interactionNonces: new Set(),
 		commandChannels: new Map(),
 		commandNonceLabels: new Map(),
+		commandApplications: new Map(),
 		interactionIdLabels: new Map(),
 		guilds: [],
 		guildids: new Map([[guildId, {channels: []}]]),

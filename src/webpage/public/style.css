@@ -8100,6 +8100,9 @@ textarea.interactionModalInput {
 .commandStatus:empty {
 	display: none;
 }
+.commandFailure {
+	color: var(--red);
+}
 /* A deferred interaction awaiting its content (the bot's "thinking" state). */
 .messagediv.thinking {
 	opacity: 0.65;

@@ -1,13 +1,21 @@
 import {I18n} from "../i18n.js";
-import type {interactionEvents} from "../jsontypes.js";
+import type {interactionEvents, interactionFailure} from "../jsontypes.js";
 
-// A slash command has no message of its own to show its progress on (buttons and selects use
-// theirs, see Message.interactionEvents), so it shows above the composer: sending, then gone
-// when the bot answers, or why it didn't. The server sends the invoker INTERACTION_FAILURE
-// with reason TIMEOUT when the bot doesn't answer within 3 s.
+// A slash command has no message of its own while in flight (buttons and selects use theirs,
+// see Message.interactionEvents), so sending shows above the composer and clears when the bot
+// answers. A slash command that fails leaves a local ephemeral message in its channel
+// (Channel.addCommandFailure); a modal submit with no message of its own still fails here. The
+// server sends the invoker INTERACTION_FAILURE with reason TIMEOUT when the bot doesn't answer
+// within 3 s.
 
 const TIMEOUT = 2;
 const clearTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
+
+export function commandFailureText(event: interactionFailure): string {
+	return event.d.reason_code === TIMEOUT
+		? I18n.interactions.noResponse()
+		: I18n.interactions.failed();
+}
 
 /**
  * `onScreen`: the command's channel is the one showing. The composer is shared by every
@@ -38,10 +46,7 @@ export function showCommandStatus(event: interactionEvents, onScreen: boolean) {
 			line.textContent = "";
 			break;
 		case "INTERACTION_FAILURE": {
-			line.textContent =
-				event.d.reason_code === TIMEOUT
-					? I18n.interactions.noResponse()
-					: I18n.interactions.failed();
+			line.textContent = commandFailureText(event);
 			line.classList.add("failed");
 			const shown = line;
 			clearTimers.set(

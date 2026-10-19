@@ -784,6 +784,8 @@ class Message extends SnowFlake {
 		return this.owner.info;
 	}
 	interactionDiv?: HTMLDivElement;
+	/** Set on a local-only message left when a slash command fails (e.g. "The application did not respond"). */
+	commandFailure?: string;
 	/** Set from the wire by giveData when a reply's interaction metadata rides the message. */
 	interaction_metadata?: messagejson["interaction_metadata"];
 	/** The command name this message's interaction ran, for the "used /command" line: the
@@ -1468,6 +1470,11 @@ class Message extends SnowFlake {
 				box.oncontextmenu = (e) => {
 					e.stopImmediatePropagation();
 				};
+			} else if (this.commandFailure) {
+				const failed = document.createElement("div");
+				failed.classList.add("commandFailure");
+				failed.textContent = this.commandFailure;
+				messagedwrap.append(failed);
 			} else {
 				this.content.onUpdate = () => {};
 				const messaged = this.content.makeHTML();
