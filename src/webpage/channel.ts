@@ -1449,6 +1449,7 @@ class Channel extends SnowFlake {
 			const that = Channel.dragged[0];
 			if (!that) return;
 			event.preventDefault();
+			const restore = this.guild.snapshotLayout();
 			const height = div.getBoundingClientRect().height;
 			const before = event.offsetY / height < 0.5;
 			if (container && that.type !== 4 && !before) {
@@ -1522,7 +1523,7 @@ class Channel extends SnowFlake {
 					}
 				}
 			}
-			this.guild.calculateReorder(that.id);
+			void this.guild.calculateReorder(that.id, restore);
 		});
 
 		return div;

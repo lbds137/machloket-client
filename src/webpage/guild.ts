@@ -110,17 +110,16 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 			}
 
 			opt.addButtonInput("", I18n.delete(), async () => {
-				if (
-					(
-						await fetch(guild.info.api + "/invites/" + invite.code, {
-							method: "DELETE",
-							headers: guild.headers,
-						})
-					).ok
-				) {
+				const res = await fetch(guild.info.api + "/invites/" + invite.code, {
+					method: "DELETE",
+					headers: guild.headers,
+				}).catch(() => undefined);
+				if (res?.ok) {
 					invsArr = invsArr.filter((_) => _ !== invite);
 					inviteMenu.returnFromSub();
 					renderInvites(allShown);
+				} else {
+					await showRefusal(res);
 				}
 			});
 		};
@@ -607,6 +606,26 @@ class Guild extends SnowFlake {
 		dio.show();
 	}
 	welcomeScreen?: welcomeScreen;
+	/** Sends `body` to the welcome-screen endpoint, says why when refused, true when saved. */
+	private async saveWelcomeScreen(body: unknown): Promise<boolean> {
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+			method: "PATCH",
+			headers: this.headers,
+			body: JSON.stringify(body),
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
+	}
+	/** Saves the welcome screen as edited. A refused save puts its description back to `saved`, so
+	 * a later channel add or removal doesn't send it; returns the description the server holds. */
+	private async saveWelcomeEdits(screen: welcomeScreen, saved: string) {
+		if (await this.saveWelcomeScreen(screen)) return screen.description;
+		screen.description = saved;
+		return saved;
+	}
 	generateSettings() {
 		const settings = new Settings(I18n.guild.settingsFor(this.properties.name));
 		const sectionLabel = (path: string, fallback: string) => {
@@ -975,10 +994,16 @@ class Guild extends SnowFlake {
 									method: "PATCH",
 									headers: this.headers,
 									body: JSON.stringify({name: newName}),
-								}).then((res) => {
-									if (res.ok) emjData.name = newName;
-									else input.value = emjData.name;
-								});
+								})
+									.catch(() => undefined)
+									.then(async (res) => {
+										if (res?.ok) {
+											emjData.name = newName;
+										} else {
+											input.value = emjData.name;
+											await showRefusal(res);
+										}
+									});
 							}
 							input.replaceWith(nameSpan);
 						};
@@ -1004,12 +1029,15 @@ class Guild extends SnowFlake {
 						const diaolog = new Dialog("");
 						diaolog.options.addTitle(I18n.emoji.confirmDel());
 						const options = diaolog.options.addOptions("", {ltr: true});
-						options.addButtonInput("", I18n.yes(), () => {
-							fetch(`${this.info.api}/guilds/${this.id}/emojis/${emjData.id}`, {
+						options.addButtonInput("", I18n.yes(), async () => {
+							diaolog.hide();
+							const res = await fetch(`${this.info.api}/guilds/${this.id}/emojis/${emjData.id}`, {
 								method: "DELETE",
 								headers: this.headers,
-							});
-							diaolog.hide();
+							}).catch(() => undefined);
+							if (!res?.ok) {
+								await showRefusal(res);
+							}
 						});
 						options.addButtonInput("", I18n.no(), () => {
 							diaolog.hide();
@@ -1112,12 +1140,15 @@ class Guild extends SnowFlake {
 							const diaolog = new Dialog("");
 							diaolog.options.addTitle(I18n.sticker.confirmDel());
 							const options = diaolog.options.addOptions("", {ltr: true});
-							options.addButtonInput("", I18n.yes(), () => {
-								fetch(`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`, {
+							options.addButtonInput("", I18n.yes(), async () => {
+								diaolog.hide();
+								const res = await fetch(`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`, {
 									method: "DELETE",
 									headers: this.headers,
-								});
-								diaolog.hide();
+								}).catch(() => undefined);
+								if (!res?.ok) {
+									await showRefusal(res);
+								}
 							});
 							options.addButtonInput("", I18n.no(), () => {
 								diaolog.hide();
@@ -1154,40 +1185,26 @@ class Guild extends SnowFlake {
 				onboard.removeAll();
 				if (this.welcomeScreen?.enabled) {
 					const welcomeScreen = this.welcomeScreen;
-					onboard.afterSubmit = () => {
-						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-							method: "PATCH",
-							headers: this.headers,
-							body: JSON.stringify(welcomeScreen),
-						});
+					let savedDescription = welcomeScreen.description;
+					onboard.afterSubmit = async () => {
+						savedDescription = await this.saveWelcomeEdits(welcomeScreen, savedDescription);
 					};
-					onboard.addButtonInput("", I18n.onboarding.disable(), () => {
-						fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-							method: "PATCH",
-							headers: this.headers,
-							body: JSON.stringify({enabled: false}),
-						}).then((r) => {
+					onboard.addButtonInput("", I18n.onboarding.disable(), async () => {
+						if (await this.saveWelcomeScreen({enabled: false})) {
 							this.welcomeScreen = undefined;
-							if (r.ok) {
-								genOnboard();
-							}
-						});
+							genOnboard();
+						}
 					});
 					onboard.addButtonInput("", I18n.onboarding.addChannel(), () => {
 						const d = new Dialog(I18n.onboarding.addChannel());
-						const form = d.options.addForm("", (o) => {
+						const form = d.options.addForm("", async (o) => {
 							const obj = o as {description: string; channel_id: string};
-							welcomeScreen.welcome_channels.push(obj);
-							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify(welcomeScreen),
-							}).then((r) => {
-								if (r.ok) {
-									d.hide();
-									welcome(obj);
-								}
-							});
+							const welcome_channels = [...welcomeScreen.welcome_channels, obj];
+							if (await this.saveWelcomeScreen({...welcomeScreen, welcome_channels})) {
+								welcomeScreen.welcome_channels = welcome_channels;
+								d.hide();
+								welcome(obj);
+							}
 						});
 						const channels = this.channels.filter((channel) => {
 							if (channel.isThread()) return false;
@@ -1228,43 +1245,32 @@ class Guild extends SnowFlake {
 							},
 							{initText: description},
 						);
-						opt.addButtonInput("", I18n.onboarding.deleteChannel(), () => {
-							welcomeScreen.welcome_channels = welcomeScreen.welcome_channels.filter(
+						opt.addButtonInput("", I18n.onboarding.deleteChannel(), async () => {
+							const welcome_channels = welcomeScreen.welcome_channels.filter(
 								(entry) => entry.channel_id !== channel_id,
 							);
-							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify(welcomeScreen),
-							}).then((r) => {
-								if (r.ok) {
-									opt.removeAll();
-								}
-							});
+							if (await this.saveWelcomeScreen({...welcomeScreen, welcome_channels})) {
+								welcomeScreen.welcome_channels = welcome_channels;
+								opt.removeAll();
+							}
 						});
 					};
 					welcomeScreen.welcome_channels.forEach(welcome);
 				} else {
 					onboard.addButtonInput("", I18n.onboarding.enable(), () => {
 						const d = new Dialog("");
-						const form = d.options.addForm("", (o) => {
+						const form = d.options.addForm("", async (o) => {
 							const obj = o as {description: string};
 							const welcome_screen = {
 								description: obj.description,
 								enabled: true,
 								welcome_channels: [],
 							} satisfies extendedProperties["welcome_screen"];
-							fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-								method: "PATCH",
-								headers: this.headers,
-								body: JSON.stringify(welcome_screen),
-							}).then((r) => {
+							if (await this.saveWelcomeScreen(welcome_screen)) {
 								this.welcomeScreen = welcome_screen;
-								if (r.ok) {
-									d.hide();
-									genOnboard();
-								}
-							});
+								d.hide();
+								genOnboard();
+							}
 						});
 						form.addTextInput(I18n.onboarding.desc(), "description");
 						d.show();
@@ -1519,17 +1525,23 @@ class Guild extends SnowFlake {
 	sortRoles() {
 		this.roles.sort((a, b) => b.position - a.position);
 	}
-	async recalcRoles() {
+	async recalcRoles(previous?: Role[]): Promise<boolean> {
 		let position = this.roles.length;
 		const map = this.roles.map((_) => {
 			position--;
 			return {id: _.id, position};
 		});
-		await fetch(this.info.api + "/guilds/" + this.id + "/roles", {
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/roles", {
 			method: "PATCH",
 			body: JSON.stringify(map),
 			headers: this.headers,
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			if (previous) this.roles = previous;
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
 	/** After roles change (all members', or one `member`'s): re-point drawn names at each member's
 	 * current top coloured role, and regroup the member list by hoisted role if it's on screen. */
@@ -1766,21 +1778,23 @@ class Guild extends SnowFlake {
 		const full = new Dialog("");
 		full.options.addTitle(I18n.guild.confirmLeave());
 		const options = full.options.addOptions("", {ltr: true});
-		options.addButtonInput("", I18n.guild.yesLeave(), () => {
-			this.leave().then((_) => {
-				full.hide();
-			});
+		options.addButtonInput("", I18n.guild.yesLeave(), async () => {
+			const res = await this.leave();
+			full.hide();
+			if (!res?.ok) {
+				await showRefusal(res);
+			}
 		});
 		options.addButtonInput("", I18n.guild.noLeave(), () => {
 			full.hide();
 		});
 		full.show();
 	}
-	async leave() {
+	async leave(): Promise<Response | undefined> {
 		return fetch(this.info.api + "/users/@me/guilds/" + this.id, {
 			method: "DELETE",
 			headers: this.headers,
-		});
+		}).catch(() => undefined);
 	}
 	printServers() {
 		let build = "";
@@ -1793,7 +1807,46 @@ class Guild extends SnowFlake {
 		}
 		console.log(build);
 	}
-	calculateReorder(movedId?: string) {
+	/** Counts layout snapshots: only the newest drag's refusal may put the layout back. */
+	private layoutSeq?: number;
+	/** Records the channel list's arrangement; the returned function puts it back, unless a newer
+	 * snapshot was taken since. Channels created since stay (at the end of their list), channels
+	 * deleted since stay gone. */
+	snapshotLayout(): () => void {
+		const seq = (this.layoutSeq = (this.layoutSeq ?? 0) + 1);
+		const headchannels = [...this.headchannels];
+		const perChannel = this.channels.map((channel) => ({
+			channel,
+			parent: channel.parent,
+			parent_id: channel.parent_id,
+			move_id: channel.move_id,
+			position: channel.position,
+			children: [...channel.children],
+		}));
+		/** `saved`, less what's gone, then what `now` holds that `saved` didn't. */
+		const merge = (saved: Channel[], now: Channel[], live: Set<Channel>, known: Set<Channel>) => [
+			...saved.filter((c) => live.has(c)),
+			...now.filter((c) => !known.has(c)),
+		];
+		return () => {
+			if (seq !== this.layoutSeq) return;
+			const live = new Set(this.channels);
+			const known = new Set(perChannel.map(({channel}) => channel));
+			this.headchannels = merge(headchannels, this.headchannels, live, known);
+			for (const entry of perChannel) {
+				if (!live.has(entry.channel)) continue;
+				entry.channel.parent = entry.parent;
+				entry.channel.parent_id = entry.parent_id;
+				entry.channel.move_id = entry.move_id;
+				entry.channel.position = entry.position;
+				entry.channel.children = merge(entry.children, entry.channel.children, live, known);
+			}
+			if (this.localuser.lookingguild === this) {
+				this.localuser.loadGuild(this.id, true);
+			}
+		};
+	}
+	async calculateReorder(movedId?: string, restore?: () => void) {
 		let position = 0;
 		type buildtype = {
 			id: string;
@@ -1857,11 +1910,15 @@ class Guild extends SnowFlake {
 				});
 			}
 		} else {
-			fetch(this.info.api + "/guilds/" + this.id + "/channels", {
+			const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify(build),
-			});
+			}).catch(() => undefined);
+			if (!res?.ok && restore) {
+				restore();
+				await showRefusal(res);
+			}
 		}
 	}
 	get localuser() {

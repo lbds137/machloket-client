@@ -649,6 +649,7 @@ class RoleList extends Buttons {
 		button.addEventListener("drop", (event) => {
 			const role2 = this.buttonRoleMap.get(this.dragged as HTMLButtonElement);
 			if (!role2 || this.dragged === button) return;
+			const previous = [...this.guild.roles];
 			const index2 = this.guild.roles.indexOf(role2);
 			this.guild.roles.splice(index2, 1);
 			const index = this.guild.roles.indexOf(role);
@@ -658,7 +659,7 @@ class RoleList extends Buttons {
 				this.guild.roles.splice(index + 1, 0, role2);
 			}
 
-			this.guild.recalcRoles();
+			void this.guild.recalcRoles(previous);
 			console.log(role);
 		});
 	}
