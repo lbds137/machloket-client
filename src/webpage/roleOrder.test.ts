@@ -18,6 +18,8 @@ it("a role another admin moved takes its new place in the guild's order", () => 
 	const guild = Object.assign(Object.create(Guild.prototype), {
 		id: "g1",
 		roles: [mods, helpers],
+		members: new Set(),
+		owner: {},
 		roleUpdate: () => {},
 		roleids: new Map([
 			["mods", mods],

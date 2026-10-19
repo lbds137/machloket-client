@@ -1531,12 +1531,36 @@ class Guild extends SnowFlake {
 			headers: this.headers,
 		});
 	}
+	/** After roles change (all members', or one `member`'s): re-point drawn names at each member's
+	 * current top coloured role, and regroup the member list by hoisted role if it's on screen. */
+	redrawForRoles(member?: Member) {
+		const names = `span[data-role-colour-guild="${this.id}"]`;
+		if (member) {
+			for (const span of document.querySelectorAll<HTMLElement>(
+				`${names}[data-role-colour-member="${member.id}"]`,
+			)) {
+				member.bind(span);
+			}
+		} else {
+			const byId = new Map<string, Member>();
+			for (const thing of this.members) {
+				byId.set(thing.id, thing);
+			}
+			for (const span of document.querySelectorAll<HTMLElement>(names)) {
+				byId.get(span.dataset.roleColourMember ?? "")?.bind(span);
+			}
+		}
+		if (this.localuser.lookingguild === this) {
+			this.localuser.memberListQue();
+		}
+	}
 	newRole(rolej: rolesjson) {
 		const role = new Role(rolej, this);
 		this.roles.push(role);
 		this.roleids.set(role.id, role);
 		this.sortRoles();
 		this.roleUpdate(role, 1);
+		this.redrawForRoles();
 	}
 	updateRole(rolej: rolesjson) {
 		const role = this.roleids.get(rolej.id) as Role;
@@ -1546,6 +1570,7 @@ class Guild extends SnowFlake {
 		this.sortRoles();
 		this.roleUpdate(role, 0);
 		this.recalcPrivate();
+		this.redrawForRoles();
 	}
 	memberupdate(json: memberjson) {
 		// Discord's (and the server's role and nick routes') payload names the member by its user.
@@ -1560,6 +1585,7 @@ class Guild extends SnowFlake {
 
 		if (!member) return;
 		member.update(json);
+		this.redrawForRoles(member);
 		// Your own roles changed: redraw the open guild for them; another guild redraws when opened.
 		if (member === this.member && this.localuser.lookingguild === this) {
 			this.localuser.loadGuild(this.id, true);
@@ -1571,6 +1597,7 @@ class Guild extends SnowFlake {
 		this.roleids.delete(id);
 		this.roles.splice(this.roles.indexOf(role), 1);
 		this.roleUpdate(role, -1);
+		this.redrawForRoles();
 	}
 	onEmojiUpdate = (_: emojipjson[]) => {};
 	update(json: extendedProperties) {

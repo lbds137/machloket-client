@@ -11,7 +11,7 @@ function guildWithMembers(viewing: boolean) {
 	const me = {id: "me", update: vi.fn()};
 	const other = {id: "u2", update: vi.fn()};
 	const loadGuild = vi.fn();
-	const owner = {loadGuild, lookingguild: undefined as unknown};
+	const owner = {loadGuild, memberListQue: vi.fn(), lookingguild: undefined as unknown};
 	const guild = Object.assign(Object.create(Guild.prototype), {
 		id: "g1",
 		members: new Set([me, other]),

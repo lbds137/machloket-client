@@ -564,8 +564,14 @@ class Member extends SnowFlake {
 
 				}
 				*/
+			html.dataset.roleColourGuild = this.guild.id;
+			html.dataset.roleColourMember = this.id;
 			const id = this.getTopColor();
-			if (id) html.style.setProperty("--userbg", `var(--role-${id})`);
+			if (id) {
+				html.style.setProperty("--userbg", `var(--role-${id})`);
+			} else {
+				html.style.removeProperty("--userbg");
+			}
 		}
 
 		//this.profileclick(html);
