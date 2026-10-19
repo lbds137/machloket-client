@@ -46,6 +46,25 @@ describe("PLURAL", () => {
 		expect(I18n.fillInBlanks(ru, ["11"])).toBe("11 записей");
 		expect(I18n.fillInBlanks(ru, ["21"])).toBe("21 запись");
 		expect(I18n.fillInBlanks(ru, ["25"])).toBe("25 записей");
+		// Russian fractions (Intl "other") take the genitive singular, the middle form.
+		expect(I18n.fillInBlanks(ru, ["1.5"])).toBe("1.5 записи");
+	});
+
+	it("the shipped Russian blocked-messages and typing lines agree with their counts", async () => {
+		await I18n.create("ru");
+		expect(I18n.showBlockedMessages("1")).toContain("просмотреть 1 заблокированное сообщение.");
+		expect(I18n.showBlockedMessages("2")).toContain("просмотреть 2 заблокированных сообщения.");
+		expect(I18n.showBlockedMessages("5")).toContain("просмотреть 5 заблокированных сообщений.");
+		expect(I18n.typing("1", "Аня")).toBe("Аня печатает");
+		expect(I18n.typing("2", "Аня, Боря")).toBe("Аня, Боря печатают");
+	});
+
+	it("the shipped Irish discovery title and message count read as words", async () => {
+		await I18n.create("ga");
+		expect(I18n.guild.disoveryTitle("1")).toBe("Fionnachtain na Guild (1 iontráil)");
+		expect(I18n.guild.disoveryTitle("3")).toBe("Fionnachtain na Guild (3 iontrálacha)");
+		expect(I18n.message.messages("1")).toBe("1 teachtaireacht >");
+		expect(I18n.message.messages("4")).toBe("4 teachtaireachtaí >");
 	});
 
 	it("a two-alternative block keeps the positional fallback for every language", () => {

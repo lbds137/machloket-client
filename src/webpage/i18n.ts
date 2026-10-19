@@ -142,6 +142,8 @@ class I18n {
 							const cls = this.pluralClass(numb);
 							if (cls === "one") return strs[0];
 							if (cls === "few") return strs[1];
+							// Russian fractions ("other") take the genitive singular, the middle form.
+							if (cls === "other" && I18n.lang === "ru") return strs[1];
 							return strs[2];
 						}
 						return strs[Math.min(strs.length - 1, numb - 1)];
