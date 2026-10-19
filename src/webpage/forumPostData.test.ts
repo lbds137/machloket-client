@@ -119,3 +119,39 @@ it("post data that isn't post data says what came back, not offline", async () =
 	expect(view.textContent).toContain(I18n.requestFailed("HTTP 200"));
 	view.remove();
 });
+
+it("two searches started together (opening, then typing) ask for the post data once", async () => {
+	const sent = captureRequests(API + "/channels/f3/post-data", async () => {
+		await new Promise((res) => setTimeout(res, 5));
+		return Response.json({threads: {}});
+	});
+	const {forum, view} = forumWithPosts();
+
+	await Promise.all([forum.forumSearch("", view), forum.forumSearch("po", view)]);
+
+	expect(sent).toHaveLength(1);
+	view.remove();
+});
+
+it("two searches sharing a refused post-data request both read the server's reason", async () => {
+	const {I18n} = await import("./i18n");
+	await I18n.done;
+	captureRequests(API + "/channels/f3/post-data", async () => {
+		await new Promise((res) => setTimeout(res, 5));
+		return Response.json({code: 50001, message: "Missing Access"}, {status: 403});
+	});
+	const {forum, view} = forumWithPosts();
+	// Whichever search draws last wins the view, so check every drawing, not just the last.
+	const drawn: string[] = [];
+	const draw = view.replaceChildren.bind(view);
+	view.replaceChildren = (...nodes) => {
+		draw(...nodes);
+		drawn.push(view.textContent ?? "");
+	};
+
+	await Promise.all([forum.forumSearch("", view), forum.forumSearch("po", view)]);
+
+	expect(drawn).toHaveLength(2);
+	for (const text of drawn) expect(text).toContain(I18n.requestFailed("Missing Access"));
+	view.remove();
+});

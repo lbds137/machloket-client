@@ -2285,6 +2285,8 @@ class Channel extends SnowFlake {
 		tags: [] as string[],
 	};
 	hasFetchedForForum = false;
+	/** The post-data fetch on its way, shared by searches started meanwhile (opening, typing). */
+	private forumFetch?: Promise<void>;
 	/** Gives this category's channels (not threads) its permission overwrites, then says it did,
 	 * or why a channel didn't take them. */
 	async syncPermsToChildren() {
@@ -2542,10 +2544,14 @@ class Channel extends SnowFlake {
 	async forumSearch(text: string, div: HTMLDivElement) {
 		if (!this.hasFetchedForForum) {
 			try {
-				await this.fetchForum();
+				await (this.forumFetch ??= this.fetchForum().finally(() => {
+					this.forumFetch = undefined;
+				}));
 			} catch (e) {
 				const refused = e instanceof Error && e.cause instanceof Response ? e.cause : undefined;
-				const reason = await refusalText(refused);
+				// A clone: every search that shared the request reads the same refusal's body
+				// (one fetchForum already read, an unreadable answer, gives its status).
+				const reason = await refusalText(refused?.bodyUsed ? refused : refused?.clone());
 				// Without the posts' first messages every preview would read as deleted: say why
 				// there's no list, and offer another go (unless another search has fetched it since).
 				if (!this.hasFetchedForForum) {
