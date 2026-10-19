@@ -6,6 +6,7 @@ import {emojijson, emojiSource} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {BinRead} from "./utils/binaryUtils.js";
 import {CDNParams} from "./utils/cdnParams.js";
+import {showRefusal} from "./utils/showRefusal.js";
 import {removeAni} from "./utils/utils.js";
 
 //I need to recompile the emoji format for translation
@@ -193,9 +194,11 @@ class Emoji {
 									method: "PUT",
 									headers: localuser.headers,
 								},
-							);
-							if (joinRes.ok) {
+							).catch(() => undefined);
+							if (joinRes?.ok) {
 								removeAni(div);
+							} else {
+								await showRefusal(joinRes);
 							}
 						};
 					}

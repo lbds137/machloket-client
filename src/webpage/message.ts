@@ -560,7 +560,10 @@ class Message extends SnowFlake {
 				this.localuser.giveMessage(messagejson.referenced_message);
 		}
 	}
-	reactionToggle(emoji: string | Emoji) {
+	/** The reactions whose toggle is in flight: the reaction list changes only on the gateway's
+	 * echo, so a quick second click would resend the same toggle (and stack refusals). */
+	private reactionsInFlight?: Set<string>;
+	async reactionToggle(emoji: string | Emoji) {
 		if (emoji instanceof Emoji && !emoji.id && emoji.emoji) {
 			emoji = emoji.emoji;
 		}
@@ -568,26 +571,32 @@ class Message extends SnowFlake {
 		let remove = !!this.reactions.find((_) => sameReactionEmoji(_.emoji, target))?.me;
 
 		const reactiontxt = reactionPathSegment(target);
-		if (!remove) {
-			this.localuser.favorites.addReactEmoji(
-				emoji instanceof Emoji ? emoji.id || (emoji.emoji as string) : emoji,
-			);
-		}
-		fetchRetryOnce(
+		const inFlight = (this.reactionsInFlight ??= new Set());
+		if (inFlight.has(reactiontxt)) return;
+		inFlight.add(reactiontxt);
+		const res = await fetchRetryOnce(
 			`${this.info.api}/channels/${this.channel.id}/messages/${this.id}/reactions/${reactiontxt}/@me`,
 			{
 				method: remove ? "DELETE" : "PUT",
 				headers: this.headers,
 			},
-		);
+		)
+			.catch(() => undefined)
+			.finally(() => inFlight.delete(reactiontxt));
+		if (!res?.ok) return showRefusal(res);
+		if (!remove) {
+			this.localuser.favorites.addReactEmoji(
+				emoji instanceof Emoji ? emoji.id || (emoji.emoji as string) : emoji,
+			);
+		}
 	}
 	/** Pins or unpins this message; a refusal says so. */
 	async setPinned(pinned: boolean) {
 		const f = await fetchRetryOnce(`${this.info.api}/channels/${this.channel.id}/pins/${this.id}`, {
 			method: pinned ? "PUT" : "DELETE",
 			headers: this.headers,
-		});
-		if (!f.ok) alert(I18n.unableToPin());
+		}).catch(() => undefined);
+		if (!f?.ok) alert(I18n.unableToPin());
 	}
 	forward(): void {
 		this.openForwardDialog();
@@ -1004,10 +1013,11 @@ class Message extends SnowFlake {
 		await showRefusal(res ?? undefined);
 	}
 	async delete() {
-		await fetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {
+		const res = await fetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {
 			headers: this.headers,
 			method: "DELETE",
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) await showRefusal(res);
 	}
 	deleteEvent() {
 		if (!this.channel.messages.has(this.id)) return;

@@ -10,6 +10,7 @@ import {I18n} from "./i18n.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
+import {showRefusal} from "./utils/showRefusal.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
@@ -212,12 +213,13 @@ class Bot {
 						content.onclick = () => {
 							const guildsetting = guildsettings.addSubOptions(guild.name);
 							guildsetting.addHTMLArea(content);
-							guildsetting.addButtonInput("", I18n.leaveGuild(), () => {
+							guildsetting.addButtonInput("", I18n.leaveGuild(), async () => {
 								if (confirm(I18n.confirmGuildLeave(guild.name))) {
-									fetch(this.info.api + "/users/@me/guilds/" + guild.id, {
+									const res = await fetch(this.info.api + "/users/@me/guilds/" + guild.id, {
 										method: "DELETE",
 										headers: this.headers,
-									});
+									}).catch(() => undefined);
+									if (!res?.ok) await showRefusal(res);
 								}
 							});
 						};

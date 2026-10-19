@@ -495,6 +495,15 @@ class RoleList extends Buttons {
 	}
 	static channelrolemenu = this.ChannelRoleMenu();
 	static guildrolemenu = this.GuildRoleMenu();
+	/** Deletes a channel permission overwrite; a refusal says so. */
+	async removeOverwrite(id: string) {
+		if (!this.channel) return;
+		const res = await fetch(this.info.api + "/channels/" + this.channel.id + "/permissions/" + id, {
+			method: "DELETE",
+			headers: this.headers,
+		}).catch(() => undefined);
+		if (!res?.ok) await showRefusal(res);
+	}
 	private static ChannelRoleMenu() {
 		const menu = new Contextmenu<RoleList, Role | User>("role settings");
 		menu.addButton(
@@ -505,12 +514,7 @@ class RoleList extends Buttons {
 				return I18n.role.remove();
 			},
 			function (role) {
-				if (!this.channel) return;
-				console.log(role);
-				fetch(this.info.api + "/channels/" + this.channel.id + "/permissions/" + role.id, {
-					method: "DELETE",
-					headers: this.headers,
-				});
+				void this.removeOverwrite(role.id);
 			},
 			{
 				visible: function (role) {
