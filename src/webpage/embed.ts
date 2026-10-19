@@ -175,6 +175,18 @@ class Embed {
 		}
 
 		if (this.json.fields) {
+			// Discord's layout: consecutive inline fields share a row, up to three (two beside a
+			// thumbnail), splitting its 12 columns; any other field takes a row of its own.
+			const fields = document.createElement("div");
+			fields.classList.add("embedFields");
+			const maxRow = thumbnail?.url || thumbnail?.proxy_url ? 2 : 3;
+			let row: HTMLDivElement[] = [];
+			const flushRow = () => {
+				for (const item of row) {
+					item.style.gridColumn = `span ${12 / row.length}`;
+				}
+				row = [];
+			};
 			for (const thing of this.json.fields) {
 				const div = document.createElement("div");
 				const b = document.createElement("b");
@@ -187,9 +199,16 @@ class Embed {
 
 				if (thing.inline) {
 					div.classList.add("inline");
+					row.push(div);
+					if (row.length === maxRow) flushRow();
+				} else {
+					flushRow();
+					div.style.gridColumn = "span 12";
 				}
-				embed.append(div);
+				fields.append(div);
 			}
+			flushRow();
+			embed.append(fields);
 		}
 		if (this.json.image) {
 			const img = document.createElement("img");

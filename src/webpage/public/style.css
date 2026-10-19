@@ -4366,6 +4366,17 @@ span .quote:last-of-type .quoteline {
 	object-fit: contain;
 }
 
+.embed .embedFields {
+	display: grid;
+	/* minmax(0, …): a long word wraps in its own column rather than widening it. */
+	grid-template-columns: repeat(12, minmax(0, 1fr));
+	gap: 8px;
+
+	> div {
+		overflow-wrap: anywhere;
+	}
+}
+
 .rich-embed {
 	& {
 		width: unset;
