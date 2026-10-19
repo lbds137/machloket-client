@@ -259,7 +259,9 @@ class Message extends SnowFlake {
 				visible: function () {
 					// The first open may precede the fetch (this starts it); later ones see the
 					// stored list.
-					return this.channel.guild.cachedContextCommands(this.channel.id).length > 0;
+					return (
+						!this.ephemeral && this.channel.guild.cachedContextCommands(this.channel.id).length > 0
+					);
 				},
 			},
 		);
@@ -320,7 +322,8 @@ class Message extends SnowFlake {
 					css: "svg-emoji",
 				},
 				visible: function () {
-					return this.channel.hasPermission("ADD_REACTIONS");
+					// An ephemeral message is yours alone: the server has nothing to react to.
+					return !this.ephemeral && this.channel.hasPermission("ADD_REACTIONS");
 				},
 			},
 		);
@@ -347,7 +350,7 @@ class Message extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.channel.hasPermission("CREATE_PUBLIC_THREADS");
+					return !this.ephemeral && this.channel.hasPermission("CREATE_PUBLIC_THREADS");
 				},
 			},
 		);
@@ -397,7 +400,7 @@ class Message extends SnowFlake {
 					css: "svg-pin",
 				},
 				visible: function () {
-					if (this.pinned) return false;
+					if (this.pinned || this.ephemeral) return false;
 					if (this.channel.guild.id === "@me") return true;
 					return this.channel.hasPermission("MANAGE_MESSAGES");
 				},
@@ -436,7 +439,8 @@ class Message extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.canDelete();
+					// An ephemeral message has its own Dismiss.
+					return !this.ephemeral && this.canDelete();
 				},
 				icon: {
 					css: "svg-delete",
@@ -469,7 +473,9 @@ class Message extends SnowFlake {
 			{
 				visible: function () {
 					const settings = getDeveloperSettings();
-					return this.author.id !== this.localuser.user.id && settings.reportSystem;
+					return (
+						!this.ephemeral && this.author.id !== this.localuser.user.id && settings.reportSystem
+					);
 				},
 				color: "red",
 			},
@@ -2045,7 +2051,7 @@ class Message extends SnowFlake {
 				buttons = document.createElement("div");
 				buttons.classList.add("messageButtons", "flexltr");
 				let addedRec = false;
-				if (this.channel.hasPermission("ADD_REACTIONS")) {
+				if (!this.ephemeral && this.channel.hasPermission("ADD_REACTIONS")) {
 					const favs = this.localuser.favorites
 						.emojiReactFreq()
 						.slice(0, 6)
@@ -2083,7 +2089,7 @@ class Message extends SnowFlake {
 						this.channel.setReplying(this);
 					};
 				}
-				if (this.channel.hasPermission("ADD_REACTIONS")) {
+				if (!this.ephemeral && this.channel.hasPermission("ADD_REACTIONS")) {
 					const container = document.createElement("button");
 					const reply = document.createElement("span");
 					reply.classList.add("svg-emoji", "svgicon");
@@ -2107,7 +2113,7 @@ class Message extends SnowFlake {
 						this.setEdit();
 					};
 				}
-				if (this.canDelete()) {
+				if (!this.ephemeral && this.canDelete()) {
 					const container = document.createElement("button");
 					const reply = document.createElement("span");
 					reply.classList.add("svg-delete", "svgicon");
