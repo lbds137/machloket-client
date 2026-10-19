@@ -223,11 +223,12 @@ class Channel extends SnowFlake {
 		this.contextmenu.addSeperator();
 		this.contextmenu.addButton(
 			() => I18n.threads.leave(),
-			function () {
-				fetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
+			async function () {
+				const res = await fetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
 					method: "DELETE",
 					headers: this.headers,
-				});
+				}).catch(() => undefined);
+				if (!res?.ok) await showRefusal(res);
 			},
 			{
 				visible: function () {
@@ -238,11 +239,12 @@ class Channel extends SnowFlake {
 
 		this.contextmenu.addButton(
 			() => I18n.threads.join(),
-			function () {
-				fetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
+			async function () {
+				const res = await fetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
 					method: "POST",
 					headers: this.headers,
-				});
+				}).catch(() => undefined);
+				if (!res?.ok) await showRefusal(res);
 			},
 			{
 				visible: function () {
@@ -355,13 +357,16 @@ class Channel extends SnowFlake {
 	}
 	/** Counts this channel's mute and unmute PATCHes, so a newer one cancels an older one's 429 retry. */
 	private muteSeq?: number;
-	unmuteChannel() {
-		const seq = (this.muteSeq = (this.muteSeq ?? 0) + 1);
-		const mute_config = {
-			selected_time_window: -1,
-			end_time: 0,
-		};
-		fetchRetryOnce(
+	/** While mute changes are in flight: the config the server last accepted (boxed: it may be
+	 * null), so a refusal goes back to it rather than to an earlier unanswered change. */
+	private acceptedMute?: {config: mute_config | null; inFlight: number};
+	/** Sends a mute or unmute override; if the latest change is refused, the channel goes back to
+	 * the config the server holds. Call it before applying `mute_config` locally. */
+	private async sendMuteConfig(muted: boolean, mute_config: mute_config, seq: number) {
+		// With nothing in flight, the config shown is the server's (a gateway update may have set it).
+		const accepted = (this.acceptedMute ??= {config: this.mute_config, inFlight: 0});
+		accepted.inFlight++;
+		const res = await fetchRetryOnce(
 			this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings",
 			{
 				method: "PATCH",
@@ -370,7 +375,7 @@ class Channel extends SnowFlake {
 					channel_overrides: {
 						[this.id]: {
 							message_notifications: this.message_notifications,
-							muted: false,
+							muted,
 							mute_config,
 							channel_id: this.id,
 						},
@@ -378,11 +383,30 @@ class Channel extends SnowFlake {
 				}),
 			},
 			{shouldRetry: () => seq === this.muteSeq},
-		);
+		).catch(() => undefined);
+		if (--accepted.inFlight === 0) this.acceptedMute = undefined;
+		if (res?.ok) {
+			accepted.config = mute_config;
+		} else if (seq === this.muteSeq) {
+			this.mute_config = accepted.config;
+			this.showMuteState();
+			this.unreads();
+			this.guild.unreads();
+			await showRefusal(res);
+		}
+	}
+	unmuteChannel() {
+		const seq = (this.muteSeq = (this.muteSeq ?? 0) + 1);
+		const mute_config = {
+			selected_time_window: -1,
+			end_time: 0,
+		};
+		const req = this.sendMuteConfig(false, mute_config, seq);
 		this.mute_config = mute_config;
 		this.showMuteState();
 		this.unreads();
 		this.guild.unreads();
+		return req;
 	}
 	muteChannel() {
 		const dio = new Dialog(I18n.channel.mute());
@@ -403,29 +427,13 @@ class Channel extends SnowFlake {
 				selected_time_window: time,
 				end_time: Math.floor(new Date(Date.now() + time * 1000).getTime()),
 			};
-			fetchRetryOnce(
-				this.info.api + "/users/@me/guilds/" + this.guild.id + "/settings",
-				{
-					method: "PATCH",
-					headers: this.headers,
-					body: JSON.stringify({
-						channel_overrides: {
-							[this.id]: {
-								message_notifications: this.message_notifications,
-								muted: true,
-								mute_config,
-								channel_id: this.id,
-							},
-						},
-					}),
-				},
-				{shouldRetry: () => seq === this.muteSeq},
-			);
+			const req = this.sendMuteConfig(true, mute_config, seq);
 			this.mute_config = mute_config;
 			this.showMuteState();
 			dio.hide();
 			this.unreads();
 			this.guild.unreads();
+			return req;
 		});
 		dio.show();
 	}
@@ -604,10 +612,12 @@ class Channel extends SnowFlake {
 							const res = await fetch(this.info.api + "/channels/" + this.id + "/tags/" + tag.id, {
 								method: "DELETE",
 								headers: this.headers,
-							});
-							if (res.ok) {
+							}).catch(() => undefined);
+							if (res?.ok) {
 								d.hide();
 								html.remove();
+							} else {
+								await showRefusal(res);
 							}
 						});
 						d.show();
@@ -1554,11 +1564,16 @@ class Channel extends SnowFlake {
 		this.guild.goToChannelDelay(body.id);
 		return true;
 	}
-	deleteChannel() {
-		fetch(this.info.api + "/channels/" + this.id, {
+	async deleteChannel(): Promise<boolean> {
+		const res = await fetch(this.info.api + "/channels/" + this.id, {
 			method: "DELETE",
 			headers: this.headers,
-		});
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
 	setReplying(message: Message) {
 		if (this.replyingto?.div) {
@@ -2320,33 +2335,46 @@ class Channel extends SnowFlake {
 		const d = new Dialog(I18n.threads.editTags());
 		if (!this.appliedTags || !this.parent) return;
 		let tagList = [...this.appliedTags];
-		const patchList = () => {
-			fetch(this.info.api + "/channels/" + this.id, {
+		let patchSeq = 0;
+		// What the server holds: a refusal goes back to it, not to an earlier unanswered click.
+		let accepted = tagList;
+		const patchList = async (sent: string[]) => {
+			const seq = ++patchSeq;
+			const res = await fetch(this.info.api + "/channels/" + this.id, {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify({
-					applied_tags: tagList,
+					applied_tags: sent,
 				}),
-			});
+			}).catch(() => undefined);
+			if (res?.ok) {
+				accepted = sent;
+			} else if (seq === patchSeq) {
+				tagList = accepted;
+				for (const [id, elm] of tagElms) {
+					elm.classList.toggle("selected", tagList.includes(id));
+				}
+				await showRefusal(res);
+			}
 		};
 
 		const tags = document.createElement("div");
 		tags.classList.add("forumTagSelect");
+		const tagElms = new Map<string, HTMLDivElement>();
 		for (const tag of this.parent.availableTags.filter(
 			(tag) => !tag.moderated || this.hasPermission("MANAGE_THREADS"),
 		)) {
 			const html = tag.makeHTML();
+			tagElms.set(tag.id, html);
 			html.onclick = () => {
 				if (tagList.includes(tag.id)) {
 					tagList = tagList.filter((id) => id !== tag.id);
 					html.classList.remove("selected");
-					patchList();
 				} else {
-					tagList.push(tag.id);
-					tagList.sort();
+					tagList = [...tagList, tag.id].sort();
 					html.classList.add("selected");
-					patchList();
 				}
+				void patchList(tagList);
 			};
 			if (tagList.includes(tag.id)) html.classList.add("selected");
 			tags.append(html);
