@@ -7295,6 +7295,43 @@ fieldset input[type="radio"] {
 		max-height: min(85dvh, calc(var(--app-height) - 24px));
 	}
 
+	/* A bot's form (interactions/modal.ts) is one sheet filling the space above the keyboard:
+	   the title and buttons stay put and only the fields scroll. */
+	.dialogModal:has(.interactionModal) {
+		align-self: flex-start;
+		width: 100%;
+		max-width: none;
+		/* The backdrop's full height: the layout viewport, which shrinks with the keyboard
+		   (interactive-widget=resizes-content), not the --app-height snapshot, which can lag. */
+		height: 100%;
+		max-height: none;
+		padding: 0;
+		border-radius: 0;
+		overflow: hidden;
+
+		> .flexspace,
+		.optionElement:has(> .interactionModal) {
+			display: flex;
+			flex-direction: column;
+			flex: 1;
+			min-height: 0;
+			margin: 0;
+			padding: 0 !important;
+			border-radius: 0;
+		}
+		.interactionModal {
+			flex: 1;
+			min-height: 0;
+			max-height: none;
+			overflow: hidden;
+		}
+		.interactionModalBody {
+			flex: 1;
+			min-height: 0;
+			overflow-y: auto;
+		}
+	}
+
 	.dialogModal .optionElement:has(.friendGroupSelect) {
 		max-height: min(50dvh, calc(var(--app-height) * 0.5));
 	}
