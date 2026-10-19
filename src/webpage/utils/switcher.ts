@@ -5,7 +5,7 @@ import {createImg, getBulkInfo, Specialuser} from "./utils.js";
 await I18n.done;
 const menu = new Contextmenu<Specialuser, void>("");
 menu.addButton(
-	"Logout of account",
+	I18n.logout.logoutOfAccount(),
 	async function () {
 		await this.logout();
 	},

@@ -86,7 +86,7 @@ export function unnest(str: string, check = true) {
 			}
 		}
 	}
-	if (last) alert("huh");
+	if (last) console.error("cssMagic: unnest ended inside a block");
 	console.log(specificity);
 	return specificity.join("\n");
 }
@@ -99,7 +99,7 @@ export function fix() {
 					_.href.endsWith("/style.css"),
 				);
 				if (!link) {
-					alert("link not found");
+					console.error("cssMagic: /style.css link not found");
 					return;
 				}
 				const css = unnest(txt);

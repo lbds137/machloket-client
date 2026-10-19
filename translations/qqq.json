@@ -30,17 +30,24 @@
 								"size": "$1 is the formatted file size (e.g. 1.5 kB)"
 				},
 				"guild": {
-								"disoveryTitle": "$1 is the number of guilds discovered"
+								"disoveryTitle": "$1 is the number of guilds discovered",
+								"iconAlt": "Alt text of a server's icon in a picker; $1 is the server's name"
 				},
 				"htmlPages": {
 								"box1Items": "this string is slightly atypical, it has a list of items separated by |, please try to keep the same list size as this"
 				},
 				"invite": {
+								"botTitle": "$1 is the bot's username",
 								"members": "$1 is the formatted number of members in the guild"
 				},
+				"loading": "Generic placeholder while something loads",
 				"localuser": {
 								"description": "This object contains strings related to the logged in user, which is mostly the settings for the user",
 								"sillyDeleteConfirmPhrase": "This is a silly phrase, do not translate this directly, make a joke that is easy to type in your language",
+								"themeNames": {
+												"Onyx": "Theme name; Onyx and Fuzzy are names, usually kept as is",
+												"Fuzzy": "Theme name, usually kept as is"
+								},
 								"updateSettings": "Title of a page that allows you to adjust the update settings"
 				},
 				"messagesLoadFailed": "Shown in the message pane when the channel's opening page of messages failed to load after retrying.",

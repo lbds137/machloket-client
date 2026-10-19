@@ -144,7 +144,7 @@ export async function makeLogin(
 		const details = document.createElement("details");
 		details.classList.add("loginAdvanced");
 		const summary = document.createElement("summary");
-		summary.textContent = "Advanced";
+		summary.textContent = I18n.login.advanced();
 		details.append(summary, picker.generateHTML());
 		return details;
 	});

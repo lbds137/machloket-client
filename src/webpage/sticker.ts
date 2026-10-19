@@ -197,7 +197,7 @@ class Sticker extends SnowFlake {
 					guild.properties.icon +
 					".png" +
 					new CDNParams({expectedSize: 48});
-				img.alt = "Server: " + guild.properties.name;
+				img.alt = I18n.guild.iconAlt(guild.properties.name);
 				select.appendChild(img);
 			} else {
 				const div = document.createElement("span");

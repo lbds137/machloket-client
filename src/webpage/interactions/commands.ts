@@ -883,7 +883,7 @@ class ErrorOption extends Option {
 	toHTML(): HTMLElement {
 		const span = document.createElement("span");
 		this.imprintName(span);
-		span.textContent = "Machloket doesn't implement this yet";
+		span.textContent = I18n.interactions.optionNotImpl();
 		return span;
 	}
 }

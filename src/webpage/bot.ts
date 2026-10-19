@@ -32,7 +32,7 @@ class Bot {
 	}
 	settings() {
 		const settings = new Settings(I18n.botSettings());
-		const botOptions = settings.addButton("Profile", {ltr: true});
+		const botOptions = settings.addButton(I18n.botProfile(), {ltr: true});
 		const bot = new User(this.json, this.localuser);
 		{
 			const hypotheticalProfile = document.createElement("div");
@@ -155,7 +155,7 @@ class Bot {
 			});
 		}
 		{
-			const guildsettings = settings.addButton("Guilds");
+			const guildsettings = settings.addButton(I18n.guild.guilds());
 			guildsettings.addTitle(I18n.botGuilds());
 			fetch(this.info.api + "/users/@me/guilds/", {
 				headers: this.headers,

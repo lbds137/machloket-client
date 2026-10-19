@@ -346,7 +346,7 @@ class Guild extends SnowFlake {
 	}
 	async findAdmin() {
 		const menu = new Dialog(I18n.guild.admins());
-		menu.options.addText("Loading");
+		menu.options.addText(I18n.loading());
 		menu.show();
 		const roles = new Set(
 			Object.entries(
@@ -1436,7 +1436,7 @@ class Guild extends SnowFlake {
 			com.addSelect(
 				I18n.guild["systemSelect:"](),
 				"system_channel_id",
-				["No system messages", ...textChannels.map((e) => e.name)],
+				[I18n.guild.noSystemChannel(), ...textChannels.map((e) => e.name)],
 				{defaultIndex: sysmap.indexOf(this.properties.system_channel_id)},
 				sysmap,
 			);

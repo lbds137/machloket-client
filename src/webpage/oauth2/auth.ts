@@ -45,9 +45,6 @@ if (window.location.pathname.startsWith("/oauth2")) {
 		urls = joinable[0].serverurls;
 	}
 
-	if (!joinable.length) {
-		document.getElementById("AcceptInvite")!.textContent = "Create an account to invite the bot";
-	}
 	await I18n.done;
 	function showGuilds(user: Specialuser) {
 		if (!urls) return;
@@ -64,7 +61,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 			dialog.classList.add("flexttb", "accountSwitcher");
 			const h1 = document.createElement("h1");
 			dialog.append(h1);
-			h1.textContent = "Invite to server:";
+			h1.textContent = I18n.invite.botPickServer();
 			const select = document.createElement("select");
 			const selectSpan = document.createElement("span");
 			selectSpan.classList.add("selectspan");
@@ -80,12 +77,12 @@ if (window.location.pathname.startsWith("/oauth2")) {
 			selectSpan.append(selectArrow);
 			dialog.append(selectSpan);
 			const button = document.createElement("button");
-			button.textContent = "Invite";
+			button.textContent = I18n.invite.botInviteButton();
 			dialog.append(button);
 			button.onclick = () => {
 				const clientId = params.get("client_id") as string;
 				authorizeBot(urls.api, user.token, clientId, select.value, permstr).then((added) =>
-					alert(added === true ? "Bot added successfully" : added),
+					alert(added === true ? I18n.invite.botAdded() : added),
 				);
 			};
 			document.body.append(dialog);
@@ -125,7 +122,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 
 		const td = document.createElement("div");
 		td.classList.add("switchtable");
-		td.textContent = "Login or create an account ⇌";
+		td.textContent = I18n.invite.loginOrCreateAccount();
 		td.addEventListener("click", () => {
 			const l = new URLSearchParams("?");
 			l.set("goback", window.location.href);
@@ -155,7 +152,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 				return;
 			}
 			if (title) {
-				title.textContent = `Invite ${json.bot.username} to your servers`;
+				title.textContent = I18n.invite.botTitle(json.bot.username);
 			}
 			const desc = document.getElementById("invitedescription");
 			if (desc) {
@@ -189,6 +186,8 @@ if (window.location.pathname.startsWith("/oauth2")) {
 	const AcceptInvite = document.getElementById("AcceptInvite");
 	if (AcceptInvite) {
 		AcceptInvite.addEventListener("click", showAccounts);
-		AcceptInvite.textContent = I18n.htmlPages.addBot();
+		AcceptInvite.textContent = joinable.length
+			? I18n.htmlPages.addBot()
+			: I18n.invite.botNoAccount();
 	}
 }

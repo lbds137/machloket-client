@@ -229,7 +229,7 @@ export class Buttons implements OptionsElement<unknown> {
 		}
 		if (this.sectionHeaders.size) {
 			const fb = document.createElement("a");
-			fb.textContent = "Give feedback about this design";
+			fb.textContent = I18n.settings.feedback();
 			fb.href = "https://github.com/lbds137/machloket-client/issues";
 			fb.target = "_blank";
 			fb.rel = "noopener noreferrer";
@@ -1589,7 +1589,7 @@ class Options implements OptionsElement<void> {
 		onSubmit: (arg1: object, sent: object) => void,
 		{
 			ltr = false,
-			submitText = "Submit",
+			submitText = I18n.submit(),
 			fetchURL = "",
 			headers = {},
 			method = "POST",

@@ -78,6 +78,6 @@ it("a ping that never got through leaves the instance unnamed, and the title sti
 	await user.pingEndpoint();
 
 	expect(user.instancePing.name).toBe("Unknown");
-	expect(user.pageTitle).toHaveBeenCalledWith("Loading...");
+	expect(user.pageTitle).toHaveBeenCalledWith(I18n.loading());
 	expect(cached()).toBeUndefined();
 });

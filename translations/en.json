@@ -30,6 +30,7 @@
 	},
 	"DMs": {
 		"add": "Add someone to this DM",
+		"addPerson": "Add person",
 		"close": "Close DM",
 		"copyId": "Copy DM id",
 		"markRead": "Mark as read",
@@ -120,6 +121,7 @@
 	"blankMessage": "Blank message",
 	"bot": "BOT",
 	"botGuilds": "Guilds bot is in:",
+	"botProfile": "Profile",
 	"botSettings": "Bot Settings",
 	"botExplorerTitle": "A catalog bot with this name",
 	"botExplorerLink": "Open on Spacebar Explorer",
@@ -144,6 +146,8 @@
 		"name": "Channel",
 		"name:": "Channel name:",
 		"nsfw:": "NSFW/Mature content warning:",
+		"nsfwAsk": "This is a NSFW channel, do you wish to proceed?",
+		"notAllowed": "You are not allowed in this channel.",
 		"permissions": "Permissions",
 		"selectCatName": "Name of category",
 		"selectName": "Name of channel",
@@ -155,6 +159,7 @@
 		"text": "Text",
 		"timedOutUntil": "Timed out until: $1",
 		"topic:": "Topic:",
+		"type:": "Type:",
 		"typebox": "Message in $1",
 		"unmute": "Unmute channel",
 		"voice": "Voice",
@@ -375,6 +380,7 @@
 		"helpTips?": "Send helpful tips for your guild!",
 		"howJoin": "How can people join your guild?",
 		"icon:": "Icon:",
+		"iconAlt": "Server: $1",
 		"invites": "Invites",
 		"joinConfirm": "Join $1?",
 		"leave": "Leave guild",
@@ -401,6 +407,7 @@
 		"settingsFor": "Settings for $1",
 		"splash": "Discovery splash:",
 		"stickWelcomeReact?": "Prompt members of your guild to react with a sticker when someone joins!",
+		"noSystemChannel": "No system messages",
 		"systemSelect:": "Systems messages channel:",
 		"tempCreatedBy": "Template created by:",
 		"tempUseCount": "Template has been used $1 time{{PLURAL:$1||s}}",
@@ -485,6 +492,7 @@
 		"modalUnsupported": "This form has a field Machloket can't show yet, so it can't be sent",
 		"nonsence": "The server sent a component of type $1 which does not exist",
 		"notImpl": "Machloket has not implemented component type $1 yet",
+		"optionNotImpl": "Machloket doesn't implement this yet",
 		"onlyYou": "Only you can see this message",
 		"replyline": "Started interaction",
 		"used": "used",
@@ -494,6 +502,11 @@
 	"invite": {
 		"accept": "Accept",
 		"alreadyJoined": "Already joined",
+		"botAdded": "Bot added successfully",
+		"botInviteButton": "Invite",
+		"botNoAccount": "Create an account to invite the bot",
+		"botPickServer": "Invite to server:",
+		"botTitle": "Invite $1 to your servers",
 		"channel:": "Channel:",
 		"createInvite": "Create invite",
 		"createdAt": "Created at $1",
@@ -534,6 +547,7 @@
 	"leaveGuild": "Leave guild",
 	"leaving": "You're leaving Spacebar",
 	"loaded": "Loaded",
+	"loading": "Loading…",
 	"localuser": {
 		"2faCode:": "Code:",
 		"2faCodeGive": "Your TOTP secret is: $1. This will generate a 6 digits 2FA token with a 30 second expiration period.",
@@ -548,6 +562,7 @@
 		"addBot": "Add bot",
 		"addStatus": "Add status",
 		"advancedBot": "Advanced bot settings",
+		"appIcon": "Icon:",
 		"appName": "Application name:",
 		"areYouSureDelete": "Are you sure you want to delete your account? If so enter the phrase $1",
 		"badCode": "Invalid code",
@@ -611,8 +626,17 @@
 		"sillyDeleteConfirmPhrase": "I'm sure yes, now delete",
 		"soundTooLarge": "The sound you tried to upload was too large, try again",
 		"status": "Status",
+		"personalTeam": "Personal",
 		"team:": "Team:",
 		"theme:": "Theme",
+		"themeNames": {
+			"Dark": "Dark",
+			"WHITE": "WHITE",
+			"Light": "Light",
+			"Dark-Accent": "Dark-Accent",
+			"Onyx": "Onyx",
+			"Fuzzy": "Fuzzy"
+		},
 		"themesAndSounds": "Themes & Sounds",
 		"tokenDisplay": "Token: $1",
 		"trace": "Traces",
@@ -624,6 +648,7 @@
 		"userSettings": "Your public profile"
 	},
 	"login": {
+		"advanced": "Advanced",
 		"allGood": "All good",
 		"checking": "Checking instance",
 		"enterPAgain": "Enter new password again:",
@@ -644,7 +669,8 @@
 			"desc": "Machloket was unable to log you out,\n do you wish to remove the account anyways?",
 			"title": "An error occurred trying to log you out"
 		},
-		"logout": "Logout"
+		"logout": "Logout",
+		"logoutOfAccount": "Logout of account"
 	},
 	"manageInstance": {
 		"AreYouSureStop": "Are you sure you want to stop this instance?",
@@ -963,6 +989,7 @@
 	"tenorMigrationInfo": "Tenor migration info",
 	"settings": {
 		"clear": "Clear",
+		"feedback": "Give feedback about this design",
 		"img": "Upload image",
 		"fileReadFailed": "Couldn't read that file. Try picking it again.",
 		"save": "Save changes",
@@ -1093,6 +1120,7 @@
 	},
 	"webauth": {
 		"addKey": "Add key",
+		"defaultKeyName": "Key",
 		"keyname": "Key name:",
 		"manage": "Manage security keys"
 	},

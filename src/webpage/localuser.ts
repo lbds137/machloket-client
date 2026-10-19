@@ -2719,7 +2719,7 @@ class Localuser {
 	}
 	private inboxSubtitle(channel: Channel) {
 		if (channel.guild.id === "@me") {
-			return "Direct Message";
+			return I18n.inbox.directMessage();
 		}
 		return channel.guild.properties.name;
 	}
@@ -2920,7 +2920,7 @@ class Localuser {
 		list.classList.add("flexttb", "inboxList");
 		const loading = document.createElement("span");
 		loading.classList.add("inboxEmpty");
-		loading.textContent = "Loading...";
+		loading.textContent = I18n.loading();
 		list.append(loading);
 		if (!keepVisible) menu.replaceChildren(tabRow, list);
 
@@ -3254,7 +3254,9 @@ class Localuser {
 
 						await setTheme(prefs.theme);
 					},
-					themes,
+					themes.map((theme) =>
+						I18n.localuser.themeNames[theme as keyof typeof I18n.localuser.themeNames](),
+					),
 					{
 						defaultIndex: themes.indexOf(prefs.theme),
 					},
@@ -3546,7 +3548,7 @@ class Localuser {
 					});
 				}
 				addToGrid(I18n.webauth.manage(), () => {
-					const keyMenu = security.addSubOptions("Manage Keys");
+					const keyMenu = security.addSubOptions(I18n.webauth.manage());
 					const addKey = (key: {name: string; id: string}) => {
 						keyMenu.addButtonInput("", key.name, () => {
 							const opt = keyMenu.addSubOptions(key.name);
@@ -3619,7 +3621,7 @@ class Localuser {
 							password: true,
 						});
 						const name = form.options.addTextInput(I18n.webauth.keyname(), () => {}, {
-							initText: "Key",
+							initText: I18n.webauth.defaultKeyName(),
 						});
 					});
 					fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
@@ -3711,7 +3713,7 @@ class Localuser {
 						.watchForChange((text) => {
 							in1 = text;
 						});
-					const copy = form.addTextInput("New password again:", "", {password: true});
+					const copy = form.addTextInput(I18n.login.enterPAgain(), "", {password: true});
 					copy.watchForChange((text) => {
 						in2 = text;
 					});
@@ -4169,11 +4171,11 @@ class Localuser {
 						return true;
 					};
 
-					form.addTextInput("Name:", "name", {required: true});
+					form.addTextInput(I18n.localuser.appName(), "name", {required: true});
 					form.addSelect(
 						I18n.localuser["team:"](),
 						"team_id",
-						["Personal", ...teams.map((team: {name: string}) => team.name)],
+						[I18n.localuser.personalTeam(), ...teams.map((team: {name: string}) => team.name)],
 						{defaultIndex: 0},
 					);
 				});
@@ -4642,7 +4644,7 @@ class Localuser {
 		form.addMDInput(I18n.localuser.description(), "description", {
 			initText: json.description,
 		});
-		form.addImageInput("Icon:", "icon", {
+		form.addImageInput(I18n.localuser.appIcon(), "icon", {
 			clear: true,
 			initImg: json.icon
 				? this.info.cdn +
@@ -6272,7 +6274,7 @@ class Localuser {
 			this.instancePing = userInfo.instances[wellknown].instance;
 		}
 
-		this.pageTitle("Loading...");
+		this.pageTitle(I18n.loading());
 	}
 	pageTitle(channelName = "", guildName = "") {
 		(document.getElementById("channelname") as HTMLSpanElement).textContent = channelName;

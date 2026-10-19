@@ -512,7 +512,7 @@ class Group extends Channel {
 			.filter((user) => user.relationshipType === 1)
 			.filter((user) => !this.users.includes(user));
 		d.show();
-		const users = await User.makeSelector(d.options, "Add person", options, {single: true});
+		const users = await User.makeSelector(d.options, I18n.DMs.addPerson(), options, {single: true});
 		d.hide();
 		if (!users) return;
 		const [user] = [...users];

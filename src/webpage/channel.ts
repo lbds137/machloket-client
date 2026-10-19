@@ -649,7 +649,7 @@ class Channel extends SnowFlake {
 			if (this.type !== 4 && !this.isThread() && !this.isForum()) {
 				const options = ["voice", "text", "announcement"] as const;
 				form.addSelect(
-					"Type:",
+					I18n.channel["type:"](),
 					"type",
 					options.map((e) => I18n.channel[e]()),
 					{
@@ -1693,17 +1693,17 @@ class Channel extends SnowFlake {
 		//TODO make an extention of the user class with these aditional properties
 		//TODO make a popup for `nsfw_allowed==null` to input age
 		if (this.localuser.user.nsfw_allowed) {
-			options.addTitle("This is a NSFW channel, do you wish to proceed?");
+			options.addTitle(I18n.channel.nsfwAsk());
 			const buttons = options.addOptions("", {ltr: true});
-			buttons.addButtonInput("", "Yes", () => {
+			buttons.addButtonInput("", I18n.yes(), () => {
 				this.perminfo.nsfwOk = true;
 				this.getHTML();
 			});
-			buttons.addButtonInput("", "No", () => {
+			buttons.addButtonInput("", I18n.no(), () => {
 				window.history.back();
 			});
 		} else {
-			options.addTitle("You are not allowed in this channel.");
+			options.addTitle(I18n.channel.notAllowed());
 		}
 		const html = float.generateHTML();
 		html.classList.add("messagecontainer");

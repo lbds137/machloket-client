@@ -51,7 +51,7 @@ describe("the open inbox", () => {
 
 		expect(build).toHaveBeenCalledTimes(2);
 		expect(menu.textContent).toContain(I18n.inbox.noUnreadChannels());
-		expect(menu.textContent).not.toContain("Loading...");
+		expect(menu.textContent).not.toContain(I18n.loading());
 		finish([]);
 	});
 
