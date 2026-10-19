@@ -220,7 +220,8 @@ body {
 
 	--button-bg: #1e1f22;
 	--button-hover: #2a2b2f;
-	--spoiler-bg: #000000;
+	/* Discord's hidden spoiler: a grey bar that stands out from the black page. */
+	--spoiler-bg: #4e5058;
 	--link: #5ca9ed;
 
 	--primary-text-prominent: #ffffff;
@@ -247,7 +248,8 @@ body {
 
 	--button-bg: #151a1a;
 	--button-hover: #212626;
-	--spoiler-bg: #000000;
+	/* Discord's hidden spoiler: a grey bar that stands out from the black page. */
+	--spoiler-bg: #4e5058;
 	--link: #9ce6ff;
 
 	--primary-text-prominent: #f2fdff;

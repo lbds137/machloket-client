@@ -237,6 +237,7 @@ class MarkDown {
 					i += 3;
 				} else if (txt[i + 1] === "-" && txt[i + 2] === "#" && txt[i + 3] === " ") {
 					element = document.createElement("small");
+					element.classList.add("subtext");
 					keepys = "-# ";
 					i += 4;
 				}

@@ -4032,12 +4032,18 @@ input[type="search"]:read-only {
 	color: var(--primary-text-soft);
 }
 
+/* "-# " lines: smaller and quieter than the body text, as on Discord (links keep their colour). */
+.subtext {
+	color: var(--primary-text-soft);
+}
+
 .spoiler {
 	background: var(--spoiler-bg);
 	color: var(--spoiler-bg);
 	cursor: pointer;
 	samp,
-	a {
+	a,
+	.subtext {
 		background: transparent;
 		color: inherit;
 	}
