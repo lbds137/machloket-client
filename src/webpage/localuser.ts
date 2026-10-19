@@ -225,9 +225,12 @@ class Localuser {
 						method: "PATCH",
 					},
 					{shouldRetry: () => seq === Localuser.statusSeq.get(user)},
-				);
+				).catch(() => undefined);
 				// Applied only once the server took it: a refused or cancelled change isn't shown.
-				if (!res.ok) return;
+				if (!res?.ok) {
+					if (seq === Localuser.statusSeq.get(user)) await showRefusal(res);
+					return;
+				}
 				sessionStorage.setItem("status", status);
 				user.user.setstatus(status);
 			});
@@ -374,6 +377,8 @@ class Localuser {
 		);
 	}
 	guildFolders: guildFolder[] = [];
+	/** The last `guild_folders` the server accepted (from READY or a saved reorder). */
+	private acceptedFolders: guildFolder[] = [];
 	unknownRead = new Map<string, readStateEntry>();
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
@@ -382,6 +387,7 @@ class Localuser {
 		this.inrelation.clear();
 		this.userMap.clear();
 		this.guildFolders = ready.d.user_settings.guild_folders;
+		this.acceptedFolders = this.guildFolders;
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
 		this.ready = ready;
@@ -2274,7 +2280,7 @@ class Localuser {
 			}
 		});
 
-		await fetchRetryOnce(
+		const res = await fetchRetryOnce(
 			this.info.api + "/users/@me/settings",
 			{
 				method: "PATCH",
@@ -2282,7 +2288,18 @@ class Localuser {
 				body: JSON.stringify({guild_folders}),
 			},
 			{shouldRetry: () => seq === this.folderSeq},
-		);
+		).catch(() => undefined);
+		if (res?.ok) {
+			this.acceptedFolders = guild_folders;
+			this.guildFolders = guild_folders;
+			return;
+		}
+		if (seq !== this.folderSeq) return;
+		this.guildFolders = this.acceptedFolders;
+		document.getElementById("servers")?.replaceChildren();
+		this.buildservers();
+		this.lookingguild?.html?.classList.add("serveropen");
+		await showRefusal(res);
 	}
 	makeGuildIcon(guild: Guild) {
 		const divy = guild.generateGuildIcon();
@@ -2521,15 +2538,14 @@ class Localuser {
 		const guildcreate = buttons.add(I18n.guild.create());
 		{
 			const form = guildcreate.addForm("", (fields: any) => {
-				this.makeGuild(fields).then((_) => {
-					if (_.message) {
-						loading.hide();
-						full.show();
-						alert(_.errors.name._errors[0].message);
-					} else {
-						loading.hide();
-						full.hide();
-					}
+				const formBack = () => {
+					loading.hide();
+					full.show();
+				};
+				void this.makeGuild(fields, formBack).then((ok) => {
+					if (!ok) return;
+					loading.hide();
+					full.hide();
 				});
 			});
 			form.addImageInput(I18n.guild["icon:"](), "icon", {
@@ -2604,14 +2620,23 @@ class Localuser {
 			if (htmlarea) buttons.generateHTMLArea(guildcreateFromTemplate, htmlarea);
 		}
 	}
-	async makeGuild(fields: {name: string; icon: string | null}) {
-		return await (
-			await fetch(this.info.api + "/guilds", {
-				method: "POST",
-				headers: this.headers,
-				body: JSON.stringify(fields),
-			})
-		).json();
+	/** Creates a server; a refusal says why. `beforeRefusal` runs first (the form comes back),
+	 * so the refusal opens on top of it. True when created. */
+	async makeGuild(
+		fields: {name: string; icon: string | null},
+		beforeRefusal: () => void = () => {},
+	): Promise<boolean> {
+		const res = await fetch(this.info.api + "/guilds", {
+			method: "POST",
+			headers: this.headers,
+			body: JSON.stringify(fields),
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			beforeRefusal();
+			await showRefusal(res);
+			return false;
+		}
+		return true;
 	}
 	async guildDiscovery() {
 		this.guildids.get("@me")?.loadChannel("discover");
@@ -3553,10 +3578,14 @@ class Localuser {
 						keyMenu.addButtonInput("", key.name, () => {
 							const opt = keyMenu.addSubOptions(key.name);
 							const button = opt.addButtonInput("", I18n.delete(), async () => {
-								await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
-									headers: this.headers,
-									method: "DELETE",
-								});
+								const res = await fetch(
+									this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id,
+									{
+										headers: this.headers,
+										method: "DELETE",
+									},
+								).catch(() => undefined);
+								if (!res?.ok) return showRefusal(res);
 								keyMenu.returnFromSub();
 								keyMenu.deleteElm(button);
 							});
@@ -3589,24 +3618,26 @@ class Localuser {
 								function toBase64(buf: ArrayBuffer) {
 									return btoa(String.fromCharCode(...new Uint8Array(buf)));
 								}
-								const res = {
+								const cred = {
 									rawId: toBase64(credential.rawId),
 									response: {
 										clientDataJSON: toBase64(credential.response.clientDataJSON),
 										attestationObject: toBase64(credential.response.attestationObject),
 									},
 								};
-								const key = await (
-									await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
-										headers: this.headers,
-										method: "POST",
-										body: JSON.stringify({
-											ticket: body.ticket,
-											credential: JSON.stringify(res),
-											name: name.value,
-										}),
-									})
-								).json();
+								const res = await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+									headers: this.headers,
+									method: "POST",
+									body: JSON.stringify({
+										ticket: body.ticket,
+										credential: JSON.stringify(cred),
+										name: name.value,
+									}),
+								}).catch(() => undefined);
+								const key = res?.ok
+									? ((await res.json().catch(() => null)) as {name: string; id: string} | null)
+									: null;
+								if (!key) return showRefusal(res);
 								addKey(key);
 								keyMenu.returnFromSub();
 							},
@@ -3952,17 +3983,18 @@ class Localuser {
 								sub.addText(I18n.deviceManage.latitude(last.latitude + ""));
 							}
 							if (session.id !== this.session_id) {
-								sub.addButtonInput("", I18n.deviceManage.logout(), () => {
-									div.remove();
-									r.html = document.createElement("div");
-									manageSessions.returnFromSub();
-									fetch(this.info.api + "/auth/sessions/logout", {
+								sub.addButtonInput("", I18n.deviceManage.logout(), async () => {
+									const res = await fetch(this.info.api + "/auth/sessions/logout", {
 										method: "POST",
 										headers: this.headers,
 										body: JSON.stringify({
 											session_id_hashes: [session.id_hash],
 										}),
-									});
+									}).catch(() => undefined);
+									if (!res?.ok) return showRefusal(res);
+									div.remove();
+									r.html = document.createElement("div");
+									manageSessions.returnFromSub();
 								});
 							} else sub.addText(I18n.deviceManage.curSes());
 						};
@@ -4464,9 +4496,13 @@ class Localuser {
 					const options = menu.float.options;
 					options.addTitle(I18n.manageInstance.AreYouSureStop());
 					const yesno = options.addOptions("", {ltr: true});
-					yesno.addButtonInput("", I18n.yes(), () => {
-						fetch(this.info.api + "/stop", {headers: this.headers, method: "POST"});
+					yesno.addButtonInput("", I18n.yes(), async () => {
 						menu.hide();
+						const res = await fetch(this.info.api + "/stop", {
+							headers: this.headers,
+							method: "POST",
+						}).catch(() => undefined);
+						if (!res?.ok) await showRefusal(res);
 					});
 					yesno.addButtonInput("", I18n.no(), () => {
 						menu.hide();
@@ -4623,6 +4659,20 @@ class Localuser {
 		settings.show();
 	}
 	readonly botTokens: Map<string, string> = new Map();
+	/** Creates the application's bot and keeps its token; a refusal says so. True when created. */
+	async addBot(appId: string) {
+		const res = await fetch(this.info.api + "/applications/" + appId + "/bot", {
+			method: "POST",
+			headers: this.headers,
+		}).catch(() => undefined);
+		const body = res?.ok ? ((await res.json().catch(() => null)) as {token?: unknown} | null) : null;
+		if (typeof body?.token !== "string") {
+			await showRefusal(res);
+			return false;
+		}
+		this.botTokens.set(appId, body.token);
+		return true;
+	}
 	async manageApplication(appId = "", container: Options, deleteButton: () => void) {
 		if (this.perminfo.applications) {
 			for (const item of Object.keys(this.perminfo.applications)) {
@@ -4677,12 +4727,7 @@ class Localuser {
 				if (!confirm(I18n.localuser.confirmAddBot())) {
 					return;
 				}
-				const updateRes = await fetch(this.info.api + "/applications/" + appId + "/bot", {
-					method: "POST",
-					headers: this.headers,
-				});
-				const updateJSON = await updateRes.json();
-				this.botTokens.set(appId, updateJSON.token);
+				if (!(await this.addBot(appId))) return;
 			}
 			this.manageBot(appId, form);
 		});
