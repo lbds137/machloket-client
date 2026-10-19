@@ -38,6 +38,128 @@ it("an edit that changes nothing isn't sent", async () => {
 	expect(sent).toEqual([]);
 });
 
+describe("an edit back to the text the server last echoed", () => {
+	const path = (id: string) => API + "/channels/c1/messages/" + id;
+
+	it("is sent after a saved edit the server hasn't echoed yet", async () => {
+		const sent = captureRequests(path("r1"), () => Response.json({}));
+		const message = Object.assign(messageSaying("original"), {id: "r1"});
+
+		await message.edit("changed");
+		await message.edit("original");
+
+		expect(sent).toEqual([{content: "changed"}, {content: "original"}]);
+	});
+
+	it("is sent while the edit before it is still on its way", async () => {
+		let answer: (res: Response) => void = () => {};
+		const answers = [
+			new Promise<Response>((r) => (answer = r)),
+			Promise.resolve(Response.json({})),
+		];
+		const sent = captureRequests(path("r2"), () => answers.shift()!);
+		const message = Object.assign(messageSaying("original"), {id: "r2"});
+
+		const first = message.edit("changed");
+		const second = message.edit("original");
+		answer(Response.json({}));
+		await Promise.all([first, second]);
+
+		expect(sent).toEqual([{content: "changed"}, {content: "original"}]);
+	});
+
+	const refusedEdit = () => Response.json({code: 50035, message: "Too long"}, {status: 400});
+
+	it("an edit retried after a refusal is sent, even when it was asked for twice in flight", async () => {
+		let answer: (res: Response) => void = () => {};
+		const answers = [
+			new Promise<Response>((r) => (answer = r)),
+			Promise.resolve(Response.json({})),
+		];
+		const sent = captureRequests(path("r5"), () => answers.shift()!);
+		const message = Object.assign(messageSaying("original"), {id: "r5"});
+
+		const first = message.edit("changed");
+		await message.edit("changed"); // Enter twice: nothing new to send
+		answer(refusedEdit());
+		await first;
+		await message.edit("changed");
+
+		expect(sent).toEqual([{content: "changed"}, {content: "changed"}]);
+	});
+
+	it("a newer edit refused while an older one is on its way leaves the older as the base", async () => {
+		let answer: (res: Response) => void = () => {};
+		const answers = [
+			new Promise<Response>((r) => (answer = r)),
+			Promise.resolve(refusedEdit()),
+			Promise.resolve(Response.json({})),
+		];
+		const sent = captureRequests(path("r6"), () => answers.shift()!);
+		const message = Object.assign(messageSaying("original"), {id: "r6"});
+
+		const first = message.edit("changed");
+		await message.edit("too long");
+		await message.edit("original");
+		answer(Response.json({}));
+		await first;
+
+		expect(sent).toEqual([{content: "changed"}, {content: "too long"}, {content: "original"}]);
+	});
+
+	it("isn't sent after a refused edit: the server still holds it", async () => {
+		const sent = captureRequests(path("r3"), () =>
+			Response.json({code: 50035, message: "Too long"}, {status: 400}),
+		);
+		const message = Object.assign(messageSaying("original"), {id: "r3"});
+
+		await message.edit("changed");
+		await message.edit("original");
+
+		expect(sent).toEqual([{content: "changed"}]);
+	});
+
+	it("isn't sent once the server's echo of the saved edit has come back and been reverted elsewhere", async () => {
+		const sent = captureRequests(path("r4"), () => Response.json({}));
+		const message = Object.assign(messageSaying("original"), {id: "r4"});
+		Object.assign(message.owner, {
+			infinite: {snapBottom: () => () => {}},
+			guild: {id: "@me", roleids: new Map()},
+		});
+
+		await message.edit("changed");
+		// Another device puts the text back; its echo is the newest thing the server holds.
+		message.giveData({content: "original", author: {}} as never);
+		await message.edit("original");
+
+		expect(sent).toEqual([{content: "changed"}]);
+	});
+
+	it("an older edit's late answer doesn't replace a newer edit's echoed text as the base", async () => {
+		let answer: (res: Response) => void = () => {};
+		const answers = [
+			new Promise<Response>((r) => (answer = r)),
+			Promise.resolve(Response.json({})),
+			Promise.resolve(Response.json({})),
+		];
+		const sent = captureRequests(path("r7"), () => answers.shift()!);
+		const message = Object.assign(messageSaying("original"), {id: "r7"});
+		Object.assign(message.owner, {
+			infinite: {snapBottom: () => () => {}},
+			guild: {id: "@me", roleids: new Map()},
+		});
+
+		const first = message.edit("older");
+		await message.edit("newer");
+		message.giveData({content: "newer", author: {}} as never);
+		answer(Response.json({}));
+		await first;
+		await message.edit("older");
+
+		expect(sent).toEqual([{content: "older"}, {content: "newer"}, {content: "older"}]);
+	});
+});
+
 describe("saving from the editor", () => {
 	afterEach(() => {
 		vi.restoreAllMocks();

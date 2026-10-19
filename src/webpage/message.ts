@@ -671,6 +671,7 @@ class Message extends SnowFlake {
 			} else if (thing === "content") {
 				const newContent = messagejson[thing] || "";
 				this.content = new MarkDown(newContent, this.channel);
+				this.savedEdit = undefined;
 				continue;
 			} else if (thing === "id") {
 				continue;
@@ -940,23 +941,50 @@ class Message extends SnowFlake {
 	/** Counts this message's edits, so a newer one cancels an older one's 429 retry and its
 	 * reopened editor. */
 	private editSeq?: number;
+	/** Edits on their way to the server. */
+	private sendingEdits?: {seq: number; content: string}[];
+	/** The newest edit the server took, until a MESSAGE_UPDATE replaces `content`. A late echo
+	 * of an older edit also clears it: echoes aren't matched to edits. */
+	private savedEdit?: {seq: number; content: string};
+	/** The newest edit the server took, kept past echoes: an older edit's late answer isn't newer. */
+	private savedSeq?: number;
+	/** What the server holds or is about to: the newest edit sent or saved, else `content`. */
+	private editBase() {
+		let newest = this.savedEdit;
+		for (const sending of this.sendingEdits ?? []) {
+			if (!newest || sending.seq > newest.seq) newest = sending;
+		}
+		return newest?.content ?? this.content.rawString;
+	}
 	async edit(content: string) {
 		// Bumped before the no-op return: a newer edit, even one that changes nothing, is the
 		// newest intent and cancels an older edit's pending retry.
 		const seq = (this.editSeq = (this.editSeq ?? 0) + 1);
-		// The text as typed, not as rendered: taking out only the formatting is a change.
-		if (content === this.content.rawString) {
+		// The text as typed, not as rendered: taking out only the formatting is a change. Putting
+		// back the original after an edit that hasn't been echoed yet is still sent.
+		if (content === this.editBase()) {
 			return;
 		}
-		return await fetchRetryOnce(
-			this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id,
-			{
-				method: "PATCH",
-				headers: this.headers,
-				body: JSON.stringify({content}),
-			},
-			{shouldRetry: () => seq === this.editSeq},
-		);
+		const sending = {seq, content};
+		(this.sendingEdits ??= []).push(sending);
+		try {
+			const res = await fetchRetryOnce(
+				this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id,
+				{
+					method: "PATCH",
+					headers: this.headers,
+					body: JSON.stringify({content}),
+				},
+				{shouldRetry: () => seq === this.editSeq},
+			);
+			if (res.ok && seq > (this.savedSeq ?? 0)) {
+				this.savedEdit = sending;
+				this.savedSeq = seq;
+			}
+			return res;
+		} finally {
+			this.sendingEdits = this.sendingEdits?.filter((edit) => edit !== sending);
+		}
 	}
 	/** Text the editor opens with instead of the message's own: an edit that didn't save. */
 	editDraft?: string;
