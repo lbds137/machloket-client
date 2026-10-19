@@ -3239,9 +3239,11 @@ class Channel extends SnowFlake {
 		});
 		notiselect.show();
 	}
-	/** Set when the opening page of history was rate-limited: the channel is unloaded, not
-	 * empty. */
+	/** Set when the opening page of history was refused or never came: the channel is
+	 * unloaded, not empty. */
 	private firstPageRefused = false;
+	/** The last refusal was a rate limit, whose own window says when to ask again. */
+	private firstPageRateLimited = false;
 	/** The opening page's consecutive refusals; an open the user makes starts the count over. */
 	private firstPageRefusals?: number;
 	/** What an open the user makes (getHTML's build path) resets before fetching the opening page. */
@@ -3251,7 +3253,7 @@ class Channel extends SnowFlake {
 		// getHTML's in-view early return, so a click on the channel already in view leaves it be.
 		this.reaskToken = (this.reaskToken ?? 0) + 1;
 	}
-	/** The most times one open asks for a rate-limited opening page before it gives up. */
+	/** The most times one open asks for a refused opening page before it gives up. */
 	private static readonly firstPageAttempts = 3;
 	async putmessages() {
 		//TODO swap out with the WS op code
@@ -3269,9 +3271,11 @@ class Channel extends SnowFlake {
 			// the paging loop shares, and leave the channel unloaded.
 			Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(j));
 			this.firstPageRefused = true;
+			this.firstPageRateLimited = true;
 			this.firstPageRefusals = (this.firstPageRefusals ?? 0) + 1;
 			return;
 		}
+		this.firstPageRateLimited = false;
 		// Any other failure says no more about where the history ends: refused, not the top.
 		const body: unknown = j?.ok ? await j.json().catch(() => undefined) : undefined;
 		if (!Array.isArray(body)) {
@@ -3613,17 +3617,29 @@ class Channel extends SnowFlake {
 				}
 			}
 			if (!id && this.firstPageRefused) {
-				// Nothing came, but that isn't the channel's emptiness: no title, no recorded end.
+				// Nothing came, but that isn't the channel's emptiness: no empty-channel title, no
+				// recorded end.
 				this.infinitefocus = false;
-				if ((this.firstPageRefusals ?? 0) >= Channel.firstPageAttempts) {
-					// Out of attempts: as after any failed page, the skeleton goes and nothing is
-					// recorded, so the next open asks again.
+				const refusals = this.firstPageRefusals ?? 0;
+				if (refusals >= Channel.firstPageAttempts) {
+					// Out of attempts: the skeleton goes, the pane says the messages couldn't load,
+					// and nothing is recorded, so the next open asks again.
+					const title = document.createElement("h2");
+					title.id = "loadfailedtitle";
+					title.textContent = I18n.messagesLoadFailed();
+					title.classList.add("titlespace", "messagecontainer");
+					messages.append(title);
 					loading.classList.remove("loading");
 					return;
 				}
-				// The skeleton stays up. When the window ends, the channel asks again by the
-				// same two steps getHTML takes, if it is still the one on screen.
-				const wait = Math.max(0, Channel.historyCooldownUntil - Date.now());
+				// The skeleton stays up. Once the rate limit's window ends, or after a backoff for
+				// any other refusal (1 s, then 2 s), the channel asks again by the same two steps
+				// getHTML takes, if it is still the one on screen.
+				const cooldownRemaining = Math.max(0, Channel.historyCooldownUntil - Date.now());
+				const backoff = refusals >= 1 ? 1000 * 2 ** (refusals - 1) : 0;
+				const wait = this.firstPageRateLimited
+					? cooldownRemaining
+					: Math.max(cooldownRemaining, backoff);
 				const token = this.reaskToken;
 				// The token (not the global generation, which any click on the channel in view
 				// bumps) says no newer build of this channel has started; the focus check says

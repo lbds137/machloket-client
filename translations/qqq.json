@@ -43,6 +43,7 @@
 								"sillyDeleteConfirmPhrase": "This is a silly phrase, do not translate this directly, make a joke that is easy to type in your language",
 								"updateSettings": "Title of a page that allows you to adjust the update settings"
 				},
+				"messagesLoadFailed": "Shown in the message pane when the channel's opening page of messages failed to load after retrying.",
 				"ok": "Assuming that it's an Ok button",
 				"permissions": {
 								"descriptions": {

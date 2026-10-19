@@ -729,6 +729,7 @@
 		"summary": "Report summary:"
 	},
 	"messageLink": "Message in # $1",
+	"messagesLoadFailed": "Couldn't load the messages. Open the channel again to retry.",
 	"muteDuration": "Unmute in:",
 	"nevermind": "Nevermind",
 	"no": "No",

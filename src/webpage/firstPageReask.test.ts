@@ -167,6 +167,48 @@ it("the refused first page re-asks once the cooldown passes", async () => {
 	// The skeleton comes down again only when a build actually lands; leave that to buildmessages.
 });
 
+it("a refusal that isn't a rate limit still waits before asking again, longer each time", async () => {
+	vi.useFakeTimers();
+	const channel = refusedChannel();
+	(channel as unknown as {firstPageRefusals?: number}).firstPageRefusals = 2;
+	const putmessages = vi.spyOn(channel, "putmessages").mockResolvedValue(undefined);
+	vi.spyOn(channel, "buildmessages").mockResolvedValue(undefined);
+
+	void channel.tryfocusinfinate();
+	await vi.advanceTimersByTimeAsync(1_999);
+	expect(putmessages).not.toHaveBeenCalled();
+
+	await vi.advanceTimersByTimeAsync(1);
+	expect(putmessages).toHaveBeenCalledTimes(1);
+});
+
+it("a rate-limited refusal waits only for the server's window, with no backoff on top", async () => {
+	vi.useFakeTimers();
+	const channel = refusedChannel();
+	Object.assign(channel, {firstPageRefusals: 2, firstPageRateLimited: true});
+	Channel.historyCooldownUntil = Date.now() + 100;
+	const putmessages = vi.spyOn(channel, "putmessages").mockResolvedValue(undefined);
+	vi.spyOn(channel, "buildmessages").mockResolvedValue(undefined);
+
+	void channel.tryfocusinfinate();
+	await vi.advanceTimersByTimeAsync(100);
+
+	expect(putmessages).toHaveBeenCalledTimes(1);
+});
+
+it("after the last refused attempt the pane says the messages couldn't load", async () => {
+	const {I18n} = await import("./i18n");
+	const channel = refusedChannel();
+	(channel as unknown as {firstPageRefusals?: number}).firstPageRefusals = 3;
+
+	await channel.tryfocusinfinate();
+
+	const note = document.getElementById("scrollWrap")!.querySelector("h2");
+	expect(note).not.toBeNull();
+	expect(note!.textContent).toBe(I18n.messagesLoadFailed());
+	expect(document.getElementById("loadingdiv")!.classList.contains("loading")).toBe(false);
+});
+
 it("a newer build's token bump cancels the pending re-ask", async () => {
 	vi.useFakeTimers();
 	const channel = refusedChannel();
