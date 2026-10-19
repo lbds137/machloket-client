@@ -5689,9 +5689,17 @@ class Localuser {
 		let authorIds = [] as string[];
 		let mentionIds = [] as string[];
 		let channels = [] as Channel[];
+		/** Whether this search has drawn a page, so the panel holds its sort bar. */
+		let shown = false;
 		const genPage = (page: number) => {
 			p.set("offset", page * 50 + "");
 			const guildSearch = this.lookingguild?.id !== "@me";
+			// A DM search searches the open channel; with none open there's nothing to ask, and
+			// the last search's results don't answer this one.
+			if (!guildSearch && !this.channelfocus) {
+				sideDiv.replaceChildren();
+				return;
+			}
 			fetchRetryOnce(
 				this.info.api +
 					`${guildSearch ? `/guilds/${this.lookingguild?.id}` : `/channels/${this.channelfocus?.id}`}/messages/search/?` +
@@ -5720,11 +5728,26 @@ class Localuser {
 					}
 					// Not an answer to this search: say why, rather than leave the last one's results.
 					if (!found) {
-						sideDiv.textContent = refusal;
+						const heading = document.createElement("h3");
+						heading.classList.add("searchRefusal");
+						heading.textContent = refusal;
+						const sortBar = shown ? sideDiv.querySelector(".sortBar") : null;
+						if (sortBar) {
+							// A later page, sort or filter of this search: its sort bar and page
+							// buttons stay, to try again without retyping.
+							for (const old of sideDiv.querySelectorAll(".searchRefusal, .searchNoResults")) {
+								old.remove();
+							}
+							sortBar.after(heading);
+						} else {
+							sideDiv.replaceChildren(heading);
+						}
 						sideContainDiv.classList.add("searchDiv");
 						sideContainDiv.classList.remove("hideSearchDiv");
+						sideDiv.scrollTo({top: 0, behavior: "instant"});
 						return;
 					}
+					shown = true;
 					//FIXME total_results shall be ignored as it's known to be bad, spacebar bug.
 					const messages = found
 						.map(([m]) => {
@@ -5736,14 +5759,16 @@ class Localuser {
 							return new Message(m, c, true);
 						})
 						.filter((_) => _ !== undefined);
-					sideDiv.innerHTML = "";
 					if (messages.length == 0 && page !== 0) {
+						// Past the last page: the one before is drawn instead. The panel stays until
+						// it comes, so a refusal still has the sort bar to sit under.
 						maxpage = page - 1;
 						genPage(page - 1);
 						return;
 					} else if (messages.length !== 50) {
 						maxpage = page;
 					}
+					sideDiv.innerHTML = "";
 					const sortBar = document.createElement("div");
 					sortBar.classList.add("flexltr", "sortBar");
 
@@ -5877,6 +5902,7 @@ class Localuser {
 								channels = values.map((id) => g.getChannel(id)).filter((_) => _ !== undefined);
 							};
 						d.onhide = () => {
+							deleteMessages();
 							genPage(0);
 						};
 						d.show();
@@ -5885,13 +5911,18 @@ class Localuser {
 					const newB = document.createElement("button");
 					const old = document.createElement("button");
 					[newB.textContent, old.textContent] = [I18n.search.new(), I18n.search.old()];
+					// The highlight follows the order asked for, which a retry after a refusal uses.
 					old.onclick = () => {
 						p.set("sort_order", "asc");
+						old.classList.add("selectedB");
+						newB.classList.remove("selectedB");
 						deleteMessages();
 						genPage(0);
 					};
 					newB.onclick = () => {
 						p.set("sort_order", "desc");
+						newB.classList.add("selectedB");
+						old.classList.remove("selectedB");
 						deleteMessages();
 						genPage(0);
 					};
@@ -5941,6 +5972,7 @@ class Localuser {
 					if (messages.length === 0) {
 						const noMs = document.createElement("h3");
 						noMs.textContent = I18n.search.nofind();
+						noMs.classList.add("searchNoResults");
 						sideDiv.append(noMs);
 					}
 					const bottombuttons = document.createElement("div");
