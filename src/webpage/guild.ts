@@ -1362,10 +1362,14 @@ class Guild extends SnowFlake {
 				form.addMDInput(I18n.guild.templateDesc(), "description", {
 					initText: temp.description,
 				});
-				User.resolve(temp.creator_id, this.localuser).then((_) => {
-					form.addText(I18n.guild.tempCreatedBy());
-					form.addHTMLArea(_.createWidget(this));
-				});
+				User.resolve(temp.creator_id, this.localuser).then(
+					(_) => {
+						form.addText(I18n.guild.tempCreatedBy());
+						form.addHTMLArea(_.createWidget(this));
+					},
+					// A failed lookup leaves the row out; the rest of the form is unaffected.
+					() => undefined,
+				);
 				form.addText(I18n.guild.tempUseCount((temp.usage_count || 0) + ""));
 				form.addPreprocessor(() => {
 					if (name.value.length < 2) {
