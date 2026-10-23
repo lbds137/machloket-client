@@ -209,18 +209,26 @@ class Bot {
 						desc.textContent = guild.description;
 						content.appendChild(desc);
 
-						guildsettings.addHTMLArea(content);
+						const r = guildsettings.addHTMLArea(content);
 						content.onclick = () => {
 							const guildsetting = guildsettings.addSubOptions(guild.name);
 							guildsetting.addHTMLArea(content);
+							let leaving = false;
 							guildsetting.addButtonInput("", I18n.leaveGuild(), async () => {
-								if (confirm(I18n.confirmGuildLeave(guild.name))) {
-									const res = await fetch(this.info.api + "/users/@me/guilds/" + guild.id, {
-										method: "DELETE",
-										headers: this.headers,
-									}).catch(() => undefined);
-									if (!res?.ok) await showRefusal(res);
+								if (leaving || !confirm(I18n.confirmGuildLeave(guild.name))) return;
+								leaving = true;
+								const res = await fetch(this.info.api + "/users/@me/guilds/" + guild.id, {
+									method: "DELETE",
+									headers: this.headers,
+								}).catch(() => undefined);
+								if (!res?.ok) {
+									leaving = false;
+									await showRefusal(res);
+									return;
 								}
+								r.html = document.createElement("div");
+								content.remove();
+								guildsettings.returnFromSub();
 							});
 						};
 					}
