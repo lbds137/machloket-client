@@ -1,8 +1,15 @@
-import {expect, it, vi} from "vitest";
+import {afterEach, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 const {Localuser} = await import("./localuser");
+const {Guild} = await import("./guild");
+const {Member} = await import("./member");
+const {User} = await import("./user");
+
+afterEach(() => {
+	vi.restoreAllMocks();
+});
 
 function session(known: string[]) {
 	const user = Object.assign(Object.create(Localuser.prototype), {
@@ -54,4 +61,47 @@ it("going elsewhere drops the wait, so a late arrival doesn't pull the view back
 	user.guildArrived("g1");
 
 	expect(load).not.toHaveBeenCalledWith("g1");
+});
+
+it("GUILD_CREATE adds the joined guild to guildOrder, so the next save keeps it", async () => {
+	document.body.innerHTML = '<div id="servers"><div id="bottomseparator"></div></div>';
+	const existing = {id: "g0"};
+	const user = Object.assign(Object.create(Localuser.prototype), {
+		headers: {},
+		guilds: [],
+		guildids: new Map(),
+		guildOrder: [existing],
+		channelids: new Map(),
+		// Localuser.perminfo is accessor-backed; Guild walks owner.perminfo.guilds.
+		userinfo: {localuserStore: {guilds: {}, channels: {}}},
+		user: Object.create(User.prototype),
+	}) as InstanceType<typeof Localuser>;
+	const icon = document.createElement("div");
+	vi.spyOn(user, "makeGuildIcon").mockReturnValue(icon);
+	// The dispatch's tail updates the favicon; its DM walk needs a page this fixture skips.
+	vi.spyOn(user, "generateFavicon").mockImplementation(() => {});
+	vi.spyOn(Guild.prototype, "showWelcome").mockImplementation(() => Promise.resolve());
+	vi.spyOn(Member, "resolveMember").mockResolvedValue(undefined);
+
+	await user.handleEvent({
+		op: 0,
+		t: "GUILD_CREATE",
+		d: {
+			id: "g9",
+			name: "Joined",
+			large: false,
+			member_count: 1,
+			emojis: [],
+			stickers: [],
+			roles: [],
+			channels: [],
+			threads: [],
+			properties: {id: "g9", name: "Joined", default_message_notifications: 0},
+		},
+	} as never);
+
+	await vi.waitFor(() =>
+		expect((user.guildOrder[1] as {id?: string} | undefined)?.id).toBe("g9"),
+	);
+	expect(user.guildOrder[0]).toBe(existing);
 });
