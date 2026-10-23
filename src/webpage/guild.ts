@@ -581,11 +581,11 @@ class Guild extends SnowFlake {
 		return [];
 	}
 	async showWelcome() {
-		this.welcomeScreen = await (
-			await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-				headers: this.headers,
-			})
-		).json();
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+			headers: this.headers,
+		}).catch(() => undefined);
+		if (!res?.ok) return showRefusal(res);
+		this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
 		if (!this.welcomeScreen?.enabled) return;
 		const dio = new Dialog(I18n.onboarding.title(this.properties.name));
 		const opt = dio.options;
@@ -1177,11 +1177,15 @@ class Guild extends SnowFlake {
 		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const onboard = settings.addButton(I18n.onboarding.name());
 			const genOnboard = async () => {
-				this.welcomeScreen = await (
-					await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
-						headers: this.headers,
-					})
-				).json();
+				const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+					headers: this.headers,
+				}).catch(() => undefined);
+				if (!res?.ok) {
+					// The section keeps its previous state; no rebuild from an answer we don't have.
+					await showRefusal(res);
+					return;
+				}
+				this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
 				onboard.removeAll();
 				if (this.welcomeScreen?.enabled) {
 					const welcomeScreen = this.welcomeScreen;

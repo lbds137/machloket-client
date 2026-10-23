@@ -3121,9 +3121,18 @@ class Localuser {
 		return saveProfile(this.info.api + "/users/@me/profile", this.headers, json);
 	}
 	async getConnections() {
-		return fetch(this.info.api + "/connections", {
+		const res = await fetch(this.info.api + "/connections", {
 			headers: this.headers,
-		}).then((r) => r.json() as Promise<{[key: string]: {enabled: boolean; icon_url?: string}}>);
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return {};
+		}
+		return (
+			(await res.json().catch(() => null)) as
+				| {[key: string]: {enabled: boolean; icon_url?: string}}
+				| null
+		) ?? {};
 	}
 	async showusersettings() {
 		const prefs = await getPreferences();
@@ -3777,10 +3786,16 @@ class Localuser {
 				actConDivCont.innerHTML = "";
 				const cons = fetch(this.info.api + "/users/@me/connections", {
 					headers: this.headers,
-				});
+				}).catch(() => undefined);
 
 				this.getConnections().then(async (json) => {
-					const actCons = (await (await cons).json()) as ConnectionJson[];
+					const consRes = await cons;
+					// A refusal says why once and the instance's own connection types still list;
+					// only the account's connected rows are missing.
+					const actCons = consRes?.ok
+						? ((await consRes.json().catch(() => null)) as ConnectionJson[] | null) ?? []
+						: [];
+					if (!consRes?.ok) await showRefusal(consRes);
 					const actConMap = new Map<string, ConnectionJson>(
 						actCons.map((_) => [_.type, _] as const),
 					);
@@ -3809,9 +3824,13 @@ class Localuser {
 										{
 											headers: this.headers,
 										},
-									);
-									const connectionJSON = await connectionRes.json();
-									const authorizeUrl = externalUrl(connectionJSON.url);
+									).catch(() => undefined);
+									if (!connectionRes?.ok) {
+										await showRefusal(connectionRes);
+										return;
+									}
+									const connectionJSON = await connectionRes.json().catch(() => null);
+									const authorizeUrl = externalUrl(connectionJSON?.url);
 									if (authorizeUrl) {
 										window.open(authorizeUrl.href, "_blank", "noopener noreferrer");
 									}
@@ -4571,14 +4590,22 @@ class Localuser {
 						const params = new URLSearchParams();
 						params.set("count", count.value);
 						params.set("length", length.value);
-						const json = (await (
-							await fetch(
-								this.info.api + "/auth/generate-registration-tokens?" + params.toString(),
-								{
-									headers: this.headers,
-								},
-							)
-						).json()) as {tokens: string[]};
+						const res = await fetch(
+							this.info.api + "/auth/generate-registration-tokens?" + params.toString(),
+							{
+								headers: this.headers,
+							},
+						).catch(() => undefined);
+						if (!res?.ok) {
+							await showRefusal(res);
+							return;
+						}
+						const json = (await res.json().catch(() => null)) as {tokens: string[]} | null;
+						if (!json) {
+							// A 200 that isn't the promised shape: say so, don't die silently.
+							await showRefusal(res);
+							return;
+						}
 						if (format.index === 0) {
 							pre.textContent = JSON.stringify(json.tokens);
 						} else if (format.index === 1) {
@@ -4622,9 +4649,13 @@ class Localuser {
 		{
 			const instanceInfo = settings.addButton(I18n.instanceInfo.name());
 			fetch(this.info.api + "/policies/instance/")
-				.then((_) => _.json())
-				.then((body) => {
-					const json = body as {
+				.catch(() => undefined)
+				.then(async (_) => {
+					if (!_?.ok) {
+						await showRefusal(_);
+						return null;
+					}
+					return (await _.json().catch(() => null)) as {
 						instanceName: string;
 						instanceDescription: string | null;
 						frontPage: string | null;
@@ -4635,7 +4666,10 @@ class Localuser {
 						instanceId: string;
 						autoCreateBotUsers: false;
 						publicUrl: string | null;
-					};
+					} | null;
+				})
+				.then((json) => {
+					if (!json) return;
 					instanceInfo.addTitle(json.instanceName);
 					if (json.correspondenceEmail) {
 						const a = document.createElement("a");
@@ -4681,9 +4715,13 @@ class Localuser {
 		}
 		const res = await fetch(this.info.api + "/applications/" + appId, {
 			headers: this.headers,
-		});
-		const json = await res.json();
-		console.error(json);
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return;
+		}
+		const json = await res.json().catch(() => null);
+		if (!json) return;
 		const form = container.addSubForm(json.name, () => {}, {
 			fetchURL: this.info.api + "/applications/" + appId,
 			method: "PATCH",
@@ -4764,8 +4802,17 @@ class Localuser {
 	async manageBot(appId = "", container: Form) {
 		const res = await fetch(this.info.api + "/applications/" + appId, {
 			headers: this.headers,
-		});
-		const json = await res.json();
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return;
+		}
+		const json = await res.json().catch(() => null);
+		if (!json) {
+			// A 200 that isn't the promised shape is a failed request, not "no bot".
+			await showRefusal(res);
+			return;
+		}
 		if (!json.bot) {
 			return alert(I18n.localuser.confuseNoBot());
 		}
