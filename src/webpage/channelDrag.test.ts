@@ -196,6 +196,30 @@ it("a channel dropped onto a sibling lands before it and PATCHes", async () => {
 	expect([...wrap.children].indexOf(ghost)).toBeLessThan([...wrap.children].indexOf(div));
 });
 
+it("a channel dropped onto a category header lands inside it, wrappers or not", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const cat = chan(g, "cat", {type: 4, position: 0});
+	const kid = chan(g, "kid", {position: 0, parent: cat});
+	cat.children = [kid];
+	const c = chan(g, "c", {position: 1});
+	g.headchannels = [cat, c];
+	g.channels = [cat, c, kid];
+
+	// No wrapper structure at all: the container branch must not need the anchors.
+	const div = document.createElement("div");
+	const containerDiv = document.createElement("div");
+	cat.coatDropDiv(div, containerDiv);
+	const drop = new Event("drop");
+	Object.defineProperty(drop, "offsetY", {value: 5}); // bottom half: after, not before
+	Channel.dragged = [c, document.createElement("div")];
+	div.dispatchEvent(drop);
+	Channel.dragged = [];
+
+	expect(cat.children.map((ch) => ch.id)).toEqual(["c", "kid"]);
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+});
+
 it("a refused PATCH after a sibling drop restores the order and keeps the search panel", async () => {
 	captureRequests(
 		CHANNELS,
