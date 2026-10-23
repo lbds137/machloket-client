@@ -167,6 +167,35 @@ describe("form submit", () => {
 		expect(calls).toEqual([{code: 404, message: "a channel topic"}]);
 	});
 
+	// The welcome add-channel/enable dialogs are fetchURL="" forms: their guard is
+	// subbmitting alone, held across the awaited onSubmit (a posting form swaps to its
+	// per-URL inFlight set before the fetch).
+	it("a second tap while an async onSubmit is still awaiting runs it once", async () => {
+		let release!: () => void;
+		const gate = new Promise<void>((res) => (release = res));
+		const calls: unknown[] = [];
+		const form = new Dialog("").options.addForm("", async (res: object) => {
+			calls.push(res);
+			await gate;
+		});
+
+		const first = form.submit();
+		await settle();
+		// The handler is inside its await before the second tap: the guard is what
+		// decides the outcome, not scheduling.
+		expect(calls).toHaveLength(1);
+		void form.submit();
+		release();
+		await first;
+
+		expect(calls).toHaveLength(1);
+
+		// Once the handler is done the guard releases: the form can be sent again.
+		await form.submit();
+		await settle();
+		expect(calls).toHaveLength(2);
+	});
+
 	it("a second tap while the first answer is pending sends nothing", async () => {
 		let answer!: () => void;
 		const sent = captureRequests(
