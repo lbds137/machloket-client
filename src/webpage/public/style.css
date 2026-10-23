@@ -1103,6 +1103,125 @@ textarea {
 	}
 }
 
+/* A message select's phone bottom sheet (utils/fancySelect.ts): the list opens as a fixed
+   sheet over a dim backdrop instead of overlaying the message. Built only when
+   FancySelect.phoneMode is on, so the rules need no media query of their own. */
+.selectSheetBackdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 102;
+	display: flex;
+	align-items: flex-end;
+	background: color-mix(in srgb, var(--black) 75%, transparent);
+}
+
+.selectSheet {
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+	width: 100%;
+	max-height: 70dvh;
+	padding: 4px 16px calc(16px + env(safe-area-inset-bottom));
+	border-radius: 16px 16px 0 0;
+	background: var(--secondary-bg);
+}
+
+.selectSheetHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 10px 0;
+}
+
+.selectSheetTitle {
+	overflow: hidden;
+	font-weight: bold;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.selectSheetClose {
+	flex-shrink: 0;
+	padding: 2px 10px;
+	border: none;
+	background: none;
+	color: var(--primary-text);
+	font-size: 22px;
+	cursor: pointer;
+}
+
+.selectSheetRows {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+}
+
+.selectSheetRow {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 10px 4px;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.selectSheetRow p {
+	margin: 3px 0 0;
+	font-size: 14px;
+	opacity: 0.6;
+}
+
+.selectSheetMarker {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	accent-color: var(--blue);
+}
+
+/* The single choice's leading radio circle (multi uses a real checkbox above). */
+span.selectSheetMarker {
+	box-sizing: border-box;
+	border: 2px solid var(--primary-text);
+	border-radius: 50%;
+}
+
+.selectSheetRow.selectSheetSelected span.selectSheetMarker {
+	border-color: var(--blue);
+	background: radial-gradient(circle, var(--blue) 42%, transparent 46%);
+}
+
+.selectSheetRow.selectSheetDisabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+.selectSheetFooter {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding-top: 12px;
+}
+
+.selectSheetCount {
+	opacity: 0.6;
+}
+
+.selectSheetApply {
+	flex: 1;
+	padding: 10px 12px;
+	border: none;
+	border-radius: 6px;
+	background: var(--blue);
+	color: white;
+	cursor: pointer;
+}
+
+.selectSheetApply:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
 input[type="text"],
 input[type="password"],
 input[type="search"],

@@ -495,6 +495,8 @@
 		"optionNotImpl": "Machloket doesn't implement this yet",
 		"onlyYou": "Only you can see this message",
 		"replyline": "Started interaction",
+		"sheetApply": "Apply",
+		"sheetCount": "$1 selected",
 		"used": "used",
 		"started": "Processing interaction…",
 		"worked": "Interaction succeeded"
