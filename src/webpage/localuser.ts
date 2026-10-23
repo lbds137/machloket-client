@@ -4006,7 +4006,10 @@ class Localuser {
 								sub.addText(I18n.deviceManage.latitude(last.latitude + ""));
 							}
 							if (session.id !== this.session_id) {
+								let loggingOut = false;
 								sub.addButtonInput("", I18n.deviceManage.logout(), async () => {
+									if (loggingOut) return;
+									loggingOut = true;
 									const res = await fetch(this.info.api + "/auth/sessions/logout", {
 										method: "POST",
 										headers: this.headers,
@@ -4014,7 +4017,10 @@ class Localuser {
 											session_id_hashes: [session.id_hash],
 										}),
 									}).catch(() => undefined);
-									if (!res?.ok) return showRefusal(res);
+									if (!res?.ok) {
+										loggingOut = false;
+										return showRefusal(res);
+									}
 									div.remove();
 									r.html = document.createElement("div");
 									manageSessions.returnFromSub();
