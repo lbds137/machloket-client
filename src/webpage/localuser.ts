@@ -2290,8 +2290,11 @@ class Localuser {
 			{shouldRetry: () => seq === this.folderSeq},
 		).catch(() => undefined);
 		if (res?.ok) {
-			this.acceptedFolders = guild_folders;
-			this.guildFolders = guild_folders;
+			// A newer save superseded this one: its late success must not overwrite that state.
+			if (seq === this.folderSeq) {
+				this.acceptedFolders = guild_folders;
+				this.guildFolders = guild_folders;
+			}
 			return;
 		}
 		if (seq !== this.folderSeq) return;

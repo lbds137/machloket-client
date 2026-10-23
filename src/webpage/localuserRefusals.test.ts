@@ -111,6 +111,37 @@ it("saveGuildOrder records accepted folders on 200, and on 403 restores guildFol
 	expect(shown).toHaveBeenCalledOnce();
 });
 
+it("saveGuildOrder ignores a success that a newer save superseded", async () => {
+	await I18n.done;
+	let staleAnswer!: (res: Response) => void;
+	let call = 0;
+	captureRequests(API + "/users/@me/settings", () =>
+		++call === 1
+			? new Promise<Response>((res) => (staleAnswer = res))
+			: Response.json({}),
+	);
+
+	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
+	const user = makeUser({
+		guildFolders: [],
+		guildOrder: [folder("stale")],
+	});
+
+	const first = user.saveGuildOrder();
+	await vi.waitFor(() => expect(staleAnswer).toBeDefined());
+
+	user.guildOrder = [folder("fresh")] as never;
+	await user.saveGuildOrder();
+
+	// The stale save's answer lands last and succeeds: it must not overwrite the newer state.
+	staleAnswer(Response.json({}));
+	await first;
+
+	const fresh = [{id: 1, name: "fresh", guild_ids: ["g1"], color: 0}];
+	expect(user.guildFolders).toEqual(fresh);
+	expect((user as unknown as {acceptedFolders: unknown}).acceptedFolders).toEqual(fresh);
+});
+
 it("saveGuildOrder ignores a refusal that a newer save superseded", async () => {
 	await I18n.done;
 	let firstAnswer!: (res: Response) => void;
