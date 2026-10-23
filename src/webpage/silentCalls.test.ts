@@ -1,4 +1,5 @@
 import {afterEach, expect, it, vi} from "vitest";
+import type {channeljson} from "./jsontypes.js";
 import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -27,16 +28,27 @@ function localuser() {
 		info: {api: API},
 		headers: {Authorization: "t"},
 		inrelation: new Set(),
+		channelids: new Map(),
+		idToNext: new Map(),
+		idToPrev: new Map(),
+		messages: new Map(),
+		unknownRead: new Map(),
+		// Channel.perminfo walks userinfo.localuserStore; perminfo itself is accessor-only.
+		userinfo: {localuserStore: {guilds: {}, channels: {}}},
 	}) as InstanceType<typeof Localuser>;
 }
 
 function guild() {
-	return Object.assign(Object.create(Guild.prototype), {
+	const g = Object.assign(Object.create(Guild.prototype), {
 		id: "g1",
 		headers: {Authorization: "t"},
 		channels: [],
+		headchannels: [],
 		owner: localuser(),
 	}) as InstanceType<typeof Guild>;
+	// The real constructor seeds this; Channel's constructor reads it.
+	g.perminfo = {channels: {}};
+	return g;
 }
 
 function channel(owner = guild()) {
@@ -158,4 +170,30 @@ it("a refused poll expire keeps its confirmation dialog open and says why", asyn
 	);
 
 	expect(hide).not.toHaveBeenCalled();
+});
+
+it("a gateway channel create sends no reorder PATCH and lands top-level channels in position order", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	// A position gap (5) is the normal state of a real guild: it is what the stray
+	// PATCH would renormalize.
+	const existing = channel(g);
+	existing.name = "general";
+	existing.position = 5;
+	existing.type = 0;
+	existing.children = [];
+	g.channels = [existing];
+	g.headchannels = [existing];
+
+	const created = g.createChannelpac({
+		id: "c2",
+		name: "random",
+		type: 0,
+		position: 1,
+	} as unknown as channeljson);
+
+	expect(created.id).toBe("c2");
+	expect(sent).toEqual([]);
+	expect(existing.position).toBe(5);
+	expect(g.headchannels.map((c) => c.id)).toEqual(["c2", "c1"]);
 });

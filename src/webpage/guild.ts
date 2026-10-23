@@ -2278,7 +2278,11 @@ class Guild extends SnowFlake {
 		if (!thischannel.parent) {
 			this.headchannels.push(thischannel);
 		}
-		this.calculateReorder();
+		// A channel someone else created is not a reorder: sortchannels keeps the top level in
+		// server-position order without writing positions back (calculateReorder PATCHes).
+		// Children of a category keep their arrival order: their sort can't take a thread's
+		// missing position.
+		this.sortchannels();
 		this.printServers();
 		return thischannel;
 	}
