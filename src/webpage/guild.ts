@@ -1850,7 +1850,10 @@ class Guild extends SnowFlake {
 				entry.channel.children = merge(entry.children, entry.channel.children, live, known);
 			}
 			if (this.localuser.lookingguild === this) {
-				this.localuser.loadGuild(this.id, true);
+				// In place: loadGuild would also close an open search panel.
+				const channels = document.getElementById("channels") as HTMLDivElement;
+				channels.innerHTML = "";
+				channels.appendChild(this.buildChannelList());
 			}
 		};
 	}
@@ -2114,6 +2117,17 @@ class Guild extends SnowFlake {
 		}
 		this.localuser.goToChannel(threadId);
 	}
+	/** Sorts and builds the channel list for #channels. The refused-drag restore swaps this in
+	 * directly: it must not touch the search panel or anything outside #channels. */
+	buildChannelList(): HTMLElement {
+		this.sortchannels();
+		const build = document.createElement("div");
+
+		for (const thing of this.headchannels) {
+			build.appendChild(thing.createguildHTML(this.isAdmin()));
+		}
+		return build;
+	}
 	getHTML() {
 		const sideContainDiv = document.getElementById("sideContainDiv");
 		if (sideContainDiv) {
@@ -2123,15 +2137,8 @@ class Guild extends SnowFlake {
 		const searchBox = document.getElementById("searchBox");
 		if (searchBox) searchBox.textContent = "";
 
-		//this.printServers();
-		this.sortchannels();
 		this.printServers();
-		const build = document.createElement("div");
-
-		for (const thing of this.headchannels) {
-			build.appendChild(thing.createguildHTML(this.isAdmin()));
-		}
-		return build;
+		return this.buildChannelList();
 	}
 	isAdmin() {
 		return this.member?.isAdmin() ?? false;

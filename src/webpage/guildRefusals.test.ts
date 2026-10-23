@@ -232,11 +232,23 @@ it("a restore keeps a channel created since the snapshot and drops one deleted s
 });
 
 it("a restore redraws the channel list when its guild is on screen", () => {
-	const {guild} = guildWithChannels("c1");
-	const loadGuild = vi.fn();
-	Object.assign(guild.owner, {lookingguild: guild, loadGuild});
+	const {guild, channels: [c1]} = guildWithChannels("c1");
+	Object.assign(guild.owner, {lookingguild: guild});
+	const channelsDiv = document.createElement("div");
+	channelsDiv.id = "channels";
+	channelsDiv.textContent = "stale";
+	document.body.append(channelsDiv);
+	c1.createguildHTML = () => {
+		const d = document.createElement("div");
+		d.textContent = c1.id;
+		return d;
+	};
 
-	guild.snapshotLayout()();
+	try {
+		guild.snapshotLayout()();
 
-	expect(loadGuild).toHaveBeenCalledWith("g1", true);
+		expect(channelsDiv.textContent).toBe("c1");
+	} finally {
+		channelsDiv.remove();
+	}
 });

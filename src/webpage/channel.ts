@@ -1423,7 +1423,6 @@ class Channel extends SnowFlake {
 	coatDropDiv(div: HTMLDivElement, container: HTMLElement | false = false) {
 		div.style.position = "relative";
 		div.addEventListener("dragenter", (event) => {
-			console.log("enter");
 			event.preventDefault();
 		});
 		const dragDiv = () => {
@@ -1459,27 +1458,33 @@ class Channel extends SnowFlake {
 			const that = Channel.dragged[0];
 			if (!that) return;
 			event.preventDefault();
-			const restore = this.guild.snapshotLayout();
 			const height = div.getBoundingClientRect().height;
 			const before = event.offsetY / height < 0.5;
-			if (container && that.type !== 4 && !before) {
+			// thisy (the row the drop is relative to) and the anchors for placing the dragged
+			// row are read before any mutation: bailing out afterwards would leave the model
+			// moved with nothing sent or restored. The snapshot comes after the bail: a drop
+			// that changes nothing must not cancel an in-flight drag's restore.
+			let thisy = this as Channel;
+			if (that.type === 4 && this.parent) {
+				thisy = this.parent;
+			}
+			const useContainer = Boolean(container) && that.type !== 4 && !before;
+			const needAnchors =
+				!useContainer && Channel.dragged[1] !== undefined && !(this === thisy && this.type !== 4);
+			const tdiv = needAnchors
+				? ((div.parentElement as HTMLDivElement | null)?.parentElement as HTMLElement | null)
+				: undefined;
+			if (needAnchors && !tdiv) return;
+			const restore = this.guild.snapshotLayout();
+			if (useContainer) {
 				that.move_id = this.id;
 				if (that.parent) {
 					that.parent.children.splice(that.parent.children.indexOf(that), 1);
 				}
 				that.parent = this;
-				container.prepend(Channel.dragged[1] as HTMLDivElement);
+				(container as HTMLElement).prepend(Channel.dragged[1] as HTMLDivElement);
 				this.children.unshift(that);
 			} else {
-				console.log(this, Channel.dragged);
-				let thisy = this as Channel;
-				if (that.type === 4) {
-					console.log("check", this);
-					if (this.parent) {
-						thisy = this.parent;
-						console.log("overwrite :3", thisy);
-					}
-				}
 				that.move_id = thisy.parent_id;
 				if (that.parent) {
 					that.parent.children.splice(that.parent.children.indexOf(that), 1);
@@ -1498,7 +1503,6 @@ class Channel extends SnowFlake {
 						}
 					}
 					that.parent.children = build;
-					console.log(build);
 				} else {
 					const build: Channel[] = [];
 					for (let i = 0; i < thisy.guild.headchannels.length; i++) {
@@ -1519,16 +1523,11 @@ class Channel extends SnowFlake {
 							div.after(Channel.dragged[1]);
 						}
 					} else {
-						let tdiv = div.parentElement as HTMLDivElement;
-						if (!tdiv) return;
-						tdiv = tdiv.parentElement as HTMLDivElement;
-						if (!tdiv) return;
-
 						Channel.dragged[1].remove();
 						if (before) {
-							tdiv.before(Channel.dragged[1]);
+							(tdiv as HTMLElement).before(Channel.dragged[1]);
 						} else {
-							tdiv.after(Channel.dragged[1]);
+							(tdiv as HTMLElement).after(Channel.dragged[1]);
 						}
 					}
 				}
