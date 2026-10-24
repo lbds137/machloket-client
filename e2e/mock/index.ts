@@ -49,6 +49,7 @@ import type {
 	actionRow,
 	button,
 	channeljson,
+	embedjson,
 	guildjson,
 	mainuserjson,
 	memberjson,
@@ -72,6 +73,7 @@ export const MOCK_CHANNEL_ID = "1200000000000000200";
 export const MOCK_BUTTON_MESSAGE_ID = "1200000000000000300";
 export const MOCK_TEXT_MESSAGE_ID = "1200000000000000301";
 export const MOCK_SELECT_MESSAGE_ID = "1200000000000000302";
+export const MOCK_EMBED_MESSAGE_ID = "1200000000000000299";
 
 // 1x1 transparent PNG so default avatar requests (/embed/avatars/*.png, guild.ts member icons) settle 200.
 const TRANSPARENT_PNG = Buffer.from(
@@ -428,6 +430,42 @@ export const MOCK_FORM_MODAL: Omit<ModalCreateEvent, "nonce"> = {
 	],
 };
 
+// src/webpage/embed.ts (generateRich: thumbnail floats top-right beside the text;
+// generateArticle: a "video" embed renders its thumbnail and swaps to a YouTube player
+// iframe on tap via youtubeEmbedSrc). The image host is 127.0.0.1 - deliberately a
+// different host than the mock's cdn (localhost:4173) so localuser.refreshIfNeeded
+// returns the URLs untouched instead of batching a POST /attachments/refresh-urls;
+// real embed images point at third-party hosts anyway. e2e/embeds.spec.ts fulfills
+// these paths with inline SVGs.
+export const MOCK_EMBED_THUMB_URL = "http://127.0.0.1:4173/e2e-assets/character-thumb.svg";
+export const MOCK_EMBED_POSTER_URL = "http://127.0.0.1:4173/e2e-assets/video-poster.svg";
+
+export const MOCK_RICH_EMBED: embedjson = {
+	type: "rich",
+	color: 0x5865f2,
+	provider: {name: "CardBot"},
+	author: {name: "CardBot"},
+	title: "Character: Juniper",
+	description: "Level 12 wanderer with a knack for finding trouble.",
+	fields: [
+		{name: "Class", value: "Wanderer", inline: true},
+		{name: "Level", value: "12", inline: true},
+	],
+	footer: {text: "CardBot • e2e"},
+	timestamp: "2025-01-01T11:58:00.000Z",
+	thumbnail: {url: MOCK_EMBED_THUMB_URL, proxy_url: MOCK_EMBED_THUMB_URL, width: 48, height: 48},
+};
+
+export const MOCK_VIDEO_EMBED: embedjson = {
+	type: "video",
+	// embedjson requires `author` on every embed; the article renderer never reads it.
+	author: {},
+	provider: {name: "YouTube"},
+	title: "e2e fixture clip",
+	video: {url: "https://www.youtube.com/embed/e2eFixtured01"},
+	thumbnail: {url: MOCK_EMBED_POSTER_URL, proxy_url: MOCK_EMBED_POSTER_URL, width: 480, height: 360},
+};
+
 // src/webpage/channel.ts (putmessages expects newest-first array from GET /channels/:id/messages?limit=100)
 // src/webpage/message.ts (Message constructor) & src/webpage/jsontypes.ts (messagejson)
 export const MOCK_MESSAGES: messagejson[] = [
@@ -492,6 +530,29 @@ export const MOCK_MESSAGES: messagejson[] = [
 		pinned: false,
 		type: 0,
 		components: [MOCK_BUTTON_ROW],
+	},
+	{
+		// Oldest message: last in this newest-first array, so it renders at the TOP of
+		// #general, above the button message (previously the oldest); the select stays
+		// bottom-most, as T3 arranged.
+		id: MOCK_EMBED_MESSAGE_ID,
+		channel_id: MOCK_CHANNEL_ID,
+		guild_id: MOCK_GUILD_ID,
+		author: MOCK_BOT_USER,
+		member: MOCK_BOT_MEMBER,
+		content: "Bot cards look like this:",
+		timestamp: "2025-01-01T11:58:00.000Z",
+		edited_timestamp: null,
+		tts: false,
+		mention_everyone: false,
+		mentions: [],
+		mention_roles: [],
+		attachments: [],
+		embeds: [MOCK_RICH_EMBED, MOCK_VIDEO_EMBED],
+		reactions: [],
+		nonce: "e2e-nonce-3",
+		pinned: false,
+		type: 0,
 	},
 ];
 
