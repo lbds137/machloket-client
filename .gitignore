@@ -149,6 +149,10 @@ commit.txt
 # Vitest browser-mode failure screenshots
 .vitest/
 
+# Playwright e2e artifacts
+test-results/
+playwright-report/
+
 # Agent git worktrees (Claude Code)
 .claude/worktrees/
 

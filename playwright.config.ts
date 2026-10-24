@@ -1,0 +1,29 @@
+import {defineConfig, devices} from "@playwright/test";
+
+// e2e tier: drives the BUILT app with real CSS at a phone viewport.
+// The webServer command builds first, so
+// `npm run test:e2e` can never green-light code the tests did not see. Files are
+// *.spec.ts so the unit gate (vitest, **/*.test.ts) never picks them up; tsc's project
+// include is src/** only — the e2e tier is typechecked by `npm run check:e2e` instead.
+export default defineConfig({
+	testDir: "./e2e",
+	testMatch: /.*\.spec\.ts/,
+	timeout: 30_000,
+	retries: 0,
+	// 14 GB Deck: a growing suite must not spawn a Chromium per core.
+	workers: 2,
+	use: {
+		baseURL: "http://localhost:4173",
+		// The app registers a precaching service worker, and route() cannot intercept
+		// service-worker requests — block it so every test sees the network directly.
+		serviceWorkers: "block",
+	},
+	projects: [{name: "chromium-phone", use: {...devices["Pixel 7"]}}],
+	webServer: {
+		command: "npm run build && npx vite preview --port 4173 --strictPort",
+		port: 4173,
+		// Reuse only on explicit request: with strictPort, silent reuse would adopt
+		// whatever already answers on 4173, whatever it is serving.
+		reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
+	},
+});
