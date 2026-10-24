@@ -36,7 +36,13 @@ function mount(select: InstanceType<typeof FancySelect>) {
 		/** The tap on the select's box: the event the sheet opens from. */
 		open: () =>
 			input.dispatchEvent(new PointerEvent("pointerdown", {bubbles: true, cancelable: true})),
-		tapRow: (label: string) => row(label).click(),
+		tapRow: (label: string) => {
+			// A faithful row tap: the pointerdown (which disarms the open gesture's
+			// click swallow) and then the click the row answers.
+			const target = row(label);
+			target.dispatchEvent(new PointerEvent("pointerdown", {bubbles: true}));
+			target.click();
+		},
 		row,
 		sheet,
 		count: () => document.querySelector(".selectSheetCount")?.textContent ?? "",
@@ -149,6 +155,23 @@ describe("FancySelect phone sheet", () => {
 		expect(onSubmit).toHaveBeenCalledTimes(1);
 		expect(onSubmit).toHaveBeenCalledWith(["b"]);
 		expect(document.querySelector(".selectSheetBackdrop")).toBeNull();
+	});
+
+	it("ignores the opening tap's own trailing click", () => {
+		// The sheet opens on the box tap's pointerdown, so the same gesture's release
+		// lands on whatever row the sheet slid under. In the e2e run that click
+		// silently picked "Releases" at open (count read "1 selected" untouched);
+		// the swallow must eat it, and a tap that starts a new gesture must answer.
+		const select = new FancySelect(options(), {min: 1, max: 2});
+		const {open, row, count} = mount(select);
+
+		open();
+		row("alpha").click();
+		expect(count()).toBe("0 selected");
+
+		row("alpha").dispatchEvent(new PointerEvent("pointerdown", {bubbles: true}));
+		row("alpha").click();
+		expect(count()).toBe("1 selected");
 	});
 
 	it("clears a chip without opening the sheet", () => {

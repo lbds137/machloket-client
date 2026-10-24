@@ -19,6 +19,10 @@ export default defineConfig({
 		serviceWorkers: "block",
 	},
 	projects: [{name: "chromium-phone", use: {...devices["Pixel 7"]}}],
+	// Baselines must be deterministic: entry animations fast-forwarded, caret hidden.
+	expect: {
+		toHaveScreenshot: {animations: "disabled", caret: "hide"},
+	},
 	webServer: {
 		command: "npm run build && npx vite preview --port 4173 --strictPort",
 		port: 4173,

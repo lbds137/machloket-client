@@ -241,6 +241,7 @@ export class FancySelect {
 			}
 
 			const closeSheet = () => {
+				disarmOpenClick();
 				document.removeEventListener("keydown", esc);
 				backdrop.remove();
 				sheet = undefined;
@@ -266,6 +267,31 @@ export class FancySelect {
 			backdrop.append(sheet);
 			document.body.append(backdrop);
 			refresh();
+
+			// The opening tap's own release lands wherever the sheet just slid — under
+			// the finger sat a row (or the backdrop), and its click would answer or
+			// discard before the user ever chose. Swallow exactly that one click: a new
+			// gesture disarms the swallow (a pointerdown, or a keydown from keyboard or
+			// assistive-tech activation), and closeSheet cleans up behind it.
+			let swallowOpenClick: ((e: MouseEvent) => void) | undefined;
+			const disarmOpenClick = () => {
+				if (!swallowOpenClick) return;
+				document.removeEventListener("click", swallowOpenClick, true);
+				document.removeEventListener("pointerdown", disarmOpenClick, true);
+				document.removeEventListener("keydown", disarmOpenClick, true);
+				swallowOpenClick = undefined;
+			};
+			swallowOpenClick = (e) => {
+				disarmOpenClick();
+				if (!backdrop.isConnected) return;
+				if (backdrop.contains(e.target as Node)) {
+					e.preventDefault();
+					e.stopImmediatePropagation();
+				}
+			};
+			document.addEventListener("click", swallowOpenClick, true);
+			document.addEventListener("pointerdown", disarmOpenClick, true);
+			document.addEventListener("keydown", disarmOpenClick, true);
 		};
 
 		input.onpointerdown = (e) => {
