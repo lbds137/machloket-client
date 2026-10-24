@@ -189,7 +189,8 @@ class MarkDown {
 			getCurLast() instanceof HTMLPreElement && !current.textContent && txt[at - 1] === "`";
 		for (let i = 0; i < txt.length; i++) {
 			if (txt[i] === "\n" || i === 0) {
-				let first = i === 0;
+				// A leading newline is a line break like any other: its line's marker is the one after it.
+				let first = i === 0 && txt[0] !== "\n";
 				if (first) {
 					i--;
 				}

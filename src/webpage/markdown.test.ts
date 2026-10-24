@@ -343,6 +343,25 @@ describe("a line-start marker followed by a newline or tab", () => {
 	});
 });
 
+describe("a message that starts with a newline", () => {
+	it("still marks its second line", () => {
+		const draw = (typed: string) => new MarkDown(typed, undefined).makeHTML();
+		expect(draw("\n> q").querySelector(".quote")?.textContent).toBe("q");
+		expect(draw("\n# T").querySelector("h1")?.textContent).toBe("T");
+		expect(draw("\n-# s").querySelector("small")?.textContent).toBe("s");
+		expect(draw("\n>>> q").querySelector(".quote")?.textContent).toBe("q");
+		expect(draw("\n\n> q").querySelector(".quote")?.textContent).toBe("q");
+		expect(draw("\n* item").querySelector("li")?.textContent).toBe("item");
+	});
+	it("keeps its markers in the composer's round trip", () => {
+		for (const typed of ["\n> q", "\n# T", "\n-# s", "\n>>> q"]) {
+			const box = document.createElement("div");
+			box.append(new MarkDown(typed, undefined, {keep: true}).makeHTML());
+			expect(MarkDown.gatherBoxText(box)).toBe(typed);
+		}
+	});
+});
+
 describe("blank lines after a code block", () => {
 	it("still show as a blank line", () => {
 		const html = new MarkDown("```a```\n\nnext", undefined).makeHTML();
