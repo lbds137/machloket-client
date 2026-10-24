@@ -522,8 +522,6 @@ export interface CapturedRequest {
 }
 
 export interface MockInstanceOptions {
-	/** Custom handler for POST /api/v9/auth/login (e.g. T1 refusal tests). */
-	onLogin?: (route: Route, body: unknown) => Promise<void> | void;
 	/** Override initial channel messages returned by GET /api/v9/channels/:id/messages. */
 	messages?: messagejson[];
 	/** Suppress the first-run "What's new" changelog modal (src/webpage/changelog.ts). Defaults to true. */
@@ -541,6 +539,9 @@ export interface MockInstanceHandle {
 		fromApp: unknown[];
 	};
 	sendGatewayEvent: (frame: {op: number; t?: string; s?: number; d: unknown}) => void;
+	/** Reassignable per test: a custom handler for POST /api/v9/auth/login (refusal tests
+	 * fulfill a 401 here). Runs INSTEAD of the default fulfill when set. */
+	onLogin?: (route: Route, body: unknown) => Promise<void> | void;
 }
 
 /**
@@ -551,7 +552,7 @@ export async function mountMockInstance(
 	page: Page,
 	options: MockInstanceOptions = {},
 ): Promise<MockInstanceHandle> {
-	const {onLogin, messages = MOCK_MESSAGES, suppressChangelog = true} = options;
+	const {messages = MOCK_MESSAGES, suppressChangelog = true} = options;
 
 	if (suppressChangelog) {
 		// src/webpage/changelog.ts: "0" is the built-in sentinel that suppresses the
@@ -576,6 +577,24 @@ export async function mountMockInstance(
 	) => {
 		gatewayFrames.toApp.push(frame);
 		send(JSON.stringify(frame));
+	};
+
+	// Built before the routes so the handlers can read the live handle (per-test onLogin).
+	const handle: MockInstanceHandle = {
+		origin: MOCK_INSTANCE_ORIGIN,
+		api: `${MOCK_INSTANCE_ORIGIN}/api/v9`,
+		gateway: "ws://localhost:4173",
+		token: MOCK_TOKEN,
+		capturedRequests,
+		gatewayFrames,
+		sendGatewayEvent(frame) {
+			if (frame.op === 0 && frame.s === undefined) {
+				frame = {...frame, s: ++seq};
+			}
+			for (const send of activeSockets) {
+				sendFrame(send, frame);
+			}
+		},
 	};
 
 	// Gateway WebSocket script (the gateway message loop)
@@ -733,8 +752,8 @@ export async function mountMockInstance(
 
 			// 5. Login (src/webpage/login.ts makeLogin)
 			if (method === "POST" && pathname === "/api/v9/auth/login") {
-				if (onLogin) {
-					await onLogin(route, parsedBody);
+				if (handle.onLogin) {
+					await handle.onLogin(route, parsedBody);
 					return;
 				}
 				return fulfillJson(MOCK_LOGIN_RESPONSE);
@@ -854,20 +873,5 @@ export async function mountMockInstance(
 		},
 	);
 
-	return {
-		origin: MOCK_INSTANCE_ORIGIN,
-		api: `${MOCK_INSTANCE_ORIGIN}/api/v9`,
-		gateway: "ws://localhost:4173",
-		token: MOCK_TOKEN,
-		capturedRequests,
-		gatewayFrames,
-		sendGatewayEvent(frame) {
-			if (frame.op === 0 && frame.s === undefined) {
-				frame = {...frame, s: ++seq};
-			}
-			for (const send of activeSockets) {
-				sendFrame(send, frame);
-			}
-		},
-	};
+	return handle;
 }
