@@ -43,9 +43,11 @@
  */
 
 import type {Page, Route} from "@playwright/test";
+import type {ModalCreateEvent} from "../../src/webpage/interactions/modal";
 import {MessageComponentType} from "../../src/webpage/jsontypes";
 import type {
 	actionRow,
+	button,
 	channeljson,
 	guildjson,
 	mainuserjson,
@@ -67,6 +69,7 @@ export const MOCK_USER_ID = "1200000000000000001";
 export const MOCK_BOT_USER_ID = "1200000000000000002";
 export const MOCK_GUILD_ID = "1200000000000000100";
 export const MOCK_CHANNEL_ID = "1200000000000000200";
+export const MOCK_BUTTON_MESSAGE_ID = "1200000000000000300";
 export const MOCK_TEXT_MESSAGE_ID = "1200000000000000301";
 export const MOCK_SELECT_MESSAGE_ID = "1200000000000000302";
 
@@ -380,6 +383,51 @@ export const MOCK_SELECT_ROW: actionRow = {
 	],
 };
 
+// src/webpage/interactions/compontents.ts (class Button -> postInteraction; the bot's modal
+// comes back as a gateway INTERACTION_MODAL_CREATE keyed by the POST's nonce, not in the
+// REST response — compontents.ts postInteraction ignores the response body)
+export const MOCK_BUTTON_ROW: actionRow = {
+	type: MessageComponentType.ActionRow,
+	components: [
+		{
+			type: MessageComponentType.Button,
+			style: 1,
+			label: "Open form",
+			custom_id: "e2e-form-button",
+		} satisfies button,
+	],
+};
+
+// A bot's form taller than a phone screen with the keyboard up: three paragraph fields
+// plus a select (mirrors src/webpage/interactions/modalPhone.test.ts's tallModal). The
+// nonce is the one from the interaction POST that opened it — a spec reads it back from
+// capturedRequests and sends INTERACTION_MODAL_CREATE via sendGatewayEvent.
+function paragraph(custom_id: string) {
+	return {
+		type: 18,
+		label: custom_id,
+		component: {type: 4, custom_id, style: 2, required: false},
+	};
+}
+export const MOCK_FORM_MODAL: Omit<ModalCreateEvent, "nonce"> = {
+	id: "1200000000000000400",
+	channel_id: MOCK_CHANNEL_ID,
+	custom_id: "e2e-form",
+	title: "Row 9",
+	application: {id: MOCK_BOT_USER_ID, name: "HelperBot"},
+	components: [
+		{type: 10, content: "Some words about the form.\n\nAnd some more."},
+		paragraph("first"),
+		paragraph("second"),
+		paragraph("third"),
+		{
+			type: 18,
+			label: "Select",
+			component: {type: 3, custom_id: "pick", required: false, options: [{label: "A", value: "a"}]},
+		},
+	],
+};
+
 // src/webpage/channel.ts (putmessages expects newest-first array from GET /channels/:id/messages?limit=100)
 // src/webpage/message.ts (Message constructor) & src/webpage/jsontypes.ts (messagejson)
 export const MOCK_MESSAGES: messagejson[] = [
@@ -423,6 +471,27 @@ export const MOCK_MESSAGES: messagejson[] = [
 		nonce: "e2e-nonce-1",
 		pinned: false,
 		type: 0,
+	},
+	{
+		id: MOCK_BUTTON_MESSAGE_ID,
+		channel_id: MOCK_CHANNEL_ID,
+		guild_id: MOCK_GUILD_ID,
+		author: MOCK_BOT_USER,
+		member: MOCK_BOT_MEMBER,
+		content: "Need some details:",
+		timestamp: "2025-01-01T11:59:00.000Z",
+		edited_timestamp: null,
+		tts: false,
+		mention_everyone: false,
+		mentions: [],
+		mention_roles: [],
+		attachments: [],
+		embeds: [],
+		reactions: [],
+		nonce: "e2e-nonce-0",
+		pinned: false,
+		type: 0,
+		components: [MOCK_BUTTON_ROW],
 	},
 ];
 
