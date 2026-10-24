@@ -1,15 +1,25 @@
 {
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
+		"alwaysStrict": true,
 		"esModuleInterop": true,
-		"lib": ["esnext", "DOM", "DOM.Iterable"],
+		"importHelpers": false,
+		"lib": ["esnext", "DOM", "webworker", "DOM.AsyncIterable", "DOM.Iterable"],
 		"module": "ESNext",
 		"moduleResolution": "Bundler",
 		"newLine": "lf",
 		"noEmit": true,
+		"noFallthroughCasesInSwitch": true,
+		"noImplicitReturns": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"pretty": true,
+		"resolveJsonModule": true,
+		"resolvePackageJsonImports": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"target": "es2022"
+		"target": "es2022",
+		"useDefineForClassFields": true
 	},
-	"include": ["e2e/**/*.ts", "playwright.config.ts"]
+	"include": ["e2e/**/*.ts", "playwright.config.ts", "src/**/*.ts"]
 }
