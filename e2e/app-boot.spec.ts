@@ -1,5 +1,6 @@
 import {expect} from "@playwright/test";
 import {MOCK_CHANNEL, MOCK_GUILD, MOCK_GUILD_ID, MOCK_INSTANCE_NAME, loginAndOpenChannel, test} from "./fixtures";
+import {type CapturedRequest} from "./mock";
 
 test("picking the mock instance and logging in renders the fixture guild, channel, and messages", async ({
 	page,
@@ -104,4 +105,38 @@ test("a channel deep link boots into the named channel", async ({page, mockInsta
 	await page.goto(`/channels/${MOCK_GUILD_ID}/${MOCK_CHANNEL.id}`);
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
 	await expect(page.getByText("Welcome to the mock guild!", {exact: true})).toBeVisible();
+});
+
+// The deep-link landing must not just resolve the channel but OPEN the mobile chat: the
+// main area rests off-canvas until #maintoggle is checked, and a boot passes no click,
+// so the unresolved state parks the composer off screen (the F1 regression pin - the
+// channelfocus clobber left this composer dead, which the channelname pins above
+// cannot see). Mobile sends ride #mobileSend: Enter only submits above 600px.
+test("a bare guild deep link lands with a working composer", async ({page, mockInstance}) => {
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}`);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+	// The boot's open rides the checkbox's change event, so #page's class syncs with it -
+	// the drawer-swipe state and the CSS slide both read these.
+	await expect(page.locator("#page")).toHaveClass(/mobileMainOpen/);
+
+	const typebox = page.locator("#typebox");
+	await typebox.click();
+	await typebox.fill("hello from the deep link");
+	await page.locator("#mobileSend").tap();
+
+	// figureSubmit is not change-gated: count POSTs, exactly one send. The tap's POST
+	// reaches the mock asynchronously - polled so the route capture and this read
+	// can't race (phone-layout's openForm pattern).
+	let sends: CapturedRequest[] = [];
+	await expect
+		.poll(() => {
+			sends = mockInstance.capturedRequests.filter(
+				(req) =>
+					req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL.id}/messages`,
+			);
+			return sends.length;
+		}, "the send must reach the mock")
+		.toBe(1);
+	expect((sends[0].body as {content: string}).content).toBe("hello from the deep link");
 });

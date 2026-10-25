@@ -23,6 +23,7 @@ import {
 	setTheme,
 	Specialuser,
 	debounce,
+	mobile,
 } from "./utils/utils.js";
 import {CDN_LINK_MARGIN_MS, cssUrl} from "./utils/netUtils.js";
 import {
@@ -1961,7 +1962,14 @@ class Localuser {
 		// The open channel is gone: on to the guild's default one (the friends list in the DMs).
 		if (focused) guild.loadChannel().catch(console.error);
 	}
+	/** init() re-runs on reconnect retries and account-less re-identifies, re-parsing the
+	 * same URL; only the first resolve is a boot landing, and only that may slide the
+	 * mobile chat open. Reconnect paths reuse this instance, account switch builds a new
+	 * Localuser - both keep the intended behavior. */
+	private firstUrlResolve = true;
 	async init() {
+		const landing = this.firstUrlResolve;
+		this.firstUrlResolve = false;
 		const parts = window.location.href.split("/");
 		this.buildservers();
 		this.generateFavicon();
@@ -1981,6 +1989,20 @@ class Localuser {
 			// it — the composer, typing and read-acks all read channelfocus.
 			if (parts[5]) {
 				this.channelfocus = this.channelids.get(parts[5]);
+			}
+			// A deep-link landing resolves into a channel with no click to slide the mobile
+			// chat in, so the composer would stay off canvas: open it here, the same state
+			// a channel-list tap produces. The change event drives #page's class sync (the
+			// wiring lives in index.ts's mobile block). Only the first resolve may open:
+			// reconnect retries re-run init() on this instance with the URL unchanged, and
+			// must not yank the chat open over a drawer the user has closed since.
+			if (mobile && landing && this.channelfocus) {
+				const toggle = document.getElementById("maintoggle") as HTMLInputElement | null;
+				// checked only when the chat is not already open - a redundant dispatch.
+				if (toggle && !toggle.checked) {
+					toggle.checked = true;
+					toggle.dispatchEvent(new Event("change"));
+				}
 			}
 		}
 	}
