@@ -174,6 +174,41 @@ describe("FancySelect phone sheet", () => {
 		expect(count()).toBe("1 selected");
 	});
 
+	it("lets a keyboard or assistive-tech activation through after the opening tap", () => {
+		// A keydown starts a new gesture with no pointerdown: it must disarm the swallow,
+		// or the activation's click would be eaten.
+		const select = new FancySelect(options(), {min: 1, max: 2});
+		const {open, row, count} = mount(select);
+
+		open();
+		document.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+		row("alpha").click();
+		expect(count()).toBe("1 selected");
+	});
+
+	it("keeps the sheet open when the opening tap's click lands on the backdrop", () => {
+		// The release over the dimmed backdrop would discard the sheet the tap just opened.
+		const select = new FancySelect(options(), {min: 1, max: 2});
+		const {open} = mount(select);
+
+		open();
+		(document.querySelector(".selectSheetBackdrop") as HTMLElement).click();
+		expect(document.querySelector(".selectSheetBackdrop")).not.toBeNull();
+	});
+
+	it("does not answer a single select with the opening tap's click", () => {
+		// A single select answers and closes on a row tap, so the phantom click would send.
+		const select = new FancySelect(options());
+		const onSubmit = vi.fn();
+		select.onSubmit = onSubmit;
+		const {open, row} = mount(select);
+
+		open();
+		row("beta").click();
+		expect(onSubmit).not.toHaveBeenCalled();
+		expect(document.querySelector(".selectSheetBackdrop")).not.toBeNull();
+	});
+
 	it("clears a chip without opening the sheet", () => {
 		// A message whose bot chose "alpha": its chip renders with a × when the select is built.
 		const chosen = options().map((option) => ({...option, default: option.value === "a"}));

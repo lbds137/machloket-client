@@ -184,6 +184,12 @@ class MarkDown {
 			const nodes = span.childNodes;
 			return nodes[nodes.length - 1];
 		}
+		/** A one-line preview keeps the words of separate lines apart: a space before the next
+		 * line, unless nothing came before it or the text already ends in one. */
+		const needsPreviewGap = () => {
+			const before = (span.textContent ?? "") + (current.textContent ?? "");
+			return before !== "" && !before.endsWith(" ");
+		};
 		/** Whether the newline at `at` comes right after a code block, which already ends its line. */
 		const endsLine = (at: number) =>
 			getCurLast() instanceof HTMLPreElement && !current.textContent && txt[at - 1] === "`";
@@ -243,8 +249,7 @@ class MarkDown {
 					i += 4;
 				}
 				if (keepys) {
-					if (stdsize && !first && !current.textContent?.endsWith(" ")) {
-						// A one-line preview keeps the words of separate lines apart.
+					if (stdsize && needsPreviewGap()) {
 						current.textContent += " ";
 					}
 					appendcurrent();
@@ -365,8 +370,7 @@ class MarkDown {
 					} else if (!endsLine(i)) {
 						span.append(document.createElement("br"));
 					}
-				} else if (!current.textContent?.endsWith(" ")) {
-					// A one-line preview keeps the words of separate lines apart.
+				} else if (needsPreviewGap()) {
 					current.textContent += " ";
 				}
 				continue;

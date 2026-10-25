@@ -353,8 +353,22 @@ describe("a message that starts with a newline", () => {
 		expect(draw("\n\n> q").querySelector(".quote")?.textContent).toBe("q");
 		expect(draw("\n* item").querySelector("li")?.textContent).toBe("item");
 	});
+	it("previews on one line without a leading space", () => {
+		// The one-line preview joins lines with a space; with nothing before the first
+		// marked line there is nothing to separate it from.
+		const preview = (typed: string) =>
+			new MarkDown(typed, undefined, {stdsize: true}).makeHTML().textContent;
+		expect(preview("\n> q")).toBe("q");
+		expect(preview("\n# T")).toBe("T");
+		expect(preview("a\n> q")).toBe("a q");
+		expect(preview("> a \n> b")).toBe("a b");
+		expect(preview("\n\n> q")).toBe("q");
+		// Plain lines take the same rule.
+		expect(preview("\n\nx")).toBe("x");
+		expect(preview("a\nb")).toBe("a b");
+	});
 	it("keeps its markers in the composer's round trip", () => {
-		for (const typed of ["\n> q", "\n# T", "\n-# s", "\n>>> q"]) {
+		for (const typed of ["\n> q", "\n# T", "\n-# s", "\n>>> q", "\n* item"]) {
 			const box = document.createElement("div");
 			box.append(new MarkDown(typed, undefined, {keep: true}).makeHTML());
 			expect(MarkDown.gatherBoxText(box)).toBe(typed);
