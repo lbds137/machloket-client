@@ -1,4 +1,5 @@
 import {test as base, expect, type Page} from "@playwright/test";
+import type {ModalCreateEvent} from "../src/webpage/interactions/modal";
 import {type MockInstanceHandle, MOCK_CHANNEL, MOCK_INSTANCE_NAME, mountMockInstance} from "./mock";
 
 // The shared e2e test: every spec imports this, not @playwright/test directly, so the
@@ -63,6 +64,35 @@ export async function loginAndOpenChannel(page: Page): Promise<void> {
 	await expect(channelButton).toBeVisible();
 	await channelButton.click();
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+}
+
+/** Opens a bot modal through the real entry path (button tap -> POST /api/v9/interactions
+ * -> gateway INTERACTION_MODAL_CREATE carrying `modal`, keyed by the captured nonce) and
+ * leaves the dialog on screen. The modal payload is pure gateway data: which form the
+ * "bot" answers with is the caller's choice. The tall-form opener lives in
+ * phone-layout.spec.ts; this lifted helper starts with the validation spec. */
+export async function openModalViaButton(
+	page: Page,
+	mockInstance: MockInstanceHandle,
+	modal: Omit<ModalCreateEvent, "nonce">,
+): Promise<void> {
+	await page.getByRole("button", {name: "Open form"}).tap();
+	// The nonce is only readable once the tap's POST reaches the mock — polled so the
+	// route capture and this read can't race.
+	await expect
+		.poll(() => {
+			const post = mockInstance.capturedRequests
+				.filter((req) => req.method === "POST" && req.pathname === "/api/v9/interactions")
+				.at(-1);
+			return (post?.body as {nonce?: string}).nonce;
+		}, "the button tap must reach the mock before the modal opens")
+		.toBeTruthy();
+	const post = mockInstance.capturedRequests
+		.filter((req) => req.method === "POST" && req.pathname === "/api/v9/interactions")
+		.at(-1)!;
+	const nonce = (post.body as {nonce: string}).nonce;
+	mockInstance.sendGatewayEvent({op: 0, t: "INTERACTION_MODAL_CREATE", d: {...modal, nonce}});
+	await expect(page.locator(".dialogModal")).toBeVisible();
 }
 
 export * from "./mock";

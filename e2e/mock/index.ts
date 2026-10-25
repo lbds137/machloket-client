@@ -411,6 +411,32 @@ function paragraph(custom_id: string) {
 		component: {type: 4, custom_id, style: 2, required: false},
 	};
 }
+// src/webpage/interactions/modal.ts (FieldDef: required !== false; textField problem():
+// empty + required -> I18n.interactions.modalRequired, length outside
+// min_length..max_length -> modalLength). A one-line required field and an optional
+// one with a length window — the client-side validation pins submit against it.
+export const MOCK_REQUIRED_MODAL: Omit<ModalCreateEvent, "nonce"> = {
+	id: "1200000000000000401",
+	channel_id: MOCK_CHANNEL_ID,
+	custom_id: "e2e-validated-form",
+	title: "Validated",
+	application: {id: MOCK_BOT_USER_ID, name: "HelperBot"},
+	components: [
+		{type: 18, label: "Required", component: {type: 4, custom_id: "must", style: 1, required: true}},
+		{
+			type: 18,
+			label: "Length window",
+			component: {
+				type: 4,
+				custom_id: "window",
+				style: 1,
+				required: false,
+				min_length: 5,
+				max_length: 10,
+			},
+		},
+	],
+};
 export const MOCK_FORM_MODAL: Omit<ModalCreateEvent, "nonce"> = {
 	id: "1200000000000000400",
 	channel_id: MOCK_CHANNEL_ID,
