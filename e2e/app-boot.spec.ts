@@ -220,3 +220,41 @@ test("a reconnect re-init leaves a closed chat closed", async ({page, mockInstan
 	await expect(page.locator("#page")).not.toHaveClass(/mobileMainOpen/);
 	await expect(page.locator("#maintoggle")).not.toBeChecked();
 });
+
+// The send button's box is CSS-reserved, not content-sized: the img carries no
+// width/height attributes, so only the stylesheet holds a 25x25 tap target open - a
+// slow first paint must show a blank button, never a missing one (the 10-25 send-probe
+// nit). The icon's route is held pending from before the boot, so the measurement runs
+// while mobileSend.svg has never loaded. Same-origin static never reaches the mock's
+// unmocked ledger, and a page-level route outranks the context net.
+test("the send button keeps its box while its icon is still loading", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance; // mount the mock's routes; the handle stays unread
+	let held = 0;
+	await page.route("**/icons/mobileSend.svg", () => {
+		// Held: neither fulfilled nor continued, so the img stays unloaded all test.
+		held++;
+	});
+	await loginAndOpenChannel(page);
+	// No mobileMainOpen pin here: the channel-button click checks #maintoggle
+	// programmatically (slide without a change event), so #page's class only syncs on
+	// the boot/label-click paths. The fill below is the open-composer proof.
+
+	const typebox = page.locator("#typebox");
+	await typebox.click();
+	await typebox.fill("measuring the send button");
+	// Typed text drops .noConent and the width transitions 0 -> 25px (0.2s): polled so
+	// the animation's tail can't race the read.
+	const send = page.locator("#mobileSend");
+	await expect
+		.poll(async () => {
+			const box = await send.boundingBox();
+			return box ? {w: Math.round(box.width), h: Math.round(box.height)} : {};
+		}, "the send button must keep its 25x25 box before its icon loads")
+		.toEqual({w: 25, h: 25});
+	// Positive control: the hold really engaged - otherwise the geometry above passes
+	// trivially over a loaded icon.
+	expect(held, "the icon request must have been held").toBeGreaterThan(0);
+});
