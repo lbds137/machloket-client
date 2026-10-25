@@ -1,5 +1,13 @@
 import {expect} from "@playwright/test";
-import {MOCK_CHANNEL, MOCK_GUILD, MOCK_GUILD_ID, MOCK_INSTANCE_NAME, loginAndOpenChannel, test} from "./fixtures";
+import {
+	MOCK_CHANNEL,
+	MOCK_GUILD,
+	MOCK_GUILD_ID,
+	MOCK_HIDDEN_CHANNEL_ID,
+	MOCK_INSTANCE_NAME,
+	loginAndOpenChannel,
+	test,
+} from "./fixtures";
 import {type CapturedRequest} from "./mock";
 
 test("picking the mock instance and logging in renders the fixture guild, channel, and messages", async ({
@@ -139,4 +147,76 @@ test("a bare guild deep link lands with a working composer", async ({page, mockI
 		}, "the send must reach the mock")
 		.toBe(1);
 	expect((sends[0].body as {content: string}).content).toBe("hello from the deep link");
+});
+
+// A stale or deleted channel link: loadChannel falls back to the guild's default channel,
+// and the landing must keep that channel focused - a re-assignment from the unknown
+// segment left the composer dead and skipped the mobile open.
+test("a deep link to an unknown channel lands in the fallback with a working composer", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}/1299999999999999999`);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+	await expect(page.locator("#page")).toHaveClass(/mobileMainOpen/);
+
+	const typebox = page.locator("#typebox");
+	await typebox.click();
+	await typebox.fill("hello from a stale link");
+	await page.locator("#mobileSend").tap();
+	let sends: CapturedRequest[] = [];
+	await expect
+		.poll(() => {
+			sends = mockInstance.capturedRequests.filter(
+				(req) =>
+					req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL.id}/messages`,
+			);
+			return sends.length;
+		}, "the send must reach the mock")
+		.toBe(1);
+	expect((sends[0].body as {content: string}).content).toBe("hello from a stale link");
+});
+
+// A link to a channel the viewer can't see: the fallback opens the visible channel, and
+// the landing must keep focus there - re-pointing it at the hidden channel would send
+// the composer's messages somewhere the user can't read.
+test("a deep link to a hidden channel keeps the fallback focused", async ({page, mockInstance}) => {
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}/${MOCK_HIDDEN_CHANNEL_ID}`);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+	await expect(page.locator("#page")).toHaveClass(/mobileMainOpen/);
+
+	const typebox = page.locator("#typebox");
+	await typebox.click();
+	await typebox.fill("hello past a hidden link");
+	await page.locator("#mobileSend").tap();
+	const sends = () =>
+		mockInstance.capturedRequests.filter((req) => req.method === "POST" && /\/messages$/.test(req.pathname));
+	await expect.poll(() => sends().length, "the send must reach the mock").toBe(1);
+	expect(sends()[0].pathname).toBe(`/api/v9/channels/${MOCK_CHANNEL.id}/messages`);
+});
+
+// Only the boot's landing opens the chat: a reconnect re-runs init() over the unchanged
+// URL, and must leave a chat the user closed closed. The mock's invalid-session frame
+// (op 9) drives the app's backoff retry, which re-identifies and re-runs init().
+test("a reconnect re-init leaves a closed chat closed", async ({page, mockInstance}) => {
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}`);
+	await expect(page.locator("#page")).toHaveClass(/mobileMainOpen/);
+
+	await page.locator("#maintoggleicon").tap();
+	await expect(page.locator("#page")).not.toHaveClass(/mobileMainOpen/);
+
+	const identifies = () =>
+		mockInstance.gatewayFrames.fromApp.filter((f) => (f as {op?: number}).op === 2).length;
+	const before = identifies();
+	mockInstance.sendGatewayEvent({op: 9, d: false});
+	// Positive control: the retry really re-identified and the re-init finished its URL pass.
+	await expect.poll(identifies, {timeout: 15_000}).toBeGreaterThan(before);
+	await expect(page.locator("#loading")).toHaveClass(/doneloading/);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+	await page.waitForTimeout(500); // init()'s open would land right after the channel renders
+	await expect(page.locator("#page")).not.toHaveClass(/mobileMainOpen/);
+	await expect(page.locator("#maintoggle")).not.toBeChecked();
 });

@@ -2945,7 +2945,8 @@ class Channel extends SnowFlake {
 	}
 	async getHTML(addstate = true, getMessages: boolean | void = undefined, aroundMessage?: string) {
 		if (!this.visible) {
-			this.guild.loadChannel();
+			// Awaited so the caller sees the visible fallback focused when this returns.
+			await this.guild.loadChannel();
 			return;
 		}
 		if (this.guild_id === "@me") {

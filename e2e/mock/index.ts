@@ -278,11 +278,23 @@ export const MOCK_CHANNEL: channeljson = {
 	default_thread_rate_limit_per_user: 0,
 };
 
+// A channel @everyone can't view (VIEW_CHANNEL = 1 << 10 denied): a deep link to it must
+// land in the guild's visible fallback, never focus it.
+export const MOCK_HIDDEN_CHANNEL_ID = "1200000000000000201";
+export const MOCK_HIDDEN_CHANNEL: channeljson = {
+	...MOCK_CHANNEL,
+	id: MOCK_HIDDEN_CHANNEL_ID,
+	name: "staff",
+	topic: "",
+	position: 1,
+	permission_overwrites: [{id: MOCK_GUILD_ID, allow: "0", deny: "1024"}],
+};
+
 // src/webpage/guild.ts (Guild constructor) & (generateGuildIcon)
 // src/webpage/jsontypes.ts (guildjson)
 export const MOCK_GUILD: guildjson = {
 	application_command_counts: {},
-	channels: [MOCK_CHANNEL],
+	channels: [MOCK_CHANNEL, MOCK_HIDDEN_CHANNEL],
 	threads: [],
 	data_mode: "",
 	emojis: [],
@@ -1087,8 +1099,13 @@ export async function mountMockInstance(
 			}
 		});
 
-		ws.onClose(() => {
+		// Setting onClose disables Playwright's default close forwarding, so the mock must
+		// complete the app's close itself - without it the app's ws.close(4041) never fires
+		// its close event and no reconnect path can run.
+		ws.onClose((code, reason) => {
 			activeSockets.delete(send);
+			// A page or context already closing rejects this; nothing is left to complete.
+			ws.close({code, reason}).catch(() => {});
 		});
 	});
 

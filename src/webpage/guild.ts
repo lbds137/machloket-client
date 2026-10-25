@@ -1722,7 +1722,7 @@ class Guild extends SnowFlake {
 				}
 				this.member = _;
 			})
-			.catch(() => {});
+			.catch((e) => console.error("Member fetch failed", e));
 
 		for (const thing of json.channels) {
 			const temp = new Channel(thing, this);
@@ -2122,7 +2122,8 @@ class Guild extends SnowFlake {
 			const par = this.localuser.channelids.get(channel.parent_id as string);
 			par?.createguildHTML();
 		}
-		this.localuser.goToChannel(threadId);
+		// Awaited so loadChannel's caller sees the thread focused when it returns.
+		await this.localuser.goToChannel(threadId);
 	}
 	/** Sorts and builds the channel list for #channels. The refused-drag restore swaps this in
 	 * directly: it must not touch the search panel or anything outside #channels. */

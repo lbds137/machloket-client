@@ -1962,14 +1962,21 @@ class Localuser {
 		// The open channel is gone: on to the guild's default one (the friends list in the DMs).
 		if (focused) guild.loadChannel().catch(console.error);
 	}
-	/** init() re-runs on reconnect retries and account-less re-identifies, re-parsing the
+	/** init() re-runs on reconnect retries and session-less re-identifies, re-parsing the
 	 * same URL; only the first resolve is a boot landing, and only that may slide the
 	 * mobile chat open. Reconnect paths reuse this instance, account switch builds a new
-	 * Localuser - both keep the intended behavior. */
+	 * Localuser - both keep the intended behavior. Spent when a pass finishes or throws; a
+	 * first pass that hangs leaves the landing to the next one. */
 	private firstUrlResolve = true;
 	async init() {
 		const landing = this.firstUrlResolve;
-		this.firstUrlResolve = false;
+		try {
+			await this.resolveUrl(landing);
+		} finally {
+			this.firstUrlResolve = false;
+		}
+	}
+	private async resolveUrl(landing: boolean) {
 		const parts = window.location.href.split("/");
 		this.buildservers();
 		this.generateFavicon();
@@ -1984,12 +1991,9 @@ class Localuser {
 			await guild.memberReady;
 			const messageId = parts[6]?.split("?")[0]?.split("#")[0];
 			await guild.loadChannel(parts[5], true, messageId);
-			// A bare URL has no channel segment: loadChannel's fallback already focused the
-			// channel it opened, and re-assigning from the undefined segment would clobber
-			// it — the composer, typing and read-acks all read channelfocus.
-			if (parts[5]) {
-				this.channelfocus = this.channelids.get(parts[5]);
-			}
+			// loadChannel has focused what it opened - the named channel or thread, or the
+			// visible fallback for a bare, unknown or hidden segment. The URL must not
+			// re-point that focus: the composer, typing and read-acks all read it.
 			// A deep-link landing resolves into a channel with no click to slide the mobile
 			// chat in, so the composer would stay off canvas: open it here, the same state
 			// a channel-list tap produces. The change event drives #page's class sync (the
