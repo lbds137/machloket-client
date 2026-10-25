@@ -1284,7 +1284,6 @@ class Message extends SnowFlake {
 						while (next?.author === this.author) {
 							next.generateMessage(undefined, true);
 							next = this.channel.messages.get(this.channel.idToNext.get(next.id) as string);
-							console.log("loopy");
 						}
 						func();
 					};
