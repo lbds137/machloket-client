@@ -44,6 +44,7 @@ import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLi
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {formErrors, refusalText, showRefusal} from "./utils/showRefusal.js";
+import {resolveTypedMentions} from "./utils/typedMentions.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -4322,6 +4323,27 @@ class Channel extends SnowFlake {
 			return;
 		}
 		Channel.clearSendError();
+		// Typed-mention resolution is best-effort enrichment: a half-loaded guild or a
+		// test-fixture shell may not carry a real member Set, and a send must never
+		// break on it. The `@` check keeps memberless sends allocation-free.
+		if (content.includes("@")) {
+			const memberCandidates =
+				this.guild.members instanceof Set
+					? [...this.guild.members].map((m) => ({
+							id: m.id,
+							names: m.nick ? [m.user.username, m.nick] : [m.user.username],
+						}))
+					: [];
+			content = resolveTypedMentions(
+				content,
+				this.guild.id === "@me"
+					? ((this as {users?: User[]}).users ?? []).map((u) => ({
+							id: u.id,
+							names: u.nickname ? [u.username, u.nickname] : [u.username],
+						}))
+					: memberCandidates,
+			);
+		}
 		let replyjson: any;
 		if (replyingto) {
 			replyjson = {
