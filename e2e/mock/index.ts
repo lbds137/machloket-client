@@ -30,6 +30,8 @@
  * - POST /api/v9/read-states/ack-bulk               -> 200 {token: null}
  * - GET  /api/v9/users/:userId/profile              -> user profile + empty badges/mutuals
  * - POST /api/v9/interactions                       -> 204 No Content
+ * - GET  /api/v9/invites/:code                      -> MOCK_INVITE (the invite page's preview)
+ * - POST /api/v9/invites/:code                      -> {guild: {id}} (acceptInvite's join)
  * - Any other /api/*, /.well-known/*, /_spacebar/*  -> route.abort("failed") so missed routes fail loudly
  *
  * Gateway WebSocket (ws://localhost:4173):
@@ -531,6 +533,24 @@ export const MOCK_VIDEO_EMBED: embedjson = {
 	title: "e2e fixture clip",
 	video: {url: "https://www.youtube.com/embed/e2eFixtured01"},
 	thumbnail: {url: MOCK_EMBED_POSTER_URL, proxy_url: MOCK_EMBED_POSTER_URL, width: 480, height: 360},
+};
+
+// The /invite/:code page (src/webpage/invite.ts) reads guild.name/icon/banner/
+// discovery_splash + inviter.username off the preview answer; acceptInvite (utils/
+// acceptInvite.ts) POSTs the same path and reads {guild:{id}} (or the old guild_id).
+// The guild is the mock's own, so an accept lands /channels/:guildId in the booted app.
+export const MOCK_INVITE_CODE = "e2e-invite";
+export const MOCK_INVITE = {
+	code: MOCK_INVITE_CODE,
+	guild: {
+		id: MOCK_GUILD_ID,
+		name: "Mock Guild",
+		icon: null,
+		banner: null,
+		discovery_splash: null,
+	},
+	inviter: {id: MOCK_BOT_USER_ID, username: "HelperBot"},
+	channel: {name: "general"},
 };
 
 // src/webpage/message.ts (generateMessage: message_reference.type === 1 renders the
@@ -1156,6 +1176,15 @@ export async function mountMockInstance(
 			// the send from capturedRequests; nothing downstream reads the response body.
 			if (method === "POST" && /^\/api\/v9\/channels\/[^/]+\/messages$/.test(pathname)) {
 				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
+			}
+
+			// 16. Invite preview + accept (src/webpage/invite.ts page, embed.ts
+			// generateInvite, utils/acceptInvite.ts).
+			if (method === "GET" && /^\/api\/v9\/invites\/[^/]+$/.test(pathname)) {
+				return fulfillJson(MOCK_INVITE);
+			}
+			if (method === "POST" && /^\/api\/v9\/invites\/[^/]+$/.test(pathname)) {
+				return fulfillJson({guild: {id: MOCK_GUILD_ID}});
 			}
 
 			// 15. Short-rev nonce base, plain text on purpose (createMachloketNonce reads
