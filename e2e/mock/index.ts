@@ -24,6 +24,8 @@
  * - GET  /api/v9/guilds/:guildId/welcome-screen     -> MOCK_WELCOME_SCREEN (enabled: false)
  * - GET  /api/v9/guilds/:guildId/members/:userId    -> MOCK member (Member.resolveMember)
  * - GET  /api/v9/channels/:channelId/messages       -> MOCK_MESSAGES (newest-first; before/after pages -> [])
+ * - POST /api/v9/channels/:channelId/messages       -> 200 {} (a sent message, e.g. the forward
+ *                                                      flow's send; pinned from capturedRequests)
  * - POST /api/v9/channels/:channelId/messages/:id/ack -> 200 {token: null}
  * - POST /api/v9/read-states/ack-bulk               -> 200 {token: null}
  * - GET  /api/v9/users/:userId/profile              -> user profile + empty badges/mutuals
@@ -33,7 +35,9 @@
  * Gateway WebSocket (ws://localhost:4173):
  * - Server -> Client on connect: op 10 HELLO ({heartbeat_interval: 41250})
  * - Client -> Server op 1 / op 40 (heartbeat)       -> Server op 11 HEARTBEAT_ACK
- * - Client -> Server op 2 (IDENTIFY)                -> Server op 0 READY, then op 0 GUILD_CREATE
+ * - Client -> Server op 2 (IDENTIFY)                -> Server op 0 READY (carries the blocked
+ *                                                      peer's type-2 relationship), then op 0
+ *                                                      GUILD_CREATE
  * - Client -> Server op 8 (REQUEST_GUILD_MEMBERS)   -> Server op 0 GUILD_MEMBERS_CHUNK (+ CHANNEL_UPDATE)
  * - Client -> Server op 6 (RESUME)                  -> Server op 9 invalid session: no state is
  *                                                      kept, the app re-identifies afresh and the
@@ -74,6 +78,10 @@ export const MOCK_BUTTON_MESSAGE_ID = "1200000000000000300";
 export const MOCK_TEXT_MESSAGE_ID = "1200000000000000301";
 export const MOCK_SELECT_MESSAGE_ID = "1200000000000000302";
 export const MOCK_EMBED_MESSAGE_ID = "1200000000000000299";
+export const MOCK_BLOCKED_MESSAGE_B_ID = "1200000000000000298";
+export const MOCK_BLOCKED_MESSAGE_A_ID = "1200000000000000297";
+export const MOCK_FORWARD_MESSAGE_ID = "1200000000000000296";
+export const MOCK_BLOCKED_USER_ID = "1200000000000000003";
 
 // 1x1 transparent PNG so default avatar requests (/embed/avatars/*.png, guild.ts member icons) settle 200.
 const TRANSPARENT_PNG = Buffer.from(
@@ -349,6 +357,39 @@ export const MOCK_BOT_MEMBER: memberjson = {
 	pending: false,
 };
 
+// src/webpage/user.ts (handleRelationship: relationshipType = relation.type) — READY
+// carries the type-2 relationship, and User.checkuser hands every later resolution the
+// SAME instance, so messages by this peer render the blocked run (message.ts
+// generateMessage's relationshipType === 2 branches).
+export const MOCK_BLOCKED_USER: userjson = {
+	id: MOCK_BLOCKED_USER_ID,
+	username: "BlockedPeer",
+	discriminator: "0004",
+	avatar: null,
+	bot: false,
+	public_flags: 0,
+	bio: "",
+	accent_color: 0,
+	theme_colors: null,
+	pronouns: "",
+	premium_type: 0,
+	premium_since: "",
+	badge_ids: [],
+};
+
+export const MOCK_BLOCKED_MEMBER: memberjson = {
+	id: MOCK_BLOCKED_USER_ID,
+	user: MOCK_BLOCKED_USER,
+	guild: {id: MOCK_GUILD_ID},
+	guild_id: MOCK_GUILD_ID,
+	roles: [MOCK_GUILD_ID],
+	joined_at: "2025-01-01T00:00:00.000Z",
+	premium_since: "",
+	deaf: false,
+	mute: false,
+	pending: false,
+};
+
 // src/webpage/interactions/compontents.ts (class ActionRow) & (class Select -> FancySelect)
 // src/webpage/utils/fancySelect.ts (FancySelect phone sheet options, min/max)
 // src/webpage/jsontypes.ts (MessageComponentType.ActionRow = 1, MessageComponentType.StringSelect = 3)
@@ -492,6 +533,91 @@ export const MOCK_VIDEO_EMBED: embedjson = {
 	thumbnail: {url: MOCK_EMBED_POSTER_URL, proxy_url: MOCK_EMBED_POSTER_URL, width: 480, height: 360},
 };
 
+// src/webpage/message.ts (generateMessage: message_reference.type === 1 renders the
+// forwardBlock card from message_snapshots[0]; the reply-bar path skips type 1) —
+// the card labels the SOURCE channel from message_reference.channel_id.
+export const MOCK_FORWARD_MESSAGE: messagejson = {
+	id: MOCK_FORWARD_MESSAGE_ID,
+	channel_id: MOCK_CHANNEL_ID,
+	guild_id: MOCK_GUILD_ID,
+	author: MOCK_BOT_USER,
+	member: MOCK_BOT_MEMBER,
+	content: "",
+	timestamp: "2025-01-01T11:55:00.000Z",
+	edited_timestamp: null,
+	tts: false,
+	mention_everyone: false,
+	mentions: [],
+	mention_roles: [],
+	attachments: [],
+	embeds: [],
+	reactions: [],
+	nonce: "e2e-nonce-4",
+	pinned: false,
+	type: 0,
+	message_reference: {type: 1, channel_id: MOCK_CHANNEL_ID, message_id: MOCK_TEXT_MESSAGE_ID},
+	message_snapshots: [
+		{
+			message: {
+				content: "Forwarded from earlier: the original answer, kept verbatim.",
+				timestamp: "2025-01-01T10:00:00.000Z",
+				edited_timestamp: null,
+				type: 0,
+				attachments: [],
+				embeds: [],
+				mentions: [],
+				mention_roles: [],
+			},
+		},
+	],
+};
+
+// The blocked peer's run: two consecutive messages collapsing behind one bar
+// (message.ts generateMessage: the run's first build gets .blocked.topMessage and the
+// showBlockedMessages count; later ones go zeroheight until expanded via ignoredblock).
+export const MOCK_BLOCKED_MESSAGES: messagejson[] = [
+	{
+		id: MOCK_BLOCKED_MESSAGE_B_ID,
+		channel_id: MOCK_CHANNEL_ID,
+		guild_id: MOCK_GUILD_ID,
+		author: MOCK_BLOCKED_USER,
+		member: MOCK_BLOCKED_MEMBER,
+		content: "blocked message two",
+		timestamp: "2025-01-01T11:57:00.000Z",
+		edited_timestamp: null,
+		tts: false,
+		mention_everyone: false,
+		mentions: [],
+		mention_roles: [],
+		attachments: [],
+		embeds: [],
+		reactions: [],
+		nonce: "e2e-nonce-5",
+		pinned: false,
+		type: 0,
+	},
+	{
+		id: MOCK_BLOCKED_MESSAGE_A_ID,
+		channel_id: MOCK_CHANNEL_ID,
+		guild_id: MOCK_GUILD_ID,
+		author: MOCK_BLOCKED_USER,
+		member: MOCK_BLOCKED_MEMBER,
+		content: "blocked message one",
+		timestamp: "2025-01-01T11:56:00.000Z",
+		edited_timestamp: null,
+		tts: false,
+		mention_everyone: false,
+		mentions: [],
+		mention_roles: [],
+		attachments: [],
+		embeds: [],
+		reactions: [],
+		nonce: "e2e-nonce-6",
+		pinned: false,
+		type: 0,
+	},
+];
+
 // src/webpage/channel.ts (putmessages expects newest-first array from GET /channels/:id/messages?limit=100)
 // src/webpage/message.ts (Message constructor) & src/webpage/jsontypes.ts (messagejson)
 export const MOCK_MESSAGES: messagejson[] = [
@@ -558,9 +684,8 @@ export const MOCK_MESSAGES: messagejson[] = [
 		components: [MOCK_BUTTON_ROW],
 	},
 	{
-		// Oldest message: last in this newest-first array, so it renders at the TOP of
-		// #general, above the button message (previously the oldest); the select stays
-		// bottom-most, as T3 arranged.
+		// Sits between the button message and the blocked run below; the select stays
+		// bottom-most, as T3 arranged, and the run above is the new bottom of the array.
 		id: MOCK_EMBED_MESSAGE_ID,
 		channel_id: MOCK_CHANNEL_ID,
 		guild_id: MOCK_GUILD_ID,
@@ -580,6 +705,10 @@ export const MOCK_MESSAGES: messagejson[] = [
 		pinned: false,
 		type: 0,
 	},
+	...MOCK_BLOCKED_MESSAGES,
+	// Last in this newest-first array, so it renders at the TOP of #general: the
+	// forward card sits above the collapsed blocked run.
+	MOCK_FORWARD_MESSAGE,
 ];
 
 // src/webpage/localuser.ts (op 10 HELLO starts heartbeat interval and sends op 1)
@@ -636,7 +765,14 @@ export const MOCK_READY_FRAME: readyjson = {
 			view_nsfw_guilds: false,
 		},
 		guilds: [],
-		relationships: [],
+		relationships: [
+			{
+				id: MOCK_BLOCKED_USER_ID,
+				type: 2,
+				nickname: null,
+				user: MOCK_BLOCKED_USER,
+			},
+		],
 		private_channels: [],
 		read_state: {entries: [], partial: false, version: 0},
 		user_guild_settings: {entries: [], partial: false, version: 0},
@@ -1014,6 +1150,12 @@ export async function mountMockInstance(
 			// 14. Component / command interactions (src/webpage/interactions/compontents.ts)
 			if (method === "POST" && pathname === "/api/v9/interactions") {
 				return route.fulfill({status: 204, body: ""});
+			}
+
+			// 14b. A sent message (the forward flow's send): accepted, no echo. A spec pins
+			// the send from capturedRequests; nothing downstream reads the response body.
+			if (method === "POST" && /^\/api\/v9\/channels\/[^/]+\/messages$/.test(pathname)) {
+				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
 			}
 
 			// 15. Short-rev nonce base, plain text on purpose (createMachloketNonce reads
