@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_CHANNEL, MOCK_GUILD, MOCK_INSTANCE_NAME, test} from "./fixtures";
+import {MOCK_CHANNEL, MOCK_GUILD, MOCK_GUILD_ID, MOCK_INSTANCE_NAME, loginAndOpenChannel, test} from "./fixtures";
 
 test("picking the mock instance and logging in renders the fixture guild, channel, and messages", async ({
 	page,
@@ -83,4 +83,25 @@ test("picking the mock instance and logging in renders the fixture guild, channe
 			'#scrollWrap .messagediv:has-text("Choose a notification role:") .fancySelect',
 		),
 	).toBeVisible();
+});
+
+// The deep-link boot: a bare /channels/:guildId URL (the invite accept's landing, a
+// notification tap's shape) must auto-open the guild's channel, not park in a
+// channelless state. The invite accept flow carries the user-facing pin in invite.spec.
+test("a bare guild deep link auto-opens the guild's channel", async ({page, mockInstance}) => {
+	void mockInstance; // mount the mock's routes; the handle stays unread
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}`);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+});
+
+// Class sweep, channel-shaped deep link (/channels/:guildId/:channelId): the channels
+// register synchronously at GUILD_CREATE, so the URL's channel resolves without waiting
+// on the member fetch - this pins that the shape boots into the named channel.
+test("a channel deep link boots into the named channel", async ({page, mockInstance}) => {
+	void mockInstance; // mount the mock's routes; the handle stays unread
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}/${MOCK_CHANNEL.id}`);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+	await expect(page.getByText("Welcome to the mock guild!", {exact: true})).toBeVisible();
 });

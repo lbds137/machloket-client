@@ -1970,6 +1970,10 @@ class Localuser {
 			if (!guild) {
 				return;
 			}
+			// The URL's resolution checks permissions, which need the viewer's member — its
+			// fetch starts in the Guild constructor and settles after READY. Without this
+			// wait every channel reads invisible and a bare guild link parks in noChannel.
+			await guild.memberReady;
 			const messageId = parts[6]?.split("?")[0]?.split("#")[0];
 			await guild.loadChannel(parts[5], true, messageId);
 			this.channelfocus = this.channelids.get(parts[5]);

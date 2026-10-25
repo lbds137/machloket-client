@@ -1,9 +1,8 @@
 import {expect} from "@playwright/test";
 import {
-	MOCK_GUILD_ID,
-	MOCK_INSTANCE_ORIGIN,
-	MOCK_INVITE_CODE,
 	loginAndOpenChannel,
+	MOCK_INVITE_CODE,
+	MOCK_INSTANCE_ORIGIN,
 	test,
 } from "./fixtures";
 
@@ -40,11 +39,9 @@ test("the invite page previews the guild, and accept lands in it", async ({
 		(req) => req.method === "POST" && req.pathname === `/api/v9/invites/${MOCK_INVITE_CODE}`,
 	);
 	expect(joins.length).toBe(1);
-	await expect(page).toHaveURL(new RegExp(`/channels/${MOCK_GUILD_ID}$`));
-	// Where the app lands after this navigation is the boot's business, not the page's:
-	// a bare /channels/:guildId boot currently resolves to the guild's noChannel state
-	// ("Weird spot", no channel auto-picked) — repro'd on the mock, FILED red-first.
-	// This spec pins the invite page's contract up to the handoff. When the fix makes
-	// the boot auto-open a channel, the URL gains a /<channelId> segment and this $-
-	// anchored assert gets updated with it.
+	await expect(page).toHaveURL(/\/channels\/1200000000000000100/);
+
+	// The accept must LAND the user in the guild's channel view: the boot auto-opens the
+	// guild's channel (Discord's invite behavior), not a channelless holding state.
+	await expect(page.locator("#channelname")).toHaveText("#general");
 });

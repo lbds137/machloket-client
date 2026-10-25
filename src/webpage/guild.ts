@@ -179,6 +179,10 @@ class Guild extends SnowFlake {
 	position!: number;
 	parent_id!: string;
 	member!: Member;
+	/** Settles once `member` is resolved (or the resolve failed): deep-link boots await it
+	 * before resolving the URL, so permission checks see the viewer's member. The shell
+	 * constructor (-1) keeps it resolved — nothing to wait for. */
+	memberReady: Promise<void> = Promise.resolve();
 	html!: HTMLElement;
 	emojis: emojipjson[] = [];
 	large!: boolean;
@@ -1700,22 +1704,20 @@ class Guild extends SnowFlake {
 
 		this.message_notifications = 0;
 		this.sortRoles();
-		if (member instanceof User) {
-			console.warn(member);
-			Member.resolveMember(member, this).then((_) => {
-				if (_) {
-					this.member = _;
-				} else {
-					console.error("Member was unable to resolve");
-				}
-			});
-		} else {
-			Member.new(member, this).then((_) => {
-				if (_) {
-					this.member = _;
-				}
-			});
-		}
+		// A deep-link boot (the invite accept's landing, a bare /channels/:guildId URL)
+		// resolves its URL while this member fetch is still in flight; without the member
+		// every channel reads invisible and the boot parks in noChannel. init() awaits this
+		// before touching the URL, so the channels are visible when it looks at them.
+		this.memberReady = (member instanceof User
+			? Member.resolveMember(member, this)
+			: Member.new(member, this)
+		).then((_) => {
+			if (!_) {
+				if (member instanceof User) console.error("Member was unable to resolve");
+				return;
+			}
+			this.member = _;
+		});
 
 		for (const thing of json.channels) {
 			const temp = new Channel(thing, this);
