@@ -1707,17 +1707,22 @@ class Guild extends SnowFlake {
 		// A deep-link boot (the invite accept's landing, a bare /channels/:guildId URL)
 		// resolves its URL while this member fetch is still in flight; without the member
 		// every channel reads invisible and the boot parks in noChannel. init() awaits this
-		// before touching the URL, so the channels are visible when it looks at them.
+		// before touching the URL, so the channels are visible when it looks at them. The
+		// fetch failure settles resolved with the member unset (init then parks in
+		// noChannel, as before this field existed) — a rejection here would throw out of
+		// init's callers.
 		this.memberReady = (member instanceof User
 			? Member.resolveMember(member, this)
 			: Member.new(member, this)
-		).then((_) => {
-			if (!_) {
-				if (member instanceof User) console.error("Member was unable to resolve");
-				return;
-			}
-			this.member = _;
-		});
+		)
+			.then((_) => {
+				if (!_) {
+					if (member instanceof User) console.error("Member was unable to resolve");
+					return;
+				}
+				this.member = _;
+			})
+			.catch(() => {});
 
 		for (const thing of json.channels) {
 			const temp = new Channel(thing, this);

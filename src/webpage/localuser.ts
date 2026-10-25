@@ -1976,7 +1976,12 @@ class Localuser {
 			await guild.memberReady;
 			const messageId = parts[6]?.split("?")[0]?.split("#")[0];
 			await guild.loadChannel(parts[5], true, messageId);
-			this.channelfocus = this.channelids.get(parts[5]);
+			// A bare URL has no channel segment: loadChannel's fallback already focused the
+			// channel it opened, and re-assigning from the undefined segment would clobber
+			// it — the composer, typing and read-acks all read channelfocus.
+			if (parts[5]) {
+				this.channelfocus = this.channelids.get(parts[5]);
+			}
 		}
 	}
 	loaduser(): void {
