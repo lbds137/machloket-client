@@ -946,6 +946,9 @@ export interface MockInstanceHandle {
 	/** Reassignable per test: a custom handler for POST /api/v9/auth/login (refusal tests
 	 * fulfill a 401 here). Runs INSTEAD of the default fulfill when set. */
 	onLogin?: (route: Route, body: unknown) => Promise<void> | void;
+	/** Reassignable per test: a custom handler for POST /api/v9/interactions (modal refusal
+	 * tests fulfill a 400 here). Runs INSTEAD of the default 204 fulfill when set. */
+	onInteractions?: (route: Route, body: unknown) => Promise<void> | void;
 }
 
 /**
@@ -1261,6 +1264,10 @@ export async function mountMockInstance(
 
 			// 14. Component / command interactions (src/webpage/interactions/compontents.ts)
 			if (method === "POST" && pathname === "/api/v9/interactions") {
+				if (handle.onInteractions) {
+					await handle.onInteractions(route, parsedBody);
+					return;
+				}
 				return route.fulfill({status: 204, body: ""});
 			}
 
