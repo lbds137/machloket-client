@@ -75,7 +75,12 @@ test("picking the mock instance and logging in renders the fixture guild, channe
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
 
 	// 7. Fixture messages and the select component (for T2 sheet tests) are visible in the DOM.
+	// Scoped to the multi-select's message: the channel also carries a single-select box.
 	await expect(page.getByText("Welcome to the mock guild!", {exact: true})).toBeVisible();
 	await expect(page.getByText("Choose a notification role:", {exact: true})).toBeVisible();
-	await expect(page.locator("#scrollWrap .fancySelect")).toBeVisible();
+	await expect(
+		page.locator(
+			'#scrollWrap .messagediv:has-text("Choose a notification role:") .fancySelect',
+		),
+	).toBeVisible();
 });

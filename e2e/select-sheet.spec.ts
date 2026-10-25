@@ -6,7 +6,10 @@ import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, test} from "./fixtures";
 // The Discord-truth checks (disable-at-max and Apply-until-min FEEL like Discord) stay
 // physical; these specs pin the mechanical half: open, rows, count, Apply, no-focus.
 
-const SELECT_BOX = "#scrollWrap .fancySelect input";
+// Scoped to the multi-select's own message: the channel now also carries a
+// single-select box (single-select-sheet.spec.ts), so the bare selector double-matches.
+const SELECT_BOX =
+	'#scrollWrap .messagediv:has-text("Choose a notification role:") .fancySelect input';
 const SHEET = ".selectSheetBackdrop .selectSheet";
 
 async function openChannelWithSelect(page: import("@playwright/test").Page): Promise<void> {

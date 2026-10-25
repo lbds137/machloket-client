@@ -22,6 +22,8 @@
  * - PATCH /api/v9/users/@me/settings-proto/2/json   -> MOCK_SETTINGS_PROTO
  * - GET  /_spacebar/api/v1/integrations/gif         -> MOCK_GIF_INTEGRATIONS (empty GIF providers)
  * - GET  /api/v9/guilds/:guildId/welcome-screen     -> MOCK_WELCOME_SCREEN (enabled: false)
+ * - GET  /api/v9/guilds/:guildId/application-command-index -> MOCK_COMMAND_INDEX (3 chat-input
+ *                                                      commands: visible / admins-only / denied)
  * - GET  /api/v9/guilds/:guildId/members/:userId    -> MOCK member (Member.resolveMember)
  * - GET  /api/v9/channels/:channelId/messages       -> MOCK_MESSAGES (newest-first; before/after pages -> [])
  * - POST /api/v9/channels/:channelId/messages       -> 200 {} (a sent message, e.g. the forward
@@ -55,6 +57,7 @@ import type {
 	actionRow,
 	button,
 	channeljson,
+	commandJson,
 	embedjson,
 	guildjson,
 	mainuserjson,
@@ -80,6 +83,7 @@ export const MOCK_BUTTON_MESSAGE_ID = "1200000000000000300";
 export const MOCK_TEXT_MESSAGE_ID = "1200000000000000301";
 export const MOCK_SELECT_MESSAGE_ID = "1200000000000000302";
 export const MOCK_EMBED_MESSAGE_ID = "1200000000000000299";
+export const MOCK_SINGLE_SELECT_MESSAGE_ID = "1200000000000000305";
 export const MOCK_BLOCKED_MESSAGE_B_ID = "1200000000000000298";
 export const MOCK_BLOCKED_MESSAGE_A_ID = "1200000000000000297";
 export const MOCK_FORWARD_MESSAGE_ID = "1200000000000000296";
@@ -224,7 +228,9 @@ export const MOCK_BOT_USER: userjson = {
 };
 
 // src/webpage/role.ts & src/webpage/channel.ts (hasPermission checks @everyone role id === guild.id)
-// Bits: ADMINISTRATOR (1<<3 = 8) | VIEW_CHANNEL (1<<10 = 1024) | SEND_MESSAGES (1<<11 = 2048) | READ_MESSAGE_HISTORY (1<<16 = 65536) = 68616
+// Bits: VIEW_CHANNEL (1<<10 = 1024) | SEND_MESSAGES (1<<11 = 2048) | READ_MESSAGE_HISTORY (1<<16 = 65536) = 68608.
+// Deliberately NOT admin (no 1<<3): the slash-perm pins need a member whose filtering is
+// visible - an ADMINISTRATOR passes memberCanSee for everything.
 export const MOCK_EVERYONE_ROLE: rolesjson = {
 	id: MOCK_GUILD_ID,
 	guild_id: MOCK_GUILD_ID,
@@ -232,7 +238,7 @@ export const MOCK_EVERYONE_ROLE: rolesjson = {
 	color: 0,
 	hoist: false,
 	position: 0,
-	permissions: "68616",
+	permissions: "68608",
 	managed: false,
 	mentionable: false,
 	icon: "",
@@ -257,7 +263,7 @@ export const MOCK_CHANNEL: channeljson = {
 	topic: "General discussion",
 	nsfw: false,
 	position: 0,
-	last_message_id: MOCK_SELECT_MESSAGE_ID,
+	last_message_id: MOCK_SINGLE_SELECT_MESSAGE_ID,
 	rate_limit_per_user: 0,
 	permission_overwrites: [],
 	default_auto_archive_duration: 1440,
@@ -295,7 +301,9 @@ export const MOCK_GUILD: guildjson = {
 		banner: "",
 		features: [],
 		preferred_locale: "en-US",
-		owner_id: MOCK_USER_ID,
+		// NOT the fixture member: guild.ts memberCanSee's owner bypass passes everything,
+		// which would silent the slash-perm pins. The bot persona owns the guild.
+		owner_id: MOCK_BOT_USER_ID,
 		application_id: "",
 		afk_channel_id: "",
 		afk_timeout: 300,
@@ -395,6 +403,26 @@ export const MOCK_BLOCKED_MEMBER: memberjson = {
 // src/webpage/interactions/compontents.ts (class ActionRow) & (class Select -> FancySelect)
 // src/webpage/utils/fancySelect.ts (FancySelect phone sheet options, min/max)
 // src/webpage/jsontypes.ts (MessageComponentType.ActionRow = 1, MessageComponentType.StringSelect = 3)
+export const MOCK_SINGLE_SELECT_ROW: actionRow = {
+	type: MessageComponentType.ActionRow,
+	components: [
+		{
+			type: MessageComponentType.StringSelect,
+			custom_id: "e2e-single-select",
+			// Dead data: the app drops a select's placeholder (compontents.ts passes only
+			// label/value/description/default + min/max) - filed as a parity gap.
+			placeholder: "Pick one role",
+			min_values: 1,
+			max_values: 1,
+			options: [
+				{label: "Alpha", value: "alpha", description: "First pick", default: false},
+				{label: "Beta", value: "beta", description: "Second pick", default: false},
+				{label: "Gamma", value: "gamma", description: "Third pick", default: false},
+			],
+		} satisfies select,
+	],
+};
+
 export const MOCK_SELECT_ROW: actionRow = {
 	type: MessageComponentType.ActionRow,
 	components: [
@@ -553,6 +581,44 @@ export const MOCK_INVITE = {
 	channel: {name: "general"},
 };
 
+// src/webpage/guild.ts (getCommandsFetch / getCommands: chat-input type 1 only;
+// memberCanSee: per-command overrides via commandAllowedFor, then default_member_permissions
+// where "0" is Discord's admins-only). The member holds only 68608 - no ADMINISTRATOR - so
+// the two hidden commands below are hidden BY the pins being tested. The app's owner is the
+// bot itself, so the app-owner bypass can't leak the denied command either.
+let commandIdCounter = 500;
+function command(
+	name: string,
+	extra: Pick<commandJson, "default_member_permissions" | "permissions">,
+): commandJson {
+	return {
+		id: "1200000000000000" + commandIdCounter++,
+		type: 1,
+		application_id: MOCK_BOT_USER_ID,
+		guild_id: MOCK_GUILD_ID,
+		name,
+		description: "e2e command " + name,
+		dm_permission: false,
+		nsfw: false,
+		global_popularity_rank: 0,
+		version: "1",
+		handler: 1,
+		...extra,
+	};
+}
+export const MOCK_COMMAND_INDEX: {application_commands: commandJson[]; applications: unknown[]} = {
+	application_commands: [
+		command("e2evisible", {}),
+		// "0" = admins-only; the member is not one.
+		command("e2eadminonly", {default_member_permissions: "0"}),
+		// An explicit per-user deny outranks everything but the bypasses.
+		// An explicit deny in the command's permissions table outranks everything but the
+		// bypasses (Spacebar's shape: `user` is one boolean on the command, not an id map).
+		command("e2edenied", {permissions: {user: false}}),
+	],
+	applications: [{id: MOCK_BOT_USER_ID, name: "HelperBot", owner_id: MOCK_BOT_USER_ID}],
+};
+
 // src/webpage/message.ts (generateMessage: message_reference.type === 1 renders the
 // forwardBlock card from message_snapshots[0]; the reply-bar path skips type 1) —
 // the card labels the SOURCE channel from message_reference.channel_id.
@@ -638,9 +704,35 @@ export const MOCK_BLOCKED_MESSAGES: messagejson[] = [
 	},
 ];
 
+// The single-select sheet's message: the run's newest (bottom-most in #general), whose
+// tap answers immediately - radio markers, no Apply footer (fancySelect.ts multi !== 1).
+export const MOCK_SINGLE_MESSAGE: messagejson = {
+	id: MOCK_SINGLE_SELECT_MESSAGE_ID,
+	channel_id: MOCK_CHANNEL_ID,
+	guild_id: MOCK_GUILD_ID,
+	author: MOCK_BOT_USER,
+	member: MOCK_BOT_MEMBER,
+	content: "Pick exactly one:",
+	timestamp: "2025-01-01T12:02:00.000Z",
+	edited_timestamp: null,
+	tts: false,
+	mention_everyone: false,
+	mentions: [],
+	mention_roles: [],
+	attachments: [],
+	embeds: [],
+	reactions: [],
+	nonce: "e2e-nonce-7",
+	pinned: false,
+	type: 0,
+	components: [MOCK_SINGLE_SELECT_ROW],
+};
+
 // src/webpage/channel.ts (putmessages expects newest-first array from GET /channels/:id/messages?limit=100)
 // src/webpage/message.ts (Message constructor) & src/webpage/jsontypes.ts (messagejson)
 export const MOCK_MESSAGES: messagejson[] = [
+	// The newest message, bottom-most in #general (the channel's last_message_id).
+	MOCK_SINGLE_MESSAGE,
 	{
 		id: MOCK_SELECT_MESSAGE_ID,
 		channel_id: MOCK_CHANNEL_ID,
@@ -1178,6 +1270,12 @@ export async function mountMockInstance(
 				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
 			}
 
+			// 14c. The composer's typing indicator (the slash popup's typing fires it; the
+			// app ignores the answer).
+			if (method === "POST" && /^\/api\/v9\/channels\/[^/]+\/typing$/.test(pathname)) {
+				return route.fulfill({status: 204, body: ""});
+			}
+
 			// 16. Invite preview + accept (src/webpage/invite.ts page, embed.ts
 			// generateInvite, utils/acceptInvite.ts).
 			if (method === "GET" && /^\/api\/v9\/invites\/[^/]+$/.test(pathname)) {
@@ -1185,6 +1283,14 @@ export async function mountMockInstance(
 			}
 			if (method === "POST" && /^\/api\/v9\/invites\/[^/]+$/.test(pathname)) {
 				return fulfillJson({guild: {id: MOCK_GUILD_ID}});
+			}
+
+			// 17. The guild's slash-command index (src/webpage/guild.ts getCommandsFetch).
+			if (
+				method === "GET" &&
+				/^\/api\/v9\/guilds\/[^/]+\/application-command-index$/.test(pathname)
+			) {
+				return fulfillJson(MOCK_COMMAND_INDEX);
 			}
 
 			// 15. Short-rev nonce base, plain text on purpose (createMachloketNonce reads
