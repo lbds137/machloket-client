@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, test} from "./fixtures";
+import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, expectRequests, test} from "./fixtures";
 
 // T2 select-sheet pins (fancySelect.ts phone sheet). The fixture message carries a
 // StringSelect with min 1 / max 2 and three described options, none pre-selected.
@@ -137,10 +137,11 @@ test("sheet chrome: rows, count, header join, disable-at-max, Apply sends", asyn
 	// Apply is the only send: the sheet closes and exactly one interaction carries
 	// the applied values in option order.
 	await expect(page.locator(".selectSheetBackdrop")).toHaveCount(0);
-	const interactions = mockInstance.capturedRequests.filter(
+	const interactions = await expectRequests(
+		mockInstance,
 		(req) => req.method === "POST" && req.pathname === "/api/v9/interactions",
+		1,
 	);
-	expect(interactions).toHaveLength(1);
 	expect(interactions[0].body).toMatchObject({
 		data: {component_type: 3, custom_id: "e2e-role-select", values: ["announcements", "builds"]},
 	});

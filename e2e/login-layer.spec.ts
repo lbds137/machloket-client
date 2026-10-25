@@ -100,12 +100,21 @@ test("the instance-rewrite dialog renders above the raised auth dialog", async (
 		exact: false,
 	});
 	await expect(dialogText).toBeVisible();
-	const box = (await dialogText.boundingBox())!;
-	const painted = await page.evaluate(
-		([x, y]) => document.elementFromPoint(x, y)?.textContent,
-		[box.x + box.width / 2, box.y + box.height / 2],
-	);
-	expect(painted).toContain("incorrect links");
+	// Identity, not text: the layer's .background holds the prompt's text too, so a
+	// textContent match passes over a covered prompt. Polled with the center re-measured
+	// each tick: the dialog animates in, and a box read mid-entry points off the prompt.
+	await expect
+		.poll(
+			() =>
+				dialogText.evaluate((el) => {
+					const r = el.getBoundingClientRect();
+					const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
+					if (!hit) return "nothing";
+					return el === hit || el.contains(hit) ? "prompt" : `${hit.tagName}.${String(hit.className)}`;
+				}),
+			"the prompt's text is the element painted at its center",
+		)
+		.toBe("prompt");
 
 	// Declining closes the prompt; checkURLs then settles null and the picker keeps the
 	// advertised URLs unchanged.

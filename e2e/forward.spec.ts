@@ -2,6 +2,7 @@ import {expect} from "@playwright/test";
 import {
 	MOCK_CHANNEL_ID,
 	MOCK_TEXT_MESSAGE_ID,
+	expectRequests,
 	loginAndOpenChannel,
 	test,
 } from "./fixtures";
@@ -53,10 +54,11 @@ test("right-click -> Forward sends through the picker with the source reference"
 	// both before and after detach.
 	await expect(picker).toBeHidden();
 
-	const sends = mockInstance.capturedRequests.filter(
+	const sends = await expectRequests(
+		mockInstance,
 		(req) => req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
+		1,
 	);
-	expect(sends.length).toBe(1);
 	expect(sends[0].body).toEqual({
 		content: "",
 		message_reference: {type: 1, message_id: MOCK_TEXT_MESSAGE_ID},

@@ -1,5 +1,12 @@
-import {expect} from "@playwright/test";
-import {MOCK_FORM_MODAL, MOCK_BUTTON_MESSAGE_ID, loginAndOpenChannel, test} from "./fixtures";
+import {expect, type Page} from "@playwright/test";
+import {
+	type MockInstanceHandle,
+	MOCK_FORM_MODAL,
+	MOCK_BUTTON_MESSAGE_ID,
+	loginAndOpenChannel,
+	openModalViaButton,
+	test,
+} from "./fixtures";
 
 // T3 phone-layout, first half: a bot's form (INTERACTION_MODAL_CREATE) is one sheet the
 // size of the space above the keyboard, Submit in reach — the M1 pin (c17e001a), extended
@@ -12,31 +19,8 @@ import {MOCK_FORM_MODAL, MOCK_BUTTON_MESSAGE_ID, loginAndOpenChannel, test} from
 const DIALOG = ".dialogModal";
 
 /** Opens the tall form through the real path and leaves it on screen. */
-async function openForm(page: import("@playwright/test").Page, mockInstance: {
-	capturedRequests: {method: string; pathname: string; body: unknown}[];
-	sendGatewayEvent: (frame: {op: number; t?: string; s?: number; d: unknown}) => void;
-}): Promise<void> {
-	await page.getByRole("button", {name: "Open form"}).tap();
-	// The nonce is only readable after the tap's POST reaches the mock — polled so the
-	// route capture and this read can't race.
-	await expect
-		.poll(() => {
-			const post = mockInstance.capturedRequests
-				.filter((req) => req.method === "POST" && req.pathname === "/api/v9/interactions")
-				.at(-1);
-			return (post?.body as {nonce?: string}).nonce;
-		}, "the button tap must reach the mock before the modal opens")
-		.toBeTruthy();
-	const post = mockInstance.capturedRequests
-		.filter((req) => req.method === "POST" && req.pathname === "/api/v9/interactions")
-		.at(-1)!;
-	const nonce = (post.body as {nonce: string}).nonce;
-	mockInstance.sendGatewayEvent({
-		op: 0,
-		t: "INTERACTION_MODAL_CREATE",
-		d: {...MOCK_FORM_MODAL, nonce},
-	});
-	await expect(page.locator(DIALOG)).toBeVisible();
+async function openForm(page: Page, mockInstance: MockInstanceHandle): Promise<void> {
+	await openModalViaButton(page, mockInstance, MOCK_FORM_MODAL);
 }
 
 test("a bot's form is one sheet the size of the phone viewport", async ({page, mockInstance}) => {
@@ -86,7 +70,8 @@ test("with the keyboard up, the sheet fills the band above it and Submit stays i
 
 	// Submit stays on the shrunken screen.
 	const submit = await page.locator(".interactionModalSubmit").boundingBox();
-	expect(submit, "Submit rendered").toBeDefined();
+	expect(submit, "Submit rendered").not.toBeNull();
+	expect(submit!.y).toBeGreaterThanOrEqual(0);
 	expect(submit!.y + submit!.height).toBeLessThanOrEqual(420);
 
 	// One scrolling frame: the fields scroll, the sheet and its backdrop do not.

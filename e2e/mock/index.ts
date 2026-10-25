@@ -34,6 +34,8 @@
  * - POST /api/v9/interactions                       -> 204 No Content
  * - GET  /api/v9/invites/:code                      -> MOCK_INVITE (the invite page's preview)
  * - POST /api/v9/invites/:code                      -> {guild: {id}} (acceptInvite's join)
+ * - GET  /api/v9/channels/:channelId                -> a fixture channel, else 404 10003
+ * - GET  http://127.0.0.1:4173/e2e-assets/*          -> the embed fixture's inline SVGs
  * - Any other /api/*, /.well-known/*, /_spacebar/*  -> route.abort("failed") so missed routes fail loudly
  *
  * Gateway WebSocket (ws://localhost:4173):
@@ -544,10 +546,27 @@ export const MOCK_FORM_MODAL: Omit<ModalCreateEvent, "nonce"> = {
 // iframe on tap via youtubeEmbedSrc). The image host is 127.0.0.1 - deliberately a
 // different host than the mock's cdn (localhost:4173) so localuser.refreshIfNeeded
 // returns the URLs untouched instead of batching a POST /attachments/refresh-urls;
-// real embed images point at third-party hosts anyway. e2e/embeds.spec.ts fulfills
-// these paths with inline SVGs.
+// real embed images point at third-party hosts anyway. Every boot renders the embed
+// message, so mountMockInstance fulfills these paths with the inline SVGs below.
 export const MOCK_EMBED_THUMB_URL = "http://127.0.0.1:4173/e2e-assets/character-thumb.svg";
 export const MOCK_EMBED_POSTER_URL = "http://127.0.0.1:4173/e2e-assets/video-poster.svg";
+
+// Inline SVGs, not binary PNGs: deterministic by construction and readable in review.
+// Pure shapes, no text, so no font metrics enter the Deck-local baseline.
+const svg = (body: string): string =>
+	`<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">${body}</svg>`;
+const EMBED_ASSETS = new Map([
+	[
+		new URL(MOCK_EMBED_THUMB_URL).pathname,
+		svg(
+			'<circle cx="48" cy="48" r="40" fill="#2d7d46"/><rect x="40" y="16" width="16" height="64" fill="#7bd389"/>',
+		),
+	],
+	[
+		new URL(MOCK_EMBED_POSTER_URL).pathname,
+		svg('<rect width="96" height="96" fill="#8a5a2b"/><polygon points="38,30 70,48 38,66" fill="#f0e6d2"/>'),
+	],
+]);
 
 export const MOCK_RICH_EMBED: embedjson = {
 	type: "rich",
@@ -950,6 +969,9 @@ export interface MockInstanceHandle {
 	gateway: string;
 	token: string;
 	capturedRequests: CapturedRequest[];
+	/** "METHOD /path" of each same-origin API request no route answered; the shared
+	 * fixture fails the test at teardown unless this is empty. */
+	unmocked: string[];
 	gatewayFrames: {
 		toApp: unknown[];
 		fromApp: unknown[];
@@ -1005,6 +1027,7 @@ export async function mountMockInstance(
 		gateway: "ws://localhost:4173",
 		token: MOCK_TOKEN,
 		capturedRequests,
+		unmocked: [],
 		gatewayFrames,
 		sendGatewayEvent(frame) {
 			if (frame.op === 0 && frame.s === undefined) {
@@ -1107,6 +1130,14 @@ export async function mountMockInstance(
 			// A page or context already closing rejects this; nothing is left to complete.
 			ws.close({code, reason}).catch(() => {});
 		});
+	});
+
+	// The embed fixture's images, on their deliberately foreign host (see EMBED_ASSETS).
+	await page.route("http://127.0.0.1:4173/e2e-assets/*", (route) => {
+		const body = EMBED_ASSETS.get(new URL(route.request().url()).pathname);
+		if (body) return route.fulfill({contentType: "image/svg+xml", body});
+		handle.unmocked.push(`GET ${route.request().url()}`);
+		return route.fulfill({status: 404, body: "unmocked e2e asset"});
 	});
 
 	// REST + static discovery routes on http://localhost:4173
@@ -1309,6 +1340,14 @@ export async function mountMockInstance(
 				return fulfillJson({guild: {id: MOCK_GUILD_ID}});
 			}
 
+			// 18. A single channel (guild.ts goToThread fetches an id it doesn't know): the
+			// viewer's visible channel, else Spacebar's unknown-channel 404 - the hidden
+			// channel included, as a real server refuses one the viewer can't see.
+			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+$/.test(pathname)) {
+				if (pathname.split("/").at(-1) === MOCK_CHANNEL.id) return fulfillJson(MOCK_CHANNEL);
+				return fulfillJson({code: 10003, message: "Unknown Channel"}, 404);
+			}
+
 			// 17. The guild's slash-command index (src/webpage/guild.ts getCommandsFetch).
 			if (
 				method === "GET" &&
@@ -1323,8 +1362,9 @@ export async function mountMockInstance(
 				return route.fulfill({status: 200, contentType: "text/plain", body: "e2e-mock"});
 			}
 
-			// Loud failure for any unmocked API / discovery route on same-origin: the abort
-			// net makes the request fail, and this line names the gap in the console.
+			// Any unmocked API / discovery route on same-origin: the request fails, and the
+			// shared fixture fails the test over handle.unmocked at teardown.
+			handle.unmocked.push(`${method} ${pathname}`);
 			console.error("[e2e-mock] unmocked request:", method, pathname);
 			return route.abort("failed");
 		},

@@ -48,6 +48,10 @@ test("dismissing the bar sticks across a reload", async ({page, mockInstance}) =
 	// A reload boots straight into the stored session; the dismissed key must keep the
 	// bar from coming back.
 	await page.reload();
+	// The bar is `hidden` in the static HTML until installNotifyBanner runs, which index.ts
+	// does before the socket boot: wait for the boot so the hidden check reads the
+	// installed state, not the page's starting one.
+	await expect(page.locator("#loading")).toHaveClass(/doneloading/);
 	await expect(page.locator("#notifyBanner")).toBeHidden();
 });
 

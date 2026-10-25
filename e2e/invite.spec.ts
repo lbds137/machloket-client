@@ -1,5 +1,6 @@
 import {expect} from "@playwright/test";
 import {
+	expectRequests,
 	loginAndOpenChannel,
 	MOCK_INVITE_CODE,
 	MOCK_INSTANCE_ORIGIN,
@@ -35,10 +36,11 @@ test("the invite page previews the guild, and accept lands in it", async ({
 	await row.click();
 
 	// The join went out, and the page navigated into the accepted guild.
-	const joins = mockInstance.capturedRequests.filter(
+	await expectRequests(
+		mockInstance,
 		(req) => req.method === "POST" && req.pathname === `/api/v9/invites/${MOCK_INVITE_CODE}`,
+		1,
 	);
-	expect(joins.length).toBe(1);
 	await expect(page).toHaveURL(/\/channels\/1200000000000000100/);
 
 	// The accept must LAND the user in the guild's channel view: the boot auto-opens the

@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {expectRequests, loginAndOpenChannel, test} from "./fixtures";
 
 // The single-select (max_values 1) sheet, the twin of select-sheet.spec.ts's multi pins:
 // fancySelect renders radio markers instead of checkboxes and NO footer at all (no count,
@@ -38,10 +38,11 @@ test("the single-select sheet answers on tap with radio markers and no Apply", a
 	await sheet.locator(".selectSheetRow", {hasText: "Beta"}).tap();
 
 	await expect(page.locator(".selectSheetBackdrop")).toHaveCount(0);
-	const posts = mockInstance.capturedRequests.filter(
+	const posts = await expectRequests(
+		mockInstance,
 		(req) => req.method === "POST" && req.pathname === "/api/v9/interactions",
+		1,
 	);
-	expect(posts.length).toBe(1);
 	const body = posts[0].body as {data: {custom_id: string; values: string[]}};
 	expect(body.data.custom_id).toBe("e2e-single-select");
 	expect(body.data.values).toEqual(["beta"]);

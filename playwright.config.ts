@@ -17,6 +17,10 @@ export default defineConfig({
 		// The app registers a precaching service worker, and route() cannot intercept
 		// service-worker requests — block it so every test sees the network directly.
 		serviceWorkers: "block",
+		// Rendered dates (embed footers, message stamps) follow the browser's locale and
+		// zone: pinned so a baseline doesn't depend on the machine's.
+		locale: "en-US",
+		timezoneId: "UTC",
 	},
 	projects: [{name: "chromium-phone", use: {...devices["Pixel 7"]}}],
 	// Baselines must be deterministic: entry animations fast-forwarded, caret hidden.
