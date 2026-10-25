@@ -423,8 +423,8 @@ export const MOCK_SINGLE_SELECT_ROW: actionRow = {
 		{
 			type: MessageComponentType.StringSelect,
 			custom_id: "e2e-single-select",
-			// Dead data: the app drops a select's placeholder (compontents.ts passes only
-			// label/value/description/default + min/max) - filed as a parity gap.
+			// The placeholder renders: it is the closed box's hint and the sheet header's
+			// text while nothing is chosen (select-sheet.spec.ts pins the header text).
 			placeholder: "Pick one role",
 			min_values: 1,
 			max_values: 1,

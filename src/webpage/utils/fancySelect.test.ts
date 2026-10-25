@@ -176,3 +176,29 @@ it("filters the list without regard to case", () => {
 	input.dispatchEvent(new Event("input"));
 	expect(shown()).toEqual(["gamma"]);
 });
+
+describe("the bot's placeholder", () => {
+	it("names an empty single-choice box", () => {
+		const {input} = mount(new FancySelect(options(), {min: 1, max: 1, placeholder: "Pick one"}));
+
+		expect(input.placeholder).toBe("Pick one");
+	});
+
+	it("names a multiple-choice box and returns when the last chip clears", () => {
+		const select = new FancySelect(options(), {min: 1, max: 2, placeholder: "Pick some"});
+		const {input, tap} = mount(select);
+
+		expect(input.placeholder).toBe("Pick some");
+
+		tap("alpha");
+		tap("alpha");
+		expect(input.placeholder).toBe("Pick some");
+	});
+
+	it("steps aside for the chosen option's label", () => {
+		const chosen = options().map((option) => ({...option, default: option.value === "b"}));
+		const {input} = mount(new FancySelect(chosen, {min: 1, max: 1, placeholder: "Pick one"}));
+
+		expect(input.placeholder).toBe("beta");
+	});
+});

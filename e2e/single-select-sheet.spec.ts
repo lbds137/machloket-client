@@ -14,9 +14,9 @@ test("the single-select sheet answers on tap with radio markers and no Apply", a
 }) => {
 	await loginAndOpenChannel(page);
 
-	// Open the bottom-most message's select box. (The component's placeholder prop isn't
-	// rendered into the input - the placeholder only becomes the CHOSEN label - so the
-	// box is found through its own message.)
+	// Open the bottom-most message's select box. (Every select box in this suite is
+	// located through its own message: bare .fancySelect selectors strict-mode-violate
+	// once two selects render.)
 	await page.getByText("Pick exactly one:", {exact: true}).waitFor();
 	const box = page
 		.locator(".messagediv", {hasText: "Pick exactly one:"})

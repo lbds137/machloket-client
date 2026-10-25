@@ -384,6 +384,7 @@ class Select extends compObj {
 	options: select["options"];
 	maxValues: number;
 	minValues: number;
+	placeholder: string | undefined;
 	constructor(comp: select, owner: Components) {
 		super();
 		this.owner = owner;
@@ -391,6 +392,7 @@ class Select extends compObj {
 		this.options = comp.options;
 		this.maxValues = comp.max_values || 1;
 		this.minValues = comp.min_values ?? 1;
+		this.placeholder = comp.placeholder;
 	}
 	async submit(values: string[]) {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
@@ -420,7 +422,7 @@ class Select extends compObj {
 					default: _.default || false,
 				};
 			}),
-			{max: this.maxValues, min: this.minValues},
+			{max: this.maxValues, min: this.minValues, placeholder: this.placeholder},
 		);
 		fancy.onSubmit = (list) => {
 			this.submit(list);

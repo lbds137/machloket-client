@@ -298,6 +298,17 @@ describe("FancySelect phone sheet", () => {
 		expect(checked("alpha")).toBe(true);
 		expect(checked("beta")).toBe(false);
 	});
+
+	it("titles the sheet with the bot's placeholder while nothing is chosen", () => {
+		const select = new FancySelect(options(), {min: 1, max: 2, placeholder: "Pick some"});
+		const {open} = mount(select);
+
+		open();
+
+		expect(document.querySelector<HTMLElement>(".selectSheetTitle")!.textContent).toBe(
+			"Pick some",
+		);
+	});
 });
 
 describe("FancySelect desktop guard (phoneMode off)", () => {

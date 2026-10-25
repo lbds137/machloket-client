@@ -105,8 +105,9 @@ test("sheet chrome: rows, count, header join, disable-at-max, Apply sends", asyn
 	await expect(rows.nth(2)).toContainText("Tagged version announcements");
 	await expect(sheet.locator("input.selectSheetMarker")).toHaveCount(3);
 
-	// Nothing pre-selected: empty header, zero count, Apply gated by min_values 1.
-	await expect(sheet.locator(".selectSheetTitle")).toHaveText("");
+	// Nothing pre-selected: the bot's placeholder names the header, zero count, Apply
+	// gated by min_values 1.
+	await expect(sheet.locator(".selectSheetTitle")).toHaveText("Pick notification roles");
 	await expect(sheet.locator(".selectSheetCount")).toHaveText("0 selected");
 	const apply = sheet.locator(".selectSheetApply");
 	await expect(apply).toBeDisabled();
@@ -121,7 +122,7 @@ test("sheet chrome: rows, count, header join, disable-at-max, Apply sends", asyn
 	await expect(sheet.locator(".selectSheetCount")).toHaveText("1 selected");
 	await rows.nth(0).tap();
 	await expect(sheet.locator(".selectSheetCount")).toHaveText("2 selected");
-	await expect(sheet.locator(".selectSheetTitle")).toHaveText("");
+	await expect(sheet.locator(".selectSheetTitle")).toHaveText("Pick notification roles");
 
 	// At max_values 2 the unchosen row is disabled and its tap is ignored — no
 	// error, no selection, count unchanged.

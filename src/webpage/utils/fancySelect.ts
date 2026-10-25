@@ -15,10 +15,17 @@ export class FancySelect {
 	options: option[];
 	min: number;
 	max: number;
-	constructor(options: option[], {min, max} = {min: 1, max: 1}) {
+	/** The bot's placeholder: the box's hint (a single choice's chosen label takes
+	 * precedence) and the sheet header's fallback while nothing is chosen. */
+	placeholder: string | undefined;
+	constructor(
+		options: option[],
+		{min, max, placeholder}: {min: number; max: number; placeholder?: string} = {min: 1, max: 1},
+	) {
 		this.options = options;
 		this.min = min;
 		this.max = max;
+		this.placeholder = placeholder;
 	}
 	/** The chosen values when the list last opened (or last sent): closing sends only a change. */
 	private openedWith: string[] = [];
@@ -41,9 +48,11 @@ export class FancySelect {
 			if (this.max === 1) {
 				// One choice reads as the box's placeholder: no chip to clear (a clear couldn't reach the
 				// bot), and the box's text stays free to filter the list.
-				input.placeholder = this.options.find((_) => _.default)?.label ?? "";
+				input.placeholder = this.options.find((_) => _.default)?.label ?? this.placeholder ?? "";
 				return;
 			}
+			// Several choices: the chips carry the state; the box's hint is the bot's placeholder.
+			input.placeholder = this.placeholder ?? "";
 			for (const option of this.options.toReversed()) {
 				if (!option.default) continue;
 				const span = document.createElement("span");
@@ -154,10 +163,11 @@ export class FancySelect {
 			header.classList.add("selectSheetHeader");
 			const title = document.createElement("span");
 			title.classList.add("selectSheetTitle");
-			title.textContent = this.options
-				.filter((_) => _.default)
-				.map((_) => _.label)
-				.join(", ");
+			title.textContent =
+				this.options
+					.filter((_) => _.default)
+					.map((_) => _.label)
+					.join(", ") || this.placeholder || "";
 			const close = document.createElement("button");
 			close.classList.add("selectSheetClose");
 			close.textContent = "×";
