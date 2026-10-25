@@ -3456,13 +3456,10 @@ span.instanceStatus {
 	transition: all 0.2s ease;
 }
 
+/* Tint only, no scale: a transformed #userinfo paints above its untransformed dock
+ * siblings, so the old hover/active scale grew the panel over the mic (Lila 10-16). */
 #userinfo:hover {
 	background: var(--dock-hover);
-	transform: scale(1.05);
-}
-
-#userinfo:active {
-	transform: scale(0.95);
 }
 
 #user-actions {
