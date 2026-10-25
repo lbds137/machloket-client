@@ -51,6 +51,49 @@ test("a refused login shows the field refusal and stays on the form", async ({
 	).toHaveLength(1);
 });
 
+// The refusal Spacebar actually sends for a bad login: a 400 FieldError with the message
+// under both fields (machloket-server src/api/routes/auth/login.ts, util/FieldError.ts) -
+// the case above pins only the top-level-message fallback.
+test("Spacebar's own field refusal shows under the form and keeps it up", async ({
+	page,
+	mockInstance,
+}) => {
+	const refusal = {code: "INVALID_LOGIN", message: "Invalid login or password."};
+	mockInstance.onLogin = (route) =>
+		route.fulfill({
+			status: 400,
+			contentType: "application/json",
+			body: JSON.stringify({
+				code: 50035,
+				message: "Invalid Form Body",
+				errors: {login: {_errors: [refusal]}, password: {_errors: [refusal]}},
+			}),
+		});
+
+	await page.goto("/");
+	const loginForm = await openLoginForm(page);
+	await loginForm
+		.locator(".optionElement", {has: page.getByText("Email:", {exact: true})})
+		.locator("input")
+		.fill("testuser@example.test");
+	await loginForm
+		.locator(".optionElement", {has: page.getByText("Password:", {exact: true})})
+		.locator("input")
+		.fill("wrong-password");
+	await loginForm.getByRole("button", {name: "Login", exact: true}).click();
+
+	// Form's field-error path places it under the field the server named first (login,
+	// the email input) - not the onErrorBody fallback the case above pins.
+	const emailField = loginForm.locator(".optionElement", {
+		has: page.getByText("Email:", {exact: true}),
+	});
+	await expect(emailField.locator(".suberror", {hasText: "Invalid login or password."})).toBeVisible();
+	await expect(loginForm.getByRole("button", {name: "Login", exact: true})).toBeVisible();
+	expect(
+		mockInstance.capturedRequests.filter((req) => req.pathname === "/instances.json"),
+	).toHaveLength(1);
+});
+
 test("the instance-rewrite dialog renders above the raised auth dialog", async ({page}) => {
 	// A remote-named entry whose well-known advertises a loopback API: the loopback
 	// mismatch is exactly what triggers checkURLs' rewrite prompt. The flow runs through

@@ -954,6 +954,8 @@ export interface CapturedRequest {
 	pathname: string;
 	method: string;
 	body: unknown;
+	/** The request's Authorization header: which account's token the app sent. */
+	authorization?: string;
 }
 
 export interface MockInstanceOptions {
@@ -1176,6 +1178,7 @@ export async function mountMockInstance(
 				pathname,
 				method,
 				body: parsedBody,
+				authorization: request.headers()["authorization"],
 			});
 
 			const fulfillJson = (body: unknown, status = 200) =>

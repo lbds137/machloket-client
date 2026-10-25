@@ -12,33 +12,39 @@ test("the app chrome's icons resolve real mask files", async ({page, mockInstanc
 	await loginAndOpenChannel(page);
 
 	const report = await page.evaluate(() => {
-	 const broken: string[] = [];
-	 let masked = 0;
-	 document.querySelectorAll(".svgicon").forEach((el) => {
-		 const mask = getComputedStyle(el).maskImage;
-		 if (mask && mask !== "none") {
-			 masked++;
-		 } else if (el.id) {
-			 broken.push("#" + el.id);
-		 }
-	 });
-	 return {broken, masked};
+		const broken: string[] = [];
+		const urls = new Set<string>();
+		document.querySelectorAll(".svgicon").forEach((el) => {
+			const mask = getComputedStyle(el).maskImage;
+			const url = mask?.match(/url\("?([^")]+)"?\)/)?.[1];
+			if (url) {
+				urls.add(url);
+			} else if (el.id) {
+				broken.push("#" + el.id);
+			}
+		});
+		return {broken, urls: [...urls]};
 	});
 	expect(
 		report.broken,
 		"id-carrying chrome icons must resolve a mask (an unmasked icon renders invisible)",
 	).toEqual([]);
-	expect(report.masked).toBeGreaterThan(5);
+	expect(report.urls.length).toBeGreaterThan(5);
 
-	// Spot-check the specific file: the settings gear is the settings icon - and the
-	// icon FILE actually serves (the mask rule alone would hide a 404'd svg silently).
+	// Every mask FILE must actually be an SVG: the mask rule alone hides a missing file,
+	// and the preview server answers a missing path 200 with its HTML fallback page - a
+	// status check can't tell. The settings gear is spot-checked by name.
 	const settingsMask = await page
 		.locator("#settings")
 		.evaluate((el) => getComputedStyle(el).maskImage);
-	expect(settingsMask).toContain("settings.svg");
-	const iconUrl = settingsMask.slice(4, -1).replace(/"/g, "");
-	const iconResponse = await page.request.get(iconUrl);
-	expect(iconResponse.ok(), "the masked icon file must serve").toBe(true);
+	expect(settingsMask, "the settings gear is the settings icon").toContain("settings.svg");
+	const notSvg: string[] = [];
+	for (const url of report.urls) {
+		const response = await page.request.get(url);
+		const type = response.headers()["content-type"] ?? "";
+		if (!response.ok() || !type.startsWith("image/svg+xml")) notSvg.push(`${url} (${type})`);
+	}
+	expect(notSvg, "every masked icon file must serve an SVG").toEqual([]);
 });
 
 test("the header's icons render and look right", async ({page, mockInstance}) => {
