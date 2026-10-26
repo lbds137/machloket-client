@@ -45,3 +45,19 @@ test.fail("an off-origin websocket fails the test", async ({page}) => {
 			}),
 	);
 });
+
+test.fail("a same-origin request outside the mock's allowlist fails the test", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance; // mount the mock's routes; the handle stays unread
+	await page.goto("/");
+	await page.evaluate(() => fetch("/icons/not-a-real-icon.svg").catch(() => undefined));
+});
+
+test("control: a built-app static serves through the catch-all", async ({page, mockInstance}) => {
+	await page.goto("/");
+	const status = await page.evaluate(() => fetch("/icons/addfriend.svg").then((r) => r.status));
+	expect(status).toBe(200);
+	expect(mockInstance.unmocked).toEqual([]);
+});

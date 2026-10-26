@@ -25,7 +25,8 @@
  * - GET  /api/v9/guilds/:guildId/application-command-index -> MOCK_COMMAND_INDEX (3 chat-input
  *                                                      commands: visible / admins-only / denied)
  * - GET  /api/v9/guilds/:guildId/members/:userId    -> MOCK member (Member.resolveMember)
- * - GET  /api/v9/channels/:channelId/messages       -> MOCK_MESSAGES (newest-first; before/after pages -> [])
+ * - GET  /api/v9/channels/:channelId/messages       -> MOCK_MESSAGES (newest-first; before/
+ *                                                      after/around pages served from it)
  * - POST /api/v9/channels/:channelId/messages       -> 200 {} (a sent message, e.g. the forward
  *                                                      flow's send; pinned from capturedRequests)
  * - POST /api/v9/channels/:channelId/messages/:id/ack -> 200 {token: null}
@@ -53,6 +54,8 @@
  *   spec with a visible member list would need GUILD_MEMBER_LIST_UPDATE)
  */
 
+import {existsSync} from "node:fs";
+import {join} from "node:path";
 import type {Page, Route} from "@playwright/test";
 import type {ModalCreateEvent} from "../../src/webpage/interactions/modal";
 import {MessageComponentType} from "../../src/webpage/jsontypes";
@@ -112,7 +115,8 @@ export const MOCK_INSTANCES: ListedInstance[] = [
 		name: "Spacebar",
 		description: "Official Spacebar Instance",
 		url: "https://spacebar.chat",
-		icon: "/icons/Spacebar.svg",
+		// A real built asset: the picker loads it, and the catch-all net 404s phantoms.
+		icon: "/logo.svg",
 	},
 ];
 
@@ -1179,6 +1183,24 @@ export async function mountMockInstance(
 			// A page or context already closing rejects this; nothing is left to complete.
 			ws.close({code, reason}).catch(() => {});
 		});
+	});
+
+	// Same-origin catch-all, registered FIRST so every specific route below wins its own
+	// matches: document navigations continue (any client-side route is what the SPA fallback
+	// is for) and paths that exist in the just-built dist continue; everything else is
+	// recorded as unmocked so the teardown fails the spec instead of vite preview answering
+	// 200 with index.html for a path no build ever produced.
+	await page.route(`${MOCK_INSTANCE_ORIGIN}/**`, (route) => {
+		const request = route.request();
+		if (request.resourceType() === "document") return route.continue();
+		const p = decodeURIComponent(new URL(request.url()).pathname);
+		if (!p.startsWith("/") || p.includes("..")) {
+			handle.unmocked.push(`${request.method()} ${p}`);
+			return route.fulfill({status: 404, body: "no mock route and not a built-app surface"});
+		}
+		if (existsSync(join(process.cwd(), "dist", "webpage", p))) return route.continue();
+		handle.unmocked.push(`${request.method()} ${p}`);
+		return route.fulfill({status: 404, body: "no mock route and not a built-app surface"});
 	});
 
 	// The embed fixture's images, on their deliberately foreign host (see EMBED_ASSETS).

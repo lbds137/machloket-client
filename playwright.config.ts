@@ -10,8 +10,10 @@ export default defineConfig({
 	testMatch: /.*\.spec\.ts/,
 	timeout: 30_000,
 	retries: 0,
-	// 14 GB Deck: a growing suite must not spawn a Chromium per core.
-	workers: 2,
+	// 14 GB Deck: one Chromium at a time. Two workers ran the phone suite ~2× faster but
+	// reproduced a 30 s menu-open stall under swap pressure (icons:101, three 10-26
+	// sightings, always concurrent, never solo); solo is the supported mode.
+	workers: 1,
 	use: {
 		baseURL: "http://localhost:4173",
 		// The app registers a precaching service worker, and route() cannot intercept
@@ -30,6 +32,8 @@ export default defineConfig({
 	webServer: {
 		command: "npm run build && npx vite preview --port 4173 --strictPort",
 		port: 4173,
+		// A cold build on the 14 GB Deck can outwait Playwright's 60 s default.
+		timeout: 180_000,
 		// Reuse only on explicit request: with strictPort, silent reuse would adopt
 		// whatever already answers on 4173, whatever it is serving.
 		reuseExistingServer: process.env.PW_REUSE_SERVER === "1",
