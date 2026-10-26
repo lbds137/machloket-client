@@ -2181,7 +2181,9 @@ class Guild extends SnowFlake {
 		fetchRetryOnce(
 			this.info.api + "/read-states/ack-bulk",
 			{method: "POST", headers: this.headers, body: JSON.stringify(build)},
-			// A retry after any of these channels was read further would move it back.
+			// A retry after any of these channels was read further would move it back. Deliberately
+			// all-or-nothing: one advanced channel drops the whole batch, and the dropped acks heal
+			// from the server's own unread state on the next sync.
 			{shouldRetry: () => acked.every((c) => c.lastreadmessageid === sent.get(c))},
 		).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 	}
