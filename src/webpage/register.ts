@@ -23,6 +23,18 @@ export async function makeRegister(
 			registerInstance = info;
 			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/register";
 			tosLogic(md, info);
+			fetch(trimTrailingSlashes(info.api) + "/policies/instance/config")
+				.then((r) => r.json())
+				.then(
+					(data: {register_dateOfBirth_required?: unknown}) =>
+						data?.register_dateOfBirth_required === false,
+					() => false,
+				)
+				.then((hide) => {
+					if (registerInstance === info) {
+						form.setHidden(dob, hide);
+					}
+				});
 		},
 		{instance},
 	);
@@ -72,7 +84,7 @@ export async function makeRegister(
 	const p1 = form.addTextInput(I18n.htmlPages.pwField(), "password", {password: true});
 	const p2 = form.addTextInput(I18n.htmlPages.pw2Field(), "password2", {password: true});
 
-	form.addDateInput(I18n.htmlPages.dobField(), "date_of_birth");
+	const dob = form.addDateInput(I18n.htmlPages.dobField(), "date_of_birth");
 	form.addPreprocessor((e) => {
 		if (p1.value !== p2.value) {
 			throw new FormError(p2, I18n.localuser.PasswordsNoMatch());

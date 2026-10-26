@@ -2392,6 +2392,7 @@ class Form implements OptionsElement<object> {
 	readonly ltr: boolean;
 	readonly names: Map<string, OptionsElement<any>> = new Map();
 	readonly required: WeakSet<OptionsElement<any>> = new WeakSet();
+	readonly hiddenInputs: WeakSet<OptionsElement<any>> = new WeakSet();
 	readonly submitText: string;
 	fetchURL: string;
 	readonly headers = {};
@@ -2560,6 +2561,17 @@ class Form implements OptionsElement<object> {
 		}
 		return dateInput;
 	}
+	setHidden(input: OptionsElement<any>, hidden: boolean) {
+		if (hidden) {
+			this.hiddenInputs.add(input);
+		} else {
+			this.hiddenInputs.delete(input);
+		}
+		const html = this.options.html.get(input)?.deref();
+		if (html) {
+			html.hidden = hidden;
+		}
+	}
 	addTextInput(
 		label: string,
 		formName: string,
@@ -2711,6 +2723,7 @@ class Form implements OptionsElement<object> {
 			for (const thing of this.names.keys()) {
 				if (thing === "") continue;
 				const input = this.names.get(thing) as OptionsElement<any>;
+				if (this.hiddenInputs.has(input)) continue;
 				if (input instanceof SelectInput) {
 					(build as any)[thing] = (this.selectMap.get(input) as string[])[input.value];
 					continue;

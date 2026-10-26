@@ -16,7 +16,7 @@
  *
  * REST API (/api/v9 and /_spacebar):
  * - GET  /api/v9/ping                               -> MOCK_PING (instance metadata + tosPage: null)
- * - GET  /api/v9/policies/instance/config           -> MOCK_POLICIES_CONFIG (can_recover_account: false)
+ * - GET  /api/v9/policies/instance/config           -> MOCK_POLICIES_CONFIG (can_recover_account: false, register_dateOfBirth_required: true)
  * - POST /api/v9/auth/login                         -> MOCK_LOGIN_RESPONSE (neutral e2e-mock-token)
  * - GET  /api/v9/users/@me/settings-proto/2/json    -> MOCK_SETTINGS_PROTO (empty favoriteGifs proto)
  * - PATCH /api/v9/users/@me/settings-proto/2/json   -> MOCK_SETTINGS_PROTO
@@ -154,8 +154,11 @@ export const MOCK_PING = {
 };
 
 // src/webpage/login.ts (recover checks res.can_recover_account)
+// src/webpage/register.ts (makeRegister checks res.register_dateOfBirth_required)
 export const MOCK_POLICIES_CONFIG = {
 	can_recover_account: false,
+	register_dateOfBirth_required: true,
+	register_dateOfBirth_minimum: 13,
 };
 
 // src/webpage/localuser.ts (showusersettings fetches instance policy metadata, connections, sessions, teams)
@@ -1065,6 +1068,8 @@ export interface MockInstanceOptions {
 	messages?: messagejson[];
 	/** Suppress the first-run "What's new" changelog modal (src/webpage/changelog.ts). Defaults to true. */
 	suppressChangelog?: boolean;
+	/** Override fields returned by GET /api/v9/policies/instance/config. */
+	policiesConfig?: Partial<typeof MOCK_POLICIES_CONFIG>;
 }
 
 export interface MockInstanceHandle {
@@ -1097,7 +1102,7 @@ export async function mountMockInstance(
 	page: Page,
 	options: MockInstanceOptions = {},
 ): Promise<MockInstanceHandle> {
-	const {messages = MOCK_MESSAGES, suppressChangelog = true} = options;
+	const {messages = MOCK_MESSAGES, suppressChangelog = true, policiesConfig} = options;
 
 	if (suppressChangelog) {
 		// src/webpage/changelog.ts: "0" is the built-in sentinel that suppresses the
@@ -1324,9 +1329,9 @@ export async function mountMockInstance(
 				return fulfillJson(MOCK_PING);
 			}
 
-			// 4. Instance policies config (src/webpage/login.ts)
+			// 4. Instance policies config (src/webpage/login.ts, src/webpage/register.ts)
 			if (method === "GET" && pathname === "/api/v9/policies/instance/config") {
-				return fulfillJson(MOCK_POLICIES_CONFIG);
+				return fulfillJson({...MOCK_POLICIES_CONFIG, ...policiesConfig});
 			}
 
 			// 5. Login (src/webpage/login.ts makeLogin)

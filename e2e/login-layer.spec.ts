@@ -131,6 +131,12 @@ test("the instance-rewrite dialog renders above the raised auth dialog", async (
 	await page.route("http://127.0.0.1:4173/api/v9/ping", (route) =>
 		route.fulfill({status: 404, body: ""}),
 	);
+	// The picker also asks the advertised api for its policies config (the signup DOB
+	// gate); a 404 here sends that fetch down its show-field fallback, which is what
+	// this scenario wants to see anyway.
+	await page.route("http://127.0.0.1:4173/api/v9/policies/instance/config", (route) =>
+		route.fulfill({status: 404, body: ""}),
+	);
 
 	await page.goto("/");
 	await page.getByRole("heading", {name: "Remote Mock", exact: true}).click();
