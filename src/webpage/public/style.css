@@ -3945,6 +3945,17 @@ span.instanceStatus {
 	background: var(--embed-bg);
 }
 
+.componentSpoiler {
+	filter: blur(8px);
+	cursor: pointer;
+}
+
+/* Blur is visual-only: without this, clicks reach (and activate) the hidden children.
+   No descendant rule may re-enable pointer-events while the container is spoiled. */
+.componentSpoiler > * {
+	pointer-events: none;
+}
+
 .topMessage {
 	margin-top: 16px;
 }

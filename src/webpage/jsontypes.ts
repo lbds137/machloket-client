@@ -818,7 +818,7 @@ export interface thumbnail {
 	id?: number;
 	media: UnfurledMediaItem;
 	description?: string;
-	spoiler?: string;
+	spoiler?: boolean;
 }
 export type component =
 	| actionRow

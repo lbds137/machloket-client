@@ -143,11 +143,10 @@ class MediaGallery extends compObj {
 		files.forEach((file) => (file.files = files));
 	}
 	getHTML() {
-		//TODO handle spoiler
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "mediaDisp");
 		const items = this.items.map((elm) => {
-			const img = elm.media.getHTML();
+			const img = elm.media.getHTML(false, false, Boolean(elm.spoiler));
 			img.classList.add("mediaDispImg");
 			return img;
 		});
@@ -207,9 +206,11 @@ class Seperator extends compObj {
 class Thumbnail extends compObj {
 	owner: Components;
 	file: File;
+	spoiler: boolean;
 	constructor(comp: thumbnail, owner: Components) {
 		super();
 		this.owner = owner;
+		this.spoiler = Boolean(comp.spoiler);
 		//TODO deal with more
 		this.file = new File(
 			{
@@ -223,7 +224,7 @@ class Thumbnail extends compObj {
 		this.file.files = [this.file];
 	}
 	getHTML() {
-		return this.file.getHTML();
+		return this.file.getHTML(false, false, this.spoiler);
 	}
 }
 class TextDisplay extends compObj {
@@ -249,7 +250,6 @@ class Section extends compObj {
 		this.components = comp.components.map((comp) => owner.toComp(comp));
 	}
 	getHTML() {
-		//TODO handle spoiler
 		const div = document.createElement("div");
 		div.classList.add("flexltr");
 		const div2 = document.createElement("div");
@@ -266,19 +266,31 @@ class Container extends compObj {
 	components: compObj[];
 	owner: Components;
 	accentColor?: number;
+	spoiler: boolean;
 	constructor(comp: container, owner: Components) {
 		super();
 		this.owner = owner;
 		this.accentColor = comp.accent_color;
+		this.spoiler = Boolean(comp.spoiler);
 		this.components = comp.components.map((comp) => owner.toComp(comp));
 	}
 	getHTML() {
-		//TODO handle spoiler
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "displayComp");
 		if (this.accentColor !== undefined)
 			div.style.setProperty("--accent-color", "#" + this.accentColor.toString(16).padStart(6, "0"));
-		div.append(...this.components.map((_) => _.getHTML()));
+		const children = this.components.map((_) => _.getHTML());
+		if (this.spoiler) {
+			div.classList.add("componentSpoiler");
+			// The CSS pointer-events rule stops taps; inert stops Tab/Enter on the
+			// hidden controls. Both lift on reveal.
+			for (const child of children) child.inert = true;
+			div.onclick = () => {
+				div.classList.remove("componentSpoiler");
+				for (const child of children) child.inert = false;
+			};
+		}
+		div.append(...children);
 		return div;
 	}
 }
