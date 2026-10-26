@@ -17,6 +17,7 @@ import {MarkDown} from "../markdown";
 import {Message} from "../message.js";
 import {FancySelect} from "../utils/fancySelect.js";
 import {fetchRetryOnce} from "../utils/rateLimit.js";
+import {getSensitiveContentSync} from "../utils/sensitiveContent.js";
 import {File} from "../file.js";
 
 abstract class compObj {
@@ -279,8 +280,16 @@ class Container extends compObj {
 		div.classList.add("flexttb", "displayComp");
 		if (this.accentColor !== undefined)
 			div.style.setProperty("--accent-color", "#" + this.accentColor.toString(16).padStart(6, "0"));
+		const spoilerAction = this.spoiler ? getSensitiveContentSync().spoilers : "show";
+		if (spoilerAction === "block") {
+			const blocked = document.createElement("div");
+			blocked.classList.add("fSpoilBlocked");
+			blocked.textContent = I18n.spoilerBlocked();
+			div.append(blocked);
+			return div;
+		}
 		const children = this.components.map((_) => _.getHTML());
-		if (this.spoiler) {
+		if (spoilerAction === "blur") {
 			div.classList.add("componentSpoiler");
 			// The CSS pointer-events rule stops taps; inert stops Tab/Enter on the
 			// hidden controls. Both lift on reveal.

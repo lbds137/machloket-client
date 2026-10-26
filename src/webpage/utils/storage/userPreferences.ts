@@ -42,8 +42,8 @@ export class UserPreferences {
 	theme: ThemeOption = ThemeOption.Onyx;
 	accentColor: string = "#5865F2";
 	emojiFont?: string;
-	spoilerAction: ContentAction = "show";
-	nsfwAction: ContentAction = "show";
+	spoilerAction: ContentAction = "blur";
+	nsfwAction: ContentAction = "blur";
 
 	notificationSound: string = "Default";
 	notificationVolume: number = 75;

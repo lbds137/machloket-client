@@ -18,11 +18,24 @@ function prefField(source: SensitiveContentSource): "spoilerAction" | "nsfwActio
 	return source === "spoilers" ? "spoilerAction" : "nsfwAction";
 }
 
+export function getSensitiveContentSync(): SensitiveContentSettings {
+	let prefs: {spoilerAction?: unknown; nsfwAction?: unknown} | null = null;
+	try {
+		prefs = JSON.parse(localStorage.getItem("userPreferences") || "{}");
+	} catch {
+		prefs = null;
+	}
+	return {
+		spoilers: isAction(prefs?.spoilerAction) ? prefs.spoilerAction : "blur",
+		nsfw: isAction(prefs?.nsfwAction) ? prefs.nsfwAction : "blur",
+	};
+}
+
 export async function getSensitiveContent(): Promise<SensitiveContentSettings> {
 	const prefs = await getPreferences().catch(() => null);
 	return {
-		spoilers: isAction(prefs?.spoilerAction) ? prefs.spoilerAction : "show",
-		nsfw: isAction(prefs?.nsfwAction) ? prefs.nsfwAction : "show",
+		spoilers: isAction(prefs?.spoilerAction) ? prefs.spoilerAction : "blur",
+		nsfw: isAction(prefs?.nsfwAction) ? prefs.nsfwAction : "blur",
 	};
 }
 

@@ -3,6 +3,7 @@ import type {ModalCreateEvent} from "../src/webpage/interactions/modal";
 import {
 	type CapturedRequest,
 	type MockInstanceHandle,
+	type MockInstanceOptions,
 	MOCK_CHANNEL,
 	MOCK_INSTANCE_NAME,
 	mountMockInstance,
@@ -19,7 +20,8 @@ import {
 const PREVIEW = "localhost:4173";
 const OFF_PREVIEW = /^https?:\/\/(?!localhost:4173(?=\/|$))/;
 
-export const test = base.extend<{mockInstance: MockInstanceHandle; network: void}>({
+export const test = base.extend<{mockInstance: MockInstanceHandle; mockInstanceOptions: MockInstanceOptions; network: void}>({
+	mockInstanceOptions: [{}, {option: true}],
 	network: [
 		async ({context}, use) => {
 			const escaped: string[] = [];
@@ -38,8 +40,8 @@ export const test = base.extend<{mockInstance: MockInstanceHandle; network: void
 		},
 		{auto: true},
 	],
-	mockInstance: async ({page}, use) => {
-		const handle = await mountMockInstance(page);
+	mockInstance: async ({page, mockInstanceOptions}, use) => {
+		const handle = await mountMockInstance(page, mockInstanceOptions);
 		await use(handle);
 		expect(handle.unmocked, "same-origin requests the mock doesn't answer").toEqual([]);
 	},

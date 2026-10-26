@@ -3897,6 +3897,19 @@ span.instanceStatus {
 	}
 }
 
+/* The block action's stand-in: it REPLACES the media (no img behind it to blur),
+ * so unlike .fSpoil it sizes itself — the family's box, held open to thumbnail
+ * height so it reads as media-sized. */
+.fSpoilBlocked {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 96px;
+	padding: 3px 6px;
+	border-radius: 6px;
+	background: var(--spoiler-bg);
+}
+
 .messageButtons,
 .controls {
 	position: absolute;

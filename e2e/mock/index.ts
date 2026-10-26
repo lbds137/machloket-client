@@ -343,11 +343,23 @@ export const MOCK_HIDDEN_CHANNEL: channeljson = {
 	permission_overwrites: [{id: MOCK_GUILD_ID, allow: "0", deny: "1024"}],
 };
 
+// An 18+ channel for the sensitive-content settings (S4): the mock account has
+// nsfw_allowed: true, so the gate's ask/block/show variants are all reachable.
+export const MOCK_NSFW_CHANNEL_ID = "1200000000000000202";
+export const MOCK_NSFW_CHANNEL: channeljson = {
+	...MOCK_CHANNEL,
+	id: MOCK_NSFW_CHANNEL_ID,
+	name: "after-dark",
+	topic: "",
+	position: 2,
+	nsfw: true,
+};
+
 // src/webpage/guild.ts (Guild constructor) & (generateGuildIcon)
 // src/webpage/jsontypes.ts (guildjson)
 export const MOCK_GUILD: guildjson = {
 	application_command_counts: {},
-	channels: [MOCK_CHANNEL, MOCK_HIDDEN_CHANNEL],
+	channels: [MOCK_CHANNEL, MOCK_HIDDEN_CHANNEL, MOCK_NSFW_CHANNEL],
 	threads: [],
 	data_mode: "",
 	emojis: [],
@@ -785,6 +797,45 @@ export const MOCK_BLOCKED_MESSAGES: messagejson[] = [
 		type: 0,
 	},
 ];
+
+// A spoiler-tagged attachment for the sensitive-content settings (S4): the SPOILER_
+// filename prefix is what File.getHTML keys the cover on (file.ts OSpoiler). It rides
+// the per-test `messages` option (MockInstanceOptions), NOT the shared MOCK_MESSAGES:
+// any height added to the shared #general list shifts the embed messages' viewport
+// position, and the icons.spec right-click on a drawer channelbutton loses its
+// hit-test to an overlapping embed when the timing lands wrong.
+export const MOCK_SPOILER_MESSAGE_ID = "1200000000000000304";
+const hexExpiry = (ms: number) => Math.round(ms).toString(16);
+export const MOCK_SPOILER_MESSAGE: messagejson = {
+	id: MOCK_SPOILER_MESSAGE_ID,
+	channel_id: MOCK_CHANNEL_ID,
+	guild_id: MOCK_GUILD_ID,
+	author: MOCK_USER,
+	member: MOCK_MEMBER,
+	content: "here, one spoiler:",
+	timestamp: "2025-01-01T12:01:30.000Z",
+	edited_timestamp: null,
+	tts: false,
+	mention_everyone: false,
+	mentions: [],
+	mention_roles: [],
+	attachments: [
+		{
+			id: "1200000000000000901",
+			filename: "SPOILER_kekw.png",
+			content_type: "image/png",
+			size: 1024,
+			url: `${MOCK_INSTANCE_ORIGIN}/attachments/1/9/SPOILER_kekw.png?ex=${hexExpiry(Date.now() + 30 * 86400e3)}`,
+			width: 320,
+			height: 240,
+		},
+	],
+	embeds: [],
+	reactions: [],
+	nonce: "e2e-nonce-8",
+	pinned: false,
+	type: 0,
+};
 
 // The single-select sheet's message: the run's newest (bottom-most in #general), whose
 // tap answers immediately - radio markers, no Apply footer (fancySelect.ts multi !== 1).
@@ -1224,6 +1275,7 @@ export async function mountMockInstance(
 				p.startsWith("/_spacebar/") ||
 				p.startsWith("/embed/avatars/") ||
 				(p.startsWith("/icons/") && p.endsWith(".png")) ||
+				(p.startsWith("/attachments/") && p.endsWith(".png")) ||
 				p === "/getupdates"
 			);
 		},
@@ -1315,6 +1367,16 @@ export async function mountMockInstance(
 
 			// 9b. Guild icon (Guild.generateGuildIcon builds cdn + /icons/:id/:icon.png)
 			if (method === "GET" && pathname.startsWith("/icons/")) {
+				return route.fulfill({
+					status: 200,
+					contentType: "image/png",
+					body: TRANSPARENT_PNG,
+				});
+			}
+
+			// 9c. Message attachments (File renders cdn + /attachments/... img srcs;
+			// the S4 spoiler fixture's SPOILER_kekw.png is one)
+			if (method === "GET" && pathname.startsWith("/attachments/")) {
 				return route.fulfill({
 					status: 200,
 					contentType: "image/png",

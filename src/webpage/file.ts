@@ -5,6 +5,7 @@ import {makePlayBox, MediaPlayer} from "./media.js";
 import {I18n} from "./i18n.js";
 import {createImg} from "./utils/utils.js";
 import {attachmentUrl, CDN_LINK_MARGIN_MS} from "./utils/netUtils.js";
+import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
 class File {
 	readonly owner: Message | null;
 	id: string;
@@ -50,6 +51,16 @@ class File {
 			return spoil;
 		}
 		OSpoiler ||= this.filename.startsWith("SPOILER_");
+		const rawAction = OSpoiler ? getSensitiveContentSync().spoilers : "show";
+		const spoilerAction = temp && rawAction === "block" ? "blur" : rawAction;
+		if (spoilerAction === "block") {
+			const div = document.createElement("div");
+			const blocked = document.createElement("div");
+			blocked.classList.add("fSpoilBlocked");
+			blocked.textContent = I18n.spoilerBlocked();
+			div.append(blocked);
+			return div;
+		}
 
 		const src = this.proxy_url || this.url;
 		const url = this.refreshURL();
@@ -133,7 +144,7 @@ class File {
 				};
 			});
 			if (!fullScreen) {
-				if (OSpoiler) {
+				if (spoilerAction === "blur") {
 					div.append(makeSpoilerHTML());
 				}
 			}
@@ -163,7 +174,7 @@ class File {
 				video.height = Math.min(this.height, 96 * 3);
 			}
 
-			if (OSpoiler) {
+			if (spoilerAction === "blur") {
 				const div = document.createElement("div");
 				div.style.setProperty("position", "relative");
 				div.append(video, makeSpoilerHTML());
@@ -172,13 +183,13 @@ class File {
 			return video;
 		} else if (this.content_type.startsWith("audio/")) {
 			const a = this.getAudioHTML(url);
-			if (OSpoiler) {
+			if (spoilerAction === "blur") {
 				a.append(makeSpoilerHTML());
 			}
 			return a;
 		} else {
 			const uk = this.createunknown(url);
-			if (OSpoiler) {
+			if (spoilerAction === "blur") {
 				uk.append(makeSpoilerHTML());
 			}
 			return uk;

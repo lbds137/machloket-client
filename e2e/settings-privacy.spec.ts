@@ -128,8 +128,8 @@ test("sensitive-content selects persist across page reload", async ({page, mockI
 		.locator("select");
 	const nsfwSelect = card.locator(".optionElement", {hasText: "NSFW content"}).locator("select");
 
-	await expect(spoilersSelect).toHaveValue("Show");
-	await expect(nsfwSelect).toHaveValue("Show");
+	await expect(spoilersSelect).toHaveValue("Blur");
+	await expect(nsfwSelect).toHaveValue("Blur");
 
 	await spoilersSelect.selectOption({label: "Blur"});
 	await nsfwSelect.selectOption({label: "Blur"});

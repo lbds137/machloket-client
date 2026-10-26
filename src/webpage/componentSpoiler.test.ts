@@ -91,4 +91,45 @@ describe("component spoilers", () => {
 		spoiled.remove();
 		plain.remove();
 	});
+
+	// The sensitive-content setting (utils/sensitiveContent.ts) governs every spoiler path:
+	// show renders the media raw, block replaces it with a placeholder, blur is today's cover.
+	it("mediaGallery spoiler: show drops the cover, block replaces the media", () => {
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "show"}));
+		const shown = renderComponent({
+			type: MessageComponentType.MediaGallery,
+			items: [{media, spoiler: true}],
+		});
+		expect(shown.querySelector(".fSpoil")).toBeNull();
+		expect(shown.querySelector("img")).not.toBeNull();
+
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "block"}));
+		const blocked = renderComponent({
+			type: MessageComponentType.MediaGallery,
+			items: [{media, spoiler: true}],
+		});
+		expect(blocked.querySelector(".fSpoilBlocked")).not.toBeNull();
+		expect(blocked.querySelector("img")).toBeNull();
+	});
+
+	it("container spoiler: show renders the content with no cover", () => {
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "show"}));
+		const shown = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "visible now"}],
+		});
+		expect(shown.classList.contains("componentSpoiler")).toBe(false);
+	});
+
+	it("container spoiler: block replaces the content with a placeholder", () => {
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "block"}));
+		const blocked = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "never rendered"}],
+		});
+		expect(blocked.querySelector(".fSpoilBlocked")).not.toBeNull();
+		expect(blocked.textContent).not.toContain("never rendered");
+	});
 });

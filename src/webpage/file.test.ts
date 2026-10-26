@@ -1,4 +1,4 @@
-import {describe, expect, it, vi} from "vitest";
+import {beforeEach, describe, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -150,5 +150,55 @@ describe("a video attachment", () => {
 	it("full screen keeps the source's size", () => {
 		const full = videoOf(1080, 1920, true);
 		expect([full.width, full.height]).toEqual([1080, 1920]);
+	});
+});
+
+describe("a spoiler-tagged attachment follows the sensitive-content setting", () => {
+	beforeEach(() => {
+		localStorage.clear();
+	});
+	const hex = (ms: number) => Math.round(ms).toString(16);
+	function spoilerFile() {
+		const owner = {info: {cdn: "http://cdn.test"}, localuser: {refreshURL: async (u: string) => u}};
+		return new File(
+			{
+				id: "9",
+				filename: "SPOILER_kekw.png",
+				content_type: "image/png",
+				size: 1,
+				url: `http://cdn.test/attachments/1/9/SPOILER_kekw.png?ex=${hex(Date.now() + 3600e3)}`,
+				width: 320,
+				height: 240,
+			} as never,
+			owner as never,
+		);
+	}
+
+	it("blurs by default: covered until revealed", () => {
+		const html = spoilerFile().getHTML();
+		expect(html.querySelector(".fSpoil")).not.toBeNull();
+		expect(html.querySelector("img")).not.toBeNull();
+	});
+
+	it("show renders the media raw, with no cover", () => {
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "show"}));
+		const html = spoilerFile().getHTML();
+		expect(html.querySelector(".fSpoil")).toBeNull();
+		expect(html.querySelector("img")).not.toBeNull();
+	});
+
+	it("block replaces the media with a blocked placeholder", () => {
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "block"}));
+		const html = spoilerFile().getHTML();
+		expect(html.querySelector(".fSpoilBlocked")).not.toBeNull();
+		expect(html.querySelector("img")).toBeNull();
+	});
+
+	it("the upload preview is covered, never blocked", () => {
+		localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "block"}));
+		const html = spoilerFile().getHTML(true, false, true);
+		expect(html.querySelector("img")).not.toBeNull();
+		expect(html.querySelector(".fSpoil")).not.toBeNull();
+		expect(html.querySelector(".fSpoilBlocked")).toBeNull();
 	});
 });

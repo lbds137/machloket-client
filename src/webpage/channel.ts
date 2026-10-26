@@ -43,6 +43,7 @@ import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
+import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
 import {formErrors, refusalText, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
 
@@ -1718,18 +1719,25 @@ class Channel extends SnowFlake {
 		//@ts-ignore weird hack, ik, but the user here does have that information
 		//TODO make an extention of the user class with these aditional properties
 		//TODO make a popup for `nsfw_allowed==null` to input age
-		if (this.localuser.user.nsfw_allowed) {
+		if (!this.localuser.user.nsfw_allowed) {
+			options.addTitle(I18n.channel.notAllowed());
+		} else if (getSensitiveContentSync().nsfw === "block") {
+			options.addTitle(I18n.channel.nsfwBlocked());
+			const buttons = options.addOptions("", {ltr: true});
+			buttons.addButtonInput("", I18n.forum.back(), () => {
+				window.history.back();
+			});
+		} else {
 			options.addTitle(I18n.channel.nsfwAsk());
 			const buttons = options.addOptions("", {ltr: true});
 			buttons.addButtonInput("", I18n.yes(), () => {
 				this.perminfo.nsfwOk = true;
-				this.getHTML();
+				this.localuser.channelfocus = undefined;
+				this.getHTML(true, true);
 			});
 			buttons.addButtonInput("", I18n.no(), () => {
 				window.history.back();
 			});
-		} else {
-			options.addTitle(I18n.channel.notAllowed());
 		}
 		const html = float.generateHTML();
 		html.classList.add("messagecontainer");
@@ -4152,10 +4160,13 @@ class Channel extends SnowFlake {
 	}
 	/** Whether the channel is behind the NSFW gate (its panel stands in for the messages). */
 	nsfwGated() {
-		return (
-			this.nsfw && //@ts-ignore another hack
-			(!this.perminfo.nsfwOk || !this.localuser.user.nsfw_allowed)
-		);
+		if (!this.nsfw) return false;
+		//@ts-ignore another hack
+		const allowed = Boolean(this.localuser.user.nsfw_allowed);
+		const action = getSensitiveContentSync().nsfw;
+		if (action === "block") return true;
+		if (action === "show") return !allowed;
+		return !this.perminfo.nsfwOk || !allowed;
 	}
 	/** Locks or unlocks the composer for whether the user may send here now. Only the open
 	 * channel's composer is on the page; a forum has none, and the NSFW gate keeps it locked. */
