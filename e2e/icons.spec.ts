@@ -105,6 +105,19 @@ test("the queued menu rows carry icons and every new mask serves", async ({
 	void mockInstance; // mount the mock's routes; the handle stays unread
 	await loginAndOpenChannel(page);
 
+	// Opening the channel slid the chat over the drawer (index.ts setMainOpen(true) on
+	// the channel-list click); the menu under test lives in the drawer, so restore the
+	// drawer the way the swipe's closeChat does before right-clicking into it. Without
+	// this the right-click races the 0.3s slide and loses whenever the machine is slow.
+	await page.evaluate(() => {
+		const toggle = document.getElementById("maintoggle") as HTMLInputElement | null;
+		if (toggle) {
+			toggle.checked = false;
+			toggle.dispatchEvent(new Event("change"));
+		}
+	});
+	await expect(page.locator("#page")).not.toHaveClass(/mobileMainOpen/);
+
 	// Channel menu: the notifications and copy-ID rows.
 	await page
 		.locator("#channels button.channelbutton", {hasText: "general"})
