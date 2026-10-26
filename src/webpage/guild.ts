@@ -279,11 +279,15 @@ class Guild extends SnowFlake {
 			},
 		);
 
-		//TODO make icon for this
 		Guild.contextmenu.addButton(
 			() => I18n.guild.admins(),
 			function (this: Guild) {
 				this.findAdmin();
+			},
+			{
+				icon: {
+					css: "svg-shield",
+				},
 			},
 		);
 		Guild.contextmenu.addSeperator();

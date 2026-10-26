@@ -561,7 +561,6 @@ class User extends SnowFlake {
 			},
 		);
 
-		//TODO kick icon
 		this.contextmenu.addButton(
 			() => I18n.user.kick(),
 			function (this: User, member: Member | undefined) {
@@ -580,11 +579,13 @@ class User extends SnowFlake {
 						us.canActOn(member)
 					);
 				},
+				icon: {
+					css: "svg-userx",
+				},
 				color: "red",
 			},
 		);
 
-		//TODO ban icon
 		this.contextmenu.addButton(
 			() => I18n.user.ban(),
 			function (this: User, member: Member | undefined) {
@@ -602,6 +603,9 @@ class User extends SnowFlake {
 						this.id !== this.localuser.user.id &&
 						us.canActOn(member)
 					);
+				},
+				icon: {
+					css: "svg-gavel",
 				},
 				color: "red",
 			},

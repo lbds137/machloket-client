@@ -1629,6 +1629,41 @@ textarea:focus {
 	mask-size: contain !important;
 }
 
+.svg-link {
+	mask: url(./icons/link.svg);
+	mask-size: contain !important;
+}
+
+.svg-userplus {
+	mask: url(./icons/userplus.svg);
+	mask-size: contain !important;
+}
+
+.svg-bell {
+	mask: url(./icons/bell.svg);
+	mask-size: contain !important;
+}
+
+.svg-hash {
+	mask: url(./icons/hash.svg);
+	mask-size: contain !important;
+}
+
+.svg-shield {
+	mask: url(./icons/shield.svg);
+	mask-size: contain !important;
+}
+
+.svg-userx {
+	mask: url(./icons/userx.svg);
+	mask-size: contain !important;
+}
+
+.svg-gavel {
+	mask: url(./icons/gavel.svg);
+	mask-size: contain !important;
+}
+
 .svg-explore {
 	mask: url(./icons/explore.svg);
 	mask-size: contain !important;

@@ -208,7 +208,6 @@ class Channel extends SnowFlake {
 			},
 		);
 
-		//TODO invite icon
 		this.contextmenu.addButton(
 			() => I18n.channel.makeInvite(),
 			function (this: Channel) {
@@ -217,6 +216,9 @@ class Channel extends SnowFlake {
 			{
 				visible: function () {
 					return this.hasPermission("CREATE_INSTANT_INVITE") && this.type !== 4 && !this.isThread();
+				},
+				icon: {
+					css: "svg-userplus",
 				},
 				color: "blue",
 			},
@@ -267,11 +269,15 @@ class Channel extends SnowFlake {
 		);
 
 		this.contextmenu.addSeperator();
-		//TODO notifcations icon
 		this.contextmenu.addButton(
 			() => I18n.guild.notifications(),
 			function () {
 				this.setnotifcation();
+			},
+			{
+				icon: {
+					css: "svg-bell",
+				},
 			},
 		);
 		this.contextmenu.addButton(
@@ -343,7 +349,6 @@ class Channel extends SnowFlake {
 		);
 
 		this.contextmenu.addSeperator();
-		//TODO copy ID icon
 		this.contextmenu.addButton(
 			function () {
 				if (this.type == 4) {
@@ -353,6 +358,11 @@ class Channel extends SnowFlake {
 			},
 			function (this: Channel) {
 				navigator.clipboard.writeText(this.id);
+			},
+			{
+				icon: {
+					css: "svg-hash",
+				},
 			},
 		);
 	}
