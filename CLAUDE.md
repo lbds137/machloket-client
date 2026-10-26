@@ -6,7 +6,7 @@ Machloket (מחלוקת, "discord") is a Discord-like web client for [Spacebar](
 
 - **Never contribute upstream.** Fermo's README asks that no AI-assisted work touch its repo: no PRs, issues or contact with its maintainer from here. `upstream` (`https://git.sovrahi.com/oh64/Fermo.git`) is fetch-only; its push URL is disabled on purpose. Agent fetch tools get a Cloudflare 403 there; plain `git`/`curl` work.
 - **Licence:** keep the AGPL notices (`LICENSE`, author credits).
-- **Donor code** may come from Fuzzy (AGPL-3.0; the look-and-feel reference) and Flicker (GPL-3.0). Refactor donor code freely.
+- **Donor code** may come from Fuzzy (AGPL-3.0; the look-and-feel reference), Flicker (GPL-3.0), Lucide (ISC; the vendored icon set — `src/webpage/public/icons/LUCIDE-LICENSE`), Fluxer (AGPL-3.0, fluxerapp/fluxer) and Stoat (Lila 10-25: reference with attribution; check Stoat's licence file at first donor use). Refactor donor code freely.
 - **Parity bar:** someone switching from Discord should have "minimal headache": same layout, interaction patterns and shortcuts. Decompiling Discord's client is out.
 - **Server-side questions** (Web Push, instance config, gateway, interaction routes) belong to the server project that hosts the instance, not to this client.
 
