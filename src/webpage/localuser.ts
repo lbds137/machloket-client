@@ -1446,10 +1446,11 @@ class Localuser {
 		});
 		if (!device) return;
 		await this.voiceFactory?.currentVoice?.giveMicTrack(device);
+		this.perminfo.localuser ??= {};
 		this.perminfo.localuser.defaultAudio = id;
 	}
 	getDefaultAudio() {
-		return this.perminfo.localuser.defaultAudio || "default";
+		return this.perminfo.localuser?.defaultAudio || "default";
 	}
 	async joinVoice(channel: Channel) {
 		if (!this.voiceFactory) return;
@@ -3191,62 +3192,76 @@ class Localuser {
 			}
 		};
 		settings.addSection(
-			sectionLabel("settingsCategories.user.profileAppearance", "Appearance"),
+			sectionLabel("settingsCategories.user.appSettings", "App settings"),
 		);
 		{
-			const prefs = await getPreferences();
-			const tas = settings.addButton(I18n.localuser.themesAndSounds());
-			{
-				const themes = ["Dark", "WHITE", "Light", "Dark-Accent", "Onyx", "Fuzzy"];
-				tas.addSelect(
-					I18n.localuser["theme:"](),
-					async (_) => {
-						prefs.theme = themes[_] as ThemeOption;
+			const appearance = settings.addButton(I18n.localuser.appearance());
+			const themes = ["Dark", "WHITE", "Light", "Dark-Accent", "Onyx", "Fuzzy"];
+			appearance.addSelect(
+				I18n.localuser["theme:"](),
+				async (_) => {
+					prefs.theme = themes[_] as ThemeOption;
 
-						await setTheme(prefs.theme);
-					},
-					themes.map((theme) =>
-						I18n.localuser.themeNames[theme as keyof typeof I18n.localuser.themeNames](),
-					),
-					{
-						defaultIndex: themes.indexOf(prefs.theme),
-					},
-				);
-			}
-			{
-				tas.addText(sectionLabel("localuser.notificationSoundSection", "Notification sound"));
-				const getSoundNames = () =>
-					NotificationSoundManager.getAvailableSounds(prefs).map((s) => s.name);
-				let soundNames = getSoundNames();
-				let selectedIndex = Math.max(0, soundNames.indexOf(prefs.notificationSound));
-				const select = tas.addSelect(
-					I18n.localuser.notisound(),
-					async (index) => {
-						prefs.notificationSound = soundNames[index];
-						await setPreferences(prefs);
-					},
-					soundNames,
-					{defaultIndex: selectedIndex},
-				);
-				select.watchForChange(async (index) => {
+					await setTheme(prefs.theme);
+				},
+				themes.map((theme) =>
+					I18n.localuser.themeNames[theme as keyof typeof I18n.localuser.themeNames](),
+				),
+				{
+					defaultIndex: themes.indexOf(prefs.theme),
+				},
+			);
+			appearance.addColorInput(
+				I18n.localuser.accentColor(),
+				async (_) => {
+					prefs.accentColor = _;
+					await setPreferences(prefs);
+
+					document.documentElement.style.setProperty("--accent-color", prefs.accentColor);
+				},
+				{initColor: prefs.accentColor},
+			);
+		}
+		{
+			const notifications = settings.addButton(I18n.localuser.notifications());
+			notifications.addText(
+				sectionLabel("localuser.notificationSoundSection", "Notification sound"),
+			);
+			const getSoundNames = () =>
+				NotificationSoundManager.getAvailableSounds(prefs).map((s) => s.name);
+			let soundNames = getSoundNames();
+			let selectedIndex = Math.max(0, soundNames.indexOf(prefs.notificationSound));
+			const select = notifications.addSelect(
+				I18n.localuser.notisound(),
+				async (index) => {
 					prefs.notificationSound = soundNames[index];
 					await setPreferences(prefs);
-					const sounds = NotificationSoundManager.getAvailableSounds(prefs);
-					await NotificationSoundManager.play(sounds[index], prefs.notificationVolume);
-				});
-				const volumeInput = document.createElement("input");
-				volumeInput.type = "range";
-				volumeInput.value = prefs.notificationVolume + "";
-				volumeInput.min = "0";
-				volumeInput.max = "100";
-				volumeInput.onchange = async () => {
-					prefs.notificationVolume = +volumeInput.value;
-					await setPreferences(prefs);
-					void NotificationSoundManager.playFromPreferences(prefs);
-				};
-				tas.addText(I18n.notiVolume());
-				tas.addHTMLArea(volumeInput);
-				tas.addButtonInput("", sectionLabel("localuser.addNewSound", "Add a new sound"), () => {
+				},
+				soundNames,
+				{defaultIndex: selectedIndex},
+			);
+			select.watchForChange(async (index) => {
+				prefs.notificationSound = soundNames[index];
+				await setPreferences(prefs);
+				const sounds = NotificationSoundManager.getAvailableSounds(prefs);
+				await NotificationSoundManager.play(sounds[index], prefs.notificationVolume);
+			});
+			const volumeInput = document.createElement("input");
+			volumeInput.type = "range";
+			volumeInput.value = prefs.notificationVolume + "";
+			volumeInput.min = "0";
+			volumeInput.max = "100";
+			volumeInput.onchange = async () => {
+				prefs.notificationVolume = +volumeInput.value;
+				await setPreferences(prefs);
+				void NotificationSoundManager.playFromPreferences(prefs);
+			};
+			notifications.addText(I18n.notiVolume());
+			notifications.addHTMLArea(volumeInput);
+			notifications.addButtonInput(
+				"",
+				sectionLabel("localuser.addNewSound", "Add a new sound"),
+				() => {
 					const d = new Dialog(sectionLabel("localuser.addNewSound", "Add a new sound"));
 					let soundFile: File | null = null;
 					let soundName = "";
@@ -3323,55 +3338,79 @@ class Localuser {
 					const center = d.show();
 					const fileEl = center.querySelector('input[type="file"]') as HTMLInputElement | null;
 					if (fileEl) fileEl.accept = ".mp3,.ogg,.webm,audio/*";
-				});
-			}
+				},
+			);
+		}
+		{
+			const chat = settings.addButton(I18n.localuser.chat());
+			const options = [[null, I18n.noEmojiFont()], ...Localuser.fonts] as const;
+			const cur = prefs.emojiFont;
+			let index = options.findIndex((_) => _[1] == cur);
+			if (index === -1) index = 0;
+			chat.addSelect(
+				I18n.emojiSelect(),
+				async (index) => {
+					if (options[index][0]) {
+						prefs.emojiFont = options[index][1];
+					} else {
+						prefs.emojiFont = undefined;
+					}
 
-			{
-				tas.addColorInput(
-					I18n.localuser.accentColor(),
-					async (_) => {
-						prefs.accentColor = _;
-						await setPreferences(prefs);
-
-						document.documentElement.style.setProperty("--accent-color", prefs.accentColor);
-					},
-					{initColor: prefs.accentColor},
-				);
-			}
-			{
-				const options = [[null, I18n.noEmojiFont()], ...Localuser.fonts] as const;
-				const cur = prefs.emojiFont;
-				let index = options.findIndex((_) => _[1] == cur);
-				if (index === -1) index = 0;
-				tas.addSelect(
-					I18n.emojiSelect(),
-					async (index) => {
-						if (options[index][0]) {
-							prefs.emojiFont = options[index][1];
-						} else {
-							prefs.emojiFont = undefined;
-						}
-
-						await setPreferences(prefs);
-						await Localuser.loadFont();
-					},
-					options.map((font) => font[1]),
-					{
-						defaultIndex: index,
-					},
-				);
-			}
-			{
-				const cur = prefs.renderJoinAvatars;
-				tas.addCheckboxInput(
-					I18n.renderJoinAvatars(),
-					async (v) => {
-						prefs.renderJoinAvatars = v;
-						await setPreferences(prefs);
-					},
-					{initState: cur},
-				);
-			}
+					await setPreferences(prefs);
+					await Localuser.loadFont();
+				},
+				options.map((font) => font[1]),
+				{
+					defaultIndex: index,
+				},
+			);
+			const curJoinAvatars = prefs.renderJoinAvatars;
+			chat.addCheckboxInput(
+				I18n.renderJoinAvatars(),
+				async (v) => {
+					prefs.renderJoinAvatars = v;
+					await setPreferences(prefs);
+				},
+				{initState: curJoinAvatars},
+			);
+		}
+		{
+			const voiceAndVideo = settings.addButton(I18n.localuser.voiceAndVideo());
+			const audioDevices = await this.getAudioDeviceList().catch(() => []);
+			const deviceLabels = [
+				I18n.localuser.systemDefault(),
+				...audioDevices.map((dev, i) => dev.label || (i === 0 ? "Microphone" : `Microphone ${i + 1}`)),
+			];
+			const defaultAudio = this.getDefaultAudio();
+			const matchedDeviceIndex =
+				defaultAudio === "default"
+					? -1
+					: audioDevices.findIndex((dev) => dev.deviceId === defaultAudio);
+			const applyInputDevice = async (index: number) => {
+				if (index === 0) {
+					this.perminfo.localuser ??= {};
+					delete this.perminfo.localuser.defaultAudio;
+					if (this.voiceFactory?.currentVoice) {
+						const device = await navigator.mediaDevices.getUserMedia({audio: true});
+						if (!device) return;
+						await this.voiceFactory.currentVoice.giveMicTrack(device);
+					}
+					return;
+				}
+				const picked = audioDevices[index - 1];
+				if (picked) {
+					await this.setNewDefualtDevice(picked.deviceId);
+				}
+			};
+			const inputDeviceSelect = voiceAndVideo.addSelect(
+				I18n.localuser.inputDevice(),
+				applyInputDevice,
+				deviceLabels,
+				{
+					defaultIndex: matchedDeviceIndex >= 0 ? matchedDeviceIndex + 1 : 0,
+				},
+			);
+			inputDeviceSelect.watchForChange(applyInputDevice);
 		}
 		{
 			const accessibility = settings.addButton(I18n.accessibility.name());
@@ -3425,6 +3464,20 @@ class Localuser {
 				AnimateTristateValues.map((_) => I18n.accessibility.gifSettings[_]()),
 				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateIcons)},
 			);
+		}
+		{
+			const langRegion = settings.addButton(I18n.localuser.language());
+			langRegion.addSelect(
+				I18n.localuser.language(),
+				(e) => {
+					I18n.setLanguage(I18n.options()[e]);
+					this.updateTranslations();
+				},
+				[...langmap.values()],
+				{defaultIndex: I18n.options().indexOf(I18n.lang)},
+			);
+
+			langRegion.addMDText(new MarkDown(I18n.translation.wantToHelpTranslate()));
 		}
 
 		settings.addSection(
@@ -4208,20 +4261,6 @@ class Localuser {
 		}
 
 		settings.addSection(sectionLabel("settingsCategories.user.application", "Application"));
-		{
-			const langRegion = settings.addButton(I18n.localuser.language());
-			langRegion.addSelect(
-				I18n.localuser.language(),
-				(e) => {
-					I18n.setLanguage(I18n.options()[e]);
-					this.updateTranslations();
-				},
-				[...langmap.values()],
-				{defaultIndex: I18n.options().indexOf(I18n.lang)},
-			);
-
-			langRegion.addMDText(new MarkDown(I18n.translation.wantToHelpTranslate()));
-		}
 		{
 			const update = settings.addButton(I18n.localuser.updateSettings());
 			let index = ServiceWorkerModeValues.indexOf(localSettings.serviceWorkerMode);

@@ -17,17 +17,20 @@ test("search box renders and filters nav rows live", async ({page, mockInstance}
 	const search = nav.getByPlaceholder("Search settings");
 	await expect(search).toBeVisible();
 
-	const themesLink = nav.locator(".cardLink", {hasText: "Themes & Sounds"});
+	const appearanceLink = nav.locator('.cardLink[data-section="App settings"]', {
+		hasText: "Appearance",
+	});
 	const accountLink = nav.locator(".cardLink", {hasText: "Account settings"});
-	await expect(themesLink).toBeVisible();
+	await expect(appearanceLink).toBeVisible();
 	await expect(accountLink).toBeVisible();
 
+	// The Appearance leaf matches on content: the theme select lives inside it.
 	await search.fill("theme");
-	await expect(themesLink).toBeVisible();
+	await expect(appearanceLink).toBeVisible();
 	await expect(accountLink).toBeHidden();
 
 	await search.fill("");
-	await expect(themesLink).toBeVisible();
+	await expect(appearanceLink).toBeVisible();
 	await expect(accountLink).toBeVisible();
 });
 
@@ -39,26 +42,26 @@ test("the chevron toggles a section and the label click navigates without collap
 	await openSettings(page);
 
 	const nav = page.locator(".settingbuttons");
-	const header = nav.locator('.sectionHeader[data-section="Appearance"]');
+	const header = nav.locator('.sectionHeader[data-section="App settings"]');
 	const chevron = header.locator(".sectionChevron");
-	const themesLink = nav.locator('.cardLink[data-section="Appearance"]', {
-		hasText: "Themes & Sounds",
+	const notificationsLink = nav.locator('.cardLink[data-section="App settings"]', {
+		hasText: "Notifications",
 	});
 
 	// Label click: navigates to the section and must NEVER collapse it — the rendered
 	// page fills the htmlarea while the nav stays truthful (aria-expanded stays true).
 	await header.click();
 	await expect(header).toHaveAttribute("aria-expanded", "true");
-	await expect(themesLink).toBeVisible();
+	await expect(notificationsLink).toBeVisible();
 
 	// The chevron is the toggle.
 	await chevron.click();
 	await expect(header).toHaveAttribute("aria-expanded", "false");
-	await expect(themesLink).toBeHidden();
+	await expect(notificationsLink).toBeHidden();
 
 	await chevron.click();
 	await expect(header).toHaveAttribute("aria-expanded", "true");
-	await expect(themesLink).toBeVisible();
+	await expect(notificationsLink).toBeVisible();
 });
 
 test("activating a section sets the hash and reload pre-activates that section", async ({
@@ -69,7 +72,7 @@ test("activating a section sets the hash and reload pre-activates that section",
 	await openSettings(page);
 
 	const nav = page.locator(".settingbuttons");
-	const firstHeader = nav.locator('.sectionHeader[data-section="Appearance"]');
+	const firstHeader = nav.locator('.sectionHeader[data-section="App settings"]');
 	const targetHeader = nav.locator('.sectionHeader[data-section="Application"]');
 
 	await expect(firstHeader).toHaveClass(/activeSetting/);

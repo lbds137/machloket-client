@@ -639,7 +639,12 @@
 			"Onyx": "Onyx",
 			"Fuzzy": "Fuzzy"
 		},
-		"themesAndSounds": "Themes & Sounds",
+		"appearance": "Appearance",
+		"notifications": "Notifications",
+		"chat": "Chat",
+		"voiceAndVideo": "Voice & video",
+		"inputDevice": "Input device",
+		"systemDefault": "System default",
 		"tokenDisplay": "Token: $1",
 		"trace": "Traces",
 		"trusted": "Trusted Domains",
@@ -1022,7 +1027,7 @@
 	},
 	"settingsCategories": {
 		"user": {
-			"profileAppearance": "Appearance",
+			"appSettings": "App settings",
 			"yourAccount": "Your account",
 			"application": "Application",
 			"developerOptions": "Developer Options",

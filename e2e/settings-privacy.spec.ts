@@ -22,7 +22,7 @@ async function openPrivacyCard(page: Page) {
 	return card;
 }
 
-test("the nav shows the Your account header with its six leaves in order", async ({
+test("the nav shows each section header with its leaves in order", async ({
 	page,
 	mockInstance,
 }) => {
@@ -30,11 +30,15 @@ test("the nav shows the Your account header with its six leaves in order", async
 	await openSettings(page);
 
 	const nav = page.locator(".settingbuttons");
-	const appearanceHeader = nav.locator('.sectionHeader[data-section="Appearance"]');
-	await expect(appearanceHeader).toBeVisible();
-	await expect(nav.locator('.cardLink[data-section="Appearance"]')).toHaveText([
-		"Themes & Sounds",
+	const appSettingsHeader = nav.locator('.sectionHeader[data-section="App settings"]');
+	await expect(appSettingsHeader).toBeVisible();
+	await expect(nav.locator('.cardLink[data-section="App settings"]')).toHaveText([
+		"Appearance",
+		"Notifications",
+		"Chat",
+		"Voice & video",
 		"Accessibility",
+		"Language",
 	]);
 
 	const accountHeader = nav.locator('.sectionHeader[data-section="Your account"]');
@@ -158,7 +162,7 @@ test("searching a query that matches only the Privacy leaf keeps the Your accoun
 	const nav = page.locator(".settingbuttons");
 	const search = nav.getByPlaceholder("Search settings");
 	const accountHeader = nav.locator('.sectionHeader[data-section="Your account"]');
-	const appearanceHeader = nav.locator('.sectionHeader[data-section="Appearance"]');
+	const appSettingsHeader = nav.locator('.sectionHeader[data-section="App settings"]');
 	const privacyLink = nav.locator('.cardLink[data-section="Your account"]', {
 		hasText: "Privacy",
 	});
@@ -170,5 +174,5 @@ test("searching a query that matches only the Privacy leaf keeps the Your accoun
 	await expect(privacyLink).toBeVisible();
 	await expect(accountHeader).toBeVisible();
 	await expect(accountSettingsLink).toBeHidden();
-	await expect(appearanceHeader).toBeHidden();
+	await expect(appSettingsHeader).toBeHidden();
 });
