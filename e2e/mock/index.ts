@@ -60,7 +60,9 @@ import type {
 	button,
 	channeljson,
 	commandJson,
+	ConnectionJson,
 	embedjson,
+	expSessionJson,
 	guildjson,
 	mainuserjson,
 	memberjson,
@@ -150,6 +152,38 @@ export const MOCK_PING = {
 export const MOCK_POLICIES_CONFIG = {
 	can_recover_account: false,
 };
+
+// src/webpage/localuser.ts (showusersettings fetches instance policy metadata, connections, sessions, teams)
+export const MOCK_INSTANCE_POLICIES = {
+	instanceName: MOCK_INSTANCE_NAME,
+	instanceDescription: null,
+	frontPage: null,
+	tosPage: null,
+	correspondenceEmail: null,
+	correspondenceUserID: null,
+	image: null,
+	instanceId: "100000000000000000",
+	autoCreateBotUsers: false as const,
+	publicUrl: null,
+};
+
+export const MOCK_USER_CONNECTIONS: ConnectionJson[] = [];
+
+export const MOCK_CONNECTIONS: Record<string, {enabled: boolean; icon_url?: string}> = {};
+
+export const MOCK_AUTH_SESSIONS: {user_sessions: expSessionJson[]} = {
+	user_sessions: [],
+};
+
+export const MOCK_TEAMS: {id: string; name: string}[] = [];
+
+export const MOCK_APPLICATIONS: {
+	id: string;
+	name: string;
+	cover_image?: string | null;
+	icon?: string | null;
+	bot?: unknown;
+}[] = [];
 
 // src/webpage/login.ts (makeLogin onSubmit reads res.token)
 // src/webpage/test/setup.ts (acceptAuth template)
@@ -1363,6 +1397,29 @@ export async function mountMockInstance(
 			// res.text() and slices the first 7 chars).
 			if (method === "GET" && pathname === "/getupdates") {
 				return route.fulfill({status: 200, contentType: "text/plain", body: "e2e-mock"});
+			}
+
+			// 19. User settings routes (src/webpage/localuser.ts showusersettings)
+			if (method === "GET" && pathname === "/api/v9/users/@me/connections") {
+				return fulfillJson(MOCK_USER_CONNECTIONS);
+			}
+			if (method === "GET" && pathname === "/api/v9/connections") {
+				return fulfillJson(MOCK_CONNECTIONS);
+			}
+			if (method === "GET" && pathname === "/api/v9/auth/sessions") {
+				return fulfillJson(MOCK_AUTH_SESSIONS);
+			}
+			if (method === "GET" && pathname === "/api/v9/teams") {
+				return fulfillJson(MOCK_TEAMS);
+			}
+			if (method === "GET" && pathname === "/api/v9/applications") {
+				return fulfillJson(MOCK_APPLICATIONS);
+			}
+			if (
+				method === "GET" &&
+				(pathname === "/api/v9/policies/instance/" || pathname === "/api/v9/policies/instance")
+			) {
+				return fulfillJson(MOCK_INSTANCE_POLICIES);
 			}
 
 			// Any unmocked API / discovery route on same-origin: the request fails, and the

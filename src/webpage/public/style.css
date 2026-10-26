@@ -6022,6 +6022,38 @@ fieldset input[type="radio"] {
 	pointer-events: auto;
 }
 
+.sectionHeader .sectionChevron {
+	flex: none;
+	width: 12px;
+	height: 12px;
+	margin-left: auto;
+	transition: rotate 0.15s ease;
+}
+
+.sectionHeader[aria-expanded="false"] .sectionChevron {
+	rotate: -90deg;
+}
+
+.settingsSearch {
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0 0 8px;
+	padding: 8px 12px;
+	border: 1px solid var(--shadow);
+	border-radius: 8px;
+	font-size: 0.85rem;
+	color: var(--primary-text);
+	background: var(--secondary-bg);
+}
+
+.settingsBuildInfo {
+	margin-top: auto;
+	padding: 12px 16px 4px;
+	font-size: 0.75rem;
+	color: var(--secondary-text-soft);
+	user-select: text;
+}
+
 .sectionHeader.activeSetting::before {
 	content: none;
 }

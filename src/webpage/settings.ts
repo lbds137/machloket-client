@@ -12,6 +12,17 @@ import {I18n} from "./i18n.js";
 import {Localuser} from "./localuser.js";
 import {MarkDown} from "./markdown.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import packageJson from "./../../package.json";
+
+let initialBootHash = typeof window !== "undefined" ? window.location.hash : "";
+
+function navLabel(path: string, fallback: string): string {
+	try {
+		return I18n.getTranslation(path);
+	} catch {
+		return fallback;
+	}
+}
 
 interface OptionsElement<x> {
 	generateHTML(): HTMLElement;
@@ -75,8 +86,8 @@ export class Buttons implements OptionsElement<unknown> {
 		this.buttonTable = new WeakRef(buttonTable);
 		if (this.buttons[0]) {
 			if (this.sectionHeaders.size) {
-				const firstSection = this._sectionNames()[0];
-				if (firstSection) this._renderSection(firstSection, htmlarea);
+				const initialSection = this._activeSection || this._sectionNames()[0];
+				if (initialSection) this._renderSection(initialSection, htmlarea);
 			} else {
 				this.generateHTMLArea(this.buttons[0][1], htmlarea);
 			}
@@ -113,9 +124,88 @@ export class Buttons implements OptionsElement<unknown> {
 	makeSectionHeaderHTML(text: string) {
 		const header = document.createElement("button");
 		header.classList.add("SettingsButton", "sectionHeader");
-		header.textContent = text;
 		header.dataset.section = text;
+		header.setAttribute("aria-expanded", "true");
+		const label = document.createElement("span");
+		label.textContent = text;
+		const chevron = document.createElement("span");
+		chevron.classList.add("svgicon", "svg-category", "sectionChevron");
+		header.append(label, chevron);
 		return header;
+	}
+	_sectionSlug(name: string): string {
+		return name.replace(/\s+/g, "-").toLowerCase();
+	}
+	_resolveInitialSection(sections: string[]): string | undefined {
+		if (!sections.length) return undefined;
+		const rawHash = window.location.hash || initialBootHash;
+		initialBootHash = "";
+		if (rawHash.startsWith("#settings/")) {
+			let slug = rawHash.slice("#settings/".length);
+			try {
+				slug = decodeURIComponent(slug);
+			} catch {}
+			slug = slug.toLowerCase();
+			const matched =
+				sections.find((name) => this._sectionSlug(name) === slug) ??
+				sections.find(
+					(name) =>
+						name
+							.toLowerCase()
+							.replace(/[^a-z0-9]+/g, "-")
+							.replace(/^-|-$/g, "") === slug,
+				);
+			if (matched) {
+				window.history.replaceState(null, "", "#settings/" + this._sectionSlug(matched));
+				return matched;
+			}
+		}
+		const first = sections[0];
+		window.history.replaceState(null, "", "#settings/" + this._sectionSlug(first));
+		return first;
+	}
+	_setSectionExpanded(sidebar: HTMLElement, header: HTMLElement, expanded: boolean) {
+		header.setAttribute("aria-expanded", expanded ? "true" : "false");
+		const sectionName = header.dataset.section;
+		if (!sectionName) return;
+		const searchInput = sidebar.querySelector<HTMLInputElement>(".settingsSearch");
+		const query = searchInput?.value.trim().toLowerCase() ?? "";
+		sidebar.querySelectorAll<HTMLElement>(".cardLink").forEach((link) => {
+			if (link.dataset.section !== sectionName) return;
+			const matchesSearch = !query || (link.textContent?.toLowerCase().includes(query) ?? false);
+			const visible = expanded && matchesSearch;
+			link.hidden = !visible;
+			link.style.display = visible ? "" : "none";
+		});
+	}
+	_filterNav(sidebar: HTMLElement, rawQuery: string) {
+		const query = rawQuery.trim().toLowerCase();
+		const headers = sidebar.querySelectorAll<HTMLElement>(".sectionHeader");
+		const links = sidebar.querySelectorAll<HTMLElement>(".cardLink");
+		if (!query) {
+			headers.forEach((header) => {
+				header.hidden = false;
+				header.style.display = "";
+			});
+			links.forEach((link) => {
+				const sectionName = link.dataset.section;
+				const header = Array.from(headers).find((h) => h.dataset.section === sectionName);
+				const expanded = header ? header.getAttribute("aria-expanded") !== "false" : true;
+				link.hidden = !expanded;
+				link.style.display = expanded ? "" : "none";
+			});
+			return;
+		}
+		headers.forEach((header) => {
+			const match = header.textContent?.toLowerCase().includes(query) ?? false;
+			header.hidden = !match;
+			header.style.display = match ? "" : "none";
+		});
+		links.forEach((link) => {
+			const match = link.textContent?.toLowerCase().includes(query) ?? false;
+			link.hidden = !match;
+			link.style.display = match ? "" : "none";
+		});
 	}
 	_sectionNames(): string[] {
 		const names: string[] = [];
@@ -160,6 +250,7 @@ export class Buttons implements OptionsElement<unknown> {
 				label.textContent = name;
 				link.append(label);
 				link.onclick = () => {
+					window.history.replaceState(null, "", "#settings/" + this._sectionSlug(sectionName));
 					if (this._activeSection !== sectionName) {
 						sidebar
 							.querySelectorAll(".sectionHeader")
@@ -228,6 +319,16 @@ export class Buttons implements OptionsElement<unknown> {
 			buttonTable.classList.add("flexltr");
 		}
 		if (this.sectionHeaders.size) {
+			const searchInput = document.createElement("input");
+			searchInput.type = "text";
+			searchInput.classList.add("settingsSearch");
+			const searchPlaceholder = navLabel("settings.searchPlaceholder", "Search settings");
+			searchInput.placeholder = searchPlaceholder;
+			searchInput.addEventListener("input", () => {
+				this._filterNav(buttonTable, searchInput.value);
+			});
+			buttonTable.append(searchInput);
+
 			const fb = document.createElement("a");
 			fb.textContent = I18n.settings.feedback();
 			fb.href = "https://github.com/lbds137/machloket-client/issues";
@@ -238,14 +339,26 @@ export class Buttons implements OptionsElement<unknown> {
 		}
 		if (this.sectionHeaders.size) {
 			const sections = this._sectionNames();
+			const initialSection = this._resolveInitialSection(sections);
+			this._activeSection = initialSection ?? null;
 			for (const name of sections) {
 				const header = this.makeSectionHeaderHTML(name);
+				if (name === initialSection) {
+					header.classList.add("activeSetting");
+				}
 				header.onclick = () => {
+					// Label click navigates and expands, never collapses — the chevron is
+					// the only collapse toggle (a collapsing navigation hid the page the
+					// click just opened, and the keyboard nav's focus-click amplified it).
+					if (header.getAttribute("aria-expanded") === "false") {
+						this._setSectionExpanded(buttonTable, header, true);
+					}
 					if (this.warndiv) this.warndiv.remove();
 					buttonTable
 						.querySelectorAll(".sectionHeader")
 						.forEach((el) => el.classList.remove("activeSetting"));
 					header.classList.add("activeSetting");
+					window.history.replaceState(null, "", "#settings/" + this._sectionSlug(name));
 					this._renderSection(name, optionsArea);
 					if (window.innerWidth <= 1012) {
 						buttonTable.classList.add("mobileHidden");
@@ -253,10 +366,14 @@ export class Buttons implements OptionsElement<unknown> {
 						this._showMobileBack();
 					}
 				};
+				header
+					.querySelector(".sectionChevron")
+					?.addEventListener("click", (e) => {
+						e.stopPropagation();
+						const expanded = header.getAttribute("aria-expanded") !== "false";
+						this._setSectionExpanded(buttonTable, header, !expanded);
+					});
 				buttonTable.append(header);
-			}
-			if (sections[0]) {
-				buttonTable.querySelector(".sectionHeader")?.classList.add("activeSetting");
 			}
 			this._addAllCardLinks(buttonTable, optionsArea);
 		} else {
@@ -265,15 +382,57 @@ export class Buttons implements OptionsElement<unknown> {
 				buttonTable.append(this.makeButtonHTML(thing, optionsArea));
 			}
 		}
+		if (this.sectionHeaders.size) {
+			const foot = document.createElement("div");
+			foot.classList.add("settingsBuildInfo");
+			const buildInfoText = navLabel(
+				"settings.buildInfo",
+				`Machloket web ${packageJson.version}`,
+			);
+			foot.textContent = buildInfoText;
+			buttonTable.append(foot);
+		}
 		this._initKeyboardNav(buttonTable);
 		return buttonTable;
 	}
 	private _initKeyboardNav(container: HTMLElement) {
 		container.addEventListener("keydown", (e) => {
-			const navItems = container.querySelectorAll<HTMLElement>(".SettingsButton");
+			const focusedHeader =
+				document.activeElement instanceof HTMLElement &&
+				container.contains(document.activeElement)
+					? document.activeElement.closest<HTMLElement>(".sectionHeader")
+					: null;
+			if (e.key === "ArrowRight" && focusedHeader) {
+				e.preventDefault();
+				this._setSectionExpanded(container, focusedHeader, true);
+				return;
+			}
+			if (e.key === "ArrowLeft" && focusedHeader) {
+				e.preventDefault();
+				this._setSectionExpanded(container, focusedHeader, false);
+				return;
+			}
+			if (
+				e.target instanceof HTMLInputElement &&
+				(e.key === "Home" || e.key === "End" || e.key === "ArrowLeft" || e.key === "ArrowRight")
+			) {
+				return;
+			}
+			const navItems = Array.from(
+				container.querySelectorAll<HTMLElement>(".SettingsButton"),
+			).filter((el) => !el.hidden && el.style.display !== "none");
 			if (!navItems.length) return;
-			const current = container.querySelector<HTMLElement>(".activeSetting") || navItems[0];
-			let idx = Array.from(navItems).indexOf(current);
+			const focusedBtn =
+				document.activeElement instanceof HTMLElement &&
+				container.contains(document.activeElement)
+					? document.activeElement.closest<HTMLElement>(".SettingsButton")
+					: null;
+			const current =
+				(focusedBtn && navItems.includes(focusedBtn) ? focusedBtn : null) ||
+				container.querySelector<HTMLElement>(".activeSetting") ||
+				navItems[0];
+			let idx = navItems.indexOf(current);
+			if (idx < 0) idx = 0;
 			if (e.key === "ArrowDown") {
 				e.preventDefault();
 				idx = (idx + 1) % navItems.length;
