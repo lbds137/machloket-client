@@ -35,6 +35,7 @@
  * - GET  /api/v9/invites/:code                      -> MOCK_INVITE (the invite page's preview)
  * - POST /api/v9/invites/:code                      -> {guild: {id}} (acceptInvite's join)
  * - GET  /api/v9/channels/:channelId                -> a fixture channel, else 404 10003
+ * - GET  /api/v9/users/@me/export                   -> MOCK_USER_EXPORT (attachment download)
  * - GET  http://127.0.0.1:4173/e2e-assets/*          -> the embed fixture's inline SVGs
  * - Any other /api/*, /.well-known/*, /_spacebar/*  -> route.abort("failed") so missed routes fail loudly
  *
@@ -184,6 +185,18 @@ export const MOCK_APPLICATIONS: {
 	icon?: string | null;
 	bot?: unknown;
 }[] = [];
+
+export const MOCK_EXPORT_FILENAME = `machloket-export-${MOCK_USER_ID}-20261026.json`;
+
+export const MOCK_USER_EXPORT = {
+	format_version: 1,
+	exported_at: "2026-10-26T00:00:00.000Z",
+	user: {
+		id: MOCK_USER_ID,
+		username: "testuser",
+	},
+	cloud_attachments: [],
+};
 
 // src/webpage/login.ts (makeLogin onSubmit reads res.token)
 // src/webpage/test/setup.ts (acceptAuth template)
@@ -1400,6 +1413,16 @@ export async function mountMockInstance(
 			}
 
 			// 19. User settings routes (src/webpage/localuser.ts showusersettings)
+			if (method === "GET" && pathname === "/api/v9/users/@me/export") {
+				return route.fulfill({
+					status: 200,
+					contentType: "application/json; charset=utf-8",
+					headers: {
+						"Content-Disposition": `attachment; filename="${MOCK_EXPORT_FILENAME}"`,
+					},
+					body: JSON.stringify(MOCK_USER_EXPORT),
+				});
+			}
 			if (method === "GET" && pathname === "/api/v9/users/@me/connections") {
 				return fulfillJson(MOCK_USER_CONNECTIONS);
 			}

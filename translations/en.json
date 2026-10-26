@@ -647,7 +647,20 @@
 		"trustedDomainPlaceholder": "example.com or *.example.com",
 		"updateSettings": "Update settings",
 		"updatesYay": "Updates found!",
-		"userSettings": "Your public profile"
+		"userSettings": "Your public profile",
+		"privacy": "Privacy",
+		"dataAndPrivacy": "Data & privacy",
+		"downloadData": "Download your data",
+		"downloadingData": "Downloading…",
+		"exportFailed": "Couldn't download your data: $1",
+		"exportUnexpected": "unexpected error",
+		"dataDeletion": "Data deletion",
+		"sensitiveContent": "Sensitive content",
+		"spoilerContent": "Spoiler-tagged content",
+		"nsfwContent": "NSFW content",
+		"sensitiveShow": "Show",
+		"sensitiveBlur": "Blur",
+		"sensitiveBlock": "Block"
 	},
 	"login": {
 		"advanced": "Advanced",
@@ -1009,8 +1022,8 @@
 	},
 	"settingsCategories": {
 		"user": {
-			"profileAppearance": "Profile & Appearance",
-			"accountSecurity": "Account & Security",
+			"profileAppearance": "Appearance",
+			"yourAccount": "Your account",
 			"application": "Application",
 			"developerOptions": "Developer Options",
 			"instanceInfo": "Instance Info"

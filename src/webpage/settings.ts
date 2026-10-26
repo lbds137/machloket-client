@@ -164,6 +164,39 @@ export class Buttons implements OptionsElement<unknown> {
 		window.history.replaceState(null, "", "#settings/" + this._sectionSlug(first));
 		return first;
 	}
+	_optionSearchText(thing: Options | string): string {
+		if (typeof thing === "string") return thing.toLowerCase();
+		const parts: string[] = [thing.name];
+		const walk = (opt: Options) => {
+			for (const item of opt.options) {
+				if (item instanceof Options) {
+					parts.push(item.name);
+					walk(item);
+				} else {
+					if ("label" in item && typeof (item as {label?: unknown}).label === "string") {
+						parts.push((item as {label: string}).label);
+					}
+					if ("text" in item && typeof (item as {text?: unknown}).text === "string") {
+						parts.push((item as {text: string}).text);
+					}
+					if (
+						"textContent" in item &&
+						typeof (item as {textContent?: unknown}).textContent === "string"
+					) {
+						parts.push((item as {textContent: string}).textContent);
+					}
+				}
+			}
+		};
+		walk(thing);
+		return parts.join(" ").toLowerCase();
+	}
+	_linkMatchesSearch(link: HTMLElement, query: string): boolean {
+		if (!query) return true;
+		if (link.textContent?.toLowerCase().includes(query)) return true;
+		if (link.dataset.search?.includes(query)) return true;
+		return false;
+	}
 	_setSectionExpanded(sidebar: HTMLElement, header: HTMLElement, expanded: boolean) {
 		header.setAttribute("aria-expanded", expanded ? "true" : "false");
 		const sectionName = header.dataset.section;
@@ -172,7 +205,7 @@ export class Buttons implements OptionsElement<unknown> {
 		const query = searchInput?.value.trim().toLowerCase() ?? "";
 		sidebar.querySelectorAll<HTMLElement>(".cardLink").forEach((link) => {
 			if (link.dataset.section !== sectionName) return;
-			const matchesSearch = !query || (link.textContent?.toLowerCase().includes(query) ?? false);
+			const matchesSearch = this._linkMatchesSearch(link, query);
 			const visible = expanded && matchesSearch;
 			link.hidden = !visible;
 			link.style.display = visible ? "" : "none";
@@ -196,15 +229,21 @@ export class Buttons implements OptionsElement<unknown> {
 			});
 			return;
 		}
-		headers.forEach((header) => {
-			const match = header.textContent?.toLowerCase().includes(query) ?? false;
-			header.hidden = !match;
-			header.style.display = match ? "" : "none";
-		});
+		const matchingSections = new Set<string>();
 		links.forEach((link) => {
-			const match = link.textContent?.toLowerCase().includes(query) ?? false;
+			const match = this._linkMatchesSearch(link, query);
 			link.hidden = !match;
 			link.style.display = match ? "" : "none";
+			if (match && link.dataset.section) {
+				matchingSections.add(link.dataset.section);
+			}
+		});
+		headers.forEach((header) => {
+			const sectionName = header.dataset.section ?? "";
+			const selfMatch = header.textContent?.toLowerCase().includes(query) ?? false;
+			const match = selfMatch || matchingSections.has(sectionName);
+			header.hidden = !match;
+			header.style.display = match ? "" : "none";
 		});
 	}
 	_sectionNames(): string[] {
@@ -241,11 +280,12 @@ export class Buttons implements OptionsElement<unknown> {
 			const buttons = this._sectionButtons(sectionName);
 			let insertAfter: HTMLElement | null = header;
 			for (const btn of buttons) {
-				const [name] = btn;
+				const [name, thing] = btn;
 				const cardId = "card-" + name.replace(/\s+/g, "-").toLowerCase();
 				const link = document.createElement("button");
 				link.classList.add("SettingsButton", "cardLink");
 				link.dataset.section = sectionName;
+				link.dataset.search = this._optionSearchText(thing);
 				const label = document.createElement("span");
 				label.textContent = name;
 				link.append(label);

@@ -39,9 +39,9 @@ test("the chevron toggles a section and the label click navigates without collap
 	await openSettings(page);
 
 	const nav = page.locator(".settingbuttons");
-	const header = nav.locator('.sectionHeader[data-section="Profile & Appearance"]');
+	const header = nav.locator('.sectionHeader[data-section="Appearance"]');
 	const chevron = header.locator(".sectionChevron");
-	const themesLink = nav.locator('.cardLink[data-section="Profile & Appearance"]', {
+	const themesLink = nav.locator('.cardLink[data-section="Appearance"]', {
 		hasText: "Themes & Sounds",
 	});
 
@@ -69,7 +69,7 @@ test("activating a section sets the hash and reload pre-activates that section",
 	await openSettings(page);
 
 	const nav = page.locator(".settingbuttons");
-	const firstHeader = nav.locator('.sectionHeader[data-section="Profile & Appearance"]');
+	const firstHeader = nav.locator('.sectionHeader[data-section="Appearance"]');
 	const targetHeader = nav.locator('.sectionHeader[data-section="Application"]');
 
 	await expect(firstHeader).toHaveClass(/activeSetting/);
@@ -93,8 +93,8 @@ test("keyboard ArrowRight and ArrowLeft on a focused header flip aria-expanded",
 	await openSettings(page);
 
 	const nav = page.locator(".settingbuttons");
-	const header = nav.locator('.sectionHeader[data-section="Account & Security"]');
-	const cardLink = nav.locator('.cardLink[data-section="Account & Security"]', {
+	const header = nav.locator('.sectionHeader[data-section="Your account"]');
+	const cardLink = nav.locator('.cardLink[data-section="Your account"]', {
 		hasText: "Account settings",
 	});
 

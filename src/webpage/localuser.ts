@@ -84,6 +84,12 @@ import {commandFailureText, showCommandStatus} from "./interactions/commandStatu
 import {previewURL} from "./utils/previewURL.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
+import {exportUserData} from "./utils/dataExport.js";
+import {
+	getSensitiveContent,
+	SENSITIVE_CONTENT_ACTIONS,
+	setSensitiveContent,
+} from "./utils/sensitiveContent.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 type traceObj = {
@@ -3185,136 +3191,8 @@ class Localuser {
 			}
 		};
 		settings.addSection(
-			sectionLabel("settingsCategories.user.profileAppearance", "Profile & Appearance"),
+			sectionLabel("settingsCategories.user.profileAppearance", "Appearance"),
 		);
-		{
-			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
-				ltr: true,
-			});
-			const hypotheticalProfile = document.createElement("div");
-			let file: undefined | File | null;
-			const avatarPreview = previewURL();
-			let newpronouns: string | undefined;
-			let newbio: string | undefined;
-			const hypouser = this.user.clone();
-			let color: string;
-			async function regen() {
-				hypotheticalProfile.textContent = "";
-				const hypoprofile = await hypouser.buildprofile(-1, -1);
-
-				hypotheticalProfile.appendChild(hypoprofile);
-			}
-			regen();
-			const settingsLeft = userOptions.addOptions("");
-			const settingsRight = userOptions.addOptions("");
-			settingsRight.addHTMLArea(hypotheticalProfile);
-
-			const finput = settingsLeft.addImageInput(
-				I18n.uploadPfp(),
-				(_) => {
-					if (file !== undefined) {
-						this.updatepfp(file);
-					}
-				},
-				{clear: true, initImg: this.user.getpfpsrc()},
-			);
-			finput.img.classList.add("pfp");
-			finput.watchForChange((_) => {
-				if (!_) {
-					file = null;
-					avatarPreview(null);
-					hypouser.avatar = null;
-					hypouser.hypotheticalpfp = true;
-					regen();
-					return;
-				}
-				if (_.length) {
-					file = _[0];
-					const blob = avatarPreview(file);
-					hypouser.avatar = blob;
-					hypouser.hypotheticalpfp = true;
-					regen();
-				}
-			});
-			let bfile: undefined | File | null;
-			const bannerPreview = previewURL();
-			const binput = settingsLeft.addImageInput(
-				I18n.uploadBanner(),
-				(_) => {
-					if (bfile !== undefined) {
-						this.updatebanner(bfile);
-					}
-				},
-				{
-					clear: true,
-					width: 96 * 3,
-					initImg: this.user.banner ? this.user.getBannerUrl() : "",
-					objectFit: "cover",
-				},
-			);
-			binput.watchForChange((_) => {
-				if (!_) {
-					bfile = null;
-					bannerPreview(null);
-					hypouser.banner = undefined;
-					hypouser.hypotheticalbanner = true;
-					regen();
-					return;
-				}
-				if (_.length) {
-					bfile = _[0];
-					const blob = bannerPreview(bfile);
-					hypouser.banner = blob;
-					hypouser.hypotheticalbanner = true;
-					regen();
-				}
-			});
-			let changed = false;
-			const pronounbox = settingsLeft.addTextInput(
-				I18n.pronouns(),
-				(_) => {
-					// A colour goes only once one is picked ("transparent", no accent, isn't a number).
-					if (newpronouns !== undefined || newbio !== undefined || changed) {
-						this.updateProfile({
-							pronouns: newpronouns,
-							bio: newbio,
-							...(changed ? {accent_color: Number.parseInt(color.slice(1), 16)} : {}),
-						});
-					}
-				},
-				{initText: this.user.pronouns},
-			);
-			pronounbox.watchForChange((_) => {
-				hypouser.pronouns = _;
-				newpronouns = _;
-				regen();
-			});
-			const bioBox = settingsLeft.addMDInput(I18n.bio(), (_) => {}, {
-				initText: this.user.bio.rawString,
-			});
-			bioBox.watchForChange((_) => {
-				newbio = _;
-				hypouser.bio = new MarkDown(_, this);
-				regen();
-			});
-
-			if (this.user.accent_color) {
-				color = Role.numberToColor(this.user.accent_color);
-			} else {
-				color = "transparent";
-			}
-			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
-				initColor: color,
-			});
-
-			colorPicker.watchForChange((_) => {
-				console.log();
-				color = _;
-				hypouser.accent_color = Number.parseInt(_.slice(1), 16);
-				changed = true;
-				regen();
-			});
-		}
 		{
 			const prefs = await getPreferences();
 			const tas = settings.addButton(I18n.localuser.themesAndSounds());
@@ -3550,8 +3428,136 @@ class Localuser {
 		}
 
 		settings.addSection(
-			sectionLabel("settingsCategories.user.accountSecurity", "Account & Security"),
+			sectionLabel("settingsCategories.user.yourAccount", "Your account"),
 		);
+		{
+			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
+				ltr: true,
+			});
+			const hypotheticalProfile = document.createElement("div");
+			let file: undefined | File | null;
+			const avatarPreview = previewURL();
+			let newpronouns: string | undefined;
+			let newbio: string | undefined;
+			const hypouser = this.user.clone();
+			let color: string;
+			async function regen() {
+				hypotheticalProfile.textContent = "";
+				const hypoprofile = await hypouser.buildprofile(-1, -1);
+
+				hypotheticalProfile.appendChild(hypoprofile);
+			}
+			regen();
+			const settingsLeft = userOptions.addOptions("");
+			const settingsRight = userOptions.addOptions("");
+			settingsRight.addHTMLArea(hypotheticalProfile);
+
+			const finput = settingsLeft.addImageInput(
+				I18n.uploadPfp(),
+				(_) => {
+					if (file !== undefined) {
+						this.updatepfp(file);
+					}
+				},
+				{clear: true, initImg: this.user.getpfpsrc()},
+			);
+			finput.img.classList.add("pfp");
+			finput.watchForChange((_) => {
+				if (!_) {
+					file = null;
+					avatarPreview(null);
+					hypouser.avatar = null;
+					hypouser.hypotheticalpfp = true;
+					regen();
+					return;
+				}
+				if (_.length) {
+					file = _[0];
+					const blob = avatarPreview(file);
+					hypouser.avatar = blob;
+					hypouser.hypotheticalpfp = true;
+					regen();
+				}
+			});
+			let bfile: undefined | File | null;
+			const bannerPreview = previewURL();
+			const binput = settingsLeft.addImageInput(
+				I18n.uploadBanner(),
+				(_) => {
+					if (bfile !== undefined) {
+						this.updatebanner(bfile);
+					}
+				},
+				{
+					clear: true,
+					width: 96 * 3,
+					initImg: this.user.banner ? this.user.getBannerUrl() : "",
+					objectFit: "cover",
+				},
+			);
+			binput.watchForChange((_) => {
+				if (!_) {
+					bfile = null;
+					bannerPreview(null);
+					hypouser.banner = undefined;
+					hypouser.hypotheticalbanner = true;
+					regen();
+					return;
+				}
+				if (_.length) {
+					bfile = _[0];
+					const blob = bannerPreview(bfile);
+					hypouser.banner = blob;
+					hypouser.hypotheticalbanner = true;
+					regen();
+				}
+			});
+			let changed = false;
+			const pronounbox = settingsLeft.addTextInput(
+				I18n.pronouns(),
+				(_) => {
+					// A colour goes only once one is picked ("transparent", no accent, isn't a number).
+					if (newpronouns !== undefined || newbio !== undefined || changed) {
+						this.updateProfile({
+							pronouns: newpronouns,
+							bio: newbio,
+							...(changed ? {accent_color: Number.parseInt(color.slice(1), 16)} : {}),
+						});
+					}
+				},
+				{initText: this.user.pronouns},
+			);
+			pronounbox.watchForChange((_) => {
+				hypouser.pronouns = _;
+				newpronouns = _;
+				regen();
+			});
+			const bioBox = settingsLeft.addMDInput(I18n.bio(), (_) => {}, {
+				initText: this.user.bio.rawString,
+			});
+			bioBox.watchForChange((_) => {
+				newbio = _;
+				hypouser.bio = new MarkDown(_, this);
+				regen();
+			});
+
+			if (this.user.accent_color) {
+				color = Role.numberToColor(this.user.accent_color);
+			} else {
+				color = "transparent";
+			}
+			const colorPicker = settingsLeft.addColorInput(I18n.profileColor(), (_) => {}, {
+				initColor: color,
+			});
+
+			colorPicker.watchForChange((_) => {
+				console.log();
+				color = _;
+				hypouser.accent_color = Number.parseInt(_.slice(1), 16);
+				changed = true;
+				regen();
+			});
+		}
 		{
 			const security = settings.addButton(I18n.localuser.accountSettings());
 			const genSecurity = () => {
@@ -3806,6 +3812,96 @@ class Localuser {
 				});
 			};
 			genSecurity();
+		}
+		{
+			const privacy = settings.addButton(I18n.localuser.privacy(), {noSubmit: true});
+			privacy.addTitle(I18n.localuser.dataAndPrivacy());
+			const exportRefusal = document.createElement("div");
+			exportRefusal.classList.add("dataExportRefusal", "suberror");
+			exportRefusal.hidden = true;
+			let exportInFlight = false;
+			const exportBtn = privacy.addButtonInput("", I18n.localuser.downloadData(), async () => {
+				if (exportInFlight) return;
+				exportInFlight = true;
+				exportRefusal.textContent = "";
+				exportRefusal.hidden = true;
+				exportBtn.textContent = I18n.localuser.downloadingData();
+				if (exportBtn.buttonHtml) {
+					exportBtn.buttonHtml.disabled = true;
+					exportBtn.buttonHtml.setAttribute("aria-busy", "true");
+				}
+				try {
+					const err = await exportUserData(this.info.api, this.headers, this.user.id);
+					if (err) {
+						exportRefusal.textContent = err;
+						exportRefusal.hidden = false;
+					}
+				} catch {
+					// onClickEvent drops rejections, so the refusal line is the only surface.
+					exportRefusal.textContent = I18n.localuser.exportFailed(
+						I18n.localuser.exportUnexpected(),
+					);
+					exportRefusal.hidden = false;
+				} finally {
+					exportInFlight = false;
+					exportBtn.textContent = I18n.localuser.downloadData();
+					if (exportBtn.buttonHtml) {
+						exportBtn.buttonHtml.disabled = false;
+						exportBtn.buttonHtml.removeAttribute("aria-busy");
+					}
+				}
+			});
+			privacy.addHTMLArea(exportRefusal);
+			privacy.addButtonInput("", I18n.localuser.dataDeletion(), () => {
+				const deleteLabel = I18n.localuser.deleteAccount();
+				const deleteCardId = "card-" + deleteLabel.replace(/\s+/g, "-").toLowerCase();
+				const link = Array.from(
+					settings.buttonList?.querySelectorAll<HTMLElement>(".cardLink") ?? [],
+				).find((el) => el.textContent === deleteLabel);
+				if (link) {
+					link.click();
+				} else {
+					document.getElementById(deleteCardId)?.scrollIntoView({behavior: "smooth", block: "start"});
+				}
+			});
+
+			privacy.addTitle(I18n.localuser.sensitiveContent());
+			const sensitiveOptionLabels = [
+				I18n.localuser.sensitiveShow(),
+				I18n.localuser.sensitiveBlur(),
+				I18n.localuser.sensitiveBlock(),
+			];
+			const currentSensitive = await getSensitiveContent();
+			const updateSpoilers = (index: number) => {
+				const action = SENSITIVE_CONTENT_ACTIONS[index];
+				if (action) void setSensitiveContent({spoilers: action});
+			};
+			const spoilersSelect = privacy.addSelect(
+				I18n.localuser.spoilerContent(),
+				updateSpoilers,
+				sensitiveOptionLabels,
+				{
+					defaultIndex: Math.max(
+						0,
+						SENSITIVE_CONTENT_ACTIONS.indexOf(currentSensitive.spoilers),
+					),
+				},
+			);
+			spoilersSelect.watchForChange(updateSpoilers);
+
+			const updateNsfw = (index: number) => {
+				const action = SENSITIVE_CONTENT_ACTIONS[index];
+				if (action) void setSensitiveContent({nsfw: action});
+			};
+			const nsfwSelect = privacy.addSelect(
+				I18n.localuser.nsfwContent(),
+				updateNsfw,
+				sensitiveOptionLabels,
+				{
+					defaultIndex: Math.max(0, SENSITIVE_CONTENT_ACTIONS.indexOf(currentSensitive.nsfw)),
+				},
+			);
+			nsfwSelect.watchForChange(updateNsfw);
 		}
 		{
 			const connections = settings.addButton(I18n.localuser.connections());

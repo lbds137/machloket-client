@@ -33,12 +33,14 @@ async function openProfile(user: Record<string, unknown>) {
 	const hypo = {pronouns: "", bio: "", buildprofile: async () => document.createElement("div")};
 	Object.assign(localuser, {
 		user: {pronouns: "", bio: {rawString: ""}, getpfpsrc: () => "", clone: () => hypo, ...user},
+		userinfo: {localuserStore: {user: {}}},
 		updateProfile: (json: object) => saved.push(json),
 	});
 	await localuser.showusersettings().catch(() => {});
 	const pronouns = text.mock.results[0].value as Input;
-	const picker = color.mock.results[0].value as Input;
-	return {saved, pronouns, picker, pickerOpened: color.mock.calls[0]};
+	const colorIdx = color.mock.calls.findIndex((c) => c[0] === I18n.profileColor());
+	const picker = color.mock.results[colorIdx].value as Input;
+	return {saved, pronouns, picker, pickerOpened: color.mock.calls[colorIdx]};
 }
 
 it("saving the profile without touching the colour sends no colour", async () => {

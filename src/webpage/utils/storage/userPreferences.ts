@@ -29,6 +29,9 @@ export const ThemeOptionValues = [
 	ThemeOption.Fuzzy,
 ];
 
+export type ContentAction = "show" | "blur" | "block";
+export const ContentActionValues: ContentAction[] = ["show", "blur", "block"];
+
 export class UserPreferences {
 	locale: string = navigator.language || "en";
 
@@ -39,6 +42,8 @@ export class UserPreferences {
 	theme: ThemeOption = ThemeOption.Onyx;
 	accentColor: string = "#5865F2";
 	emojiFont?: string;
+	spoilerAction: ContentAction = "show";
+	nsfwAction: ContentAction = "show";
 
 	notificationSound: string = "Default";
 	notificationVolume: number = 75;
