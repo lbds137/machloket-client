@@ -313,8 +313,7 @@ class Channel extends SnowFlake {
 				visible: function () {
 					return (
 						this.hasPermission("MANAGE_CHANNELS") ||
-						this.owner_id === this.localuser.user.id ||
-						true
+						this.owner_id === this.localuser.user.id
 					);
 				},
 				icon: {
