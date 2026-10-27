@@ -795,7 +795,13 @@ if (window.location.pathname.startsWith("/channels")) {
 		"bottom",
 	);
 	const emojiTB = document.getElementById("emojiTB") as HTMLElement;
-	emojiTB.onmousedown = (e) => e.stopImmediatePropagation();
+	// preventDefault keeps the mousedown default from moving the selection out of the
+	// typebox — TBEmojiMenu's saveCaretPosition would otherwise read the wrong caret and
+	// the picked emoji would insert at the end of the text instead of at the caret.
+	emojiTB.onmousedown = (e) => {
+		e.preventDefault();
+		e.stopImmediatePropagation();
+	};
 	emojiTB.onclick = (e) => {
 		e.preventDefault();
 		e.stopImmediatePropagation();
