@@ -361,16 +361,14 @@ class Emoji {
 		let activePopup: HTMLElement | undefined = undefined;
 		let renderCurrentSection: (() => void) | undefined = undefined;
 		const closeTonePopup = () => {
+			if (activePopup && Contextmenu.currentmenu === activePopup) Contextmenu.declareMenu();
 			activePopup?.remove();
 			activePopup = undefined;
 		};
 		const pick = (emoji: Emoji) => {
-			const hadPopup = activePopup !== undefined;
 			closeTonePopup();
-			// One declareMenu closes the stack top (the popup when it was open, the picker
-			// itself otherwise); a second, only when the popup was up, closes the picker.
+			// closeTonePopup pops the stack when the popup is currentmenu, so one call always remains.
 			Contextmenu.declareMenu();
-			if (hadPopup) Contextmenu.declareMenu();
 			res(emoji);
 		};
 		const openTonePopup = (
@@ -418,7 +416,6 @@ class Emoji {
 			e.preventDefault();
 			e.stopPropagation();
 			openTonePopup(e, "👋", getSkinTone(), (tone) => {
-				Contextmenu.declareMenu();
 				setSkinTone(tone);
 				defaultToneBtn.textContent = applySkinTone("👋", tone);
 				if (search.value !== "") {
@@ -483,6 +480,7 @@ class Emoji {
 		selection.classList.add("flexltr", "emojirow");
 		const body = document.createElement("div");
 		body.classList.add("emojiBody");
+		body.addEventListener("scroll", closeTonePopup);
 
 		let isFirst = true;
 		if (localuser) {

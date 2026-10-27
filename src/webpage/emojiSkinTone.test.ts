@@ -366,6 +366,71 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(picker.querySelectorAll(".emojiBody .emojiSelect")).toHaveLength(1);
 	});
 
+	it("4i. M1: clicking a section rail after opening the badge popup (soft close) and then clicking an emoji cell resolves that emoji and closes the picker", async () => {
+		assignTwoEmojiFixture();
+		const pickPromise = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const waveBadge = picker.querySelector(".emojiBody .emojiSelect .emojiToneBadge")!;
+		waveBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).not.toBeNull();
+
+		const railSelect = picker.querySelector(".emojirow .emojiSelect")!;
+		railSelect.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).toBeNull();
+
+		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const picked = await pickPromise;
+		expect(picked.emoji).toBe("😀");
+		expect(picked.name).toBe("grinning");
+		expect(document.querySelector(".emojiPicker")).toBeNull();
+	});
+
+	it("4j. M1: typing a search query after opening the badge popup and then clicking a search-result row resolves that emoji and closes the picker", async () => {
+		assignTwoEmojiFixture();
+		const pickPromise = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const waveBadge = picker.querySelector(".emojiBody .emojiSelect .emojiToneBadge")!;
+		waveBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).not.toBeNull();
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "grinning";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).toBeNull();
+
+		const results = picker.querySelectorAll(".emojiBody .emojiSelect");
+		expect(results).toHaveLength(1);
+		results[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const picked = await pickPromise;
+		expect(picked.emoji).toBe("😀");
+		expect(picked.name).toBe("grinning");
+		expect(document.querySelector(".emojiPicker")).toBeNull();
+	});
+
+	it("4k. L2: scrolling .emojiBody closes an open tone popup and leaves the stack consistent so a subsequent row click closes the picker and resolves", async () => {
+		assignTwoEmojiFixture();
+		const pickPromise = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const waveBadge = picker.querySelector(".emojiBody .emojiSelect .emojiToneBadge")!;
+		waveBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).not.toBeNull();
+
+		const body = picker.querySelector(".emojiBody")!;
+		body.dispatchEvent(new Event("scroll"));
+		expect(document.querySelector(".emojiTonePopup")).toBeNull();
+
+		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const picked = await pickPromise;
+		expect(picked.emoji).toBe("😀");
+		expect(picked.name).toBe("grinning");
+		expect(document.querySelector(".emojiPicker")).toBeNull();
+	});
+
 	it("5. CSS var existence: every var(--x) in emoji tone/footer rule blocks is defined in themes.css", () => {
 		const definedVars = new Set(
 			Array.from(themesCss.matchAll(/(--[a-zA-Z0-9-]+)\s*:/g), (m) => m[1]!),
