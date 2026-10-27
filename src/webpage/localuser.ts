@@ -46,7 +46,7 @@ import {
 } from "./jsontypes.js";
 import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
-import {Dialog, Form, FormError, Options, Settings} from "./settings.js";
+import {Dialog, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
 import {Bot} from "./bot.js";
 import {Role} from "./role.js";
@@ -165,6 +165,16 @@ class Localuser {
 		name: "Unknown",
 	};
 	mfa_enabled!: boolean;
+	private mfaAuth?: {token: string; exp: number};
+	private mfaRetry(): MfaRetry {
+		return {
+			factor: this.mfa_enabled ? "totp" : "webauthn",
+			token: () => (this.mfaAuth && this.mfaAuth.exp > Date.now() ? this.mfaAuth.token : null),
+			store: (token) => {
+				this.mfaAuth = token ? {token, exp: Date.now() + 4 * 60_000} : undefined;
+			},
+		};
+	}
 	get perminfo() {
 		return this.userinfo.localuserStore;
 	}
@@ -4961,15 +4971,15 @@ class Localuser {
 					method: "POST",
 					headers: this.headers,
 					submitText: I18n.delete(),
+					mfaRetry: this.mfaRetry(),
 				},
 			);
 			sub.addText(I18n.applications.sure(json.name));
-			this.addOwnerCode(sub);
 		});
 	}
-	/** For an owner action the server gates on the second factor (deleting a guild or an
-	 * application, resetting a bot token): a code field when two-factor is on, a wrong code
-	 * shown there. Without it (turned on elsewhere since) the server's message shows. */
+	/** For an owner action the server gates on a body second-factor code (deleting a guild): a
+	 * code field when two-factor is on, a wrong code shown there. Without it (turned on
+	 * elsewhere since) the server's message shows. */
 	addOwnerCode(form: Form) {
 		if (!this.mfa_enabled) return;
 		form.addTextInput(I18n.localuser["2faCode:"](), "code", {required: true});
@@ -5017,7 +5027,7 @@ class Localuser {
 			clear: true,
 		});
 		form.addButtonInput("", I18n.localuser.resetToken(), () => {
-			// Through a form, so a refusal shows and an owner with two-factor on gives a code.
+			// Through a form, so a refusal shows and a 60003 challenge prompts for MFA and retries.
 			const sub = form.addSubForm(
 				I18n.localuser.resetToken(),
 				(updateJSON) => {
@@ -5034,10 +5044,10 @@ class Localuser {
 					submitText: I18n.localuser.resetToken(),
 					method: "POST",
 					headers: this.headers,
+					mfaRetry: this.mfaRetry(),
 				},
 			);
 			sub.addText(I18n.localuser.confirmReset());
-			this.addOwnerCode(sub);
 		});
 		const text = form.addText(
 			I18n.localuser.tokenDisplay(

@@ -669,7 +669,7 @@ class SettingsMDText implements OptionsElement<void> {
 class SettingsText implements OptionsElement<void> {
 	readonly onSubmit!: (str: string) => void;
 	value!: void;
-	readonly text: string;
+	text: string;
 	elm!: WeakRef<HTMLSpanElement>;
 	constructor(text: string) {
 		this.text = text;
@@ -681,6 +681,9 @@ class SettingsText implements OptionsElement<void> {
 		return span;
 	}
 	setText(text: string) {
+		// The state updates too: a re-render (returnFromSub) regenerates from this.text, and
+		// a DOM-only setText would show the old string again (the bot-token reset did).
+		this.text = text;
 		if (this.elm) {
 			const span = this.elm.deref();
 			if (span) {
@@ -1794,6 +1797,7 @@ class Options implements OptionsElement<void> {
 			method = "POST",
 			traditionalSubmit = false,
 			tfaCheck = true,
+			mfaRetry = undefined as MfaRetry | undefined,
 		} = {},
 	) {
 		const options = new Form(name, this, onSubmit, {
@@ -1804,6 +1808,7 @@ class Options implements OptionsElement<void> {
 			method,
 			traditionalSubmit,
 			tfaCheck,
+			mfaRetry,
 		});
 		this.subOptions = options;
 		this.genTop();
@@ -2384,6 +2389,133 @@ async function handleCaptcha(
 	}
 	return "none";
 }
+export type MfaRetry = {
+	factor: "totp" | "webauthn";
+	/** cached MFA token, or null when none is fresh */
+	token?: () => string | null;
+	/** keep a minted token, or forget the cached one with null */
+	store?: (token: string | null) => void;
+};
+async function handleMfa(
+	factor: "totp" | "webauthn",
+	api: string,
+	auth: Record<string, string>,
+	onRefused: (message: string) => void,
+): Promise<string | null> {
+	if (factor === "webauthn") {
+		const url = api + "/users/@me/mfa/webauthn";
+		const headers = {
+			...auth,
+			"Content-Type": "application/json",
+		};
+		const step1Res = await fetchRetryOnce(url, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({}),
+		}).catch(() => undefined);
+		const step1Body = await step1Res?.json().catch(() => null);
+		if (
+			!step1Res?.ok ||
+			typeof step1Body?.ticket !== "string" ||
+			typeof step1Body?.challenge !== "string"
+		) {
+			onRefused(
+				typeof step1Body?.message === "string"
+					? step1Body.message
+					: I18n.requestFailed(step1Res ? "HTTP " + step1Res.status : "offline"),
+			);
+			return null;
+		}
+		let options: PublicKeyCredentialRequestOptions;
+		try {
+			const challenge = JSON.parse(step1Body.challenge)
+				.publicKey as PublicKeyCredentialRequestOptionsJSON;
+			challenge.challenge = challenge.challenge
+				.split("=")[0]
+				.replaceAll("+", "-")
+				.replaceAll("/", "_");
+			challenge.allowCredentials?.forEach(
+				(_) => (_.id = _.id.split("=")[0].replaceAll("+", "-").replaceAll("/", "_")),
+			);
+			options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
+		} catch {
+			// A challenge that isn't the promised shape must refuse, not dead-end the submit
+			// with an unhandled rejection.
+			onRefused(I18n.requestFailed("bad challenge"));
+			return null;
+		}
+		// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
+		const credential = (await navigator.credentials
+			.get({publicKey: options})
+			.catch(() => null)) as unknown as {
+			rawId: ArrayBuffer;
+			response: {
+				[key: string]: ArrayBuffer;
+			};
+		} | null;
+		if (!credential) return null;
+		function toBase64(buf: ArrayBuffer) {
+			return btoa(String.fromCharCode(...new Uint8Array(buf)));
+		}
+		const keys = ["authenticatorData", "clientDataJSON", "signature"];
+		const response = {} as Record<string, string>;
+		for (const key of keys) {
+			response[key] = toBase64(credential.response[key] as ArrayBuffer);
+		}
+		const res = {
+			rawId: toBase64(credential.rawId),
+			response,
+		};
+		const step2Res = await fetchRetryOnce(url, {
+			method: "POST",
+			headers,
+			body: JSON.stringify({ticket: step1Body.ticket, code: JSON.stringify(res)}),
+		}).catch(() => undefined);
+		const step2Body = await step2Res?.json().catch(() => null);
+		if (!step2Res?.ok || typeof step2Body?.token !== "string" || step2Body.token === "") {
+			onRefused(
+				typeof step2Body?.message === "string"
+					? step2Body.message
+					: I18n.requestFailed(step2Res ? "HTTP " + step2Res.status : "offline"),
+			);
+			return null;
+		}
+		return step2Body.token;
+	}
+	return new Promise<string | null>((resolution) => {
+		const better = new Dialog("");
+		const form = better.options.addForm(
+			"",
+			(res: any) => {
+				better.hide();
+				if (typeof res?.token === "string" && res.token !== "") {
+					resolution(res.token);
+				} else {
+					onRefused(
+						typeof res?.message === "string" ? res.message : I18n.requestFailed("bad body"),
+					);
+					resolution(null);
+				}
+			},
+			{
+				fetchURL: api + "/users/@me/mfa/totp",
+				method: "POST",
+				headers: {
+					...auth,
+					"Content-Type": "application/json",
+				},
+			},
+		);
+		form.addTitle(I18n["2faCode"]());
+		const ti = form.addTextInput("", "code");
+		form.onErrorBody = (res) => {
+			if (typeof res.message === "string") throw new FormError(ti, res.message);
+		};
+		// Dismissed (outside tap, Escape): no second factor.
+		better.onhide = () => resolution(null);
+		better.show().parentElement!.style.zIndex = "200";
+	});
+}
 export {FormError};
 class Form implements OptionsElement<object> {
 	name: string;
@@ -2401,6 +2533,7 @@ class Form implements OptionsElement<object> {
 	traditionalSubmit: boolean;
 	values: {[key: string]: any} = {};
 	tfaCheck: boolean;
+	mfaRetry?: MfaRetry;
 	constructor(
 		name: string,
 		owner: Options,
@@ -2414,11 +2547,13 @@ class Form implements OptionsElement<object> {
 			traditionalSubmit = false,
 			vsmaller = false,
 			tfaCheck = true,
+			mfaRetry = undefined as MfaRetry | undefined,
 		} = {},
 	) {
 		this.traditionalSubmit = traditionalSubmit;
 		this.name = name;
 		this.tfaCheck = tfaCheck;
+		this.mfaRetry = mfaRetry;
 		this.method = method;
 		this.submitText = submitText;
 		this.options = new Options(name, this, {ltr, vsmaller});
@@ -2460,6 +2595,7 @@ class Form implements OptionsElement<object> {
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
+			mfaRetry = undefined as MfaRetry | undefined,
 		} = {},
 	) {
 		if (this.button && this.button.deref()) {
@@ -2473,6 +2609,7 @@ class Form implements OptionsElement<object> {
 			headers,
 			method,
 			traditionalSubmit,
+			mfaRetry,
 		});
 	}
 	generateContainer() {
@@ -2785,6 +2922,11 @@ class Form implements OptionsElement<object> {
 				// Captcha and 2FA retries go to the URL this submit started with, even if the
 				// form is pointed elsewhere meanwhile (login pages re-point it on instance change).
 				const fetchURL = this.fetchURL;
+				// The MFA verify endpoints ride the same versioned base this form posts to
+				// (/api/v9, not the bare /api prefix — the app's own calls all use info.api).
+				const mfaApi = fetchURL.match(/^(https?:\/\/[^\/]+\/api(?:\/v\d+)?)\//)?.[1];
+				let mfaAttempted = false;
+				let mfaAuthHeader: Record<string, string> | undefined;
 				const onSubmit = async (json: any) => {
 					try {
 						await this.onSubmit(json, build);
@@ -2806,7 +2948,7 @@ class Form implements OptionsElement<object> {
 						const res = await fetchRetryOnce(fetchURL, {
 							method: this.method,
 							body: JSON.stringify(build),
-							headers: this.headers,
+							headers: {...this.headers, ...mfaAuthHeader},
 						});
 						status = res.status;
 						const text = await res.text();
@@ -2840,6 +2982,26 @@ class Form implements OptionsElement<object> {
 					}
 					// An error answer is never a success: the form's own handler gets it first.
 					if (status < 200 || status >= 300) {
+						if (mfaApi && this.mfaRetry && json?.code === 60003) {
+							if (mfaAttempted) {
+								this.mfaRetry.store?.(null);
+							} else {
+								mfaAttempted = true;
+								const cached = this.mfaRetry.token?.() ?? null;
+								const token =
+									cached ??
+									(await handleMfa(this.mfaRetry.factor, mfaApi, this.headers, (m) =>
+										this.showPrimError(m),
+									));
+								if (cached === null && token !== null) this.mfaRetry.store?.(token);
+								if (token === null) {
+									// dismissed: fall through to the normal refusal display, form stays open
+								} else {
+									mfaAuthHeader = {"X-Discord-MFA-Authorization": token};
+									return await doFetch();
+								}
+							}
+						}
 						try {
 							if (this.onErrorBody?.(json, status)) return;
 						} catch (e) {
