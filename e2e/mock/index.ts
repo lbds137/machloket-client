@@ -1063,6 +1063,14 @@ export interface CapturedRequest {
 	authorization?: string;
 }
 
+// Permission bit indices supported by `extraEveryonePermissions`. Kept local so the mock
+// stays free of runtime imports from `src/webpage/` (`src/webpage/permissions.ts:1` imports
+// `I18n`, which pulls the browser app graph).
+const PERM_BITS: Record<string, bigint> = {
+	// `src/webpage/permissions.ts` (`Permissions.permisions` index 49, line 90).
+	SEND_POLLS: 49n,
+};
+
 export interface MockInstanceOptions {
 	/** Override initial channel messages returned by GET /api/v9/channels/:id/messages. */
 	messages?: messagejson[];
@@ -1070,6 +1078,10 @@ export interface MockInstanceOptions {
 	suppressChangelog?: boolean;
 	/** Override fields returned by GET /api/v9/policies/instance/config. */
 	policiesConfig?: Partial<typeof MOCK_POLICIES_CONFIG>;
+	/** Permission names (entries of `Permissions.permisions` in `src/webpage/permissions.ts`,
+	 * where the array's index is the bit) merged via bitwise OR into the `@everyone` role's
+	 * `permissions` string served to the app. */
+	extraEveryonePermissions?: string[];
 }
 
 export interface MockInstanceHandle {
@@ -1102,7 +1114,32 @@ export async function mountMockInstance(
 	page: Page,
 	options: MockInstanceOptions = {},
 ): Promise<MockInstanceHandle> {
-	const {messages = MOCK_MESSAGES, suppressChangelog = true, policiesConfig} = options;
+	const {
+		messages = MOCK_MESSAGES,
+		suppressChangelog = true,
+		policiesConfig,
+		extraEveryonePermissions,
+	} = options;
+
+	let guildCreateFrame = MOCK_GUILD_CREATE_FRAME;
+	if (extraEveryonePermissions && extraEveryonePermissions.length > 0) {
+		let merged = BigInt(MOCK_EVERYONE_ROLE.permissions);
+		for (const name of extraEveryonePermissions) {
+			if (!Object.hasOwn(PERM_BITS, name)) {
+				throw new Error(
+					`Unsupported permission "${name}" in extraEveryonePermissions (supported: ${Object.keys(PERM_BITS).join(", ")})`,
+				);
+			}
+			merged |= 1n << PERM_BITS[name];
+		}
+		guildCreateFrame = {
+			...MOCK_GUILD_CREATE_FRAME,
+			d: {
+				...MOCK_GUILD,
+				roles: [{...MOCK_EVERYONE_ROLE, permissions: merged.toString()}],
+			},
+		};
+	}
 
 	if (suppressChangelog) {
 		// src/webpage/changelog.ts: "0" is the built-in sentinel that suppresses the
@@ -1183,7 +1220,7 @@ export async function mountMockInstance(
 			// IDENTIFY (op 2) -> READY, then GUILD_CREATE
 			if (parsed.op === 2) {
 				sendFrame(send, MOCK_READY_FRAME);
-				sendFrame(send, MOCK_GUILD_CREATE_FRAME);
+				sendFrame(send, guildCreateFrame);
 				return;
 			}
 
