@@ -15,12 +15,14 @@ type G = {
 	info: {api: string};
 	headchannels: C[];
 	channels: C[];
-	localuser: {lookingguild: unknown};
+	localuser: {lookingguild?: unknown; user: {id: string}};
 	snapshotLayout: () => () => void;
 	calculateReorder: (movedId?: string, restore?: () => void) => Promise<void>;
+	buildChannelList?: () => HTMLElement;
 };
 
-/** A bare channel wired into the model by hand: parent/children/headchannels are plain arrays. */
+/** A bare channel wired into the model by hand: parent/children/headchannels are plain arrays.
+ * `hasPermission` defaults to false — the Move-to gate is the real one. */
 function chan(id: string, type: number, parent: C | null, g: G): C {
 	return Object.assign(Object.create(Channel.prototype), {
 		id,
@@ -32,6 +34,8 @@ function chan(id: string, type: number, parent: C | null, g: G): C {
 		position: 0,
 		children: [],
 		owner: g,
+		hasPermission: () => false,
+		isThread: () => false,
 	}) as C;
 }
 
@@ -42,8 +46,7 @@ function guild(): G {
 		info: {api: API},
 		headchannels: [],
 		channels: [],
-		localuser: {lookingguild: undefined, user: {id: "me-1"}},
-		snapshotLayout: vi.fn(() => () => undefined),
+		localuser: {lookingguild: undefined, user: {id: "me-1"}},		snapshotLayout: vi.fn(() => () => undefined),
 		calculateReorder: vi.fn(async () => undefined),
 	} as unknown as G;
 }
@@ -74,6 +77,7 @@ describe("the channel menu's Move to… row", () => {
 		const g = guild();
 		const cat = wire(g, chan("cat1", 4, null, g));
 		const c = wire(g, chan("c1", 0, cat, g));
+		c.hasPermission = () => true; // a channel manager
 
 		const labels = menuLabels(c);
 		// Positive control: the menu itself built, so an empty render can't pass the row pins.
@@ -86,11 +90,30 @@ describe("the channel menu's Move to… row", () => {
 		expect(menuLabels(cat), "categories reorder by drag").not.toContain(I18n.channel.moveTo());
 	});
 
+	it("hides from a member without MANAGE_CHANNELS and from threads, like drag", () => {
+		const g = guild();
+		const cat = wire(g, chan("cat1", 4, null, g));
+		const member = wire(g, chan("c1", 0, cat, g)); // hasPermission: false by default
+		const thread = wire(g, chan("t1", 11, cat, g));
+		thread.isThread = () => true;
+
+		expect(menuLabels(member), "no MANAGE_CHANNELS").not.toContain(I18n.channel.moveTo());
+		expect(menuLabels(thread), "threads aren't movable this way").not.toContain(
+			I18n.channel.moveTo(),
+		);
+	});
+
 	it("picking a destination moves the channel and PATCHes through calculateReorder", () => {
 		const g = guild();
 		const cat1 = wire(g, chan("cat1", 4, null, g));
 		const cat2 = wire(g, chan("cat2", 4, null, g));
 		const c = wire(g, chan("c1", 0, cat1, g));
+		// The success redraw swaps #channels from the model, like snapshotLayout's restore.
+		g.localuser.lookingguild = g;
+		g.buildChannelList = vi.fn(() => Object.assign(document.createElement("div"), {className: "rebuilt"}));
+		const holder = document.createElement("div");
+		holder.id = "channels";
+		document.body.append(holder);
 
 		const selects = vi.spyOn(Options.prototype, "addSelect");
 		const buttons = vi.spyOn(Options.prototype, "addButtonInput");
@@ -112,6 +135,10 @@ describe("the channel menu's Move to… row", () => {
 		const reorder = g.calculateReorder as ReturnType<typeof vi.fn>;
 		expect(snapshot.mock.invocationCallOrder[0]).toBeLessThan(reorder.mock.invocationCallOrder[0]);
 		expect(reorder).toHaveBeenCalledWith("c1", expect.any(Function));
+		expect(g.buildChannelList).toHaveBeenCalled();
+		expect(holder.querySelector(".rebuilt"), "the list is redrawn at once").toBeDefined();
+		holder.remove();
+		delete g.localuser.lookingguild;
 	});
 
 	it("a same-place pick changes nothing and sends nothing", () => {

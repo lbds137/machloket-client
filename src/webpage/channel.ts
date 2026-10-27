@@ -288,7 +288,8 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.type !== 4;
+					// Same crowd drag allows (channel.ts ~1240): managers, no threads.
+					return this.type !== 4 && !this.isThread() && this.hasPermission("MANAGE_CHANNELS");
 				},
 			},
 		);
@@ -488,7 +489,17 @@ class Channel extends SnowFlake {
 			const dest = dests[picked] ?? null;
 			const restore = this.guild.snapshotLayout();
 			if (this.moveInto(dest)) {
-				void this.guild.calculateReorder(this.id, restore);
+				const guild = this.guild;
+				void guild.calculateReorder(this.id, restore);
+				// The drag path moves the DOM row itself; move-to redraws from the model at
+				// once, the way snapshotLayout's restore does — the gateway echo can lag.
+				if (guild.localuser.lookingguild === guild) {
+					const channels = document.getElementById("channels");
+					if (channels) {
+						channels.innerHTML = "";
+						channels.appendChild(guild.buildChannelList());
+					}
+				}
 			}
 			dio.hide();
 		});
