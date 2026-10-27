@@ -1,5 +1,23 @@
 import {favandfreq, freq} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
+
+const HALF_LIFE_DAYS = 7;
+const MS_PER_DAY = 86_400_000;
+const MAX_AGE_DAYS = 90;
+
+function decayedWeight(recentUses: readonly string[] | undefined, now: number): number {
+	let weight = 0;
+	if (!Array.isArray(recentUses)) return 0;
+	for (const raw of recentUses) {
+		const ts = Number(raw);
+		if (!Number.isFinite(ts)) continue;
+		const ageDays = Math.max(0, (now - ts) / MS_PER_DAY);
+		if (ageDays > MAX_AGE_DAYS) continue;
+		weight += 2 ** (-ageDays / HALF_LIFE_DAYS);
+	}
+	return weight;
+}
+
 const enum saveImportance {
 	no = 0,
 	verylow = 1,
@@ -364,11 +382,54 @@ export class Favorites {
 	favoriteEmojis() {
 		return structuredClone(this.favorite_emojis);
 	}
-	emojiFreq() {
-		return Object.entries(this.emojiFrecency).sort((a, b) => b[1].score - a[1].score);
-	}
 	emojiReactFreq() {
-		return Object.entries(this.emojiReactionFrecency).sort((a, b) => b[1].score - a[1].score);
+		const now = Date.now();
+		return Object.entries(this.emojiReactionFrecency)
+			.map(
+				(entry) =>
+					[entry, decayedWeight(entry[1]?.recentUses, now), entry[1]?.totalUses ?? 0] as const,
+			)
+			.sort((a, b) => b[1] - a[1] || b[2] - a[2])
+			.map(([entry]) => entry);
+	}
+	emojiRecentsMerged(): [string, freq & {weight: number}][] {
+		const now = Date.now();
+		const keys = new Set([
+			...Object.keys(this.emojiFrecency),
+			...Object.keys(this.emojiReactionFrecency),
+		]);
+		const merged: [string, freq & {weight: number}][] = [];
+		for (const key of keys) {
+			const comp = this.emojiFrecency[key];
+			const react = this.emojiReactionFrecency[key];
+			const weight =
+				decayedWeight(comp?.recentUses, now) + decayedWeight(react?.recentUses, now);
+			const totalUses = (comp?.totalUses ?? 0) + (react?.totalUses ?? 0);
+			const score = (comp?.score ?? 0) + (react?.score ?? 0);
+			// Newest-first, capped at 20: the synthetic entry must keep the same
+			// recentUses invariant the real maps write.
+			const recentUses = [...(comp?.recentUses ?? []), ...(react?.recentUses ?? [])]
+				.map(Number)
+				.filter(Number.isFinite)
+				.sort((a, b) => b - a)
+				.slice(0, 20)
+				.map(String);
+			merged.push([
+				key,
+				{
+					totalUses,
+					recentUses,
+					frecency: -1,
+					score,
+					weight,
+				},
+			]);
+		}
+		// Entries whose uses have all decayed past 90 days weigh 0 and only clog
+		// the rail; drop them here where recents are ranked.
+		return merged
+			.filter(([, e]) => e.weight > 0)
+			.sort((a, b) => b[1].weight - a[1].weight || b[1].totalUses - a[1].totalUses);
 	}
 	async addEmoji(nameOrID: string) {
 		const obj = (this.emojiFrecency[nameOrID] ??= {
