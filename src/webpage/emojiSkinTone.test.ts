@@ -5,7 +5,8 @@ const {Emoji} = await import("./emoji.js");
 const {Contextmenu} = await import("./contextmenu.js");
 const {I18n} = await import("./i18n.js");
 const {BinWrite} = await import("./utils/binaryUtils.js");
-const {applySkinTone, getSkinTone, setSkinTone} = await import("./utils/skinTone.js");
+const {applySkinTone, getSkinTone, isDualToneEmoji, setSkinTone} =
+	await import("./utils/skinTone.js");
 // @ts-expect-error Vite's ?inline import returns the stylesheet text.
 const {default: styleCss}: {default: string} = await import("./public/style.css?inline");
 // @ts-expect-error Vite's ?inline import returns the stylesheet text.
@@ -115,6 +116,23 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(codepoints(applySkinTone("🕵️\u200d♂️", 3))).toEqual([
 			0x1f575, 0x1f3fd, 0x200d, 0x2642, 0xfe0f,
 		]);
+	});
+
+	it("2e. F6: isDualToneEmoji returns true for 🧑🤝🧑 and the six kiss/couple-with-heart ZWJ forms, false for 👋, 🤝, 👫", () => {
+		expect(isDualToneEmoji("🧑\u200d🤝\u200d🧑")).toBe(true);
+		for (const zwjPair of [
+			"👩\u200d❤️\u200d💋\u200d👨",
+			"👨\u200d❤️\u200d💋\u200d👨",
+			"👩\u200d❤️\u200d💋\u200d👩",
+			"👩\u200d❤️\u200d👨",
+			"👨\u200d❤️\u200d👨",
+			"👩\u200d❤️\u200d👩",
+		]) {
+			expect(isDualToneEmoji(zwjPair), zwjPair).toBe(true);
+		}
+		expect(isDualToneEmoji("👋")).toBe(false);
+		expect(isDualToneEmoji("🤝")).toBe(false);
+		expect(isDualToneEmoji("👫")).toBe(false);
 	});
 
 	it("3. preference getSkinTone and setSkinTone persist and guard corrupt storage", () => {
@@ -237,6 +255,115 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(cells).toHaveLength(2);
 		expect(cells[0]!.querySelector(".emojiToneBadge")).toBeNull();
 		expect(cells[1]!.querySelector(".emojiToneBadge")).not.toBeNull();
+	});
+
+	it("4e. F1: clicking another emoji cell while the badge tone popup is open resolves that emoji and closes both popup and picker", async () => {
+		assignTwoEmojiFixture();
+		const pickPromise = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+
+		const waveBadge = cells[0]!.querySelector(".emojiToneBadge")!;
+		waveBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).not.toBeNull();
+
+		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const picked = await pickPromise;
+		expect(picked.emoji).toBe("😀");
+		expect(picked.name).toBe("grinning");
+		expect(document.querySelector(".emojiPicker")).toBeNull();
+		expect(document.querySelector(".emojiTonePopup")).toBeNull();
+	});
+
+	it("4f. F3: switching sections or searching while the tone popup is open closes the tone popup", () => {
+		assignTwoEmojiFixture();
+		void Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+
+		const waveBadge = cells[0]!.querySelector(".emojiToneBadge")!;
+		waveBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).not.toBeNull();
+
+		const railSelect = picker.querySelector(".emojirow .emojiSelect")!;
+		railSelect.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).toBeNull();
+
+		const freshBadge = picker.querySelector(".emojiBody .emojiSelect .emojiToneBadge")!;
+		freshBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).not.toBeNull();
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "wav";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+		expect(document.querySelector(".emojiTonePopup")).toBeNull();
+	});
+
+	it("4g. F5: swatches use CLDR tone names for ariaLabel and set aria-pressed on the active tone in badge and header popups", () => {
+		assignTwoEmojiFixture();
+		setSkinTone(2);
+		void Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+		const waveBadge = picker.querySelector(".emojiBody .emojiSelect .emojiToneBadge")!;
+		waveBadge.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+		const badgeSwatches = Array.from(
+			document.querySelectorAll<HTMLElement>(".emojiTonePopup .emojiToneSwatch"),
+		);
+		expect(badgeSwatches.map((s) => s.ariaLabel)).toEqual([
+			"Default",
+			"Light",
+			"Medium-Light",
+			"Medium",
+			"Medium-Dark",
+			"Dark",
+		]);
+		expect(badgeSwatches.map((s) => s.getAttribute("aria-pressed"))).toEqual([
+			"false",
+			"false",
+			"true",
+			"false",
+			"false",
+			"false",
+		]);
+
+		setSkinTone(4);
+		const headerBtn = picker.querySelector(".emojiToneDefault")!;
+		headerBtn.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const headerSwatches = Array.from(
+			document.querySelectorAll<HTMLElement>(".emojiTonePopup .emojiToneSwatch"),
+		);
+		expect(headerSwatches.map((s) => s.getAttribute("aria-pressed"))).toEqual([
+			"false",
+			"false",
+			"false",
+			"false",
+			"true",
+			"false",
+		]);
+	});
+
+	it("4h. search-active header tone pick persists the tone and keeps the picker open with results present", () => {
+		assignTwoEmojiFixture();
+		void Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "waving";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+		expect(picker.querySelectorAll(".emojiBody .emojiSelect")).toHaveLength(1);
+
+		const headerBtn = picker.querySelector(".emojiToneDefault")!;
+		headerBtn.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const swatches = document.querySelectorAll(".emojiTonePopup .emojiToneSwatch");
+		expect(swatches).toHaveLength(6);
+
+		swatches[4]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		expect(getSkinTone()).toBe(4);
+		expect(localStorage.getItem("emojiSkinTone")).toBe("4");
+		expect(document.querySelector(".emojiPicker")).toBe(picker);
+		expect(picker.classList.contains("removeElm")).toBe(false);
+		expect(picker.querySelectorAll(".emojiBody .emojiSelect")).toHaveLength(1);
 	});
 
 	it("5. CSS var existence: every var(--x) in emoji tone/footer rule blocks is defined in themes.css", () => {

@@ -40,3 +40,12 @@ export function setSkinTone(tone: number): void {
 		// A full or blocked storage loses the persisted default; the picker still works.
 	}
 }
+
+/** Dual-tone ZWJ compositions have no single-tone RGI variants; keep base glyph and hide badge. */
+export function isDualToneEmoji(emoji: string): boolean {
+	const cps = Array.from(emoji, (ch) => ch.codePointAt(0));
+	return (
+		cps.includes(0x1f48b) ||
+		(cps.includes(0x200d) && (cps.includes(0x2764) || cps.includes(0x1f91d)))
+	);
+}
