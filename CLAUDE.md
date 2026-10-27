@@ -32,7 +32,7 @@ Node 24 (LTS), npm (the repo ships `package-lock.json`; don't switch it to pnpm)
 
 ## Workflow
 
-- Every change lands by PR, never straight to `main`: branch → push → PR. The `claude-review` job reviews it, and the `automerge` job merges once the review passes and all checks are green — never merge by hand, `gh pr merge` bypasses that workflow gate. (Owner ruling 2026-10-27.)
+- Every change lands by PR, never straight to `main`: branch → push → PR (open it as the owner, not as a draft — `automerge` only fires for those). The `claude-review` job reviews it, and the `automerge` job merges once the review passes and all checks are green. Never merge by hand — a hand merge skips the review gate — except a PR that changes `.github/workflows/claude-code-review.yml`: it gets no review (the action skips itself), so the owner merges it by hand after reading it. (Owner ruling 2026-10-27.)
 - Every change gets a fresh-context review agent before it's committed. A reviewer that runs the gate does it in a scratch copy of the tree (on disk, `node_modules` symlinked), never in the working tree.
 - Every behaviour fix lands red-first: write the test, watch it fail on the assertion the fix is about, then fix.
 - Machine-local state (task tracker, evidence, session notes) lives in `docs/local/`, which is git-ignored.
