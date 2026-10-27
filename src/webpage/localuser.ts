@@ -470,8 +470,6 @@ class Localuser {
 			this.guildids.set(temp.id, temp);
 		}
 		if (ready.d.user_guild_settings) {
-			console.log(ready.d.user_guild_settings.entries);
-
 			for (const thing of ready.d.user_guild_settings.entries) {
 				(this.guildids.get(thing.guild_id) as Guild).notisetting(thing);
 			}

@@ -2998,6 +2998,10 @@ span.instanceStatus {
 	position: relative;
 }
 
+.servernoti.muted {
+	opacity: 0.4;
+}
+
 .unread {
 	position: absolute;
 	width: 8px;

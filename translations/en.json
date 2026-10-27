@@ -364,6 +364,7 @@
 		"community": "Community",
 		"confirmDelete": "Are you sure you want to delete $1?",
 		"confirmLeave": "Are you sure you want to leave?",
+		"copyInfo": "Copy server info",
 		"copyId": "Copy guild id",
 		"create": "Create guild from scratch",
 		"createFromTemplate": "Create guild from template",
@@ -421,6 +422,7 @@
 		"templcateMetaDesc": "A template allows others to use this guild as a base for their own guilds: it'll copy the channels, roles and settings of this guild but not the messages from within the guild, the bots nor the guilds icon.",
 		"topic:": "Topic:",
 		"unknownRole": "@unknown-role",
+		"unmute": "Unmute guild",
 		"viewTemplate": "View template",
 		"yesDelete": "Yes, I'm sure",
 		"yesLeave": "Yes, I'm sure"

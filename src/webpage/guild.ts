@@ -220,6 +220,28 @@ class Guild extends SnowFlake {
 				this.setnotifcation();
 			},
 		);
+		Guild.contextmenu.addButton(
+			() => I18n.guild.mute(),
+			function (this: Guild) {
+				this.muteGuild();
+			},
+			{
+				visible: function () {
+					return !this.muted;
+				},
+			},
+		);
+		Guild.contextmenu.addButton(
+			() => I18n.guild.unmute(),
+			function (this: Guild) {
+				this.unmuteGuild();
+			},
+			{
+				visible: function () {
+					return this.muted;
+				},
+			},
+		);
 		Guild.contextmenu.addSeperator();
 		this.contextmenu.addButton(
 			() => I18n.user.editServerProfile(),
@@ -335,7 +357,12 @@ class Guild extends SnowFlake {
 				color: "red",
 			},
 		);
-		//TODO mute guild button
+		Guild.contextmenu.addButton(
+			() => I18n.guild.copyInfo(),
+			function (this: Guild) {
+				navigator.clipboard.writeText(`${this.properties.name} (${this.id})`);
+			},
+		);
 	}
 	get muted() {
 		return !!this.mute_config && new Date(this.mute_config.end_time).getTime() > Date.now();
@@ -1793,6 +1820,87 @@ class Guild extends SnowFlake {
 		);
 		notiselect.show();
 	}
+	/** Counts this guild's mute and unmute PATCHes, so a newer one cancels an older one's 429 retry. */
+	private muteSeq?: number;
+	/** While mute changes are in flight: the config the server last accepted (boxed: it may be
+	 * null), so a refusal goes back to it rather than to an earlier unanswered change. */
+	private acceptedMute?: {config: mute_config | null; inFlight: number};
+	/** Sends a mute or unmute setting; if the latest change is refused, the guild goes back to
+	 * the config the server holds. Call it before applying `mute_config` locally. */
+	private async sendMuteConfig(muted: boolean, mute_config: mute_config, seq: number) {
+		// With nothing in flight, the config shown is the server's (a gateway update may have set it).
+		const accepted = (this.acceptedMute ??= {config: this.mute_config, inFlight: 0});
+		accepted.inFlight++;
+		const res = await fetchRetryOnce(
+			`${this.info.api}/users/@me/guilds/${this.id}/settings`,
+			{
+				method: "PATCH",
+				headers: this.headers,
+				body: JSON.stringify({
+					muted,
+					mute_config,
+				}),
+			},
+			{shouldRetry: () => seq === this.muteSeq},
+		).catch(() => undefined);
+		if (--accepted.inFlight === 0) this.acceptedMute = undefined;
+		if (res?.ok) {
+			accepted.config = mute_config;
+		} else if (seq === this.muteSeq) {
+			this.mute_config = accepted.config;
+			this.showMuteState();
+			await showRefusal(res);
+		}
+	}
+	unmuteGuild() {
+		const seq = (this.muteSeq = (this.muteSeq ?? 0) + 1);
+		const mute_config = {
+			selected_time_window: -1,
+			end_time: 0,
+		};
+		const req = this.sendMuteConfig(false, mute_config, seq);
+		this.mute_config = mute_config;
+		this.showMuteState();
+		return req;
+	}
+	muteGuild() {
+		const dio = new Dialog(I18n.guild.mute());
+		const opt = dio.options;
+		let time = 1800;
+		opt.addSelect(
+			I18n.muteDuration(),
+			() => {},
+			(["30m", "1h", "6h", "12h", "1d", "7d", "30d", "never"] as const).map((e) =>
+				I18n.inviteOptions[e](),
+			),
+		).onchange = (e) => {
+			time = [1800, 3600, 21600, 43200, 86400, 604800, 2592000, 1 << 30][e];
+		};
+		opt.addButtonInput("", I18n.submit(), () => {
+			const seq = (this.muteSeq = (this.muteSeq ?? 0) + 1);
+			const mute_config = {
+				selected_time_window: time,
+				end_time: Math.floor(Date.now() + time * 1000),
+			};
+			const req = this.sendMuteConfig(true, mute_config, seq);
+			this.mute_config = mute_config;
+			this.showMuteState();
+			dio.hide();
+			return req;
+		});
+		dio.show();
+	}
+	private muteTimer?: ReturnType<typeof setTimeout>;
+	/** Shows the pillar icon muted while the mute lasts, and unmuted once it runs out. */
+	private showMuteState(div = this.html) {
+		clearTimeout(this.muteTimer);
+		if (!div) return;
+		div.classList.toggle("muted", this.muted);
+		if (!this.muted) return;
+		const left = new Date(this.mute_config!.end_time).getTime() - Date.now();
+		// A timer can't wait past 2^31-1 ms (~24.8 days): a longer mute checks again then.
+		this.muteTimer = setTimeout(() => this.showMuteState(), Math.min(left, 2 ** 31 - 1));
+	}
 	confirmleave() {
 		const full = new Dialog("");
 		full.options.addTitle(I18n.guild.confirmLeave());
@@ -2082,6 +2190,7 @@ class Guild extends SnowFlake {
 		} else {
 			html = this.html;
 		}
+		this.showMuteState();
 		if (!html) {
 			return;
 		}
