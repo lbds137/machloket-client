@@ -288,8 +288,15 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					// Same crowd drag allows (channel.ts ~1240): managers, no threads.
-					return this.type !== 4 && !this.isThread() && this.hasPermission("MANAGE_CHANNELS");
+					// Managers only (drag's own gate is isAdmin — the filed drag unit carries
+					// the question of widening it). No threads; nothing to offer without
+					// categories unless the channel can leave the one it is in.
+					return (
+						this.type !== 4 &&
+						!this.isThread() &&
+						this.hasPermission("MANAGE_CHANNELS") &&
+						(!!this.parent || this.guild.headchannels.some((c) => c.type === 4))
+					);
 				},
 			},
 		);
@@ -466,9 +473,18 @@ class Channel extends SnowFlake {
 		const from = this.parent ? this.parent.children : this.guild.headchannels;
 		const idx = from.indexOf(this);
 		if (idx !== -1) from.splice(idx, 1);
-		this.move_id = dest?.id;
-		this.parent = dest;
-		(dest ? dest.children : this.guild.headchannels).push(this);
+		if (dest) {
+			this.move_id = dest.id;
+			this.parent = dest;
+			dest.children.push(this);
+		} else {
+			// Discord renders uncategorised channels above the categories.
+			this.move_id = undefined;
+			this.parent = null;
+			const firstCat = this.guild.headchannels.findIndex((c) => c.type === 4);
+			if (firstCat === -1) this.guild.headchannels.push(this);
+			else this.guild.headchannels.splice(firstCat, 0, this);
+		}
 		return true;
 	}
 	moveToMenu() {
@@ -487,18 +503,23 @@ class Channel extends SnowFlake {
 		};
 		opt.addButtonInput("", I18n.submit(), () => {
 			const dest = dests[picked] ?? null;
+			// Bail before snapshotting: a no-op submit must not bump layoutSeq — that would
+			// disarm an in-flight drag's restore (the drop handler orders the same way).
+			if ((this.parent ?? null) === dest) {
+				dio.hide();
+				return;
+			}
 			const restore = this.guild.snapshotLayout();
-			if (this.moveInto(dest)) {
-				const guild = this.guild;
-				void guild.calculateReorder(this.id, restore);
-				// The drag path moves the DOM row itself; move-to redraws from the model at
-				// once, the way snapshotLayout's restore does — the gateway echo can lag.
-				if (guild.localuser.lookingguild === guild) {
-					const channels = document.getElementById("channels");
-					if (channels) {
-						channels.innerHTML = "";
-						channels.appendChild(guild.buildChannelList());
-					}
+			this.moveInto(dest);
+			const guild = this.guild;
+			void guild.calculateReorder(this.id, restore);
+			// The drag path moves the DOM row itself; move-to redraws from the model at
+			// once, the way snapshotLayout's restore does — the gateway echo can lag.
+			if (guild.localuser.lookingguild === guild) {
+				const channels = document.getElementById("channels");
+				if (channels) {
+					channels.innerHTML = "";
+					channels.appendChild(guild.buildChannelList());
 				}
 			}
 			dio.hide();

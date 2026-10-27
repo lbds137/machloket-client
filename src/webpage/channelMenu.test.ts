@@ -21,7 +21,8 @@ function menuChannel(hasPermission: () => boolean): InstanceType<typeof Channel>
 		id: "c1",
 		type: 0,
 		owner_id: "owner-1",
-		owner: {localuser: {user: {id: "me-1"}}},
+		// headchannels backs the Move-to row's "guild has categories" read (channel.ts:297).
+		owner: {localuser: {user: {id: "me-1"}}, headchannels: []},
 		hasPermission,
 	}) as InstanceType<typeof Channel>;
 }
