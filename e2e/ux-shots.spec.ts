@@ -1,27 +1,42 @@
 import {mkdirSync} from "node:fs";
 import path from "node:path";
-import {expect} from "@playwright/test";
+import {fileURLToPath} from "node:url";
+import {expect, type Page} from "@playwright/test";
 import {loginAndOpenChannel, test} from "./fixtures";
 
 // Documentation captures for the emoji/composer comparison rows (scope doc:
 // docs/local/ux-compare/emoji-composer-scope.md, screenshot pass). NOT regression
-// pins: no baselines, no behavior asserts beyond "it opened" — the PNGs land in
-// docs/local/ux-compare/shots/ for the Discord-truth comparison. Skipped unless
-// SYG_SHOTS=1 so the CI tier pays nothing for them.
-test.skip(!process.env.SYG_SHOTS, "documentation captures — run with SYG_SHOTS=1");
+// pins: no baselines — the PNGs land in docs/local/ux-compare/shots/ for the
+// Discord-truth comparison. Every capture asserts its surface actually mounted
+// before shooting, so a half-built or crashed menu can't masquerade as a shot.
+// Skipped unless E2E_SHOTS=1 (run a spec directly with that env) so the CI tier
+// pays nothing for them.
+test.skip(!process.env.E2E_SHOTS, "documentation captures — run with E2E_SHOTS=1");
 
-const SHOTS = path.join(process.cwd(), "docs", "local", "ux-compare", "shots");
+// Anchored to this file, not the invocation cwd, so the shots always land inside
+// the git-ignored docs/local tree.
+const SHOTS = path.join(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"docs",
+	"local",
+	"ux-compare",
+	"shots",
+);
 
-async function shot(page: import("@playwright/test").Page, name: string): Promise<void> {
+async function shot(page: Page, name: string): Promise<void> {
+	mkdirSync(SHOTS, {recursive: true});
 	// Let entry animations/transitions settle; documentation, not pixel pins.
 	await page.waitForTimeout(400);
 	await page.screenshot({path: path.join(SHOTS, name)});
 }
 
+// The mockInstance fixture arms the mock (Playwright fixtures are lazy — without
+// destructuring it, the instance list never populates). loginAndOpenChannel itself
+// proves the boot worked; no extra assert needed here.
 test("capture: floating emoji picker + bare rows (phone)", async ({page, mockInstance}) => {
-	mkdirSync(SHOTS, {recursive: true});
 	await loginAndOpenChannel(page);
-	expect(mockInstance.capturedRequests.length).toBeGreaterThan(0);
+	void mockInstance;
 
 	await page.locator("#typebox").click();
 	await page.keyboard.type("hello");
@@ -34,13 +49,21 @@ test("capture: floating emoji picker + bare rows (phone)", async ({page, mockIns
 	await shot(page, "emoji-row-hover-phone.png");
 });
 
-test.describe("desktop viewport", () => {
-	test.use({viewport: {width: 1280, height: 800}});
+// A REAL desktop run, not a wide phone: the Pixel 7 profile's Android UA and
+// touch flags survive a viewport override, and the app's `mobile` check keys on
+// exactly those (utils/utils.ts) — override all three.
+test.describe("desktop", () => {
+	test.use({
+		viewport: {width: 1280, height: 800},
+		userAgent:
+			"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		isMobile: false,
+		hasTouch: false,
+	});
 
 	test("capture: floating emoji picker (desktop)", async ({page, mockInstance}) => {
-		mkdirSync(SHOTS, {recursive: true});
 		await loginAndOpenChannel(page);
-		expect(mockInstance.capturedRequests.length).toBeGreaterThan(0);
+		void mockInstance;
 
 		await page.locator("#typebox").click();
 		await page.keyboard.type("hello");
@@ -51,30 +74,36 @@ test.describe("desktop viewport", () => {
 });
 
 test("capture: GIF picker (phone)", async ({page, mockInstance}) => {
-	mkdirSync(SHOTS, {recursive: true});
 	await loginAndOpenChannel(page);
-	expect(mockInstance.capturedRequests.length).toBeGreaterThan(0);
+	void mockInstance;
 
-	// The picker's server-proxied trending call has no mock answer; the empty body
-	// documents the picker's empty state under this config (the docs capture asks
-	// "what renders", not "what the providers return").
+	// The picker's server-proxied trending call has no mock answer; an empty
+	// categories payload is the documented state ("no providers configured"),
+	// rendered through the picker's normal success path. `[]` would crash it —
+	// fetchTrending only bails on a falsy body, then reads .categories.
 	await page.route("**/api/v9/gifs/trending*", (route) =>
-		route.fulfill({status: 200, contentType: "application/json", body: "[]"}),
+		route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({categories: [], gifs: []}),
+		}),
 	);
 
 	await page.locator("#gifTB").click();
+	// The search box is only added after trending parses — proving the picker
+	// built fully, not just that a menu div mounted.
+	await expect(page.locator(".gifmenu input")).toBeVisible();
 	await shot(page, "gif-picker-phone.png");
 });
 
 test("capture: sticker picker (phone)", async ({page, mockInstance}) => {
-	mkdirSync(SHOTS, {recursive: true});
 	await loginAndOpenChannel(page);
-	expect(mockInstance.capturedRequests.length).toBeGreaterThan(0);
+	void mockInstance;
 
 	await page.locator("#stickerTB").click();
+	// The root mounts even when no guild carries stickers (a "no stickers" title,
+	// then a never-settling promise — scope row J); the shot documents whichever
+	// state the mock produces.
+	await expect(page.locator(".stickerPicker")).toBeVisible();
 	await shot(page, "sticker-picker-phone.png");
 });
-
-// No poll-modal capture yet: the mock's @everyone role lacks SEND_POLLS, so the
-// "+"-menu renders only "Upload files". A mock option granting extra permission bits
-// is filed in the tracker — it serves this capture and EMOJI-C's validation pins.
