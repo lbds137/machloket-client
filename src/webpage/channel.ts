@@ -101,7 +101,7 @@ class Channel extends SnowFlake {
 	headers!: Localuser["headers"];
 	name!: string;
 	parent_id?: string;
-	parent: Channel | undefined;
+	parent: Channel | null | undefined;
 	children!: Channel[];
 	guild_id!: string;
 	permission_overwrites!: Map<string, Permissions>;
@@ -282,6 +282,17 @@ class Channel extends SnowFlake {
 			},
 		);
 		this.contextmenu.addButton(
+			() => I18n.channel.moveTo(),
+			function () {
+				this.moveToMenu();
+			},
+			{
+				visible: function () {
+					return this.type !== 4;
+				},
+			},
+		);
+		this.contextmenu.addButton(
 			() => I18n.channel.mute(),
 			function () {
 				this.muteChannel();
@@ -445,6 +456,41 @@ class Channel extends SnowFlake {
 			this.unreads();
 			this.guild.unreads();
 			return req;
+		});
+		dio.show();
+	}
+	moveInto(dest: Channel | null): boolean {
+		// Places at the end of dest; coatDropDiv's container drop places at the top.
+		if ((this.parent ?? null) === dest) return false;
+		const from = this.parent ? this.parent.children : this.guild.headchannels;
+		const idx = from.indexOf(this);
+		if (idx !== -1) from.splice(idx, 1);
+		this.move_id = dest?.id;
+		this.parent = dest;
+		(dest ? dest.children : this.guild.headchannels).push(this);
+		return true;
+	}
+	moveToMenu() {
+		const dio = new Dialog(I18n.channel.moveTo());
+		const opt = dio.options;
+		const cats = this.guild.headchannels.filter((c) => c.type === 4);
+		const dests: (Channel | null)[] = [...cats, null];
+		const labels = [...cats.map((c) => c.name), I18n.channel.noCategory()];
+		const cur = dests.indexOf(this.parent ?? null);
+		let picked = cur >= 0 ? cur : dests.length - 1;
+		opt.addSelect(I18n.channel.moveTo(), () => {}, labels, {
+			defaultIndex: picked,
+			radio: true,
+		}).onchange = (i) => {
+			picked = i;
+		};
+		opt.addButtonInput("", I18n.submit(), () => {
+			const dest = dests[picked] ?? null;
+			const restore = this.guild.snapshotLayout();
+			if (this.moveInto(dest)) {
+				void this.guild.calculateReorder(this.id, restore);
+			}
+			dio.hide();
 		});
 		dio.show();
 	}
@@ -1488,6 +1534,7 @@ class Channel extends SnowFlake {
 			if (needAnchors && !tdiv) return;
 			const restore = this.guild.snapshotLayout();
 			if (useContainer) {
+				// Places at the top of the category; moveInto places at the end.
 				that.move_id = this.id;
 				if (that.parent) {
 					that.parent.children.splice(that.parent.children.indexOf(that), 1);
