@@ -299,6 +299,12 @@
 		"privateGuild": "This guild is private",
 		"skinTone": "Skin tone",
 		"title": "Emojis",
+		"toneDark": "Dark",
+		"toneDefault": "Default",
+		"toneLight": "Light",
+		"toneMedium": "Medium",
+		"toneMediumDark": "Medium-Dark",
+		"toneMediumLight": "Medium-Light",
 		"upload": "Upload emojis"
 	},
 	"emojiSelect": "Emoji:",

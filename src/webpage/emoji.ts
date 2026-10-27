@@ -7,7 +7,7 @@ import {Localuser} from "./localuser.js";
 import {BinRead} from "./utils/binaryUtils.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {showRefusal} from "./utils/showRefusal.js";
-import {applySkinTone, getSkinTone, setSkinTone} from "./utils/skinTone.js";
+import {applySkinTone, getSkinTone, isDualToneEmoji, setSkinTone} from "./utils/skinTone.js";
 import {removeAni} from "./utils/utils.js";
 
 //I need to recompile the emoji format for translation
@@ -360,25 +360,51 @@ class Emoji {
 
 		let activePopup: HTMLElement | undefined = undefined;
 		let renderCurrentSection: (() => void) | undefined = undefined;
-		const openTonePopup = (e: MouseEvent, baseEmoji: string, onPick: (tone: number) => void) => {
+		const closeTonePopup = () => {
+			activePopup?.remove();
+			activePopup = undefined;
+		};
+		const pick = (emoji: Emoji) => {
+			const hadPopup = activePopup !== undefined;
+			closeTonePopup();
+			// One declareMenu closes the stack top (the popup when it was open, the picker
+			// itself otherwise); a second, only when the popup was up, closes the picker.
+			Contextmenu.declareMenu();
+			if (hadPopup) Contextmenu.declareMenu();
+			res(emoji);
+		};
+		const openTonePopup = (
+			e: MouseEvent,
+			baseEmoji: string,
+			activeTone: number,
+			onPick: (tone: number) => void,
+		) => {
 			activePopup?.remove();
 			const popup = document.createElement("div");
 			popup.classList.add("flexltr", "emojiTonePopup");
 			const rect = (e.currentTarget as HTMLElement | null)?.getBoundingClientRect();
 			popup.style.top = (e.clientY || rect?.bottom || 0) + "px";
 			popup.style.left = (e.clientX || rect?.left || 0) + "px";
+			const toneNames = [
+				I18n.emoji.toneDefault(),
+				I18n.emoji.toneLight(),
+				I18n.emoji.toneMediumLight(),
+				I18n.emoji.toneMedium(),
+				I18n.emoji.toneMediumDark(),
+				I18n.emoji.toneDark(),
+			];
 			for (let tone = 0; tone <= 5; tone++) {
 				const swatch = document.createElement("button");
 				swatch.type = "button";
 				swatch.classList.add("emojiSelect", "emojiToneSwatch");
 				swatch.textContent = applySkinTone(baseEmoji, tone);
-				swatch.ariaLabel = `${I18n.emoji.skinTone()} ${tone}`;
+				swatch.ariaLabel = toneNames[tone]!;
+				swatch.setAttribute("aria-pressed", tone === activeTone ? "true" : "false");
 				swatch.addEventListener("click", (ev) => {
 					ev.preventDefault();
 					ev.stopPropagation();
-					popup.remove();
-					activePopup = undefined;
 					onPick(tone);
+					closeTonePopup();
 				});
 				popup.append(swatch);
 			}
@@ -391,7 +417,7 @@ class Emoji {
 		defaultToneBtn.addEventListener("click", (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-			openTonePopup(e, "👋", (tone) => {
+			openTonePopup(e, "👋", getSkinTone(), (tone) => {
 				Contextmenu.declareMenu();
 				setSkinTone(tone);
 				defaultToneBtn.textContent = applySkinTone("👋", tone);
@@ -413,6 +439,7 @@ class Emoji {
 				return;
 			}
 
+			closeTonePopup();
 			search.style.setProperty("width", "3in");
 			title.innerText = "";
 			body.innerHTML = "";
@@ -431,8 +458,7 @@ class Emoji {
 					footer.textContent = `:${emoji.humanName}:`;
 				});
 				emojiElem.addEventListener("click", () => {
-					res(emoji);
-					Contextmenu.declareMenu();
+					pick(emoji);
 				});
 			}
 		}
@@ -447,8 +473,7 @@ class Emoji {
 		});
 		search.addEventListener("keyup", (e) => {
 			if (e.key === "Enter" && topEmoji) {
-				res(topEmoji);
-				Contextmenu.declareMenu();
+				pick(topEmoji);
 			}
 		});
 
@@ -497,6 +522,7 @@ class Emoji {
 					selection.append(select);
 
 					const clickEvent = () => {
+						closeTonePopup();
 						renderCurrentSection = clickEvent;
 						search.value = "";
 						resetSearch();
@@ -521,8 +547,7 @@ class Emoji {
 								footer.textContent = `:${emojiClass.humanName}:`;
 							});
 							emojiElem.addEventListener("click", () => {
-								res(emojiClass);
-								Contextmenu.declareMenu();
+								pick(emojiClass);
 							});
 						}
 					};
@@ -556,6 +581,7 @@ class Emoji {
 			// Used sits first too).
 			selection.prepend(select);
 			const clickRecent = () => {
+				closeTonePopup();
 				renderCurrentSection = clickRecent;
 				search.value = "";
 				resetSearch();
@@ -571,8 +597,7 @@ class Emoji {
 						footer.textContent = `:${emoji.humanName}:`;
 					});
 					emojihtml.onclick = (_) => {
-						res(emoji);
-						Contextmenu.declareMenu();
+						pick(emoji);
 					};
 				}
 			};
@@ -589,22 +614,15 @@ class Emoji {
 			select.classList.add("emojiSelect");
 			selection.append(select);
 			const clickEvent = () => {
+				closeTonePopup();
 				renderCurrentSection = clickEvent;
 				search.value = "";
 				resetSearch();
 				title.textContent = thing.name;
 				body.innerHTML = "";
 				const defaultTone = getSkinTone();
-				// Dual-tone ZWJ compositions have no single-tone RGI variants; keep base glyph and hide badge.
-				const isDualTone = (str: string) => {
-					const cps = Array.from(str, (ch) => ch.codePointAt(0));
-					return (
-						cps.includes(0x1f48b) ||
-						(cps.includes(0x200d) && (cps.includes(0x2764) || cps.includes(0x1f91d)))
-					);
-				};
 				for (const raw of thing.emojis) {
-					const canTone = Boolean(raw.skin_tone_support) && !isDualTone(raw.emoji);
+					const canTone = Boolean(raw.skin_tone_support) && !isDualToneEmoji(raw.emoji);
 					const variant = canTone ? applySkinTone(raw.emoji, defaultTone) : raw.emoji;
 					const emojit = new Emoji({name: raw.name, emoji: variant}, localuser);
 					const emoji = document.createElement("div");
@@ -619,10 +637,8 @@ class Emoji {
 						badge.addEventListener("click", (e) => {
 							e.preventDefault();
 							e.stopPropagation();
-							openTonePopup(e, raw.emoji, (tone) => {
-								Contextmenu.declareMenu();
-								Contextmenu.declareMenu();
-								res(
+							openTonePopup(e, raw.emoji, defaultTone, (tone) => {
+								pick(
 									new Emoji(
 										{name: raw.name, emoji: applySkinTone(raw.emoji, tone)},
 										localuser,
@@ -637,8 +653,7 @@ class Emoji {
 						footer.textContent = `:${emojit.humanName}:`;
 					});
 					emoji.onclick = (_) => {
-						res(emojit);
-						Contextmenu.declareMenu();
+						pick(emojit);
 					};
 				}
 			};
