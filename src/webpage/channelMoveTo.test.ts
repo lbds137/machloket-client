@@ -46,7 +46,8 @@ function guild(): G {
 		info: {api: API},
 		headchannels: [],
 		channels: [],
-		localuser: {lookingguild: undefined, user: {id: "me-1"}},		snapshotLayout: vi.fn(() => () => undefined),
+		localuser: {lookingguild: undefined, user: {id: "me-1"}},
+		snapshotLayout: vi.fn(() => () => undefined),
 		calculateReorder: vi.fn(async () => undefined),
 	} as unknown as G;
 }
@@ -90,17 +91,27 @@ describe("the channel menu's Move to… row", () => {
 		expect(menuLabels(cat), "categories reorder by drag").not.toContain(I18n.channel.moveTo());
 	});
 
-	it("hides from a member without MANAGE_CHANNELS and from threads, like drag", () => {
+	it("hides from a member without MANAGE_CHANNELS and from threads", () => {
 		const g = guild();
 		const cat = wire(g, chan("cat1", 4, null, g));
 		const member = wire(g, chan("c1", 0, cat, g)); // hasPermission: false by default
 		const thread = wire(g, chan("t1", 11, cat, g));
+		// A manager-thread: without it the permission clause shadows the thread pin.
+		thread.hasPermission = () => true;
 		thread.isThread = () => true;
 
 		expect(menuLabels(member), "no MANAGE_CHANNELS").not.toContain(I18n.channel.moveTo());
 		expect(menuLabels(thread), "threads aren't movable this way").not.toContain(
 			I18n.channel.moveTo(),
 		);
+	});
+
+	it("hides on a top-level channel in a guild with no categories — nothing to offer", () => {
+		const g = guild();
+		const top = wire(g, chan("top", 0, null, g));
+		top.hasPermission = () => true; // even a manager: no categories to move to
+
+		expect(menuLabels(top)).not.toContain(I18n.channel.moveTo());
 	});
 
 	it("picking a destination moves the channel and PATCHes through calculateReorder", () => {
@@ -136,7 +147,7 @@ describe("the channel menu's Move to… row", () => {
 		expect(snapshot.mock.invocationCallOrder[0]).toBeLessThan(reorder.mock.invocationCallOrder[0]);
 		expect(reorder).toHaveBeenCalledWith("c1", expect.any(Function));
 		expect(g.buildChannelList).toHaveBeenCalled();
-		expect(holder.querySelector(".rebuilt"), "the list is redrawn at once").toBeDefined();
+		expect(holder.querySelector(".rebuilt"), "the list is redrawn at once").not.toBeNull();
 		holder.remove();
 		delete g.localuser.lookingguild;
 	});
@@ -156,6 +167,8 @@ describe("the channel menu's Move to… row", () => {
 		expect(c.parent).toBe(cat1);
 		expect(c.move_id).toBeUndefined();
 		expect(g.calculateReorder).not.toHaveBeenCalled();
+		// A no-op submit must not bump layoutSeq: that would disarm an in-flight drag's restore.
+		expect(g.snapshotLayout).not.toHaveBeenCalled();
 	});
 });
 
@@ -185,7 +198,7 @@ describe("Channel.moveInto", () => {
 		expect(a.parent).toBe(cat);
 	});
 
-	it("moves a categorised channel to the end of the top level", () => {
+	it("moves a categorised channel to the top level, above the categories", () => {
 		const g = guild();
 		const cat = wire(g, chan("cat", 4, null, g));
 		const a = wire(g, chan("a", 0, cat, g));
@@ -194,8 +207,8 @@ describe("Channel.moveInto", () => {
 		expect(a.moveInto(null)).toBe(true);
 		expect(a.parent).toBeNull();
 		expect(a.move_id).toBeUndefined();
-		// Categories are parent-null too, so cat rides in headchannels; a lands after it.
-		expect(g.headchannels).toEqual([cat, top, a]);
+		// Discord renders uncategorised channels above the categories.
+		expect(g.headchannels).toEqual([a, cat, top]);
 		expect(cat.children).not.toContain(a);
 	});
 
