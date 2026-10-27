@@ -348,7 +348,6 @@ class Voice {
 	pc?: RTCPeerConnection;
 	ws?: WebSocket;
 	timeout: number = 30000;
-	interval: NodeJS.Timeout = 0 as unknown as NodeJS.Timeout;
 	time: number = 0;
 	seq: number = 0;
 	sendAlive() {

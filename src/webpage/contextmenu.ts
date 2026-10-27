@@ -465,7 +465,7 @@ class Contextmenu<x, y> {
 			obj.addEventListener("click", func);
 		}
 		//NOTE not sure if this code is correct, seems fine at least for now
-		let hold: NodeJS.Timeout | undefined;
+		let hold: ReturnType<typeof setTimeout> | undefined;
 		let x!: number;
 		let y!: number;
 		// On multi-touch, a second touchstart re-seats x/y at the FIRST finger's position (touches[0]
