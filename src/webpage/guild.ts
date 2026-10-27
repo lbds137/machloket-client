@@ -1994,7 +1994,6 @@ class Guild extends SnowFlake {
 				thisthing.position = thing.position = position;
 			}
 
-			console.log(position);
 			if (thing.move_id && thing.move_id !== thing.parent_id) {
 				thing.parent_id = thing.move_id;
 				thisthing.parent_id = thing.parent?.id;
@@ -2024,7 +2023,6 @@ class Guild extends SnowFlake {
 		} else {
 			if (channel) find.parent_id = channel.parent?.id || null;
 		}
-		console.log(build);
 		this.printServers();
 		if (build.length === 0) {
 			return;
