@@ -7,6 +7,7 @@ import {Localuser} from "./localuser.js";
 import {BinRead} from "./utils/binaryUtils.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {applySkinTone, getSkinTone, setSkinTone} from "./utils/skinTone.js";
 import {removeAni} from "./utils/utils.js";
 
 //I need to recompile the emoji format for translation
@@ -17,6 +18,7 @@ class Emoji {
 		emojis: {
 			name: string;
 			emoji: string;
+			skin_tone_support?: boolean;
 		}[];
 	}[] = [];
 	name: string;
@@ -228,7 +230,10 @@ class Emoji {
 	}
 	static decodeEmojiList(buffer: ArrayBuffer) {
 		const reader = new BinRead(buffer);
-		const build: {name: string; emojis: {name: string; emoji: string}[]}[] = [];
+		const build: {
+			name: string;
+			emojis: {name: string; emoji: string; skin_tone_support?: boolean}[];
+		}[] = [];
 		let cats = reader.read16();
 
 		for (; cats !== 0; cats--) {
@@ -240,7 +245,6 @@ class Emoji {
 			}[] = [];
 			let emojinumber = reader.read16();
 			for (; emojinumber !== 0; emojinumber--) {
-				//console.log(emojis);
 				const name = reader.readString8();
 				const len = reader.read8();
 				const skin_tone_support = len > 127;
@@ -335,10 +339,69 @@ class Emoji {
 		title.classList.add("emojiTitle");
 		topBar.append(title);
 
+		const defaultToneBtn = document.createElement("button");
+		defaultToneBtn.type = "button";
+		defaultToneBtn.classList.add("emojiToneDefault");
+		defaultToneBtn.textContent = applySkinTone("👋", getSkinTone());
+		defaultToneBtn.ariaLabel = I18n.emoji.defaultSkinTone();
+		defaultToneBtn.title = I18n.emoji.defaultSkinTone();
+		topBar.append(defaultToneBtn);
+
 		const search = document.createElement("input");
 		search.type = "text";
 		search.placeholder = I18n.search.search();
 		topBar.append(search);
+
+		const footer = document.createElement("div");
+		footer.classList.add("emojiFooter");
+		menu.addEventListener("mouseleave", () => {
+			footer.textContent = "";
+		});
+
+		let activePopup: HTMLElement | undefined = undefined;
+		let renderCurrentSection: (() => void) | undefined = undefined;
+		const openTonePopup = (e: MouseEvent, baseEmoji: string, onPick: (tone: number) => void) => {
+			activePopup?.remove();
+			const popup = document.createElement("div");
+			popup.classList.add("flexltr", "emojiTonePopup");
+			const rect = (e.currentTarget as HTMLElement | null)?.getBoundingClientRect();
+			popup.style.top = (e.clientY || rect?.bottom || 0) + "px";
+			popup.style.left = (e.clientX || rect?.left || 0) + "px";
+			for (let tone = 0; tone <= 5; tone++) {
+				const swatch = document.createElement("button");
+				swatch.type = "button";
+				swatch.classList.add("emojiSelect", "emojiToneSwatch");
+				swatch.textContent = applySkinTone(baseEmoji, tone);
+				swatch.ariaLabel = `${I18n.emoji.skinTone()} ${tone}`;
+				swatch.addEventListener("click", (ev) => {
+					ev.preventDefault();
+					ev.stopPropagation();
+					popup.remove();
+					activePopup = undefined;
+					onPick(tone);
+				});
+				popup.append(swatch);
+			}
+			activePopup = popup;
+			document.body.append(popup);
+			Contextmenu.keepOnScreen(popup);
+			Contextmenu.declareMenu(popup, menu);
+		};
+
+		defaultToneBtn.addEventListener("click", (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+			openTonePopup(e, "👋", (tone) => {
+				Contextmenu.declareMenu();
+				setSkinTone(tone);
+				defaultToneBtn.textContent = applySkinTone("👋", tone);
+				if (search.value !== "") {
+					updateSearch.call(this);
+				} else if (renderCurrentSection) {
+					renderCurrentSection();
+				}
+			});
+		});
 
 		let html: HTMLElement | undefined = undefined;
 		let topEmoji: undefined | Emoji = undefined;
@@ -364,6 +427,9 @@ class Emoji {
 				emojiElem.append(emoji.getHTML(false, false));
 				body.append(emojiElem);
 
+				emojiElem.addEventListener("mouseover", () => {
+					footer.textContent = `:${emoji.humanName}:`;
+				});
 				emojiElem.addEventListener("click", () => {
 					res(emoji);
 					Contextmenu.declareMenu();
@@ -431,6 +497,7 @@ class Emoji {
 					selection.append(select);
 
 					const clickEvent = () => {
+						renderCurrentSection = clickEvent;
 						search.value = "";
 						resetSearch();
 						title.textContent = guild.properties.name;
@@ -450,6 +517,9 @@ class Emoji {
 							emojiElem.append(emojiClass.getHTML(false, false));
 							body.append(emojiElem);
 
+							emojiElem.addEventListener("mouseover", () => {
+								footer.textContent = `:${emojiClass.humanName}:`;
+							});
 							emojiElem.addEventListener("click", () => {
 								res(emojiClass);
 								Contextmenu.declareMenu();
@@ -485,7 +555,8 @@ class Emoji {
 			// The section the picker opens on leads the rail (Discord's Frequently
 			// Used sits first too).
 			selection.prepend(select);
-			select.onclick = () => {
+			const clickRecent = () => {
+				renderCurrentSection = clickRecent;
 				search.value = "";
 				resetSearch();
 				title.textContent = I18n.recentEmoji();
@@ -496,12 +567,16 @@ class Emoji {
 					emojihtml.classList.add("emojiSelect");
 					emojihtml.append(emoji.getHTML(false, false));
 					body.append(emojihtml);
+					emojihtml.addEventListener("mouseover", () => {
+						footer.textContent = `:${emoji.humanName}:`;
+					});
 					emojihtml.onclick = (_) => {
 						res(emoji);
 						Contextmenu.declareMenu();
 					};
 				}
 			};
+			select.onclick = clickRecent;
 			select.click();
 			html = select;
 			i++;
@@ -514,15 +589,53 @@ class Emoji {
 			select.classList.add("emojiSelect");
 			selection.append(select);
 			const clickEvent = () => {
+				renderCurrentSection = clickEvent;
 				search.value = "";
 				resetSearch();
 				title.textContent = thing.name;
 				body.innerHTML = "";
-				for (const emojit of thing.emojis.map((_) => new Emoji(_, localuser))) {
+				const defaultTone = getSkinTone();
+				// Dual-tone ZWJ compositions have no single-tone RGI variants; keep base glyph and hide badge.
+				const isDualTone = (str: string) => {
+					const cps = Array.from(str, (ch) => ch.codePointAt(0));
+					return (
+						cps.includes(0x1f48b) ||
+						(cps.includes(0x200d) && (cps.includes(0x2764) || cps.includes(0x1f91d)))
+					);
+				};
+				for (const raw of thing.emojis) {
+					const canTone = Boolean(raw.skin_tone_support) && !isDualTone(raw.emoji);
+					const variant = canTone ? applySkinTone(raw.emoji, defaultTone) : raw.emoji;
+					const emojit = new Emoji({name: raw.name, emoji: variant}, localuser);
 					const emoji = document.createElement("div");
 					emoji.classList.add("emojiSelect");
 					emoji.append(emojit.getHTML(false, false));
+					if (canTone) {
+						const badge = document.createElement("button");
+						badge.type = "button";
+						badge.classList.add("emojiToneBadge");
+						badge.ariaLabel = I18n.emoji.skinTone();
+						badge.title = I18n.emoji.skinTone();
+						badge.addEventListener("click", (e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							openTonePopup(e, raw.emoji, (tone) => {
+								Contextmenu.declareMenu();
+								Contextmenu.declareMenu();
+								res(
+									new Emoji(
+										{name: raw.name, emoji: applySkinTone(raw.emoji, tone)},
+										localuser,
+									),
+								);
+							});
+						});
+						emoji.append(badge);
+					}
 					body.append(emoji);
+					emoji.addEventListener("mouseover", () => {
+						footer.textContent = `:${emojit.humanName}:`;
+					});
 					emoji.onclick = (_) => {
 						res(emojit);
 						Contextmenu.declareMenu();
@@ -538,6 +651,7 @@ class Emoji {
 		}
 		menu.append(selection);
 		menu.append(body);
+		menu.append(footer);
 		search.focus();
 		return promise;
 	}
