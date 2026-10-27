@@ -1180,13 +1180,17 @@ class Channel extends SnowFlake {
 			if (thing.position != position) {
 				thisthing.position = thing.position = position;
 			}
-			if (thing.move_id && thing.move_id !== thing.parent_id) {
-				thing.parent_id = thing.move_id;
-				thisthing.parent_id = thing.parent?.id;
+			if (thing.move_id) {
+				// A pending parent move is consumed by the next reorder pass even when
+				// it already matches parent_id (the model keeps parent_id current):
+				// leaving it set would resurrect it after a gateway move by someone else.
+				if (thing.move_id !== thing.parent_id) {
+					thing.parent_id = thing.move_id;
+					thisthing.parent_id = thing.parent?.id;
+				}
 				thing.move_id = undefined;
-				//console.log(this.guild.channelids[thisthing.parent_id.id]);
 			}
-			if (thisthing.position || thisthing.parent_id) {
+			if (thisthing.position !== undefined || thisthing.parent_id) {
 				build.push(thisthing);
 			}
 			position++;
@@ -1255,6 +1259,7 @@ class Channel extends SnowFlake {
 	}
 	createguildHTML(): HTMLDivElement {
 		const div = this.html?.deref() || document.createElement("div");
+		const canManageChannels = this.guild.member?.hasPermission("MANAGE_CHANNELS") ?? false;
 		div.innerHTML = "";
 
 		this.showMuteState(div);
@@ -1271,7 +1276,7 @@ class Channel extends SnowFlake {
 				return div;
 			}
 		}
-		div.draggable = this.guild.member.hasPermission("MANAGE_CHANNELS") && !this.isThread();
+		div.draggable = canManageChannels && !this.isThread();
 		div.addEventListener("dragstart", (e) => {
 			Channel.dragged = [this, div];
 			e.stopImmediatePropagation();
@@ -1354,7 +1359,7 @@ class Channel extends SnowFlake {
 			div.classList.add("channel");
 			this.unreads();
 			Channel.contextmenu.bindContextmenu(div, this, undefined);
-			if (this.guild.member.hasPermission("MANAGE_CHANNELS") && !this.isThread()) {
+			if (canManageChannels && !this.isThread()) {
 				this.coatDropDiv(div);
 			}
 			const button = document.createElement("button");
@@ -1573,7 +1578,8 @@ class Channel extends SnowFlake {
 				if (that.parent) {
 					that.parent.children.splice(that.parent.children.indexOf(that), 1);
 				} else {
-					this.guild.headchannels.splice(this.guild.headchannels.indexOf(that), 1);
+					const i = this.guild.headchannels.indexOf(that);
+					if (i !== -1) this.guild.headchannels.splice(i, 1);
 				}
 				that.parent = this;
 				that.parent_id = this.id;
@@ -1584,7 +1590,8 @@ class Channel extends SnowFlake {
 				if (that.parent) {
 					that.parent.children.splice(that.parent.children.indexOf(that), 1);
 				} else {
-					thisy.guild.headchannels.splice(thisy.guild.headchannels.indexOf(that), 1);
+					const i = thisy.guild.headchannels.indexOf(that);
+					if (i !== -1) thisy.guild.headchannels.splice(i, 1);
 				}
 				that.parent = thisy.parent;
 				that.parent_id = thisy.parent?.id ?? null;

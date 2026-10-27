@@ -1994,9 +1994,14 @@ class Guild extends SnowFlake {
 				thisthing.position = thing.position = position;
 			}
 
-			if (thing.move_id && thing.move_id !== thing.parent_id) {
-				thing.parent_id = thing.move_id;
-				thisthing.parent_id = thing.parent?.id;
+			if (thing.move_id) {
+				// A pending parent move is consumed by the next reorder pass even when
+				// it already matches parent_id (the model keeps parent_id current):
+				// leaving it set would resurrect it after a gateway move by someone else.
+				if (thing.move_id !== thing.parent_id) {
+					thing.parent_id = thing.move_id;
+					thisthing.parent_id = thing.parent?.id;
+				}
 				thing.move_id = undefined;
 			}
 			if (thisthing.position !== undefined || thisthing.parent_id) {
