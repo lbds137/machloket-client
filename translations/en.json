@@ -999,7 +999,13 @@
 		"tie": "It was a tie!",
 		"winningAnswer": "Winning answer: $1%",
 		"view": "View poll",
-		"count": "$1 {{PLURAL:$1|vote|votes}} $2%"
+		"count": "$1 {{PLURAL:$1|vote|votes}} $2%",
+		"emptyQuestion": "Please enter a question",
+		"questionTooLong": "Question must be 300 characters or fewer",
+		"emptyAnswer": "Please fill in all answers",
+		"answerTooLong": "Answers must be 32 characters or fewer",
+		"minAnswers": "A poll needs at least 2 answers",
+		"maxAnswers": "You can add up to 10 options"
 	},
 	"search": {
 		"back": "Back",
