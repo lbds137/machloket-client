@@ -1,10 +1,10 @@
-// TUNABLE: Discord-truth pending screenshot pass
+// Character limits are documented, not screenshot-dependent: Discord docs (resources/poll,
+// Poll Media object) — "The maximum length of text is 300 for the question, and 55 for any
+// answer". The answer-count bounds match Discord's modal UI; re-check those two in the
+// screenshot pass.
 export const QUESTION_MAX_CHARS = 300;
-// TUNABLE: Discord-truth pending screenshot pass
-export const ANSWER_MAX_CHARS = 32;
-// TUNABLE: Discord-truth pending screenshot pass
+export const ANSWER_MAX_CHARS = 55;
 export const MIN_ANSWERS = 2;
-// TUNABLE: Discord-truth pending screenshot pass
 export const MAX_ANSWERS = 10;
 
 export function validatePoll(question: string, answers: string[]): string[] {

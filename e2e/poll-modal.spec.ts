@@ -60,16 +60,21 @@ test.describe("poll modal validation (SEND_POLLS granted)", () => {
 		await expect(submitBtn).toBeEnabled();
 		await expect(status).toHaveText("");
 
-		// Live char caps on answer and question inputs.
+		// The answer input truncates live (plain input + slice). The question's maxLength
+		// caps it at the DOM level: fill() inserts like a user, so 310 chars LAND as 300 and
+		// no refusal can fire through the UI (the refusal path is unit-pinned via direct
+		// .value assignment, which bypasses maxLength).
 		await answerInputs.nth(0).fill("a".repeat(ANSWER_MAX_CHARS + 10));
 		await expect(answerInputs.nth(0)).toHaveValue("a".repeat(ANSWER_MAX_CHARS));
 
 		await questionInput.fill("q".repeat(QUESTION_MAX_CHARS + 10));
 		await expect(questionInput).toHaveValue("q".repeat(QUESTION_MAX_CHARS));
+		await expect(submitBtn).toBeEnabled();
 
 		// Restore readable values before testing row bounds.
 		await questionInput.fill("What is for lunch?");
 		await answerInputs.nth(0).fill("Tacos");
+		await expect(submitBtn).toBeEnabled();
 
 		// Adding rows up to MAX_ANSWERS enables delete and disables "New Answer" at MAX with hint.
 		for (let count = MIN_ANSWERS; count < MAX_ANSWERS; count++) {

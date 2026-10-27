@@ -1,22 +1,27 @@
 import {beforeEach, describe, expect, it, vi} from "vitest";
-import {
-	ANSWER_MAX_CHARS,
-	MAX_ANSWERS,
-	MIN_ANSWERS,
-	QUESTION_MAX_CHARS,
-	validatePoll,
-} from "./utils/pollValidation";
 
+// Fixture convention (CLAUDE.md): ./localuser loads before anything else that pulls the
+// app graph. pollValidation is dependency-free today; keeping it dynamic preserves the
+// documented order even if it grows an import later.
 const {Localuser} = await import("./localuser");
 const {I18n} = await import("./i18n");
 await I18n.done;
+const {ANSWER_MAX_CHARS, MAX_ANSWERS, MIN_ANSWERS, QUESTION_MAX_CHARS, validatePoll} =
+	await import("./utils/pollValidation");
 
 describe("validatePoll", () => {
-	it("exports the tunable poll limits", () => {
+	it("exports the documented poll limits", () => {
 		expect(QUESTION_MAX_CHARS).toBe(300);
-		expect(ANSWER_MAX_CHARS).toBe(32);
+		expect(ANSWER_MAX_CHARS).toBe(55);
 		expect(MIN_ANSWERS).toBe(2);
 		expect(MAX_ANSWERS).toBe(10);
+	});
+
+	it("the refusal copy names the constants it enforces", () => {
+		expect(I18n.poll.questionTooLong()).toContain(String(QUESTION_MAX_CHARS));
+		expect(I18n.poll.answerTooLong()).toContain(String(ANSWER_MAX_CHARS));
+		expect(I18n.poll.minAnswers()).toContain(String(MIN_ANSWERS));
+		expect(I18n.poll.maxAnswers()).toContain(String(MAX_ANSWERS));
 	});
 
 	it("rejects an empty or whitespace-only question and accepts a non-empty question", () => {
@@ -103,8 +108,11 @@ describe("makePoll modal wiring", () => {
 		expect(ansInputs()).toHaveLength(MIN_ANSWERS);
 		expect(delButtons().every((d) => d.getAttribute("aria-disabled") === "true")).toBe(true);
 
-		// Clicking delete at MIN does not splice below 2 rows.
+		// Clicking delete at MIN does not splice below 2 rows; neither does Enter (the span
+		// advertises button semantics, so the keyboard maps to the same guarded removal).
 		delButtons()[0].click();
+		expect(ansInputs()).toHaveLength(MIN_ANSWERS);
+		delButtons()[1].dispatchEvent(new KeyboardEvent("keydown", {key: " ", bubbles: true}));
 		expect(ansInputs()).toHaveLength(MIN_ANSWERS);
 
 		// Filling question + 2 answers enables submit and clears status.
@@ -122,14 +130,23 @@ describe("makePoll modal wiring", () => {
 		expect(submitBtn.disabled).toBe(false);
 		expect(status.textContent).toBe("");
 
-		// Live char caps on question and answer inputs.
+		// The answer input truncates live (plain input + slice); an over-limit question is
+		// REFUSED, not truncated — user typing is capped by maxLength at the DOM level, but
+		// a programmatic write lands whole and validation gates the submit on it.
 		questionInput.value = "q".repeat(QUESTION_MAX_CHARS + 25);
 		questionInput.dispatchEvent(new Event("input"));
-		expect(questionInput.value).toHaveLength(QUESTION_MAX_CHARS);
+		expect(questionInput.value).toHaveLength(QUESTION_MAX_CHARS + 25);
+		expect(submitBtn.disabled).toBe(true);
+		expect(status.textContent).toBe(I18n.poll.questionTooLong());
 
 		ansInputs()[0].value = "a".repeat(ANSWER_MAX_CHARS + 10);
 		ansInputs()[0].dispatchEvent(new Event("input"));
 		expect(ansInputs()[0].value).toHaveLength(ANSWER_MAX_CHARS);
+
+		// Restore valid values before testing row bounds.
+		questionInput.value = "Best snack?";
+		questionInput.dispatchEvent(new Event("input"));
+		expect(submitBtn.disabled).toBe(false);
 
 		// Add up to MAX_ANSWERS clamps New Answer and shows the maxAnswers hint.
 		for (let i = MIN_ANSWERS; i < MAX_ANSWERS; i++) {
@@ -141,8 +158,14 @@ describe("makePoll modal wiring", () => {
 		expect(maxHint.textContent).toBe(I18n.poll.maxAnswers());
 		expect(delButtons()[0].getAttribute("aria-disabled")).toBe("false");
 
+		// Keyboard removal above MIN (Enter) behaves like the click.
+		delButtons()[MAX_ANSWERS - 1].dispatchEvent(
+			new KeyboardEvent("keydown", {key: "Enter", bubbles: true}),
+		);
+		expect(ansInputs()).toHaveLength(MAX_ANSWERS - 1);
+
 		// Delete back down to MIN_ANSWERS and submit.
-		for (let i = MAX_ANSWERS; i > MIN_ANSWERS; i--) {
+		for (let i = MAX_ANSWERS - 1; i > MIN_ANSWERS; i--) {
 			delButtons()[i - 1].click();
 		}
 		expect(ansInputs()).toHaveLength(MIN_ANSWERS);
@@ -153,7 +176,7 @@ describe("makePoll modal wiring", () => {
 		expect(sendMessage).toHaveBeenCalledTimes(1);
 		expect(sendMessage).toHaveBeenCalledWith("", {
 			poll: {
-				question: {text: "q".repeat(QUESTION_MAX_CHARS)},
+				question: {text: "Best snack?"},
 				answers: [
 					{poll_media: {text: "a".repeat(ANSWER_MAX_CHARS)}},
 					{poll_media: {text: "Apples"}},

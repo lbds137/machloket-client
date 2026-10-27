@@ -1003,7 +1003,7 @@
 		"emptyQuestion": "Please enter a question",
 		"questionTooLong": "Question must be 300 characters or fewer",
 		"emptyAnswer": "Please fill in all answers",
-		"answerTooLong": "Answers must be 32 characters or fewer",
+		"answerTooLong": "Answers must be 55 characters or fewer",
 		"minAnswers": "A poll needs at least 2 answers",
 		"maxAnswers": "You can add up to 10 options"
 	},

@@ -5904,12 +5904,11 @@ class Localuser {
 		maxHint.classList.add("verify", "pollMaxHint");
 		let addBtn: ReturnType<Options["addButtonInput"]> | undefined;
 		let submitBtn: ReturnType<Options["addButtonInput"]> | undefined;
-		const updateValidation = () => {
-			const qInput = q.input.deref();
-			if (qInput) {
-				qInput.maxLength = QUESTION_MAX_CHARS;
-			}
-			const refusals = validatePoll(q.value, answers);
+		const updateValidation = (questionStr?: string) => {
+			// watchForChange delivers the fresh input value BEFORE TextInput.onChange assigns
+			// q.value — validating the argument keeps the gate current-keystroke without
+			// forking the shared onChange (review round 2's drift warning).
+			const refusals = validatePoll(questionStr ?? q.value, answers);
 			status.textContent = refusals.length > 0 ? I18n.getTranslation(refusals[0]) : "";
 			const atMax = answers.length >= MAX_ANSWERS;
 			maxHint.textContent = atMax ? I18n.poll.maxAnswers() : "";
@@ -5922,19 +5921,8 @@ class Localuser {
 				submitBtn.buttonHtml.disabled = refusals.length > 0;
 			}
 		};
-		q.onChange = () => {
-			q.owner.changed();
-			const qInput = q.input.deref();
-			if (qInput) {
-				if (qInput.value.length > QUESTION_MAX_CHARS) {
-					qInput.value = qInput.value.slice(0, QUESTION_MAX_CHARS);
-				}
-				q.value = qInput.value;
-				q.onchange(q.value);
-			}
-		};
-		q.watchForChange(() => {
-			updateValidation();
+		q.watchForChange((str) => {
+			updateValidation(str);
 		});
 		const genAnswerField = () => {
 			ansField.textContent = "";
@@ -5964,11 +5952,20 @@ class Localuser {
 				del.style.opacity = atMin ? "0.4" : "";
 				del.style.cursor = atMin ? "not-allowed" : "";
 				div.append(input, del);
-				del.onclick = () => {
+				const removeAnswer = () => {
 					if (answers.length <= MIN_ANSWERS) return;
 					answers.splice(si, 1);
 					genAnswerField();
 					updateValidation();
+				};
+				del.onclick = removeAnswer;
+				// role=button advertises button semantics; Enter/Space must back them.
+				del.tabIndex = atMin ? -1 : 0;
+				del.onkeydown = (e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						removeAnswer();
+					}
 				};
 				ansField.append(div);
 			}
@@ -6012,6 +6009,11 @@ class Localuser {
 		});
 		updateValidation();
 		d.show();
+		// show() rebuilds the options DOM — the input that stays on screen only exists now.
+		const qInput = q.input.deref();
+		if (qInput) {
+			qInput.maxLength = QUESTION_MAX_CHARS;
+		}
 		updateValidation();
 	}
 	curSearch?: Symbol;
