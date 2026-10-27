@@ -20,7 +20,7 @@ class Hover {
 	static map = new WeakMap<HTMLElement, () => void>();
 	static elm: HTMLElement = document.createElement("div");
 	static bound: HTMLElement = document.createElement("div");
-	static timeout: NodeJS.Timeout;
+	static timeout: ReturnType<typeof setInterval>;
 	static watchForGone() {
 		clearInterval(this.timeout);
 		this.timeout = setInterval(() => {
