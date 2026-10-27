@@ -100,7 +100,7 @@ class Channel extends SnowFlake {
 	owner!: Guild;
 	headers!: Localuser["headers"];
 	name!: string;
-	parent_id?: string;
+	parent_id?: string | null;
 	parent: Channel | null | undefined;
 	children!: Channel[];
 	guild_id!: string;
@@ -140,7 +140,7 @@ class Channel extends SnowFlake {
 	rate_limit_per_user: number = 0;
 	mentions = 0;
 	lastpin!: string;
-	move_id?: string;
+	move_id?: string | null;
 	typing!: number;
 	message_notifications: number = 3;
 	allthewayup!: boolean;
@@ -476,11 +476,13 @@ class Channel extends SnowFlake {
 		if (dest) {
 			this.move_id = dest.id;
 			this.parent = dest;
+			this.parent_id = dest.id;
 			dest.children.push(this);
 		} else {
 			// Discord renders uncategorised channels above the categories.
 			this.move_id = undefined;
 			this.parent = null;
+			this.parent_id = null;
 			const firstCat = this.guild.headchannels.findIndex((c) => c.type === 4);
 			if (firstCat === -1) this.guild.headchannels.push(this);
 			else this.guild.headchannels.splice(firstCat, 0, this);
@@ -1251,7 +1253,7 @@ class Channel extends SnowFlake {
 	isThread() {
 		return this.type === 10 || this.type === 11 || this.type === 12;
 	}
-	createguildHTML(admin = false): HTMLDivElement {
+	createguildHTML(): HTMLDivElement {
 		const div = this.html?.deref() || document.createElement("div");
 		div.innerHTML = "";
 
@@ -1269,7 +1271,7 @@ class Channel extends SnowFlake {
 				return div;
 			}
 		}
-		div.draggable = admin && !this.isThread();
+		div.draggable = this.guild.member.hasPermission("MANAGE_CHANNELS") && !this.isThread();
 		div.addEventListener("dragstart", (e) => {
 			Channel.dragged = [this, div];
 			e.stopImmediatePropagation();
@@ -1280,7 +1282,7 @@ class Channel extends SnowFlake {
 		const childrendiv = document.createElement("div");
 		childrendiv.classList.add("channels");
 		for (const channel of this.children.filter((_) => !_.isThread() || _.threadVis())) {
-			childrendiv.appendChild(channel.createguildHTML(admin));
+			childrendiv.appendChild(channel.createguildHTML());
 		}
 
 		if (this.type === 4) {
@@ -1352,7 +1354,7 @@ class Channel extends SnowFlake {
 			div.classList.add("channel");
 			this.unreads();
 			Channel.contextmenu.bindContextmenu(div, this, undefined);
-			if (admin && !this.isThread()) {
+			if (this.guild.member.hasPermission("MANAGE_CHANNELS") && !this.isThread()) {
 				this.coatDropDiv(div);
 			}
 			const button = document.createElement("button");
@@ -1570,8 +1572,11 @@ class Channel extends SnowFlake {
 				that.move_id = this.id;
 				if (that.parent) {
 					that.parent.children.splice(that.parent.children.indexOf(that), 1);
+				} else {
+					this.guild.headchannels.splice(this.guild.headchannels.indexOf(that), 1);
 				}
 				that.parent = this;
+				that.parent_id = this.id;
 				(container as HTMLElement).prepend(Channel.dragged[1] as HTMLDivElement);
 				this.children.unshift(that);
 			} else {
@@ -1582,6 +1587,7 @@ class Channel extends SnowFlake {
 					thisy.guild.headchannels.splice(thisy.guild.headchannels.indexOf(that), 1);
 				}
 				that.parent = thisy.parent;
+				that.parent_id = thisy.parent?.id ?? null;
 				if (that.parent) {
 					const build: Channel[] = [];
 					for (let i = 0; i < that.parent.children.length; i++) {
