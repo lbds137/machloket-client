@@ -127,7 +127,10 @@ export class NotificationHandler {
 		);
 		if (closed) notification?.close();
 	}
-	static channelSuperMap = new Map<Channel, [number, NodeJS.Timeout, number]>();
+	static channelSuperMap = new Map<
+		Channel,
+		[number, ReturnType<typeof setTimeout> | undefined, number]
+	>();
 	/** False, or the clump's show when the message joins its channel's clump. */
 	static groupNotifs(message: Message): false | Promise<unknown> {
 		let sup = this.channelSuperMap.get(message.channel);
@@ -137,7 +140,7 @@ export class NotificationHandler {
 		if (!sup) {
 			if (notiSet.size < 4) return false;
 			// Counts the notifications it replaces; this message adds itself below.
-			sup = [notiSet.size, 0 as any, Math.random()];
+			sup = [notiSet.size, undefined, Math.random()];
 			this.channelSuperMap.set(message.channel, sup);
 		}
 

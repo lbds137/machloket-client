@@ -19,6 +19,7 @@
 		"skipLibCheck": true,
 		"strict": true,
 		"target": "es2022",
+		"types": ["node"],
 		"useDefineForClassFields": true
 	},
 	"include": ["e2e/**/*.ts", "playwright.config.ts", "src/**/*.ts"]
