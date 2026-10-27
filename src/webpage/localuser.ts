@@ -91,6 +91,13 @@ import {
 	setSensitiveContent,
 } from "./utils/sensitiveContent.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
+import {
+	ANSWER_MAX_CHARS,
+	MAX_ANSWERS,
+	MIN_ANSWERS,
+	QUESTION_MAX_CHARS,
+	validatePoll,
+} from "./utils/pollValidation.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 type traceObj = {
 	micros: number;
@@ -5891,35 +5898,91 @@ class Localuser {
 		const ansField = document.createElement("div");
 		ansField.classList.add("flexttb", "pollAnsM");
 		const answers = ["", ""] as string[];
+		const status = document.createElement("p");
+		status.classList.add("verify", "pollStatus");
+		const maxHint = document.createElement("p");
+		maxHint.classList.add("verify", "pollMaxHint");
+		let addBtn: ReturnType<Options["addButtonInput"]> | undefined;
+		let submitBtn: ReturnType<Options["addButtonInput"]> | undefined;
+		const updateValidation = () => {
+			const qInput = q.input.deref();
+			if (qInput) {
+				qInput.maxLength = QUESTION_MAX_CHARS;
+			}
+			const refusals = validatePoll(q.value, answers);
+			status.textContent = refusals.length > 0 ? I18n.getTranslation(refusals[0]) : "";
+			const atMax = answers.length >= MAX_ANSWERS;
+			maxHint.textContent = atMax ? I18n.poll.maxAnswers() : "";
+			maxHint.hidden = !atMax;
+			if (addBtn?.buttonHtml) {
+				addBtn.buttonHtml.disabled = atMax;
+				addBtn.buttonHtml.title = atMax ? I18n.poll.maxAnswers() : "";
+			}
+			if (submitBtn?.buttonHtml) {
+				submitBtn.buttonHtml.disabled = refusals.length > 0;
+			}
+		};
+		q.onChange = () => {
+			q.owner.changed();
+			const qInput = q.input.deref();
+			if (qInput) {
+				if (qInput.value.length > QUESTION_MAX_CHARS) {
+					qInput.value = qInput.value.slice(0, QUESTION_MAX_CHARS);
+				}
+				q.value = qInput.value;
+				q.onchange(q.value);
+			}
+		};
+		q.watchForChange(() => {
+			updateValidation();
+		});
 		const genAnswerField = () => {
 			ansField.textContent = "";
+			const atMin = answers.length <= MIN_ANSWERS;
 			for (let i = 0; i < answers.length; i++) {
 				const si = i;
 				const div = document.createElement("div");
 				div.classList.add("flexltr");
 				const input = document.createElement("input");
 				input.type = "text";
+				input.maxLength = ANSWER_MAX_CHARS;
 				input.value = answers[i];
-				input.onchange = () => {
+				const syncAnswer = () => {
+					if (input.value.length > ANSWER_MAX_CHARS) {
+						input.value = input.value.slice(0, ANSWER_MAX_CHARS);
+					}
 					answers[si] = input.value;
+					updateValidation();
 				};
+				input.oninput = syncAnswer;
+				input.onchange = syncAnswer;
 
 				const del = document.createElement("span");
 				del.classList.add("svg-delete", "svgicon");
+				del.setAttribute("role", "button");
+				del.setAttribute("aria-disabled", String(atMin));
+				del.style.opacity = atMin ? "0.4" : "";
+				del.style.cursor = atMin ? "not-allowed" : "";
 				div.append(input, del);
 				del.onclick = () => {
+					if (answers.length <= MIN_ANSWERS) return;
 					answers.splice(si, 1);
 					genAnswerField();
+					updateValidation();
 				};
 				ansField.append(div);
 			}
 		};
 		genAnswerField();
 		opt.addHTMLArea(ansField);
-		opt.addButtonInput("", I18n.poll.newAnswer(), () => {
+		opt.addHTMLArea(status);
+		addBtn = opt.addButtonInput("", I18n.poll.newAnswer(), () => {
+			if (answers.length >= MAX_ANSWERS) return;
 			answers.push("");
 			genAnswerField();
+			updateValidation();
 		});
+		opt.addHTMLArea(maxHint);
 		const hours = [1, 4, 8, 24, 72, 168, 336] as const;
 		const h = opt.addSelect(
 			I18n.poll.duration(),
@@ -5931,7 +5994,8 @@ class Localuser {
 			},
 		);
 		const c = opt.addCheckboxInput(I18n.poll.mult(), () => {});
-		opt.addButtonInput("", I18n.submit(), () => {
+		submitBtn = opt.addButtonInput("", I18n.submit(), () => {
+			if (validatePoll(q.value, answers).length > 0) return;
 			const chan = this.channelfocus;
 			if (!chan) return;
 			chan.sendMessage("", {
@@ -5946,7 +6010,9 @@ class Localuser {
 			});
 			d.hide();
 		});
+		updateValidation();
 		d.show();
+		updateValidation();
 	}
 	curSearch?: Symbol;
 	pollUpdateSubMap = new Map<string, (u: pollUpdateJson) => void>();
