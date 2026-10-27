@@ -311,7 +311,6 @@ class Emoji {
 		localuser?: Localuser,
 	): Promise<Emoji> {
 		let res: (r: Emoji) => void;
-		this;
 		const promise: Promise<Emoji> = new Promise((r) => {
 			res = r;
 		});
@@ -371,6 +370,12 @@ class Emoji {
 				});
 			}
 		}
+		// Section rail clicks clear the query themselves without re-triggering the
+		// restore click — only a real input-clear comes back through html.click().
+		function resetSearch() {
+			search.style.removeProperty("width");
+			topEmoji = undefined;
+		}
 		search.addEventListener("input", () => {
 			updateSearch.call(this);
 		});
@@ -427,7 +432,7 @@ class Emoji {
 
 					const clickEvent = () => {
 						search.value = "";
-						updateSearch.call(this);
+						resetSearch();
 						title.textContent = guild.properties.name;
 						body.innerHTML = "";
 						for (const emojit of guild.emojis) {
@@ -454,6 +459,7 @@ class Emoji {
 
 					select.addEventListener("click", clickEvent);
 					if (isFirst) {
+						html = select;
 						clickEvent();
 						isFirst = false;
 					}
@@ -465,13 +471,23 @@ class Emoji {
 		Contextmenu.declareMenu(menu);
 		document.body.append(menu);
 		Contextmenu.keepOnScreen(menu);
-		const recent = localuser?.favorites.emojiFreq();
-		if (recent && recent.length >= 15 && localuser) {
+		const recent = localuser
+			? localuser.favorites
+					.emojiRecentsMerged()
+					// A reaction can record a custom emoji from a guild the user isn't
+					// in; its id resolves to a nameless Emoji and picking it would
+					// insert a broken `<::id>` — keep it off the rail.
+					.filter(([emj]) => Emoji.getEmojiFromIDOrString(emj, localuser).name !== "")
+			: undefined;
+		if (recent && recent.length > 0 && localuser) {
 			const select = document.createElement("div");
 			select.classList.add("svg-history");
-			selection.append(select);
-			console.log("appended");
+			// The section the picker opens on leads the rail (Discord's Frequently
+			// Used sits first too).
+			selection.prepend(select);
 			select.onclick = () => {
+				search.value = "";
+				resetSearch();
 				title.textContent = I18n.recentEmoji();
 				body.innerHTML = "";
 				for (const [emj] of recent) {
@@ -487,6 +503,7 @@ class Emoji {
 				}
 			};
 			select.click();
+			html = select;
 			i++;
 		}
 
@@ -498,7 +515,7 @@ class Emoji {
 			selection.append(select);
 			const clickEvent = () => {
 				search.value = "";
-				updateSearch.call(this);
+				resetSearch();
 				title.textContent = thing.name;
 				body.innerHTML = "";
 				for (const emojit of thing.emojis.map((_) => new Emoji(_, localuser))) {
@@ -513,7 +530,7 @@ class Emoji {
 				}
 			};
 			select.onclick = clickEvent;
-			if (i === 0) {
+			if (i === 0 && isFirst) {
 				html = select;
 				clickEvent();
 			}
