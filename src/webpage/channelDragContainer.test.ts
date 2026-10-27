@@ -148,6 +148,8 @@ it("a top-level channel dropped onto a category header leaves the top level exac
 	// The walked-twice channel must produce one PATCH row, not two.
 	const rows = sent[0] as ReorderRow[];
 	expect(rows.filter((r) => r.id === "c")).toHaveLength(1);
+	// And that row must carry the container drop's parent.
+	expect(rows.find((r) => r.id === "c")?.parent_id).toBe("cat");
 });
 
 it("moveInto maintains parent_id across moves (the merge's invariant)", async () => {
@@ -241,4 +243,83 @@ it("MANAGE_CHANNELS members get working sibling drop targets, not just draggable
 	// The synchronous model half: the drop handler must actually run on this row.
 	expect(g.headchannels.map((ch) => ch.id)).toEqual(["a", "c", "b"]);
 	return vi.waitFor(() => expect(sent).toHaveLength(1));
+});
+
+it("a sibling drop inside a category keeps the category's parent_id row", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const cat = chan(g, "cat", {type: 4, position: 0});
+	const k1 = chan(g, "k1", {position: 0, parent: cat});
+	const k2 = chan(g, "k2", {position: 1, parent: cat});
+	cat.children = [k1, k2];
+	const top = chan(g, "top", {position: 1});
+	g.headchannels = [cat, top];
+	g.channels = [cat, k1, k2, top];
+
+	// Drop k2 onto k1 inside the same category.
+	const wrap = document.createElement("div");
+	const div = document.createElement("div");
+	wrap.append(div);
+	document.body.append(wrap);
+	k1.coatDropDiv(div);
+	Channel.dragged = [k2, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+
+	expect(cat.children.map((ch) => ch.id)).toEqual(["k2", "k1"]);
+	expect(k2.parent_id).toBe("cat");
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+});
+
+it("a dragged channel missing from every list cannot splice out a bystander", () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const a = chan(g, "a", {position: 0});
+	const b = chan(g, "b", {position: 1});
+	const ghost = chan(g, "ghost", {position: 2});
+	g.headchannels = [a, b];
+	g.channels = [a, b];
+
+	const wrap = document.createElement("div");
+	const div = document.createElement("div");
+	wrap.append(div);
+	document.body.append(wrap);
+	b.coatDropDiv(div);
+	Channel.dragged = [ghost, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+
+	// The insertion still happens, but nothing already in the list may vanish.
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["a", "ghost", "b"]);
+	return vi.waitFor(() => expect(sent).toHaveLength(1));
+});
+
+it("a consumed drop leaves no move_id to resurrect after a gateway move", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const catX = chan(g, "catX", {type: 4, position: 0});
+	const catY = chan(g, "catY", {type: 4, position: 1});
+	const c = chan(g, "c", {position: 0});
+	g.headchannels = [catX, catY];
+	g.channels = [catX, catY, c];
+
+	// 1. The user container-drops c into catX; the reorder consumes the move.
+	const div = document.createElement("div");
+	const containerDiv = document.createElement("div");
+	catX.coatDropDiv(div, containerDiv);
+	Channel.dragged = [c, document.createElement("div")];
+	div.dispatchEvent(dropBottomHalf());
+	Channel.dragged = [];
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+	expect(c.move_id).toBeUndefined();
+
+	// 2. Another admin moves c into catY; the gateway echo lands.
+	c.parent = catY;
+	c.parent_id = "catY";
+	catX.children = catX.children.filter((ch) => ch !== c);
+	catY.children.push(c);
+
+	// 3. An unrelated reorder pass must not write the old move back.
+	await g.calculateReorder();
+	expect(c.parent_id).toBe("catY");
 });
