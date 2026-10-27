@@ -2101,7 +2101,6 @@ class User extends SnowFlake {
 		friendSpan.classList.add("svgicon");
 		const updateIcon = () => {
 			friendSpan.classList.remove("svg-addfriend", "svg-waitfriend");
-			console.log(this.relationshipType);
 			if (this.relationshipType === 0 || this.relationshipType === 3) {
 				friendSpan.classList.add("svg-addfriend");
 			} else if (this.relationshipType === 4) {
@@ -2198,6 +2197,12 @@ class User extends SnowFlake {
 					username.textContent = this.webhook ? I18n.webhook() : I18n.bot();
 					usernamehtml.appendChild(username);
 				}
+				const us = member.guild.member;
+				// The edit-profile preview (x=-1) renders a CLONE: its id's #clone suffix would
+				// truncate the role-fetch URL into the member's real id — the kick route. The
+				// preview shows chips only; its buttons never exist.
+				const canManageRoles =
+					us.hasPermission("MANAGE_ROLES") && x !== -1 && !member.id.includes("#clone");
 				const roles = document.createElement("div");
 				roles.classList.add("flexltr", "rolesbox");
 				for (const role of member.roles) {
@@ -2211,7 +2216,41 @@ class User extends SnowFlake {
 					const span = document.createElement("span");
 					roleDiv.append(span);
 					span.textContent = role.name;
+					if (canManageRoles && role.canManage()) {
+						const remove = document.createElement("button");
+						remove.type = "button";
+						remove.classList.add("removerole");
+						remove.title = I18n.user.removeRole();
+						remove.textContent = "×";
+						remove.onclick = (e) => {
+							e.stopPropagation();
+							member.removeRole(role);
+						};
+						roleDiv.append(remove);
+					}
 					roles.append(roleDiv);
+				}
+				if (canManageRoles) {
+					const add = document.createElement("button");
+					add.type = "button";
+					add.classList.add("addrole");
+					add.title = I18n.user.addRole();
+					add.textContent = "+";
+					add.onclick = async (e) => {
+						e.stopPropagation();
+						const candidates: [Role, string[]][] = [];
+						for (const role of member.guild.roles) {
+							if (!role.canManage() || member.roles.includes(role)) {
+								continue;
+							}
+							candidates.push([role, [role.name]]);
+						}
+						const search = new Search(candidates);
+						const result = await search.find(e.clientX, e.clientY);
+						if (!result) return;
+						member.addRole(result);
+					};
+					roles.append(add);
 				}
 				userbody.append(roles);
 			});

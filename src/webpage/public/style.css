@@ -5294,6 +5294,48 @@ img.bigembedimg {
 	background: var(--role-bg);
 }
 
+.removerole {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 2px;
+	border: none;
+	border-radius: 3px;
+	line-height: 1;
+	font-size: 0.95em;
+	color: inherit;
+	background: transparent;
+	cursor: pointer;
+}
+
+.removerole:hover {
+	color: var(--primary-text);
+	background: var(--button-hover);
+}
+
+.rolesbox .addrole {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	align-self: stretch;
+	width: auto;
+	height: auto;
+	margin-left: 0;
+	padding: 4px 8px;
+	border: 1px solid var(--black);
+	border-radius: 4px;
+	line-height: 1;
+	font-size: 0.9em;
+	color: var(--role-text);
+	background: var(--role-bg);
+	cursor: pointer;
+}
+
+.rolesbox .addrole:hover {
+	color: var(--primary-text);
+	background: var(--button-hover);
+}
+
 ul {
 	margin-top: 2px;
 	margin-bottom: 2px;
