@@ -285,6 +285,7 @@
 	"edit": "Edit",
 	"emoji": {
 		"confirmDel": "Are you sure you want to delete this emoji?",
+		"defaultSkinTone": "Default skin tone",
 		"found": {
 			"not": "This emoji is not from your guilds, join the guild hosting it to use this emoji",
 			"other": "This emoji is from one of your other guilds.",
@@ -296,6 +297,7 @@
 		"join": "Join guild",
 		"name:": "Name:",
 		"privateGuild": "This guild is private",
+		"skinTone": "Skin tone",
 		"title": "Emojis",
 		"upload": "Upload emojis"
 	},
