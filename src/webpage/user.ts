@@ -149,7 +149,6 @@ class User extends SnowFlake {
 		this.uid = userjson.id;
 		if (userjson.webhook) {
 			this.uid += ":::" + userjson.username;
-			console.log(this.uid);
 		}
 		userjson.uid = this.uid;
 		if (dontclone) {
@@ -752,7 +751,6 @@ class User extends SnowFlake {
 				color: "red",
 			},
 		);
-		console.warn("this ran");
 	}
 	setFriendNick() {
 		const dio = new Dialog("");
@@ -1078,7 +1076,7 @@ class User extends SnowFlake {
 					}
 				})
 				.catch((err) => {
-					console.log(err);
+					console.warn(err);
 				});
 		} else {
 			if (button !== "none")
@@ -1627,7 +1625,6 @@ class User extends SnowFlake {
 	}
 	async fullProfile(guild: Guild | null | Member = null) {
 		this.closeCustomBadgeMenus();
-		console.log(guild);
 		const membres = (async () => {
 			if (!guild) return;
 			let member: Member | undefined;
@@ -1874,7 +1871,6 @@ class User extends SnowFlake {
 
 		document.body.append(background);
 		background.append(div);
-		console.log(background);
 		/*const notes = buttons.add(I18n.profile.notes());
 		const textArea = document.createElement("textarea");
 		textArea.classList.add("userNote");
