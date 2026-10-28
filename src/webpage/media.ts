@@ -418,7 +418,6 @@ class MediaPlayer {
 						}
 						if (mappy.has(Identify)) {
 							await prog.get8BitArray(size);
-							//console.warn("Got dupe", Identify);
 						} else {
 							mappy.set(Identify, await prog.get8BitArray(size));
 						}
@@ -504,7 +503,6 @@ class MediaPlayer {
 						}
 						if (mappy.has(Identify)) {
 							await prog.get8BitArray(size);
-							//console.warn("Got dupe", Identify);
 						} else {
 							mappy.set(Identify, await prog.get8BitArray(size));
 						}

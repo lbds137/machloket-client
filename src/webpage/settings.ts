@@ -3019,7 +3019,6 @@ class Form implements OptionsElement<object> {
 					return;
 				}
 			}
-			console.warn("needs to be implemented");
 		} finally {
 			this.subbmitting = false;
 		}

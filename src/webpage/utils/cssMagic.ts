@@ -77,7 +77,6 @@ export function unnest(str: string, check = true) {
 			if (line.endsWith(";")) {
 				append(line);
 			} else {
-				console.warn(line);
 				prop = true;
 				conbuild = "";
 				conbuild += line + "\n";
