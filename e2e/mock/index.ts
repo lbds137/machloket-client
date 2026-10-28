@@ -11,6 +11,8 @@
  * - GET  /embed/avatars/:index.png                  -> 1x1 PNG (default user/member avatars)
  * - GET  /icons/:guildId/:hash.png                  -> 1x1 PNG (guild icon; .png only -
  *                                                      bundled /icons/*.svg pass through)
+ * - GET  /stickers/:id.webp                         -> 1x1 PNG (sticker renders; served
+ *                                                      inside the mock's own URL surface)
  * - GET  /getupdates                                -> 200 text "e2e-mock" (the short-rev
  *                                                      nonce base; plain text by design)
  *
@@ -74,6 +76,7 @@ import type {
 	readyjson,
 	rolesjson,
 	select,
+	stickerJson,
 	userjson,
 	welcomeScreen,
 } from "../../src/webpage/jsontypes";
@@ -1082,6 +1085,8 @@ export interface MockInstanceOptions {
 	 * where the array's index is the bit) merged via bitwise OR into the `@everyone` role's
 	 * `permissions` string served to the app. */
 	extraEveryonePermissions?: string[];
+	/** Override guild stickers served in GUILD_CREATE (defaults to MOCK_GUILD.stickers = []). */
+	stickers?: stickerJson[];
 }
 
 export interface MockInstanceHandle {
@@ -1119,24 +1124,30 @@ export async function mountMockInstance(
 		suppressChangelog = true,
 		policiesConfig,
 		extraEveryonePermissions,
+		stickers,
 	} = options;
 
 	let guildCreateFrame = MOCK_GUILD_CREATE_FRAME;
-	if (extraEveryonePermissions && extraEveryonePermissions.length > 0) {
-		let merged = BigInt(MOCK_EVERYONE_ROLE.permissions);
-		for (const name of extraEveryonePermissions) {
-			if (!Object.hasOwn(PERM_BITS, name)) {
-				throw new Error(
-					`Unsupported permission "${name}" in extraEveryonePermissions (supported: ${Object.keys(PERM_BITS).join(", ")})`,
-				);
+	if ((extraEveryonePermissions && extraEveryonePermissions.length > 0) || stickers !== undefined) {
+		let roles = MOCK_GUILD.roles;
+		if (extraEveryonePermissions && extraEveryonePermissions.length > 0) {
+			let merged = BigInt(MOCK_EVERYONE_ROLE.permissions);
+			for (const name of extraEveryonePermissions) {
+				if (!Object.hasOwn(PERM_BITS, name)) {
+					throw new Error(
+						`Unsupported permission "${name}" in extraEveryonePermissions (supported: ${Object.keys(PERM_BITS).join(", ")})`,
+					);
+				}
+				merged |= 1n << PERM_BITS[name];
 			}
-			merged |= 1n << PERM_BITS[name];
+			roles = [{...MOCK_EVERYONE_ROLE, permissions: merged.toString()}];
 		}
 		guildCreateFrame = {
 			...MOCK_GUILD_CREATE_FRAME,
 			d: {
 				...MOCK_GUILD,
-				roles: [{...MOCK_EVERYONE_ROLE, permissions: merged.toString()}],
+				roles,
+				...(stickers !== undefined ? {stickers} : {}),
 			},
 		};
 	}
@@ -1318,6 +1329,7 @@ export async function mountMockInstance(
 				p.startsWith("/embed/avatars/") ||
 				(p.startsWith("/icons/") && p.endsWith(".png")) ||
 				(p.startsWith("/attachments/") && p.endsWith(".png")) ||
+				(p.startsWith("/stickers/") && p.endsWith(".webp")) ||
 				p === "/getupdates"
 			);
 		},
@@ -1419,6 +1431,15 @@ export async function mountMockInstance(
 			// 9c. Message attachments (File renders cdn + /attachments/... img srcs;
 			// the S4 spoiler fixture's SPOILER_kekw.png is one)
 			if (method === "GET" && pathname.startsWith("/attachments/")) {
+				return route.fulfill({
+					status: 200,
+					contentType: "image/png",
+					body: TRANSPARENT_PNG,
+				});
+			}
+
+			// 9d. Guild stickers (Sticker.getHTML builds cdn + /stickers/:id.webp)
+			if (method === "GET" && pathname.startsWith("/stickers/")) {
 				return route.fulfill({
 					status: 200,
 					contentType: "image/png",
