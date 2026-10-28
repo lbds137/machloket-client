@@ -1710,10 +1710,6 @@ class Guild extends SnowFlake {
 		if (json === -1 || member === null) {
 			return;
 		}
-		if (json.stickers.length) {
-			console.log(json.stickers, ":3");
-		}
-
 		this.large = json.large;
 		this.member_count = json.member_count;
 		this.emojis = json.emojis || [];

@@ -5221,7 +5221,6 @@ class Localuser {
 			const width = menu.getBoundingClientRect().width;
 			let left = 0;
 			let right = width < 370 ? Infinity : 0;
-			console.warn(right, width);
 			for (const gif of gifReturns) {
 				const div = document.createElement("div");
 				div.classList.add("gifBox");

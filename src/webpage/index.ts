@@ -738,7 +738,6 @@ if (window.location.pathname.startsWith("/channels")) {
 			const isfile = data.types.includes("Files") || data.types.includes("application/x-moz-file");
 			if (isfile) {
 				e.preventDefault();
-				console.log(data.files);
 				for (const file of Array.from(data.files)) {
 					const fileInstance = File.initFromBlob(file);
 					const html = fileInstance.upHTML(images, imagesHtml, file);
