@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {beforeEach, describe, expect, it} from "vitest";
 import type {component, UnfurledMediaItem} from "./jsontypes";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -28,6 +28,15 @@ function renderComponent(comp: component): HTMLElement {
 	const [built] = new Components([comp], message).components;
 	return built.getHTML();
 }
+
+// The spoiler cover's render reads the live userPreferences localStorage (utils/
+// sensitiveContent.ts getSensitiveContentSync): sibling specs (settings-content-controls)
+// persist spoilerAction "show"/"block" into the shared profile, which silently removed the
+// cover here (2 gate sightings 10-27). Pin the app default instead of inheriting residue;
+// tests that exercise other actions set their own action inside their bodies.
+beforeEach(() => {
+	localStorage.setItem("userPreferences", JSON.stringify({spoilerAction: "blur"}));
+});
 
 describe("component spoilers", () => {
 	it("mediaGallery item with spoiler: true renders .fSpoil; without it does not", () => {
