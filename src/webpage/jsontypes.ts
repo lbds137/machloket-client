@@ -547,7 +547,8 @@ type guildjson = {
 		safety_alerts_channel_id: string;
 		welcome_screen?: welcomeScreen;
 	};
-	//TODO implement onboarding too
+	// Guild onboarding (join-time prompts) is unimplemented: the Spacebar fork serves no
+	// onboarding routes yet — this client renders only the welcome screen below.
 	roles: rolesjson[];
 	stage_instances: [];
 	stickers: stickerJson[];

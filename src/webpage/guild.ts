@@ -620,20 +620,45 @@ class Guild extends SnowFlake {
 		if (!res?.ok) return showRefusal(res);
 		this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
 		if (!this.welcomeScreen?.enabled) return;
+		// Resolved up front: it gates the dialog (nothing resolvable → nothing to show) and
+		// the row separators (only between rows that actually render).
+		const resolvable = this.welcomeScreen.welcome_channels.reduce(
+			(n, cha) => n + (this.getChannel(cha.channel_id) ? 1 : 0),
+			0,
+		);
+		if (resolvable === 0) return;
 		const dio = new Dialog(I18n.onboarding.title(this.properties.name));
 		const opt = dio.options;
+		if (this.welcomeScreen.description) {
+			// The Localuser owner is required: owner-less MarkDown silently drops
+			// custom-emoji tokens (<:name:id>) from the text.
+			opt.addMDText(new MarkDown(this.welcomeScreen.description, this.owner));
+		}
 		let i = 0;
 		for (const cha of this.welcomeScreen.welcome_channels) {
 			const channel = this.getChannel(cha.channel_id);
 			if (!channel) continue;
+			// Same mechanism as forum tags: emoji_id renders as the custom-emoji image
+			// (animated when the guild's own emoji list says so, static for unknown ids),
+			// a bare emoji_name as unicode text.
+			if (cha.emoji_id) {
+				const animated = this.emojis.find((e) => e.id === cha.emoji_id)?.animated;
+				opt.addHTMLArea(
+					new Emoji({id: cha.emoji_id, name: cha.emoji_name ?? "", animated}, this).getHTML(
+						false,
+						false,
+					),
+				);
+			} else if (cha.emoji_name) {
+				opt.addText(cha.emoji_name);
+			}
 			opt.addButtonInput("", channel.name, () => {
 				dio.hide();
 				this.loadChannel(channel.id);
 			});
 			opt.addText(cha.description);
 			i++;
-			if (i !== this.welcomeScreen.welcome_channels.length)
-				opt.addHTMLArea(document.createElement("hr"));
+			if (i !== resolvable) opt.addHTMLArea(document.createElement("hr"));
 		}
 
 		dio.show();
