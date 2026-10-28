@@ -756,7 +756,6 @@ class Group extends Channel {
 	async messageCreate(messagep: messageCreateJson): Promise<void> {
 		await super.messageCreate(messagep);
 		this.updatePosition();
-		console.log(this);
 	}
 }
 export {Direct, Group};

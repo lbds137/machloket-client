@@ -168,10 +168,8 @@ if(zip){
         zip.play()
     },1000)
     ;
-    console.log(play.voices[3][0].info.wave)
 };
 */
-	console.log(play, buff);
 	document.onclick = () => {
 		play.play("join", 15);
 	};

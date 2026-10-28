@@ -395,7 +395,6 @@ class MediaPlayer {
 				if (version === 2) {
 					//TODO I'm like 90% I can ignore *all* of the flags, but I need to check more sometime
 					await prog.next();
-					//debugger;
 					const sizes = await prog.get8BitArray(4);
 					prog.sizeLeft = (sizes[0] << 21) + (sizes[1] << 14) + (sizes[2] << 7) + sizes[3];
 					const mappy = new Map<string, Uint8Array<ArrayBuffer>>();
@@ -463,7 +462,6 @@ class MediaPlayer {
 					if (flags & 0b01000000) {
 						//TODO deal with the extended header
 					}
-					//debugger;
 					const sizes = await prog.get8BitArray(4);
 					prog.sizeLeft = (sizes[0] << 21) + (sizes[1] << 14) + (sizes[2] << 7) + sizes[3];
 					const mappy = new Map<string, Uint8Array<ArrayBuffer>>();

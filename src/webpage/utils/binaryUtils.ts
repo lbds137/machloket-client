@@ -30,7 +30,6 @@ class BinRead {
 		for (let i = 0; i < length; i++) {
 			array[i] = this.read8();
 		}
-		//console.log(array);
 		return new TextDecoder("utf8").decode(array.buffer as ArrayBuffer);
 	}
 	readAsciiString8() {
@@ -44,7 +43,6 @@ class BinRead {
 		for (let i = 0; i < length; i++) {
 			build += String.fromCharCode(this.read8());
 		}
-		//console.log(array);
 		return build;
 	}
 }

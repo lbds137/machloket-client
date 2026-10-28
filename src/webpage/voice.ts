@@ -245,7 +245,6 @@ class VoiceFactory {
 	userMap = new Map<string, Voice>();
 	voiceStateUpdate(update: voiceStatus) {
 		const prev = this.userMap.get(update.user_id);
-		console.log(prev, this.userMap);
 		if (update.user_id === this.settings.id && this.liveStream && !update.self_stream) {
 			const stream_key = `${this.curGuild === "@me" ? "call" : `guild:${this.curGuild}`}:${this.curChan}:${this.settings.id}`;
 			this.handleGateway({
@@ -310,10 +309,8 @@ class UserVolume {
 	async startAudio(media: MediaStream) {
 		const context = new AudioContext();
 		this.gain = context.createGain();
-		console.log(context);
 		await context.resume();
 		const ss = context.createMediaStreamSource(media);
-		console.log(media, ss);
 		new Audio().srcObject = media; //weird I know, but it's for chromium/webkit bug
 		ss.connect(this.gain);
 		this.gain.connect(context.destination);
@@ -379,7 +376,6 @@ class Voice {
 		}
 		this.speakingMap.delete(userid);
 		this.userids.delete(userid);
-		console.log(this.userids, userid);
 		//there's more for sure, but this is "good enough" for now
 		this.onMemberChange(userid, false);
 	}
@@ -417,7 +413,6 @@ class Voice {
 						(!this.users.has(json.d.audio_ssrc) && json.d.audio_ssrc !== 0) ||
 						(!this.vidusers.has(json.d.video_ssrc) && json.d.video_ssrc !== 0)
 					) {
-						console.log("redo 12!");
 						this.makeOp12();
 					}
 					if (this.pc && json.d.audio_ssrc) {
@@ -479,7 +474,6 @@ class Voice {
 		const out = await this.getCamInfo();
 		if (out.rtx_ssrc) {
 			//this.vidusers.set(out.rtx_ssrc, this.userid);
-			console.log(out);
 		} else {
 			// No camera: drop our own video entry (keyed by SSRC, not position).
 			for (const [ssrc, id] of this.vidusers) {
@@ -496,7 +490,6 @@ class Voice {
 		if (!group) throw new Error("group isn't in sdp");
 		const [_, ...bundles] = (group.entries().next().value as [string, string])[0].split(" ");
 		bundles[bundles.length - 1] = bundles[bundles.length - 1].replace("\r", "");
-		console.log(bundles);
 
 		if (!this.offer) throw new Error("Offer is missing :P");
 		let cline = sdp.split("\n").find((line) => line.startsWith("c="));
@@ -559,7 +552,6 @@ a=ice-pwd:${ICE_PWD}\r
 a=fingerprint:${FINGERPRINT}\r
 a=candidate:${candidate}${audioUsers[ai] && audioUsers[ai][1] ? `\r\na=ssrc:${audioUsers[ai][0]} cname:${audioUsers[ai][1]}-${audioUsers[ai][0]}\r` : "\r"}
 a=rtcp-mux\r`;
-				console.log(audioUsers[ai], "audio user");
 				ai++;
 			} else {
 				const set = grouping.atr.get("rtpmap") || new Set();
@@ -603,12 +595,10 @@ a=rtcp-mux\r`;
 
 				build += frame;
 				vi++;
-				if (user) console.log(mode, "fine me :3", user && [...user], vi, videoUsers, frame);
 			}
 			i++;
 		}
 		build += "\n";
-		if (videoUsers.length) console.log(ld.sdp, "fime :3", build, this.pc?.remoteDescription?.sdp);
 		return build;
 	}
 	counter?: string;
@@ -620,7 +610,6 @@ a=rtcp-mux\r`;
 			sdp: await this.cleanServerSDP(counter),
 			type: "answer",
 		};
-		console.log([remote.sdp, this.pc.localDescription?.sdp]);
 		await this.pc.setRemoteDescription(remote);
 	}
 	negotationneeded() {
@@ -634,7 +623,6 @@ a=rtcp-mux\r`;
 				setting = true;
 				const offer = await pc.createOffer();
 				if (offer.sdp === pc.localDescription?.sdp || forced) {
-					if (forced) console.log("foced :3");
 					logState("update", "will Sent offer " + val);
 					await pc.setLocalDescription();
 					logState("update", "Sent offer " + val);
@@ -649,12 +637,10 @@ a=rtcp-mux\r`;
 				}
 
 				const senders = this.senders.difference(this.ssrcMap);
-				console.log(senders, this.ssrcMap);
 				let made12 = false;
 				this.pc
 					?.getStats()
 					.then((_) => _.forEach((_) => _.type === "local-candidate" || console.error(_)));
-				console.log(pc.localDescription?.sdp);
 				for (const sender of senders) {
 					const d = await sender.getStats();
 					let found = false;
@@ -703,7 +689,6 @@ a=rtcp-mux\r`;
 			pc.addEventListener("negotiationneeded", async () => {
 				logState("negotiationneeded");
 				await sendOffer(true);
-				console.log(this.ssrcMap);
 			});
 			pc.onicecandidate = (e) => {
 				console.warn(e.candidate);
@@ -737,7 +722,6 @@ a=rtcp-mux\r`;
 			pc.addEventListener("icegatheringstatechange", async () => {
 				logState("icegatheringstatechange", pc.iceGatheringState);
 				detectDone();
-				console.log(this.counter, this.pc);
 				if (pc.iceGatheringState === "complete") {
 					if (setting) return;
 					if (this.pc && this.counter) {
@@ -785,7 +769,6 @@ a=rtcp-mux\r`;
 		return {video_ssrc, rtx_ssrc};
 	}
 	async makeOp12(sender: RTCRtpSender | undefined | [RTCRtpSender, number] = this.mic?.sender) {
-		//debugger;
 		//await new Promise((res) => setTimeout(res, 500));
 		this.owner.sendVoiceStateIfNeeded();
 		console.warn("making 12?");
@@ -804,7 +787,6 @@ a=rtcp-mux\r`;
 			return;
 		}
 
-		console.log(this.ssrcMap);
 		try {
 			console.error("start 12");
 			if (!video_ssrc)
@@ -978,7 +960,6 @@ a=rtcp-mux\r`;
 				}
 			}
 		}
-		console.log(this.reciverMap);
 	}
 	updateMute() {
 		if (this.owner.mute) {
@@ -1120,7 +1101,6 @@ a=rtcp-mux\r`;
 				this.onVideo(video, userId);
 				this.videos.set(userId, video);
 				video.srcObject = media;
-				console.log(video);
 
 				video.autoplay = true;
 				const settings = e.track.getConstraints();
@@ -1136,15 +1116,11 @@ a=rtcp-mux\r`;
 			}
 
 			console.log("got audio:", e);
-			for (const track of media.getTracks()) {
-				console.log(track);
-			}
 			const a = new UserVolume(media, userId);
 			this.uVolMap.set(userId, a);
 			this.onUserVol(a);
 
 			this.recivers.add(e.receiver);
-			console.log(this.recivers);
 		};
 		if (!this.settings.stream) {
 			const outStream = this.makeMicOuts();
@@ -1154,7 +1130,6 @@ a=rtcp-mux\r`;
 			const sender = pc.addTransceiver(outStream.getTracks()[0]);
 			this.mic = sender;
 			this.senders.add(sender.sender);
-			console.log(sender);
 		} else {
 			pc.addTransceiver("audio", {
 				direction: "inactive",
@@ -1319,7 +1294,6 @@ a=rtcp-mux\r`;
 			}
 			first = false;
 		}
-		console.log(sendsdp);
 		if (this.ws) {
 			this.ws.send(
 				JSON.stringify({
@@ -1392,7 +1366,6 @@ a=rtcp-mux\r`;
 		_change: {deaf: boolean; muted: boolean; video: boolean; live: boolean},
 	) => {};
 	async voiceupdate(update: voiceStatus) {
-		console.log("Update!");
 		if (!this.userids.has(update.user_id)) {
 			this.onMemberChange(update?.member || update.user_id, true);
 		}
@@ -1523,7 +1496,6 @@ a=rtcp-mux\r`;
 		if (this.cammera) this.cammera.stop();
 		this.cammera = undefined;
 		this.cam = undefined;
-		console.log(this);
 	}
 }
 export {Voice, VoiceFactory};

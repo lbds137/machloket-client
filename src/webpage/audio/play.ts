@@ -24,7 +24,6 @@ export class Play {
 					events.forEach((event) => document.removeEventListener(event, func));
 				};
 				events.forEach((event) => document.addEventListener(event, func));
-				console.log(this.audioContext);
 
 				void this.sendMessage({name: "bin", bin: buffer});
 
@@ -35,7 +34,6 @@ export class Play {
 						case "tracks":
 							this.tracks = data.tracks;
 							this.onload();
-							console.log(this.tracks);
 					}
 				};
 				return worklet;

@@ -127,7 +127,6 @@ async function tosLogic(box: HTMLElement, instanceInfo: InstanceInfo) {
 	} else {
 		box.textContent = I18n.register.noTOS();
 	}
-	console.log(tosPage);
 }
 if (window.location.pathname.startsWith("/register")) {
 	await I18n.done;

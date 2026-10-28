@@ -104,7 +104,7 @@ class InfiniteScroller {
 		this.destroyFromID = destroyFromID;
 		this.reachesBottom = reachesBottom;
 	}
-	observer: IntersectionObserver = new IntersectionObserver(console.log);
+	observer: IntersectionObserver = new IntersectionObserver(() => {});
 	private observerReady = false;
 
 	private heightMap = new WeakMap<HTMLElement, number>();
@@ -124,7 +124,6 @@ class InfiniteScroller {
 					if (this.scrollBottom - height + nh < 2) root.scrollTop = root.scrollHeight;
 					else if (root.scrollTop + nh + 6 > root.scrollHeight) root.scrollTop += -height + nh;
 					else root.scrollTop += height - nh;
-					console.log(root.scrollTop + height + 6 - root.scrollHeight);
 				}
 				height = nh;
 			}).observe(root);
@@ -173,7 +172,7 @@ class InfiniteScroller {
 							if (!id) continue;
 							this.curFocID = id;
 							this.fillIn(true);
-						} else if (!id) console.log("uh...");
+						}
 					}
 				}
 			},
@@ -330,29 +329,6 @@ class InfiniteScroller {
 		this.observer.observe(elm);
 		return elm;
 	}
-	//@ts-ignore-error
-	private checkIDs() {
-		const scroll = this.scroller;
-		if (!scroll) return;
-		const kids = Array.from(scroll.children)
-			.map((_) => this.weakElmId.get(_ as HTMLElement))
-			.filter((_) => _ !== undefined);
-		let last = null;
-		for (const kid of kids) {
-			if (last === null) {
-				last = kid;
-			} else {
-				if (this.backElm.get(last) !== kid)
-					console.log("back is wrong", kid, this.backElm.get(kid));
-				if (this.forElm.get(kid) !== last)
-					console.log("for is wrong", last, this.backElm.get(last));
-				last = kid;
-			}
-		}
-		const e = new Set(this.curElms.keys());
-		if (e.symmetricDifference(new Set(kids)).size)
-			console.log("cur elms is wrong", e.symmetricDifference(new Set(kids)));
-	}
 	private addLink(prev: string | undefined, next: string | undefined) {
 		if (prev) this.forElm.set(prev, next);
 		if (next) this.backElm.set(next, prev);
@@ -497,7 +473,6 @@ class InfiniteScroller {
 	}
 
 	async focus(id: string, flash = true, sec = false): Promise<void> {
-		// debugger;
 		const scroller = this.scroller;
 		if (!scroller) return;
 

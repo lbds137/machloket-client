@@ -188,9 +188,8 @@ async function webhookMenu(
 		div.onclick = () => {
 			const form = webhooks.addSubForm(
 				hook.name,
-				(e) => {
+				() => {
 					regenArea();
-					console.log(e);
 				},
 				{
 					traditionalSubmit: true,

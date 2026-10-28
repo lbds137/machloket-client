@@ -219,7 +219,6 @@ class Member extends SnowFlake {
 					const blob = avatarPreview(file);
 					hypomember.avatar = blob;
 					hypomember.hypotheticalpfp = true;
-					console.log(hypomember.getpfpsrc());
 					regen();
 				}
 			});
@@ -290,7 +289,6 @@ class Member extends SnowFlake {
 				initColor: color,
 			});
 			colorPicker.watchForChange((_) => {
-				console.log();
 				color = _;
 				hypomember.accent_color = Number.parseInt(_.slice(1), 16);
 				regen();

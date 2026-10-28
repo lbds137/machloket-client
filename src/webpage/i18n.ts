@@ -4,7 +4,6 @@ const langmap = new Map<string, string>();
 for (const lang of Object.keys(langs) as string[]) {
 	langmap.set(lang, langs[lang]);
 }
-console.log(langs);
 type translation = {
 	[key: string]: string | translation;
 };
@@ -180,7 +179,6 @@ class I18n {
 		}
 	}
 }
-console.log(langmap);
 let userLocale = navigator.language.slice(0, 2) || "en";
 if (I18n.options().indexOf(userLocale) === -1) {
 	userLocale = "en";

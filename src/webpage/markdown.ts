@@ -1243,10 +1243,8 @@ class MarkDown {
 				html.childNodes.length == 1 &&
 				html.childNodes[0].childNodes.length === 1 &&
 				html.childNodes[0].childNodes[0];
-			//console.log(box.cloneNode(true), html.cloneNode(true));
 			//TODO this may be slow, may want to check in on this in the future if it is
 			if ((!box.hasChildNodes() || html.isEqualNode(box.childNodes[0])) && allowLazy) {
-				//console.log("no replace needed");
 			} else {
 				if (
 					!(box.childNodes.length === 1 && box.childNodes[0] instanceof Text && condition) ||
@@ -1255,7 +1253,6 @@ class MarkDown {
 					box.innerHTML = "";
 					box.append(html);
 				} else {
-					//console.log("empty replace not happened");
 				}
 			}
 			//console.timeEnd();

@@ -34,7 +34,6 @@ if (window.location.pathname.startsWith("/invite"))
 				if (well && sameInstance(user.serverurls.wellknown, well)) {
 					joinable.push(user);
 				}
-				console.log(user);
 			}
 		}
 
@@ -50,7 +49,6 @@ if (window.location.pathname.startsWith("/invite"))
 						if (sameApi(user.serverurls.api, out.api)) {
 							joinable.push(user);
 						}
-						console.log(user);
 					}
 				}
 			} else {
@@ -125,7 +123,6 @@ if (window.location.pathname.startsWith("/invite"))
 			});
 
 		async function showAccounts() {
-			console.log("showing!");
 			const user = await new AccountSwitcher(
 				(user) => {
 					return !!(well && sameInstance(user.serverurls.wellknown, well));
