@@ -118,16 +118,12 @@ if (window.location.pathname.startsWith("/channels")) {
 				if (templateID) {
 					thisUser.passTemplateID(templateID);
 				}
-				console.warn("huh");
 				await thisUser.init();
-				console.warn("huh2");
-				console.log("done loading");
 			} catch (e) {
 				console.error(e);
 			}
 		});
 	} catch (e) {
-		debugger;
 		console.error(e);
 		loaddesc.textContent = I18n.accountNotStart();
 		thisUser = new Localuser(-1);
@@ -200,7 +196,6 @@ if (window.location.pathname.startsWith("/channels")) {
 		if (e.state instanceof Object) {
 			thisUser.goToState(e.state);
 		}
-		//console.log(e.state,"state:3")
 	});
 	// A notification shown before this page loaded (Android: the worker shows them) still
 	// opens its channel when tapped.
@@ -712,7 +707,6 @@ if (window.location.pathname.startsWith("/channels")) {
 			}
 			e.preventDefault();
 			bg.hidden = false;
-			//console.log(data.types,data)
 		} else {
 			bg.hidden = true;
 		}

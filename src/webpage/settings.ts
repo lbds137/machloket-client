@@ -1348,7 +1348,6 @@ class ImageInput extends FileInput {
 	) {
 		super(label, onSubmit, owner, {clear});
 
-		console.log(initImg);
 		let hasimg = "" !== initImg;
 		const input = document.createElement("input");
 		input.type = "file";
@@ -1391,7 +1390,6 @@ class ImageInput extends FileInput {
 		const span = document.createElement("span");
 		span.textContent = I18n.settings.img();
 		const genImg = () => {
-			console.warn(hasimg);
 			if (hasimg) {
 				div.append(img);
 				span.remove();
@@ -1405,7 +1403,6 @@ class ImageInput extends FileInput {
 			img.style.width = width + "px";
 		}
 		if (objectFit) img.style.objectFit = objectFit;
-		console.warn(objectFit);
 		this.img = div;
 		div.onclick = () => {
 			input.click();
@@ -2194,7 +2191,6 @@ class Captcha implements OptionsElement<string> {
 			case "hcaptcha":
 				if (!this.hcaptcha) throw Error("no captcha found");
 				const hcaptcha = this.hcaptcha;
-				console.log(hcaptcha);
 				//@ts-expect-error
 				while (!hcaptcha.children[1].children.length || !hcaptcha.children[1].children[1].value) {
 					if (cancelled?.aborted) return undefined;
@@ -2282,7 +2278,6 @@ async function handle2fa(
 			challenge.allowCredentials?.forEach(
 				(_) => (_.id = _.id.split("=")[0].replaceAll("+", "-").replaceAll("/", "_")),
 			);
-			console.log(challenge);
 			const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
 			// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
 			const credential = (await navigator.credentials
@@ -2598,7 +2593,6 @@ class Form implements OptionsElement<object> {
 		} = {},
 	) {
 		if (this.button && this.button.deref()) {
-			console.warn("hidden");
 			(this.button.deref() as HTMLElement).hidden = true;
 		}
 		return this.options.addSubForm(name, onSubmit, {
@@ -2837,7 +2831,6 @@ class Form implements OptionsElement<object> {
 		if (this.subbmitting || this.inFlight.has(this.fetchURL)) return;
 		this.subbmitting = true;
 		try {
-			console.log("start");
 			const build = {};
 			for (const key of Object.keys(this.values)) {
 				const thing = this.values[key];
@@ -2854,7 +2847,6 @@ class Form implements OptionsElement<object> {
 					(build as any)[key] = thing;
 				}
 			}
-			console.log("middle");
 			const promises: Promise<void>[] = [];
 			for (const thing of this.names.keys()) {
 				if (thing === "") continue;
@@ -2871,7 +2863,6 @@ class Form implements OptionsElement<object> {
 						);
 					}
 					if (options.files === "one") {
-						console.log(input.value);
 						// A picker closed without a file leaves the field unchanged.
 						if (input.value?.length === 0) continue;
 						if (input.value) {
@@ -2903,7 +2894,6 @@ class Form implements OptionsElement<object> {
 				}
 				(build as any)[thing] = input.value;
 			}
-			console.log("middle2");
 			const unread = (await Promise.allSettled(promises)).find((r) => r.status === "rejected");
 			if (unread) {
 				this.handleError(unread.reason);

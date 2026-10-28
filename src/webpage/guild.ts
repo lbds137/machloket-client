@@ -548,7 +548,6 @@ class Guild extends SnowFlake {
 					return div;
 				}),
 			);
-			console.log(members);
 		};
 		loadResults();
 	}
@@ -584,7 +583,6 @@ class Guild extends SnowFlake {
 						members?: memberjson[];
 						presences: presencejson[];
 					}) => {
-						console.log(e);
 						if (e.members && e.members[0]) {
 							if (e.members[0].user) {
 								res(
@@ -726,7 +724,6 @@ class Guild extends SnowFlake {
 
 			form.addHR();
 
-			console.log(textChannels, this.channels);
 			const options = ["DISCOVERABLE", "COMMUNITY", "INVITES_DISABLED"] as const;
 			const defaultIndex = options.findIndex((_) => this.properties.features.includes(_));
 			form.addSelect(
@@ -767,7 +764,6 @@ class Guild extends SnowFlake {
 				delete e.s4;
 				e.system_channel_flags = bits;
 				let temp = this.properties.features;
-				console.log([...temp]);
 				//@ts-ignore
 				temp = temp.filter((_) => !options.includes(_));
 				temp.push(e.features);
@@ -1923,7 +1919,6 @@ class Guild extends SnowFlake {
 		let build = "";
 		for (const thing of this.headchannels) {
 			build += thing.name + ":" + thing.position + "\n";
-			console.log(thing.children);
 			for (const thingy of thing.children) {
 				build += "   " + thingy.name + ":" + thingy.position + "\n";
 			}
@@ -2031,7 +2026,6 @@ class Guild extends SnowFlake {
 		const serverbug = false;
 		if (serverbug) {
 			for (const thing of build) {
-				console.log(build, thing);
 				fetch(this.info.api + "/guilds/" + this.id + "/channels", {
 					method: "PATCH",
 					headers: this.headers,
@@ -2296,7 +2290,6 @@ class Guild extends SnowFlake {
 		).catch(() => {}); // bookkeeping: nothing reacts to a failed ack
 	}
 	hasRole(r: Role | string) {
-		console.log("this should run");
 		if (r instanceof Role) {
 			r = r.id;
 		}
@@ -2314,7 +2307,6 @@ class Guild extends SnowFlake {
 			}
 		}
 		if (this.prevchannel && ID !== null && this.prevchannel.visible) {
-			console.log(this.prevchannel);
 			await this.prevchannel.getHTML(addstate, undefined, message);
 			return;
 		}

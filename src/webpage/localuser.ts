@@ -212,7 +212,6 @@ class Localuser {
 				loading.classList.add("doneloading");
 				loading.classList.remove("loading");
 				await thisUser.init();
-				console.log("done loading");
 			} catch (e) {
 				console.error(e);
 			}
@@ -393,7 +392,6 @@ class Localuser {
 	trace: {trace: trace; time: Date}[] = [];
 	handleTrace(str: string[]) {
 		const json = str.map((_) => JSON.parse(_)) as trace[];
-		console.log(json);
 		this.trace.push(
 			...json.map((trace) => {
 				return {trace, time: new Date()};
@@ -623,7 +621,6 @@ class Localuser {
 							await this.handleEvent(temp);
 
 							if (temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
-								console.log("in here?");
 								returny();
 							}
 						} catch (e) {
@@ -772,20 +769,16 @@ class Localuser {
 						if (this.swapped) return;
 						loaddesc.textContent = I18n.retrying();
 						this.initwebsocket().then(async () => {
-							console.log("FINE ME");
 							this.loaduser();
 							await this.init();
 							loaddesc.textContent = I18n.loaded();
-							console.log("done loading");
 						});
 					},
 					Math.round((0.2 + this.errorBackoff * 2.8) * 1000),
 				);
 			} else loaddesc.textContent = I18n.unableToConnect();
 		});
-		console.log("here?");
 		await promise;
-		console.warn("huh");
 	}
 	interNonceMap = new Map<string, Message>();
 	/**
@@ -1202,7 +1195,6 @@ class Localuser {
 							_.voice_states.forEach((status) => {
 								if (this.voiceFactory && status.channel_id) {
 									this.voiceFactory.voiceStateUpdate(status);
-									console.log(status);
 								}
 							}),
 						);
@@ -1723,7 +1715,6 @@ class Localuser {
 			}
 			if (!channel.hasPermission("VIEW_CHANNEL", member)) {
 				members.delete(member);
-				console.log(member, "can't see");
 				return;
 			}
 		});
@@ -1929,7 +1920,6 @@ class Localuser {
 	}
 	async getSidePannel() {
 		if (this.ws && this.channelfocus) {
-			console.log(this.channelfocus.guild.id);
 			this.memberListQue();
 			if (this.channelfocus.guild.id === "@me") {
 				return;
@@ -1944,8 +1934,6 @@ class Localuser {
 					op: 14,
 				}),
 			);
-		} else {
-			console.log("false? :3");
 		}
 	}
 	async goToState(state: [string, string | undefined, string | undefined]) {
@@ -2075,7 +2063,6 @@ class Localuser {
 		if (!guild) {
 			guild = this.guildids.get("@me");
 		}
-		console.log(forceReload);
 		if (!forceReload && this.lookingguild === guild) {
 			return guild;
 		}
@@ -2094,7 +2081,6 @@ class Localuser {
 		this.lookingguild = guild;
 		(document.getElementById("serverName") as HTMLElement).textContent = guild.properties.name;
 		const banner = document.getElementById("servertd");
-		console.log(guild.banner, banner);
 		if (banner) {
 			if (guild.banner) {
 				//https://cdn.discordapp.com/banners/677271830838640680/fab8570de5bb51365ba8f36d7d3627ae.webp?size=240
@@ -2129,7 +2115,6 @@ class Localuser {
 				banner.onclick = () => {};
 			}
 		}
-		//console.log(this.guildids,id)
 		const channels = document.getElementById("channels") as HTMLDivElement;
 		channels.innerHTML = "";
 		const html = guild.getHTML();
@@ -2170,7 +2155,6 @@ class Localuser {
 		elm.style.position = "relative";
 		elm.draggable = true;
 		elm.addEventListener("dragenter", (event) => {
-			console.log("enter");
 			event.preventDefault();
 			event.stopImmediatePropagation();
 		});
@@ -2221,7 +2205,6 @@ class Localuser {
 
 			const height = elm.getBoundingClientRect().height;
 			let arr = this.guildOrder;
-			console.warn(arr === this.guildOrder);
 			let found = arr.find((elm) => {
 				if (elm === thing) {
 					return true;
@@ -2232,7 +2215,6 @@ class Localuser {
 				return false;
 			});
 			if (found && "guilds" in found && found !== thing) arr = found.guilds;
-			console.warn(arr === this.guildOrder);
 			const removeThingy = (thing = thingy) => {
 				const index = this.guildOrder.indexOf(thing);
 				if (-1 !== index) this.guildOrder.splice(index, 1);
@@ -2243,7 +2225,6 @@ class Localuser {
 					}
 				});
 			};
-			console.log(arr, found);
 			if (event.offsetY < 0.3 * 48) {
 				removeThingy();
 				elm.before(this.dragged);
@@ -2299,7 +2280,6 @@ class Localuser {
 					elm.append(drag);
 				}
 			}
-			console.log(this.guildOrder);
 			this.guildOrder = this.guildOrder.filter((folder) => {
 				if (folder instanceof Guild) return true;
 				if (folder.guilds.length === 0) {
@@ -3432,7 +3412,6 @@ class Localuser {
 			accessibility.addCheckboxInput(
 				I18n.accessibility.roleColors(),
 				(t) => {
-					console.log(t);
 					this.perminfo.user.disableColors = !t;
 				},
 				{initState: !this.perminfo.user.disableColors},
@@ -3440,7 +3419,6 @@ class Localuser {
 			accessibility.addCheckboxInput(
 				I18n.accessibility.gradientColors(),
 				(t) => {
-					console.log(t);
 					this.perminfo.user.gradientColors = t;
 				},
 				{initState: this.perminfo.user.gradientColors},
@@ -3448,7 +3426,6 @@ class Localuser {
 			accessibility.addCheckboxInput(
 				I18n.channel.allowIcons(),
 				(t) => {
-					console.log(t);
 					this.perminfo.user.disableIcons = !t;
 				},
 				{initState: !this.perminfo.user.disableIcons},
@@ -3619,7 +3596,6 @@ class Localuser {
 			});
 
 			colorPicker.watchForChange((_) => {
-				console.log();
 				color = _;
 				hypouser.accent_color = Number.parseInt(_.slice(1), 16);
 				changed = true;
@@ -3720,12 +3696,10 @@ class Localuser {
 								const body = obj as {ticket: string; challenge: string};
 								const challenge = JSON.parse(body.challenge)
 									.publicKey as PublicKeyCredentialCreationOptionsJSON;
-								console.log(challenge.challenge);
 								challenge.challenge = challenge.challenge
 									.split("=")[0]
 									.replaceAll("+", "-")
 									.replaceAll("/", "_");
-								console.log(challenge.challenge);
 								const options = PublicKeyCredential.parseCreationOptionsFromJSON(challenge);
 								const credential = (await navigator.credentials.create({
 									publicKey: options,
@@ -4556,7 +4530,6 @@ class Localuser {
 							currentUserInfos.users[user].serverurls.wellknown ??
 							currentUserInfos.users[user].serverurls.api;
 						currentUserInfos.users[user].serverurls = await getapiurls(key);
-						console.log(key, currentUserInfos.users[user].serverurls);
 						localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
 					}),
 				);
@@ -6132,7 +6105,6 @@ class Localuser {
 						before.onchange = (_) => {
 							if (before.dateValue) p.set("max_id", SnowFlake.DateToID(before.dateValue));
 							else p.delete("max_id");
-							console.log([...p.entries()], before.dateValue);
 						};
 
 						const a = p.get("min_id");
@@ -6142,7 +6114,6 @@ class Localuser {
 						after.onchange = (_) => {
 							if (after.dateValue) p.set("min_id", SnowFlake.DateToID(after.dateValue));
 							else p.delete("min_id");
-							console.log([...p.entries()], after.dateValue);
 						};
 						opt.addCheckboxInput(I18n.search.includensfw(), () => {}, {
 							initState: p.get("include_nsfw") !== "false",
