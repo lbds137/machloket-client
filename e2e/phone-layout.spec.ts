@@ -5,8 +5,8 @@ import {
 	MOCK_BUTTON_MESSAGE_ID,
 	loginAndOpenChannel,
 	openModalViaButton,
-	test,
 	pinShot,
+	test,
 } from "./fixtures";
 
 // T3 phone-layout, first half: a bot's form (INTERACTION_MODAL_CREATE) is one sheet the

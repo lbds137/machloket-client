@@ -10,6 +10,8 @@ export default defineConfig({
 	testMatch: /.*\.spec\.ts/,
 	timeout: 30_000,
 	retries: 0,
+	// The tier gates merges; a stray test.only must not quietly shrink the CI run.
+	forbidOnly: !!process.env.CI,
 	// 14 GB Deck: one Chromium at a time. Two workers ran the phone suite ~2× faster but
 	// reproduced a 30 s menu-open stall under swap pressure (icons:101, three 10-26
 	// sightings, always concurrent, never solo); solo is the supported mode.

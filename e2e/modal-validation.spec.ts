@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_REQUIRED_MODAL, loginAndOpenChannel, openModalViaButton, test, pinShot} from "./fixtures";
+import {MOCK_REQUIRED_MODAL, loginAndOpenChannel, openModalViaButton, pinShot, test} from "./fixtures";
 
 // The validation half of the phone-form work: a bot's form checks its fields CLIENT-side
 // at real CSS before anything is sent (modal.ts submit(): every field's problem() lands

@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test, pinShot} from "./fixtures";
+import {loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // The verification tooling's long tail, first item: the embed card look (walk item:
 // "rich embed with a thumbnail — small image top-right in-card") and the YouTube card's

@@ -68,7 +68,10 @@ export async function expectRequests(
  * fonts can never match them, so under CI this is a no-op and the spec's DOM asserts lead
  * (the pins only ever guarded local rendering — the tooling scope doc keeps pixels local). */
 export async function pinShot(locator: Locator, name: string): Promise<void> {
-	if (process.env.CI) return;
+	if (process.env.CI) {
+		base.info().annotations.push({type: "pinShot", description: `skipped under CI: ${name}`});
+		return;
+	}
 	await expect(locator).toHaveScreenshot(name);
 }
 

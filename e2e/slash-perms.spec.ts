@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test, pinShot} from "./fixtures";
+import {loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // Walk item 1h mechanized: the slash popup's command list is permission-filtered. The
 // fixture member holds VIEW/SEND/HISTORY but no ADMINISTRATOR (the @everyone role's

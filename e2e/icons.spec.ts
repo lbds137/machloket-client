@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test, pinShot} from "./fixtures";
+import {loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // Walk item 1j mechanized: the icon set renders through CSS masks (style.css
 // `mask: url(./icons/*.svg)` on .svgicon elements) — a broken or missing icon file

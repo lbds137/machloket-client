@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {expectRequests, loginAndOpenChannel, test, pinShot} from "./fixtures";
+import {expectRequests, loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // The single-select (max_values 1) sheet, the twin of select-sheet.spec.ts's multi pins:
 // fancySelect renders radio markers instead of checkboxes and NO footer at all (no count,
