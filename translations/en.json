@@ -1158,7 +1158,8 @@
 		"joiningStream": "Joining stream…",
 		"joinstream": "Watch stream",
 		"leavestream": "Leave stream",
-		"stopstream": "Stop stream"
+		"stopstream": "Stop stream",
+		"videoLoading": "Loading video…"
 	},
 	"webauth": {
 		"addKey": "Add key",
