@@ -132,7 +132,9 @@ describe("the video tile loading state", () => {
 		expect(box.querySelector(".vidloading")).toBeNull();
 	});
 
-	// RED: at HEAD the overlay is three bare spans — screen readers hear nothing.
+	// RED: at HEAD the overlay carries only an aria-label over three empty spans — a live
+	// region inserted without text content is skipped by most AT/browser pairs, so screen
+	// readers hear nothing. The string must exist as (visually-hidden) TEXT CONTENT.
 	it("the overlay announces itself to screen readers", () => {
 		const channel = vidChannel();
 		const box = boxFor(channel, "u1");
@@ -141,6 +143,24 @@ describe("the video tile loading state", () => {
 
 		const loading = box.querySelector(".vidloading");
 		expect(loading?.getAttribute("role")).toEqual("status");
-		expect(loading?.getAttribute("aria-label")).toEqual(I18n.vc.videoLoading());
+		const text = loading?.querySelector(".visually-hidden");
+		expect(text?.textContent).toEqual(I18n.vc.videoLoading());
+	});
+
+	// PIN: .dot:nth-child(2/3) stagger the pulse by child index, so the dots must stay the
+	// overlay's first three children — the a11y label rides AFTER them (a prepended label
+	// scrambles the animation into right-to-left).
+	it("the dots keep the overlay's first three child slots", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+
+		channel.boxVid("u1", notProgressing());
+
+		const children = box.getElementsByClassName("vidloading")[0]?.children;
+		expect(children).toHaveLength(4);
+		expect(children?.[0].classList.contains("dot")).toBe(true);
+		expect(children?.[1].classList.contains("dot")).toBe(true);
+		expect(children?.[2].classList.contains("dot")).toBe(true);
+		expect(children?.[3].classList.contains("visually-hidden")).toBe(true);
 	});
 });
