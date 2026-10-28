@@ -61,7 +61,7 @@ function guild() {
 			{id: "c3", name: "lounge", type: 0, isThread: () => false},
 		],
 		headchannels: [],
-		emojis: [{id: "111", animated: false}],
+		emojis: [{id: "111", animated: true}],
 		properties: {name: "G", features: []},
 		member: {hasPermission: (perm: string) => perm === "MANAGE_GUILD"},
 		owner: settingsUser(),
@@ -72,7 +72,7 @@ function guild() {
 
 /** Opens guild settings, mounts the onboarding section (sections mount on their rail
  * button's click) and captures the welcome-screen endpoint. */
-function openOnboard(respond: () => Response = () => Response.json(SCREEN)) {
+function openOnboard(respond: () => Response | Promise<Response> = () => Response.json(SCREEN)) {
 	const bodies = captureRequests(API + "/guilds/g1/welcome-screen", respond);
 	captureRequests(API + "/guilds/g1/invites", () => Response.json([]));
 	captureRequests(API + "/guilds/g1/widget", () =>
@@ -103,9 +103,11 @@ function patchBodies(bodies: unknown[]) {
 	}[];
 }
 
-it("an added channel's picked custom emoji rides the PATCH as emoji_id", async () => {
+const rowSlotImg = () => document.querySelector<HTMLImageElement>(".emojiForm img.smallemoji");
+
+it("an added channel's picked custom emoji rides with its name", async () => {
 	const {bodies} = openOnboard();
-	await new Promise((r) => setTimeout(r, 50));
+	await vi.waitFor(() => expect(clickButtonAddChannelVisible()).toBeTruthy());
 
 	clickButton(I18n.onboarding.addChannel());
 	const dialog = [...document.querySelectorAll(".dialogModal")].at(-1)!;
@@ -114,21 +116,29 @@ it("an added channel's picked custom emoji rides the PATCH as emoji_id", async (
 
 	picked = new Emoji({id: "999", name: "party", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
 	slot!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-	await new Promise((r) => setTimeout(r, 20));
+	await vi.waitFor(() => expect(dialog.querySelector(".emojiForm img.smallemoji")).not.toBeNull());
 
 	clickButton(I18n.submit());
-	await new Promise((r) => setTimeout(r, 20));
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
 	const added = patch.welcome_channels.find((c) => c.channel_id === "c3");
+	// Discord's welcome-channel shape carries the custom emoji's name beside its id.
 	expect(added?.emoji_id).toBe("999");
-	expect(added, "no emoji_name rides beside a custom id").not.toHaveProperty("emoji_name");
+	expect(added?.emoji_name).toBe("party");
 	expect(added, "the raw form string never leaks onto the entry").not.toHaveProperty("emoji");
 });
 
+/** The add-channel button renders once the fetched screen fills the section. */
+function clickButtonAddChannelVisible() {
+	return [...document.querySelectorAll("button")].some(
+		(b) => b.textContent === I18n.onboarding.addChannel(),
+	);
+}
+
 it("an added channel's picked unicode emoji rides as emoji_name", async () => {
 	const {bodies} = openOnboard();
-	await new Promise((r) => setTimeout(r, 50));
+	await vi.waitFor(() => expect(clickButtonAddChannelVisible()).toBeTruthy());
 
 	clickButton(I18n.onboarding.addChannel());
 	const dialog = [...document.querySelectorAll(".dialogModal")].at(-1)!;
@@ -137,10 +147,10 @@ it("an added channel's picked unicode emoji rides as emoji_name", async () => {
 
 	picked = new Emoji({name: "🎉", emoji: "🎉"}, undefined);
 	slot!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-	await new Promise((r) => setTimeout(r, 20));
+	await vi.waitFor(() => expect(dialog.querySelector(".emojiForm span.smallemoji")).not.toBeNull());
 
 	clickButton(I18n.submit());
-	await new Promise((r) => setTimeout(r, 20));
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
 	const added = patch.welcome_channels.find((c) => c.channel_id === "c3");
@@ -148,18 +158,17 @@ it("an added channel's picked unicode emoji rides as emoji_name", async () => {
 	expect(added, "no emoji_id rides beside unicode").not.toHaveProperty("emoji_id");
 });
 
-it("rows show their stored emoji and a replace PATCHes the update", async () => {
+it("rows show their stored emoji (animated per the guild's list) and a replace PATCHes the update", async () => {
 	const {bodies} = openOnboard();
-	await new Promise((r) => setTimeout(r, 50));
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
 
-	const img = document.querySelector<HTMLImageElement>(".emojiForm img.smallemoji");
-	expect(img, "the custom-emoji row shows its emoji").not.toBeNull();
-	expect(img!.src).toContain("/emojis/111");
+	const img = rowSlotImg()!;
+	expect(img.src).toContain("/emojis/111.gif");
 	expect(document.body.textContent).toContain("📜");
 
 	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
-	img!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-	await new Promise((r) => setTimeout(r, 20));
+	img.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
 	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
@@ -168,13 +177,12 @@ it("rows show their stored emoji and a replace PATCHes the update", async () => 
 
 it("clearing a row's emoji strips both fields on the wire", async () => {
 	const {bodies} = openOnboard();
-	await new Promise((r) => setTimeout(r, 50));
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
 
 	picked = null;
-	const img = document.querySelector<HTMLImageElement>(".emojiForm img.smallemoji");
-	expect(img, "the custom-emoji row shows its emoji").not.toBeNull();
-	img!.closest(".emojiForm")!.parentElement!.querySelector("button")!.click();
-	await new Promise((r) => setTimeout(r, 20));
+	const img = rowSlotImg()!;
+	img.closest(".emojiForm")!.parentElement!.querySelector("button")!.click();
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
 	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
@@ -183,20 +191,34 @@ it("clearing a row's emoji strips both fields on the wire", async () => {
 	expect(row?.description).toBe("say hi");
 });
 
-it("a refused emoji replace leaves the entry holding the old emoji", async () => {
+it("a pick by an immediate-save input raises no unsaved-changes bar", async () => {
+	openOnboard();
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
+
+	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
+
+	// The input PATCHes immediately; a bar promising unsaved changes would be a lie, and
+	// its Save would send a redundant whole-screen PATCH.
+	expect(document.querySelector(".savediv")).toBeNull();
+});
+
+it("a refused emoji replace restores the visible slot and holds the old emoji", async () => {
 	let failing = false;
 	const {bodies} = openOnboard(() =>
 		failing ? Response.json({message: "boom"}, {status: 500}) : Response.json(SCREEN),
 	);
-	await new Promise((r) => setTimeout(r, 50));
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
 
 	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
 	failing = true;
-	let img = document.querySelector<HTMLImageElement>(".emojiForm img.smallemoji");
-	expect(img, "the custom-emoji row shows its emoji").not.toBeNull();
-	img!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-	await new Promise((r) => setTimeout(r, 20));
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
+
+	// The model reverts (pinned below through the next PATCH) and the slot must follow it:
+	// the admin sees the emoji the server actually holds, not the rejected pick.
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/111"));
 
 	// The next whole-screen PATCH (clearing the OTHER row) must still carry the OLD emoji
 	// on c1: the refused write reverted the entry instead of leaving the client sure of a
@@ -206,7 +228,12 @@ it("a refused emoji replace leaves the entry holding the old emoji", async () =>
 	const secondForm = [...document.querySelectorAll(".emojiForm")][1];
 	expect(secondForm, "the unicode row renders its emoji slot").not.toBeUndefined();
 	secondForm!.parentElement!.querySelector("button")!.click();
-	await new Promise((r) => setTimeout(r, 20));
+	await vi.waitFor(() => {
+		const patch = patchBodies(bodies).filter((b) => "welcome_channels" in (b as object)).at(-1) as
+			| {welcome_channels: welcomeEntry[]}
+			| undefined;
+		expect(patch?.welcome_channels.find((c) => c.channel_id === "c2")).toBeDefined();
+	});
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
 	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
@@ -214,4 +241,39 @@ it("a refused emoji replace leaves the entry holding the old emoji", async () =>
 	expect(row?.emoji_name).toBe("wave");
 	const cleared = patch.welcome_channels.find((c) => c.channel_id === "c2");
 	expect(cleared, "the clear itself still worked").not.toHaveProperty("emoji_name");
+});
+
+it("a failed pick does not clobber a pick that landed after it", async () => {
+	let failing = false;
+	const {bodies} = openOnboard(() => {
+		if (!failing) return Response.json(SCREEN);
+		// Hold the refused answer in flight so the next pick's PATCH overtakes it.
+		return new Promise((res) =>
+			setTimeout(() => res(Response.json({message: "boom"}, {status: 500})), 150),
+		);
+	});
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
+
+	// Pick A enters flight while failing; pick B lands before A's refusal arrives.
+	failing = true;
+	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
+	failing = false;
+	picked = new Emoji({id: "777", name: "party", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
+
+	// A's late refusal must NOT write the pre-A emoji back over B's landed pick.
+	await new Promise((r) => setTimeout(r, 200));
+
+	// A whole-screen PATCH from the other row exposes the settled state.
+	picked = null;
+	const secondForm = [...document.querySelectorAll(".emojiForm")][1];
+	secondForm!.parentElement!.querySelector("button")!.click();
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(2));
+
+	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
+	expect(row?.emoji_id).toBe("777");
 });
