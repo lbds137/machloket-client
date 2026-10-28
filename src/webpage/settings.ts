@@ -2094,7 +2094,6 @@ class Options implements OptionsElement<void> {
 			const title = this.title.deref();
 			if (title) title.innerHTML = "";
 
-			console.log(container.children);
 			if (this.isTop()) {
 				if (title) {
 					const elms = this.generateName();
