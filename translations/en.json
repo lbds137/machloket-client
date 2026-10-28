@@ -24,6 +24,7 @@
 		"addChannel": "Add channel",
 		"channel": "Channel:",
 		"desc": "Description:",
+		"emoji": "Emoji:",
 		"deleteChannel": "Delete channel from onboarding",
 		"enable": "Enable onboarding",
 		"title": "Welcome to $1!"

@@ -1258,12 +1258,22 @@ class Guild extends SnowFlake {
 					onboard.addButtonInput("", I18n.onboarding.addChannel(), () => {
 						const d = new Dialog(I18n.onboarding.addChannel());
 						const form = d.options.addForm("", async (o) => {
-							const obj = o as {description: string; channel_id: string};
-							const welcome_channels = [...welcomeScreen.welcome_channels, obj];
+							const obj = o as {description: string; channel_id: string; emoji?: string};
+							const entry: welcomeScreen["welcome_channels"][number] = {
+								channel_id: obj.channel_id,
+								description: obj.description,
+							};
+							// The form collector serializes the picked Emoji to its id (custom)
+							// or its unicode char; split it back onto the wire's two fields.
+							if (obj.emoji) {
+								if (/^\d+$/.test(obj.emoji)) entry.emoji_id = obj.emoji;
+								else entry.emoji_name = obj.emoji;
+							}
+							const welcome_channels = [...welcomeScreen.welcome_channels, entry];
 							if (await this.saveWelcomeScreen({...welcomeScreen, welcome_channels})) {
 								welcomeScreen.welcome_channels = welcome_channels;
 								d.hide();
-								welcome(obj);
+								welcome(entry);
 							}
 						});
 						const channels = this.channels.filter((channel) => {
@@ -1281,6 +1291,7 @@ class Guild extends SnowFlake {
 							channels.map(({id}) => id),
 						);
 						form.addTextInput(I18n.onboarding.desc(), "description");
+						form.addEmojiInput(I18n.onboarding.emoji(), "emoji", this.localuser, {required: false});
 						d.show();
 					});
 					onboard.addMDInput(
@@ -1292,12 +1303,52 @@ class Guild extends SnowFlake {
 							initText: welcomeScreen.description,
 						},
 					);
-					const welcome = (obj: {channel_id: string; description: string}) => {
+					const welcome = (obj: welcomeScreen["welcome_channels"][number]) => {
 						const {channel_id, description} = obj;
 						const opt = onboard.addOptions("");
 						const channel = this.getChannel(channel_id);
 						if (!channel) return;
 						opt.addTitle(channel.name);
+						// The row's emoji: rendered from the stored fields, replaced or cleared per
+						// pick (clear fires with null). A refused PATCH reverts the fields — the
+						// client shouldn't end up sure of a state the server lacks.
+						const emojiInput = opt.addEmojiInput(I18n.onboarding.emoji(), () => {}, this.localuser, {
+							initEmoji: obj.emoji_id
+								? new Emoji(
+										{
+											id: obj.emoji_id,
+											name: obj.emoji_name ?? "",
+											animated: this.emojis.find((e) => e.id === obj.emoji_id)?.animated,
+										},
+										this,
+								  )
+								: obj.emoji_name
+								  ? new Emoji({name: obj.emoji_name, emoji: obj.emoji_name}, undefined)
+								  : undefined,
+							clear: true,
+						});
+						emojiInput.watchForChange((emj) => {
+							const saved = {emoji_id: obj.emoji_id, emoji_name: obj.emoji_name};
+							if (emj?.id) {
+								obj.emoji_id = emj.id;
+								obj.emoji_name = emj.humanName;
+							} else if (emj?.emoji) {
+								obj.emoji_id = undefined;
+								obj.emoji_name = emj.emoji;
+							} else {
+								obj.emoji_id = undefined;
+								obj.emoji_name = undefined;
+							}
+							void this.saveWelcomeScreen({
+								...welcomeScreen,
+								welcome_channels: welcomeScreen.welcome_channels,
+							}).then((ok) => {
+								if (!ok) {
+									obj.emoji_id = saved.emoji_id;
+									obj.emoji_name = saved.emoji_name;
+								}
+							});
+						});
 						opt.addTextInput(
 							I18n.onboarding.desc(),
 							(desc) => {
