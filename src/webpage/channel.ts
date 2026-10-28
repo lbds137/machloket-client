@@ -1852,10 +1852,25 @@ class Channel extends SnowFlake {
 		}
 	}
 	boxVid(id: string, elm: HTMLVideoElement) {
-		//TODO make a loading screen thingy if the video isn't progressing in time yet
 		const box = this.boxMap.get(id);
 		if (!box) return;
 		box.append(elm);
+		if (!elm.paused && elm.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+			box.getElementsByClassName("vidloading")[0]?.remove();
+			return;
+		}
+		// A repeat call (mute/deaf change while video is on) keeps the overlay the first
+		// call armed its playing listener on.
+		if (box.getElementsByClassName("vidloading")[0]) return;
+		const loading = document.createElement("div");
+		loading.classList.add("vidloading");
+		for (let i = 0; i < 3; i++) {
+			const dot = document.createElement("span");
+			dot.classList.add("dot");
+			loading.append(dot);
+		}
+		box.append(loading);
+		elm.addEventListener("playing", () => loading.remove(), {once: true});
 	}
 	makeBig(box: HTMLElement) {
 		const par = box.parentElement;
@@ -1912,6 +1927,7 @@ class Channel extends SnowFlake {
 	purgeVid(id: string) {
 		const box = this.boxMap.get(id);
 		if (!box) return;
+		box.getElementsByClassName("vidloading")[0]?.remove();
 		const videos = Array.from(box.getElementsByTagName("video"));
 		videos.forEach((_) => _.remove());
 	}
