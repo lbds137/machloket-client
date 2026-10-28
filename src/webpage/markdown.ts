@@ -1237,25 +1237,22 @@ class MarkDown {
 			box.innerHTML = "";
 			box.append(this.customBox[0](this.rawString));
 		} else {
-			//console.time();
 			const html = this.makeHTML({keep: true});
 			const condition =
 				html.childNodes.length == 1 &&
 				html.childNodes[0].childNodes.length === 1 &&
 				html.childNodes[0].childNodes[0];
 			//TODO this may be slow, may want to check in on this in the future if it is
-			if ((!box.hasChildNodes() || html.isEqualNode(box.childNodes[0])) && allowLazy) {
-			} else {
+			// Replace unless the DOM already matches the render and lazy keeping is allowed.
+			if ((box.hasChildNodes() && !html.isEqualNode(box.childNodes[0])) || !allowLazy) {
 				if (
 					!(box.childNodes.length === 1 && box.childNodes[0] instanceof Text && condition) ||
 					!allowLazy
 				) {
 					box.innerHTML = "";
 					box.append(html);
-				} else {
 				}
 			}
-			//console.timeEnd();
 		}
 		if (restore) {
 			restore(backspace);

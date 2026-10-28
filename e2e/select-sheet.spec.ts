@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, expectRequests, test, pinShot} from "./fixtures";
+import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, expectRequests, pinShot, test} from "./fixtures";
 
 // T2 select-sheet pins (fancySelect.ts phone sheet). The fixture message carries a
 // StringSelect with min 1 / max 2 and three described options, none pre-selected.

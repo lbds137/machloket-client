@@ -1,5 +1,5 @@
 import {expect, type Page} from "@playwright/test";
-import {loginAndOpenChannel, test, pinShot} from "./fixtures";
+import {loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // T3 phone-layout, second half: the "enable notifications" bar (walk item 1e) — it shows
 // while Notification.permission is genuinely unset, its dismissal sticks, and a granted

@@ -6,8 +6,8 @@ import {
 	MOCK_INVITE_CODE,
 	MOCK_INSTANCE_ORIGIN,
 	MOCK_TOKEN,
-	test,
 	pinShot,
+	test,
 } from "./fixtures";
 
 // The invite page (walk item 1c's mockable half): /invite/:code?instance=… previews the

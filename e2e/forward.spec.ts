@@ -4,8 +4,8 @@ import {
 	MOCK_TEXT_MESSAGE_ID,
 	expectRequests,
 	loginAndOpenChannel,
-	test,
 	pinShot,
+	test,
 } from "./fixtures";
 
 // The forward flow (walk item: view the forward card, send one via the context menu).

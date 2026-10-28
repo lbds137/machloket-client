@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test, pinShot} from "./fixtures";
+import {loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // The blocked-message run (walk item: expand a "N blocked messages" bar — does the view
 // hold?). READY carries a type-2 relationship for the fixture peer; their two consecutive
