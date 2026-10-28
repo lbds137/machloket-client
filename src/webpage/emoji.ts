@@ -313,12 +313,28 @@ class Emoji {
 		x: number,
 		y: number,
 		localuser?: Localuser,
-	): Promise<Emoji> {
-		let res: (r: Emoji) => void;
-		const promise: Promise<Emoji> = new Promise((r) => {
+	): Promise<Emoji | undefined> {
+		let res!: (r: Emoji | undefined) => void;
+		const promise = new Promise<Emoji | undefined>((r) => {
 			res = r;
 		});
 		const menu = document.createElement("div");
+		let settled = false;
+		const closeObserver = new MutationObserver(() => {
+			if (!menu.isConnected || menu.classList.contains("removeElm")) {
+				settle(undefined);
+			}
+		});
+		const settle = (emoji: Emoji | undefined) => {
+			if (settled) return;
+			settled = true;
+			closeObserver.disconnect();
+			res(emoji);
+		};
+		const watchClose = () => {
+			closeObserver.observe(document.body, {childList: true});
+			closeObserver.observe(menu, {attributes: true, attributeFilter: ["class"]});
+		};
 		menu.classList.add("flexttb", "emojiPicker");
 		if (y > 0) {
 			menu.style.top = y + "px";
@@ -369,7 +385,7 @@ class Emoji {
 			closeTonePopup();
 			// closeTonePopup pops the stack when the popup is currentmenu, so one call always remains.
 			Contextmenu.declareMenu();
-			res(emoji);
+			settle(emoji);
 		};
 		const openTonePopup = (
 			e: MouseEvent,
@@ -665,6 +681,7 @@ class Emoji {
 		menu.append(selection);
 		menu.append(body);
 		menu.append(footer);
+		watchClose();
 		search.focus();
 		return promise;
 	}

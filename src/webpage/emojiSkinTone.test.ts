@@ -1,6 +1,6 @@
-import {afterEach, beforeEach, describe, expect, it} from "vitest";
+import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 
-await import("./localuser");
+const {Localuser} = await import("./localuser");
 const {Emoji} = await import("./emoji.js");
 const {Contextmenu} = await import("./contextmenu.js");
 const {I18n} = await import("./i18n.js");
@@ -12,6 +12,11 @@ const {default: styleCss}: {default: string} = await import("./public/style.css?
 // @ts-expect-error Vite's ?inline import returns the stylesheet text.
 const {default: themesCss}: {default: string} = await import("./themes.css?inline");
 await I18n.done;
+
+/** Race a picker promise against a 100 ms sentinel: an unsettled promise reads "TIMED_OUT"
+ * (the base-red shape — at base, close-without-pick never resolves). */
+const raceWithTimeout = <T>(p: Promise<T>): Promise<T | "TIMED_OUT"> =>
+	Promise.race([p, new Promise<"TIMED_OUT">((r) => setTimeout(() => r("TIMED_OUT"), 100))]);
 
 const savedEmojis = Emoji.emojis;
 
@@ -174,8 +179,8 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 
 		swatches[2]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 		const picked = await pickPromise;
-		expect(picked.emoji).toBe("👋🏼");
-		expect(picked.name).toBe("waving hand");
+		expect(picked?.emoji).toBe("👋🏼");
+		expect(picked?.name).toBe("waving hand");
 	});
 
 	it("4b. picker DOM: header selector sets default tone and re-renders body without closing; plain row click resolves default tone", async () => {
@@ -215,8 +220,8 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(cells0[0]!.textContent).toBe("👋");
 		cells0[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 		const resolved0 = await pickDefault0;
-		expect(resolved0.emoji).toBe("👋");
-		expect(resolved0.name).toBe("waving hand");
+		expect(resolved0?.emoji).toBe("👋");
+		expect(resolved0?.name).toBe("waving hand");
 	});
 
 	it("4c. picker DOM: footer shows :name: on row mouseover and clears on picker mouseleave", () => {
@@ -269,8 +274,8 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 
 		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 		const picked = await pickPromise;
-		expect(picked.emoji).toBe("😀");
-		expect(picked.name).toBe("grinning");
+		expect(picked?.emoji).toBe("😀");
+		expect(picked?.name).toBe("grinning");
 		expect(document.querySelector(".emojiPicker")).toBeNull();
 		expect(document.querySelector(".emojiTonePopup")).toBeNull();
 	});
@@ -382,8 +387,8 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
 		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 		const picked = await pickPromise;
-		expect(picked.emoji).toBe("😀");
-		expect(picked.name).toBe("grinning");
+		expect(picked?.emoji).toBe("😀");
+		expect(picked?.name).toBe("grinning");
 		expect(document.querySelector(".emojiPicker")).toBeNull();
 	});
 
@@ -405,8 +410,8 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(results).toHaveLength(1);
 		results[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 		const picked = await pickPromise;
-		expect(picked.emoji).toBe("😀");
-		expect(picked.name).toBe("grinning");
+		expect(picked?.emoji).toBe("😀");
+		expect(picked?.name).toBe("grinning");
 		expect(document.querySelector(".emojiPicker")).toBeNull();
 	});
 
@@ -426,8 +431,8 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
 		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 		const picked = await pickPromise;
-		expect(picked.emoji).toBe("😀");
-		expect(picked.name).toBe("grinning");
+		expect(picked?.emoji).toBe("😀");
+		expect(picked?.name).toBe("grinning");
 		expect(document.querySelector(".emojiPicker")).toBeNull();
 	});
 
@@ -448,6 +453,75 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 			for (const token of vars) {
 				expect(definedVars, `${selector} references undefined ${token}`).toContain(token);
 			}
+		}
+	});
+
+	it("6a. EMOJI-N: resolves undefined when the picker closes without a pick", async () => {
+		assignTwoEmojiFixture();
+		const pending = Emoji.emojiPicker(10, -10);
+
+		const picker = document.querySelector(".emojiPicker")!;
+		expect(picker).not.toBeNull();
+
+		Contextmenu.declareMenu();
+
+		const outcome = await raceWithTimeout(pending);
+		expect(outcome).toBeUndefined();
+	});
+
+	it("6b. EMOJI-N control: resolves the picked Emoji when a row is clicked", async () => {
+		assignTwoEmojiFixture();
+		const pending = Emoji.emojiPicker(10, -10);
+
+		const picker = document.querySelector(".emojiPicker")!;
+		const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+		cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+		const outcome = await raceWithTimeout(pending);
+		expect(outcome).toBeInstanceOf(Emoji);
+		expect((outcome as InstanceType<typeof Emoji> | undefined)?.emoji).toBe("😀");
+	});
+
+	it("6c. EMOJI-N caller guard: TBEmojiMenu resolves on outside-click close and skips addEmoji and boxupdate", async () => {
+		assignTwoEmojiFixture();
+		const typebox = document.createElement("div") as HTMLDivElement & {
+			markdown: {rawString: string; txt: string; boxupdate: ReturnType<typeof vi.fn>};
+		};
+		typebox.id = "typebox";
+		typebox.contentEditable = "true";
+		typebox.textContent = "hello";
+		typebox.markdown = {rawString: "hello", txt: "hello", boxupdate: vi.fn()};
+		document.body.append(typebox);
+
+		const range = document.createRange();
+		range.selectNodeContents(typebox);
+		const sel = window.getSelection()!;
+		sel.removeAllRanges();
+		sel.addRange(range);
+
+		const addEmoji = vi.fn();
+		const user = Object.assign(Object.create(Localuser.prototype), {
+			guilds: [],
+			lookingguild: undefined,
+			favorites: {
+				emojiRecentsMerged: () => [],
+				addEmoji,
+			},
+		}) as InstanceType<typeof Localuser>;
+
+		try {
+			const menuPromise = user.TBEmojiMenu(new DOMRect(100, 100, 20, 20));
+			const picker = document.querySelector(".emojiPicker")!;
+			expect(picker).not.toBeNull();
+
+			document.body.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+			const outcome = await raceWithTimeout(menuPromise);
+			expect(outcome).toBeUndefined();
+			expect(addEmoji).not.toHaveBeenCalled();
+			expect(typebox.markdown.boxupdate).not.toHaveBeenCalled();
+		} finally {
+			typebox.remove();
 		}
 	});
 });

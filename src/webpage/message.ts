@@ -314,6 +314,7 @@ class Message extends SnowFlake {
 			() => I18n.message.reactionAdd(),
 			function (this: Message, _, e: MouseEvent) {
 				Emoji.emojiPicker(e.x, e.y, this.localuser).then((_) => {
+					if (!_) return;
 					this.reactionToggle(_);
 				});
 			},
@@ -2138,6 +2139,7 @@ class Message extends SnowFlake {
 						e.stopImmediatePropagation();
 						e.preventDefault();
 						Emoji.emojiPicker(e.x, e.y, this.localuser).then((_) => {
+							if (!_) return;
 							this.reactionToggle(_);
 						});
 					};
