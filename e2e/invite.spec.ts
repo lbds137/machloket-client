@@ -7,6 +7,7 @@ import {
 	MOCK_INSTANCE_ORIGIN,
 	MOCK_TOKEN,
 	test,
+	pinShot,
 } from "./fixtures";
 
 // The invite page (walk item 1c's mockable half): /invite/:code?instance=… previews the
@@ -29,7 +30,7 @@ test("the invite page previews the guild, and accept lands in it", async ({
 	await expect(page.locator("#AcceptInvite")).toBeVisible();
 
 	// The page's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(page.locator("#invitebody")).toHaveScreenshot("invite-page.png");
+	await pinShot(page.locator("#invitebody"), "invite-page.png");
 
 	// Accept → the account switcher → the (only matching) account → the join POST.
 	const isJoin = (req: CapturedRequest) =>

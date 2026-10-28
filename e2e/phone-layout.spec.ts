@@ -6,6 +6,7 @@ import {
 	loginAndOpenChannel,
 	openModalViaButton,
 	test,
+	pinShot,
 } from "./fixtures";
 
 // T3 phone-layout, first half: a bot's form (INTERACTION_MODAL_CREATE) is one sheet the
@@ -89,7 +90,7 @@ test("with the keyboard up, the sheet fills the band above it and Submit stays i
 	expect(scroll).toEqual({body: true, frame: false, root: false});
 
 	// The keyboard-band look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(dialog).toHaveScreenshot("form-sheet-keyboard.png");
+	await pinShot(dialog, "form-sheet-keyboard.png");
 });
 
 test("the form modal names the opener message in its submit", async ({page, mockInstance}) => {

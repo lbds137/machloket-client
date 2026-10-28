@@ -1,4 +1,4 @@
-import {test as base, expect, type Page} from "@playwright/test";
+import {test as base, expect, type Locator, type Page} from "@playwright/test";
 import type {ModalCreateEvent} from "../src/webpage/interactions/modal";
 import {
 	type CapturedRequest,
@@ -62,6 +62,14 @@ export async function expectRequests(
 	await new Promise((resolve) => setTimeout(resolve, 300));
 	expect(matching(), message).toHaveLength(count);
 	return matching();
+}
+
+/** Deck-local pixel pin. The baselines encode the Deck's font rendering; a CI runner's
+ * fonts can never match them, so under CI this is a no-op and the spec's DOM asserts lead
+ * (the pins only ever guarded local rendering — the tooling scope doc keeps pixels local). */
+export async function pinShot(locator: Locator, name: string): Promise<void> {
+	if (process.env.CI) return;
+	await expect(locator).toHaveScreenshot(name);
 }
 
 /** Boots the app through the mock instance into the fixture guild's #general. The tail
