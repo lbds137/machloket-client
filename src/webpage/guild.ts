@@ -624,9 +624,32 @@ class Guild extends SnowFlake {
 		obj: welcomeScreen["welcome_channels"][number],
 		emj: Emoji | null | undefined,
 	) {
-		const fields = this.entryEmoji(emj);
+		this.applyEntryFields(obj, this.entryEmoji(emj));
+	}
+	private applyEntryFields(
+		obj: welcomeScreen["welcome_channels"][number],
+		fields: {emoji_id?: string; emoji_name?: string},
+	) {
 		obj.emoji_id = fields.emoji_id;
 		obj.emoji_name = fields.emoji_name;
+	}
+	/** The reverse of entryEmoji: an Emoji rendering a stored entry's fields (undefined →
+	 * the empty slot). */
+	private entryToEmoji(fields: {emoji_id?: string; emoji_name?: string}): Emoji | undefined {
+		if (fields.emoji_id) {
+			return new Emoji(
+				{
+					id: fields.emoji_id,
+					name: fields.emoji_name ?? "",
+					animated: this.emojis.find((e) => e.id === fields.emoji_id)?.animated,
+				},
+				this,
+			);
+		}
+		if (fields.emoji_name) {
+			return new Emoji({name: fields.emoji_name, emoji: fields.emoji_name}, undefined);
+		}
+		return undefined;
 	}
 	async showWelcome() {
 		const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
@@ -1272,16 +1295,12 @@ class Guild extends SnowFlake {
 					});
 					onboard.addButtonInput("", I18n.onboarding.addChannel(), () => {
 						const d = new Dialog(I18n.onboarding.addChannel());
-						// The form collector reduces a picked Emoji to one string; the entry needs
-						// the object's two fields (id + name, Discord's shape), so the pick is
-						// captured whole and the collector's string is ignored.
-						let pickedEmoji: Emoji | null | undefined;
 						const form = d.options.addForm("", async (o) => {
 							const obj = o as {description: string; channel_id: string};
 							const entry: welcomeScreen["welcome_channels"][number] = {
 								channel_id: obj.channel_id,
 								description: obj.description,
-								...this.entryEmoji(pickedEmoji),
+								...this.entryEmoji(emojiInput.value),
 							};
 							const welcome_channels = [...welcomeScreen.welcome_channels, entry];
 							if (await this.saveWelcomeScreen({...welcomeScreen, welcome_channels})) {
@@ -1305,15 +1324,15 @@ class Guild extends SnowFlake {
 							channels.map(({id}) => id),
 						);
 						form.addTextInput(I18n.onboarding.desc(), "description");
-						const emojiInput = form.addEmojiInput(
+						// Mounted outside the form's field names on purpose: the collector
+						// reduces a picked Emoji to one string, and the entry needs the
+						// object's two fields (read from .value at submit).
+						const emojiInput = d.options.addEmojiInput(
 							I18n.onboarding.emoji(),
-							"emoji",
+							() => {},
 							this.localuser,
-							{required: false},
+							{},
 						);
-						emojiInput.watchForChange((emj) => {
-							pickedEmoji = emj;
-						});
 						d.show();
 					});
 					onboard.addMDInput(
@@ -1336,53 +1355,36 @@ class Guild extends SnowFlake {
 						// must not raise the unsaved-changes bar. A refused PATCH reverts the
 						// fields and the visible slot — the client shouldn't end up sure of a
 						// state the server lacks, on either layer.
-						const emojiInput = opt.addEmojiInput(I18n.onboarding.emoji(), () => {}, this.localuser, {
-							initEmoji: obj.emoji_id
-								? new Emoji(
-										{
-											id: obj.emoji_id,
-											name: obj.emoji_name ?? "",
-											animated: this.emojis.find((e) => e.id === obj.emoji_id)?.animated,
-										},
-										this,
-								  )
-								: obj.emoji_name
-								  ? new Emoji({name: obj.emoji_name, emoji: obj.emoji_name}, undefined)
-								  : undefined,
-							clear: true,
-							immediate: true,
-						});
+						const emojiInput = opt.addEmojiInput(
+							I18n.onboarding.emoji(),
+							() => {},
+							this.localuser,
+							{initEmoji: this.entryToEmoji(obj), clear: true, immediate: true},
+						);
+						// The last emoji the server accepted (the fetched values at first).
+						// Refusals revert here, not to a pre-pick snapshot: with overlapping
+						// picks a snapshot can name a state the server never held.
+						const confirmed = {emoji_id: obj.emoji_id, emoji_name: obj.emoji_name};
 						emojiInput.watchForChange((emj) => {
-							const saved = {emoji_id: obj.emoji_id, emoji_name: obj.emoji_name};
 							this.setEntryEmoji(obj, emj);
 							void this.saveWelcomeScreen({
 								...welcomeScreen,
 								welcome_channels: welcomeScreen.welcome_channels,
 							}).then((ok) => {
-								// Only revert what THIS pick wrote: a later pick may have landed
-								// already, and writing the pre-A state back would clobber the
-								// server's newer answer.
 								const wrote = this.entryEmoji(emj);
-								if (ok || obj.emoji_id !== wrote.emoji_id || obj.emoji_name !== wrote.emoji_name) {
+								if (ok) {
+									confirmed.emoji_id = wrote.emoji_id;
+									confirmed.emoji_name = wrote.emoji_name;
 									return;
 								}
-								obj.emoji_id = saved.emoji_id;
-								obj.emoji_name = saved.emoji_name;
-								emojiInput.setEmoji(
-									saved.emoji_id
-										? new Emoji(
-												{
-													id: saved.emoji_id,
-													name: saved.emoji_name ?? "",
-													animated: this.emojis.find((e) => e.id === saved.emoji_id)
-														?.animated,
-												},
-												this,
-										  )
-										: saved.emoji_name
-										  ? new Emoji({name: saved.emoji_name, emoji: saved.emoji_name}, undefined)
-										  : undefined,
-								);
+								// Refused: revert only what THIS pick wrote (a later pick may
+								// have landed — its own handler reverts it), back to the last
+								// server-confirmed emoji.
+								if (obj.emoji_id !== wrote.emoji_id || obj.emoji_name !== wrote.emoji_name) {
+									return;
+								}
+								this.applyEntryFields(obj, confirmed);
+								emojiInput.setEmoji(this.entryToEmoji(confirmed));
 							});
 						});
 						opt.addTextInput(

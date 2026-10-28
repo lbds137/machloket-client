@@ -277,3 +277,36 @@ it("a failed pick does not clobber a pick that landed after it", async () => {
 	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
 	expect(row?.emoji_id).toBe("777");
 });
+
+it("two overlapping refused picks revert to the last server-confirmed emoji", async () => {
+	let failing = false;
+	const {bodies} = openOnboard(() => {
+		if (!failing) return Response.json(SCREEN);
+		return new Promise((res) =>
+			setTimeout(() => res(Response.json({message: "boom"}, {status: 500})), 150),
+		);
+	});
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
+
+	// A and B both enter flight while failing; both refusals arrive late. Neither lands,
+	// so the client must fall back to the fetched emoji — not to either pick.
+	failing = true;
+	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
+	picked = new Emoji({id: "777", name: "party", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
+
+	await new Promise((r) => setTimeout(r, 250));
+
+	picked = null;
+	const secondForm = [...document.querySelectorAll(".emojiForm")][1];
+	secondForm!.parentElement!.querySelector("button")!.click();
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(2));
+
+	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
+	expect(row?.emoji_id).toBe("111");
+	expect(row?.emoji_name).toBe("wave");
+});
