@@ -386,7 +386,7 @@ type mainuserjson = userjson & {
 	email?: string;
 	phone?: string;
 	verified: boolean;
-	nsfw_allowed: boolean;
+	nsfw_allowed: boolean | null;
 	premium: boolean;
 	purchased_flags: number;
 	premium_usage_flags: number;
