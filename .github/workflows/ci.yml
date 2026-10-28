@@ -28,4 +28,7 @@ jobs:
         if: failure()
         with:
           name: playwright-artifacts
-          path: test-results/
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore

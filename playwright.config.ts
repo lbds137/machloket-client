@@ -12,6 +12,9 @@ export default defineConfig({
 	retries: 0,
 	// The tier gates merges; a stray test.only must not quietly shrink the CI run.
 	forbidOnly: !!process.env.CI,
+	// The dot reporter hides annotations; list prints the pinShot skips and the HTML
+	// report keeps them readable in the uploaded CI artifact.
+	reporter: process.env.CI ? [["list"], ["html", {open: "never"}]] : "list",
 	// 14 GB Deck: one Chromium at a time. Two workers ran the phone suite ~2× faster but
 	// reproduced a 30 s menu-open stall under swap pressure (icons:101, three 10-26
 	// sightings, always concurrent, never solo); solo is the supported mode.
@@ -25,6 +28,8 @@ export default defineConfig({
 		// zone: pinned so a baseline doesn't depend on the machine's.
 		locale: "en-US",
 		timezoneId: "UTC",
+		// A red CI run uploads test-results/ — traces are what make the artifact useful.
+		trace: "retain-on-failure",
 	},
 	projects: [{name: "chromium-phone", use: {...devices["Pixel 7"]}}],
 	// Baselines must be deterministic: entry animations fast-forwarded, caret hidden.
