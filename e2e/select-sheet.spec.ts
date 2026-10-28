@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, expectRequests, test} from "./fixtures";
+import {MOCK_CHANNEL, MOCK_INSTANCE_NAME, expectRequests, test, pinShot} from "./fixtures";
 
 // T2 select-sheet pins (fancySelect.ts phone sheet). The fixture message carries a
 // StringSelect with min 1 / max 2 and three described options, none pre-selected.
@@ -76,7 +76,7 @@ test("tapping the select box opens the sheet without focusing it", async ({
 	// real CSS at the phone viewport (baselines are Deck-local by decision; DOM
 	// asserts lead, this pins the chrome/look). Determinism comes from the config's
 	// toHaveScreenshot defaults (animations fast-forwarded, caret hidden).
-	await expect(page.locator(".selectSheetBackdrop")).toHaveScreenshot("sheet-open.png");
+	await pinShot(page.locator(".selectSheetBackdrop"), "sheet-open.png");
 
 	// The mock saw no interaction before any sheet action.
 	expect(

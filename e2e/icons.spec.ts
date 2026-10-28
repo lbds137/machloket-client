@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {loginAndOpenChannel, test, pinShot} from "./fixtures";
 
 // Walk item 1j mechanized: the icon set renders through CSS masks (style.css
 // `mask: url(./icons/*.svg)` on .svgicon elements) — a broken or missing icon file
@@ -62,7 +62,7 @@ test("the header's icons render and look right", async ({page, mockInstance}) =>
 	}
 
 	// The header's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(header).toHaveScreenshot("header-icons.png");
+	await pinShot(header, "header-icons.png");
 });
 
 test("the context menu's icons render and the menu looks right", async ({page, mockInstance}) => {
@@ -95,7 +95,7 @@ test("the context menu's icons render and the menu looks right", async ({page, m
 	expect(linkMask, "the copy-link icon must resolve a mask").not.toBe("none");
 
 	// The menu's look, Deck-local baseline.
-	await expect(menu).toHaveScreenshot("context-menu.png");
+	await pinShot(menu, "context-menu.png");
 });
 
 test("the queued menu rows carry icons and every new mask serves", async ({

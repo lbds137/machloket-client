@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {loginAndOpenChannel, test, pinShot} from "./fixtures";
 
 // Walk item 1h mechanized: the slash popup's command list is permission-filtered. The
 // fixture member holds VIEW/SEND/HISTORY but no ADMINISTRATOR (the @everyone role's
@@ -28,7 +28,7 @@ test("the slash popup lists allowed commands and filters denied ones", async ({
 	await expect(popup).not.toContainText("e2edenied");
 
 	// The popup's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(popup).toHaveScreenshot("slash-popup.png");
+	await pinShot(popup, "slash-popup.png");
 });
 
 // The bare "/" browse panel is the other way in (renderCommandPanel, not the search

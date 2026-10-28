@@ -1,5 +1,5 @@
 import {expect, type Page} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {loginAndOpenChannel, test, pinShot} from "./fixtures";
 
 // T3 phone-layout, second half: the "enable notifications" bar (walk item 1e) — it shows
 // while Notification.permission is genuinely unset, its dismissal sticks, and a granted
@@ -30,7 +30,7 @@ test("the bar shows while permission is unset", async ({page, mockInstance}) => 
 	await expect(banner.getByRole("button", {name: "Enable"})).toBeVisible();
 
 	// The bar's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(banner).toHaveScreenshot("notify-bar.png");
+	await pinShot(banner, "notify-bar.png");
 });
 
 test("dismissing the bar sticks across a reload", async ({page, mockInstance}) => {

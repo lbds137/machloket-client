@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {loginAndOpenChannel, test, pinShot} from "./fixtures";
 
 // The verification tooling's long tail, first item: the embed card look (walk item:
 // "rich embed with a thumbnail — small image top-right in-card") and the YouTube card's
@@ -46,7 +46,7 @@ test("the rich embed shows its thumbnail at the top right, text flowing beside",
 	await expect(card).toContainText("CardBot • e2e");
 
 	// The card's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(card).toHaveScreenshot("embed-rich-thumb.png");
+	await pinShot(card, "embed-rich-thumb.png");
 });
 
 test("the video embed swaps its poster for a YouTube player iframe on tap", async ({

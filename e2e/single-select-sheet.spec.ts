@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {expectRequests, loginAndOpenChannel, test} from "./fixtures";
+import {expectRequests, loginAndOpenChannel, test, pinShot} from "./fixtures";
 
 // The single-select (max_values 1) sheet, the twin of select-sheet.spec.ts's multi pins:
 // fancySelect renders radio markers instead of checkboxes and NO footer at all (no count,
@@ -32,7 +32,7 @@ test("the single-select sheet answers on tap with radio markers and no Apply", a
 	await expect(sheet.locator(".selectSheetFooter")).toHaveCount(0);
 
 	// The sheet's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(page.locator(".selectSheetBackdrop")).toHaveScreenshot("single-sheet-open.png");
+	await pinShot(page.locator(".selectSheetBackdrop"), "single-sheet-open.png");
 
 	// The tap is the answer: one value out, sheet gone.
 	await sheet.locator(".selectSheetRow", {hasText: "Beta"}).tap();

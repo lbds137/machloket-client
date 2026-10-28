@@ -5,6 +5,7 @@ import {
 	expectRequests,
 	loginAndOpenChannel,
 	test,
+	pinShot,
 } from "./fixtures";
 
 // The forward flow (walk item: view the forward card, send one via the context menu).
@@ -26,7 +27,7 @@ test("a forwarded message renders its card from the snapshot", async ({page, moc
 	).toContainText("Forwarded from earlier: the original answer, kept verbatim.");
 
 	// The card's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(card).toHaveScreenshot("forward-card.png");
+	await pinShot(card, "forward-card.png");
 });
 
 test("right-click -> Forward sends through the picker with the source reference", async ({

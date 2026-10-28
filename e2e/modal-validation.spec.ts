@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_REQUIRED_MODAL, loginAndOpenChannel, openModalViaButton, test} from "./fixtures";
+import {MOCK_REQUIRED_MODAL, loginAndOpenChannel, openModalViaButton, test, pinShot} from "./fixtures";
 
 // The validation half of the phone-form work: a bot's form checks its fields CLIENT-side
 // at real CSS before anything is sent (modal.ts submit(): every field's problem() lands
@@ -44,7 +44,7 @@ test("an empty submit is blocked with per-field errors and nothing sent", async 
 	await expect(optionalLabel).not.toHaveClass(/interactionModalRequired/);
 
 	// The error state's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(page.locator(DIALOG)).toHaveScreenshot("modal-errors.png");
+	await pinShot(page.locator(DIALOG), "modal-errors.png");
 });
 
 test("the length window rejects out-of-band values, then a valid submit sends", async ({

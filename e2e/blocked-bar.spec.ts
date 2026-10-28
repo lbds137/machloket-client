@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {loginAndOpenChannel, test, pinShot} from "./fixtures";
 
 // The blocked-message run (walk item: expand a "N blocked messages" bar — does the view
 // hold?). READY carries a type-2 relationship for the fixture peer; their two consecutive
@@ -26,7 +26,7 @@ test("the blocked run collapses behind one bar with the right count", async ({
 	await expect(page.getByText("blocked message two", {exact: true})).toBeHidden();
 
 	// The collapsed run's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await expect(bar).toHaveScreenshot("blocked-bar.png");
+	await pinShot(bar, "blocked-bar.png");
 });
 
 test("expanding the bar shows the run and holds the view at the tap point, then re-collapses", async ({
