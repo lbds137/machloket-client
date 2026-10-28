@@ -1189,6 +1189,10 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	localuser: Localuser;
 	clear: boolean;
 	guild: boolean;
+	/** An input that saves on its own (each pick PATCHes): picks and clears must not raise
+	 * the unsaved-changes bar — it would offer a Save that only re-sends what landed. */
+	immediate: boolean;
+	private emojiEl?: HTMLElement;
 	constructor(
 		label: string,
 		onSubmit: (str: Emoji | undefined | null) => void,
@@ -1198,7 +1202,8 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			initEmoji = undefined,
 			clear = false,
 			guild = true,
-		}: {initEmoji?: undefined | Emoji; clear?: boolean; guild?: boolean} = {},
+			immediate = false,
+		}: {initEmoji?: undefined | Emoji; clear?: boolean; guild?: boolean; immediate?: boolean} = {},
 	) {
 		this.label = label;
 		this.owner = owner;
@@ -1207,6 +1212,7 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 		this.value = initEmoji;
 		this.localuser = localuser;
 		this.clear = !!clear;
+		this.immediate = immediate;
 	}
 	generateHTML(): HTMLElement {
 		const outDiv = document.createElement("div");
@@ -1223,6 +1229,7 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			emoji = document.createElement("span");
 			emoji.classList.add("emptyEmoji");
 		}
+		this.emojiEl = emoji;
 		div.onclick = (e) => {
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -1232,9 +1239,10 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 					this.value = emj;
 					emoji.remove();
 					emoji = emj.getHTML();
+					this.emojiEl = emoji;
 					div.append(emoji);
 					this.onchange(emj);
-					this.owner.changed();
+					if (!this.immediate) this.owner.changed();
 				}
 			})();
 		};
@@ -1247,9 +1255,10 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 				this.value = null;
 				emoji.remove();
 				this.onchange(null);
-				this.owner.changed();
+				if (!this.immediate) this.owner.changed();
 				emoji = document.createElement("span");
 				emoji.classList.add("emptyEmoji");
+				this.emojiEl = emoji;
 				div.append(emoji);
 			};
 			outDiv.append(button);
@@ -1260,6 +1269,24 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	onchange = (_: Emoji | undefined | null) => {};
 	watchForChange(func: (arg1: Emoji | undefined | null) => void) {
 		this.onchange = func;
+	}
+	/** Swaps the displayed emoji and the value WITHOUT firing onchange or raising the bar:
+	 * a refused save restoring the server's state calls this, and must not re-run the pick
+	 * handlers (settings.ts pick/clear swap the display themselves). */
+	setEmoji(value: Emoji | undefined | null) {
+		this.value = value;
+		const parent = this.emojiEl?.parentElement;
+		if (!parent) return;
+		let next: HTMLElement;
+		if (value) {
+			next = value.getHTML();
+		} else {
+			next = document.createElement("span");
+			next.classList.add("emptyEmoji");
+		}
+		this.emojiEl?.remove();
+		this.emojiEl = next;
+		parent.append(next);
 	}
 	submit() {
 		this.onSubmit(this.value);
@@ -1815,16 +1842,18 @@ class Options implements OptionsElement<void> {
 		label: string,
 		onSubmit: (str: Emoji | null | undefined) => void,
 		localuser: Localuser,
-		{initEmoji = undefined, clear = false, guild = true} = {} as {
+		{initEmoji = undefined, clear = false, guild = true, immediate = false} = {} as {
 			initEmoji?: Emoji;
 			clear?: boolean;
 			guild?: boolean;
+			immediate?: boolean;
 		},
 	) {
 		const emoji = new EmojiInput(label, onSubmit, this, localuser, {
 			initEmoji: initEmoji,
 			clear,
 			guild,
+			immediate,
 		});
 		this.options.push(emoji);
 		this.generate(emoji);
