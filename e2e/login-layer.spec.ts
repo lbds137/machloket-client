@@ -152,16 +152,25 @@ test("the instance-rewrite dialog renders above the raised auth dialog", async (
 	// Identity, not text: the layer's .background holds the prompt's text too, so a
 	// textContent match passes over a covered prompt. Polled with the center re-measured
 	// each tick: the dialog animates in, and a box read mid-entry points off the prompt.
+	// The painted hit is checked against the prompt's own .dialogModal, not the text
+	// element's subtree: getByText resolves the markdown text's inline span, and a
+	// multi-line span only hit-tests on its per-line boxes — its bounding-rect center can
+	// land in the inter-line gap, where the block parent (the prompt's own markdown h2)
+	// is the painted element - an ancestor hit reads as a covered prompt but isn't one. A
+	// covered by the raised auth layer would still fail: its hit lands in the OTHER
+	// dialog's .dialogModal.
 	await expect
 		.poll(
 			() =>
 				dialogText.evaluate((el) => {
+					const dialog = el.closest(".dialogModal");
+					if (!dialog) return "no-dialog";
 					const r = el.getBoundingClientRect();
 					const hit = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
 					if (!hit) return "nothing";
-					return el === hit || el.contains(hit) ? "prompt" : `${hit.tagName}.${String(hit.className)}`;
+					return dialog.contains(hit) ? "prompt" : `${hit.tagName}.${String(hit.className)}`;
 				}),
-			"the prompt's text is the element painted at its center",
+			"the prompt's own dialog is what's painted at its text's center",
 		)
 		.toBe("prompt");
 
