@@ -105,6 +105,11 @@ function patchBodies(bodies: unknown[]) {
 
 const rowSlotImg = () => document.querySelector<HTMLImageElement>(".emojiForm img.smallemoji");
 
+/** A custom picker return for the tests: a minimal owner satisfies Emoji.getHTML's CDN read. */
+function customEmoji(id: string, name: string) {
+	return new Emoji({id, name, animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+}
+
 it("an added channel's picked custom emoji rides with its name", async () => {
 	const {bodies} = openOnboard();
 	await vi.waitFor(() => expect(clickButtonAddChannelVisible()).toBeTruthy());
@@ -114,7 +119,7 @@ it("an added channel's picked custom emoji rides with its name", async () => {
 	const slot = dialog.querySelector(".emojiForm");
 	expect(slot, "the add-channel dialog offers an emoji input").not.toBeNull();
 
-	picked = new Emoji({id: "999", name: "party", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("999", "party");
 	slot!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(dialog.querySelector(".emojiForm img.smallemoji")).not.toBeNull());
 
@@ -166,7 +171,7 @@ it("rows show their stored emoji (animated per the guild's list) and a replace P
 	expect(img.src).toContain("/emojis/111.gif");
 	expect(document.body.textContent).toContain("📜");
 
-	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("888", "wave");
 	img.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
 
@@ -195,7 +200,7 @@ it("a pick by an immediate-save input raises no unsaved-changes bar", async () =
 	openOnboard();
 	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
 
-	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("888", "wave");
 	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
 
@@ -211,7 +216,7 @@ it("a refused emoji replace restores the visible slot and holds the old emoji", 
 	);
 	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
 
-	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("888", "wave");
 	failing = true;
 	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
@@ -256,11 +261,11 @@ it("a failed pick does not clobber a pick that landed after it", async () => {
 
 	// Pick A enters flight while failing; pick B lands before A's refusal arrives.
 	failing = true;
-	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("888", "wave");
 	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
 	failing = false;
-	picked = new Emoji({id: "777", name: "party", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("777", "party");
 	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
 
@@ -278,6 +283,30 @@ it("a failed pick does not clobber a pick that landed after it", async () => {
 	expect(row?.emoji_id).toBe("777");
 });
 
+it("a pick on the same row after a refusal leaves exactly one emoji in the slot", async () => {
+	let failing = false;
+	openOnboard(() =>
+		failing ? Response.json({message: "boom"}, {status: 500}) : Response.json(SCREEN),
+	);
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
+
+	picked = customEmoji("888", "wave");
+	failing = true;
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/111"));
+
+	// The slot was rebuilt by the revert; the next pick must replace its emoji, not stack
+	// a new one beside the restored element.
+	failing = false;
+	picked = customEmoji("777", "party");
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
+
+	const form = rowSlotImg()!.closest(".emojiForm")!;
+	expect(form.querySelectorAll(".smallemoji"), "one emoji element after the re-edit").toHaveLength(1);
+});
+
 it("two overlapping refused picks revert to the last server-confirmed emoji", async () => {
 	let failing = false;
 	const {bodies} = openOnboard(() => {
@@ -291,10 +320,10 @@ it("two overlapping refused picks revert to the last server-confirmed emoji", as
 	// A and B both enter flight while failing; both refusals arrive late. Neither lands,
 	// so the client must fall back to the fetched emoji — not to either pick.
 	failing = true;
-	picked = new Emoji({id: "888", name: "wave", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("888", "wave");
 	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
-	picked = new Emoji({id: "777", name: "party", animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	picked = customEmoji("777", "party");
 	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
 
