@@ -472,8 +472,8 @@ class Voice {
 	fingerprint?: string;
 	async cleanServerSDP(sdp: string): Promise<string> {
 		const out = await this.getCamInfo();
+		// When a camera is added, out.rtx_ssrc is set here (this.vidusers.set(out.rtx_ssrc, this.userid)).
 		if (!out.rtx_ssrc) {
-			// A camera path would register its rtx SSRC (this.vidusers.set(out.rtx_ssrc, this.userid)).
 			// No camera: drop our own video entry (keyed by SSRC, not position).
 			for (const [ssrc, id] of this.vidusers) {
 				if (id === this.userid) this.vidusers.delete(ssrc);

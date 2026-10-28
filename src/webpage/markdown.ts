@@ -1243,7 +1243,7 @@ class MarkDown {
 				html.childNodes[0].childNodes.length === 1 &&
 				html.childNodes[0].childNodes[0];
 			//TODO this may be slow, may want to check in on this in the future if it is
-			// Replace unless the DOM already matches the render and lazy keeping is allowed.
+			// Replace unless lazy keeping is allowed and the box is empty or already matches the render.
 			if ((box.hasChildNodes() && !html.isEqualNode(box.childNodes[0])) || !allowLazy) {
 				if (
 					!(box.childNodes.length === 1 && box.childNodes[0] instanceof Text && condition) ||
