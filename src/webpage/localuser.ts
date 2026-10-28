@@ -5449,6 +5449,7 @@ class Localuser {
 			-20 + rect.top - getViewportHeight(),
 			this,
 		);
+		if (!emoji) return;
 		this.favorites.addEmoji(emoji.id || (emoji.emoji as string));
 		p();
 		const md = typebox.markdown;
