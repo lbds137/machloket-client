@@ -108,7 +108,7 @@ async function putInCache(request: URL | string, response: Response) {
 		swStorageSave();
 	}
 	try {
-		console.log(await cache.put(request, response));
+		await cache.put(request, response);
 	} catch (error) {
 		console.error(error);
 	}
@@ -146,7 +146,6 @@ async function checkCache() {
 	if (promise) {
 		lastcache = await promise.text();
 	}
-	console.log(lastcache);
 	return fetch("/getupdates", {cache: "no-store"}).then(async (data) => {
 		setTimeout(
 			(_: any) => {
@@ -156,7 +155,6 @@ async function checkCache() {
 		);
 		if (!data.ok) return false;
 		const text = await data.clone().text();
-		console.log(text, lastcache);
 		if (lastcache !== text) {
 			deleteoldcache();
 			putInCache("/getupdates", data);
@@ -233,10 +231,8 @@ async function getfile(req: Request): Promise<Response> {
 		return response;
 	}
 	const cacheKey = cacheLookupKey(req);
-	console.log("Getting path: " + cacheKey);
 	const responseFromCache = await caches.match(cacheKey);
 	if (responseFromCache) {
-		console.log("cache hit");
 		return responseFromCache;
 	}
 	try {
@@ -279,13 +275,10 @@ async function onFetch(e: Event) {
 						return;
 					}
 					if (expired) {
-						const old = url;
-						const p = Date.now();
 						req = await Promise.race<Request>([
 							new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
 							new Promise((res) => setTimeout(() => res(req), 5000)),
 						]);
-						console.log(p - Date.now(), old === url);
 					}
 					const f = await fetch(req);
 					res(f);

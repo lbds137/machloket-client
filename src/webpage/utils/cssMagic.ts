@@ -31,7 +31,6 @@ export function unnest(str: string, check = true) {
 			}
 			if (!ani) {
 				append(conbuild, 1);
-				console.log(conbuild);
 				conbuild = "";
 			}
 
@@ -49,7 +48,6 @@ export function unnest(str: string, check = true) {
 		}
 		if (line.endsWith(",")) {
 			conbuild += line;
-			console.log(conbuild, line);
 		} else if (line.endsWith("{") && line.startsWith("@keyframes")) {
 			conbuild = uline;
 			ani++;
@@ -87,7 +85,6 @@ export function unnest(str: string, check = true) {
 		}
 	}
 	if (last) console.error("cssMagic: unnest ended inside a block");
-	console.log(specificity);
 	return specificity.join("\n");
 }
 export function fix() {
@@ -103,7 +100,6 @@ export function fix() {
 					return;
 				}
 				const css = unnest(txt);
-				console.log(css);
 
 				const style = document.createElement("style");
 				style.textContent = css;

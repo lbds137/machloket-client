@@ -4987,9 +4987,7 @@ class Localuser {
 		const bot: User = new User(json.bot, this);
 		const form = container.addSubForm(
 			I18n.localuser.editingBot(bot.username),
-			(out) => {
-				console.log(out);
-			},
+			() => {},
 			{
 				method: "PATCH",
 				fetchURL: this.info.api + "/applications/" + appId + "/bot",

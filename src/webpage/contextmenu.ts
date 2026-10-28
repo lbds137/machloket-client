@@ -249,7 +249,6 @@ class LayeredEvent extends CustomEvent<unknown> {
 		this.side = side;
 		this.menus = menus;
 		queueMicrotask(() => {
-			console.log(this);
 			const pop = this.primary || menus.pop();
 			if (!pop) return;
 			const [menu, addinfo, other] = pop;

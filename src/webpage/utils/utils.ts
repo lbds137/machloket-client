@@ -34,7 +34,6 @@ await setTheme();
 export async function setTheme(theme?: string) {
 	const prefs = await getPreferences();
 	document.body.className = (theme || prefs.theme) + "-theme";
-	console.log(theme);
 }
 export function getBulkUsers() {
 	const json = getBulkInfo();
@@ -277,7 +276,6 @@ export function trimswitcher() {
 		}
 	}
 	localStorage.setItem("userinfos", JSON.stringify(json));
-	console.log(json);
 }
 export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	const suser = new Specialuser(user);
@@ -306,11 +304,8 @@ class Directory {
 				yield [name, new Directory(handle)] as [string, Directory];
 			} else if (handle instanceof FileSystemFileHandle) {
 				yield [name, await handle.getFile()] as [string, File];
-			} else {
-				console.log(handle, "oops :3");
 			}
 		}
-		console.log("done");
 	}
 	async getRawFileHandler(name: string) {
 		return await this.handle.getFileHandle(name);
@@ -969,10 +964,6 @@ export class SW {
 			}
 		}
 		switch (message.code) {
-			case "pong": {
-				console.log(message);
-				break;
-			}
 			case "close": {
 				for (const thing of await navigator.serviceWorker.getRegistrations()) {
 					await thing.unregister();

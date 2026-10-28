@@ -23,7 +23,6 @@ if (window.location.pathname.startsWith("/template"))
 				if (well && sameInstance(user.serverurls.wellknown, well)) {
 					joinable.push(user);
 				}
-				console.log(user);
 			}
 		}
 
@@ -39,7 +38,6 @@ if (window.location.pathname.startsWith("/template"))
 						if (sameApi(user.serverurls.api, out.api)) {
 							joinable.push(user);
 						}
-						console.log(user);
 					}
 				}
 			} else {
@@ -72,8 +70,6 @@ if (window.location.pathname.startsWith("/template"))
 		function showAccounts(): void {
 			const table = document.createElement("dialog");
 			for (const user of joinable) {
-				console.log(user.pfpsrc);
-
 				const userinfo = document.createElement("div");
 				userinfo.classList.add("flexltr", "switchtable");
 
@@ -111,7 +107,6 @@ if (window.location.pathname.startsWith("/template"))
 			}
 
 			table.classList.add("flexttb", "accountSwitcher");
-			console.log(table);
 			document.body.append(table);
 		}
 

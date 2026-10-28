@@ -148,7 +148,6 @@ class Bot {
 				initColor: color,
 			});
 			colorPicker.watchForChange((_) => {
-				console.log();
 				color = _;
 				hypouser.accent_color = Number.parseInt("0x" + _.substr(1), 16);
 				changed = true;
@@ -272,7 +271,6 @@ class Bot {
 			const encoded = params.toString();
 			const urlStr = `${location.origin}/oauth2/authorize?${encoded}`;
 			if (urlStr == url.elm.deref()?.textContent) return;
-			console.log(urlStr, url.text);
 			url.setText(urlStr);
 		}, 100);
 	}

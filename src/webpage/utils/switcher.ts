@@ -94,7 +94,6 @@ export class AccountSwitcher {
 					if (this.canLogOut) {
 						e.stopImmediatePropagation();
 						e.preventDefault();
-						console.log(e, e.clientX, e.clientY);
 						menu.makemenu(e.clientX, e.clientY, specialUser, undefined, table);
 					}
 					return;

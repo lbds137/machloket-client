@@ -65,7 +65,6 @@ class Search<E> {
 		return new Promise<E | undefined>((res) => {
 			const container = document.createElement("div");
 			container.classList.add("fixedsearch");
-			console.log((x ^ 0) + "", (y ^ 0) + "");
 			container.style.left = (x ^ 0) + "px";
 			container.style.top = (y ^ 0) + "px";
 			const remove = container.remove;

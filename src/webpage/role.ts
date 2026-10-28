@@ -607,7 +607,6 @@ class RoleList extends Buttons {
 		const elms = Array.from(this.buttonList.children);
 		const div = elms[0] as HTMLDivElement;
 		const div2 = elms[1] as HTMLDivElement;
-		console.log(div);
 		div.innerHTML = "";
 		div.append(this.buttonListGen(div2)); //not actually sure why the html is needed
 	}
@@ -660,7 +659,6 @@ class RoleList extends Buttons {
 			}
 
 			void this.guild.recalcRoles(previous);
-			console.log(role);
 		});
 	}
 	buttonListGen(html: HTMLElement) {
@@ -688,14 +686,12 @@ class RoleList extends Buttons {
 					const users = (await this.guild.searchMembers(3, str))
 						.map((_) => _.user)
 						.map((_) => [_.name, _] as [string, User]);
-					console.log(users);
 					return users;
 				});
 
 				const found = await search.find(box.left, box.top);
 
 				if (!found) return;
-				console.log(found);
 				this.onchange(found.id, new Permissions("0", "0"));
 			} else {
 				const div = document.createElement("div");
@@ -710,7 +706,6 @@ class RoleList extends Buttons {
 				Contextmenu.keepOnScreen(div);
 				bar.onchange = async () => {
 					div.remove();
-					console.log(bar.value);
 					if (bar.value === "") return;
 					const res = await fetch(this.info.api + `/guilds/${this.guild.id}/roles`, {
 						method: "POST",

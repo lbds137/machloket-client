@@ -1,6 +1,6 @@
 import {I18n} from "./i18n.js";
 import {makeRegister} from "./register.js";
-import {getInstances, instancefetch, mobile} from "./utils/utils.js";
+import {getInstances, instancefetch} from "./utils/utils.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
 
 NotificationSoundManager.preload().catch((e) => {
@@ -8,7 +8,6 @@ NotificationSoundManager.preload().catch((e) => {
 });
 
 if (window.location.pathname === "/" || window.location.pathname.startsWith("/index")) {
-	console.log(mobile);
 	const serverbox = document.getElementById("instancebox") as HTMLDivElement;
 	const observer = new IntersectionObserver(
 		(entries) => {

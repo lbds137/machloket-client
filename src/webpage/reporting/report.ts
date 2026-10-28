@@ -316,7 +316,6 @@ class ReportNode {
 
 		const buttonDiv = document.createElement("div");
 		buttonDiv.classList.add("flexltr", "reportButtonDiv");
-		console.log(this.buttonType);
 		switch (this.buttonType) {
 			case "next": {
 				const next = document.createElement("button");
@@ -353,9 +352,6 @@ class ReportNode {
 				};
 				break;
 			}
-
-			default:
-				console.log(this.buttonType);
 		}
 		if (
 			this.buttonType !== "cancel" &&
@@ -404,7 +400,6 @@ class ReportNode {
 				comb.push(...elm.optionReal);
 			}
 		}
-		console.log(comb, this);
 		return new Intl.ListFormat(I18n.lang).format(comb);
 	}
 }
@@ -584,7 +579,6 @@ class ReportElement {
 				break;
 			}
 			default:
-				console.log(json);
 				div.textContent = this.json.type;
 		}
 

@@ -812,7 +812,6 @@ class Channel extends SnowFlake {
 		settings.show();
 	}
 	sortPerms() {
-		console.log(this.permission_overwritesar + "");
 		this.permission_overwritesar.sort((a, b) => {
 			if (!this.guild.hasRole(a[0])) return -1;
 			if (!this.guild.hasRole(b[0])) return 1;
@@ -821,7 +820,6 @@ class Channel extends SnowFlake {
 				this.guild.roles.findIndex((r) => r.id === b[0])
 			);
 		});
-		console.log(this.permission_overwritesar + "");
 	}
 	setUpInfiniteScroller() {
 		this.infinite = new InfiniteScroller(
@@ -1249,8 +1247,6 @@ class Channel extends SnowFlake {
 			icon.classList.add("space", "svgicon", this.nsfw ? "svg-announcensfw" : "svg-announce");
 		} else if (this.type === 15) {
 			icon.classList.add("space", "svgicon", this.nsfw ? "svg-forumnsfw" : "svg-forum");
-		} else {
-			console.log(this.type);
 		}
 		return icon;
 	}
@@ -1398,7 +1394,6 @@ class Channel extends SnowFlake {
 			u.volume = this.localuser.getUserAudio(u.id) / 100;
 		};
 		this.voice.onMemberChange = async (memb, joined) => {
-			console.log(memb, joined);
 			if (typeof memb !== "string") {
 				await Member.new(memb, this.guild);
 			}
@@ -1428,7 +1423,6 @@ class Channel extends SnowFlake {
 				}
 			}
 			const tray = this.voiceTray.get(id);
-			console.log("tray! :3");
 			if (tray && tray.parentElement) {
 				const parent = tray.parentElement;
 				const pfp = parent.children[0].getElementsByClassName("pfp")[0];
@@ -1454,7 +1448,6 @@ class Channel extends SnowFlake {
 					.toArray()
 					.map(async (_) => {
 						const user = await User.resolve(_[0], this.localuser);
-						console.log(user);
 						const member = await Member.resolveMember(user, this.guild);
 						const array = [member, _[1]] as [Member, (typeof _)[1]];
 						return array;
@@ -1685,7 +1678,6 @@ class Channel extends SnowFlake {
 		const typebox = document.getElementById("typebox") as HTMLElement;
 		typebox.focus();
 		if (!this.replyingto?.div) return;
-		console.log(message);
 		this.replyingto.div.classList.add("replying");
 		this.makereplybox();
 	}
@@ -1759,7 +1751,6 @@ class Channel extends SnowFlake {
 			m1 = this.idToPrev.get(m1);
 		}
 		await Promise.all(waits);
-		console.log(waits);
 	}
 	async focus(id: string, flash = true) {
 		const prom = this.getMessages(id);
@@ -1855,7 +1846,6 @@ class Channel extends SnowFlake {
 		//TODO make a loading screen thingy if the video isn't progressing in time yet
 		const box = this.boxMap.get(id);
 		if (!box) return;
-		console.log("vid", elm);
 		box.append(elm);
 	}
 	makeBig(box: HTMLElement) {
@@ -2128,8 +2118,7 @@ class Channel extends SnowFlake {
 				this.voice?.stopStream();
 			} else {
 				const stream = await navigator.mediaDevices.getDisplayMedia();
-				const v = await this.voice?.createLive(stream);
-				console.log(v);
+				await this.voice?.createLive(stream);
 			}
 			updateLiveIcon();
 		};
@@ -2317,7 +2306,6 @@ class Channel extends SnowFlake {
 					this.updateEvents.delete(up);
 					return;
 				}
-				console.log(this.updateEvents);
 				const c = await this.renderThread(false);
 				if (!c) return;
 				div.after(c);
@@ -3270,10 +3258,8 @@ class Channel extends SnowFlake {
 			user.statusChange();
 		}, 10000);
 		if (memb.id === this.localuser.user.id) {
-			console.log("you is typing");
 			return;
 		}
-		console.log("user is typing and you should see it");
 		this.rendertyping();
 	}
 	similar(str: string) {
@@ -3350,7 +3336,6 @@ class Channel extends SnowFlake {
 			"",
 			(_, sent: any) => {
 				notiselect.hide();
-				console.log(sent);
 				this.message_notifications = sent.channel_overrides[this.id].message_notifications;
 			},
 			{
@@ -3563,8 +3548,6 @@ class Channel extends SnowFlake {
 	async getArround(id: string) {
 		if (!this.messages.has(id)) {
 			await this.getmessage(id);
-		} else {
-			console.log("have " + id);
 		}
 		await Promise.all([this.grabBefore(id), this.grabAfter(id)]);
 	}
@@ -4549,7 +4532,6 @@ class Channel extends SnowFlake {
 		let ctype: string | undefined;
 		const maybeUpdate = () => {
 			if ("updatePosition" in this && this.updatePosition instanceof Function) {
-				console.log("here?");
 				this.updatePosition(Date.now());
 			}
 		};

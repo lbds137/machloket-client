@@ -513,7 +513,6 @@ class Message extends SnowFlake {
 			...this.reactions.map((reaction) => {
 				const button = document.createElement("div");
 
-				console.log(reaction);
 				const emoji = new Emoji(reaction.emoji, this.guild);
 				button.append(emoji.getHTML(), `(${reaction.count})`);
 				let users: User[] | undefined = undefined;
@@ -754,9 +753,6 @@ class Message extends SnowFlake {
 			(this as any)[thing] = (messagejson as any)[thing];
 		}
 		this.stickers ||= [];
-		if (messagejson.reactions?.length) {
-			console.log(messagejson.reactions, ":3");
-		}
 		if (messagejson.webhook) {
 			messagejson.author.webhook = messagejson.webhook;
 		}
@@ -1026,7 +1022,6 @@ class Message extends SnowFlake {
 		if (!this.channel.messages.has(this.id)) return;
 		if (!this.id.includes("fake") && this.channel.messageCount !== undefined)
 			this.channel.messageCount--;
-		console.log("deleted");
 		this.channel.infinite.deleteId(this.id);
 		if (this.div) {
 			this.div.remove();
@@ -1073,7 +1068,6 @@ class Message extends SnowFlake {
 				this.channel.lastreadmessageid = undefined;
 			}
 		}
-		console.log("deleted done");
 	}
 	pollUpdate(update: pollUpdateJson) {
 		if (!this.poll) return;
@@ -2066,7 +2060,6 @@ class Message extends SnowFlake {
 			const messages = document.createElement("span");
 			messages.classList.add("clickable");
 			messages.textContent = I18n.message.messages(thread.messageCount + "");
-			console.log(thread);
 			topRow.append(title, messages);
 			threadBox.append(topRow);
 			div.append(threadBox);
