@@ -327,7 +327,6 @@ class Button extends compObj {
 	disabled: boolean;
 	constructor(comp: button, owner: Components) {
 		super();
-		console.warn(comp);
 		this.custom_id = comp.custom_id;
 		this.label = comp.label;
 		this.style = comp.style;

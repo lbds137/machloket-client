@@ -1439,7 +1439,6 @@ class Channel extends SnowFlake {
 	async updateVoiceUsers() {
 		const voiceUsers = this.voiceUsers.deref();
 		if (!voiceUsers || !this.voice) return;
-		console.warn(this.voice.userids);
 
 		const html = (
 			await Promise.all(
@@ -2162,7 +2161,6 @@ class Channel extends SnowFlake {
 		voiceArea.append(users, buttonRow);
 		this.voice.onVideo = (vid, id) => {
 			this.localuser.regenVoiceIcons();
-			console.warn("happened");
 			this.boxVid(id, vid);
 			updateVideoIcon();
 		};
@@ -3966,7 +3964,6 @@ class Channel extends SnowFlake {
 			notinumber = null;
 		}
 		notinumber ??= this.guild.message_notifications;
-		console.warn("info:", notinumber);
 		switch (Number(notinumber)) {
 			case 0:
 				return "all";
@@ -4471,7 +4468,6 @@ class Channel extends SnowFlake {
 			res.send(rbody);
 		};
 		const fail = () => {
-			console.warn("failed");
 			funcs?.failed(resend);
 		};
 

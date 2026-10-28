@@ -233,7 +233,6 @@ class VoiceFactory {
 			};
 
 			voice2.gotStream(voice, user);
-			console.warn(voice2);
 			const res = this.live.get(create.d.stream_key);
 			if (res) res(voice);
 		}
@@ -365,7 +364,6 @@ class Voice {
 	readonly speakingMap = new Map<string, number>();
 	onSpeakingChange = (_userid: string, _speaking: number) => {};
 	disconnect(userid: string) {
-		console.warn(userid);
 		if (userid === this.userid) {
 			this.leave();
 		}
@@ -485,7 +483,6 @@ class Voice {
 		if (!ld) throw new Error("localDescription isn't defined");
 		const parsed = Voice.parsesdp(ld.sdp);
 		const group = parsed.atr.get("group");
-		console.warn(parsed);
 		if (!group) throw new Error("group isn't in sdp");
 		const [_, ...bundles] = (group.entries().next().value as [string, string])[0].split(" ");
 		bundles[bundles.length - 1] = bundles[bundles.length - 1].replace("\r", "");
@@ -506,7 +503,6 @@ class Voice {
 
 		const audioUsers = [...this.users];
 		const videoUsers = [...this.vidusers];
-		console.warn(audioUsers);
 
 		let build = `v=0\r
 o=- 1420070400000 0 IN IP4 ${this.urlobj.url}\r
@@ -649,7 +645,6 @@ a=rtcp-mux\r`;
 							found = true;
 							this.ssrcMap.set(sender, thing.ssrc);
 							this.makeOp12(sender);
-							console.warn("ssrc");
 						}
 					});
 					//TODO Firefox made me do this, if I can figure out how to not do this, that'd be great
@@ -662,13 +657,11 @@ a=rtcp-mux\r`;
 							const ssrc = +[...temp][0].split(" ")[0];
 							this.ssrcMap.set(sender, ssrc);
 							this.makeOp12(sender);
-							console.warn("ssrc");
 							made12 = true;
 						}
 					}
 				}
 				if (!made12) {
-					console.warn("this was ran :3");
 					this.makeOp12();
 				}
 			};
@@ -689,24 +682,19 @@ a=rtcp-mux\r`;
 				logState("negotiationneeded");
 				await sendOffer(true);
 			});
-			pc.onicecandidate = (e) => {
-				console.warn(e.candidate);
-			};
+			pc.onicecandidate = () => {};
 
 			pc.addEventListener("signalingstatechange", async () => {
 				logState("signalingstatechange", pc.signalingState);
 				detectDone();
 				while (!this.counter) await new Promise((res) => setTimeout(res, 100));
 				if (this.pc && this.counter) {
-					console.warn("in here :3");
 					if (pc.signalingState === "have-local-offer") {
 						const val = (Math.random() * 1000) ^ 0;
 						logState("update", "start sent remote " + val);
 						await this.updateRemote();
 						logState("update", "end sent remote " + val);
 					}
-				} else {
-					console.warn("uh oh!");
 				}
 			});
 			pc.addEventListener("connectionstatechange", async () => {
@@ -753,7 +741,6 @@ a=rtcp-mux\r`;
 				Array.from(stats).forEach((_) => {
 					if (_[1].ssrc) {
 						video_ssrc = _[1].ssrc;
-						console.warn(_);
 					}
 					if (_[1].rtxSsrc) {
 						rtx_ssrc = _[1].rtxSsrc;
@@ -770,7 +757,6 @@ a=rtcp-mux\r`;
 	async makeOp12(sender: RTCRtpSender | undefined | [RTCRtpSender, number] = this.mic?.sender) {
 		//await new Promise((res) => setTimeout(res, 500));
 		this.owner.sendVoiceStateIfNeeded();
-		console.warn("making 12?");
 		if (!this.ws) return;
 		if (sender instanceof Array) {
 			sender = sender[0];
@@ -1039,7 +1025,6 @@ a=rtcp-mux\r`;
 			if (!this.open) return;
 			await new Promise((res) => setTimeout(res, 100));
 		}
-		console.warn("test test test test video sent!");
 		const tracks = caml.getVideoTracks();
 		const [cam] = tracks;
 
@@ -1306,7 +1291,6 @@ a=rtcp-mux\r`;
 				}),
 			);
 		}
-		console.warn("done with this!");
 	}
 	static parsesdp(sdp: string) {
 		let currentA = new Map<string, Set<string>>();
