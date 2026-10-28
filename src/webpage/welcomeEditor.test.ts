@@ -163,6 +163,35 @@ it("an added channel's picked unicode emoji rides as emoji_name", async () => {
 	expect(added, "no emoji_id rides beside unicode").not.toHaveProperty("emoji_id");
 });
 
+// RED: at HEAD the add dialog's emoji input mounts without {clear: true}, so it offers no
+// way to un-pick before submitting.
+it("the add dialog's emoji input offers a clear button and a cleared pick submits bare", async () => {
+	const {bodies} = openOnboard();
+	await vi.waitFor(() => expect(clickButtonAddChannelVisible()).toBeTruthy());
+
+	clickButton(I18n.onboarding.addChannel());
+	const dialog = [...document.querySelectorAll(".dialogModal")].at(-1)!;
+	const slot = dialog.querySelector(".emojiForm");
+	expect(slot, "the add-channel dialog offers an emoji input").not.toBeNull();
+
+	picked = customEmoji("999", "party");
+	slot!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(dialog.querySelector(".emojiForm img.smallemoji")).not.toBeNull());
+
+	// The clear button lives on the input's outdiv, not inside .emojiForm.
+	const clear = slot!.parentElement!.querySelector("button");
+	expect(clear, "the add dialog's emoji input offers a clear button").not.toBeNull();
+	clear!.click();
+	await vi.waitFor(() => expect(dialog.querySelector(".emojiForm img.smallemoji")).toBeNull());
+
+	clickButton(I18n.submit());
+	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
+	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	const added = patch.welcome_channels.find((c) => c.channel_id === "c3");
+	expect(added, "a cleared pick rides bare").not.toHaveProperty("emoji_id");
+	expect(added).not.toHaveProperty("emoji_name");
+});
+
 it("rows show their stored emoji (animated per the guild's list) and a replace PATCHes the update", async () => {
 	const {bodies} = openOnboard();
 	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());

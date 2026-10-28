@@ -1331,7 +1331,9 @@ class Guild extends SnowFlake {
 							I18n.onboarding.emoji(),
 							() => {},
 							this.localuser,
-							{},
+							// The rows' inputs take {clear: true}; an un-pick before submit must
+							// be possible here too (entryEmoji(null) composes to bare fields).
+							{clear: true},
 						);
 						d.show();
 					});
