@@ -392,7 +392,10 @@ describe("emojiRecentsMerged and picker recents rail", () => {
 		Object.assign(favorites, {
 			emojiFrecency: {
 				"⏩": {totalUses: 1, recentUses: [String(now + 60_000)], frecency: -1, score: 100},
-				"🗿": {totalUses: 5, recentUses: [String(now)], frecency: -1, score: 500},
+				// Future-stamped too: both weights clamp to exactly 1, so the totalUses
+				// tie-break decides deterministically (a now-stamped seed decays below 1
+				// after one millisecond and the order flips on slow machines).
+				"🗿": {totalUses: 5, recentUses: [String(now + 60_000)], frecency: -1, score: 500},
 			},
 		});
 
