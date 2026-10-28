@@ -4,6 +4,8 @@ import {describe, expect, it} from "vitest";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Channel} = await import("./channel");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 // A tile whose video is still negotiating (paused, no frame data yet) — the state a fresh
 // WebRTC <video> sits in until the first frame decodes.
@@ -93,5 +95,52 @@ describe("the video tile loading state", () => {
 		channel.boxVid("u1", video);
 
 		expect(box.querySelectorAll(".vidloading")).toHaveLength(1);
+	});
+
+	// RED: at HEAD the dedupe short-circuits on the existing overlay, so the listener stays
+	// armed on the FIRST element only — renegotiation's replacement element plays and the
+	// loader never clears (a permanent spinner over a working video).
+	it("a replacement element arriving mid-load re-arms the overlay on itself", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+		const first = notProgressing();
+		const second = notProgressing();
+
+		channel.boxVid("u1", first);
+		channel.boxVid("u1", second);
+		expect(box.querySelectorAll(".vidloading")).toHaveLength(1);
+
+		second.dispatchEvent(new Event("playing"));
+
+		expect(box.querySelector(".vidloading")).toBeNull();
+	});
+
+	// PIN: passes at HEAD; a video that reaches HAVE_CURRENT_DATA without a playing event
+	// (the fast-path branch) clears the stale overlay on the next boxChange.
+	it("a video already rendering clears a stale overlay on re-attach", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+		const video = notProgressing();
+
+		channel.boxVid("u1", video);
+		expect(box.querySelector(".vidloading")).not.toBeNull();
+
+		Object.defineProperty(video, "paused", {value: false});
+		Object.defineProperty(video, "readyState", {value: HTMLMediaElement.HAVE_CURRENT_DATA});
+		channel.boxVid("u1", video);
+
+		expect(box.querySelector(".vidloading")).toBeNull();
+	});
+
+	// RED: at HEAD the overlay is three bare spans — screen readers hear nothing.
+	it("the overlay announces itself to screen readers", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+
+		channel.boxVid("u1", notProgressing());
+
+		const loading = box.querySelector(".vidloading");
+		expect(loading?.getAttribute("role")).toEqual("status");
+		expect(loading?.getAttribute("aria-label")).toEqual(I18n.vc.videoLoading());
 	});
 });

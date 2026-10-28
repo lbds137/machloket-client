@@ -1859,17 +1859,22 @@ class Channel extends SnowFlake {
 			box.getElementsByClassName("vidloading")[0]?.remove();
 			return;
 		}
-		// A repeat call (mute/deaf change while video is on) keeps the overlay the first
-		// call armed its playing listener on.
-		if (box.getElementsByClassName("vidloading")[0]) return;
-		const loading = document.createElement("div");
-		loading.classList.add("vidloading");
-		for (let i = 0; i < 3; i++) {
-			const dot = document.createElement("span");
-			dot.classList.add("dot");
-			loading.append(dot);
+		// The overlay is per box, the listener per element: renegotiation can deliver a
+		// replacement while the first element is still loading, so every arrival (re)arms
+		// on itself. Repeat listeners are `once` and their extra removes are no-ops.
+		let loading = box.getElementsByClassName("vidloading")[0];
+		if (!loading) {
+			loading = document.createElement("div");
+			loading.classList.add("vidloading");
+			loading.setAttribute("role", "status");
+			loading.setAttribute("aria-label", I18n.vc.videoLoading());
+			for (let i = 0; i < 3; i++) {
+				const dot = document.createElement("span");
+				dot.classList.add("dot");
+				loading.append(dot);
+			}
+			box.append(loading);
 		}
-		box.append(loading);
 		elm.addEventListener("playing", () => loading.remove(), {once: true});
 	}
 	makeBig(box: HTMLElement) {
