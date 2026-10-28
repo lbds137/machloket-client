@@ -1070,6 +1070,7 @@
 		"desc": "Description",
 		"errEmjMust": "Must pair an emoji with your sticker",
 		"errFileMust": "Must include an image for your sticker",
+		"frequentlyUsed": "Frequently Used",
 		"image": "Image:",
 		"name": "Name:",
 		"tags": "Associated emoji: ",

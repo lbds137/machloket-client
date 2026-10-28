@@ -5132,8 +5132,8 @@ class Localuser {
 			-20 + rect.top - getViewportHeight(),
 			this,
 		);
+		if (!sticker) return;
 		this.favorites.addStickerFreq(sticker.id);
-		console.log(sticker);
 		if (this.channelfocus) {
 			this.channelfocus.sendMessage("", {
 				embeds: [],

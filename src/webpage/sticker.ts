@@ -74,20 +74,41 @@ class Sticker extends SnowFlake {
 	}
 	static getFromId(id: string, localuser: Localuser) {
 		for (const guild of localuser.guilds) {
-			const stick = guild.stickers.find((_) => _.id === id);
+			// The @me home (Direct) extends Guild without ever assigning stickers — every
+			// sticker send died here on it before the request left (undefined.find).
+			const stick = (guild.stickers ?? []).find((_) => _.id === id);
 			if (stick) {
 				return stick;
 			}
 		}
 		return undefined;
 	}
-	static async stickerPicker(x: number, y: number, localuser: Localuser): Promise<Sticker> {
-		let res: (r: Sticker) => void;
-		this;
-		const promise: Promise<Sticker> = new Promise((r) => {
+	static async stickerPicker(
+		x: number,
+		y: number,
+		localuser: Localuser,
+	): Promise<Sticker | undefined> {
+		let res!: (r: Sticker | undefined) => void;
+		const promise = new Promise<Sticker | undefined>((r) => {
 			res = r;
 		});
 		const menu = document.createElement("div");
+		let settled = false;
+		const closeObserver = new MutationObserver(() => {
+			if (!menu.isConnected || menu.classList.contains("removeElm")) {
+				settle(undefined);
+			}
+		});
+		const settle = (sticker: Sticker | undefined) => {
+			if (settled) return;
+			settled = true;
+			closeObserver.disconnect();
+			res(sticker);
+		};
+		const watchClose = () => {
+			closeObserver.observe(document.body, {childList: true});
+			closeObserver.observe(menu, {attributes: true, attributeFilter: ["class"]});
+		};
 		menu.classList.add("flexttb", "stickerPicker");
 		if (y > 0) {
 			menu.style.top = y + "px";
@@ -116,7 +137,8 @@ class Sticker extends SnowFlake {
 			Contextmenu.declareMenu(menu);
 			document.body.append(menu);
 			Contextmenu.keepOnScreen(menu);
-			return new Promise(() => {});
+			watchClose();
+			return promise;
 		}
 		const title = document.createElement("h2");
 		title.textContent = guilds[0].properties.name;
@@ -130,11 +152,14 @@ class Sticker extends SnowFlake {
 
 		let html: HTMLElement | undefined = undefined;
 		let topSticker: undefined | Sticker = undefined;
+		const resetSearch = () => {
+			search.style.removeProperty("width");
+			topSticker = undefined;
+		};
 		const updateSearch = () => {
 			if (search.value === "") {
 				if (html) html.click();
-				search.style.removeProperty("width");
-				topSticker = undefined;
+				resetSearch();
 				return;
 			}
 
@@ -153,7 +178,7 @@ class Sticker extends SnowFlake {
 				body.append(emojiElem);
 
 				emojiElem.addEventListener("click", () => {
-					res(sticker);
+					settle(sticker);
 					Contextmenu.declareMenu();
 				});
 			}
@@ -163,7 +188,7 @@ class Sticker extends SnowFlake {
 		});
 		search.addEventListener("keyup", (e) => {
 			if (e.key === "Enter" && topSticker) {
-				res(topSticker);
+				settle(topSticker);
 				Contextmenu.declareMenu();
 			}
 		});
@@ -175,8 +200,53 @@ class Sticker extends SnowFlake {
 		const body = document.createElement("div");
 		body.classList.add("stickerBody");
 
+		// TUNABLE: maximum number of stickers shown in the Frequently Used section.
+		const FREQUENT_STICKERS_CAP = 10;
+		const stickerById = new Map<string, Sticker>();
+		for (const guild of guilds) {
+			for (const sticker of guild.stickers) {
+				stickerById.set(sticker.id, sticker);
+			}
+		}
+		const frequentStickers: Sticker[] = [];
+		for (const [id] of localuser.favorites?.stickersFreq() ?? []) {
+			if (frequentStickers.length >= FREQUENT_STICKERS_CAP) break;
+			const sticker = stickerById.get(id);
+			if (sticker) {
+				frequentStickers.push(sticker);
+			}
+		}
+
 		let isFirst = true;
 		let i = 0;
+		if (frequentStickers.length > 0) {
+			const select = document.createElement("div");
+			select.classList.add("svg-history");
+			html = select;
+			i++;
+			selection.append(select);
+			const clickFrequent = () => {
+				search.value = "";
+				resetSearch();
+				title.textContent = I18n.sticker.frequentlyUsed();
+				body.innerHTML = "";
+				for (const sticker of frequentStickers) {
+					const stickerElem = document.createElement("div");
+					stickerElem.classList.add("stickerSelect");
+					stickerElem.append(sticker.getHTML());
+					body.append(stickerElem);
+					stickerElem.addEventListener("click", () => {
+						settle(sticker);
+						Contextmenu.declareMenu();
+					});
+				}
+			};
+			select.addEventListener("click", clickFrequent);
+			if (isFirst) {
+				clickFrequent();
+				isFirst = false;
+			}
+		}
 		guilds.forEach((guild) => {
 			const select = document.createElement("div");
 			if (i === 0) {
@@ -212,7 +282,7 @@ class Sticker extends SnowFlake {
 
 			const clickEvent = () => {
 				search.value = "";
-				updateSearch.call(this);
+				resetSearch();
 				title.textContent = guild.properties.name;
 				body.innerHTML = "";
 				for (const sticker of guild.stickers) {
@@ -221,7 +291,7 @@ class Sticker extends SnowFlake {
 					stickerElem.append(sticker.getHTML());
 					body.append(stickerElem);
 					stickerElem.addEventListener("click", () => {
-						res(sticker);
+						settle(sticker);
 						Contextmenu.declareMenu();
 					});
 				}
@@ -239,6 +309,7 @@ class Sticker extends SnowFlake {
 		Contextmenu.keepOnScreen(menu);
 		menu.append(selection);
 		menu.append(body);
+		watchClose();
 		search.focus();
 		return promise;
 	}
