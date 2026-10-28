@@ -1904,6 +1904,9 @@ textarea:focus {
 }
 
 .forumTag {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
 	padding: 3px;
 	border-radius: 12px;
 	background: #ff21;
