@@ -1222,13 +1222,14 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 		const label = document.createElement("span");
 		label.textContent = this.label;
 
-		let emoji: HTMLElement;
-		if (this.value) {
-			emoji = this.value.getHTML();
-		} else {
-			emoji = document.createElement("span");
-			emoji.classList.add("emptyEmoji");
-		}
+		// The displayed element lives on the instance, not in a closure local: setEmoji
+		// swaps it too, and the pick/clear handlers below must act on whatever is current.
+		const emptySlot = () => {
+			const span = document.createElement("span");
+			span.classList.add("emptyEmoji");
+			return span;
+		};
+		const emoji = this.value ? this.value.getHTML() : emptySlot();
 		this.emojiEl = emoji;
 		div.onclick = (e) => {
 			e.preventDefault();
@@ -1237,10 +1238,9 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 				const emj = await this.localuser.emojiPicker(e.x, e.y, this.guild);
 				if (emj) {
 					this.value = emj;
-					emoji.remove();
-					emoji = emj.getHTML();
-					this.emojiEl = emoji;
-					div.append(emoji);
+					this.emojiEl?.remove();
+					this.emojiEl = emj.getHTML();
+					div.append(this.emojiEl);
 					this.onchange(emj);
 					if (!this.immediate) this.owner.changed();
 				}
@@ -1253,13 +1253,12 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			button.textContent = I18n.settings.clear();
 			button.onclick = () => {
 				this.value = null;
-				emoji.remove();
+				this.emojiEl?.remove();
 				this.onchange(null);
 				if (!this.immediate) this.owner.changed();
-				emoji = document.createElement("span");
-				emoji.classList.add("emptyEmoji");
-				this.emojiEl = emoji;
-				div.append(emoji);
+				this.emojiEl = document.createElement("span");
+				this.emojiEl.classList.add("emptyEmoji");
+				div.append(this.emojiEl);
 			};
 			outDiv.append(button);
 		}
