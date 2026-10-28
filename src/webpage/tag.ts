@@ -1,4 +1,5 @@
 import {Channel} from "./channel";
+import {Emoji} from "./emoji";
 import {tagjson} from "./jsontypes";
 import {SnowFlake} from "./snowflake";
 
@@ -25,7 +26,11 @@ export class Tag extends SnowFlake {
 		const tagDiv = document.createElement("div");
 		tagDiv.classList.add("forumTag");
 
-		//TODO render emojis
+		if (this.emoji_id) {
+			tagDiv.append(new Emoji({id: this.emoji_id, name: this.emoji_name ?? ""}, this.owner.guild).getHTML(false, false));
+		} else if (this.emoji_name) {
+			tagDiv.append(this.emoji_name);
+		}
 
 		const name = document.createElement("span");
 		name.textContent = this.name;
