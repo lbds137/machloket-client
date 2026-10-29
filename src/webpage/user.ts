@@ -130,6 +130,12 @@ class User extends SnowFlake {
 		asset: string;
 		sku_id: string;
 	} | null;
+	/** The NSFW attestation flag, tri-state on Discord's wire (null = unattested). mainuserjson
+	 * types it for the @me payload, and the repo's own types hedge that other users' profile
+	 * responses may carry it too (highMemberJSON; checkfortmi's bad-set) — but only the self
+	 * user's INSTANCE receives a value, via userupdate's dynamic copy at the @me construction.
+	 * This declaration types the reads (channel.ts nsfwPannel + nsfwGated). */
+	nsfw_allowed?: boolean | null;
 
 	/** This user's profile badges, loaded into localuser.badges once (reset by new badge_ids). */
 	private profileBadges: Promise<boolean> | undefined;
