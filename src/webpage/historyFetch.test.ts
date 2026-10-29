@@ -19,7 +19,7 @@ const within = <T,>(p: Promise<T>, ms = 1500) =>
 /** A channel whose history already holds the messages a fetch would return, so the paging
  * paths link ids without building Message objects. */
 function channelWith(ids: string[]) {
-	return Object.assign(Object.create(Channel.prototype), {
+	const channel = Object.assign(Object.create(Channel.prototype), {
 		id: "200",
 		owner: {info: {api: "http://history.test/api/v9"}},
 		headers: {},
@@ -30,6 +30,19 @@ function channelWith(ids: string[]) {
 		afterProms: new Map(),
 		historyFailures: 0,
 	}) as InstanceType<typeof Channel>;
+	// guild is a getter-only prototype accessor: shadow it per instance. Message construction
+	// resolves the author through channel.guild.localuser.userMap.
+	Object.defineProperty(channel, "guild", {
+		value: {
+			localuser: {
+				info: {api: "http://history.test/api/v9"},
+				userMap: new Map(),
+				guilds: [],
+				resolvemember: async () => undefined,
+			},
+		},
+	});
+	return channel;
 }
 
 afterEach(() => {
@@ -250,6 +263,27 @@ describe("a rate-limited history fetch", () => {
 });
 
 describe("jumping to a message the instance won't give", () => {
+	/** A wire-shaped message the Message constructor can build. */
+	function wireMessage(id: string) {
+		return {
+			id,
+			type: 0,
+			content: "",
+			timestamp: "2026-10-28T12:00:00+00:00",
+			edited_timestamp: null,
+			author: {id: "author-1", username: "Neighbor"},
+			attachments: [],
+			embeds: [],
+			stickers: [],
+			reactions: [],
+			flags: 0,
+			pinned: false,
+			tts: false,
+			mention_everyone: false,
+			mentions: [],
+		};
+	}
+
 	it("reads an error answer as no message, not as a message", async () => {
 		const channel = channelWith([]);
 		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -257,6 +291,38 @@ describe("jumping to a message the instance won't give", () => {
 		);
 
 		expect(await channel.getmessage("5")).toBeUndefined();
+	});
+
+	it("doesn't hand back the nearest survivor for a deleted target", async () => {
+		const channel = channelWith([]);
+		// getmessage builds the answer into a full Message, which reads the scroller.
+		Object.assign(channel, {infinite: {snapBottom: () => () => {}}});
+		// The asked-for message is gone; `around` answers the closest one it still has.
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json([wireMessage("9")]));
+
+		expect(await channel.getmessage("5")).toBeUndefined();
+		// The rejected answer must not enter the channel's message cache either.
+		expect(channel.messages.has("9")).toBe(false);
+	});
+
+	it("still answers the target when the instance overshoots limit=1", async () => {
+		const channel = channelWith([]);
+		Object.assign(channel, {infinite: {snapBottom: () => () => {}}});
+		// An endpoint that ignores `limit` (this codebase already knows one) would answer
+		// with several messages; the target can sit anywhere among them.
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+			Response.json([wireMessage("9"), wireMessage("5")]),
+		);
+
+		expect((await channel.getmessage("5"))?.id).toBe("5");
+	});
+
+	it("still answers the message when the instance has it", async () => {
+		const channel = channelWith([]);
+		Object.assign(channel, {infinite: {snapBottom: () => () => {}}});
+		vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json([wireMessage("5")]));
+
+		expect((await channel.getmessage("5"))?.id).toBe("5");
 	});
 
 	it("takes the loading skeleton down when the lookup fails", async () => {
@@ -277,9 +343,10 @@ describe("jumping to a message the instance won't give", () => {
 });
 
 describe("a history page that throws part-way through building", () => {
-	// The fault is the fixture shape itself: `new Message({id: "7"})` crashes in giveData
-	// on the missing author. If Message ever tolerates that, replace this with explicit
-	// fault injection — the assertions below must not go green by accident.
+	// The fault is the fixture shape itself: `new Message({id: "7"})` crashes in giveData —
+	// with no scroller stub, at infinite.snapBottom(), before the author read is reached.
+	// If Message ever tolerates that, replace this with explicit fault injection — the
+	// assertions below must not go green by accident.
 	it("a page that fails part-way leaves the scroller able to retry", async () => {
 		const channel = channelWith(["9"]);
 		Object.assign(channel, {lastmessage: undefined});

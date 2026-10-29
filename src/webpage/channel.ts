@@ -1724,7 +1724,14 @@ class Channel extends SnowFlake {
 			if (!Array.isArray(json) || json.length === 0) {
 				return undefined;
 			}
-			return new Message(json[0], this);
+			// `around` answers the nearest surviving message: a deleted target must read as
+			// gone, not as its neighbor. Match by id — an endpoint may overshoot limit=1
+			// (one already does), so position in the answer proves nothing.
+			const hit = json.find((m) => m.id === id);
+			if (!hit) {
+				return undefined;
+			}
+			return new Message(hit, this);
 		}
 	}
 	async getMessages(id: string) {
