@@ -8,19 +8,12 @@ import {attachmentUrl} from "./utils/netUtils.js";
  * attachment that renders — chat-reachable input — and zlib ratios reach ~1000:1, so an
  * unbounded inflate would let one posted file eat a viewer's tab. Covers any sane cover art. */
 const MAX_INFLATED_FRAME = 8 * 1024 * 1024;
-/** The only frame ids anything downstream reads (both versions' text maps, the year/
- * timestamp/length frames, and the pictures). Compressed frames with any other id are
+/** The only v2.3/2.4 frame ids anything downstream reads (the text map, the year/
+ * timestamp/length frames, and the picture). Compressed frames with any other id are
  * consumed but never inflated: a tag of distinct-id 8 MiB bombs must not spend the
- * decompression budget frame by frame. */
+ * decompression budget frame by frame. (v2.2 has no compression path; its 3-char
+ * ids never reach this set.) */
 const READ_FRAME_IDS = new Set([
-	"PIC",
-	"TYE",
-	"TT2",
-	"TP1",
-	"TCM",
-	"TAL",
-	"TCO",
-	"TEN",
 	"APIC",
 	"TYER",
 	"TDRC",
@@ -466,9 +459,6 @@ class MediaPlayer {
 						output.img = {url, description};
 					}
 					const mapmap = {
-						// Keep these keys in READ_FRAME_IDS (top of file): a compressed frame with
-						// an id outside that set is never inflated, so a new key here is silently
-						// unreadable in compressed tags until the set grows too.
 						TT2: "title",
 						TP1: "artist",
 						TCM: "composer",
@@ -513,9 +503,10 @@ class MediaPlayer {
 							version === 4
 								? (sizeArr[0] << 21) + (sizeArr[1] << 14) + (sizeArr[2] << 7) + sizeArr[3]
 								: sizeArr[0] * 2 ** 24 + (sizeArr[1] << 16) + (sizeArr[2] << 8) + sizeArr[3];
-						if (size > prog.sizeLeft) {
-							// Truncated: the frame claims more bytes than the tag has left. Bounding
-							// this here bounds every consume path below (store, dup, skip, inflate).
+						if (size + 2 > prog.sizeLeft) {
+							// Truncated: the frame claims more than the tag has left (the +2 covers
+							// the flag pair, read after this check). Bounding this here bounds every
+							// consume path below (store, dup, skip, inflate).
 							break;
 						}
 
@@ -554,14 +545,17 @@ class MediaPlayer {
 							if (flags[1] & 0b01000000) {
 								continue;
 							}
-							// A declared size past the frame cap is a bomb by header; a declaration
-							// past the tag's remaining budget is the same bomb spread across frames.
-							if (declared > MAX_INFLATED_FRAME || declared > inflateBudget) {
-								continue;
-							}
 							// Only ids something downstream reads ever inflate; everything else was
 							// consumed above and skipped, so distinct-id bombs spend nothing.
+							// The budget is reserved BEFORE the attempt: an abandoned or corrupt
+							// stream has still spent the attempt, so one readable id cannot be
+							// re-bombed N times. (inflateBudget starts at MAX_INFLATED_FRAME and
+							// only shrinks, so this check is also the per-frame cap.)
 							if (READ_FRAME_IDS.has(Identify) && !mappy.has(Identify)) {
+								if (declared > inflateBudget) {
+									continue;
+								}
+								inflateBudget -= declared;
 								// Feed the decompressor in small slices: implementations inflate a
 								// whole input chunk per transform() call and enqueue eagerly, so one
 								// big stream would allocate the full output before this reader's cap
@@ -605,7 +599,6 @@ class MediaPlayer {
 											offset += chunk.length;
 										}
 										mappy.set(Identify, body);
-										inflateBudget -= declared;
 									}
 								} catch {
 									// A corrupt or padded stream loses this frame, not the whole tag.

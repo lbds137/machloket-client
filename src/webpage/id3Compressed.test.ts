@@ -192,7 +192,26 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		expect(inflate).toHaveBeenCalledTimes(1);
 	});
 
-	it("a plain frame claiming more than the tag holds drops only itself", async () => {
+	it("a readable id cannot be re-bombed: the budget is reserved before the attempt", async () => {
+		// Two TIT2 frames, each declaring 6 MiB with a payload that inflates past its own
+		// declaration (~6.2 MB of 'a'). The first reserves, overshoots, and is abandoned;
+		// the second must not even construct a decompressor — an abandoned attempt has
+		// still spent the budget.
+		const bomb = async () => ({
+			id: "TIT2",
+			flag2: 0b10000000,
+			body: [
+				...plain4(6 * 1024 * 1024),
+				...(await deflate(new Array(6_500_000).fill(97))),
+			],
+		});
+		const inflate = vi.spyOn(globalThis, "DecompressionStream");
+		const title = await titleOf(rawTag(3, [await bomb(), await bomb()]));
+		expect((title ?? "").length).toBeLessThan(100);
+		expect(inflate).toHaveBeenCalledTimes(1);
+	});
+
+	it("a plain frame claiming more than the tag holds stops the parse without losing earlier frames", async () => {
 		const overlong = {id: "TXXX", flag2: 0, body: [1, 2, 3], sizeOverride: 0xffffffff};
 		const title = await titleOf(
 			rawTag(3, [await compressedFrame("Zipped"), overlong]),
