@@ -3754,8 +3754,19 @@ class Localuser {
 					fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
 						headers: this.headers,
 					})
-						.then((_) => _.json())
-						.then((keys: {id: string; name: string}[]) => {
+						.catch(() => undefined)
+						.then(async (res) => {
+							if (!res?.ok) {
+								await showRefusal(res);
+								return;
+							}
+							const keys = (await res.json().catch(() => null)) as
+								| {id: string; name: string}[]
+								| null;
+							if (!Array.isArray(keys)) {
+								await showRefusal(res);
+								return;
+							}
 							for (const key of keys) {
 								addKey(key);
 							}
@@ -4367,86 +4378,114 @@ class Localuser {
 
 			fetch(this.info.api + "/teams", {
 				headers: this.headers,
-			}).then(async (teamsRes) => {
-				const teams = await teamsRes.json();
-
-				const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
-					const form = devPortal.addSubForm(
-						I18n.localuser.createApp(),
-						(json: any) => {
-							devPortal.returnFromSub();
-							this.manageApplication(json.id, devPortal, () => {
-								form.options.deleteElm(button);
-							});
-						},
-						{
-							fetchURL: this.info.api + "/applications",
-							headers: this.headers,
-							method: "POST",
-						},
-					);
-					form.onErrorBody = (e) => {
-						if (typeof e.message !== "string") return false;
-						form.error("name", e.message);
-						return true;
-					};
-
-					form.addTextInput(I18n.localuser.appName(), "name", {required: true});
-					form.addSelect(
-						I18n.localuser["team:"](),
-						"team_id",
-						[I18n.localuser.personalTeam(), ...teams.map((team: {name: string}) => team.name)],
-						{defaultIndex: 0},
-					);
-				});
-
-				const appListContainer = document.createElement("div");
-				appListContainer.id = "app-list-container";
-				fetch(this.info.api + "/applications", {
-					headers: this.headers,
-				})
-					.then((r) => r.json())
-					.then((json) => {
-						json.forEach(
-							(application: {
-								cover_image: any;
-								icon: any;
-								id: string | undefined;
-								name: string | number;
-								bot: any;
-							}) => {
-								const container = document.createElement("div");
-
-								if (application.cover_image || application.icon) {
-									const cover = createImg(
-										this.info.cdn +
-											"/app-icons/" +
-											application.id +
-											"/" +
-											(application.cover_image || application.icon) +
-											".png" +
-											new CDNParams({expectedSize: 256}),
-									);
-									cover.alt = "";
-									cover.loading = "lazy";
-									container.appendChild(cover);
-								}
-
-								const name = document.createElement("h2");
-								name.textContent = application.name + (application.bot ? " (Bot)" : "");
-								container.appendChild(name);
-
-								container.addEventListener("click", async () => {
-									this.manageApplication(application.id, devPortal, () => {
-										appListContainer.remove();
-									});
+			})
+				.catch(() => undefined)
+				.then(async (teamsRes) => {
+					if (!teamsRes?.ok) {
+						await showRefusal(teamsRes);
+						return;
+					}
+					const teams = (await teamsRes.json().catch(() => null)) as
+						| {name: string}[]
+						| null;
+					if (!Array.isArray(teams)) {
+						await showRefusal(teamsRes);
+						return;
+					}
+					const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
+						const form = devPortal.addSubForm(
+							I18n.localuser.createApp(),
+							(json: any) => {
+								devPortal.returnFromSub();
+								this.manageApplication(json.id, devPortal, () => {
+									form.options.deleteElm(button);
 								});
-								appListContainer.appendChild(container);
+							},
+							{
+								fetchURL: this.info.api + "/applications",
+								headers: this.headers,
+								method: "POST",
 							},
 						);
+						form.onErrorBody = (e) => {
+							if (typeof e.message !== "string") return false;
+							form.error("name", e.message);
+							return true;
+						};
+
+						form.addTextInput(I18n.localuser.appName(), "name", {required: true});
+						form.addSelect(
+							I18n.localuser["team:"](),
+							"team_id",
+							[I18n.localuser.personalTeam(), ...teams.map((team: {name: string}) => team.name)],
+							{defaultIndex: 0},
+						);
 					});
-				devPortal.addHTMLArea(appListContainer);
-			});
+
+					const appListContainer = document.createElement("div");
+					appListContainer.id = "app-list-container";
+					fetch(this.info.api + "/applications", {
+						headers: this.headers,
+					})
+						.catch(() => undefined)
+						.then(async (res) => {
+							if (!res?.ok) {
+								await showRefusal(res);
+								return;
+							}
+							const json = (await res.json().catch(() => null)) as
+								| {
+										cover_image: any;
+										icon: any;
+										id: string | undefined;
+										name: string | number;
+										bot: any;
+								  }[]
+								| null;
+							if (!Array.isArray(json)) {
+								await showRefusal(res);
+								return;
+							}
+							json.forEach(
+								(application: {
+									cover_image: any;
+									icon: any;
+									id: string | undefined;
+									name: string | number;
+									bot: any;
+								}) => {
+									const container = document.createElement("div");
+
+									if (application.cover_image || application.icon) {
+										const cover = createImg(
+											this.info.cdn +
+												"/app-icons/" +
+												application.id +
+												"/" +
+												(application.cover_image || application.icon) +
+												".png" +
+												new CDNParams({expectedSize: 256}),
+										);
+										cover.alt = "";
+										cover.loading = "lazy";
+										container.appendChild(cover);
+									}
+
+									const name = document.createElement("h2");
+									name.textContent = application.name + (application.bot ? " (Bot)" : "");
+									container.appendChild(name);
+
+									container.addEventListener("click", async () => {
+										this.manageApplication(application.id, devPortal, () => {
+											appListContainer.remove();
+										});
+									});
+									appListContainer.appendChild(container);
+								},
+							);
+						});
+					devPortal.addHTMLArea(appListContainer);
+				});
 		}
 
 		{

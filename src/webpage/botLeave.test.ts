@@ -98,3 +98,24 @@ it("a refused guilds list says so instead of sitting empty", async () => {
 	// rejection behind an empty panel.
 	await vi.waitFor(() => expect(document.body.textContent).toContain("401: Unauthorized"));
 });
+
+it("a guilds-list 200 whose body isn't an array says so instead of dying silently", async () => {
+	captureRequests(API + "/users/@me/guilds/", () => Response.json({error: "nope"}));
+	// The settings page renders the bot's profile as a side effect; keep it to a stub.
+	vi.spyOn(User.prototype, "buildprofile").mockResolvedValue(document.createElement("div"));
+	vi.spyOn(User.prototype, "clone").mockReturnValue({
+		pronouns: "",
+		bio: "",
+		buildprofile: async () => document.createElement("div"),
+	} as never);
+	const owner = await makeBotOwner(API);
+	const bot = new Bot(
+		new User({id: "b1", username: "Bot", bot: true} as never, owner, true),
+		"tok",
+		owner,
+	);
+
+	bot.settings();
+	// refusalText has no message string to read here, so the dialog names the status.
+	await vi.waitFor(() => expect(document.body.textContent).toContain("HTTP 200"));
+});
