@@ -482,7 +482,24 @@ class MediaPlayer {
 						const flags = await prog.get8BitArray(2);
 						const compression = !!(flags[1] & 0b10000000);
 						if (compression) {
-							//TODO Honestly, I don't know if I can do this with normal JS
+							// Frame-level compression (v2.3 layout): a 4-byte decompressed size, then
+							// zlib data. DecompressionStream("deflate") is the same decoder the
+							// gateway uses. (v2.4's flag bit and Data Length Indicator differ — see
+							// the tracker's v2.4-flags row.)
+							if (size < 4) {
+								break;
+							}
+							await prog.get8BitArray(4);
+							const packed = await prog.get8BitArray(size - 4);
+							if (!mappy.has(Identify)) {
+								const stream = new Blob([new Uint8Array(packed)])
+									.stream()
+									.pipeThrough(new DecompressionStream("deflate"));
+								mappy.set(
+									Identify,
+									new Uint8Array(await new Response(stream).arrayBuffer()),
+								);
+							}
 							continue;
 						}
 						const encyption = !!(flags[1] & 0b01000000);
