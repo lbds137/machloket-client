@@ -84,7 +84,8 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 			{id: "TIT2", flag2: 0b10000000, body: [...plain4(4), ...packed]},
 		]);
 		const title = await titleOf(blob);
-		expect(title).not.toBe("Zipped");
+		// The real assertion is the short fallback: the payload is all 'a's, so any
+		// "not Zipped" check would be vacuous here.
 		expect((title ?? "").length).toBeLessThan(100);
 	});
 
@@ -112,6 +113,30 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 			rawTag(3, [{id: "TIT2", flag2: 0b10000000, body: [...plain4(64), 1, 2, 3, 4, 5]}]),
 		);
 		expect((title ?? "").length).toBeLessThan(100);
+	});
+
+	it("a corrupt compressed stream loses its frame, not the whole tag", async () => {
+		const survivor = await compressedFrame("Survivor");
+		const title = await titleOf(
+			rawTag(3, [
+				{id: "TIT2", flag2: 0b10000000, body: [...plain4(64), 1, 2, 3, 4, 5]},
+				survivor,
+			]),
+		);
+		expect(title).toBe("Survivor");
+	});
+
+	it("a grouped compressed frame keeps its group byte and still decompresses", async () => {
+		// v2.3 extra fields follow the flag order i,j,k: the decompressed size first, then
+		// the group identifier byte, then the data.
+		const payload = [0, ...charCodes("Zipped"), 0];
+		const packed = await deflate(payload);
+		const title = await titleOf(
+			rawTag(3, [
+				{id: "TIT2", flag2: 0b10100000, body: [...plain4(payload.length), 7, ...packed]},
+			]),
+		);
+		expect(title).toBe("Zipped");
 	});
 
 	it("an encrypted frame is skipped without derailing the rest of the tag", async () => {

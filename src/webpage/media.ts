@@ -3,6 +3,7 @@ import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {ProgressiveArray} from "./utils/progessiveLoad.js";
 import {attachmentUrl} from "./utils/netUtils.js";
+
 /** The largest ID3 frame this parser will decompress. IdentifyFile runs on every audio
  * attachment that renders — chat-reachable input — and zlib ratios reach ~1000:1, so an
  * unbounded inflate would let one posted file eat a viewer's tab. Covers any sane cover art. */
@@ -495,7 +496,8 @@ class MediaPlayer {
 							// tracker's v2.4-flags row.)
 							const extra =
 								(flags[1] & 0b01000000 ? 1 : 0) + (flags[1] & 0b00100000 ? 1 : 0);
-							if (size < 4 + extra) {
+							if (size < 4 + extra || size > prog.sizeLeft) {
+								// Malformed or truncated: the frame claims more than the tag holds.
 								break;
 							}
 							const sizeArr2 = await prog.get8BitArray(4);
@@ -522,32 +524,52 @@ class MediaPlayer {
 								continue;
 							}
 							if (!mappy.has(Identify)) {
-								const reader = new Blob([new Uint8Array(packed)])
-									.stream()
-									.pipeThrough(new DecompressionStream("deflate"))
-									.getReader();
-								const chunks: Uint8Array[] = [];
-								let total = 0;
-								for (;;) {
-									const {done, value} = await reader.read();
-									if (done) break;
-									total += value.length;
-									if (total > declared) {
-										// The header lied: abandon the stream mid-read.
-										await reader.cancel();
-										total = -1;
-										break;
+								// Feed the decompressor in small slices: implementations inflate a
+								// whole input chunk per transform() call and enqueue eagerly, so one
+								// big stream would allocate the full output before this reader's cap
+								// could fire. Sliced, a transform's output stays ~slice × zlib ratio.
+								const SLICE = 4096;
+								let at = 0;
+								const source = new ReadableStream<Uint8Array<ArrayBuffer>>({
+									pull(controller) {
+										if (at >= packed.length) {
+											controller.close();
+											return;
+										}
+										const end = Math.min(at + SLICE, packed.length);
+										controller.enqueue(packed.subarray(at, end));
+										at = end;
+									},
+								});
+								try {
+									const reader = source
+										.pipeThrough(new DecompressionStream("deflate"))
+										.getReader();
+									const chunks: Uint8Array[] = [];
+									let total = 0;
+									for (;;) {
+										const {done, value} = await reader.read();
+										if (done) break;
+										total += value.length;
+										if (total > declared) {
+											// The header lied: abandon the stream mid-read.
+											await reader.cancel();
+											total = -1;
+											break;
+										}
+										chunks.push(value);
 									}
-									chunks.push(value);
-								}
-								if (total >= 0) {
-									const body = new Uint8Array(total);
-									let at = 0;
-									for (const chunk of chunks) {
-										body.set(chunk, at);
-										at += chunk.length;
+									if (total >= 0) {
+										const body = new Uint8Array(total);
+										let at = 0;
+										for (const chunk of chunks) {
+											body.set(chunk, at);
+											at += chunk.length;
+										}
+										mappy.set(Identify, body);
 									}
-									mappy.set(Identify, body);
+								} catch {
+									// A corrupt or padded stream loses this frame, not the whole tag.
 								}
 							}
 							continue;
