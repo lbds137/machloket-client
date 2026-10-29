@@ -8,6 +8,30 @@ import {attachmentUrl} from "./utils/netUtils.js";
  * attachment that renders — chat-reachable input — and zlib ratios reach ~1000:1, so an
  * unbounded inflate would let one posted file eat a viewer's tab. Covers any sane cover art. */
 const MAX_INFLATED_FRAME = 8 * 1024 * 1024;
+/** The only frame ids anything downstream reads (both versions' text maps, the year/
+ * timestamp/length frames, and the pictures). Compressed frames with any other id are
+ * consumed but never inflated: a tag of distinct-id 8 MiB bombs must not spend the
+ * decompression budget frame by frame. */
+const READ_FRAME_IDS = new Set([
+	"PIC",
+	"TYE",
+	"TT2",
+	"TP1",
+	"TCM",
+	"TAL",
+	"TCO",
+	"TEN",
+	"APIC",
+	"TYER",
+	"TDRC",
+	"TLEN",
+	"TIT2",
+	"TPE1",
+	"TCOM",
+	"TALB",
+	"TMED",
+	"TENC",
+]);
 /** A track's length (`ms`) for the More info dialog. */
 function lengthText(ms: number) {
 	// Rounded as a whole first, so 59.6 s reads as a minute rather than "0 minutes and 60 seconds".
@@ -483,6 +507,11 @@ class MediaPlayer {
 							version === 4
 								? (sizeArr[0] << 21) + (sizeArr[1] << 14) + (sizeArr[2] << 7) + sizeArr[3]
 								: sizeArr[0] * 2 ** 24 + (sizeArr[1] << 16) + (sizeArr[2] << 8) + sizeArr[3];
+						if (size > prog.sizeLeft) {
+							// Truncated: the frame claims more bytes than the tag has left. Bounding
+							// this here bounds every consume path below (store, dup, skip, inflate).
+							break;
+						}
 
 						const flags = await prog.get8BitArray(2);
 						const compression = !!(flags[1] & 0b10000000);
@@ -496,8 +525,8 @@ class MediaPlayer {
 							// tracker's v2.4-flags row.)
 							const extra =
 								(flags[1] & 0b01000000 ? 1 : 0) + (flags[1] & 0b00100000 ? 1 : 0);
-							if (size < 4 + extra || size > prog.sizeLeft) {
-								// Malformed or truncated: the frame claims more than the tag holds.
+							if (size < 4 + extra) {
+								// Malformed: the frame cannot hold its own declared size.
 								break;
 							}
 							const sizeArr2 = await prog.get8BitArray(4);
@@ -523,7 +552,9 @@ class MediaPlayer {
 							if (declared > MAX_INFLATED_FRAME) {
 								continue;
 							}
-							if (!mappy.has(Identify)) {
+							// Only ids something downstream reads ever inflate; everything else was
+							// consumed above and skipped, so distinct-id bombs spend nothing.
+							if (READ_FRAME_IDS.has(Identify) && !mappy.has(Identify)) {
 								// Feed the decompressor in small slices: implementations inflate a
 								// whole input chunk per transform() call and enqueue eagerly, so one
 								// big stream would allocate the full output before this reader's cap

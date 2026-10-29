@@ -146,4 +146,34 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		);
 		expect(title).toBe("Zipped");
 	});
+
+	it("a compressed+encrypted frame consumes its method byte and is never stored", async () => {
+		// flag2 0b11000000: compression + encryption — the extra byte is the method, and the
+		// data is undecryptable here. The plain compressed frame after it must still parse.
+		const plain = await compressedFrame("Zipped");
+		const packed = await deflate([0, ...charCodes("Hidden"), 0]);
+		const title = await titleOf(
+			rawTag(3, [
+				{
+					id: "TIT2",
+					flag2: 0b11000000,
+					body: [...plain4(8), 1, ...packed],
+				},
+				plain,
+			]),
+		);
+		expect(title).toBe("Zipped");
+	});
+
+	it("compressed frames with unread ids never inflate, and a survivor still parses", async () => {
+		// The 8 MiB per-frame cap is not the whole defense: distinct junk ids must not spend
+		// the decompression budget at all. Three 8 MiB-declaring unread frames, then the one
+		// id the parser reads. (The memory bound itself is by design — the whitelist — not
+		// observable from the title; this pins that the readable frame still comes through.)
+		const bomb = {id: "AAA0", flag2: 0b10000000, body: [...plain4(8 * 1024 * 1024), 0, 1, 2]};
+		const bomb2 = {id: "AAA1", flag2: 0b10000000, body: [...plain4(8 * 1024 * 1024), 0, 1, 2]};
+		const bomb3 = {id: "AAA2", flag2: 0b10000000, body: [...plain4(8 * 1024 * 1024), 0, 1, 2]};
+		const title = await titleOf(rawTag(3, [bomb, bomb2, bomb3, await compressedFrame("Zipped")]));
+		expect(title).toBe("Zipped");
+	});
 });
