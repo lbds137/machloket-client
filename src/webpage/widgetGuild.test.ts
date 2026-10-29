@@ -27,6 +27,8 @@ function pfpSlot() {
 function widgetUser(meGuild: {id: string}) {
 	const pfp = pfpSlot();
 	const user = Object.assign(Object.create(User.prototype), {
+		// User.localuser is a getter over `owner` (user.ts:819) — the fixture stores the
+		// fake localuser there, not under `localuser`.
 		owner: {guildids: new Map([["@me", meGuild]])},
 		username: "Widgeted",
 		bind: () => {},
@@ -43,6 +45,22 @@ it("the widget keeps its layout classes (the chip look lives in .createdWebhook)
 	// once lost to an edit slip — pinned so the loss reddens here instead of on screen.
 	expect(div.classList.contains("flexltr")).toBe(true);
 	expect(div.classList.contains("createdWebhook")).toBe(true);
+});
+
+it("a not-found member gets the inline note, not a stray error badge", async () => {
+	const passedGuild = {id: "777"};
+	// No bind stub: the REAL bind runs, so its not-found side effects are observable.
+	const {user} = widgetUser({id: "@me"});
+	const bindSpy = vi.spyOn(user, "bind");
+	vi.spyOn(Member, "resolveMember").mockResolvedValue(undefined);
+
+	const div = user.createWidget(passedGuild as never);
+	await new Promise((r) => setTimeout(r, 0));
+
+	// The badge suppression is deliberate: the inline note is the only not-found signal.
+	expect(bindSpy).toHaveBeenCalledWith(div, passedGuild, false);
+	expect(document.querySelector(".membererror")).toBeNull();
+	expect(div.textContent).toContain(I18n.webhooks.notFound());
 });
 
 it("createWidget resolves the member in the guild the caller passed", async () => {

@@ -921,7 +921,9 @@ class User extends SnowFlake {
 				nameBox.append(notFound);
 			}
 		});
-		this.bind(div, guild, undefined);
+		// error=false: the not-found note above is the only signal — bind's default error
+		// badge would add a stray "!" beside the chip.
+		this.bind(div, guild, false);
 		return div;
 	}
 	updateStatusSet = new Set<WeakRef<HTMLDivElement>>();
