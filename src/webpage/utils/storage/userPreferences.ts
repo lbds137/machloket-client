@@ -33,6 +33,11 @@ export type ContentAction = "show" | "blur" | "block";
 export const ContentActionValues: ContentAction[] = ["show", "blur", "block"];
 
 export class UserPreferences {
+	/** Bump when a stored-shape change needs a migration; getPreferences is the hook that
+	 * reads it. Stores written before this field existed read as the default via
+	 * Object.assign leaving it untouched. */
+	version: number = 1;
+
 	locale: string = navigator.language || "en";
 
 	// render settings
@@ -55,7 +60,14 @@ export class UserPreferences {
 }
 
 export async function getPreferences(): Promise<UserPreferences> {
-	return new UserPreferences(JSON.parse(localStorage.getItem("userPreferences") || "{}"));
+	try {
+		return new UserPreferences(JSON.parse(localStorage.getItem("userPreferences") || "{}"));
+	} catch (error) {
+		// i18n awaits this at module load: a corrupt store must not kill boot. Defaults win;
+		// the next setPreferences overwrites the bad payload.
+		console.warn("userPreferences store is malformed, using defaults", error);
+		return new UserPreferences();
+	}
 }
 
 export async function setPreferences(prefs: UserPreferences): Promise<void> {
