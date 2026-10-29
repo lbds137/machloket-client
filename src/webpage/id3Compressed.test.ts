@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -42,6 +42,10 @@ async function titleOf(blob: Blob) {
 	}
 }
 
+afterEach(() => {
+	vi.restoreAllMocks();
+});
+
 // Fermo's TODO said "Honestly, I don't know if I can do this with normal JS" — the gateway
 // already ships DecompressionStream, so compressed frames are readable in the browser.
 describe("AUDIT (backlog #11): compressed ID3 frames", () => {
@@ -56,10 +60,14 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 	});
 
 	// A frame body the parser stores verbatim: [id-size-flags already written by the builder]
-	function rawTag(version: 3 | 4, frames: {id: string; flag2: number; body: number[]}[]) {
+	function rawTag(
+		version: 3 | 4,
+		frames: {id: string; flag2: number; body: number[]; sizeOverride?: number}[],
+	) {
 		const body: number[] = [];
-		for (const {id, flag2, body: payload} of frames) {
-			const size = version === 4 ? synchsafe(payload.length) : plain4(payload.length);
+		for (const {id, flag2, body: payload, sizeOverride} of frames) {
+			const written = sizeOverride ?? payload.length;
+			const size = version === 4 ? synchsafe(written) : plain4(written);
 			body.push(...charCodes(id), ...size, 0, flag2, ...payload);
 		}
 		return new Blob(
@@ -147,6 +155,51 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		expect(title).toBe("Zipped");
 	});
 
+	it("a compressed frame past the tag's inflate budget is skipped", async () => {
+		// TPE1 reserves 6 MiB of the 8 MiB per-tag budget (its actual payload is tiny — the
+		// reservation is by declared size, the conservative side); TIT2's 4 MiB declaration
+		// no longer fits, so it must be skipped rather than inflate.
+		const tiny = await deflate([0, ...charCodes("x"), 0]);
+		const big = await deflate([0, ...charCodes("Zipped"), 0]);
+		const title = await titleOf(
+			rawTag(3, [
+				{id: "TPE1", flag2: 0b10000000, body: [...plain4(6 * 1024 * 1024), ...tiny]},
+				{id: "TIT2", flag2: 0b10000000, body: [...plain4(4 * 1024 * 1024), ...big]},
+			]),
+		);
+		expect(title).not.toBe("Zipped");
+		expect((title ?? "").length).toBeLessThan(100);
+	});
+
+	it("unread compressed frames are never inflated, and a survivor still parses", async () => {
+		const inflate = vi.spyOn(globalThis, "DecompressionStream");
+		const bomb = async (id: string) => ({
+			id,
+			flag2: 0b10000000,
+			body: [...plain4(1024 * 1024), ...(await deflate(new Array(100).fill(97)))],
+		});
+		const title = await titleOf(
+			rawTag(3, [
+				await bomb("AAA0"),
+				await bomb("AAA1"),
+				await bomb("AAA2"),
+				await compressedFrame("Zipped"),
+			]),
+		);
+		expect(title).toBe("Zipped");
+		// The whole defense is observable here: only the whitelisted TIT2 constructs a
+		// decompressor — the three 1 MiB-declaring unread frames never reach one.
+		expect(inflate).toHaveBeenCalledTimes(1);
+	});
+
+	it("a plain frame claiming more than the tag holds drops only itself", async () => {
+		const overlong = {id: "TXXX", flag2: 0, body: [1, 2, 3], sizeOverride: 0xffffffff};
+		const title = await titleOf(
+			rawTag(3, [await compressedFrame("Zipped"), overlong]),
+		);
+		expect(title).toBe("Zipped");
+	});
+
 	it("a compressed+encrypted frame consumes its method byte and is never stored", async () => {
 		// flag2 0b11000000: compression + encryption — the extra byte is the method, and the
 		// data is undecryptable here. The plain compressed frame after it must still parse.
@@ -162,18 +215,6 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 				plain,
 			]),
 		);
-		expect(title).toBe("Zipped");
-	});
-
-	it("compressed frames with unread ids never inflate, and a survivor still parses", async () => {
-		// The 8 MiB per-frame cap is not the whole defense: distinct junk ids must not spend
-		// the decompression budget at all. Three 8 MiB-declaring unread frames, then the one
-		// id the parser reads. (The memory bound itself is by design — the whitelist — not
-		// observable from the title; this pins that the readable frame still comes through.)
-		const bomb = {id: "AAA0", flag2: 0b10000000, body: [...plain4(8 * 1024 * 1024), 0, 1, 2]};
-		const bomb2 = {id: "AAA1", flag2: 0b10000000, body: [...plain4(8 * 1024 * 1024), 0, 1, 2]};
-		const bomb3 = {id: "AAA2", flag2: 0b10000000, body: [...plain4(8 * 1024 * 1024), 0, 1, 2]};
-		const title = await titleOf(rawTag(3, [bomb, bomb2, bomb3, await compressedFrame("Zipped")]));
 		expect(title).toBe("Zipped");
 	});
 });
