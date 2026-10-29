@@ -1,4 +1,6 @@
 import {describe, expect, it, vi} from "vitest";
+import type {Channel} from "./channel";
+import type {Guild} from "./guild";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -458,5 +460,47 @@ describe("a reply's one-line preview, more", () => {
 	it("puts one space between lines, however many breaks", () => {
 		expect(draw("a\n\nb").textContent).toBe("a b");
 		expect(draw("a \nb").textContent).toBe("a b");
+	});
+});
+
+describe("MarkDown with a Guild owner (member bios)", () => {
+	const guildOwner = {
+		info: {cdn: "http://cdn.test"},
+		localuser: {user: {id: "me"}},
+		roleids: new Map([["222", {id: "222", name: "Knights"}]]),
+	} as unknown as Guild;
+
+	it("a guild owner is not a channel", () => {
+		expect(new MarkDown("hi", guildOwner).channel).toBeUndefined();
+	});
+
+	it("a guild owner is the guild; a localuser is no guild; a channel carries its own", () => {
+		expect(new MarkDown("hi", guildOwner).guild).toBe(guildOwner);
+		expect(new MarkDown("hi", undefined).guild).toBeUndefined();
+		expect(
+			new MarkDown("hi", {guild: guildOwner, localuser: {user: {id: "me"}}} as unknown as Channel)
+				.guild,
+		).toBe(guildOwner);
+	});
+
+	it("a role mention resolves against the guild's roles", () => {
+		expect(new MarkDown("hi <@&222>", guildOwner).makeHTML().textContent).toContain("@Knights");
+	});
+
+	it("a role mention the guild lacks says so instead of vanishing", () => {
+		expect(new MarkDown("hi <@&333>", guildOwner).makeHTML().textContent).toContain(
+			I18n.guild.unknownRole(),
+		);
+	});
+
+	it("a user mention resolves the member nickname against the guild", async () => {
+		const owned = {
+			info: {cdn: "http://cdn.test"},
+			localuser: {user: {id: "me"}, getUser: () => ({name: "alice", bind: () => {}})},
+			roleids: new Map(),
+			resolveMember: () => Promise.resolve({name: "AliceInWonderland"}),
+		} as unknown as Guild;
+		const mention = new MarkDown("hi <@1553128655016763450>", owned).makeHTML().querySelector(".mentionMD")!;
+		await vi.waitFor(() => expect(mention.textContent).toBe("@AliceInWonderland"));
 	});
 });
