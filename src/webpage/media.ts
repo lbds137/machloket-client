@@ -466,6 +466,9 @@ class MediaPlayer {
 						output.img = {url, description};
 					}
 					const mapmap = {
+						// Keep these keys in READ_FRAME_IDS (top of file): a compressed frame with
+						// an id outside that set is never inflated, so a new key here is silently
+						// unreadable in compressed tags until the set grows too.
 						TT2: "title",
 						TP1: "artist",
 						TCM: "composer",
@@ -493,6 +496,9 @@ class MediaPlayer {
 					const sizes = await prog.get8BitArray(4);
 					prog.sizeLeft = (sizes[0] << 21) + (sizes[1] << 14) + (sizes[2] << 7) + sizes[3];
 					const mappy = new Map<string, Uint8Array<ArrayBuffer>>();
+					// The decompression budget is per TAG, not per frame: the 18 whitelisted ids
+					// × 8 MiB each would otherwise be ~144 MiB of honest-looking frames.
+					let inflateBudget = MAX_INFLATED_FRAME;
 					while (prog.sizeLeft > 0) {
 						const Identify = String.fromCharCode(
 							await prog.next(),
@@ -548,8 +554,9 @@ class MediaPlayer {
 							if (flags[1] & 0b01000000) {
 								continue;
 							}
-							// A declared size past the cap is a bomb by header; skip the inflate.
-							if (declared > MAX_INFLATED_FRAME) {
+							// A declared size past the frame cap is a bomb by header; a declaration
+							// past the tag's remaining budget is the same bomb spread across frames.
+							if (declared > MAX_INFLATED_FRAME || declared > inflateBudget) {
 								continue;
 							}
 							// Only ids something downstream reads ever inflate; everything else was
@@ -592,12 +599,13 @@ class MediaPlayer {
 									}
 									if (total >= 0) {
 										const body = new Uint8Array(total);
-										let at = 0;
+										let offset = 0;
 										for (const chunk of chunks) {
-											body.set(chunk, at);
-											at += chunk.length;
+											body.set(chunk, offset);
+											offset += chunk.length;
 										}
 										mappy.set(Identify, body);
+										inflateBudget -= declared;
 									}
 								} catch {
 									// A corrupt or padded stream loses this frame, not the whole tag.
@@ -646,6 +654,9 @@ class MediaPlayer {
 						output.img = {url, description};
 					}
 					const mapmap = {
+						// Keep these keys in READ_FRAME_IDS (top of file): a compressed frame with
+						// an id outside that set is never inflated, so a new key here is silently
+						// unreadable in compressed tags until the set grows too.
 						TIT2: "title",
 						TPE1: "artist",
 						TCOM: "composer",
