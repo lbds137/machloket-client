@@ -353,9 +353,8 @@ it("a refused passkey-list GET says why instead of an empty panel", async () => 
 	captureRequests(API + "/users/@me/mfa/webauthn/credentials", refused);
 
 	await openPasskeyList();
-	await new Promise((r) => setTimeout(r, 50));
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 });
 
 it("a passkey-list GET that never arrived says the network failed", async () => {
@@ -365,9 +364,10 @@ it("a passkey-list GET that never arrived says the network failed", async () => 
 	);
 
 	await openPasskeyList();
-	await new Promise((r) => setTimeout(r, 50));
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("offline")),
+	);
 });
 
 it("a passkey-list answer that isn't JSON says why", async () => {
@@ -375,40 +375,95 @@ it("a passkey-list answer that isn't JSON says why", async () => {
 	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () => new Response("<html>"));
 
 	await openPasskeyList();
-	await new Promise((r) => setTimeout(r, 50));
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
 });
 
-it("a refused applications GET says why instead of an empty app list", async () => {
+/** Opens the user settings and mounts the developer-portal section (sections mount on click). */
+async function openDevPortal() {
+	const u = settingsUser();
+	await u.showusersettings().catch(() => {});
+	const tab = [...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")].find(
+		(b) => b.textContent === I18n.localuser.devPortal(),
+	);
+	expect(tab).not.toBeUndefined();
+	tab!.click();
+}
+
+it("a refused applications GET says so inside the panel instead of modal-spamming Settings", async () => {
 	stubUserSettings();
 	captureRequests(API + "/applications", refused);
-	const u = settingsUser();
 
-	await u.showusersettings().catch(() => {});
-	await new Promise((r) => setTimeout(r, 50));
+	await openDevPortal();
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	await vi.waitFor(() =>
+		expect(document.querySelector("#app-list-container")!.textContent).toContain(
+			I18n.requestFailed("boom"),
+		),
+	);
 });
 
-it("a refused teams GET says why instead of arming a crashing Create App form", async () => {
+it("a refused teams GET degrades quietly: apps still list, Create App stays", async () => {
 	stubUserSettings();
 	captureRequests(API + "/teams", refused);
-	const u = settingsUser();
+	captureRequests(API + "/applications", () =>
+		Response.json([{id: "a1", name: "Listed App", bot: false, icon: null, cover_image: null}]),
+	);
 
-	await u.showusersettings().catch(() => {});
-	await new Promise((r) => setTimeout(r, 50));
+	await openDevPortal();
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	await vi.waitFor(() =>
+		expect(document.querySelector("#app-list-container")!.textContent).toContain("Listed App"),
+	);
+	// No dialog anywhere: the teams list only feeds one Create App <select>.
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
+	expect(
+		[...document.querySelectorAll("button")].some(
+			(b) => b.textContent === I18n.localuser.createApp(),
+		),
+	).toBe(true);
 });
 
-it("a teams GET that never arrived says the network failed", async () => {
+it("a teams GET that never arrived degrades the same way", async () => {
 	stubUserSettings();
 	captureRequests(API + "/teams", () => Promise.reject(new TypeError("offline")));
-	const u = settingsUser();
+	captureRequests(API + "/applications", () =>
+		Response.json([{id: "a1", name: "Listed App", bot: false, icon: null, cover_image: null}]),
+	);
 
-	await u.showusersettings().catch(() => {});
-	await new Promise((r) => setTimeout(r, 50));
+	await openDevPortal();
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
+	await vi.waitFor(() =>
+		expect(document.querySelector("#app-list-container")!.textContent).toContain("Listed App"),
+	);
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("offline"));
+});
+
+it("a teams answer that isn't an array degrades the same way", async () => {
+	stubUserSettings();
+	captureRequests(API + "/teams", () => Response.json({error: "nope"}));
+	captureRequests(API + "/applications", () =>
+		Response.json([{id: "a1", name: "Listed App", bot: false, icon: null, cover_image: null}]),
+	);
+
+	await openDevPortal();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector("#app-list-container")!.textContent).toContain("Listed App"),
+	);
+});
+
+it("an applications answer that isn't an array says so inside the panel", async () => {
+	stubUserSettings();
+	captureRequests(API + "/applications", () => Response.json({error: "nope"}));
+
+	await openDevPortal();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector("#app-list-container")!.textContent).toContain(
+			I18n.requestFailed("HTTP 200"),
+		),
+	);
 });
