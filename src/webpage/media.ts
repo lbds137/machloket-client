@@ -6,24 +6,32 @@ import {attachmentUrl} from "./utils/netUtils.js";
 
 /** The largest ID3 frame this parser will decompress. IdentifyFile runs on every audio
  * attachment that renders — chat-reachable input — and zlib ratios reach ~1000:1, so an
- * unbounded inflate would let one posted file eat a viewer's tab. Covers any sane cover art. */
+ * unbounded inflate would let one posted file eat a viewer's tab. Covers any sane cover art.
+ * Also the per-tag budget's starting value (see the v2.3/2.4 branch): one near-ceiling frame
+ * — a large compressed APIC, say — can starve later frames of the tag's budget; accepted,
+ * since per-id slices would reopen the tag-level multiplication the budget exists to close. */
 const MAX_INFLATED_FRAME = 8 * 1024 * 1024;
+/** The v2.3/2.4 text frames and the output field each fills. */
+const TEXT_FRAME_FIELDS = {
+	TIT2: "title",
+	TPE1: "artist",
+	TCOM: "composer",
+	TALB: "sourcy",
+	TMED: "type",
+	TENC: "copyright",
+} as const;
 /** The only v2.3/2.4 frame ids anything downstream reads (the text map, the year/
  * timestamp/length frames, and the picture). Compressed frames with any other id are
  * consumed but never inflated: a tag of distinct-id 8 MiB bombs must not spend the
  * decompression budget frame by frame. (v2.2 has no compression path; its 3-char
  * ids never reach this set.) */
-const READ_FRAME_IDS = new Set([
-	"APIC",
-	"TYER",
-	"TDRC",
-	"TLEN",
-	"TIT2",
-	"TPE1",
-	"TCOM",
-	"TALB",
-	"TMED",
-	"TENC",
+const READ_FRAME_IDS = new Set<string>([
+	...Object.keys(TEXT_FRAME_FIELDS),
+	// Read directly in the v2.3/2.4 branch, not through TEXT_FRAME_FIELDS:
+	"APIC", // the picture
+	"TYER", // v2.3 year
+	"TDRC", // v2.4 recording time (year from its first four digits)
+	"TLEN", // length
 ]);
 /** A track's length (`ms`) for the More info dialog. */
 function lengthText(ms: number) {
@@ -486,8 +494,9 @@ class MediaPlayer {
 					const sizes = await prog.get8BitArray(4);
 					prog.sizeLeft = (sizes[0] << 21) + (sizes[1] << 14) + (sizes[2] << 7) + sizes[3];
 					const mappy = new Map<string, Uint8Array<ArrayBuffer>>();
-					// The decompression budget is per TAG, not per frame: the 18 whitelisted ids
-					// × 8 MiB each would otherwise be ~144 MiB of honest-looking frames.
+					// The decompression budget is per TAG, not per frame: left unbounded, every
+					// whitelisted id could spend its full 8 MiB, adding up across a tag of
+					// honest-looking frames.
 					let inflateBudget = MAX_INFLATED_FRAME;
 					while (prog.sizeLeft > 0) {
 						const Identify = String.fromCharCode(
@@ -646,18 +655,7 @@ class MediaPlayer {
 						const url = urlmaker.createObjectURL(blob);
 						output.img = {url, description};
 					}
-					const mapmap = {
-						// Keep these keys in READ_FRAME_IDS (top of file): a compressed frame with
-						// an id outside that set is never inflated, so a new key here is silently
-						// unreadable in compressed tags until the set grows too.
-						TIT2: "title",
-						TPE1: "artist",
-						TCOM: "composer",
-						TALB: "sourcy",
-						TMED: "type",
-						TENC: "copyright",
-					} as const;
-					for (const [key, ind] of Object.entries(mapmap)) {
+					for (const [key, ind] of Object.entries(TEXT_FRAME_FIELDS)) {
 						const temp = mappy.get(key);
 						if (temp) {
 							//@ts-ignore TS is being weird about this idk why

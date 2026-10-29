@@ -5,19 +5,14 @@ import {expect, it} from "vitest";
 await import("./localuser");
 const {Bot} = await import("./bot");
 const {User} = await import("./user");
+const {makeBotOwner} = await import("./test/botOwner");
 
 // Bot used to take its user as `mainuserjson` and re-wrap it (`new User(this.json, …)` in
 // settings()) — the caller passed a real User behind an unknown-cast, so the "json" round
 // tripped back through checkuser/userupdate. It now holds the User it is given; this pin
 // holds that contract so the wrap cannot quietly return.
 it("Bot holds the caller's User instead of re-wrapping it", async () => {
-	const {Localuser} = await import("./localuser");
-	const owner = Object.assign(Object.create(Localuser.prototype), {
-		info: {api: "http://bot.test/api/v9", cdn: "http://bot.test", wellknown: "http://bot.test"},
-		headers: {},
-		userMap: new Map(),
-		guilds: [],
-	}) as InstanceType<typeof Localuser>;
+	const owner = await makeBotOwner("http://bot.test/api/v9");
 	const bot = new User(
 		{
 			id: "9001",

@@ -1,6 +1,7 @@
 import {describe, expect, it, vi} from "vitest";
 import type {Channel} from "./channel";
 import type {Guild} from "./guild";
+import type {Localuser} from "./localuser";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -477,6 +478,9 @@ describe("MarkDown with a Guild owner (member bios)", () => {
 	it("a guild owner is the guild; a localuser is no guild; a channel carries its own", () => {
 		expect(new MarkDown("hi", guildOwner).guild).toBe(guildOwner);
 		expect(new MarkDown("hi", undefined).guild).toBeUndefined();
+		// The confusable `{user: …}` shape: "no guild" must come from the Localuser arm, not
+		// only from the void the middle line passes.
+		expect(new MarkDown("hi", {user: {id: "me"}} as unknown as Localuser).guild).toBeUndefined();
 		expect(
 			new MarkDown("hi", {guild: guildOwner, localuser: {user: {id: "me"}}} as unknown as Channel)
 				.guild,

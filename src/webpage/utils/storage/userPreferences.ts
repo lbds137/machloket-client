@@ -33,9 +33,9 @@ export type ContentAction = "show" | "blur" | "block";
 export const ContentActionValues: ContentAction[] = ["show", "blur", "block"];
 
 export class UserPreferences {
-	/** Bump when a stored-shape change needs a migration; getPreferences is the hook that
-	 * reads it. Stores written before this field existed read as the default via
-	 * Object.assign leaving it untouched. */
+	/** Bump when a stored-shape change needs a migration; getPreferences will be the hook
+	 * that reads it (nothing does yet). Stores written before this field existed read as
+	 * the default via Object.assign leaving it untouched. */
 	version: number = 1;
 
 	locale: string = navigator.language || "en";

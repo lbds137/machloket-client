@@ -26,3 +26,18 @@ it("userupdate's dynamic copy lands a wire-only @me field on the instance", () =
 	user.userupdate({id: "u9", nsfw_allowed: true} as never);
 	expect(user.nsfw_allowed).toBe(true);
 });
+
+it("the constructor path lands wire-only @me fields too", async () => {
+	// The pin above drives userupdate directly — blind to a constructor that stops calling
+	// it (say, a field-initializer rewrite with an explicit key list). A real construction
+	// with dontclone=true takes the production entry.
+	const {Localuser} = await import("./localuser");
+	const owner = Object.assign(Object.create(Localuser.prototype), {
+		info: {api: "http://wire.test/api/v9"},
+		headers: {},
+		userMap: new Map(),
+		guilds: [],
+	}) as InstanceType<typeof Localuser>;
+	const user = new User({id: "u9", nsfw_allowed: null} as never, owner, true);
+	expect(user.nsfw_allowed).toBe(null);
+});
