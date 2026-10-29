@@ -4381,17 +4381,12 @@ class Localuser {
 			})
 				.catch(() => undefined)
 				.then(async (teamsRes) => {
-					if (!teamsRes?.ok) {
-						await showRefusal(teamsRes);
-						return;
-					}
-					const teams = (await teamsRes.json().catch(() => null)) as
+					// The teams list feeds one Create App <select>: a failed lookup degrades to the
+					// personal team, silently — Settings must not modal over an optional panel.
+					const parsed = (await teamsRes?.json().catch(() => null)) as
 						| {name: string}[]
 						| null;
-					if (!Array.isArray(teams)) {
-						await showRefusal(teamsRes);
-						return;
-					}
+					const teams = Array.isArray(parsed) ? parsed : [];
 					const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 						const form = devPortal.addSubForm(
 							I18n.localuser.createApp(),
@@ -4429,8 +4424,15 @@ class Localuser {
 					})
 						.catch(() => undefined)
 						.then(async (res) => {
+							// A refusal here used to modal on every Settings open; the panel says so
+							// inline instead — the user opened Settings, not the dev portal.
+							const sayInline = async (failed: Response | undefined) => {
+								const note = document.createElement("p");
+								note.textContent = I18n.requestFailed(await refusalText(failed));
+								appListContainer.appendChild(note);
+							};
 							if (!res?.ok) {
-								await showRefusal(res);
+								await sayInline(res);
 								return;
 							}
 							const json = (await res.json().catch(() => null)) as
@@ -4443,17 +4445,10 @@ class Localuser {
 								  }[]
 								| null;
 							if (!Array.isArray(json)) {
-								await showRefusal(res);
+								await sayInline(res);
 								return;
 							}
-							json.forEach(
-								(application: {
-									cover_image: any;
-									icon: any;
-									id: string | undefined;
-									name: string | number;
-									bot: any;
-								}) => {
+							json.forEach((application) => {
 									const container = document.createElement("div");
 
 									if (application.cover_image || application.icon) {
