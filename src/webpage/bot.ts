@@ -1,4 +1,3 @@
-import {mainuserjson} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
 import {MarkDown} from "./markdown.js";
 import {Form, Settings} from "./settings.js";
@@ -14,7 +13,11 @@ import {showRefusal} from "./utils/showRefusal.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
-	readonly json: mainuserjson;
+	/** The bot's User, built by the caller from the fresh application-bot payload. Held, not
+	 * re-wrapped: feeding a User through the json constructor again would round-trip it
+	 * through checkuser for no gain — and on a userMap miss (READY clears the map) through
+	 * userupdate, which mangles the copy. */
+	readonly user: User;
 	headers: {"Content-type": string; Authorization: string};
 	get localuser() {
 		return this.owner;
@@ -22,10 +25,10 @@ class Bot {
 	get info() {
 		return this.localuser.info;
 	}
-	constructor(json: mainuserjson, token: string, owner: Localuser) {
+	constructor(bot: User, token: string, owner: Localuser) {
 		this.owner = owner;
 		this.token = token;
-		this.json = json;
+		this.user = bot;
 		this.headers = {
 			"Content-type": "application/json; charset=UTF-8",
 			Authorization: token,
@@ -34,7 +37,7 @@ class Bot {
 	settings() {
 		const settings = new Settings(I18n.botSettings());
 		const botOptions = settings.addButton(I18n.botProfile(), {ltr: true});
-		const bot = new User(this.json, this.localuser);
+		const bot = this.user;
 		{
 			const hypotheticalProfile = document.createElement("div");
 

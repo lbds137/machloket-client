@@ -27,11 +27,14 @@ function openProfile(json: Record<string, unknown>) {
 	const md = vi.spyOn(options, "addMDInput");
 	const color = vi.spyOn(options, "addColorInput");
 	const owner = {info: {api: API, cdn: "http://bot.test"}, userMap: new Map(), guilds: []};
-	new Bot(
+	// Bot takes a real User (the production caller builds one from the fresh payload): the old
+	// raw-json fixtures only worked because settings() re-wrapped its input.
+	const botUser = new User(
 		{id: "b1", username: "bot", discriminator: "0", bio: "", ...json} as never,
-		"t",
 		owner as never,
-	).settings();
+		true,
+	);
+	new Bot(botUser, "t", owner as never).settings();
 	const pronouns = text.mock.results[0].value as Input;
 	const bio = md.mock.results[0].value as Input;
 	const picker = color.mock.results[0].value as Input;

@@ -31,7 +31,6 @@ import {
 	channeljson,
 	expSessionJson,
 	guildFolder,
-	mainuserjson,
 	memberjson,
 	memberlistupdatejson,
 	messageCreateJson,
@@ -5053,8 +5052,7 @@ class Localuser {
 		form.addButtonInput("", I18n.localuser.advancedBot(), () => {
 			const token = this.botTokens.get(appId);
 			if (token) {
-				//TODO check if this is actually valid or not
-				const botc = new Bot(bot as unknown as mainuserjson, token, this);
+				const botc = new Bot(bot, token, this);
 				botc.settings();
 			}
 		});
