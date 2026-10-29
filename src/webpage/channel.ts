@@ -1811,8 +1811,6 @@ class Channel extends SnowFlake {
 		// Unknown values (null/undefined, a stock-Spacebar or event-merged absence) stay gated for
 		// good per the shipped nsfwGated matrix, so they get the same back-only panel rather than a
 		// Yes that could never pass the gate.
-		//@ts-expect-error weird hack, ik, but the user here does have that information
-		//TODO make an extention of the user class with these aditional properties
 		if (this.localuser.user.nsfw_allowed !== true) {
 			options.addTitle(I18n.channel.notAllowed());
 			const buttons = options.addOptions("", {ltr: true});
@@ -4278,7 +4276,6 @@ class Channel extends SnowFlake {
 	/** Whether the channel is behind the NSFW gate (its panel stands in for the messages). */
 	nsfwGated() {
 		if (!this.nsfw) return false;
-		//@ts-expect-error another hack
 		const allowed = Boolean(this.localuser.user.nsfw_allowed);
 		const action = getSensitiveContentSync().nsfw;
 		if (action === "block") return true;
