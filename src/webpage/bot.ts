@@ -160,11 +160,18 @@ class Bot {
 		{
 			const guildsettings = settings.addButton(I18n.guild.guilds());
 			guildsettings.addTitle(I18n.botGuilds());
+			// Same surface as the leave button below: a refused or dead list fetch must say
+			// so, not leave an empty panel behind a silent rejection.
 			fetch(this.info.api + "/users/@me/guilds/", {
 				headers: this.headers,
 			})
-				.then((_) => _.json())
-				.then((json: guildjson["properties"][]) => {
+				.catch(() => undefined)
+				.then(async (res) => {
+					if (!res?.ok) {
+						await showRefusal(res);
+						return;
+					}
+					const json = (await res.json()) as guildjson["properties"][];
 					for (const guild of json) {
 						const content = document.createElement("div");
 						content.classList.add("discovery-guild");

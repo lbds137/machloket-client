@@ -34,11 +34,12 @@ function openProfile(json: Record<string, unknown>) {
 		owner as never,
 		true,
 	);
-	new Bot(botUser, "t", owner as never).settings();
+	const botc = new Bot(botUser, "t", owner as never);
+	botc.settings();
 	const pronouns = text.mock.results[0].value as Input;
 	const bio = md.mock.results[0].value as Input;
 	const picker = color.mock.results[0].value as Input;
-	return {sent, pronouns, bio, picker, pickerOpened: color.mock.calls[0]};
+	return {sent, pronouns, bio, picker, pickerOpened: color.mock.calls[0], botUser};
 }
 
 /** The profile saves sent, once the first has gone out. */
@@ -46,6 +47,16 @@ async function bodies(sent: unknown[]) {
 	await vi.waitFor(() => expect(sent.length).toBeGreaterThan(0));
 	return sent;
 }
+
+it("the editor renders through the Bot's held User, not a re-wrap", () => {
+	// The old code re-wrapped this.json in settings(); with a userMap MISS that minted a
+	// stranger, and the profile edits would save onto it instead of the bot the caller
+	// holds. The clone call is the observable: its `this` must be the held User.
+	const clone = vi.spyOn(User.prototype, "clone");
+	const {botUser} = openProfile({bio: "Hi"});
+	expect(clone).toHaveBeenCalled();
+	expect(clone.mock.instances[0]).toBe(botUser);
+});
 
 it("clearing a bot's pronouns saves the cleared pronouns", async () => {
 	const {sent, pronouns} = openProfile({pronouns: "it/its"});

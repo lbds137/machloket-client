@@ -6,8 +6,8 @@ import {captureRequests} from "./test/setup";
 await import("./localuser");
 const {Bot} = await import("./bot");
 const {User} = await import("./user");
-const {Localuser} = await import("./localuser");
 const {I18n} = await import("./i18n");
+const {makeBotOwner} = await import("./test/botOwner");
 await I18n.done;
 
 const API = "http://botleave.test/api/v9";
@@ -38,12 +38,7 @@ it("leaving a guild from the bot settings drops its row on one DELETE", async ()
 		buildprofile: async () => document.createElement("div"),
 	} as never);
 
-	const owner = Object.assign(Object.create(Localuser.prototype), {
-		info: {api: API, cdn: API},
-		headers: {},
-		guilds: [],
-		userMap: new Map(),
-	}) as InstanceType<typeof Localuser>;
+	const owner = await makeBotOwner(API);
 	// Bot takes a real User (the production caller builds one from the fresh payload): the old
 	// raw-json fixture only worked because settings() re-wrapped its input.
 	const bot = new Bot(
@@ -78,4 +73,28 @@ it("leaving a guild from the bot settings drops its row on one DELETE", async ()
 	expect(
 		[...document.querySelectorAll("button")].some((b) => b.textContent === I18n.leaveGuild()),
 	).toBe(false);
+});
+
+it("a refused guilds list says so instead of sitting empty", async () => {
+	captureRequests(API + "/users/@me/guilds/", () =>
+		Response.json({message: "401: Unauthorized"}, {status: 401}),
+	);
+	// The settings page renders the bot's profile as a side effect; keep it to a stub.
+	vi.spyOn(User.prototype, "buildprofile").mockResolvedValue(document.createElement("div"));
+	vi.spyOn(User.prototype, "clone").mockReturnValue({
+		pronouns: "",
+		bio: "",
+		buildprofile: async () => document.createElement("div"),
+	} as never);
+	const owner = await makeBotOwner(API);
+	const bot = new Bot(
+		new User({id: "b1", username: "Bot", bot: true} as never, owner, true),
+		"tok",
+		owner,
+	);
+
+	bot.settings();
+	// The refusal dialog names the server's reason; the 401 must not die as an unhandled
+	// rejection behind an empty panel.
+	await vi.waitFor(() => expect(document.body.textContent).toContain("401: Unauthorized"));
 });

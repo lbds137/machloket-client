@@ -32,6 +32,8 @@ export function getSensitiveContentSync(): SensitiveContentSettings {
 }
 
 export async function getSensitiveContent(): Promise<SensitiveContentSettings> {
+	// getPreferences no longer rejects on a corrupt store (it degrades to defaults), but a
+	// future rejection path should degrade here too, not kill the render: defense in depth.
 	const prefs = await getPreferences().catch(() => null);
 	return {
 		spoilers: isAction(prefs?.spoilerAction) ? prefs.spoilerAction : "blur",
@@ -40,6 +42,8 @@ export async function getSensitiveContent(): Promise<SensitiveContentSettings> {
 }
 
 export async function setSensitiveContent(patch: Partial<SensitiveContentSettings>): Promise<void> {
+	// Same defense in depth as getSensitiveContent: getPreferences no longer rejects on a
+	// corrupt store.
 	const prefs = await getPreferences().catch(() => null);
 	if (!prefs) return;
 	for (const source of ["spoilers", "nsfw"] as const) {

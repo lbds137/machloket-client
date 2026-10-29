@@ -94,7 +94,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		const title = await titleOf(blob);
 		// The real assertion is the short fallback: the payload is all 'a's, so any
 		// "not Zipped" check would be vacuous here.
-		expect((title ?? "").length).toBeLessThan(100);
+		expect(title ?? "").toMatch(/^[0-9a-f-]{36}$/);
 	});
 
 	it("a compressed frame whose declared size passes the cap is skipped without inflating", async () => {
@@ -106,7 +106,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		]);
 		const title = await titleOf(blob);
 		expect(title).not.toBe("Zipped");
-		expect((title ?? "").length).toBeLessThan(100);
+		expect(title ?? "").toMatch(/^[0-9a-f-]{36}$/);
 	});
 
 	it("duplicate compressed frames keep the first and still consume the second", async () => {
@@ -120,7 +120,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		const title = await titleOf(
 			rawTag(3, [{id: "TIT2", flag2: 0b10000000, body: [...plain4(64), 1, 2, 3, 4, 5]}]),
 		);
-		expect((title ?? "").length).toBeLessThan(100);
+		expect(title ?? "").toMatch(/^[0-9a-f-]{36}$/);
 	});
 
 	it("a corrupt compressed stream loses its frame, not the whole tag", async () => {
@@ -168,7 +168,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 			]),
 		);
 		expect(title).not.toBe("Zipped");
-		expect((title ?? "").length).toBeLessThan(100);
+		expect(title ?? "").toMatch(/^[0-9a-f-]{36}$/);
 	});
 
 	it("unread compressed frames are never inflated, and a survivor still parses", async () => {
@@ -207,7 +207,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		});
 		const inflate = vi.spyOn(globalThis, "DecompressionStream");
 		const title = await titleOf(rawTag(3, [await bomb(), await bomb()]));
-		expect((title ?? "").length).toBeLessThan(100);
+		expect(title ?? "").toMatch(/^[0-9a-f-]{36}$/);
 		expect(inflate).toHaveBeenCalledTimes(1);
 	});
 
