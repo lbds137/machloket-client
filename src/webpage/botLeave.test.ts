@@ -44,7 +44,13 @@ it("leaving a guild from the bot settings drops its row on one DELETE", async ()
 		guilds: [],
 		userMap: new Map(),
 	}) as InstanceType<typeof Localuser>;
-	const bot = new Bot({id: "b1", username: "Bot", bot: true} as never, "tok", owner);
+	// Bot takes a real User (the production caller builds one from the fresh payload): the old
+	// raw-json fixture only worked because settings() re-wrapped its input.
+	const bot = new Bot(
+		new User({id: "b1", username: "Bot", bot: true} as never, owner, true),
+		"tok",
+		owner,
+	);
 
 	bot.settings();
 	await vi.waitFor(() => expect(listBodies).toHaveLength(1));
