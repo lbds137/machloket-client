@@ -3,6 +3,10 @@ import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {ProgressiveArray} from "./utils/progessiveLoad.js";
 import {attachmentUrl} from "./utils/netUtils.js";
+/** The largest ID3 frame this parser will decompress. IdentifyFile runs on every audio
+ * attachment that renders — chat-reachable input — and zlib ratios reach ~1000:1, so an
+ * unbounded inflate would let one posted file eat a viewer's tab. Covers any sane cover art. */
+const MAX_INFLATED_FRAME = 8 * 1024 * 1024;
 /** A track's length (`ms`) for the More info dialog. */
 function lengthText(ms: number) {
 	// Rounded as a whole first, so 59.6 s reads as a minute rather than "0 minutes and 60 seconds".
@@ -482,29 +486,76 @@ class MediaPlayer {
 						const flags = await prog.get8BitArray(2);
 						const compression = !!(flags[1] & 0b10000000);
 						if (compression) {
-							// Frame-level compression (v2.3 layout): a 4-byte decompressed size, then
-							// zlib data. DecompressionStream("deflate") is the same decoder the
-							// gateway uses. (v2.4's flag bit and Data Length Indicator differ — see
-							// the tracker's v2.4-flags row.)
-							if (size < 4) {
+							// Frame-level compression (v2.3 layout): a plain 4-byte decompressed
+							// size, then zlib data ("deflate" is the RFC 1950 zlib container the
+							// ID3 spec cites). A grouped or encrypted frame carries an extra byte
+							// before the data; streams that overshoot their declared size are
+							// abandoned mid-read — a chat-posted file must not allocate GBs.
+							// (v2.4's flag bit and Data Length Indicator differ — see the
+							// tracker's v2.4-flags row.)
+							const extra =
+								(flags[1] & 0b01000000 ? 1 : 0) + (flags[1] & 0b00100000 ? 1 : 0);
+							if (size < 4 + extra) {
 								break;
 							}
-							await prog.get8BitArray(4);
-							const packed = await prog.get8BitArray(size - 4);
+							const sizeArr2 = await prog.get8BitArray(4);
+							const declared =
+								version === 4
+									? (sizeArr2[0] << 21) +
+										(sizeArr2[1] << 14) +
+										(sizeArr2[2] << 7) +
+										sizeArr2[3]
+									: sizeArr2[0] * 2 ** 24 +
+										(sizeArr2[1] << 16) +
+										(sizeArr2[2] << 8) +
+										sizeArr2[3];
+							if (extra) {
+								await prog.get8BitArray(extra);
+							}
+							const packed = await prog.get8BitArray(size - 4 - extra);
+							// Encrypted post-compression: undecryptable here, so never stored.
+							if (flags[1] & 0b01000000) {
+								continue;
+							}
+							// A declared size past the cap is a bomb by header; skip the inflate.
+							if (declared > MAX_INFLATED_FRAME) {
+								continue;
+							}
 							if (!mappy.has(Identify)) {
-								const stream = new Blob([new Uint8Array(packed)])
+								const reader = new Blob([new Uint8Array(packed)])
 									.stream()
-									.pipeThrough(new DecompressionStream("deflate"));
-								mappy.set(
-									Identify,
-									new Uint8Array(await new Response(stream).arrayBuffer()),
-								);
+									.pipeThrough(new DecompressionStream("deflate"))
+									.getReader();
+								const chunks: Uint8Array[] = [];
+								let total = 0;
+								for (;;) {
+									const {done, value} = await reader.read();
+									if (done) break;
+									total += value.length;
+									if (total > declared) {
+										// The header lied: abandon the stream mid-read.
+										await reader.cancel();
+										total = -1;
+										break;
+									}
+									chunks.push(value);
+								}
+								if (total >= 0) {
+									const body = new Uint8Array(total);
+									let at = 0;
+									for (const chunk of chunks) {
+										body.set(chunk, at);
+										at += chunk.length;
+									}
+									mappy.set(Identify, body);
+								}
 							}
 							continue;
 						}
 						const encyption = !!(flags[1] & 0b01000000);
 						if (encyption) {
-							//TODO not sure what this would even do
+							// Not supported: consume the frame so the loop stays aligned.
+							await prog.get8BitArray(size);
 							continue;
 						}
 

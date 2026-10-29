@@ -54,4 +54,71 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		// fixture comment: real v2.4 uses flag bit 3 plus a Data Length Indicator).
 		await expect(titleOf(await compressedTag(4, "Zipped"))).resolves.toBe("Zipped");
 	});
+
+	// A frame body the parser stores verbatim: [id-size-flags already written by the builder]
+	function rawTag(version: 3 | 4, frames: {id: string; flag2: number; body: number[]}[]) {
+		const body: number[] = [];
+		for (const {id, flag2, body: payload} of frames) {
+			const size = version === 4 ? synchsafe(payload.length) : plain4(payload.length);
+			body.push(...charCodes(id), ...size, 0, flag2, ...payload);
+		}
+		return new Blob(
+			[new Uint8Array([0x49, 0x44, 0x33, version, 0, 0, ...synchsafe(body.length), ...body])],
+			{type: "audio/mpeg"},
+		);
+	}
+	async function compressedFrame(text: string, declaredOverride?: number) {
+		const payload = [0, ...charCodes(text), 0];
+		const packed = await deflate(payload);
+		const declared = declaredOverride ?? payload.length;
+		return {id: "TIT2", flag2: 0b10000000, body: [...plain4(declared), ...packed]};
+	}
+
+	it("a compressed frame declaring less than it inflates to is abandoned, not stored", async () => {
+		// 1 MB of 'a' deflates small; the header claims 4 bytes. The stream must be abandoned
+		// mid-read: the title falls back to the short filename, never the inflated megabyte.
+		const filler: number[] = new Array(1_000_000).fill(97); // 'a'
+		const payload = [0, ...filler, 0];
+		const packed = await deflate(payload);
+		const blob = rawTag(3, [
+			{id: "TIT2", flag2: 0b10000000, body: [...plain4(4), ...packed]},
+		]);
+		const title = await titleOf(blob);
+		expect(title).not.toBe("Zipped");
+		expect((title ?? "").length).toBeLessThan(100);
+	});
+
+	it("a compressed frame whose declared size passes the cap is skipped without inflating", async () => {
+		const packed = await deflate([0, ...charCodes("Zipped"), 0]);
+		// Declares ~9 MiB, over the parser's 8 MiB ceiling: skipped by header alone.
+		const declared = 9 * 1024 * 1024;
+		const blob = rawTag(3, [
+			{id: "TIT2", flag2: 0b10000000, body: [...plain4(declared), ...packed]},
+		]);
+		const title = await titleOf(blob);
+		expect(title).not.toBe("Zipped");
+		expect((title ?? "").length).toBeLessThan(100);
+	});
+
+	it("duplicate compressed frames keep the first and still consume the second", async () => {
+		const first = await compressedFrame("First");
+		const second = await compressedFrame("Second");
+		const title = await titleOf(rawTag(3, [first, second]));
+		expect(title).toBe("First");
+	});
+
+	it("a corrupt compressed stream falls back to the filename instead of hanging", async () => {
+		const title = await titleOf(
+			rawTag(3, [{id: "TIT2", flag2: 0b10000000, body: [...plain4(64), 1, 2, 3, 4, 5]}]),
+		);
+		expect((title ?? "").length).toBeLessThan(100);
+	});
+
+	it("an encrypted frame is skipped without derailing the rest of the tag", async () => {
+		const plain = await compressedFrame("Zipped");
+		const title = await titleOf(
+			rawTag(3, [{id: "TENC", flag2: 0b01000000, body: [1, 2, 3, 4]}, plain]),
+		);
+		expect(title).toBe("Zipped");
+	});
 });
