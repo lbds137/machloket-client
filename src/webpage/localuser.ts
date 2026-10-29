@@ -24,6 +24,7 @@ import {
 	Specialuser,
 	debounce,
 	mobile,
+	pingResponse,
 } from "./utils/utils.js";
 import {CDN_LINK_MARGIN_MS, cssUrl} from "./utils/netUtils.js";
 import {
@@ -6612,7 +6613,7 @@ class Localuser {
 		const isPing = (json: unknown) =>
 			typeof (json as {instance?: {name?: unknown}} | null)?.instance?.name === "string";
 		if (!isPing(userInfo.instances[wellknown])) {
-			const pingRes = await fetch(this.info.api + "/ping").catch(() => undefined);
+			const pingRes = await pingResponse(this.info.api);
 			const pingJSON: unknown = pingRes?.ok ? await pingRes.json().catch(() => null) : null;
 			if (isPing(pingJSON)) {
 				userInfo.instances[wellknown] = pingJSON;

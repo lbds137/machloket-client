@@ -1,5 +1,5 @@
 import {I18n} from "./i18n.js";
-import {adduser, InstanceInfo, Specialuser} from "./utils/utils.js";
+import {adduser, InstanceInfo, Specialuser, pingResponse} from "./utils/utils.js";
 import {makeLogin} from "./login.js";
 import {MarkDown} from "./markdown.js";
 import {Dialog, FormError} from "./settings.js";
@@ -117,7 +117,10 @@ export async function makeRegister(
 async function tosLogic(box: HTMLElement, instanceInfo: InstanceInfo) {
 	const apiurl = new URL(instanceInfo.api);
 	const urlstr = apiurl.toString();
-	const response = await fetch(urlstr + (urlstr.endsWith("/") ? "" : "/") + "ping");
+	// Budgeted: an unreachable instance leaves the TOS area empty instead of hanging the
+	// registration form forever.
+	const response = await pingResponse(urlstr);
+	if (!response) return;
 	const data = await response.json();
 	const tosPage = data.instance.tosPage;
 	if (!box) return;
