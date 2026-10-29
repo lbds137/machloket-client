@@ -330,3 +330,85 @@ it("a refused application GET in the bot manager says why and alerts nothing", a
 	expect(alerted).not.toHaveBeenCalled();
 	expect(addSubForm).not.toHaveBeenCalled();
 });
+
+/** Opens the user settings, mounts the account-security tab and fires the passkey-list GET. */
+async function openPasskeyList() {
+	const u = settingsUser();
+	await u.showusersettings().catch(() => {});
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.localuser.accountSettings())!
+		.click();
+	const manage = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === I18n.webauth.manage(),
+		);
+		expect(b).not.toBeUndefined();
+		return b;
+	});
+	manage!.click();
+}
+
+it("a refused passkey-list GET says why instead of an empty panel", async () => {
+	stubUserSettings();
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", refused);
+
+	await openPasskeyList();
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+});
+
+it("a passkey-list GET that never arrived says the network failed", async () => {
+	stubUserSettings();
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () =>
+		Promise.reject(new TypeError("offline")),
+	);
+
+	await openPasskeyList();
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
+});
+
+it("a passkey-list answer that isn't JSON says why", async () => {
+	stubUserSettings();
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () => new Response("<html>"));
+
+	await openPasskeyList();
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+});
+
+it("a refused applications GET says why instead of an empty app list", async () => {
+	stubUserSettings();
+	captureRequests(API + "/applications", refused);
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+});
+
+it("a refused teams GET says why instead of arming a crashing Create App form", async () => {
+	stubUserSettings();
+	captureRequests(API + "/teams", refused);
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+});
+
+it("a teams GET that never arrived says the network failed", async () => {
+	stubUserSettings();
+	captureRequests(API + "/teams", () => Promise.reject(new TypeError("offline")));
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	await new Promise((r) => setTimeout(r, 50));
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
+});

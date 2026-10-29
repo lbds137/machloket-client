@@ -171,7 +171,11 @@ class Bot {
 						await showRefusal(res);
 						return;
 					}
-					const json = (await res.json()) as guildjson["properties"][];
+					const json = (await res.json().catch(() => null)) as guildjson["properties"][] | null;
+					if (!Array.isArray(json)) {
+						await showRefusal(res);
+						return;
+					}
 					for (const guild of json) {
 						const content = document.createElement("div");
 						content.classList.add("discovery-guild");
