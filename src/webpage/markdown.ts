@@ -66,12 +66,19 @@ function getLinkMenu() {
 	return linkMenu;
 }
 
+/** MarkDown's owner duck-types its model class: a Localuser declares `user`, a Guild declares
+ * `roleids`, and the rest reads as a Channel. Structural on purpose — this module keeps its
+ * Guild import type-only (guild.ts imports this module by value). */
+function ownerIsGuild(owner: NonNullable<MarkDown["owner"]>): owner is Guild {
+	return "roleids" in owner;
+}
+
 class MarkDown {
 	static emoji?: typeof Emoji;
 	txt: string;
 	keep: boolean;
 	stdsize: boolean;
-	owner: Localuser | Channel | void;
+	owner: Localuser | Channel | Guild | void;
 	info: Localuser["info"] | void = undefined;
 	constructor(
 		text: string | string[],
@@ -86,23 +93,20 @@ class MarkDown {
 		this.owner = owner;
 		this.stdsize = stdsize;
 	}
+	/** No production reader since the token sites moved to `get guild()` — kept as the
+	 * discrimination pin: a Guild owner must never read back as a Channel. */
 	get channel() {
-		if (!this.owner) return;
-		if ("user" in this.owner) {
-			return;
-		} else if (this.owner) {
-			return this.owner;
-		}
-		return null;
+		if (!this.owner || "user" in this.owner || ownerIsGuild(this.owner)) return;
+		return this.owner;
+	}
+	get guild(): Guild | void {
+		if (!this.owner || "user" in this.owner) return;
+		return ownerIsGuild(this.owner) ? this.owner : this.owner.guild;
 	}
 	get localuser() {
 		if (!this.owner) return;
-		if ("user" in this.owner) {
-			return this.owner;
-		} else if (this.owner) {
-			return this.owner.localuser;
-		}
-		return null;
+		if ("user" in this.owner) return this.owner;
+		return this.owner.localuser;
 	}
 	get rawString() {
 		return this.txt;
@@ -144,7 +148,7 @@ class MarkDown {
 				for (const match of tokens) {
 					const parts = match.match(/^<(a)?:\w+:(\d{10,30})>$/);
 					if (parts) {
-						const owner = this.channel ? this.channel.guild : this.localuser;
+						const owner = this.guild ?? this.localuser;
 						if (!owner) continue;
 						const emoji = new Emoji(
 							{name: match, id: parts[2], animated: Boolean(parts[1])},
@@ -755,8 +759,9 @@ class MarkDown {
 						switch (char) {
 							case "@":
 								if (role) {
-									if (this.channel) {
-										const role = this.channel.guild.roleids.get(id);
+									const guild = this.guild;
+									if (guild) {
+										const role = guild.roleids.get(id);
 										if (role) {
 											mention.textContent = `@${role.name}`;
 											mention.style.color = `var(--role-${role.id})`;
@@ -770,10 +775,7 @@ class MarkDown {
 										const user = await this.localuser?.getUser(id);
 										if (user) {
 											mention.textContent = `@${user.name}`;
-											let guild: null | Guild = null;
-											if (this.channel) {
-												guild = this.channel.guild;
-											}
+											const guild: null | Guild = this.guild ?? null;
 											if (!keep) {
 												user.bind(mention, guild, true, stdsize ? "none" : "left");
 											}
@@ -960,7 +962,7 @@ class MarkDown {
 						appendcurrent();
 						i = j;
 						const isEmojiOnly = txt.trim() === build.trim() && !stdsize;
-						const owner = this.channel ? this.channel.guild : this.localuser;
+						const owner = this.guild ?? this.localuser;
 						if (!owner) continue;
 						const emoji = new Emoji(
 							{name: build, id: parts[2], animated: Boolean(parts[1])},

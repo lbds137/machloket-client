@@ -1796,8 +1796,7 @@ class User extends SnowFlake {
 			membres.then((member) => {
 				if (!member) return;
 				if (member.bio && member.bio !== "") {
-					//TODO make markdown take Guild
-					infoDiv.insertBefore(new MarkDown(member.bio, this.localuser).makeHTML(), biohtml);
+					infoDiv.insertBefore(new MarkDown(member.bio, member.owner).makeHTML(), biohtml);
 					biohtml.remove();
 				}
 			});
@@ -2172,8 +2171,7 @@ class User extends SnowFlake {
 		membres.then((member) => {
 			if (!member) return;
 			if (member.bio && member.bio !== "") {
-				//TODO make markdown take Guild
-				userbody.insertBefore(new MarkDown(member.bio, this.localuser).makeHTML(), biohtml);
+				userbody.insertBefore(new MarkDown(member.bio, member.owner).makeHTML(), biohtml);
 				biohtml.remove();
 			}
 		});

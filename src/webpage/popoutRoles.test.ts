@@ -38,6 +38,9 @@ async function openPopout(
 		user: {id: "me-1"},
 		userMap: new Map(),
 		guilds: [],
+		// buildprofile's friend-request poll calls relationChange ~100 ms in; this constructor
+		// field is what the prototype fake skips.
+		relChangeUpdateMap: new Map(),
 	});
 	const user = new User(
 		{
@@ -70,7 +73,16 @@ async function openPopout(
 		...extra,
 	}) as MemberT;
 	// The self-member back-reference the popout's MANAGE_ROLES gate reads.
-	Object.assign(stub, {owner: {id: "g1", roles, properties: {name: "Wonderland"}, localuser, member: stub}});
+	Object.assign(stub, {
+		owner: {
+			id: "g1",
+			roles,
+			roleids: new Map(roles.map((r) => [(r as {id: string}).id, r])),
+			properties: {name: "Wonderland"},
+			localuser,
+			member: stub,
+		},
+	});
 	return user.buildprofile(x, x, stub, 5);
 }
 
@@ -130,4 +142,12 @@ it("the everyone-role never renders a chip, so it can never grow a control", asy
 	);
 	await vi.waitFor(() => expect(roleChips(popout).length).toBe(1));
 	expect(roleChips(popout)[0]!.textContent).not.toContain("@everyone");
+});
+
+it("a member bio renders its role mention against the popout's guild", async () => {
+	// Digit-only id: the mention parser reads ids as numbers.
+	const popout = await openPopout([role("222", "Knights", false)], false, {
+		bio: "sword <@&222>",
+	});
+	await vi.waitFor(() => expect(popout.textContent).toContain("@Knights"));
 });
