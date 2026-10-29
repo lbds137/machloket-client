@@ -896,10 +896,11 @@ class User extends SnowFlake {
 		return pfpWrapper;
 	}
 	createWidget(guild?: Guild) {
-		guild = this.localuser.guildids.get("@me") as Guild;
+		// The caller's guild is the context: resolving the member there drives both the
+		// guild-named widget and the not-found note. Without a guild, fall back to @me.
+		guild ??= this.localuser.guildids.get("@me") as Guild;
 		const div = document.createElement("div");
 		div.classList.add("flexltr", "createdWebhook");
-		//TODO make sure this is something I can actually do here
 		const name = document.createElement("b");
 		name.textContent = this.name;
 
@@ -1932,7 +1933,10 @@ class User extends SnowFlake {
 					...high.mutual_friends
 						.map((_) => new User(_, this.localuser))
 						.map((user) => {
-							const html = user.createWidget(this.localuser.lookingguild);
+							// No guild context: a mutual friend may simply never have been in
+							// the looked-at guild, and the not-found note would read as a
+							// false claim about them.
+							const html = user.createWidget();
 							html.onclick = (e) => {
 								e.stopImmediatePropagation();
 								e.preventDefault();
