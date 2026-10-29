@@ -563,10 +563,36 @@ export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
 //endregion
 
 //region Well-Known v1
+/** The /ping budget for instance checks: an unreachable instance must read as absent, not
+ * hang the lookup forever. */
+export const pingTimeoutMs = 10_000;
+
+/** The /ping response inside the budget, or null once it passed: an abort and a network
+ * failure both read as absent. (Exported for the pingGuard tests.) */
+export async function pingResponse(api: URL | string): Promise<Response | null> {
+	const base = api.toString();
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), pingTimeoutMs);
+	try {
+		return await fetch(base + (base.endsWith("/") ? "" : "/") + "ping", {signal: controller.signal});
+	} catch {
+		return null;
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+/** Whether an instance's API answers /ping, inside the budget. (Exported for the pingGuard
+ * tests.) */
+export async function pingOK(api: URL | string): Promise<boolean> {
+	return (await pingResponse(api))?.ok === true;
+}
+
 /**
  * this function checks if a string is an instance, it'll either return the API urls or null
+ * (exported for the pingGuard tests)
  */
-async function checkURLs(wellknown: string, urls: InstanceUrls) {
+export async function checkURLs(wellknown: string, urls: InstanceUrls) {
 	if (isLoopback(urls.api) !== isLoopback(wellknown)) {
 		return new Promise<InstanceUrls | null>(async (res) => {
 			// goAbove: the caller may have raised its own layer (the login dialog sits at
@@ -606,13 +632,7 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 					// Setting `host` without a port keeps the old (loopback) one: take the site's own port.
 					for (const url of Object.values(tempurls)) url.port = temp.port;
 
-					if (
-						!(
-							await fetch(
-								tempurls.api + (tempurls.api.toString().endsWith("/") ? "" : "/") + "ping",
-							)
-						).ok
-					) {
+					if (!(await pingOK(tempurls.api))) {
 						res(null);
 						menu.hide();
 						return;
@@ -634,9 +654,7 @@ async function checkURLs(wellknown: string, urls: InstanceUrls) {
 				clicked = true;
 				if (urls == null) throw new Error("URLs is undefined");
 				try {
-					//TODO make this a promise race for when the server just never responds
-					//TODO maybe try to strip ports as another way to fix it
-					if (!(await fetch(urls.api + (urls.api.endsWith("/") ? "" : "/") + "ping")).ok) {
+					if (!(await pingOK(urls.api))) {
 						res(null);
 						menu.hide();
 						return;
@@ -720,7 +738,7 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 		}
 		//*/
 		try {
-			if (!(await fetch(urls.api + "/ping")).ok) {
+			if (!(await pingOK(urls.api))) {
 				return null;
 			}
 		} catch {
