@@ -1,4 +1,5 @@
-import {afterEach, expect, it, vi} from "vitest";
+import {afterEach, expect, it, onTestFinished, vi} from "vitest";
+import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -156,4 +157,123 @@ it("a full profile formats account creation and server join dates with I18n.loca
 		),
 	);
 	profile.remove();
+});
+
+/**
+ * A full profile whose /profile GET answers `respond`, with the mutual-guilds tab opened (the
+ * tab's content mounts on click). highInfo is the real one here.
+ */
+async function openMutualGuilds(
+	respond: () => Response | Promise<Response>,
+	guildids: Map<string, unknown> = new Map(),
+) {
+	captureRequests("http://profile.test/api/v9/users/1553128655016763450/profile", respond);
+	const localuser = Object.assign(Object.create(Localuser.prototype), {
+		info: {
+			api: "http://profile.test/api/v9",
+			cdn: "http://profile.test",
+			wellknown: "http://profile.test",
+		},
+		headers: {},
+		user: {id: "me"},
+		userMap: new Map(),
+		guilds: [],
+		guildids,
+	});
+	const user = new User(
+		{
+			id: "1553128655016763450",
+			username: "alice",
+			discriminator: "0001",
+			avatar: null,
+			bot: false,
+			public_flags: 0,
+			badge_ids: [],
+			accent_color: 0,
+			bio: "",
+			premium_type: 0,
+			premium_since: "",
+			theme_colors: null,
+		},
+		localuser,
+		true,
+	);
+	const member = Object.assign(Object.create(Member.prototype), {
+		id: user.id,
+		user,
+		owner: {id: "g1", roles: [], properties: {name: "Wonderland"}, localuser},
+		roleIds: new Set<string>(),
+		joined_at: "2026-10-04T00:00:00Z",
+		subName: () => {},
+		hasPermission: () => false,
+	});
+
+	const profile = await user.fullProfile(member);
+	onTestFinished(() => profile.remove());
+	const tab = await vi.waitFor(() => {
+		const button = [...profile.querySelectorAll("button")].find(
+			(b) => b.textContent === I18n.profile.mut(),
+		);
+		expect(button).not.toBeUndefined();
+		return button!;
+	});
+	tab.click();
+	return profile;
+}
+
+it("an accepted profile GET opens the mutual-guilds tab without a note (the control)", async () => {
+	const guildids = new Map([
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() => Response.json({mutual_guilds: [{id: "g1"}], connected_accounts: []}),
+		guildids,
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	expect(profile.textContent).not.toContain(I18n.requestFailed("HTTP 200"));
+});
+
+it("a refused profile GET puts the reason where the mutual guilds would sit", async () => {
+	const profile = await openMutualGuilds(() => Response.json({message: "boom"}, {status: 403}));
+
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("boom")));
+});
+
+it("a profile GET that never arrived says the network failed where the mutual guilds would sit", async () => {
+	const profile = await openMutualGuilds(() => Promise.reject(new TypeError("offline")));
+
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("offline")));
+});
+
+it("a profile answer that isn't JSON says why where the mutual guilds would sit", async () => {
+	const profile = await openMutualGuilds(() => new Response("<html>"));
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("HTTP 200")));
+});
+
+it("a profile answer without a mutual-guilds list says why instead of throwing", async () => {
+	const unhandled = vi.fn();
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	const profile = await openMutualGuilds(() => Response.json({message: "hidden"}));
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("HTTP 200")));
+	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a profile answer without a connected-accounts list says why instead of throwing", async () => {
+	const unhandled = vi.fn();
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	const profile = await openMutualGuilds(() => Response.json({mutual_guilds: []}));
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("HTTP 200")));
+	expect(unhandled).not.toHaveBeenCalled();
 });

@@ -393,13 +393,18 @@ class Embed {
 					return;
 				}
 				info = tempinfo;
-				const res = await fetch(info.api + "/invites/" + json1.code);
-				if (!res.ok) {
+				const res = await fetch(info.api + "/invites/" + json1.code).catch(() => undefined);
+				// Whatever stops the preview (a refusal, no answer, a page that isn't the invite's
+				// JSON) gives way to the plain link, as a refused invite always has.
+				const loaded = res?.ok
+					? ((await res.json().catch(() => null)) as invitejson | null)
+					: null;
+				if (!loaded?.guild || !loaded.channel) {
 					div.classList.remove("embed", "inviteEmbed", "flexttb");
 					div.append(this.generateLink());
 					return;
 				}
-				json = (await res.json()) as invitejson;
+				json = loaded;
 				this.invcache = [json, info];
 			} else {
 				[json, info] = this.invcache;

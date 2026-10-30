@@ -455,6 +455,52 @@ it("a teams answer that isn't an array degrades the same way", async () => {
 	await vi.waitFor(() =>
 		expect(document.querySelector("#app-list-container")!.textContent).toContain("Listed App"),
 	);
+	// Quiet like its siblings: the reason a non-array teams answer would carry (the body is
+	// consumed by the guarded json(), so "HTTP 200") shows nowhere, and Create App stays.
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("HTTP 200"));
+	expect(
+		[...document.querySelectorAll("button")].some(
+			(b) => b.textContent === I18n.localuser.createApp(),
+		),
+	).toBe(true);
+});
+
+/** Opens the dev portal, clicks Create App and returns the team select's options. */
+async function createAppTeamOptions() {
+	await openDevPortal();
+	const create = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll("button")].find(
+			(b) => b.textContent === I18n.localuser.createApp(),
+		);
+		expect(b).not.toBeUndefined();
+		return b!;
+	});
+	create.click();
+	return vi.waitFor(() => {
+		const options = [
+			...document.querySelectorAll(".settingsHTMLArea select option"),
+		].map((o) => o.textContent);
+		expect(options.length).toBeGreaterThan(0);
+		return options;
+	});
+}
+
+it("a teams answer lists its teams in the Create App form after the personal one", async () => {
+	stubUserSettings();
+	captureRequests(API + "/teams", () => Response.json([{name: "Team X"}]));
+
+	const options = await createAppTeamOptions();
+
+	expect(options).toEqual([I18n.localuser.personalTeam(), "Team X"]);
+});
+
+it("a refused teams answer that still carries an array lists none of it", async () => {
+	stubUserSettings();
+	captureRequests(API + "/teams", () => Response.json([{name: "Ghost"}], {status: 500}));
+
+	const options = await createAppTeamOptions();
+
+	expect(options).toEqual([I18n.localuser.personalTeam()]);
 });
 
 it("an applications answer that isn't an array says so inside the panel", async () => {
@@ -470,4 +516,131 @@ it("an applications answer that isn't an array says so inside the panel", async 
 			I18n.requestFailed("HTTP 200"),
 		),
 	);
+});
+
+it("an application answer that isn't JSON says why and builds no application form", async () => {
+	captureRequests(API + "/applications/a1", () => new Response("<html>"));
+	const addSubForm = vi.spyOn(Options.prototype, "addSubForm");
+	const u = appUser();
+
+	await u.manageApplication("a1", new Dialog("").options, () => {}).catch(() => {});
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	expect(addSubForm).not.toHaveBeenCalled();
+});
+
+/** Opens a MANAGE_GUILD member's settings, the widget GET answering `widget`, and the section. */
+function openWidget(widget: () => Response | Promise<Response>) {
+	captureRequests(API + "/guilds/g1/welcome-screen", () => Response.json({enabled: false}));
+	captureRequests(API + "/guilds/g1/invites", () => Response.json([]));
+	captureRequests(API + "/guilds/g1/templates", () => Response.json([]));
+	captureRequests(API + "/guilds/g1/widget", widget);
+	guild(["MANAGE_GUILD"]).generateSettings();
+	const tab = [...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")].find(
+		(b) => b.textContent === I18n.widget(),
+	);
+	expect(tab).not.toBeUndefined();
+	tab!.click();
+}
+
+it("an accepted widget GET builds the widget form (the control)", async () => {
+	openWidget(() => Response.json({enabled: true, channel_id: null}));
+
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.widgetEnabled()));
+});
+
+it("a refused widget GET says why in the widget section and builds no form from the error body", async () => {
+	openWidget(refused);
+
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
+	expect(document.body.textContent).not.toContain(I18n.widgetEnabled());
+});
+
+it("a widget GET that never arrived says the network failed and builds no form", async () => {
+	openWidget(() => Promise.reject(new TypeError("offline")));
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("offline")),
+	);
+	expect(document.body.textContent).not.toContain(I18n.widgetEnabled());
+});
+
+it("a widget answer that isn't JSON says why and builds no form", async () => {
+	openWidget(() => new Response("<html>"));
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
+	expect(document.body.textContent).not.toContain(I18n.widgetEnabled());
+});
+
+it("a widget answer without an enabled flag says why and builds no form", async () => {
+	openWidget(() => Response.json({channel_id: null}));
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
+	expect(document.body.textContent).not.toContain(I18n.widgetEnabled());
+});
+
+/**
+ * Opens a stickers manager's guild settings, presses Upload stickers and fills the dialog's
+ * form with a valid sticker: the form is ready to submit.
+ */
+function stickerForm() {
+	const buttons = captureButtons();
+	const realAddForm = Options.prototype.addForm;
+	let form = undefined as ReturnType<typeof realAddForm> | undefined;
+	vi.spyOn(Options.prototype, "addForm").mockImplementation(function (
+		this: InstanceType<typeof Options>,
+		...args: Parameters<typeof realAddForm>
+	) {
+		form = realAddForm.apply(this, args);
+		return form;
+	});
+	const g = Object.assign(guild(["MANAGE_GUILD_EXPRESSIONS"]), {emojis: [], stickers: []});
+	g.generateSettings();
+	// The dialog's form is the last one made: the build's own come before the click.
+	buttons.get(I18n.sticker.upload())!();
+	const input = (name: string) => form!.names.get(name) as unknown as {value: unknown};
+	const files = new DataTransfer();
+	files.items.add(new File(["x"], "s.png", {type: "image/png"}));
+	input("file").value = files.files;
+	input("name").value = "cat";
+	input("tags").value = {emoji: "😀"};
+	return form!;
+}
+
+it("a sticker upload answered with a non-JSON error page says so on the file field", async () => {
+	captureRequests(
+		API + "/guilds/g1/stickers",
+		() => new Response("<html>bad gateway</html>", {status: 502}),
+	);
+	const form = stickerForm();
+
+	await form.submit();
+
+	expect(document.querySelector(".suberror")?.textContent).toBe(I18n.requestFailed("HTTP 502"));
+});
+
+it("a sticker upload that never arrived says the network failed on the file field", async () => {
+	captureRequests(API + "/guilds/g1/stickers", () => Promise.reject(new TypeError("offline")));
+	const form = stickerForm();
+
+	await form.submit();
+
+	expect(document.querySelector(".suberror")?.textContent).toBe(I18n.requestFailed("offline"));
+});
+
+it("a refused sticker upload still shows the server's own message on the file field", async () => {
+	captureRequests(API + "/guilds/g1/stickers", () =>
+		Response.json({message: "Missing Permissions"}, {status: 403}),
+	);
+	const form = stickerForm();
+
+	await form.submit();
+
+	expect(document.querySelector(".suberror")?.textContent).toBe("Missing Permissions");
 });

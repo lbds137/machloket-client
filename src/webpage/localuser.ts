@@ -4383,7 +4383,9 @@ class Localuser {
 				.then(async (teamsRes) => {
 					// The teams list feeds one Create App <select>: a failed lookup degrades to the
 					// personal team, silently — Settings must not modal over an optional panel.
-					const parsed = (await teamsRes?.json().catch(() => null)) as {name: string}[] | null;
+					const parsed = (await (teamsRes?.ok ? teamsRes.json() : Promise.resolve(null)).catch(
+						() => null,
+					)) as {name: string}[] | null;
 					const teams = Array.isArray(parsed) ? parsed : [];
 					const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 						const form = devPortal.addSubForm(
@@ -4921,7 +4923,11 @@ class Localuser {
 			return;
 		}
 		const json = await res.json().catch(() => null);
-		if (!json) return;
+		if (!json) {
+			// A 200 that isn't the promised shape is a failed request, not "no application".
+			await showRefusal(res);
+			return;
+		}
 		const form = container.addSubForm(json.name, () => {}, {
 			fetchURL: this.info.api + "/applications/" + appId,
 			method: "PATCH",

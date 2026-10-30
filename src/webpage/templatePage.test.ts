@@ -5,6 +5,8 @@ import {addInstance, captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {setDefaults, instancefetch, getDefaultInstanceUrl} = await import("./utils/utils");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 const before = location.href;
 afterEach(() => {
@@ -19,7 +21,7 @@ let runs = 0;
  * Opens /template/abc signed out and without ?instance=, the instance answering the template
  * request with `respond`. The page runs at import, so each call imports a fresh copy.
  */
-async function openSignedOut(respond: () => Response) {
+async function openSignedOut(respond: () => Response | Promise<Response>) {
 	const saved = localStorage.getItem("userinfos");
 	localStorage.removeItem("userinfos");
 	setDefaults();
@@ -41,6 +43,7 @@ async function openSignedOut(respond: () => Response) {
 	await expect.poll(() => asked.length, {timeout: 3000}).toBe(1);
 	return {
 		name: document.getElementById("templatename")!,
+		description: document.getElementById("templatedescription")!,
 		use: document.getElementById("usetemplate")!,
 	};
 }
@@ -55,5 +58,28 @@ it("a template link without ?instance= shows the template from the default insta
 it("an instance that wants a token for templates names no template rather than an undefined one", async () => {
 	const {name} = await openSignedOut(() => Response.json({message: "Unauthorized"}, {status: 401}));
 	await new Promise((res) => setTimeout(res, 100));
+	expect(name.textContent).toBe("");
+});
+
+it("a template request that never arrived says the network failed in the page body", async () => {
+	const {name, description} = await openSignedOut(() => Promise.reject(new TypeError("offline")));
+
+	await expect.poll(() => description.textContent).toBe(I18n.requestFailed("offline"));
+	expect(name.textContent).toBe("");
+});
+
+it("a template answer that isn't JSON says why in the page body", async () => {
+	const {name, description} = await openSignedOut(() => new Response("<html>"));
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await expect.poll(() => description.textContent).toBe(I18n.requestFailed("HTTP 200"));
+	expect(name.textContent).toBe("");
+});
+
+it("a template answer of the wrong shape says why in the page body", async () => {
+	const {name, description} = await openSignedOut(() => Response.json({message: "x"}));
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await expect.poll(() => description.textContent).toBe(I18n.requestFailed("HTTP 200"));
 	expect(name.textContent).toBe("");
 });

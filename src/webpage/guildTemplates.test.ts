@@ -5,6 +5,8 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Guild} = await import("./guild");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 const API = "http://tmpl.test";
 const JSON_HEADERS = {"Content-Type": "application/json"};
@@ -111,6 +113,19 @@ describe("guild templates", () => {
 		);
 
 		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
+		expect(button.addHTMLArea).not.toHaveBeenCalled();
+	});
+
+	it("a list GET that never arrived says the network failed instead of throwing", async () => {
+		const button = templateButton();
+		const guild = guildWith(button);
+		captureRequests(`${API}/guilds/g1/templates`, () =>
+			Promise.reject(new TypeError("offline")),
+		);
+
+		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
+		// Not "HTTP undefined": there was no answer to read a status from.
+		expect(button.addText).toHaveBeenLastCalledWith(I18n.requestFailed("offline"));
 		expect(button.addHTMLArea).not.toHaveBeenCalled();
 	});
 

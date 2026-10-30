@@ -36,7 +36,7 @@ import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
 import {assignableKey} from "./utils/assignableKey.js";
-import {showRefusal} from "./utils/showRefusal.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 
 type customBadgeDefinition = {
 	important?: boolean;
@@ -1218,16 +1218,28 @@ class User extends SnowFlake {
 
 		return badges;
 	}
-	async highInfo() {
-		return (await (
-			await fetch(
-				this.info.api +
-					"/users/" +
-					this.id +
-					"/profile?with_mutual_guilds=true&with_mutual_friends=true",
-				{headers: this.localuser.headers},
-			)
-		).json()) as highMemberJSON;
+	/** The profile with its mutual guilds and friends, or the line saying why there is none: a
+	 * refused or hidden profile, no answer, or an answer without the mutual-guilds list. */
+	async highInfo(): Promise<highMemberJSON | string> {
+		const res = await fetch(
+			this.info.api +
+				"/users/" +
+				this.id +
+				"/profile?with_mutual_guilds=true&with_mutual_friends=true",
+			{headers: this.localuser.headers},
+		).catch(() => undefined);
+		const payload = res?.ok
+			? ((await res.json().catch(() => null)) as highMemberJSON | null)
+			: null;
+		// On an OK answer that was unusable the body is consumed, so the reason is its status.
+		// Both list fields are guarded: the popup reads connected_accounts.length too.
+		if (
+			!payload ||
+			!Array.isArray(payload.mutual_guilds) ||
+			!Array.isArray(payload.connected_accounts)
+		)
+			return refusalText(res);
+		return payload;
 	}
 	handleRelationship(relation: relationJson) {
 		const nickChange = this.nickname !== relation.nickname;
@@ -1891,6 +1903,14 @@ class User extends SnowFlake {
 			const high = await this.highInfo();
 			const mut = buttons.add(I18n.profile.mut());
 			const mutDiv = document.createElement("div");
+			if (typeof high === "string") {
+				// The popup keeps its other tabs; the note sits where the mutual guilds would.
+				const note = document.createElement("p");
+				note.textContent = high;
+				mutDiv.append(note);
+				mut.addHTMLArea(mutDiv);
+				return;
+			}
 
 			mutDiv.append(
 				...high.mutual_guilds

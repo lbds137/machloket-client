@@ -13,7 +13,7 @@ const API = "http://refusals.test/api/v9";
 
 afterEach(() => {
 	vi.restoreAllMocks();
-	document.querySelectorAll("dialog, .PopUp").forEach((e) => e.remove());
+	document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove());
 });
 
 function makeGuild(extra: Record<string, unknown> = {}) {
@@ -251,4 +251,123 @@ it("a restore redraws the channel list when its guild is on screen", () => {
 	} finally {
 		channelsDiv.remove();
 	}
+});
+
+/** A guild whose admin listing has two roles to ask member ids of (everyone grants nothing). */
+function adminGuild() {
+	const role = (id: string, grants: boolean) => ({
+		id,
+		permissions: {hasPermission: () => grants},
+	});
+	const resolvemember = vi.fn(async () => undefined);
+	const guild = makeGuild({
+		roleids: new Map([["g1", role("g1", false)]]),
+		roles: [role("r1", true), role("r2", true)],
+		properties: {owner_id: "owner"},
+		owner: {info: {api: API}, lookingguild: null, resolvemember},
+	});
+	return {guild, resolvemember};
+}
+
+/** The admins dialog's text: what the user reads while, or after, the listing loads. */
+const adminsText = () => document.body.textContent;
+
+it("a refused member-counts GET in the admins menu says why instead of listing anyone", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () =>
+		Response.json({message: "boom"}, {status: 500}),
+	);
+	const {guild} = adminGuild();
+
+	await guild.findAdmin().catch(() => {});
+
+	expect(adminsText()).toContain(I18n.requestFailed("boom"));
+	expect(adminsText()).not.toContain(I18n.loading());
+});
+
+it("a member-counts GET that never arrived says the network failed in the admins menu", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () =>
+		Promise.reject(new TypeError("offline")),
+	);
+	const {guild} = adminGuild();
+
+	await guild.findAdmin().catch(() => {});
+
+	expect(adminsText()).toContain(I18n.requestFailed("offline"));
+	expect(adminsText()).not.toContain(I18n.loading());
+});
+
+it("a member-counts answer that isn't JSON says why in the admins menu", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () => new Response("<html>"));
+	const {guild} = adminGuild();
+
+	await guild.findAdmin().catch(() => {});
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	expect(adminsText()).toContain(I18n.requestFailed("HTTP 200"));
+	expect(adminsText()).not.toContain(I18n.loading());
+});
+
+it("one refused role member-ids GET says why instead of listing a partial set of admins", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () => Response.json({}));
+	captureRequests(API + "/guilds/g1/roles/r1/member-ids", () => Response.json(["u1"]));
+	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () =>
+		Response.json({message: "boom"}, {status: 500}),
+	);
+	const {guild, resolvemember} = adminGuild();
+
+	await guild.findAdmin();
+
+	await vi.waitFor(() => expect(adminsText()).toContain(I18n.requestFailed("boom")));
+	expect(adminsText()).not.toContain(I18n.guild.adminMenu.finding());
+	expect(resolvemember).not.toHaveBeenCalled();
+});
+
+it("a role member-ids GET that never arrived says the network failed in the admins menu", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () => Response.json({}));
+	captureRequests(API + "/guilds/g1/roles/r1/member-ids", () => Response.json(["u1"]));
+	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () =>
+		Promise.reject(new TypeError("offline")),
+	);
+	const {guild, resolvemember} = adminGuild();
+
+	await guild.findAdmin();
+
+	await vi.waitFor(() => expect(adminsText()).toContain(I18n.requestFailed("offline")));
+	expect(resolvemember).not.toHaveBeenCalled();
+});
+
+it("a role member-ids answer that isn't an id list says why in the admins menu", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () => Response.json({}));
+	captureRequests(API + "/guilds/g1/roles/r1/member-ids", () => Response.json(["u1"]));
+	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () => new Response("<html>"));
+	const {guild, resolvemember} = adminGuild();
+
+	await guild.findAdmin();
+
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	await vi.waitFor(() => expect(adminsText()).toContain(I18n.requestFailed("HTTP 200")));
+	expect(resolvemember).not.toHaveBeenCalled();
+});
+
+it("accepted member-ids answers resolve each listed admin (the control)", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () => Response.json({}));
+	captureRequests(API + "/guilds/g1/roles/r1/member-ids", () => Response.json(["u1"]));
+	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () => Response.json(["u2"]));
+	const {guild, resolvemember} = adminGuild();
+
+	await guild.findAdmin();
+
+	await vi.waitFor(() => expect(resolvemember).toHaveBeenCalledTimes(3));
+	expect(resolvemember.mock.calls.map((c) => (c as unknown[])[0]).sort()).toEqual([
+		"owner",
+		"u1",
+		"u2",
+	]);
 });

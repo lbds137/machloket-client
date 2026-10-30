@@ -121,7 +121,10 @@ async function tosLogic(box: HTMLElement, instanceInfo: InstanceInfo) {
 	// registration form forever.
 	const response = await pingResponse(urlstr);
 	if (!response) return;
-	const data = await response.json();
+	// An answer that isn't the ping's JSON reads like an unreachable instance: the area stays
+	// empty. This runs unawaited, so a throw here would be an unhandled rejection.
+	const data = response.ok ? await response.json().catch(() => null) : null;
+	if (!data?.instance) return;
 	const tosPage = data.instance.tosPage;
 	if (!box) return;
 	if (tosPage) {

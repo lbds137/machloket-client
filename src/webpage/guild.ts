@@ -39,7 +39,7 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
-import {showRefusal} from "./utils/showRefusal.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
@@ -382,14 +382,21 @@ class Guild extends SnowFlake {
 		const menu = new Dialog(I18n.guild.admins());
 		menu.options.addText(I18n.loading());
 		menu.show();
+		const countsRes = await fetch(this.info.api + `/guilds/${this.id}/roles/member-counts/`, {
+			headers: this.headers,
+		}).catch(() => undefined);
+		const counts = countsRes?.ok
+			? ((await countsRes.json().catch(() => null)) as {[key: string]: number} | null)
+			: null;
+		if (!counts || typeof counts !== "object" || Array.isArray(counts)) {
+			// Said in the menu itself, in place of "Loading": the user opened this list. On an
+			// answer that was OK but unusable the body is consumed, so the reason is its status.
+			menu.options.removeAll();
+			menu.options.addText(await refusalText(countsRes));
+			return;
+		}
 		const roles = new Set(
-			Object.entries(
-				(await (
-					await fetch(this.info.api + `/guilds/${this.id}/roles/member-counts/`, {
-						headers: this.headers,
-					})
-				).json()) as {[key: string]: number},
-			)
+			Object.entries(counts)
 				.map(([id, count]) => {
 					return [this.roleids.get(id), count] as [Role, number];
 				})
@@ -474,28 +481,38 @@ class Guild extends SnowFlake {
 		menu.options.addHTMLArea(retDiv);
 		const loadResults = async () => {
 			retDiv.textContent = I18n.guild.adminMenu.finding();
-			const results = new Set(
-				(
-					await Promise.all(
-						this.roles
-							.filter((_) => {
-								for (const perm of perms) {
-									if (_.permissions.hasPermission(perm, false)) {
-										return true;
-									}
+			let ids: string[][];
+			try {
+				ids = await Promise.all(
+					this.roles
+						.filter((_) => {
+							for (const perm of perms) {
+								if (_.permissions.hasPermission(perm, false)) {
+									return true;
 								}
-								return false;
-							})
-							.map(async (_) => {
-								return (
-									await fetch(`${this.info.api}/guilds/${this.id}/roles/${_.id}/member-ids`, {
-										headers: this.headers,
-									})
-								).json() as Promise<string[]>;
-							}),
-					)
-				).flat(),
-			);
+							}
+							return false;
+						})
+						.map(async (_) => {
+							const res = await fetch(`${this.info.api}/guilds/${this.id}/roles/${_.id}/member-ids`, {
+								headers: this.headers,
+							}).catch(() => undefined);
+							const list = res?.ok
+								? ((await res.json().catch(() => null)) as string[] | null)
+								: null;
+							// One role failing fails the listing: a partial list of admins would lie by
+							// omission. On an OK answer that was unusable the body is consumed, so the
+							// reason is its status.
+							if (!Array.isArray(list)) throw new Error(await refusalText(res));
+							return list;
+						}),
+				);
+			} catch (refusal) {
+				// The thrown message is refusalText's whole line: no second requestFailed wrap.
+				retDiv.textContent = (refusal as Error).message;
+				return;
+			}
+			const results = new Set(ids.flat());
 			if (owner) {
 				results.add(this.properties.owner_id);
 			}
@@ -1179,14 +1196,20 @@ class Guild extends SnowFlake {
 							Authorization: this.headers.Authorization,
 						},
 						body,
-					});
-					if (res.ok) {
+					}).catch(() => undefined);
+					if (res?.ok) {
 						popup.hide();
 					} else {
-						const json = await res.json();
-						if ("message" in json && typeof json.message === "string") {
-							throw new FormError(filei, json.message);
-						}
+						// An error page from a proxy isn't JSON: the status says what happened then.
+						const json = res
+							? ((await res.json().catch(() => null)) as {message?: unknown} | null)
+							: null;
+						throw new FormError(
+							filei,
+							typeof json?.message === "string"
+								? json.message
+								: I18n.requestFailed(res ? `HTTP ${res.status}` : "offline"),
+						);
 					}
 				});
 				const filei = form.addFileInput(I18n.sticker.image(), "file", {required: true});
@@ -1433,14 +1456,22 @@ class Guild extends SnowFlake {
 		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const widgetMenu = settings.addButton(I18n.widget());
 			(async () => {
-				const cur = (await (
-					await fetch(this.info.api + "/guilds/" + this.id + "/widget", {
-						headers: this.headers,
-					})
-				).json()) as {
-					enabled: boolean;
-					channel_id?: null | string;
-				};
+				const res = await fetch(this.info.api + "/guilds/" + this.id + "/widget", {
+					headers: this.headers,
+				}).catch(() => undefined);
+				const cur = res?.ok
+					? ((await res.json().catch(() => null)) as {
+							enabled: boolean;
+							channel_id?: null | string;
+						} | null)
+					: null;
+				if (typeof cur?.enabled !== "boolean") {
+					// No form from an answer we don't have: a refused body once set the checkbox.
+					// On an OK answer that was unusable the body is consumed, so the reason is its
+					// status.
+					widgetMenu.addText(await refusalText(res));
+					return;
+				}
 				const form = widgetMenu.addForm("", () => {}, {
 					traditionalSubmit: true,
 					fetchURL: this.info.api + "/guilds/" + this.id + "/widget",
@@ -1554,7 +1585,13 @@ class Guild extends SnowFlake {
 				}
 			});
 		});
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/templates", {headers: this.headers});
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/templates", {
+			headers: this.headers,
+		}).catch(() => null);
+		if (!res) {
+			template.addText(I18n.requestFailed("offline"));
+			return;
+		}
 		const templates = (await res.json().catch(() => undefined)) as templateSkim[] | undefined;
 		if (!Array.isArray(templates)) {
 			template.addText(I18n.requestFailed(`HTTP ${res.status}`));
