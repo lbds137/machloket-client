@@ -116,6 +116,8 @@ it("a guilds-list 200 whose body isn't an array says so instead of dying silentl
 	);
 
 	bot.settings();
-	// refusalText has no message string to read here, so the dialog names the status.
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200"
+	// here (refusalText's pre-parsed-body gap is tracker row 14) — if row 14 lands, this
+	// assertion's meaning changes with it.
 	await vi.waitFor(() => expect(document.body.textContent).toContain("HTTP 200"));
 });
