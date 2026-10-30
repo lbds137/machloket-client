@@ -398,8 +398,10 @@ it("a refused applications GET says so inside the panel instead of modal-spammin
 
 	await openDevPortal();
 
+	// Exact text: the note must be requestFailed(refusalText) ONCE — refusalText already
+	// wraps, and a doubled wrap passes any toContain check.
 	await vi.waitFor(() =>
-		expect(document.querySelector("#app-list-container")!.textContent).toContain(
+		expect(document.querySelector("#app-list-container p")!.textContent).toBe(
 			I18n.requestFailed("boom"),
 		),
 	);
@@ -461,8 +463,10 @@ it("an applications answer that isn't an array says so inside the panel", async 
 
 	await openDevPortal();
 
+	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200"
+	// here (refusalText's pre-parsed-body gap is tracker row 14).
 	await vi.waitFor(() =>
-		expect(document.querySelector("#app-list-container")!.textContent).toContain(
+		expect(document.querySelector("#app-list-container p")!.textContent).toBe(
 			I18n.requestFailed("HTTP 200"),
 		),
 	);

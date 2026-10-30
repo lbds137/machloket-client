@@ -4383,9 +4383,7 @@ class Localuser {
 				.then(async (teamsRes) => {
 					// The teams list feeds one Create App <select>: a failed lookup degrades to the
 					// personal team, silently — Settings must not modal over an optional panel.
-					const parsed = (await teamsRes?.json().catch(() => null)) as
-						| {name: string}[]
-						| null;
+					const parsed = (await teamsRes?.json().catch(() => null)) as {name: string}[] | null;
 					const teams = Array.isArray(parsed) ? parsed : [];
 					const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 						const form = devPortal.addSubForm(
@@ -4428,7 +4426,8 @@ class Localuser {
 							// inline instead — the user opened Settings, not the dev portal.
 							const sayInline = async (failed: Response | undefined) => {
 								const note = document.createElement("p");
-								note.textContent = I18n.requestFailed(await refusalText(failed));
+								// refusalText already wraps the reason in requestFailed — no second wrap.
+								note.textContent = await refusalText(failed);
 								appListContainer.appendChild(note);
 							};
 							if (!res?.ok) {
@@ -4449,35 +4448,34 @@ class Localuser {
 								return;
 							}
 							json.forEach((application) => {
-									const container = document.createElement("div");
+								const container = document.createElement("div");
 
-									if (application.cover_image || application.icon) {
-										const cover = createImg(
-											this.info.cdn +
-												"/app-icons/" +
-												application.id +
-												"/" +
-												(application.cover_image || application.icon) +
-												".png" +
-												new CDNParams({expectedSize: 256}),
-										);
-										cover.alt = "";
-										cover.loading = "lazy";
-										container.appendChild(cover);
-									}
+								if (application.cover_image || application.icon) {
+									const cover = createImg(
+										this.info.cdn +
+											"/app-icons/" +
+											application.id +
+											"/" +
+											(application.cover_image || application.icon) +
+											".png" +
+											new CDNParams({expectedSize: 256}),
+									);
+									cover.alt = "";
+									cover.loading = "lazy";
+									container.appendChild(cover);
+								}
 
-									const name = document.createElement("h2");
-									name.textContent = application.name + (application.bot ? " (Bot)" : "");
-									container.appendChild(name);
+								const name = document.createElement("h2");
+								name.textContent = application.name + (application.bot ? " (Bot)" : "");
+								container.appendChild(name);
 
-									container.addEventListener("click", async () => {
-										this.manageApplication(application.id, devPortal, () => {
-											appListContainer.remove();
-										});
+								container.addEventListener("click", async () => {
+									this.manageApplication(application.id, devPortal, () => {
+										appListContainer.remove();
 									});
-									appListContainer.appendChild(container);
-								},
-							);
+								});
+								appListContainer.appendChild(container);
+							});
 						});
 					devPortal.addHTMLArea(appListContainer);
 				});
