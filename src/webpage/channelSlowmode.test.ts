@@ -145,3 +145,21 @@ it("a refused send counts down from the user's last message found by search in t
 	expect(channel.messages.has(mine.id)).toBe(false); // a search hit isn't loaded history
 	expect(realbox.classList.contains("cantSendMessage")).toBe(true);
 });
+
+it("a refused send whose search never arrived leaves no countdown and doesn't throw", async () => {
+	const {channel, realbox} = slowChannel([sent("2", {id: "u2"}, Date.now() - 5_000)]);
+	vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
+
+	await expect(channel.slowmode(true)).resolves.toBeUndefined();
+
+	expect(realbox.querySelector(".slowmodeTimer")).toBeNull();
+});
+
+it("a refused send whose search answer isn't JSON leaves no countdown and doesn't throw", async () => {
+	const {channel, realbox} = slowChannel([sent("2", {id: "u2"}, Date.now() - 5_000)]);
+	vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("<html>"));
+
+	await expect(channel.slowmode(true)).resolves.toBeUndefined();
+
+	expect(realbox.querySelector(".slowmodeTimer")).toBeNull();
+});

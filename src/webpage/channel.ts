@@ -4380,9 +4380,13 @@ class Channel extends SnowFlake {
 			]);
 			const res = await fetch(this.info.api + "/channels/" + this.id + "/messages/search/?" + q, {
 				headers: this.headers,
-			});
-			// Search answers Discord's shape: each hit is a list (the message, with context).
-			const json = res.ok ? ((await res.json()) as {messages?: messagejson[][]}) : undefined;
+			}).catch(() => undefined);
+			// Search answers Discord's shape: each hit is a list (the message, with context). The
+			// lookup only feeds this countdown (the send itself already said why it failed), so
+			// no answer, or an unusable one, leaves the composer without one.
+			const json = res?.ok
+				? ((await res.json().catch(() => null)) as {messages?: messagejson[][]} | null)
+				: undefined;
 			const message = json?.messages?.[0]?.[0];
 			if (message) m = this.lastSentMessage = new Message(message, this, true);
 			// The user may have opened another channel meanwhile.

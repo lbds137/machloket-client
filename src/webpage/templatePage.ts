@@ -3,6 +3,7 @@ import {templateSkim} from "./jsontypes.js";
 import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
+import {refusalText} from "./utils/refusalText.js";
 if (window.location.pathname.startsWith("/template"))
 	(async () => {
 		const users = getBulkUsers();
@@ -59,12 +60,30 @@ if (window.location.pathname.startsWith("/template"))
 			// then, rather than an undefined one. The button still leads to sign-in.
 			headers: joinable[0] ? {Authorization: joinable[0].token} : {},
 		})
-			.then((response) => (response.ok ? response.json() : undefined))
-			.then((json) => {
-				if (!json) return;
+			.catch(() => undefined)
+			.then(async (response) => {
+				const description = document.getElementById("templatedescription")!;
+				if (!response) {
+					// No answer at all: said in the page body, not an unhandled rejection.
+					description.textContent = await refusalText(response);
+					return;
+				}
+				if (!response.ok) return;
+				const json = await response.json().catch(() => null);
+				if (!json) {
+					// A 200 that isn't the template's JSON (a proxy's page). The body is consumed,
+					// so refusalText can only give its status.
+					description.textContent = await refusalText(response);
+					return;
+				}
+				if (typeof (json as templateSkim).name !== "string") {
+					// A 200 of some other shape would write useTemplate(undefined) into the page.
+					description.textContent = await refusalText(response);
+					return;
+				}
 				const template = json as templateSkim;
 				document.getElementById("templatename")!.textContent = I18n.useTemplate(template.name);
-				document.getElementById("templatedescription")!.textContent = template.description;
+				description.textContent = template.description;
 			});
 
 		function showAccounts(): void {
