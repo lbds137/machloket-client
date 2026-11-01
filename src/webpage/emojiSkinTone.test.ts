@@ -368,7 +368,9 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(localStorage.getItem("emojiSkinTone")).toBe("4");
 		expect(document.querySelector(".emojiPicker")).toBe(picker);
 		expect(picker.classList.contains("removeElm")).toBe(false);
-		expect(picker.querySelectorAll(".emojiBody .emojiSelect")).toHaveLength(1);
+		const results = picker.querySelectorAll(".emojiBody .emojiSelect");
+		expect(results).toHaveLength(1);
+		expect(results[0]!.textContent).toBe("👋🏾");
 	});
 
 	it("4i. M1: clicking a section rail after opening the badge popup (soft close) and then clicking an emoji cell resolves that emoji and closes the picker", async () => {
@@ -434,6 +436,92 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(picked?.emoji).toBe("😀");
 		expect(picked?.name).toBe("grinning");
 		expect(document.querySelector(".emojiPicker")).toBeNull();
+	});
+
+	it("4l. search with default tone set renders the toned glyph on the result row", () => {
+		assignTwoEmojiFixture();
+		setSkinTone(5);
+		void Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "waving";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+
+		const rows = picker.querySelectorAll(".emojiBody .emojiSelect");
+		expect(rows).toHaveLength(1);
+		expect(rows[0]!.textContent).toBe("👋🏿");
+	});
+
+	it("4m. clicking a toned search result row settles the picker with the toned emoji", async () => {
+		assignTwoEmojiFixture();
+		setSkinTone(5);
+		const pickPromise = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "waving";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+
+		const rows = picker.querySelectorAll(".emojiBody .emojiSelect");
+		expect(rows).toHaveLength(1);
+		rows[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+		const picked = await pickPromise;
+		expect(picked?.emoji).toBe("👋🏿");
+		expect(picked?.name).toBe("waving hand");
+	});
+
+	it("4n. pressing Enter in search settles the picker with the toned topEmoji", async () => {
+		assignTwoEmojiFixture();
+		setSkinTone(5);
+		const pickPromise = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "waving";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+		searchInput.dispatchEvent(new KeyboardEvent("keyup", {key: "Enter", bubbles: true}));
+
+		const picked = await pickPromise;
+		expect(picked?.emoji).toBe("👋🏿");
+		expect(picked?.name).toBe("waving hand");
+	});
+
+	it("4o. search controls: non-tone and dual-tone emoji stay untoned when default tone is set", async () => {
+		assignTwoEmojiFixture();
+		Emoji.emojis[0]!.emojis.push({
+			name: "kiss woman, man",
+			emoji: "👩\u200d❤️\u200d💋\u200d👨",
+			skin_tone_support: true,
+		});
+		setSkinTone(5);
+		const pickGrin = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "grinning";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+
+		const grinRows = picker.querySelectorAll(".emojiBody .emojiSelect");
+		expect(grinRows).toHaveLength(1);
+		expect(grinRows[0]!.textContent).toBe("😀");
+		grinRows[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const pickedGrin = await pickGrin;
+		expect(pickedGrin?.emoji).toBe("😀");
+
+		const pickDual = Emoji.emojiPicker(10, -10);
+		const picker2 = document.querySelector(".emojiPicker")!;
+		const searchInput2 = picker2.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput2.value = "kiss";
+		searchInput2.dispatchEvent(new Event("input", {bubbles: true}));
+
+		const dualRows = picker2.querySelectorAll(".emojiBody .emojiSelect");
+		expect(dualRows).toHaveLength(1);
+		expect(dualRows[0]!.textContent).toBe("👩\u200d❤️\u200d💋\u200d👨");
+		dualRows[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+		const pickedDual = await pickDual;
+		expect(pickedDual?.emoji).toBe("👩\u200d❤️\u200d💋\u200d👨");
 	});
 
 	it("5. CSS var existence: every var(--x) in emoji tone/footer rule blocks is defined in themes.css", () => {
