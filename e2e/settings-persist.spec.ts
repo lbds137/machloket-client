@@ -4,6 +4,7 @@ import {MOCK_CHANNEL_ID, MOCK_GUILD_ID, loginAndOpenChannel, test} from "./fixtu
 test.use({viewport: {width: 1280, height: 800}});
 
 test.beforeEach(({mockInstance}) => {
+	// mount the mock's routes; the handle stays unread
 	void mockInstance;
 });
 
@@ -18,11 +19,11 @@ async function openSettingsCard(page: Page, section: string, cardLabel: string, 
 	return card;
 }
 
-test("theme change in Appearance updates body theme class and persists across reload", async ({
+test("theme change in Appearance updates body theme class and persists across a reboot", async ({
 	page,
 }) => {
 	await loginAndOpenChannel(page);
-	await expect(page.locator("body")).toHaveClass("Onyx-theme");
+	await expect(page.locator("body")).toHaveClass(/\bOnyx-theme\b/);
 
 	const appearance = await openSettingsCard(page, "App settings", "Appearance", "#card-appearance");
 	const themeSelect = appearance
@@ -33,11 +34,15 @@ test("theme change in Appearance updates body theme class and persists across re
 
 	await themeSelect.selectOption({label: "Light"});
 	await page.locator(".savediv button").click();
-	await expect(page.locator("body")).toHaveClass("Light-theme");
+	await expect(page.locator("body")).toHaveClass(/\bLight-theme\b/);
+	await expect(page.locator("body")).not.toHaveClass(/\bOnyx-theme\b/);
 
-	await page.reload();
+	// Re-boot through a channel deep link: a plain reload keeps the settings URL and parks the
+	// guild view half-booted (settings-content-controls.spec.ts).
+	await page.goto(`/channels/${MOCK_GUILD_ID}/${MOCK_CHANNEL_ID}`);
 	await expect(page.locator("#loading")).toHaveClass(/doneloading/, {timeout: 15_000});
-	await expect(page.locator("body")).toHaveClass("Light-theme");
+	await expect(page.locator("body")).toHaveClass(/\bLight-theme\b/);
+	await expect(page.locator("body")).not.toHaveClass(/\bOnyx-theme\b/);
 });
 
 test("Privacy spoiler Block selection survives a subsequent preference write and reload", async ({

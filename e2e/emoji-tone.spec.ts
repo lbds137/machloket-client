@@ -1,9 +1,12 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {EN, loginAndOpenChannel, test} from "./fixtures";
 
 const MEDIUM_TONE = "\u{1F3FD}";
+// The swatch's aria-label: I18n.emoji.toneMedium() (not Medium-Light or Medium-Dark).
+const MEDIUM_SWATCH = EN.emoji.toneMedium;
 
 test.beforeEach(({mockInstance}) => {
+	// mount the mock's routes; the handle stays unread
 	void mockInstance;
 });
 
@@ -26,7 +29,7 @@ test("header tone selector applies tone modifier to flagged cells and leaves unf
 	await picker.locator(".emojiToneDefault").click();
 	const popup = page.locator(".emojiTonePopup");
 	await expect(popup).toBeVisible();
-	await popup.locator(".emojiToneSwatch").nth(3).click();
+	await popup.locator(`.emojiToneSwatch[aria-label="${MEDIUM_SWATCH}"]`).click();
 
 	await expect(flaggedCell).toHaveText(`👋${MEDIUM_TONE}`);
 	await expect(unflaggedCell).toHaveText(unflaggedText);
@@ -44,7 +47,7 @@ test("picked skin tone persists across reload when reopening the picker", async 
 	const flaggedCell = picker.locator(".emojiBody .emojiSelect:has(.emojiToneBadge)").first();
 
 	await picker.locator(".emojiToneDefault").click();
-	await page.locator(".emojiTonePopup .emojiToneSwatch").nth(3).click();
+	await page.locator(`.emojiTonePopup .emojiToneSwatch[aria-label="${MEDIUM_SWATCH}"]`).click();
 	await expect(flaggedCell).toHaveText(`👋${MEDIUM_TONE}`);
 
 	await page.reload();
@@ -69,7 +72,7 @@ test("plain-clicking a flagged cell with a tone picked inserts the toned emoji i
 	await expect(picker).toBeVisible();
 
 	await picker.locator(".emojiToneDefault").click();
-	await page.locator(".emojiTonePopup .emojiToneSwatch").nth(3).click();
+	await page.locator(`.emojiTonePopup .emojiToneSwatch[aria-label="${MEDIUM_SWATCH}"]`).click();
 
 	await picker.locator(".emojirow .emojiSelect", {hasText: "👋"}).click();
 	const flaggedCell = picker.locator(".emojiBody .emojiSelect:has(.emojiToneBadge)").first();
