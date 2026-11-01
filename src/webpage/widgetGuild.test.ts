@@ -1,11 +1,13 @@
 import {afterEach, expect, it, vi} from "vitest";
+import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
-await import("./localuser");
+const {Localuser} = await import("./localuser");
 const {User} = await import("./user");
 const {Member} = await import("./member");
 const {I18n} = await import("./i18n");
+const {PromiseLock} = await import("./utils/promiseLock");
 
 // Button labels hydrate asynchronously; drive the widget only once they have landed.
 await I18n.done;
@@ -26,15 +28,36 @@ function pfpSlot() {
  * member resolution itself is what the pins observe. */
 function widgetUser(meGuild: {id: string}) {
 	const pfp = pfpSlot();
+	const owner = Object.assign(Object.create(Localuser.prototype), {
+		guildids: new Map([["@me", meGuild]]),
+		info: {api: "http://widget.test/api/v9"},
+		headers: {"Content-type": "application/json", Authorization: "t"},
+		memberLock: new PromiseLock(),
+		waitingmembers: new Map(),
+		fetchingmembers: new Map(),
+		memberLookupDrops: new Map(),
+		noncemap: new Map(),
+		noncebuild: new Map(),
+		searchMap: new Map(),
+		presences: new Map(),
+		userMap: new Map(),
+		user: {id: "me"},
+		memberListQue: () => {},
+	}) as InstanceType<typeof Localuser>;
 	const user = Object.assign(Object.create(User.prototype), {
 		// User.localuser is a getter over `owner` (user.ts:819) — the fixture stores the
 		// fake localuser there, not under `localuser`.
-		owner: {guildids: new Map([["@me", meGuild]])},
+		id: "u1",
+		members: new Map(),
+		owner,
 		username: "Widgeted",
 		bind: () => {},
 		buildpfp: () => pfp,
-		subName: () => {},
+		subName: vi.fn(),
+		getPresence: () => {},
+		getpfpsrc: () => "http://pfp.test/user.png",
 	}) as InstanceType<typeof User>;
+	owner.userMap.set(user.id, user);
 	return {pfp, user};
 }
 
@@ -99,4 +122,95 @@ it("a resolved member names the widget (the control)", async () => {
 
 	expect(div.querySelector("b")?.textContent).toBe("Guild Named");
 	expect((pfp.children[0] as HTMLImageElement).src).toContain("http://pfp.test/guild.png");
+});
+
+it("a member lookup given up after two socket drops does not claim the user left the guild", async () => {
+	const {user} = widgetUser({id: "@me"});
+	const guild = {id: "777", localuser: user.localuser, members: new Set()};
+	user.localuser.guildids.set(guild.id, guild as never);
+
+	const div = user.createWidget(guild as never);
+	user.localuser.fetchingmembers.set(guild.id, true);
+	user.localuser.abandonMemberRequests();
+	user.localuser.fetchingmembers.set(guild.id, true);
+	user.localuser.abandonMemberRequests();
+
+	await vi.waitFor(() => expect(user.subName).toHaveBeenCalled());
+	expect(div.textContent).not.toContain(I18n.webhooks.notFound());
+});
+
+it("a REST member lookup answering 500 does not claim the user left the guild", async () => {
+	captureRequests(
+		"http://widget.test/api/v9/guilds/777/members/u1",
+		() => new Response("server error", {status: 500}),
+	);
+	const {user} = widgetUser({id: "@me"});
+	const guild = {id: "777", localuser: user.localuser, members: new Set()};
+
+	const div = user.createWidget(guild as never);
+
+	await vi.waitFor(() => expect(user.subName).toHaveBeenCalled());
+	expect(div.textContent).not.toContain(I18n.webhooks.notFound());
+});
+
+it("a REST member lookup whose fetch rejects does not claim the user left the guild", async () => {
+	captureRequests("http://widget.test/api/v9/guilds/777/members/u1", () =>
+		Promise.reject(new TypeError("network error")),
+	);
+	const {user} = widgetUser({id: "@me"});
+	const guild = {id: "777", localuser: user.localuser, members: new Set()};
+
+	const div = user.createWidget(guild as never);
+
+	await vi.waitFor(() => expect(user.subName).toHaveBeenCalled());
+	expect(div.textContent).not.toContain(I18n.webhooks.notFound());
+});
+
+it("a REST 404 still shows the not-found note (control)", async () => {
+	captureRequests(
+		"http://widget.test/api/v9/guilds/777/members/u1",
+		() => new Response("unknown member", {status: 404}),
+	);
+	const {user} = widgetUser({id: "@me"});
+	const guild = {id: "777", localuser: user.localuser, members: new Set()};
+
+	const div = user.createWidget(guild as never);
+
+	await vi.waitFor(() => expect(div.textContent).toContain(I18n.webhooks.notFound()));
+});
+
+it("a gateway not_found still shows the not-found note (control)", async () => {
+	const {user} = widgetUser({id: "@me"});
+	const guild = {id: "777", localuser: user.localuser, members: new Set()};
+	user.localuser.guildids.set(guild.id, guild as never);
+	user.localuser.ws = {
+		readyState: WebSocket.OPEN,
+		send(raw: string) {
+			const {d} = JSON.parse(raw) as {d: {nonce: string; user_ids: string[]}};
+			user.localuser.gotChunk({
+				chunk_index: 0,
+				chunk_count: 1,
+				nonce: d.nonce,
+				not_found: d.user_ids,
+				presences: [],
+			});
+		},
+	} as never;
+
+	const div = user.createWidget(guild as never);
+
+	await vi.waitFor(() => expect(div.textContent).toContain(I18n.webhooks.notFound()));
+});
+
+it("a resolved member in a guild shows no not-found note (control)", async () => {
+	captureRequests("http://widget.test/api/v9/guilds/777/members/u1", () =>
+		Response.json({user: {id: "u1", username: "Widgeted"}, nick: "Guild Named", roles: []}),
+	);
+	const {user} = widgetUser({id: "@me"});
+	const guild = {id: "777", localuser: user.localuser, members: new Set()};
+
+	const div = user.createWidget(guild as never);
+
+	await vi.waitFor(() => expect(div.querySelector("b")?.textContent).toBe("Guild Named"));
+	expect(div.textContent).not.toContain(I18n.webhooks.notFound());
 });

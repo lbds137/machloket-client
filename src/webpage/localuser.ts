@@ -6480,10 +6480,12 @@ class Localuser {
 					headers: this.headers,
 				});
 				if (req.status !== 200) {
+					if (req.status !== 404) this.recordFailedMemberLookup(id, guildid);
 					return undefined;
 				}
 				return await req.json();
 			} catch {
+				this.recordFailedMemberLookup(id, guildid);
 				return undefined;
 			} finally {
 				unlock();
@@ -6503,6 +6505,19 @@ class Localuser {
 	fetchingmembers: Map<string, boolean> = new Map();
 	/** How many sockets in a row closed while this guild's member lookup was in flight. */
 	memberLookupDrops = new Map<string, number>();
+	private failedMemberLookups = new Map<string, Set<string>>();
+	private recordFailedMemberLookup(userId: string, guildId: string) {
+		this.failedMemberLookups ??= new Map();
+		let users = this.failedMemberLookups.get(guildId);
+		if (!users) {
+			users = new Set();
+			this.failedMemberLookups.set(guildId, users);
+		}
+		users.add(userId);
+	}
+	memberLookupFailed(userId: string, guildId: string): boolean {
+		return this.failedMemberLookups?.get(guildId)?.has(userId) ?? false;
+	}
 	noncemap: Map<string, (r: [memberjson[], string[]]) => void> = new Map();
 	noncebuild: Map<string, [memberjson[], string[], number[]]> = new Map();
 	searchMap = new Map<
@@ -6582,6 +6597,9 @@ class Localuser {
 		this.waitingmembers.delete(guildid);
 		this.memberLookupDrops.delete(guildid);
 		if (!waiting) return;
+		for (const userId of waiting.keys()) {
+			this.recordFailedMemberLookup(userId, guildid);
+		}
 		for (const waiter of waiting.values()) {
 			waiter?.(undefined);
 		}
