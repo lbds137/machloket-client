@@ -456,11 +456,26 @@ class Emoji {
 			search.style.setProperty("width", "3in");
 			title.innerText = "";
 			body.innerHTML = "";
+			const toneEmoji = (result: Emoji): Emoji => {
+				if (result.id || !result.emoji) return result;
+				for (const group of Emoji.emojis) {
+					const raw = group.emojis.find((entry) => entry.emoji === result.emoji);
+					if (!raw) continue;
+					const canTone = Boolean(raw.skin_tone_support) && !isDualToneEmoji(raw.emoji);
+					if (!canTone) return result;
+					return new Emoji(
+						{name: raw.name, emoji: applySkinTone(raw.emoji, getSkinTone())},
+						localuser,
+					);
+				}
+				return result;
+			};
 			const searchResults = this.searchEmoji(search.value, localuser, 200);
 			if (searchResults[0]) {
-				topEmoji = searchResults[0][0];
+				topEmoji = toneEmoji(searchResults[0][0]);
 			}
-			for (const [emoji] of searchResults) {
+			for (const [rawResult] of searchResults) {
+				const emoji = toneEmoji(rawResult);
 				const emojiElem = document.createElement("div");
 				emojiElem.classList.add("emojiSelect");
 
