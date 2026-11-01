@@ -66,8 +66,8 @@ import {Favorites} from "./favorites.js";
 import {
 	AnimateTristateValues,
 	getPreferences,
-	setPreferences,
 	ThemeOption,
+	updatePreferences,
 } from "./utils/storage/userPreferences";
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
 import {
@@ -3196,6 +3196,7 @@ class Localuser {
 				I18n.localuser["theme:"](),
 				async (_) => {
 					prefs.theme = themes[_] as ThemeOption;
+					await updatePreferences({theme: prefs.theme});
 
 					await setTheme(prefs.theme);
 				},
@@ -3210,7 +3211,7 @@ class Localuser {
 				I18n.localuser.accentColor(),
 				async (_) => {
 					prefs.accentColor = _;
-					await setPreferences(prefs);
+					await updatePreferences({accentColor: prefs.accentColor});
 
 					document.documentElement.style.setProperty("--accent-color", prefs.accentColor);
 				},
@@ -3230,14 +3231,14 @@ class Localuser {
 				I18n.localuser.notisound(),
 				async (index) => {
 					prefs.notificationSound = soundNames[index];
-					await setPreferences(prefs);
+					await updatePreferences({notificationSound: prefs.notificationSound});
 				},
 				soundNames,
 				{defaultIndex: selectedIndex},
 			);
 			select.watchForChange(async (index) => {
 				prefs.notificationSound = soundNames[index];
-				await setPreferences(prefs);
+				await updatePreferences({notificationSound: prefs.notificationSound});
 				const sounds = NotificationSoundManager.getAvailableSounds(prefs);
 				await NotificationSoundManager.play(sounds[index], prefs.notificationVolume);
 			});
@@ -3248,7 +3249,7 @@ class Localuser {
 			volumeInput.max = "100";
 			volumeInput.onchange = async () => {
 				prefs.notificationVolume = +volumeInput.value;
-				await setPreferences(prefs);
+				await updatePreferences({notificationVolume: prefs.notificationVolume});
 				void NotificationSoundManager.playFromPreferences(prefs);
 			};
 			notifications.addText(I18n.notiVolume());
@@ -3310,7 +3311,10 @@ class Localuser {
 								path,
 							});
 							prefs.notificationSound = trimmedName;
-							await setPreferences(prefs);
+							await updatePreferences({
+								customNotificationSounds: prefs.customNotificationSounds,
+								notificationSound: prefs.notificationSound,
+							});
 							soundNames = getSoundNames();
 							selectedIndex = soundNames.indexOf(trimmedName);
 							const selectEl = select.select?.deref();
@@ -3351,7 +3355,7 @@ class Localuser {
 						prefs.emojiFont = undefined;
 					}
 
-					await setPreferences(prefs);
+					await updatePreferences({emojiFont: prefs.emojiFont});
 					await Localuser.loadFont();
 				},
 				options.map((font) => font[1]),
@@ -3364,7 +3368,7 @@ class Localuser {
 				I18n.renderJoinAvatars(),
 				async (v) => {
 					prefs.renderJoinAvatars = v;
-					await setPreferences(prefs);
+					await updatePreferences({renderJoinAvatars: prefs.renderJoinAvatars});
 				},
 				{initState: curJoinAvatars},
 			);
@@ -3442,7 +3446,7 @@ class Localuser {
 				I18n.accessibility.playGif(),
 				async (i) => {
 					prefs.animateGifs = AnimateTristateValues[i];
-					await setPreferences(prefs);
+					await updatePreferences({animateGifs: prefs.animateGifs});
 				},
 				AnimateTristateValues.map((_) => I18n.accessibility.gifSettings[_]()),
 				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateGifs)},
@@ -3451,7 +3455,7 @@ class Localuser {
 				I18n.accessibility.playIcon(),
 				async (i) => {
 					prefs.animateIcons = AnimateTristateValues[i];
-					await setPreferences(prefs);
+					await updatePreferences({animateIcons: prefs.animateIcons});
 				},
 				AnimateTristateValues.map((_) => I18n.accessibility.gifSettings[_]()),
 				{defaultIndex: AnimateTristateValues.indexOf(prefs.animateIcons)},

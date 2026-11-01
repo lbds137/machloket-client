@@ -74,6 +74,12 @@ export async function setPreferences(prefs: UserPreferences): Promise<void> {
 	localStorage.setItem("userPreferences", JSON.stringify(prefs));
 }
 
+export async function updatePreferences(patch: Partial<UserPreferences>): Promise<void> {
+	const prefs = await getPreferences();
+	Object.assign(prefs, patch);
+	await setPreferences(prefs);
+}
+
 //region Migration from untyped storage
 async function migrateOldPreferences(): Promise<void> {
 	const prefs = await getPreferences();
