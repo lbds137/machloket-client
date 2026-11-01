@@ -272,7 +272,12 @@ class ReportNode {
 		) {
 			throw new Error("report node: bad elements");
 		}
-		if (!Array.isArray(json.children) || !json.children.every(Array.isArray)) {
+		if (
+			!Array.isArray(json.children) ||
+			!json.children.every(
+				(c) => Array.isArray(c) && typeof c[0] === "string" && typeof c[1] === "number",
+			)
+		) {
 			throw new Error("report node: bad children");
 		}
 		this.elements = json.elements.map((_) => new ReportElement(_, this));

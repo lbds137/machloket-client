@@ -288,6 +288,36 @@ it("a welcome screen answer that isn't an object still offers Enable, with no un
 	expect(unhandled).not.toHaveBeenCalled();
 });
 
+it("a second onboarding failure replaces the first note", async () => {
+	await I18n.done;
+	openOnboard({enabled: true, description: "", welcome_channels: []});
+	const disable = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll("button")].find(
+			(el) => el.textContent === I18n.onboarding.disable(),
+		);
+		expect(b).not.toBeUndefined();
+		return b!;
+	});
+	const queue = [
+		new Response(null, {status: 204}),
+		Response.json({message: "first"}, {status: 500}),
+		new Response(null, {status: 204}),
+		Response.json({message: "second"}, {status: 500}),
+	];
+	captureRequests(API + "/guilds/g1/welcome-screen", () => queue.shift()!);
+
+	disable.click();
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("first")),
+	);
+
+	disable.click();
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("second")),
+	);
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("first"));
+});
+
 /** A guild with top-level text channels `ids`, positioned in that order. */
 function guildWithChannels(...ids: string[]) {
 	const guild = makeGuild();
