@@ -163,4 +163,64 @@ describe("the video tile loading state", () => {
 		expect(children?.[2].classList.contains("dot")).toBe(true);
 		expect(children?.[3].classList.contains("visually-hidden")).toBe(true);
 	});
+
+	it("a replacement video removes the earlier video from the tile", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+		const first = notProgressing();
+		const second = notProgressing();
+
+		channel.boxVid("u1", first);
+		channel.boxVid("u1", second);
+
+		const videos = box.querySelectorAll("video");
+		expect(videos).toHaveLength(1);
+		expect(videos[0]).toBe(second);
+	});
+
+	it("a replaced video's late playing event does not dismiss the replacement's overlay", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+		const first = notProgressing();
+		const second = notProgressing();
+
+		channel.boxVid("u1", first);
+		channel.boxVid("u1", second);
+
+		first.dispatchEvent(new Event("playing"));
+		expect(box.querySelector(".vidloading")).not.toBeNull();
+
+		second.dispatchEvent(new Event("playing"));
+		expect(box.querySelector(".vidloading")).toBeNull();
+	});
+
+	it("re-attaching the same video leaves that single video in the tile", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+		const video = notProgressing();
+
+		channel.boxVid("u1", video);
+		channel.boxVid("u1", video);
+
+		const videos = box.querySelectorAll("video");
+		expect(videos).toHaveLength(1);
+		expect(videos[0]).toBe(video);
+	});
+
+	it("a progressing replacement arriving over a loading first video clears the overlay and leaves one video", () => {
+		const channel = vidChannel();
+		const box = boxFor(channel, "u1");
+		const first = notProgressing();
+		const second = progressing();
+
+		channel.boxVid("u1", first);
+		expect(box.querySelector(".vidloading")).not.toBeNull();
+
+		channel.boxVid("u1", second);
+
+		expect(box.querySelector(".vidloading")).toBeNull();
+		const videos = box.querySelectorAll("video");
+		expect(videos).toHaveLength(1);
+		expect(videos[0]).toBe(second);
+	});
 });

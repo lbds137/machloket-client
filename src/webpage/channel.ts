@@ -1860,6 +1860,10 @@ class Channel extends SnowFlake {
 	boxVid(id: string, elm: HTMLVideoElement) {
 		const box = this.boxMap.get(id);
 		if (!box) return;
+		const videos = Array.from(box.getElementsByTagName("video"));
+		videos.forEach((_) => {
+			if (_ !== elm) _.remove();
+		});
 		box.append(elm);
 		if (!elm.paused && elm.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
 			box.getElementsByClassName("vidloading")[0]?.remove();
@@ -1868,9 +1872,8 @@ class Channel extends SnowFlake {
 		// The overlay is per box, the listener per element: renegotiation can deliver a
 		// replacement while the first element is still loading, so every arrival (re)arms
 		// on itself. Repeat listeners are `once` and their extra removes are no-ops.
-		// Accepted edge: a REPLACED element's late playing can dismiss the new overlay a
-		// few seconds early (both elements stay connected here, so isConnected can't tell
-		// them apart) — cosmetic, and strictly better than the old permanent spinner.
+		// A replaced element has already been removed from `box`, so checking
+		// `elm.parentElement === box` ignores a late `playing` from the evicted element.
 		let loading = box.getElementsByClassName("vidloading")[0];
 		if (!loading) {
 			loading = document.createElement("div");
@@ -1889,7 +1892,13 @@ class Channel extends SnowFlake {
 			loading.append(label);
 			box.append(loading);
 		}
-		elm.addEventListener("playing", () => loading.remove(), {once: true});
+		elm.addEventListener(
+			"playing",
+			() => {
+				if (elm.parentElement === box) loading.remove();
+			},
+			{once: true},
+		);
 	}
 	makeBig(box: HTMLElement) {
 		const par = box.parentElement;
