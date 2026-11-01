@@ -682,7 +682,10 @@ class Guild extends SnowFlake {
 		const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
 			headers: this.headers,
 		}).catch(() => undefined);
-		if (!res?.ok) return showRefusal(res);
+		if (!res?.ok) {
+			console.warn("welcome screen: could not load", res?.status);
+			return;
+		}
 		this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
 		if (typeof this.welcomeScreen !== "object") this.welcomeScreen = undefined;
 		if (this.welcomeScreen && !Array.isArray(this.welcomeScreen.welcome_channels)) {
@@ -1318,13 +1321,18 @@ class Guild extends SnowFlake {
 		settings.addSection(sectionLabel("settingsCategories.guild.community", "Community"));
 		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const onboard = settings.addButton(I18n.onboarding.name());
+			let onboardNote: HTMLElement | undefined;
 			const genOnboard = async () => {
 				const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
 					headers: this.headers,
 				}).catch(() => undefined);
 				if (!res?.ok) {
 					// The section keeps its previous state; no rebuild from an answer we don't have.
-					await showRefusal(res);
+					if (!onboardNote) {
+						onboardNote = document.createElement("p");
+						onboard.addHTMLArea(onboardNote);
+					}
+					onboardNote.textContent = await refusalText(res);
 					return;
 				}
 				this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
@@ -1333,6 +1341,7 @@ class Guild extends SnowFlake {
 					this.welcomeScreen.welcome_channels = [];
 				}
 				onboard.removeAll();
+				onboardNote = undefined;
 				if (this.welcomeScreen?.enabled) {
 					const welcomeScreen = this.welcomeScreen;
 					let savedDescription = welcomeScreen.description;

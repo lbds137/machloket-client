@@ -3173,12 +3173,12 @@ class Localuser {
 	updateProfile(json: {bio?: string; pronouns?: string; accent_color?: number}) {
 		return saveProfile(this.info.api + "/users/@me/profile", this.headers, json);
 	}
-	async getConnections({quiet}: {quiet?: boolean} = {}) {
+	async getConnections(onRefused?: (res: Response | undefined) => void) {
 		const res = await fetch(this.info.api + "/connections", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
-			if (!quiet) await showRefusal(res);
+			onRefused?.(res);
 			return {};
 		}
 		return (
@@ -4016,14 +4016,16 @@ class Localuser {
 					headers: this.headers,
 				}).catch(() => undefined);
 
-				this.getConnections().then(async (json) => {
+				const failures: (Response | undefined)[] = [];
+				this.getConnections((res) => failures.push(res)).then(async (json) => {
 					const consRes = await cons;
-					// A refusal says why once and the instance's own connection types still list;
-					// only the account's connected rows are missing.
-					const actCons = consRes?.ok
-						? ((await consRes.json().catch(() => null)) as ConnectionJson[] | null) ?? []
-						: [];
-					if (!consRes?.ok) await showRefusal(consRes);
+					// A refusal says why once inside the panel (the account leg first) and the
+					// instance's own connection types still list when they arrived.
+					const parsed = consRes?.ok
+						? ((await consRes.clone().json().catch(() => null)) as ConnectionJson[] | null)
+						: null;
+					const actCons = Array.isArray(parsed) ? parsed : [];
+					if (!Array.isArray(parsed)) failures.unshift(consRes);
 					const actConMap = new Map<string, ConnectionJson>(
 						actCons.map((_) => [_.type, _] as const),
 					);
@@ -4155,6 +4157,11 @@ class Localuser {
 
 							actConDivCont.append(actConDiv);
 						});
+					if (failures.length > 0) {
+						const note = document.createElement("p");
+						note.textContent = await refusalText(failures[0]);
+						actConDivCont.appendChild(note);
+					}
 				});
 			};
 			remake();
@@ -4900,10 +4907,12 @@ class Localuser {
 				.catch(() => undefined)
 				.then(async (_) => {
 					if (!_?.ok) {
-						await showRefusal(_);
+						instanceInfo.addText(await refusalText(_));
 						return null;
 					}
-					return (await _.json().catch(() => null)) as {
+					const json = (await _.clone()
+						.json()
+						.catch(() => null)) as {
 						instanceName: string;
 						instanceDescription: string | null;
 						frontPage: string | null;
@@ -4915,6 +4924,11 @@ class Localuser {
 						autoCreateBotUsers: false;
 						publicUrl: string | null;
 					} | null;
+					if (!json) {
+						instanceInfo.addText(await refusalText(_));
+						return null;
+					}
+					return json;
 				})
 				.then((json) => {
 					if (!json) return;
