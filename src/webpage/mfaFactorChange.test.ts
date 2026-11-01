@@ -561,6 +561,142 @@ it("a double click on a key's Delete sends one request and shows one prompt", as
 	expect(promptForms).toHaveLength(1);
 });
 
+// A key-only account: mfa_enabled stays false, so the factor is the key, never a TOTP form.
+function stubKeyPrompt(answer: "signed" | "cancelled") {
+	const stepBodies = captureRequests(API + "/users/@me/mfa/webauthn", () =>
+		stepBodies.length === 1
+			? Response.json({
+					ticket: "t-key",
+					challenge: JSON.stringify({publicKey: {challenge: "abc="}}),
+				})
+			: Response.json({token: "mfa-tok-webauthn"}),
+	);
+	vi.spyOn(PublicKeyCredential, "parseRequestOptionsFromJSON").mockReturnValue({} as never);
+	const buf = new Uint8Array([1, 2]).buffer;
+	const get = vi.spyOn(navigator.credentials, "get");
+	if (answer === "signed") {
+		get.mockResolvedValue({
+			rawId: buf,
+			response: {authenticatorData: buf, clientDataJSON: buf, signature: buf},
+		} as never);
+	} else {
+		get.mockRejectedValue(new DOMException("cancelled", "NotAllowedError"));
+	}
+	return {stepBodies, get};
+}
+
+async function openKeyDelete(user: InstanceType<typeof Localuser>) {
+	await user.showusersettings();
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.localuser.accountSettings())!
+		.click();
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.webauth.manage())!
+		.click();
+	const keyBtn = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === "YubiKey",
+		);
+		expect(b).toBeDefined();
+		return b!;
+	});
+	keyBtn.click();
+	return [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+		(b) => b.textContent === I18n.delete(),
+	)!;
+}
+
+it("key-only: removing a key asks the key, not a TOTP code, and retries with its token", async () => {
+	await I18n.done;
+	spyFetchHeaders();
+	stubUserSettings();
+	const {promptForms} = capturePrompts();
+	const {stepBodies, get} = stubKeyPrompt("signed");
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () =>
+		Response.json([{id: "k1", name: "YubiKey"}]),
+	);
+	const {headers} = captureWithHeaders(
+		API + "/users/@me/mfa/webauthn/credentials/k1",
+		({headers}) =>
+			headers.get("x-discord-mfa-authorization")
+				? new Response(null, {status: 204})
+				: Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+	);
+	const deleteElmSpy = vi.spyOn(Options.prototype, "deleteElm");
+
+	(await openKeyDelete(settingsUser(false))).click();
+
+	await vi.waitFor(() => expect(deleteElmSpy).toHaveBeenCalledOnce());
+	expect(get).toHaveBeenCalledOnce();
+	expect(promptForms).toHaveLength(0);
+	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([
+		null,
+		"mfa-tok-webauthn",
+	]);
+	const [first, second] = stepBodies as [object, {ticket: string; code: string}];
+	expect(first).toEqual({});
+	expect(second.ticket).toBe("t-key");
+	expect(JSON.parse(second.code)).toEqual({
+		rawId: "AQI=",
+		response: {authenticatorData: "AQI=", clientDataJSON: "AQI=", signature: "AQI="},
+	});
+});
+
+it("key-only: cancelling the key sends no retry and leaves Delete working", async () => {
+	await I18n.done;
+	spyFetchHeaders();
+	stubUserSettings();
+	const {promptForms} = capturePrompts();
+	const {get} = stubKeyPrompt("cancelled");
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () =>
+		Response.json([{id: "k1", name: "YubiKey"}]),
+	);
+	const {headers} = captureWithHeaders(API + "/users/@me/mfa/webauthn/credentials/k1", () =>
+		Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+	);
+	const deleteElmSpy = vi.spyOn(Options.prototype, "deleteElm");
+
+	const del = await openKeyDelete(settingsUser(false));
+	del.click();
+	await vi.waitFor(() => expect(get).toHaveBeenCalledOnce());
+	await vi.waitFor(() =>
+		expect(
+			[...document.querySelectorAll(".background")].at(-1)?.textContent,
+		).toContain("Two factor required"),
+	);
+	expect(headers).toHaveLength(1);
+	expect(promptForms).toHaveLength(0);
+	expect(deleteElmSpy).not.toHaveBeenCalled();
+
+	del.click();
+	await vi.waitFor(() => expect(headers).toHaveLength(2));
+});
+
+it("key-only: guild delete has no code field, asks the key, and retries with its token", async () => {
+	await I18n.done;
+	spyFetchHeaders();
+	const {promptForms} = capturePrompts();
+	const {get} = stubKeyPrompt("signed");
+	const {headers} = captureWithHeaders(API + "/guilds/g1/delete", ({headers}) =>
+		headers.get("x-discord-mfa-authorization")
+			? new Response(null, {status: 204})
+			: Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+	);
+	const {form, hide} = confirmDeleteOf(false);
+	expect(form.names.has("code")).toBe(false);
+	form.names.get("")!.value = "Home";
+
+	await form.submit();
+
+	expect(get).toHaveBeenCalledOnce();
+	expect(promptForms).toHaveLength(0);
+	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([
+		null,
+		"mfa-tok-webauthn",
+	]);
+	expect(hide).toHaveBeenCalledOnce();
+});
+
 it("control: guild delete with a body code and no 60003 sends once", async () => {
 	await I18n.done;
 	spyFetchHeaders();
