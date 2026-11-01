@@ -3680,7 +3680,11 @@ class Localuser {
 					const addKey = (key: {name: string; id: string}) => {
 						keyMenu.addButtonInput("", key.name, () => {
 							const opt = keyMenu.addSubOptions(key.name);
+							let deleting = false;
 							const button = opt.addButtonInput("", I18n.delete(), async () => {
+								// One request and one prompt per action, however often it's tapped.
+								if (deleting) return;
+								deleting = true;
 								const res = await fetchWithMfa(
 									this.mfaRetry(),
 									this.info.api,
@@ -3692,6 +3696,7 @@ class Localuser {
 										}).catch(() => undefined),
 									(m) => new Dialog(m).show(),
 								);
+								deleting = false;
 								if (!res?.ok) return showRefusal(res);
 								keyMenu.returnFromSub();
 								keyMenu.deleteElm(button);

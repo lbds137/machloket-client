@@ -277,6 +277,10 @@ it("adding a passkey prompts on 60003 during generate, retries with X-Discord-MF
 		null,
 		"mfa-tok-key",
 	]);
+	// The create POST shares the generate call's token: no second prompt for one action.
+	await vi.waitFor(() => expect(headers).toHaveLength(3));
+	expect(headers[2]!.get("x-discord-mfa-authorization")).toBe("mfa-tok-key");
+	expect(promptForms).toHaveLength(1);
 	expect((sub as unknown as {owner: {subOptions: unknown}}).owner.subOptions).toBeUndefined();
 });
 
@@ -515,6 +519,46 @@ it("credential DELETE through the settings UI retries with X-Discord-MFA-Authori
 			(b) => b.textContent === I18n.delete(),
 		),
 	).toBeUndefined();
+});
+
+it("a double click on a key's Delete sends one request and shows one prompt", async () => {
+	await I18n.done;
+	spyFetchHeaders();
+	stubUserSettings();
+	const {promptForms} = capturePrompts();
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () =>
+		Response.json([{id: "k1", name: "YubiKey"}]),
+	);
+	const {headers} = captureWithHeaders(API + "/users/@me/mfa/webauthn/credentials/k1", () =>
+		Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+	);
+
+	const user = settingsUser(true);
+	await user.showusersettings();
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.localuser.accountSettings())!
+		.click();
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.webauth.manage())!
+		.click();
+	const keyBtn = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === "YubiKey",
+		);
+		expect(b).toBeDefined();
+		return b!;
+	});
+	keyBtn.click();
+	const delBtn = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+		(b) => b.textContent === I18n.delete(),
+	)!;
+
+	delBtn.click();
+	delBtn.click();
+
+	await vi.waitFor(() => expect(promptForms.length).toBeGreaterThan(0));
+	expect(headers).toHaveLength(1);
+	expect(promptForms).toHaveLength(1);
 });
 
 it("control: guild delete with a body code and no 60003 sends once", async () => {
