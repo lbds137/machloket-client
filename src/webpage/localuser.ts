@@ -46,7 +46,7 @@ import {
 } from "./jsontypes.js";
 import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
-import {Dialog, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
+import {Dialog, fetchWithMfa, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
 import {Bot} from "./bot.js";
 import {Role} from "./role.js";
@@ -173,7 +173,7 @@ class Localuser {
 	};
 	mfa_enabled!: boolean;
 	private mfaAuth?: {token: string; exp: number};
-	private mfaRetry(): MfaRetry {
+	mfaRetry(): MfaRetry {
 		return {
 			factor: this.mfa_enabled ? "totp" : "webauthn",
 			token: () => (this.mfaAuth && this.mfaAuth.exp > Date.now() ? this.mfaAuth.token : null),
@@ -3655,6 +3655,7 @@ class Localuser {
 							{
 								fetchURL: this.info.api + "/users/@me/mfa/totp/enable/",
 								headers: this.headers,
+								mfaRetry: this.mfaRetry(),
 							},
 						);
 						form.onErrorBody = (e) => {
@@ -3680,13 +3681,17 @@ class Localuser {
 						keyMenu.addButtonInput("", key.name, () => {
 							const opt = keyMenu.addSubOptions(key.name);
 							const button = opt.addButtonInput("", I18n.delete(), async () => {
-								const res = await fetch(
-									this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id,
-									{
-										headers: this.headers,
-										method: "DELETE",
-									},
-								).catch(() => undefined);
+								const res = await fetchWithMfa(
+									this.mfaRetry(),
+									this.info.api,
+									this.headers,
+									(mfaHeaders) =>
+										fetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
+											headers: {...this.headers, ...mfaHeaders},
+											method: "DELETE",
+										}).catch(() => undefined),
+									(m) => new Dialog(m).show(),
+								);
 								if (!res?.ok) return showRefusal(res);
 								keyMenu.returnFromSub();
 								keyMenu.deleteElm(button);
@@ -3725,15 +3730,22 @@ class Localuser {
 										attestationObject: toBase64(credential.response.attestationObject),
 									},
 								};
-								const res = await fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
-									headers: this.headers,
-									method: "POST",
-									body: JSON.stringify({
-										ticket: body.ticket,
-										credential: JSON.stringify(cred),
-										name: name.value,
-									}),
-								}).catch(() => undefined);
+								const res = await fetchWithMfa(
+									this.mfaRetry(),
+									this.info.api,
+									this.headers,
+									(mfaHeaders) =>
+										fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+											headers: {...this.headers, ...mfaHeaders},
+											method: "POST",
+											body: JSON.stringify({
+												ticket: body.ticket,
+												credential: JSON.stringify(cred),
+												name: name.value,
+											}),
+										}).catch(() => undefined),
+									(m) => new Dialog(m).show(),
+								);
 								const key = res?.ok
 									? ((await res.json().catch(() => null)) as {name: string; id: string} | null)
 									: null;
@@ -3746,6 +3758,7 @@ class Localuser {
 								method: "POST",
 								headers: this.headers,
 								tfaCheck: false,
+								mfaRetry: this.mfaRetry(),
 							},
 						);
 						form.addTextInput(I18n.htmlPages.pwField(), "password", {

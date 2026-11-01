@@ -2296,6 +2296,7 @@ class Guild extends SnowFlake {
 			fetchURL: this.info.api + "/guilds/" + this.id + "/delete",
 			method: "POST",
 			headers: this.headers,
+			mfaRetry: this.localuser.mfaRetry(),
 		});
 		// Keyed "": checked here, never sent.
 		const txt = form.addTextInput(I18n.guild.serverName(), "");
