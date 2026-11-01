@@ -368,3 +368,107 @@ it("two overlapping refused picks revert to the last server-confirmed emoji", as
 	expect(row?.emoji_id).toBe("111");
 	expect(row?.emoji_name).toBe("wave");
 });
+
+it("a refused welcome Save puts a row's edited description back so the next emoji pick sends the old one", async () => {
+	let status = 200;
+	const {bodies} = openOnboard(() =>
+		status === 200 ? Response.json(SCREEN) : new Response(null, {status}),
+	);
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
+
+	const c1Input = [...document.querySelectorAll("input")].find((i) => i.value === "say hi")!;
+	c1Input.value = "edited";
+	c1Input.dispatchEvent(new Event("input"));
+
+	status = 403;
+	clickButton(I18n.settings.save());
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 403")),
+	);
+
+	status = 204;
+	picked = customEmoji("888", "wave");
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
+
+	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
+	expect(row?.description).toBe("say hi");
+	expect(row?.description).not.toBe("edited");
+
+	expect(c1Input.value).toBe("edited");
+	const c2Input = [...document.querySelectorAll("input")].find((i) => i.value === "rules")!;
+	c2Input.dispatchEvent(new Event("input"));
+	clickButton(I18n.settings.save());
+	await vi.waitFor(() => expect(patchBodies(bodies)).toHaveLength(3));
+	const secondSave = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	expect(secondSave.welcome_channels.find((c) => c.channel_id === "c1")?.description).toBe(
+		"edited",
+	);
+});
+
+it("an accepted welcome Save keeps a row's edited description on the next emoji pick (control)", async () => {
+	let status = 200;
+	const {bodies} = openOnboard(() =>
+		status === 200 ? Response.json(SCREEN) : new Response(null, {status}),
+	);
+	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
+
+	const c1Input = [...document.querySelectorAll("input")].find((i) => i.value === "say hi")!;
+	c1Input.value = "edited";
+	c1Input.dispatchEvent(new Event("input"));
+
+	status = 204;
+	clickButton(I18n.settings.save());
+	await vi.waitFor(() => expect(patchBodies(bodies)).toHaveLength(1));
+
+	picked = customEmoji("888", "wave");
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(patchBodies(bodies)).toHaveLength(2));
+
+	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	const row = patch.welcome_channels.find((c) => c.channel_id === "c1");
+	expect(row?.description).toBe("edited");
+});
+
+it("a channel added through Add channel, then its row edited and Save refused, reverts to the description it was added with", async () => {
+	let status = 200;
+	const {bodies} = openOnboard(() =>
+		status === 200 ? Response.json(SCREEN) : new Response(null, {status}),
+	);
+	await vi.waitFor(() => expect(clickButtonAddChannelVisible()).toBeTruthy());
+
+	clickButton(I18n.onboarding.addChannel());
+	const dialog = [...document.querySelectorAll(".dialogModal")].at(-1)!;
+	const addInput = dialog.querySelector("input")!;
+	addInput.value = "hang out";
+	addInput.dispatchEvent(new Event("input"));
+
+	status = 204;
+	clickButton(I18n.submit());
+	const c3Input = await vi.waitFor(() => {
+		const i = [...document.querySelectorAll<HTMLInputElement>(".settingsHTMLArea input")].find(
+			(el) => el.value === "hang out",
+		);
+		expect(i).toBeDefined();
+		return i!;
+	});
+
+	c3Input.value = "edited";
+	c3Input.dispatchEvent(new Event("input"));
+
+	status = 403;
+	clickButton(I18n.settings.save());
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 403")),
+	);
+
+	status = 204;
+	picked = customEmoji("888", "wave");
+	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
+
+	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
+	const added = patch.welcome_channels.find((c) => c.channel_id === "c3");
+	expect(added?.description).toBe("hang out");
+});
