@@ -3,9 +3,8 @@ import {afterEach, expect, it, vi} from "vitest";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("../../localuser");
-const {getPreferences, setPreferences, UserPreferences, ThemeOption} = await import(
-	"./userPreferences.js"
-);
+const {getPreferences, setPreferences, updatePreferences, UserPreferences, ThemeOption} =
+	await import("./userPreferences.js");
 
 afterEach(() => {
 	localStorage.removeItem("userPreferences");
@@ -35,4 +34,13 @@ it("a valid store survives the read", async () => {
 	const read = await getPreferences();
 	expect(read.theme).toBe(ThemeOption.Light);
 	expect(read.notificationVolume).toBe(42);
+});
+
+it("two updatePreferences calls made without awaiting between them both land", async () => {
+	const first = updatePreferences({theme: ThemeOption.Light});
+	const second = updatePreferences({accentColor: "#123456"});
+	await Promise.all([first, second]);
+	const read = await getPreferences();
+	expect(read.theme).toBe(ThemeOption.Light);
+	expect(read.accentColor).toBe("#123456");
 });

@@ -646,4 +646,47 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 			typebox.remove();
 		}
 	});
+
+	it("6g. TBEmojiMenu appends to the draft when the selection is anchored inside typebox with its focus in another element", async () => {
+		assignTwoEmojiFixture();
+		const other = document.createElement("div");
+		other.textContent = "other";
+		const typebox = document.createElement("div") as HTMLDivElement & {
+			markdown: {rawString: string; txt: string; boxupdate: ReturnType<typeof vi.fn>};
+		};
+		typebox.id = "typebox";
+		typebox.contentEditable = "true";
+		typebox.textContent = "hello";
+		typebox.markdown = {rawString: "hello", txt: "hello", boxupdate: vi.fn()};
+		document.body.append(other, typebox);
+
+		const sel = window.getSelection()!;
+		sel.removeAllRanges();
+		sel.setBaseAndExtent(typebox.firstChild!, 2, other.firstChild!, 2);
+
+		const user = Object.assign(Object.create(Localuser.prototype), {
+			guilds: [],
+			lookingguild: undefined,
+			favorites: {
+				emojiRecentsMerged: () => [],
+				addEmoji: vi.fn(),
+			},
+		}) as InstanceType<typeof Localuser>;
+
+		try {
+			const menuPromise = user.TBEmojiMenu(new DOMRect(100, 100, 20, 20));
+			const picker = document.querySelector(".emojiPicker")!;
+			expect(picker).not.toBeNull();
+
+			const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+			cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+			await raceWithTimeout(menuPromise);
+			expect(typebox.markdown.txt).toBe("hello😀");
+			expect(typebox.markdown.boxupdate).toHaveBeenCalledWith("😀".length, false, 5);
+		} finally {
+			other.remove();
+			typebox.remove();
+		}
+	});
 });

@@ -5456,7 +5456,10 @@ class Localuser {
 		// there is no selection or it sits outside typebox (e.g. in the message list above), place
 		// a collapsed caret at the end of typebox without focusing it (which raises a phone keyboard).
 		const sel = window.getSelection();
-		if (sel && (!sel.anchorNode || !typebox.contains(sel.anchorNode))) {
+		if (
+			sel &&
+			(!sel.anchorNode || !typebox.contains(sel.anchorNode) || !typebox.contains(sel.focusNode))
+		) {
 			const range = document.createRange();
 			range.selectNodeContents(typebox);
 			range.collapse(false);

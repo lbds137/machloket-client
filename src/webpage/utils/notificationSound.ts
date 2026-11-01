@@ -1,4 +1,4 @@
-import {getPreferences, setPreferences, UserPreferences} from "./storage/userPreferences.js";
+import {getPreferences, updatePreferences, UserPreferences} from "./storage/userPreferences.js";
 import {
 	getSoundArrayBuffer,
 	saveSoundBlob,
@@ -69,7 +69,7 @@ export class NotificationSoundManager {
 		);
 		if (needsSave) {
 			await migrateFromLocalStorage(p.customNotificationSounds as {name: string; path: string}[]);
-			await setPreferences(p);
+			await updatePreferences({customNotificationSounds: p.customNotificationSounds});
 		}
 		const sounds = this.getAvailableSounds(p);
 		console.log(

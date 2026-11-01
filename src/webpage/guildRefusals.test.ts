@@ -260,6 +260,18 @@ it("a welcome screen with no description still enables (the control)", async () 
 	expect(patch).toMatchObject({enabled: true, description: ""});
 });
 
+it("an enabled welcome screen with no welcome_channels renders its Disable button with no unhandled rejection", async () => {
+	await I18n.done;
+	const {guild} = openOnboard({enabled: true, description: "x"});
+	await vi.waitFor(() => {
+		const b = [...document.querySelectorAll("button")].find(
+			(el) => el.textContent === I18n.onboarding.disable(),
+		);
+		expect(b).not.toBeUndefined();
+	});
+	expect(guild.welcomeScreen?.welcome_channels).toEqual([]);
+});
+
 /** A guild with top-level text channels `ids`, positioned in that order. */
 function guildWithChannels(...ids: string[]) {
 	const guild = makeGuild();
