@@ -252,7 +252,7 @@ it("a profile GET that never arrived says the network failed where the mutual gu
 it("a profile answer that isn't JSON says why where the mutual guilds would sit", async () => {
 	const profile = await openMutualGuilds(() => new Response("<html>"));
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	// Not JSON, so refusalText gives the status.
 	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("HTTP 200")));
 });
 
@@ -262,18 +262,80 @@ it("a profile answer without a mutual-guilds list says why instead of throwing",
 	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
 	const profile = await openMutualGuilds(() => Response.json({message: "hidden"}));
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
-	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("HTTP 200")));
+	// Cloning before json() leaves the body for refusalText to read the server's message.
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("hidden")));
 	expect(unhandled).not.toHaveBeenCalled();
 });
 
-it("a profile answer without a connected-accounts list says why instead of throwing", async () => {
+it("a profile answer without a connected-accounts list renders the mutual guilds", async () => {
 	const unhandled = vi.fn();
 	window.addEventListener("unhandledrejection", unhandled);
 	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
-	const profile = await openMutualGuilds(() => Response.json({mutual_guilds: []}));
+	const guildids = new Map([
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() => Response.json({mutual_guilds: [{id: "g1"}]}),
+		guildids,
+	);
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
-	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.requestFailed("HTTP 200")));
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	expect(profile.textContent).not.toContain(I18n.requestFailed("HTTP 200"));
 	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a profile answer with a non-array mutual-friends field still renders the mutual guilds", async () => {
+	const unhandled = vi.fn((e: PromiseRejectionEvent) => e.preventDefault());
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	const guildids = new Map([
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				mutual_friends: "x",
+				connected_accounts: [],
+			}),
+		guildids,
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
+	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a refused /connections GET while opening a profile stays quiet and renders mutual guilds", async () => {
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	const connections = captureRequests("http://profile.test/api/v9/connections", () =>
+		Response.json({message: "boom"}, {status: 500}),
+	);
+	const guildids = new Map([
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				connected_accounts: [{type: "github", name: "x", external_id: "1"}],
+			}),
+		guildids,
+	);
+
+	await vi.waitFor(() => expect(connections).toHaveLength(1));
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
 });

@@ -3173,12 +3173,12 @@ class Localuser {
 	updateProfile(json: {bio?: string; pronouns?: string; accent_color?: number}) {
 		return saveProfile(this.info.api + "/users/@me/profile", this.headers, json);
 	}
-	async getConnections() {
+	async getConnections({quiet}: {quiet?: boolean} = {}) {
 		const res = await fetch(this.info.api + "/connections", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
-			await showRefusal(res);
+			if (!quiet) await showRefusal(res);
 			return {};
 		}
 		return (
@@ -3764,7 +3764,10 @@ class Localuser {
 									(m) => new Dialog(m).show(),
 								);
 								const key = res?.ok
-									? ((await res.json().catch(() => null)) as {name: string; id: string} | null)
+									? ((await res
+											.clone()
+											.json()
+											.catch(() => null)) as {name: string; id: string} | null)
 									: null;
 								if (!key) return showRefusal(res);
 								addKey(key);
@@ -3794,7 +3797,10 @@ class Localuser {
 								await showRefusal(res);
 								return;
 							}
-							const keys = (await res.json().catch(() => null)) as
+							const keys = (await res
+								.clone()
+								.json()
+								.catch(() => null)) as
 								| {id: string; name: string}[]
 								| null;
 							if (!Array.isArray(keys)) {
@@ -4417,9 +4423,9 @@ class Localuser {
 				.then(async (teamsRes) => {
 					// The teams list feeds one Create App <select>: a failed lookup degrades to the
 					// personal team, silently — Settings must not modal over an optional panel.
-					const parsed = (await (teamsRes?.ok ? teamsRes.json() : Promise.resolve(null)).catch(
-						() => null,
-					)) as {name: string}[] | null;
+					const parsed = (teamsRes?.ok ? await teamsRes.json().catch(() => null) : null) as
+						| {name: string}[]
+						| null;
 					const teams = Array.isArray(parsed) ? parsed : [];
 					const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 						const form = devPortal.addSubForm(
@@ -4470,7 +4476,10 @@ class Localuser {
 								await sayInline(res);
 								return;
 							}
-							const json = (await res.json().catch(() => null)) as
+							const json = (await res
+								.clone()
+								.json()
+								.catch(() => null)) as
 								| {
 										cover_image: any;
 										icon: any;
@@ -4836,7 +4845,10 @@ class Localuser {
 							await showRefusal(res);
 							return;
 						}
-						const json = (await res.json().catch(() => null)) as {tokens: string[]} | null;
+						const json = (await res
+							.clone()
+							.json()
+							.catch(() => null)) as {tokens: string[]} | null;
 						if (!json) {
 							// A 200 that isn't the promised shape: say so, don't die silently.
 							await showRefusal(res);
@@ -4935,7 +4947,12 @@ class Localuser {
 			method: "POST",
 			headers: this.headers,
 		}).catch(() => undefined);
-		const body = res?.ok ? ((await res.json().catch(() => null)) as {token?: unknown} | null) : null;
+		const body = res?.ok
+			? ((await res
+					.clone()
+					.json()
+					.catch(() => null)) as {token?: unknown} | null)
+			: null;
 		if (typeof body?.token !== "string") {
 			await showRefusal(res);
 			return false;
@@ -4956,8 +4973,11 @@ class Localuser {
 			await showRefusal(res);
 			return;
 		}
-		const json = await res.json().catch(() => null);
-		if (!json) {
+		const json = await res
+			.clone()
+			.json()
+			.catch(() => null);
+		if (typeof json?.name !== "string") {
 			// A 200 that isn't the promised shape is a failed request, not "no application".
 			await showRefusal(res);
 			return;
@@ -5047,8 +5067,11 @@ class Localuser {
 			await showRefusal(res);
 			return;
 		}
-		const json = await res.json().catch(() => null);
-		if (!json) {
+		const json = await res
+			.clone()
+			.json()
+			.catch(() => null);
+		if (typeof json?.name !== "string") {
 			// A 200 that isn't the promised shape is a failed request, not "no bot".
 			await showRefusal(res);
 			return;

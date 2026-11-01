@@ -171,7 +171,10 @@ class Bot {
 						await showRefusal(res);
 						return;
 					}
-					const json = (await res.json().catch(() => null)) as guildjson["properties"][] | null;
+					const json = (await res
+						.clone()
+						.json()
+						.catch(() => null)) as guildjson["properties"][] | null;
 					if (!Array.isArray(json)) {
 						await showRefusal(res);
 						return;

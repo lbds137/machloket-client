@@ -1231,16 +1231,14 @@ class User extends SnowFlake {
 			{headers: this.localuser.headers},
 		).catch(() => undefined);
 		const payload = res?.ok
-			? ((await res.json().catch(() => null)) as highMemberJSON | null)
+			? ((await res
+					.clone()
+					.json()
+					.catch(() => null)) as highMemberJSON | null)
 			: null;
-		// On an OK answer that was unusable the body is consumed, so the reason is its status.
-		// Both list fields are guarded: the popup reads connected_accounts.length too.
-		if (
-			!payload ||
-			!Array.isArray(payload.mutual_guilds) ||
-			!Array.isArray(payload.connected_accounts)
-		)
-			return refusalText(res);
+		// Cloning before json() leaves the body for refusalText when an OK answer isn't usable.
+		if (!payload || !Array.isArray(payload.mutual_guilds)) return refusalText(res);
+		if (!Array.isArray(payload.connected_accounts)) payload.connected_accounts = [];
 		return payload;
 	}
 	handleRelationship(relation: relationJson) {
@@ -1954,7 +1952,7 @@ class User extends SnowFlake {
 			);
 			mut.addHTMLArea(mutDiv);
 
-			if (high.mutual_friends) {
+			if (Array.isArray(high.mutual_friends)) {
 				const friends = buttons.add(I18n.profile.mutFriends());
 				const div = document.createElement("div");
 				div.classList.add("mutFriends");
@@ -1978,7 +1976,7 @@ class User extends SnowFlake {
 				friends.addHTMLArea(div);
 			}
 			if (high.connected_accounts.length) {
-				const cons = await this.localuser.getConnections();
+				const cons = await this.localuser.getConnections({quiet: true});
 
 				for (const con of high.connected_accounts) {
 					const conic = cons[con.type];

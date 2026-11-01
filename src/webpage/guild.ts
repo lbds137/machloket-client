@@ -39,7 +39,7 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
-import {refusalText, showRefusal} from "./utils/showRefusal.js";
+import {refusalText, serverReason, showRefusal} from "./utils/showRefusal.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
@@ -386,11 +386,19 @@ class Guild extends SnowFlake {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const counts = countsRes?.ok
-			? ((await countsRes.json().catch(() => null)) as {[key: string]: number} | null)
+			? ((await countsRes
+					.clone()
+					.json()
+					.catch(() => null)) as {[key: string]: number} | null)
 			: null;
-		if (!counts || typeof counts !== "object" || Array.isArray(counts)) {
-			// Said in the menu itself, in place of "Loading": the user opened this list. On an
-			// answer that was OK but unusable the body is consumed, so the reason is its status.
+		if (
+			!counts ||
+			typeof counts !== "object" ||
+			Array.isArray(counts) ||
+			Object.values(counts).some((n) => typeof n !== "number")
+		) {
+			// Said in the menu itself, in place of "Loading": the user opened this list. Cloning
+			// before json() leaves the body for refusalText when an OK answer isn't usable.
 			menu.options.removeAll();
 			menu.options.addText(await refusalText(countsRes));
 			return;
@@ -498,11 +506,13 @@ class Guild extends SnowFlake {
 								headers: this.headers,
 							}).catch(() => undefined);
 							const list = res?.ok
-								? ((await res.json().catch(() => null)) as string[] | null)
+								? ((await res
+										.clone()
+										.json()
+										.catch(() => null)) as string[] | null)
 								: null;
 							// One role failing fails the listing: a partial list of admins would lie by
-							// omission. On an OK answer that was unusable the body is consumed, so the
-							// reason is its status.
+							// omission. Cloning before json() leaves the body for refusalText.
 							if (!Array.isArray(list)) throw new Error(await refusalText(res));
 							return list;
 						}),
@@ -1220,14 +1230,10 @@ class Guild extends SnowFlake {
 						popup.hide();
 					} else {
 						// An error page from a proxy isn't JSON: the status says what happened then.
-						const json = res
-							? ((await res.json().catch(() => null)) as {message?: unknown} | null)
-							: null;
+						const json = res ? await res.json().catch(() => null) : null;
 						throw new FormError(
 							filei,
-							typeof json?.message === "string"
-								? json.message
-								: I18n.requestFailed(res ? `HTTP ${res.status}` : "offline"),
+							serverReason(json) ?? I18n.requestFailed(res ? "HTTP " + res.status : "offline"),
 						);
 					}
 				});
@@ -1485,15 +1491,17 @@ class Guild extends SnowFlake {
 					headers: this.headers,
 				}).catch(() => undefined);
 				const cur = res?.ok
-					? ((await res.json().catch(() => null)) as {
+					? ((await res
+							.clone()
+							.json()
+							.catch(() => null)) as {
 							enabled: boolean;
 							channel_id?: null | string;
 						} | null)
 					: null;
 				if (typeof cur?.enabled !== "boolean") {
 					// No form from an answer we don't have: a refused body once set the checkbox.
-					// On an OK answer that was unusable the body is consumed, so the reason is its
-					// status.
+					// Cloning before json() leaves the body for refusalText.
 					widgetMenu.addText(await refusalText(res));
 					return;
 				}
@@ -1612,14 +1620,17 @@ class Guild extends SnowFlake {
 		});
 		const res = await fetch(this.info.api + "/guilds/" + this.id + "/templates", {
 			headers: this.headers,
-		}).catch(() => null);
-		if (!res) {
-			template.addText(I18n.requestFailed("offline"));
-			return;
-		}
-		const templates = (await res.json().catch(() => undefined)) as templateSkim[] | undefined;
+		}).catch(() => undefined);
+		const templates = (
+			res?.ok
+				? await res
+						.clone()
+						.json()
+						.catch(() => undefined)
+				: undefined
+		) as templateSkim[] | undefined;
 		if (!Array.isArray(templates)) {
-			template.addText(I18n.requestFailed(`HTTP ${res.status}`));
+			template.addText(await refusalText(res));
 			return;
 		}
 		for (const temp of templates.reverse()) {

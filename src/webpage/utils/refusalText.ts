@@ -20,23 +20,19 @@ export function formErrors(errors: unknown): string[] {
 	return found;
 }
 
+/** The server's own reason in a JSON error body: the 50035 field errors joined by a space, else a
+ * string `message`, else null. */
+export function serverReason(body: unknown): string | null {
+	const json = body as {code?: unknown; message?: unknown; errors?: unknown} | null;
+	const fields = json?.code === 50035 ? formErrors(json.errors) : [];
+	if (fields.length) return fields.join(" ");
+	return typeof json?.message === "string" ? json.message : null;
+}
+
 /** The line saying a request was refused, or never answered, with the server's reason when it
  * gave one: what an invalid form got wrong, else its message. */
 export async function refusalText(res: Response | undefined) {
-	const body = res
-		? ((await res.json().catch(() => null)) as {
-				code?: unknown;
-				message?: unknown;
-				errors?: unknown;
-			} | null)
-		: null;
-	const fields = body?.code === 50035 ? formErrors(body.errors) : [];
-	const why = fields.length
-		? fields.join(" ")
-		: typeof body?.message === "string"
-			? body.message
-			: res
-				? "HTTP " + res.status
-				: "offline";
+	const body = res ? await res.json().catch(() => null) : null;
+	const why = serverReason(body) ?? (res ? "HTTP " + res.status : "offline");
 	return I18n.requestFailed(why);
 }

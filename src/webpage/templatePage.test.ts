@@ -71,7 +71,7 @@ it("a template request that never arrived says the network failed in the page bo
 it("a template answer that isn't JSON says why in the page body", async () => {
 	const {name, description} = await openSignedOut(() => new Response("<html>"));
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	// Not JSON, so refusalText gives the status.
 	await expect.poll(() => description.textContent).toBe(I18n.requestFailed("HTTP 200"));
 	expect(name.textContent).toBe("");
 });
@@ -79,7 +79,7 @@ it("a template answer that isn't JSON says why in the page body", async () => {
 it("a template answer of the wrong shape says why in the page body", async () => {
 	const {name, description} = await openSignedOut(() => Response.json({message: "x"}));
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
-	await expect.poll(() => description.textContent).toBe(I18n.requestFailed("HTTP 200"));
+	// Cloning before json() leaves the body for refusalText to read the server's message.
+	await expect.poll(() => description.textContent).toBe(I18n.requestFailed("x"));
 	expect(name.textContent).toBe("");
 });
