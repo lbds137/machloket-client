@@ -1,4 +1,4 @@
-import {ContentActionValues, type ContentAction, getPreferences, setPreferences} from "./storage/userPreferences";
+import {ContentActionValues, type ContentAction, getPreferences, updatePreferences} from "./storage/userPreferences";
 
 export type SensitiveContentAction = ContentAction;
 export type SensitiveContentSource = "spoilers" | "nsfw";
@@ -41,16 +41,15 @@ export async function getSensitiveContent(): Promise<SensitiveContentSettings> {
 	};
 }
 
-export async function setSensitiveContent(patch: Partial<SensitiveContentSettings>): Promise<void> {
-	// Same defense in depth as getSensitiveContent: getPreferences no longer rejects on a
-	// corrupt store.
-	const prefs = await getPreferences().catch(() => null);
-	if (!prefs) return;
+export async function setSensitiveContent(
+	settings: Partial<SensitiveContentSettings>,
+): Promise<void> {
+	const patch: {spoilerAction?: ContentAction; nsfwAction?: ContentAction} = {};
 	for (const source of ["spoilers", "nsfw"] as const) {
-		const value = patch[source];
-		if (isAction(value)) prefs[prefField(source)] = value;
+		const value = settings[source];
+		if (isAction(value)) patch[prefField(source)] = value;
 	}
-	await setPreferences(prefs);
+	await updatePreferences(patch);
 }
 
 export {getSensitiveContent as get, setSensitiveContent as set};

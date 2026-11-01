@@ -169,13 +169,10 @@ class I18n {
 	static options() {
 		return [...langmap.keys()].map((e) => e.replace(".json", ""));
 	}
-	static setLanguage(lang: string) {
+	static async setLanguage(lang: string) {
 		if (this.options().indexOf(lang) !== -1) {
-			getPreferences().then(async (prefs) => {
-				prefs.locale = lang;
-				await I18n.create(lang);
-				await setPreferences(prefs);
-			});
+			await I18n.create(lang);
+			await updatePreferences({locale: lang});
 		}
 	}
 }
@@ -207,7 +204,7 @@ function transForm(inobj: translation, path: string = "") {
 }
 
 import bundledEn from "./../../translations/en.json";
-import {getPreferences, setPreferences} from "./utils/storage/userPreferences";
+import {getPreferences, setPreferences, updatePreferences} from "./utils/storage/userPreferences";
 type beforeType = typeof bundledEn;
 
 type DoTheThing<T> = {

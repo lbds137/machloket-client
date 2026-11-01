@@ -8,9 +8,12 @@ const {Options} = await import("./settings");
 const {I18n} = await import("./i18n");
 const {getSensitiveContent, SENSITIVE_CONTENT_ACTIONS} = await import("./utils/sensitiveContent");
 const {
+	AnimateTristateValue,
+	AnimateTristateValues,
 	getPreferences,
 	setPreferences,
 	ThemeOption,
+	updatePreferences,
 	UserPreferences,
 } = await import("./utils/storage/userPreferences");
 const {NotificationSoundManager} = await import("./utils/notificationSound");
@@ -147,7 +150,7 @@ it("keeps NSFW and spoiler Block selections after later volume or accent writes"
 	expect(await getSensitiveContent()).toEqual({spoilers: "block", nsfw: "block"});
 });
 
-it("persists a theme change from the theme select alone with no other handler run", async () => {
+it("persists a theme change from the theme select (control)", async () => {
 	const {selectByLabel} = await openSettings();
 	const themeSelect = selectByLabel(I18n.localuser["theme:"]());
 	const lightIndex = themeSelect.options.indexOf(I18n.localuser.themeNames.Light());
@@ -160,6 +163,44 @@ it("persists a theme change from the theme select alone with no other handler ru
 	});
 
 	expect((await getPreferences()).theme).toBe(ThemeOption.Light);
+});
+
+it("persists both theme and accent when their submits run synchronously together", async () => {
+	const {selectByLabel, colorByLabel} = await openSettings();
+	const themeSelect = selectByLabel(I18n.localuser["theme:"]());
+	const accentInput = colorByLabel(I18n.localuser.accentColor());
+	const lightIndex = themeSelect.options.indexOf(I18n.localuser.themeNames.Light());
+	expect(lightIndex).toBeGreaterThanOrEqual(0);
+
+	changeSelect(themeSelect, lightIndex);
+	const colorEl = accentInput.input.deref()!;
+	colorEl.value = "#abcdef";
+	colorEl.dispatchEvent(new Event("input"));
+
+	themeSelect.submit();
+	accentInput.submit();
+
+	await vi.waitFor(async () => {
+		expect((await getPreferences()).accentColor).toBe("#abcdef");
+	});
+	expect((await getPreferences()).theme).toBe(ThemeOption.Light);
+});
+
+it("persists both GIF and icon animation selects when their submits run synchronously together", async () => {
+	const {selectByLabel} = await openSettings();
+	const gifSelect = selectByLabel(I18n.accessibility.playGif());
+	const iconSelect = selectByLabel(I18n.accessibility.playIcon());
+
+	changeSelect(gifSelect, AnimateTristateValues.indexOf(AnimateTristateValue.Always));
+	changeSelect(iconSelect, AnimateTristateValues.indexOf(AnimateTristateValue.Never));
+
+	gifSelect.submit();
+	iconSelect.submit();
+
+	await vi.waitFor(async () => {
+		expect((await getPreferences()).animateIcons).toBe(AnimateTristateValue.Never);
+	});
+	expect((await getPreferences()).animateGifs).toBe(AnimateTristateValue.Always);
 });
 
 it("persists an accent color change (control)", async () => {
@@ -192,4 +233,27 @@ it("omits emojiFont from the stored preferences object when cleared to none", as
 		unknown
 	>;
 	expect(stored).not.toHaveProperty("emojiFont");
+});
+
+it("setLanguage does not clobber an accentColor write that lands while I18n.create is in flight", async () => {
+	let resolveCreate!: () => void;
+	const createSpy = vi.spyOn(I18n, "create").mockImplementation(
+		() =>
+			new Promise<void>((r) => {
+				resolveCreate = r;
+			}),
+	);
+
+	I18n.setLanguage("fr");
+	await vi.waitFor(() => {
+		expect(createSpy).toHaveBeenCalledWith("fr");
+	});
+
+	await updatePreferences({accentColor: "#112233"});
+	resolveCreate();
+
+	await vi.waitFor(async () => {
+		expect((await getPreferences()).locale).toBe("fr");
+	});
+	expect((await getPreferences()).accentColor).toBe("#112233");
 });

@@ -37,3 +37,10 @@ it("falls back to defaults when stored prefs are malformed or carry unknown valu
 	);
 	expect(await getSensitiveContent()).toEqual({spoilers: "blur", nsfw: "blur"});
 });
+
+it("setSensitiveContent({spoilers}) and setSensitiveContent({nsfw}) called without awaiting between both land", async () => {
+	const first = setSensitiveContent({spoilers: "show"});
+	const second = setSensitiveContent({nsfw: "block"});
+	await Promise.all([first, second]);
+	expect(await getSensitiveContent()).toEqual({spoilers: "show", nsfw: "block"});
+});

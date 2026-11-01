@@ -674,6 +674,9 @@ class Guild extends SnowFlake {
 		}).catch(() => undefined);
 		if (!res?.ok) return showRefusal(res);
 		this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
+		if (this.welcomeScreen && !Array.isArray(this.welcomeScreen.welcome_channels)) {
+			this.welcomeScreen.welcome_channels = [];
+		}
 		if (!this.welcomeScreen?.enabled) return;
 		// Resolved up front: it gates the dialog (nothing resolvable → nothing to show) and
 		// the row separators (only between rows that actually render).
@@ -1303,6 +1306,9 @@ class Guild extends SnowFlake {
 					return;
 				}
 				this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
+				if (this.welcomeScreen && !Array.isArray(this.welcomeScreen.welcome_channels)) {
+					this.welcomeScreen.welcome_channels = [];
+				}
 				onboard.removeAll();
 				if (this.welcomeScreen?.enabled) {
 					const welcomeScreen = this.welcomeScreen;

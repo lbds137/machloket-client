@@ -59,7 +59,7 @@ export class UserPreferences {
 	}
 }
 
-export async function getPreferences(): Promise<UserPreferences> {
+function readPreferences(): UserPreferences {
 	try {
 		return new UserPreferences(JSON.parse(localStorage.getItem("userPreferences") || "{}"));
 	} catch (error) {
@@ -70,14 +70,19 @@ export async function getPreferences(): Promise<UserPreferences> {
 	}
 }
 
+export async function getPreferences(): Promise<UserPreferences> {
+	return readPreferences();
+}
+
 export async function setPreferences(prefs: UserPreferences): Promise<void> {
 	localStorage.setItem("userPreferences", JSON.stringify(prefs));
 }
 
 export async function updatePreferences(patch: Partial<UserPreferences>): Promise<void> {
-	const prefs = await getPreferences();
+	// The read and write stay in one tick because Options.submit runs handlers synchronously.
+	const prefs = readPreferences();
 	Object.assign(prefs, patch);
-	await setPreferences(prefs);
+	localStorage.setItem("userPreferences", JSON.stringify(prefs));
 }
 
 //region Migration from untyped storage
