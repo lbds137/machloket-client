@@ -4200,17 +4200,8 @@ class Channel extends SnowFlake {
 				loadingP.textContent = File.filesizehuman(sofar) + " / " + File.filesizehuman(total);
 			},
 			failed: async (retry: () => void) => {
-				// To the bottom: out of the scroller first (its row removal finishes in a later
-				// task), then deleteEvent, which forgets the message, then known again and re-linked
-				// so the scroller can draw this bubble here and when the channel is next opened.
-				await this.infinite?.deleteId(m.id);
-				m.deleteEvent();
-				this.messages.set(m.id, m);
-				makeRecent();
-				if (this === this.localuser.channelfocus && this.infinitefocus) {
-					await this.infinite.addedBottom();
-					this.focus(m.id, false);
-				}
+				// The gateway already delivered it (a request can error after the server took it).
+				if (this.nonces.has(nonce)) return;
 				loadingP.remove();
 				html.append(buttons);
 				retryB.onclick = () => {
@@ -4219,6 +4210,19 @@ class Channel extends SnowFlake {
 					buttons.remove();
 				};
 				html.classList.add("erroredMessage");
+				const inView = this.infinite?.shows(html);
+				// To the bottom: out of the scroller first (its row removal finishes in a later
+				// task), then deleteEvent, which forgets the message, then known again and re-linked
+				// so the scroller can draw this bubble here and when the channel is next opened.
+				await this.infinite?.deleteId(m.id);
+				if (this.nonces.has(nonce)) return;
+				m.deleteEvent();
+				this.messages.set(m.id, m);
+				makeRecent();
+				if (this !== this.localuser.channelfocus || !this.infinitefocus) return;
+				await this.infinite.addedBottom();
+				// Not while the user reads history, and not if they changed channel meanwhile.
+				if (inView && this === this.localuser.channelfocus) this.focus(m.id, false);
 			},
 			void: () => {
 				m.deleteEvent();
