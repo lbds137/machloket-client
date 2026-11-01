@@ -2105,10 +2105,32 @@ class Guild extends SnowFlake {
 	}
 	/** Counts layout snapshots: only the newest drag's refusal may put the layout back. */
 	private layoutSeq?: number;
+	private reordersInFlight?: number;
+	private reorderLost?: boolean;
+	private redrawChannelList() {
+		if (this.localuser.lookingguild === this) {
+			// In place: loadGuild would also close an open search panel.
+			const channels = document.getElementById("channels") as HTMLDivElement;
+			channels.innerHTML = "";
+			channels.appendChild(this.buildChannelList());
+		}
+	}
+	private async resyncChannels() {
+		const seq = this.layoutSeq;
+		const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
+			headers: this.headers,
+		}).catch(() => undefined);
+		const channels: unknown = res?.ok ? await res.json().catch(() => undefined) : undefined;
+		if (!Array.isArray(channels) || this.layoutSeq !== seq) return;
+		for (const json of channels as channeljson[]) {
+			this.updateChannel(json);
+		}
+		this.redrawChannelList();
+	}
 	/** Records the channel list's arrangement; the returned function puts it back, unless a newer
 	 * snapshot was taken since. Channels created since stay (at the end of their list), channels
 	 * deleted since stay gone. */
-	snapshotLayout(): () => void {
+	snapshotLayout(): () => boolean {
 		const seq = (this.layoutSeq = (this.layoutSeq ?? 0) + 1);
 		const headchannels = [...this.headchannels];
 		const perChannel = this.channels.map((channel) => ({
@@ -2125,7 +2147,7 @@ class Guild extends SnowFlake {
 			...now.filter((c) => !known.has(c)),
 		];
 		return () => {
-			if (seq !== this.layoutSeq) return;
+			if (seq !== this.layoutSeq) return false;
 			const live = new Set(this.channels);
 			const known = new Set(perChannel.map(({channel}) => channel));
 			this.headchannels = merge(headchannels, this.headchannels, live, known);
@@ -2137,15 +2159,11 @@ class Guild extends SnowFlake {
 				entry.channel.position = entry.position;
 				entry.channel.children = merge(entry.children, entry.channel.children, live, known);
 			}
-			if (this.localuser.lookingguild === this) {
-				// In place: loadGuild would also close an open search panel.
-				const channels = document.getElementById("channels") as HTMLDivElement;
-				channels.innerHTML = "";
-				channels.appendChild(this.buildChannelList());
-			}
+			this.redrawChannelList();
+			return true;
 		};
 	}
-	async calculateReorder(movedId?: string, restore?: () => void) {
+	async calculateReorder(movedId?: string, restore?: () => boolean | void) {
 		let position = 0;
 		type buildtype = {
 			id: string;
@@ -2211,14 +2229,20 @@ class Guild extends SnowFlake {
 				});
 			}
 		} else {
+			this.reordersInFlight = (this.reordersInFlight ?? 0) + 1;
 			const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify(build),
 			}).catch(() => undefined);
+			this.reordersInFlight = (this.reordersInFlight ?? 0) - 1;
 			if (!res?.ok && restore) {
-				restore();
+				if (restore() === false) this.reorderLost = true;
 				await showRefusal(res);
+			}
+			if (!(this.reordersInFlight ?? 0) && this.reorderLost) {
+				this.reorderLost = false;
+				await this.resyncChannels();
 			}
 		}
 	}

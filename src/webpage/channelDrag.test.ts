@@ -259,3 +259,193 @@ it("a refused PATCH after a sibling drop restores the order and keeps the search
 	expect(g.localuser.searching).toBe(true);
 	expect(side.classList.contains("searchDiv")).toBe(true);
 });
+
+function deferred() {
+	let resolve!: (value: Response | PromiseLike<Response>) => void;
+	const promise = new Promise<Response>((r) => (resolve = r));
+	return {promise, resolve};
+}
+
+const ok = () => new Response(null, {status: 204});
+const refused = () =>
+	Response.json({code: 50013, message: "Missing Permissions"}, {status: 403});
+const gets = (bodies: unknown[]) => bodies.filter((b) => b === undefined).length;
+
+function reorderFixture(
+	getResponse: () => Response | Promise<Response> = () =>
+		Response.json([
+			{id: "a", position: 0},
+			{id: "b", position: 1},
+			{id: "c", position: 2},
+		]),
+) {
+	const patches: ReturnType<typeof deferred>[] = [];
+	const bodies = captureRequests(CHANNELS, () => {
+		if (bodies.at(-1) === undefined) return getResponse();
+		const d = deferred();
+		patches.push(d);
+		return d.promise;
+	});
+	const g = guild();
+	const channels = document.createElement("div");
+	channels.id = "channels";
+	document.body.append(channels);
+	const a = chan(g, "a", {position: 0});
+	const b = chan(g, "b", {position: 1});
+	const c = chan(g, "c", {position: 2});
+	g.headchannels = [a, b, c];
+	g.channels = [a, b, c];
+	const update = vi.spyOn(g, "updateChannel").mockImplementation(() => {});
+	return {g, a, b, c, patches, bodies, update};
+}
+
+it("re-reads the guild's channels once after a superseded refusal and an accepted move settle", async () => {
+	const serverChannels = [
+		{id: "a", position: 0},
+		{id: "b", position: 1},
+		{id: "c", position: 2},
+	];
+	const {g, a, b, c, patches, bodies, update} = reorderFixture(() =>
+		Response.json(serverChannels),
+	);
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+
+	patches[0].resolve(refused());
+	await moveA;
+	patches[1].resolve(ok());
+	await moveB;
+
+	expect(gets(bodies)).toBe(1);
+	expect(bodies.indexOf(undefined)).toBe(2);
+	expect(update.mock.calls.map(([json]) => json)).toEqual(serverChannels);
+});
+
+it("re-reads the guild's channels once when both moves are refused out of order", async () => {
+	const {g, a, b, c, patches, bodies} = reorderFixture();
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+
+	patches[1].resolve(refused());
+	await moveB;
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["b", "a", "c"]);
+	expect(gets(bodies)).toBe(0);
+
+	patches[0].resolve(refused());
+	await moveA;
+
+	expect(gets(bodies)).toBe(1);
+});
+
+it("waits for the in-flight move to settle before re-reading after a superseded refusal", async () => {
+	const {g, a, b, c, patches, bodies} = reorderFixture();
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+
+	patches[0].resolve(refused());
+	await moveA;
+	expect(gets(bodies)).toBe(0);
+
+	patches[1].resolve(ok());
+	await moveB;
+	expect(gets(bodies)).toBe(1);
+});
+
+it("restores without re-reading when the first move succeeds and the second is refused", async () => {
+	const {g, a, b, c, patches, bodies} = reorderFixture();
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+
+	patches[0].resolve(ok());
+	await moveA;
+	patches[1].resolve(refused());
+	await moveB;
+
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["b", "a", "c"]);
+	expect(gets(bodies)).toBe(0);
+});
+
+it("restores without re-reading when a single move is refused", async () => {
+	const {g, a, b, c, patches, bodies} = reorderFixture();
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	patches[0].resolve(refused());
+	await moveA;
+
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["a", "b", "c"]);
+	expect(gets(bodies)).toBe(0);
+});
+
+it("stays silent and skips updateChannel when the re-read GET answers 500", async () => {
+	const {g, a, b, c, patches, update} = reorderFixture(
+		() => new Response("Internal Server Error", {status: 500}),
+	);
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+
+	patches[0].resolve(refused());
+	await moveA;
+	patches[1].resolve(ok());
+	await expect(moveB).resolves.toBeUndefined();
+
+	expect(document.querySelectorAll(".dialogModal")).toHaveLength(1);
+	expect(update).not.toHaveBeenCalled();
+});
+
+it("discards the re-read when a new drag snapshots the layout before the GET answers", async () => {
+	const getAnswer = deferred();
+	const {g, a, b, c, patches, bodies, update} = reorderFixture(() => {
+		g.snapshotLayout();
+		return getAnswer.promise;
+	});
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+
+	patches[0].resolve(refused());
+	await moveA;
+	patches[1].resolve(ok());
+	getAnswer.resolve(Response.json([{id: "a", position: 0}]));
+	await moveB;
+
+	expect(gets(bodies)).toBe(1);
+	expect(update).not.toHaveBeenCalled();
+});
