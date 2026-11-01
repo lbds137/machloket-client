@@ -175,6 +175,158 @@ it("saveGuildOrder ignores a refusal that a newer save superseded", async () => 
 	expect(shown).not.toHaveBeenCalled();
 });
 
+it("saveGuildOrder rolls back to save 1 when save 1 succeeds before superseded save 2 is refused", async () => {
+	await I18n.done;
+	let firstAnswer!: (res: Response) => void;
+	let secondAnswer!: (res: Response) => void;
+	let call = 0;
+	captureRequests(API + "/users/@me/settings", () =>
+		++call === 1
+			? new Promise<Response>((res) => (firstAnswer = res))
+			: new Promise<Response>((res) => (secondAnswer = res)),
+	);
+
+	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
+	const user = makeUser({
+		guildFolders: [],
+		guildOrder: [folder("first")],
+	});
+	const buildservers = vi.spyOn(user, "buildservers").mockImplementation(() => {});
+	const shown = vi.spyOn(Dialog.prototype, "show");
+
+	const first = user.saveGuildOrder();
+	await vi.waitFor(() => expect(firstAnswer).toBeDefined());
+
+	user.guildOrder = [folder("second")] as never;
+	const second = user.saveGuildOrder();
+	await vi.waitFor(() => expect(secondAnswer).toBeDefined());
+
+	firstAnswer(Response.json({}));
+	await first;
+
+	secondAnswer(new Response(null, {status: 403}));
+	await second;
+
+	const firstFolders = [{id: 1, name: "first", guild_ids: ["g1"], color: 0}];
+	expect(user.guildFolders).toEqual(firstFolders);
+	expect((user as unknown as {acceptedFolders: unknown}).acceptedFolders).toEqual(firstFolders);
+	expect(buildservers).toHaveBeenCalledOnce();
+	expect(shown).toHaveBeenCalledOnce();
+});
+
+it("saveGuildOrder rolls back again to save 1 when save 2 is refused before save 1 succeeds", async () => {
+	await I18n.done;
+	let firstAnswer!: (res: Response) => void;
+	let secondAnswer!: (res: Response) => void;
+	let call = 0;
+	captureRequests(API + "/users/@me/settings", () =>
+		++call === 1
+			? new Promise<Response>((res) => (firstAnswer = res))
+			: new Promise<Response>((res) => (secondAnswer = res)),
+	);
+
+	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
+	const user = makeUser({
+		guildFolders: [],
+		guildOrder: [folder("first")],
+	});
+	const buildservers = vi.spyOn(user, "buildservers").mockImplementation(() => {});
+	const shown = vi.spyOn(Dialog.prototype, "show");
+
+	const first = user.saveGuildOrder();
+	await vi.waitFor(() => expect(firstAnswer).toBeDefined());
+
+	user.guildOrder = [folder("second")] as never;
+	const second = user.saveGuildOrder();
+	await vi.waitFor(() => expect(secondAnswer).toBeDefined());
+
+	secondAnswer(new Response(null, {status: 403}));
+	await second;
+
+	firstAnswer(Response.json({}));
+	await first;
+
+	const firstFolders = [{id: 1, name: "first", guild_ids: ["g1"], color: 0}];
+	expect(user.guildFolders).toEqual(firstFolders);
+	expect((user as unknown as {acceptedFolders: unknown}).acceptedFolders).toEqual(firstFolders);
+	expect(buildservers).toHaveBeenCalledTimes(2);
+	expect(shown).toHaveBeenCalledOnce();
+});
+
+it("saveGuildOrder keeps save 2 when save 2 answers ok before save 1 answers ok", async () => {
+	await I18n.done;
+	let firstAnswer!: (res: Response) => void;
+	let secondAnswer!: (res: Response) => void;
+	let call = 0;
+	captureRequests(API + "/users/@me/settings", () =>
+		++call === 1
+			? new Promise<Response>((res) => (firstAnswer = res))
+			: new Promise<Response>((res) => (secondAnswer = res)),
+	);
+
+	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
+	const user = makeUser({
+		guildFolders: [],
+		guildOrder: [folder("first")],
+	});
+
+	const first = user.saveGuildOrder();
+	await vi.waitFor(() => expect(firstAnswer).toBeDefined());
+
+	user.guildOrder = [folder("second")] as never;
+	const second = user.saveGuildOrder();
+	await vi.waitFor(() => expect(secondAnswer).toBeDefined());
+
+	secondAnswer(Response.json({}));
+	await second;
+
+	firstAnswer(Response.json({}));
+	await first;
+
+	const secondFolders = [{id: 1, name: "second", guild_ids: ["g1"], color: 0}];
+	expect(user.guildFolders).toEqual(secondFolders);
+	expect((user as unknown as {acceptedFolders: unknown}).acceptedFolders).toEqual(secondFolders);
+});
+
+it("saveGuildOrder keeps save 2 when save 1 answers 403 before save 2 answers ok", async () => {
+	await I18n.done;
+	let firstAnswer!: (res: Response) => void;
+	let secondAnswer!: (res: Response) => void;
+	let call = 0;
+	captureRequests(API + "/users/@me/settings", () =>
+		++call === 1
+			? new Promise<Response>((res) => (firstAnswer = res))
+			: new Promise<Response>((res) => (secondAnswer = res)),
+	);
+
+	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
+	const user = makeUser({
+		guildFolders: [],
+		guildOrder: [folder("first")],
+	});
+	const buildservers = vi.spyOn(user, "buildservers").mockImplementation(() => {});
+	const shown = vi.spyOn(Dialog.prototype, "show");
+
+	const first = user.saveGuildOrder();
+	await vi.waitFor(() => expect(firstAnswer).toBeDefined());
+
+	user.guildOrder = [folder("second")] as never;
+	const second = user.saveGuildOrder();
+	await vi.waitFor(() => expect(secondAnswer).toBeDefined());
+
+	firstAnswer(new Response(null, {status: 403}));
+	await first;
+
+	secondAnswer(Response.json({}));
+	await second;
+
+	const secondFolders = [{id: 1, name: "second", guild_ids: ["g1"], color: 0}];
+	expect(user.guildFolders).toEqual(secondFolders);
+	expect((user as unknown as {acceptedFolders: unknown}).acceptedFolders).toEqual(secondFolders);
+	expect(buildservers).not.toHaveBeenCalled();
+	expect(shown).not.toHaveBeenCalled();
+});
+
 it("status picker shows a refusal dialog when the current status PATCH is refused, and stays silent when superseded", async () => {
 	await I18n.done;
 	const setstatus = vi.fn();
