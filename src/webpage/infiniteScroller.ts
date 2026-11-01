@@ -272,6 +272,13 @@ class InfiniteScroller {
 		if (this.backElm.get(last) || !this.backElm.has(last)) return false;
 		return this.scrollBottom < 4;
 	}
+	/** Whether any of this row is in the scroller's visible area. */
+	shows(elm: HTMLElement) {
+		if (!this.div || !elm.isConnected) return false;
+		const row = elm.getBoundingClientRect();
+		const view = this.div.getBoundingClientRect();
+		return row.bottom > view.top && row.top < view.bottom;
+	}
 	toBottom() {
 		if (this.div) this.div.scrollTop = this.div.scrollHeight;
 	}
