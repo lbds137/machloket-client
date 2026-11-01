@@ -117,6 +117,18 @@ describe("guild templates", () => {
 		expect(button.addHTMLArea).not.toHaveBeenCalled();
 	});
 
+	it("a list 200 carrying an error message says that message", async () => {
+		const button = templateButton();
+		const guild = guildWith(button);
+		captureRequests(`${API}/guilds/g1/templates`, () =>
+			Response.json({message: "capped"}),
+		);
+
+		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
+		expect(button.addText).toHaveBeenLastCalledWith(I18n.requestFailed("capped"));
+		expect(button.addHTMLArea).not.toHaveBeenCalled();
+	});
+
 	it("a non-JSON refusal lists nothing instead of throwing", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);

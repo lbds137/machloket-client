@@ -1976,7 +1976,7 @@ class User extends SnowFlake {
 				friends.addHTMLArea(div);
 			}
 			if (high.connected_accounts.length) {
-				const cons = await this.localuser.getConnections({quiet: true});
+				const cons = await this.localuser.getConnections();
 
 				for (const con of high.connected_accounts) {
 					const conic = cons[con.type];

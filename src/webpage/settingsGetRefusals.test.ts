@@ -123,18 +123,36 @@ async function connectionRow() {
 	return {open, row: row!};
 }
 
-it("a refused welcome-screen GET in showWelcome says why and opens no welcome dialog", async () => {
+it("a refused welcome-screen GET in showWelcome stays quiet and opens no welcome dialog", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	captureRequests(API + "/guilds/g1/welcome-screen", refused);
 	const g = guild();
 
 	await g.showWelcome().catch(() => {});
 
 	expect(g.welcomeScreen).toBeUndefined();
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	expect(shown).not.toHaveBeenCalled();
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
+	expect(document.body.textContent).not.toContain(I18n.onboarding.title("G"));
+});
+
+it("a welcome-screen GET in showWelcome that never arrived stays quiet and opens no welcome dialog", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
+	captureRequests(API + "/guilds/g1/welcome-screen", () =>
+		Promise.reject(new TypeError("offline")),
+	);
+	const g = guild();
+
+	await g.showWelcome().catch(() => {});
+
+	expect(g.welcomeScreen).toBeUndefined();
+	expect(shown).not.toHaveBeenCalled();
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("offline"));
 	expect(document.body.textContent).not.toContain(I18n.onboarding.title("G"));
 });
 
 it("a refused welcome-screen GET in guild settings says why and keeps the onboarding section", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	captureRequests(API + "/guilds/g1/welcome-screen", refused);
 	captureRequests(API + "/guilds/g1/invites", () => Response.json([]));
 	captureRequests(API + "/guilds/g1/widget", () =>
@@ -156,14 +174,20 @@ it("a refused welcome-screen GET in guild settings says why and keeps the onboar
 	g.generateSettings();
 	// genOnboard() runs during the build but its fetch settles after it returns.
 	const removeAll = vi.spyOn(onboard!, "removeAll");
-	await new Promise((r) => setTimeout(r, 50));
+	[...document.querySelectorAll("button")]
+		.find((b) => b.textContent === I18n.onboarding.name())!
+		.click();
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
+	);
 	expect(g.welcomeScreen).toBeUndefined();
 	expect(removeAll).not.toHaveBeenCalled();
+	expect(shown).not.toHaveBeenCalled();
 });
 
 it("a refused connections GET says why and still lists the instance's connection types", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	stubUserSettings();
 	captureRequests(API + "/users/@me/connections", refused);
 	await openConnections();
@@ -171,6 +195,56 @@ it("a refused connections GET says why and still lists the instance's connection
 
 	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
 	expect(document.querySelector(".connection-container")?.children.length).toBe(1);
+	expect(shown).not.toHaveBeenCalled();
+});
+
+it("both connection legs refused say why once", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
+	stubUserSettings();
+	captureRequests(API + "/users/@me/connections", refused);
+	captureRequests(API + "/connections", refused);
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
+	);
+	expect(document.body.textContent!.split(I18n.requestFailed("boom")).length - 1).toBe(1);
+	expect(shown).not.toHaveBeenCalled();
+});
+
+it("a connections 200 of the wrong shape says the server's reason", async () => {
+	stubUserSettings();
+	captureRequests(API + "/users/@me/connections", () => Response.json({message: "capped"}));
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("capped")),
+	);
+});
+
+it("a later good connections answer clears the note", async () => {
+	stubUserSettings();
+	captureRequests(API + "/users/@me/connections", refused);
+	const u = await openConnections();
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
+	);
+
+	let reread = false;
+	captureRequests(API + "/users/@me/connections", () => {
+		reread = true;
+		return Response.json([]);
+	});
+	u.conectionChange();
+
+	// The re-read empties the panel first, so wait for its answer to be drawn: only then
+	// does the note's absence say anything.
+	await vi.waitFor(() => {
+		expect(reread).toBe(true);
+		expect(document.querySelector(".connection-container")?.children.length).toBe(1);
+	});
+	await new Promise((r) => setTimeout(r, 50));
+	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
 });
 
 it("a refused connection authorize click says why and opens no window", async () => {
@@ -241,28 +315,56 @@ it("a refused registration-token creation says why and leaves the output empty",
 });
 
 it("a refused instance-policy GET says why", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	stubUserSettings();
 	captureRequests(API + "/policies/instance/", refused);
 	const u = settingsUser();
 
 	await u.showusersettings().catch(() => {});
-	await new Promise((r) => setTimeout(r, 50));
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.instanceInfo.name())!
+		.click();
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
+	);
+	expect(shown).not.toHaveBeenCalled();
 });
 
 it("an instance-policy GET that never arrived says the network failed", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	stubUserSettings();
 	captureRequests(API + "/policies/instance/", () => Promise.reject(new TypeError("offline")));
 	const u = settingsUser();
 
 	await u.showusersettings().catch(() => {});
-	await new Promise((r) => setTimeout(r, 50));
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.instanceInfo.name())!
+		.click();
 
-	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("offline")),
+	);
+	expect(shown).not.toHaveBeenCalled();
+});
+
+it("an instance-policy 200 that isn't JSON says why", async () => {
+	stubUserSettings();
+	captureRequests(API + "/policies/instance/", () => new Response("<html>", {status: 200}));
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.instanceInfo.name())!
+		.click();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
 });
 
 it("an instance-connection-types GET that never arrived says why and still mounts the pane", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	stubUserSettings();
 	captureRequests(API + "/connections", () => Promise.reject(new TypeError("offline")));
 	await openConnections();
@@ -270,6 +372,7 @@ it("an instance-connection-types GET that never arrived says why and still mount
 
 	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
 	expect(document.querySelector(".connection-container")).not.toBeNull();
+	expect(shown).not.toHaveBeenCalled();
 });
 
 it("a registration-token answer that isn't JSON says why and leaves the output empty", async () => {

@@ -9,7 +9,7 @@ import {I18n} from "./i18n.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
-import {showRefusal} from "./utils/showRefusal.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
@@ -160,15 +160,15 @@ class Bot {
 		{
 			const guildsettings = settings.addButton(I18n.guild.guilds());
 			guildsettings.addTitle(I18n.botGuilds());
-			// Same surface as the leave button below: a refused or dead list fetch must say
-			// so, not leave an empty panel behind a silent rejection.
+			// A failed list is noted in its own panel because the user opened settings, not
+			// this list.
 			fetch(this.info.api + "/users/@me/guilds/", {
 				headers: this.headers,
 			})
 				.catch(() => undefined)
 				.then(async (res) => {
 					if (!res?.ok) {
-						await showRefusal(res);
+						guildsettings.addText(await refusalText(res));
 						return;
 					}
 					const json = (await res
@@ -176,7 +176,7 @@ class Bot {
 						.json()
 						.catch(() => null)) as guildjson["properties"][] | null;
 					if (!Array.isArray(json)) {
-						await showRefusal(res);
+						guildsettings.addText(await refusalText(res));
 						return;
 					}
 					for (const guild of json) {

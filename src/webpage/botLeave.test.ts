@@ -5,6 +5,7 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Bot} = await import("./bot");
+const {Dialog} = await import("./settings");
 const {User} = await import("./user");
 const {I18n} = await import("./i18n");
 const {makeBotOwner} = await import("./test/botOwner");
@@ -76,6 +77,7 @@ it("leaving a guild from the bot settings drops its row on one DELETE", async ()
 });
 
 it("a refused guilds list says so instead of sitting empty", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	captureRequests(API + "/users/@me/guilds/", () =>
 		Response.json({message: "401: Unauthorized"}, {status: 401}),
 	);
@@ -94,12 +96,15 @@ it("a refused guilds list says so instead of sitting empty", async () => {
 	);
 
 	bot.settings();
-	// The refusal dialog names the server's reason; the 401 must not die as an unhandled
-	// rejection behind an empty panel.
+	[...document.querySelectorAll("button")]
+		.find((b) => b.textContent === I18n.guild.guilds())!
+		.click();
 	await vi.waitFor(() => expect(document.body.textContent).toContain("401: Unauthorized"));
+	expect(shown).not.toHaveBeenCalled();
 });
 
 it("a guilds-list 200 whose body isn't an array says so instead of dying silently", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	captureRequests(API + "/users/@me/guilds/", () => Response.json({error: "nope"}));
 	// The settings page renders the bot's profile as a side effect; keep it to a stub.
 	vi.spyOn(User.prototype, "buildprofile").mockResolvedValue(document.createElement("div"));
@@ -116,11 +121,16 @@ it("a guilds-list 200 whose body isn't an array says so instead of dying silentl
 	);
 
 	bot.settings();
+	[...document.querySelectorAll("button")]
+		.find((b) => b.textContent === I18n.guild.guilds())!
+		.click();
 	// No message in the body, so refusalText gives the status.
 	await vi.waitFor(() => expect(document.body.textContent).toContain("HTTP 200"));
+	expect(shown).not.toHaveBeenCalled();
 });
 
 it("a guilds-list 200 carrying an error message says that message", async () => {
+	const shown = vi.spyOn(Dialog.prototype, "show");
 	captureRequests(API + "/users/@me/guilds/", () =>
 		Response.json({message: "rate limited"}),
 	);
@@ -138,8 +148,12 @@ it("a guilds-list 200 carrying an error message says that message", async () => 
 	);
 
 	bot.settings();
+	[...document.querySelectorAll("button")]
+		.find((b) => b.textContent === I18n.guild.guilds())!
+		.click();
 
 	await vi.waitFor(() =>
 		expect(document.body.textContent).toContain(I18n.requestFailed("rate limited")),
 	);
+	expect(shown).not.toHaveBeenCalled();
 });

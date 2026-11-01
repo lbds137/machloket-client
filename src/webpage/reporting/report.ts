@@ -266,6 +266,15 @@ class ReportNode {
 		this.key = json.key;
 		this.buttonType = json.button?.type;
 		this.buttonTarget = json.button?.target ?? undefined;
+		if (
+			!Array.isArray(json.elements) ||
+			json.elements.some((e) => typeof e !== "object" || e === null)
+		) {
+			throw new Error("report node: bad elements");
+		}
+		if (!Array.isArray(json.children) || !json.children.every(Array.isArray)) {
+			throw new Error("report node: bad children");
+		}
 		this.elements = json.elements.map((_) => new ReportElement(_, this));
 		this.reportType = json.report_type;
 		this.children = json.children;
