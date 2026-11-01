@@ -291,12 +291,27 @@ class Container extends compObj {
 		const children = this.components.map((_) => _.getHTML());
 		if (spoilerAction === "blur") {
 			div.classList.add("componentSpoiler");
+			div.setAttribute("tabindex", "0");
+			div.setAttribute("role", "button");
+			div.setAttribute("aria-label", I18n.spoiler());
 			// The CSS pointer-events rule stops taps; inert stops Tab/Enter on the
 			// hidden controls. Both lift on reveal.
 			for (const child of children) child.inert = true;
-			div.onclick = () => {
+			const reveal = () => {
 				div.classList.remove("componentSpoiler");
 				for (const child of children) child.inert = false;
+				div.removeAttribute("tabindex");
+				div.removeAttribute("role");
+				div.removeAttribute("aria-label");
+				div.onkeydown = null;
+			};
+			div.onclick = reveal;
+			div.onkeydown = (e) => {
+				if (e.target !== div) return;
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					reveal();
+				}
 			};
 		}
 		div.append(...children);
