@@ -17,8 +17,10 @@ export type ComposerParts = {
 /** Puts a refused send back where the user can resend it. `focused` is the channel open in
  * the composer right now.
  * - Another channel is open: the composer belongs to that channel and is left alone; the
- *   refused text only survives as the sent channel's draft, and only when that channel has
- *   no draft or saved files of its own by now.
+ *   refused text only survives as the sent channel's draft when the send had no attachments
+ *   that a draft can't carry and that channel has no draft or saved files of its own by now
+ *   (otherwise returns false so the refused message stays in the channel as failed, with
+ *   retry or delete).
  * - The same channel, the composer still empty: the text, files and reply target come back.
  * - The same channel, but the user has typed or attached since: the composer is left alone
  *   on purpose. Restoring would overwrite the new text, and the caller keeps the refused
@@ -33,8 +35,8 @@ export function restoreFailedSend(args: {
 }): boolean {
 	const {channel, focused, content, attachments, replyingTo, composer} = args;
 	if (focused !== channel) {
-		// Not over a draft the user wrote in that channel since the send.
-		if (!channel.textSave && !channel.files.length) {
+		// Not when the send had attachments a draft can't carry, or over a draft written since.
+		if (!attachments.length && !channel.textSave && !channel.files.length) {
 			channel.setDraft(content);
 			return true;
 		}

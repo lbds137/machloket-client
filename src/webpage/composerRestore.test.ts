@@ -36,7 +36,7 @@ describe("a refused send", () => {
 		const sent = s.channel();
 		const reply = {id: "r1"} as never;
 
-		restoreFailedSend({
+		const putBack = restoreFailedSend({
 			channel: sent,
 			focused: sent,
 			content: "hello",
@@ -45,6 +45,7 @@ describe("a refused send", () => {
 			composer: s,
 		});
 
+		expect(putBack).toBe(true);
 		expect(s.typebox.textContent).toBe("hello");
 		expect(s.typebox.markdown.txt).toBe("hello");
 		expect(s.setImages).toHaveBeenCalledWith([s.file]);
@@ -62,15 +63,16 @@ describe("a refused send", () => {
 		s.typebox.textContent = "typing in the other channel";
 		s.typebox.markdown.txt = "typing in the other channel";
 
-		restoreFailedSend({
+		const putBack = restoreFailedSend({
 			channel: sent,
 			focused: other,
 			content: "hello",
-			attachments: [s.file],
+			attachments: [],
 			replyingTo: {id: "r1"} as never,
 			composer: s,
 		});
 
+		expect(putBack).toBe(true);
 		// The composer belongs to the channel in front of the user: it is left alone.
 		expect(s.typebox.textContent).toBe("typing in the other channel");
 		expect(s.typebox.markdown.txt).toBe("typing in the other channel");
@@ -81,6 +83,27 @@ describe("a refused send", () => {
 		expect(other.replyingto).toEqual({id: "other-reply"});
 		// The refused text still survives, as the sent channel's draft.
 		expect(sent.setDraft).toHaveBeenCalledWith("hello");
+	});
+
+	it("sets no draft when another channel is open and the send had attachments", () => {
+		const s = setup();
+		const sent = s.channel();
+		const other = s.channel();
+
+		const putBack = restoreFailedSend({
+			channel: sent,
+			focused: other,
+			content: "hello",
+			attachments: [s.file],
+			replyingTo: null,
+			composer: s,
+		});
+
+		expect(putBack).toBe(false);
+		expect(sent.setDraft).not.toHaveBeenCalled();
+		expect(sent.textSave).toBe("");
+		expect(s.setImages).not.toHaveBeenCalled();
+		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
 	});
 
 	it("doesn't overwrite a draft the user wrote in the sent channel meanwhile", () => {
