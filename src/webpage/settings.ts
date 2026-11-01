@@ -2420,18 +2420,21 @@ export type MfaRetry = {
 	/** keep a minted token, or forget the cached one with null */
 	store?: (token: string | null) => void;
 };
+/** `auth` with one JSON content type. Header names ignore case, so a session's `Content-type`
+ * beside a `Content-Type` isn't replaced: fetch joins the values, and the server refuses that. */
+function mfaRequestHeaders(auth: Record<string, string>): Record<string, string> {
+	const rest = Object.entries(auth).filter(([name]) => name.toLowerCase() !== "content-type");
+	return {...Object.fromEntries(rest), "Content-Type": "application/json"};
+}
 async function handleMfa(
 	factor: "totp" | "webauthn",
 	api: string,
 	auth: Record<string, string>,
 	onRefused: (message: string) => void,
 ): Promise<string | null> {
+	const headers = mfaRequestHeaders(auth);
 	if (factor === "webauthn") {
 		const url = api + "/users/@me/mfa/webauthn";
-		const headers = {
-			...auth,
-			"Content-Type": "application/json",
-		};
 		const step1Res = await fetchRetryOnce(url, {
 			method: "POST",
 			headers,
@@ -2524,10 +2527,7 @@ async function handleMfa(
 			{
 				fetchURL: api + "/users/@me/mfa/totp",
 				method: "POST",
-				headers: {
-					...auth,
-					"Content-Type": "application/json",
-				},
+				headers,
 			},
 		);
 		form.addTitle(I18n["2faCode"]());

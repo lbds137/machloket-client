@@ -217,8 +217,6 @@ if (window.location.pathname.startsWith("/channels")) {
 			channel.submitCommand();
 			return;
 		}
-		markdown.onUpdate("", false);
-
 		// Per send: a refused earlier send must restore its own reply target, not a later one's.
 		const replyingTo = thisUser.channelfocus ? thisUser.channelfocus.replyingto : null;
 		if (replyingTo?.div) {
@@ -235,6 +233,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 		typebox.innerHTML = "";
 		typebox.markdown.txt = "";
+		markdown.onUpdate("", false);
 		channel.setDraft("");
 		try {
 			await new Promise<void>((mres, rej) =>

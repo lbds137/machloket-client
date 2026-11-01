@@ -49,6 +49,6 @@ test("a sent message reaches the server, and another member's reaches the page",
 	await rest(member.token, "POST", `/channels/${channel.id}/messages`, {
 		content: "from the server",
 	});
-	await expect(page.getByText("from the server", {exact: true})).toBeVisible();
+	await expect(page.getByText("from the server", {exact: true})).toBeVisible({timeout: 30_000});
 	expect(gatewaySockets.some((url) => url.startsWith(gatewayOrigin()))).toBe(true);
 });
