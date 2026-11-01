@@ -184,6 +184,82 @@ it("a refused welcome screen save puts its description back, so a later save won
 	expect(screen.description).toBe("edited again");
 });
 
+/** Opens guild settings onto the onboarding section with the welcome-screen endpoint stubbed. */
+function openOnboard(screen: unknown) {
+	const bodies = captureRequests(API + "/guilds/g1/welcome-screen", () => Response.json(screen));
+	captureRequests(API + "/guilds/g1/invites", () => Response.json([]));
+	captureRequests(API + "/guilds/g1/widget", () =>
+		Response.json({enabled: false, channel_id: null}),
+	);
+	captureRequests(API + "/guilds/g1/templates", () => Response.json([]));
+	const guild = makeGuild({
+		channels: [],
+		properties: {name: "G", features: []},
+		member: {hasPermission: (perm: string) => perm === "MANAGE_GUILD"},
+	});
+	guild.generateSettings();
+	const rail = [...document.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.onboarding.name(),
+	);
+	expect(rail).not.toBeUndefined();
+	rail!.click();
+	return {bodies, guild};
+}
+
+it("re-enabling a welcome screen prefills its description and omits welcome_channels from the PATCH", async () => {
+	await I18n.done;
+	const {bodies} = openOnboard({
+		enabled: false,
+		description: "hi",
+		welcome_channels: [{channel_id: "c1", description: "d"}],
+	});
+	const enable = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll("button")].find(
+			(el) => el.textContent === I18n.onboarding.enable(),
+		);
+		expect(b).not.toBeUndefined();
+		return b!;
+	});
+
+	enable.click();
+	const dialog = document.querySelector(".dialogModal")!;
+	const input = dialog.querySelector("input")!;
+	expect(input.value).toBe("hi");
+
+	[...dialog.querySelectorAll("button")].find((b) => b.textContent === I18n.submit())!.click();
+	const patch = await vi.waitFor(() => {
+		const p = bodies.find((b) => b !== undefined);
+		expect(p).toBeDefined();
+		return p as Record<string, unknown>;
+	});
+	expect(patch).toEqual({enabled: true, description: "hi"});
+	expect(patch).not.toHaveProperty("welcome_channels");
+});
+
+it("a welcome screen with no description still enables (the control)", async () => {
+	await I18n.done;
+	const {bodies} = openOnboard({enabled: false, welcome_channels: []});
+	const enable = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll("button")].find(
+			(el) => el.textContent === I18n.onboarding.enable(),
+		);
+		expect(b).not.toBeUndefined();
+		return b!;
+	});
+
+	enable.click();
+	const dialog = document.querySelector(".dialogModal")!;
+	expect(dialog.querySelector("input")!.value).toBe("");
+
+	[...dialog.querySelectorAll("button")].find((b) => b.textContent === I18n.submit())!.click();
+	const patch = await vi.waitFor(() => {
+		const p = bodies.find((b) => b !== undefined);
+		expect(p).toBeDefined();
+		return p as Record<string, unknown>;
+	});
+	expect(patch).toMatchObject({enabled: true, description: ""});
+});
+
 /** A guild with top-level text channels `ids`, positioned in that order. */
 function guildWithChannels(...ids: string[]) {
 	const guild = makeGuild();
