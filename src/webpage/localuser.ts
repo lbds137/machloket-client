@@ -6020,6 +6020,7 @@ class Localuser {
 				del.onkeydown = (e) => {
 					if (e.key === "Enter" || e.key === " ") {
 						e.preventDefault();
+						if (answers.length <= MIN_ANSWERS) return;
 						removeAnswer();
 						const index = Math.min(si, answers.length - 1);
 						const sel = answers.length <= MIN_ANSWERS ? "input" : ".svg-delete";

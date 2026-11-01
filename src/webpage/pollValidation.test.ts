@@ -265,4 +265,17 @@ describe("makePoll modal wiring", () => {
 		expect(ansInputs()).toHaveLength(MIN_ANSWERS);
 		expect(document.activeElement).toBe(ansInputs()[1]);
 	});
+
+	it("a keyboard delete already at MIN_ANSWERS removes nothing and leaves focus alone", () => {
+		Localuser.prototype.makePoll.call({channelfocus: {sendMessage: vi.fn()}});
+		const modal = document.querySelector<HTMLElement>(".dialogModal")!;
+		const del = modal.querySelectorAll<HTMLElement>(".pollAnsM .svg-delete")[1];
+		expect(modal.querySelectorAll(".pollAnsM input")).toHaveLength(MIN_ANSWERS);
+
+		del.focus();
+		del.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+
+		expect(modal.querySelectorAll(".pollAnsM input")).toHaveLength(MIN_ANSWERS);
+		expect(document.activeElement).toBe(del);
+	});
 });
