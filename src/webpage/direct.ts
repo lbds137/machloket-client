@@ -43,7 +43,6 @@ class Direct extends Guild {
 		this.channels.push(thischannel);
 		this.localuser.channelids.set(thischannel.id, thischannel);
 		this.sortchannels();
-		this.printServers();
 		return thischannel;
 	}
 	delChannel(json: channeljson) {
