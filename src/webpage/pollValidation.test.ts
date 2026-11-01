@@ -186,4 +186,83 @@ describe("makePoll modal wiring", () => {
 			},
 		});
 	});
+
+	it("Enter on the second answer's delete focuses the delete span now at that index", () => {
+		Localuser.prototype.makePoll.call({channelfocus: {sendMessage: vi.fn()}});
+		const modal = document.querySelector<HTMLElement>(".dialogModal")!;
+		const delButtons = () => [...modal.querySelectorAll<HTMLElement>(".pollAnsM .svg-delete")];
+		const newAnswerBtn = [...modal.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === I18n.poll.newAnswer(),
+		)!;
+
+		newAnswerBtn.click();
+		newAnswerBtn.click();
+		expect(delButtons()).toHaveLength(4);
+
+		delButtons()[1].focus();
+		delButtons()[1].dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+
+		expect(delButtons()).toHaveLength(3);
+		expect(document.activeElement).toBe(delButtons()[1]);
+	});
+
+	it("after a keyboard delete, Escape from activeElement closes the dialog", async () => {
+		Localuser.prototype.makePoll.call({channelfocus: {sendMessage: vi.fn()}});
+		const modal = document.querySelector<HTMLElement>(".dialogModal")!;
+		const background = modal.closest<HTMLElement>(".background")!;
+		const delButtons = () => [...modal.querySelectorAll<HTMLElement>(".pollAnsM .svg-delete")];
+		const newAnswerBtn = [...modal.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === I18n.poll.newAnswer(),
+		)!;
+
+		newAnswerBtn.click();
+		newAnswerBtn.click();
+		delButtons()[1].focus();
+		delButtons()[1].dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+
+		document.activeElement!.dispatchEvent(
+			new KeyboardEvent("keydown", {key: "Escape", bubbles: true}),
+		);
+
+		expect(background.classList.contains("removeElm")).toBe(true);
+		await vi.waitFor(() => expect(document.querySelector(".dialogModal")).toBeNull());
+	});
+
+	it("deleting the last answer from the keyboard focuses the new last delete span", () => {
+		Localuser.prototype.makePoll.call({channelfocus: {sendMessage: vi.fn()}});
+		const modal = document.querySelector<HTMLElement>(".dialogModal")!;
+		const delButtons = () => [...modal.querySelectorAll<HTMLElement>(".pollAnsM .svg-delete")];
+		const newAnswerBtn = [...modal.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === I18n.poll.newAnswer(),
+		)!;
+
+		newAnswerBtn.click();
+		newAnswerBtn.click();
+		expect(delButtons()).toHaveLength(4);
+
+		delButtons()[3].focus();
+		delButtons()[3].dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+
+		expect(delButtons()).toHaveLength(3);
+		expect(document.activeElement).toBe(delButtons()[2]);
+	});
+
+	it("when a keyboard delete reaches MIN_ANSWERS, focus moves to that index's input", () => {
+		Localuser.prototype.makePoll.call({channelfocus: {sendMessage: vi.fn()}});
+		const modal = document.querySelector<HTMLElement>(".dialogModal")!;
+		const ansInputs = () => [...modal.querySelectorAll<HTMLInputElement>(".pollAnsM input")];
+		const delButtons = () => [...modal.querySelectorAll<HTMLElement>(".pollAnsM .svg-delete")];
+		const newAnswerBtn = [...modal.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === I18n.poll.newAnswer(),
+		)!;
+
+		newAnswerBtn.click();
+		expect(ansInputs()).toHaveLength(3);
+
+		delButtons()[1].focus();
+		delButtons()[1].dispatchEvent(new KeyboardEvent("keydown", {key: " ", bubbles: true}));
+
+		expect(ansInputs()).toHaveLength(MIN_ANSWERS);
+		expect(document.activeElement).toBe(ansInputs()[1]);
+	});
 });

@@ -6021,6 +6021,10 @@ class Localuser {
 					if (e.key === "Enter" || e.key === " ") {
 						e.preventDefault();
 						removeAnswer();
+						const index = Math.min(si, answers.length - 1);
+						const sel = answers.length <= MIN_ANSWERS ? "input" : ".svg-delete";
+						const focusEl = ansField.children[index]?.querySelector<HTMLElement>(sel);
+						focusEl?.focus();
 					}
 				};
 				ansField.append(div);
