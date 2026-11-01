@@ -4172,6 +4172,7 @@ class Channel extends SnowFlake {
 		const dont = document.createElement("button");
 		dont.textContent = I18n.message.delete();
 		dont.onclick = (_) => {
+			m.deleteEvent();
 			this.fakeMessages.delete(m);
 			html.remove();
 			for (const {url} of m.attachments) {
@@ -4198,9 +4199,18 @@ class Channel extends SnowFlake {
 				html.append(loadingP);
 				loadingP.textContent = File.filesizehuman(sofar) + " / " + File.filesizehuman(total);
 			},
-			failed: (retry: () => void) => {
+			failed: async (retry: () => void) => {
+				// To the bottom: out of the scroller first (its row removal finishes in a later
+				// task), then deleteEvent, which forgets the message, then known again and re-linked
+				// so the scroller can draw this bubble here and when the channel is next opened.
+				await this.infinite?.deleteId(m.id);
 				m.deleteEvent();
+				this.messages.set(m.id, m);
 				makeRecent();
+				if (this === this.localuser.channelfocus && this.infinitefocus) {
+					await this.infinite.addedBottom();
+					this.focus(m.id, false);
+				}
 				loadingP.remove();
 				html.append(buttons);
 				retryB.onclick = () => {
