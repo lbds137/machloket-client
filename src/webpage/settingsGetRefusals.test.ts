@@ -222,6 +222,16 @@ it("a connections 200 of the wrong shape says the server's reason", async () => 
 	);
 });
 
+it("a connections list with a null entry still lists the instance's types", async () => {
+	stubUserSettings();
+	captureRequests(API + "/users/@me/connections", () => Response.json([null]));
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector(".connection-container")?.children.length).toBe(1),
+	);
+});
+
 it("a later good connections answer clears the note", async () => {
 	stubUserSettings();
 	captureRequests(API + "/users/@me/connections", refused);
@@ -245,6 +255,27 @@ it("a later good connections answer clears the note", async () => {
 	});
 	await new Promise((r) => setTimeout(r, 50));
 	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
+});
+
+it("an older connections read arriving late doesn't draw its rows twice", async () => {
+	stubUserSettings();
+	let answerFirst!: (res: Response) => void;
+	let reads = 0;
+	captureRequests(API + "/users/@me/connections", () => {
+		++reads;
+		return reads === 1
+			? new Promise<Response>((r) => (answerFirst = r))
+			: Response.json([]);
+	});
+	const u = await openConnections();
+	await vi.waitFor(() => expect(reads).toBe(1));
+	u.conectionChange();
+	await vi.waitFor(() =>
+		expect(document.querySelector(".connection-container")?.children.length).toBe(1),
+	);
+	answerFirst(Response.json([]));
+	await new Promise((r) => setTimeout(r, 50));
+	expect(document.querySelector(".connection-container")?.children.length).toBe(1);
 });
 
 it("a refused connection authorize click says why and opens no window", async () => {
@@ -363,6 +394,21 @@ it("an instance-policy 200 that isn't JSON says why", async () => {
 	);
 });
 
+it("an instance-policy 200 that's a bare string says why", async () => {
+	stubUserSettings();
+	captureRequests(API + "/policies/instance/", () => Response.json("nope"));
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.instanceInfo.name())!
+		.click();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
+});
+
 it("an instance-connection-types GET that never arrived says why and still mounts the pane", async () => {
 	const shown = vi.spyOn(Dialog.prototype, "show");
 	stubUserSettings();
@@ -373,6 +419,26 @@ it("an instance-connection-types GET that never arrived says why and still mount
 	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
 	expect(document.querySelector(".connection-container")).not.toBeNull();
 	expect(shown).not.toHaveBeenCalled();
+});
+
+it("an instance-connection-types 200 that isn't JSON says why", async () => {
+	stubUserSettings();
+	captureRequests(API + "/connections", () => new Response("<html>", {status: 200}));
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
+});
+
+it("an instance-connection-types 200 that's a list says why", async () => {
+	stubUserSettings();
+	captureRequests(API + "/connections", () => Response.json([]));
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
 });
 
 it("a registration-token answer that isn't JSON says why and leaves the output empty", async () => {

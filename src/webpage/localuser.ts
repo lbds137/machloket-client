@@ -3181,11 +3181,12 @@ class Localuser {
 			onRefused?.(res);
 			return {};
 		}
-		return (
-			(await res.json().catch(() => null)) as
-				| {[key: string]: {enabled: boolean; icon_url?: string}}
-				| null
-		) ?? {};
+		const json = await res.clone().json().catch(() => null);
+		if (typeof json !== "object" || json === null || Array.isArray(json)) {
+			onRefused?.(res);
+			return {};
+		}
+		return json as {[key: string]: {enabled: boolean; icon_url?: string}};
 	}
 	async showusersettings() {
 		const prefs = await getPreferences();
@@ -4009,7 +4010,9 @@ class Localuser {
 					this.conectionChange = () => {};
 				}
 			};
+			let remakeSeq = 0;
 			const remake = () => {
+				const seq = ++remakeSeq;
 				connectionContainer.innerHTML = "";
 				actConDivCont.innerHTML = "";
 				const cons = fetch(this.info.api + "/users/@me/connections", {
@@ -4019,12 +4022,16 @@ class Localuser {
 				const failures: (Response | undefined)[] = [];
 				this.getConnections((res) => failures.push(res)).then(async (json) => {
 					const consRes = await cons;
+					if (seq !== remakeSeq) return;
 					// A refusal says why once inside the panel (the account leg first) and the
 					// instance's own connection types still list when they arrived.
 					const parsed = consRes?.ok
 						? ((await consRes.clone().json().catch(() => null)) as ConnectionJson[] | null)
 						: null;
-					const actCons = Array.isArray(parsed) ? parsed : [];
+					if (seq !== remakeSeq) return;
+					const actCons = Array.isArray(parsed)
+						? parsed.filter((c) => typeof c === "object" && c !== null)
+						: [];
 					if (!Array.isArray(parsed)) failures.unshift(consRes);
 					const actConMap = new Map<string, ConnectionJson>(
 						actCons.map((_) => [_.type, _] as const),
@@ -4158,8 +4165,10 @@ class Localuser {
 							actConDivCont.append(actConDiv);
 						});
 					if (failures.length > 0) {
+						const text = await refusalText(failures[0]);
+						if (seq !== remakeSeq) return;
 						const note = document.createElement("p");
-						note.textContent = await refusalText(failures[0]);
+						note.textContent = text;
 						actConDivCont.appendChild(note);
 					}
 				});
@@ -4924,7 +4933,7 @@ class Localuser {
 						autoCreateBotUsers: false;
 						publicUrl: string | null;
 					} | null;
-					if (!json) {
+					if (!json || typeof json !== "object") {
 						instanceInfo.addText(await refusalText(_));
 						return null;
 					}

@@ -247,6 +247,46 @@ it("a report-menu 200 whose node child entry isn't a tuple says why and returns 
 	expect(menu).toBeUndefined();
 });
 
+it("a report-menu 200 whose node child entry is an empty array says why and returns undefined", async () => {
+	captureRequests(API + "/reporting/menu/guild", () =>
+		Response.json({
+			version: "1.0",
+			name: "guild",
+			variant: "1",
+			postback_url: POSTBACK,
+			root_node_id: 1,
+			success_node_id: 1,
+			fail_node_id: 1,
+			nodes: {1: node(1, "x", {children: [[]]})},
+		}),
+	);
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	expect(menu).toBeUndefined();
+});
+
+it("a report-menu 200 whose node child entry is missing its target id says why and returns undefined", async () => {
+	captureRequests(API + "/reporting/menu/guild", () =>
+		Response.json({
+			version: "1.0",
+			name: "guild",
+			variant: "1",
+			postback_url: POSTBACK,
+			root_node_id: 1,
+			success_node_id: 1,
+			fail_node_id: 1,
+			nodes: {1: node(1, "x", {children: [["x"]]})},
+		}),
+	);
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	expect(menu).toBeUndefined();
+});
+
 it("a report-menu 200 whose node element is null says why and returns undefined", async () => {
 	captureRequests(API + "/reporting/menu/guild", () =>
 		Response.json({
