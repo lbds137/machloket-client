@@ -674,6 +674,7 @@ class Guild extends SnowFlake {
 		}).catch(() => undefined);
 		if (!res?.ok) return showRefusal(res);
 		this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
+		if (typeof this.welcomeScreen !== "object") this.welcomeScreen = undefined;
 		if (this.welcomeScreen && !Array.isArray(this.welcomeScreen.welcome_channels)) {
 			this.welcomeScreen.welcome_channels = [];
 		}
@@ -1306,6 +1307,7 @@ class Guild extends SnowFlake {
 					return;
 				}
 				this.welcomeScreen = (await res.json().catch(() => null)) ?? undefined;
+				if (typeof this.welcomeScreen !== "object") this.welcomeScreen = undefined;
 				if (this.welcomeScreen && !Array.isArray(this.welcomeScreen.welcome_channels)) {
 					this.welcomeScreen.welcome_channels = [];
 				}
