@@ -2233,8 +2233,7 @@ class User extends SnowFlake {
 					us.hasPermission("MANAGE_ROLES") && x !== -1 && !member.id.includes("#clone");
 				const roles = document.createElement("div");
 				roles.classList.add("flexltr", "rolesbox");
-				for (const role of member.roles) {
-					if (role.id === member.guild.id) continue;
+				const roleChip = (role: Role) => {
 					const roleDiv = document.createElement("div");
 					roleDiv.classList.add("rolediv");
 					const color = document.createElement("div");
@@ -2250,13 +2249,17 @@ class User extends SnowFlake {
 						remove.classList.add("removerole");
 						remove.title = I18n.user.removeRole();
 						remove.textContent = "×";
-						remove.onclick = (e) => {
+						remove.onclick = async (e) => {
 							e.stopPropagation();
-							member.removeRole(role);
+							if (await member.removeRole(role)) roleDiv.remove();
 						};
 						roleDiv.append(remove);
 					}
-					roles.append(roleDiv);
+					return roleDiv;
+				};
+				for (const role of member.roles) {
+					if (role.id === member.guild.id) continue;
+					roles.append(roleChip(role));
 				}
 				if (canManageRoles) {
 					const add = document.createElement("button");
@@ -2276,7 +2279,7 @@ class User extends SnowFlake {
 						const search = new Search(candidates);
 						const result = await search.find(e.clientX, e.clientY);
 						if (!result) return;
-						member.addRole(result);
+						if (await member.addRole(result)) add.before(roleChip(result));
 					};
 					roles.append(add);
 				}
