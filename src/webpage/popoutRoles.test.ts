@@ -12,7 +12,7 @@ await I18n.done;
 
 afterEach(() => {
 	vi.restoreAllMocks();
-	document.querySelectorAll(".profile").forEach((e) => e.remove());
+	document.querySelectorAll(".profile, .background").forEach((e) => e.remove());
 });
 
 function role(id: string, name: string, manageable: boolean) {
@@ -80,6 +80,8 @@ async function openPopout(
 			roleids: new Map(roles.map((r) => [(r as {id: string}).id, r])),
 			properties: {name: "Wonderland"},
 			localuser,
+			info: localuser.info,
+			headers: localuser.headers,
 			member: stub,
 		},
 	});
@@ -150,4 +152,70 @@ it("a member bio renders its role mention against the popout's guild", async () 
 		bio: "sword <@&222>",
 	});
 	await vi.waitFor(() => expect(popout.textContent).toContain("@Knights"));
+});
+
+it("removing a role, the DELETE answering 204: its chip leaves the box", async () => {
+	const knights = role("r1", "Knights", true);
+	const fetch = vi
+		.spyOn(globalThis, "fetch")
+		.mockResolvedValue(new Response(null, {status: 204}));
+	const popout = await openPopout([knights], true);
+	await vi.waitFor(() => expect(roleChips(popout)).toHaveLength(1));
+	popout.querySelector<HTMLButtonElement>(".removerole")!.click();
+	await vi.waitFor(() =>
+		expect(fetch).toHaveBeenCalledWith(
+			"http://popout.test/api/v9/guilds/g1/members/1553128655016763450/roles/r1",
+			expect.objectContaining({method: "DELETE"}),
+		),
+	);
+	await vi.waitFor(() => expect(roleChips(popout)).toHaveLength(0));
+});
+
+it("adding a role, the PUT answering 204: its chip appears before the +", async () => {
+	const pagans = role("r2", "Pagans", true);
+	const fetch = vi
+		.spyOn(globalThis, "fetch")
+		.mockResolvedValue(new Response(null, {status: 204}));
+	const popout = await openPopout([], true);
+	const add = await vi.waitFor(() => {
+		const btn = popout.querySelector<HTMLButtonElement>(".addrole");
+		expect(btn).not.toBeNull();
+		return btn!;
+	});
+	vi.spyOn(Search.prototype, "find").mockResolvedValue(pagans);
+	add.click();
+	await vi.waitFor(() =>
+		expect(fetch).toHaveBeenCalledWith(
+			"http://popout.test/api/v9/guilds/g1/members/1553128655016763450/roles/r2",
+			expect.objectContaining({method: "PUT"}),
+		),
+	);
+	await vi.waitFor(() => expect(roleChips(popout)).toHaveLength(1));
+	expect(add.previousElementSibling).toBe(roleChips(popout)[0]);
+	expect(roleChips(popout)[0]!.textContent).toContain("Pagans");
+});
+
+it("a refused DELETE keeps the chip; a refused PUT adds none", async () => {
+	const knights = role("r1", "Knights", true);
+	const pagans = role("r2", "Pagans", true);
+	const fetch = vi
+		.spyOn(globalThis, "fetch")
+		.mockImplementation(async () => new Response(null, {status: 403}));
+	const popout = await openPopout([knights], true);
+	await vi.waitFor(() => expect(roleChips(popout)).toHaveLength(1));
+
+	popout.querySelector<HTMLButtonElement>(".removerole")!.click();
+	await vi.waitFor(() =>
+		expect(document.querySelector(".dialogModal")).not.toBeNull(),
+	);
+	expect(roleChips(popout)).toHaveLength(1);
+	document.querySelectorAll(".background").forEach((e) => e.remove());
+
+	vi.spyOn(Search.prototype, "find").mockResolvedValue(pagans);
+	popout.querySelector<HTMLButtonElement>(".addrole")!.click();
+	await vi.waitFor(() =>
+		expect(document.querySelector(".dialogModal")).not.toBeNull(),
+	);
+	expect(fetch).toHaveBeenCalledTimes(2);
+	expect(roleChips(popout)).toHaveLength(1);
 });
