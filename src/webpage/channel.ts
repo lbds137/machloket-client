@@ -1556,6 +1556,7 @@ class Channel extends SnowFlake {
 			if (that.type === 4 && this.parent) {
 				thisy = this.parent;
 			}
+			if (that === thisy) return;
 			const useContainer = Boolean(container) && that.type !== 4 && !before;
 			const needAnchors =
 				!useContainer && Channel.dragged[1] !== undefined && !(this === thisy && this.type !== 4);
