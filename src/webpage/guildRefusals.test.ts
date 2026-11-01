@@ -1,4 +1,4 @@
-import {afterEach, expect, it, vi} from "vitest";
+import {afterEach, expect, it, onTestFinished, vi} from "vitest";
 import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -270,6 +270,22 @@ it("an enabled welcome screen with no welcome_channels renders its Disable butto
 		expect(b).not.toBeUndefined();
 	});
 	expect(guild.welcomeScreen?.welcome_channels).toEqual([]);
+});
+
+it("a welcome screen answer that isn't an object still offers Enable, with no unhandled rejection", async () => {
+	await I18n.done;
+	const unhandled = vi.fn();
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	openOnboard(5);
+
+	await vi.waitFor(() => {
+		const b = [...document.querySelectorAll("button")].find(
+			(el) => el.textContent === I18n.onboarding.enable(),
+		);
+		expect(b).not.toBeUndefined();
+	});
+	expect(unhandled).not.toHaveBeenCalled();
 });
 
 /** A guild with top-level text channels `ids`, positioned in that order. */
