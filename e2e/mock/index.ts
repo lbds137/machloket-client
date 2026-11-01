@@ -1517,7 +1517,7 @@ export async function mountMockInstance(
 			// 10b. Single member lookup (Member.resolveMember -> localuser.resolvemember)
 			const memberMatch = pathname.match(/^\/api\/v9\/guilds\/[^/]+\/members\/([^/]+)$/);
 			if (method === "GET" && memberMatch) {
-				return fulfillJson(memberById.get(memberMatch[1]) ?? MOCK_MEMBER);
+				return fulfillJson(memberById.get(memberMatch[1]) ?? memberById.get(MOCK_USER_ID)!);
 			}
 
 			// 10c. A guild mute / unmute (Guild.sendMuteConfig); a spec pins the body from

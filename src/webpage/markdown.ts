@@ -1104,13 +1104,12 @@ class MarkDown {
 	giveBox(box: HTMLDivElement, onUpdate: (upto: string, pre: boolean) => unknown = () => {}) {
 		this.box = new WeakRef(box);
 		this.onUpdate = onUpdate;
-		let prevcontent = "";
 		let deadKeyPending = false;
 		const gatherBoxContents = (isBackSpace: boolean) => {
 			let content = MarkDown.gatherBoxText(box);
 			if (content === "\n") content = "";
-			if (content !== prevcontent) {
-				prevcontent = content;
+			// Against the text itself: a send or a channel switch changes it without going through here.
+			if (content !== this.txt) {
 				this.txt = content;
 				this.boxupdate(undefined, undefined, undefined, isBackSpace);
 				MarkDown.gatherBoxText(box);

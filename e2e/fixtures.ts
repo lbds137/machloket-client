@@ -1,5 +1,4 @@
 import {readFileSync} from "node:fs";
-import {join} from "node:path";
 import {test as base, expect, type Locator, type Page} from "@playwright/test";
 import type {ModalCreateEvent} from "../src/webpage/interactions/modal";
 import {
@@ -21,7 +20,7 @@ import {
 
 /** The app's English strings (translations/en.json), for assertions on rendered labels. Read
  * from disk: Playwright's ESM loader refuses a bare JSON import. */
-export const EN = JSON.parse(readFileSync(join(process.cwd(), "translations", "en.json"), "utf8")) as Record<
+export const EN = JSON.parse(readFileSync(new URL("../translations/en.json", import.meta.url), "utf8")) as Record<
 	string,
 	Record<string, string>
 >;

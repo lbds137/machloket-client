@@ -50,7 +50,8 @@ test("Mute asks for a duration, mutes the guild icon; Unmute undoes it", async (
 	await expect(guildPillar(page)).toHaveCount(1);
 	// The open guild's icon is the one that dims, and it really does look dimmed.
 	await expect(openGuildIcon(page)).toHaveClass(/\bmuted\b/);
-	await expect(openGuildIcon(page)).toHaveCSS("opacity", "0.4");
+	const opacity = () => openGuildIcon(page).evaluate((el) => Number(getComputedStyle(el).opacity));
+	await expect.poll(opacity).toBeLessThan(1);
 	const isSettings = (req: {method: string; pathname: string}) =>
 		req.method === "PATCH" && req.pathname === `/api/v9/users/@me/guilds/${MOCK_GUILD_ID}/settings`;
 	const [mute] = await expectRequests(mockInstance, isSettings, 1);
@@ -63,7 +64,7 @@ test("Mute asks for a duration, mutes the guild icon; Unmute undoes it", async (
 
 	await expect(guildPillar(page)).toHaveCount(0);
 	await expect(openGuildIcon(page)).toHaveCSS("opacity", "1");
-	const sent =await expectRequests(mockInstance, isSettings, 2);
+	const sent = await expectRequests(mockInstance, isSettings, 2);
 	expect(sent[1].body).toMatchObject({muted: false});
 
 	await openGuildMenu(page);

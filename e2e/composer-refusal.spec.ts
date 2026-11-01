@@ -10,6 +10,37 @@ test.beforeEach(({mockInstance}) => {
 	void mockInstance;
 });
 
+test("a sent message empties the composer and takes the send button with it", async ({page}) => {
+	await loginAndOpenChannel(page);
+	const composer = page.locator(".outerTypeBox");
+	await expect(composer).toHaveClass(/noConent/);
+
+	await page.locator("#typebox").click();
+	await page.keyboard.type("a message that goes out");
+	await expect(composer).not.toHaveClass(/noConent/);
+	await page.locator("#mobileSend").tap();
+
+	await expect(page.locator("#typebox")).toHaveText("");
+	await expect(composer).toHaveClass(/noConent/);
+});
+
+test("the same text typed again right after a tap-send still shows the send button", async ({page}) => {
+	await loginAndOpenChannel(page);
+	const composer = page.locator(".outerTypeBox");
+	const typebox = page.locator("#typebox");
+
+	await typebox.click();
+	await page.keyboard.type("k");
+	await expect(composer).not.toHaveClass(/noConent/);
+	await page.locator("#mobileSend").tap();
+	await expect(composer).toHaveClass(/noConent/);
+
+	await typebox.click();
+	await page.keyboard.type("k");
+	await expect(typebox).toHaveText("k");
+	await expect(composer).not.toHaveClass(/noConent/);
+});
+
 test("a too-long message's refusal is spelled out in a notice above the composer", async ({page}) => {
 	await loginAndOpenChannel(page);
 	await page.route("**/api/v9/channels/*/messages", async (route) => {

@@ -3691,10 +3691,10 @@ class Localuser {
 				addToGrid(I18n.webauth.manage(), () => {
 					const keyMenu = security.addSubOptions(I18n.webauth.manage());
 					const addKey = (key: {name: string; id: string}) => {
-						keyMenu.addButtonInput("", key.name, () => {
+						const row = keyMenu.addButtonInput("", key.name, () => {
 							const opt = keyMenu.addSubOptions(key.name);
 							let deleting = false;
-							const button = opt.addButtonInput("", I18n.delete(), async () => {
+							opt.addButtonInput("", I18n.delete(), async () => {
 								// One request and one prompt per action, however often it's tapped.
 								if (deleting) return;
 								deleting = true;
@@ -3712,7 +3712,7 @@ class Localuser {
 								deleting = false;
 								if (!res?.ok) return showRefusal(res);
 								keyMenu.returnFromSub();
-								keyMenu.deleteElm(button);
+								keyMenu.deleteElm(row);
 							});
 						});
 					};
@@ -5187,16 +5187,19 @@ class Localuser {
 		// The send button shows for text or a pending attachment: a phone has no Enter to send
 		// an attachment alone.
 		const pending = document.getElementById("pasteimage");
-		let hasText = false;
+		// The box's own text: onUpdate's `str` stops at the caret, and with no caret in the box it's
+		// left over from another box.
 		const updateSend = () => {
-			const empty = !hasText && !pending?.childElementCount;
-			typebox.parentElement!.classList.toggle("noConent", empty);
+			const text = typeMd.rawString;
+			const hasText = !!text && text !== "\n";
+			typebox.parentElement!.classList.toggle("noConent", !hasText && !pending?.childElementCount);
 		};
 		typeMd.onUpdate = (str, pre) => {
 			this.search(document.getElementById("searchOptions") as HTMLDivElement, typeMd, str, pre);
-			hasText = !!str && str !== "\n";
 			updateSend();
 		};
+		// The composer is shared across accounts: what changed while no session watched it counts.
+		updateSend();
 		// mdBox runs on every READY (reconnects too): replace the watcher rather than stack them.
 		this.pendingWatcher?.disconnect();
 		if (pending) {

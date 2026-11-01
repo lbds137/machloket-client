@@ -519,6 +519,66 @@ it("credential DELETE through the settings UI retries with X-Discord-MFA-Authori
 			(b) => b.textContent === I18n.delete(),
 		),
 	).toBeUndefined();
+	// The key's own row leaves the list, not just its Delete button.
+	expect(
+		[...document.querySelectorAll<HTMLButtonElement>("button")].find(
+			(b) => b.textContent === "YubiKey",
+		),
+	).toBeUndefined();
+});
+
+// Localuser.headers spells it `Content-type`. A second spelling doesn't replace it: fetch joins
+// them into one value the server's body parser refuses with a 415.
+const SESSION_HEADERS = {
+	Authorization: "t",
+	"Content-type": "application/json; charset=UTF-8",
+};
+
+it("the code prompt's request carries one JSON content type", async () => {
+	const {promptForms} = capturePrompts();
+	const {headers} = captureWithHeaders(API + "/users/@me/mfa/totp", () =>
+		Response.json({token: "mfa-tok"}),
+	);
+	spyFetchHeaders();
+
+	const done = fetchWithMfa(
+		{factor: "totp"},
+		API,
+		SESSION_HEADERS,
+		async (mfaHeaders) =>
+			mfaHeaders["X-Discord-MFA-Authorization"]
+				? new Response(null, {status: 204})
+				: Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+		() => {},
+	);
+	const prompt = await vi.waitFor(() => {
+		expect(promptForms).toHaveLength(1);
+		return promptForms[0]!;
+	});
+	prompt.names.get("code")!.value = "123456";
+	await prompt.submit();
+	await done;
+
+	expect(headers.map((h) => h.get("content-type"))).toEqual(["application/json"]);
+	expect(headers[0]!.get("authorization")).toBe("t");
+});
+
+it("the security key prompt's request carries one JSON content type", async () => {
+	const {headers} = captureWithHeaders(API + "/users/@me/mfa/webauthn", () =>
+		Response.json({message: "stop after the first step"}, {status: 400}),
+	);
+	spyFetchHeaders();
+
+	await fetchWithMfa(
+		{factor: "webauthn"},
+		API,
+		SESSION_HEADERS,
+		async () => Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+		() => {},
+	);
+
+	expect(headers.map((h) => h.get("content-type"))).toEqual(["application/json"]);
+	expect(headers[0]!.get("authorization")).toBe("t");
 });
 
 it("a double click on a key's Delete sends one request and shows one prompt", async () => {

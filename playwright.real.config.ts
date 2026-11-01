@@ -2,7 +2,8 @@ import {defineConfig, devices} from "@playwright/test";
 
 // The real-server e2e tier: the built client against a throwaway Spacebar instance, for
 // behaviour the server's own rules decide. Opt-in, and never part of CI or the commit gate:
-// it needs podman and a built checkout of the server, named by MACHLOKET_SERVER_DIR.
+// it needs podman and a built checkout of the server; MACHLOKET_SERVER_HARNESS names that
+// checkout's instance harness file.
 // Each run boots one instance (e2e-real/globalSetup.ts); specs register their own accounts.
 const PORT = 4175;
 
