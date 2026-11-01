@@ -12,8 +12,8 @@ export default defineConfig({
 	retries: 0,
 	// The tier gates merges; a stray test.only must not quietly shrink the CI run.
 	forbidOnly: !!process.env.CI,
-	// The dot reporter hides annotations; list prints the pinShot skips and the HTML
-	// report keeps them readable in the uploaded CI artifact.
+	// list prints each test's console output, which is how pinShot's skips show on a green run;
+	// the HTML report also keeps them as annotations in the artifact uploaded on failure.
 	reporter: process.env.CI ? [["list"], ["html", {open: "never"}]] : "list",
 	// 14 GB Deck: one Chromium at a time. Two workers ran the phone suite ~2× faster but
 	// reproduced a 30 s menu-open stall under swap pressure (icons:101, three 10-26

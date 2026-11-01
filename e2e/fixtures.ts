@@ -70,6 +70,8 @@ export async function expectRequests(
 export async function pinShot(locator: Locator, name: string): Promise<void> {
 	if (process.env.CI) {
 		base.info().annotations.push({type: "pinShot", description: `skipped under CI: ${name}`});
+		// The list reporter doesn't print annotations, and the HTML report uploads only on failure.
+		console.log(`pinShot skipped under CI: ${name}`);
 		return;
 	}
 	await expect(locator).toHaveScreenshot(name);
