@@ -2005,6 +2005,7 @@ class Options implements OptionsElement<void> {
 			method = "POST",
 			traditionalSubmit = false,
 			vsmaller = false,
+			mfaRetry = undefined as MfaRetry | undefined,
 		} = {},
 	) {
 		const options = new Form(name, this, onSubmit, {
@@ -2015,6 +2016,7 @@ class Options implements OptionsElement<void> {
 			method,
 			traditionalSubmit,
 			vsmaller,
+			mfaRetry,
 		});
 		this.options.push(options);
 		this.generate(options);
@@ -2538,6 +2540,38 @@ async function handleMfa(
 		better.show().parentElement!.style.zIndex = "200";
 	});
 }
+async function promptMfa(
+	retry: MfaRetry,
+	api: string,
+	headers: Record<string, string>,
+	onRefused: (message: string) => void,
+): Promise<string | null> {
+	const token = await handleMfa(retry.factor, api, headers, onRefused);
+	if (token !== null) retry.store?.(token);
+	return token;
+}
+async function isMfaRequired(res: Response | undefined): Promise<boolean> {
+	if (res?.status !== 400) return false;
+	const body = await res.clone().json().catch(() => null);
+	return body?.code === 60003;
+}
+export async function fetchWithMfa(
+	retry: MfaRetry,
+	api: string,
+	headers: Record<string, string>,
+	send: (mfaHeaders: Record<string, string>) => Promise<Response | undefined>,
+	onRefused: (message: string) => void,
+): Promise<Response | undefined> {
+	const cached = retry.token?.() ?? null;
+	const res = await send(cached !== null ? {"X-Discord-MFA-Authorization": cached} : {});
+	if (!(await isMfaRequired(res))) return res;
+	if (cached !== null) retry.store?.(null);
+	const token = await promptMfa(retry, api, headers, onRefused);
+	if (token === null) return res;
+	const retryRes = await send({"X-Discord-MFA-Authorization": token});
+	if (await isMfaRequired(retryRes)) retry.store?.(null);
+	return retryRes;
+}
 export {FormError};
 class Form implements OptionsElement<object> {
 	name: string;
@@ -3007,10 +3041,9 @@ class Form implements OptionsElement<object> {
 								const cached = this.mfaRetry.token?.() ?? null;
 								const token =
 									cached ??
-									(await handleMfa(this.mfaRetry.factor, mfaApi, this.headers, (m) =>
+									(await promptMfa(this.mfaRetry, mfaApi, this.headers, (m) =>
 										this.showPrimError(m),
 									));
-								if (cached === null && token !== null) this.mfaRetry.store?.(token);
 								if (token === null) {
 									// dismissed: fall through to the normal refusal display, form stays open
 								} else {
