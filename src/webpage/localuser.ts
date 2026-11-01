@@ -6467,6 +6467,8 @@ class Localuser {
 	}
 	memberLock = new PromiseLock();
 	async resolvemember(id: string, guildid: string): Promise<memberjson | undefined> {
+		// A fresh lookup supersedes an earlier failure; if this one fails too, it records again.
+		this.failedMemberLookups?.get(guildid)?.delete(id);
 		if (guildid === "@me") {
 			return undefined;
 		}

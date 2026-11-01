@@ -456,6 +456,7 @@ class Emoji {
 			search.style.setProperty("width", "3in");
 			title.innerText = "";
 			body.innerHTML = "";
+			const tone = getSkinTone();
 			const toneEmoji = (result: Emoji): Emoji => {
 				if (result.id || !result.emoji) return result;
 				for (const group of Emoji.emojis) {
@@ -464,16 +465,15 @@ class Emoji {
 					const canTone = Boolean(raw.skin_tone_support) && !isDualToneEmoji(raw.emoji);
 					if (!canTone) return result;
 					return new Emoji(
-						{name: raw.name, emoji: applySkinTone(raw.emoji, getSkinTone())},
+						{name: raw.name, emoji: applySkinTone(raw.emoji, tone)},
 						localuser,
 					);
 				}
 				return result;
 			};
-			const searchResults = this.searchEmoji(search.value, localuser, 200);
-			if (searchResults[0]) {
-				topEmoji = toneEmoji(searchResults[0][0]);
-			}
+			// searchEmoji returns worst-first for the autofill's prepending rows; here rows append.
+			const searchResults = this.searchEmoji(search.value, localuser, 200).reverse();
+			topEmoji = searchResults[0] ? toneEmoji(searchResults[0][0]) : undefined;
 			for (const [rawResult] of searchResults) {
 				const emoji = toneEmoji(rawResult);
 				const emojiElem = document.createElement("div");
@@ -732,7 +732,7 @@ class Emoji {
 			}
 		}
 		ranked.sort((a, b) => b[1] - a[1]);
-		// Worst-first: the only caller renders through MDSearchOptions, which prepends each
+		// Worst-first: the autofill renders through MDSearchOptions, which prepends each
 		// row — the best match must come LAST so it renders (and selects) at the top.
 		return ranked
 			.splice(0, results)
