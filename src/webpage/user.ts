@@ -922,9 +922,11 @@ class User extends SnowFlake {
 				(pfp.children[0] as HTMLImageElement).src = _.getpfpsrc();
 			} else if (guild.id !== "@me") {
 				this.subName(name);
-				const notFound = document.createElement("span");
-				notFound.textContent = I18n.webhooks.notFound();
-				nameBox.append(notFound);
+				if (!this.localuser.memberLookupFailed(this.id, guild.id)) {
+					const notFound = document.createElement("span");
+					notFound.textContent = I18n.webhooks.notFound();
+					nameBox.append(notFound);
+				}
 			}
 		});
 		// error=false: the not-found note above is the only signal — bind's default error
