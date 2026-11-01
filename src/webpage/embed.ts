@@ -565,7 +565,8 @@ class Embed {
 						iframe.referrerPolicy = "strict-origin-when-cross-origin";
 						if (this.json.thumbnail.width && this.json.thumbnail.height) {
 							iframe.style.width = this.json.thumbnail.width + "px";
-							iframe.style.height = this.json.thumbnail.height + "px";
+							// Not a fixed height: a narrow screen caps the width, and the video keeps its shape.
+							iframe.style.aspectRatio = `${this.json.thumbnail.width} / ${this.json.thumbnail.height}`;
 						}
 						div.append(iframe);
 					}
