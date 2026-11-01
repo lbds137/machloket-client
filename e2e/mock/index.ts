@@ -13,6 +13,7 @@
  *                                                      bundled /icons/*.svg pass through)
  * - GET  /stickers/:id.webp                         -> 1x1 PNG (sticker renders; served
  *                                                      inside the mock's own URL surface)
+ * - GET  /emojis/:id.png                            -> 1x1 PNG (custom emoji renders)
  * - GET  /getupdates                                -> 200 text "e2e-mock" (the short-rev
  *                                                      nonce base; plain text by design)
  *
@@ -27,6 +28,7 @@
  * - GET  /api/v9/guilds/:guildId/application-command-index -> MOCK_COMMAND_INDEX (3 chat-input
  *                                                      commands: visible / admins-only / denied)
  * - GET  /api/v9/guilds/:guildId/members/:userId    -> MOCK member (Member.resolveMember)
+ * - PATCH /api/v9/users/@me/guilds/:guildId/settings -> {} (the guild mute / unmute)
  * - GET  /api/v9/channels/:channelId/messages       -> MOCK_MESSAGES (newest-first; before/
  *                                                      after/around pages served from it)
  * - POST /api/v9/channels/:channelId/messages       -> 200 {} (a sent message, e.g. the forward
@@ -1074,7 +1076,27 @@ const PERM_BITS: Record<string, bigint> = {
 	// Same array: the channel-list drag gate reads it (`src/webpage/channel.ts`, canManageChannels).
 	MANAGE_CHANNELS: 4n,
 	SEND_POLLS: 49n,
+	// The member menu's moderation rows (`src/webpage/user.ts` Kick / Ban / Timeout / roles).
+	KICK_MEMBERS: 1n,
+	BAN_MEMBERS: 2n,
+	MANAGE_ROLES: 28n,
+	MODERATE_MEMBERS: 40n,
 };
+
+/** The `permissions` string of a role holding exactly the named permissions (names as in
+ * `extraEveryonePermissions`), for the `extraRoles` option. */
+export function permissionBits(names: string[]): string {
+	let bits = 0n;
+	for (const name of names) {
+		if (!Object.hasOwn(PERM_BITS, name)) {
+			throw new Error(
+				`Unsupported permission "${name}" (supported: ${Object.keys(PERM_BITS).join(", ")})`,
+			);
+		}
+		bits |= 1n << PERM_BITS[name];
+	}
+	return bits.toString();
+}
 
 export interface MockInstanceOptions {
 	/** Override initial channel messages returned by GET /api/v9/channels/:id/messages. */
@@ -1089,6 +1111,13 @@ export interface MockInstanceOptions {
 	extraEveryonePermissions?: string[];
 	/** Override guild stickers served in GUILD_CREATE (defaults to MOCK_GUILD.stickers = []). */
 	stickers?: stickerJson[];
+	/** Guild roles served in GUILD_CREATE beside @everyone (a spec's viewer-only "Moderator"
+	 * role, a role a bio mentions). Build a moderator's `permissions` with `permissionBits`. */
+	extraRoles?: rolesjson[];
+	/** Members served in place of the fixture's own, matched by id: the gateway chunk, the
+	 * REST member lookup and the `member` of every message by that user all answer with
+	 * them. An id the fixture doesn't know is served too (a third person for the member list). */
+	members?: memberjson[];
 }
 
 export interface MockInstanceHandle {
@@ -1122,15 +1151,33 @@ export async function mountMockInstance(
 	options: MockInstanceOptions = {},
 ): Promise<MockInstanceHandle> {
 	const {
-		messages = MOCK_MESSAGES,
+		messages: baseMessages = MOCK_MESSAGES,
 		suppressChangelog = true,
 		policiesConfig,
 		extraEveryonePermissions,
 		stickers,
+		extraRoles,
+		members: memberOverrides,
 	} = options;
 
+	const memberById = new Map<string, memberjson>([
+		[MOCK_USER_ID, MOCK_MEMBER],
+		[MOCK_BOT_USER_ID, MOCK_BOT_MEMBER],
+	]);
+	for (const memb of memberOverrides ?? []) memberById.set(memb.id, memb);
+	// A message carries its author's member: keep it the same one the chunk serves.
+	const messages = memberOverrides
+		? baseMessages.map((m) =>
+				m.member && memberById.has(m.member.id) ? {...m, member: memberById.get(m.member.id)} : m,
+			)
+		: baseMessages;
+
 	let guildCreateFrame = MOCK_GUILD_CREATE_FRAME;
-	if ((extraEveryonePermissions && extraEveryonePermissions.length > 0) || stickers !== undefined) {
+	if (
+		(extraEveryonePermissions && extraEveryonePermissions.length > 0) ||
+		stickers !== undefined ||
+		(extraRoles && extraRoles.length > 0)
+	) {
 		let roles = MOCK_GUILD.roles;
 		if (extraEveryonePermissions && extraEveryonePermissions.length > 0) {
 			let merged = BigInt(MOCK_EVERYONE_ROLE.permissions);
@@ -1144,6 +1191,7 @@ export async function mountMockInstance(
 			}
 			roles = [{...MOCK_EVERYONE_ROLE, permissions: merged.toString()}];
 		}
+		if (extraRoles && extraRoles.length > 0) roles = [...roles, ...extraRoles];
 		guildCreateFrame = {
 			...MOCK_GUILD_CREATE_FRAME,
 			d: {
@@ -1245,10 +1293,7 @@ export async function mountMockInstance(
 				const requestedIds = Array.isArray(parsed.d.user_ids)
 					? (parsed.d.user_ids as string[])
 					: [MOCK_USER_ID];
-				const knownMembers = new Map<string, memberjson>([
-					[MOCK_USER_ID, MOCK_MEMBER],
-					[MOCK_BOT_USER_ID, MOCK_BOT_MEMBER],
-				]);
+				const knownMembers = memberById;
 				const found: memberjson[] = [];
 				const notFound: string[] = [];
 				for (const id of requestedIds) {
@@ -1332,6 +1377,7 @@ export async function mountMockInstance(
 				(p.startsWith("/icons/") && p.endsWith(".png")) ||
 				(p.startsWith("/attachments/") && p.endsWith(".png")) ||
 				(p.startsWith("/stickers/") && p.endsWith(".webp")) ||
+				(p.startsWith("/emojis/") && p.endsWith(".png")) ||
 				p === "/getupdates"
 			);
 		},
@@ -1454,6 +1500,15 @@ export async function mountMockInstance(
 				});
 			}
 
+			// 9e. Custom emoji images (Emoji.getHTML builds cdn + /emojis/:id.png)
+			if (method === "GET" && pathname.startsWith("/emojis/")) {
+				return route.fulfill({
+					status: 200,
+					contentType: "image/png",
+					body: TRANSPARENT_PNG,
+				});
+			}
+
 			// 10. Guild welcome screen (src/webpage/guild.ts)
 			if (method === "GET" && /^\/api\/v9\/guilds\/[^/]+\/welcome-screen$/.test(pathname)) {
 				return fulfillJson(MOCK_WELCOME_SCREEN);
@@ -1462,7 +1517,16 @@ export async function mountMockInstance(
 			// 10b. Single member lookup (Member.resolveMember -> localuser.resolvemember)
 			const memberMatch = pathname.match(/^\/api\/v9\/guilds\/[^/]+\/members\/([^/]+)$/);
 			if (method === "GET" && memberMatch) {
-				return fulfillJson(memberMatch[1] === MOCK_BOT_USER_ID ? MOCK_BOT_MEMBER : MOCK_MEMBER);
+				return fulfillJson(memberById.get(memberMatch[1]) ?? MOCK_MEMBER);
+			}
+
+			// 10c. A guild mute / unmute (Guild.sendMuteConfig); a spec pins the body from
+			// capturedRequests, the app reads nothing off the answer.
+			if (
+				method === "PATCH" &&
+				pathname === `/api/v9/users/@me/guilds/${MOCK_GUILD_ID}/settings`
+			) {
+				return fulfillJson({});
 			}
 
 			// 11. Channel messages history (src/webpage/channel.ts putmessages)

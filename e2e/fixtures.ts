@@ -1,3 +1,5 @@
+import {readFileSync} from "node:fs";
+import {join} from "node:path";
 import {test as base, expect, type Locator, type Page} from "@playwright/test";
 import type {ModalCreateEvent} from "../src/webpage/interactions/modal";
 import {
@@ -16,6 +18,13 @@ import {
 // an aborted request, so a log line alone would leave a spec green over a missing route.
 // A spec that genuinely needs one of these answers it with its own page-level route,
 // which takes precedence over the context-level net. e2e/harness.spec.ts pins the net.
+
+/** The app's English strings (translations/en.json), for assertions on rendered labels. Read
+ * from disk: Playwright's ESM loader refuses a bare JSON import. */
+export const EN = JSON.parse(readFileSync(join(process.cwd(), "translations", "en.json"), "utf8")) as Record<
+	string,
+	Record<string, string>
+>;
 
 const PREVIEW = "localhost:4173";
 const OFF_PREVIEW = /^https?:\/\/(?!localhost:4173(?=\/|$))/;
@@ -150,5 +159,16 @@ export async function openModalViaButton(
 	mockInstance.sendGatewayEvent({op: 0, t: "INTERACTION_MODAL_CREATE", d: {...modal, nonce}});
 	await expect(page.locator(".dialogModal")).toBeVisible();
 }
+
+/** A REAL desktop run for `test.use`, not a wide phone: the Pixel 7 profile's Android UA and
+ * touch flags survive a viewport override, and the app's `mobile` check keys on exactly those
+ * (utils/utils.ts) - a wide phone closes the member list and takes taps for touches. */
+export const DESKTOP = {
+	viewport: {width: 1280, height: 800},
+	userAgent:
+		"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+	isMobile: false,
+	hasTouch: false,
+} as const;
 
 export * from "./mock";
