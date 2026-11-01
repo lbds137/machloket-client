@@ -373,6 +373,49 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 		expect(results[0]!.textContent).toBe("👋🏾");
 	});
 
+	it("4p. search lists the best match first and Enter picks it", async () => {
+		Emoji.emojis = [
+			{
+				name: "People",
+				emojis: [
+					{name: "wave of the hand", emoji: "\u{1F44B}"},
+					{name: "wave", emoji: "\u{1F30A}"},
+				],
+			},
+		] as never;
+		const picked = Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "wave";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+
+		const rows = picker.querySelectorAll(".emojiBody .emojiSelect");
+		expect(rows).toHaveLength(2);
+		expect(rows[0]!.textContent).toBe("\u{1F30A}");
+
+		searchInput.dispatchEvent(new KeyboardEvent("keyup", {key: "Enter", bubbles: true}));
+		searchInput.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+		const settled = await raceWithTimeout(picked);
+		expect(settled === "TIMED_OUT" ? settled : settled?.emoji).toBe("\u{1F30A}");
+	});
+
+	it("4q. a search with no match leaves nothing for Enter to pick", () => {
+		assignTwoEmojiFixture();
+		void Emoji.emojiPicker(10, -10);
+		const picker = document.querySelector(".emojiPicker")!;
+		const searchInput = picker.querySelector<HTMLInputElement>(".emojiHeading input")!;
+		searchInput.value = "waving";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+		searchInput.value = "waving zzz";
+		searchInput.dispatchEvent(new Event("input", {bubbles: true}));
+		expect(picker.querySelectorAll(".emojiBody .emojiSelect")).toHaveLength(0);
+
+		searchInput.dispatchEvent(new KeyboardEvent("keyup", {key: "Enter", bubbles: true}));
+		searchInput.dispatchEvent(new KeyboardEvent("keydown", {key: "Enter", bubbles: true}));
+		expect(picker.classList.contains("removeElm")).toBe(false);
+		expect(document.querySelector(".emojiPicker")).toBe(picker);
+	});
+
 	it("4i. M1: clicking a section rail after opening the badge popup (soft close) and then clicking an emoji cell resolves that emoji and closes the picker", async () => {
 		assignTwoEmojiFixture();
 		const pickPromise = Emoji.emojiPicker(10, -10);
