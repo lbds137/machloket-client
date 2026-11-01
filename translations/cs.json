@@ -664,7 +664,7 @@
 		"artist": "Interpret: $1",
 		"composer": "Skladatel: $1",
 		"download": "Stáhnout médium",
-		"length": "Délka: $1 minut a $2 sekund",
+		"length": "Délka: $1 {{PLURAL:$1|minuta|minuty|minut}} a $2 {{PLURAL:$2|sekunda|sekundy|sekund}}",
 		"loading": "Načítání",
 		"moreInfo": "Více informací",
 		"notFound": "Médium nebylo nalezeno"

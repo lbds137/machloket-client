@@ -666,7 +666,7 @@
 		"artist": "Artista: $1",
 		"composer": "Compositor: $1",
 		"download": "Descargar multimedia",
-		"length": "Duración: $1 minutos y $2 segundos",
+		"length": "Duración: $1 {{PLURAL:$1|minuto|minutos}} y $2 {{PLURAL:$2|segundo|segundos}}",
 		"loading": "Cargando",
 		"moreInfo": "Más información",
 		"notFound": "No se pudo encontrar el archivo multimedia"
