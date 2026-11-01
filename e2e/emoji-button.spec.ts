@@ -7,8 +7,8 @@ import {loginAndOpenChannel, test} from "./fixtures";
 // stops propagation. Without the preventDefault the captured caret clamps to the box's
 // full text and a picked emoji inserts at the END of the composed text instead of at
 // the caret — on touch and mouse alike (probe + fix, emoji-composer-scope G, 10-27).
-// The dead-fire variant (rangeCount 0 → silent bail) never reproduced: the open tests
-// pin that the picker opens through both pointer kinds.
+// The open tests pin that the picker opens through both pointer kinds with a caret in the box;
+// the fresh-boot test below pins the variant with no selection at all (rangeCount 0).
 
 for (const kind of ["mouse", "touch"] as const) {
 	test(`emoji button opens the picker (${kind})`, async ({page, mockInstance}) => {
@@ -72,3 +72,39 @@ for (const kind of ["mouse", "touch"] as const) {
 		expect(finalText.endsWith("world"), `[${kind}] "world" follows the emoji`).toBe(true);
 	});
 }
+
+// The tests above click into the box first, so they start with a caret in it. These two do
+// not: the button must still open the picker and must not insert ahead of the draft.
+test("emoji button opens the picker on a fresh boot, before the box is touched", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	expect(mockInstance.capturedRequests.length).toBeGreaterThan(0);
+
+	await page.locator("#emojiTB").click();
+
+	await expect(page.locator(".emojiPicker")).toBeVisible();
+});
+
+test("with text selected in a message, a picked emoji goes after the draft", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	expect(mockInstance.capturedRequests.length).toBeGreaterThan(0);
+
+	const typebox = page.locator("#typebox");
+	await typebox.click();
+	await page.keyboard.type("hello");
+	await page
+		.locator(".messagediv", {hasText: "Welcome to the mock guild!"})
+		.getByText("Welcome to the mock guild!")
+		.click({clickCount: 3});
+
+	await page.locator("#emojiTB").click();
+	await page.locator(".emojiPicker .emojiBody .emojiSelect").first().click();
+	await expect.poll(() => typebox.textContent(), "the picked emoji lands").not.toBe("hello");
+
+	expect(((await typebox.textContent()) ?? "").startsWith("hello")).toBe(true);
+});
