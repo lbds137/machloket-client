@@ -1071,6 +1071,8 @@ export interface CapturedRequest {
 // `I18n`, which pulls the browser app graph).
 const PERM_BITS: Record<string, bigint> = {
 	// `src/webpage/permissions.ts` (`Permissions.permisions` index 49, line 90).
+	// Same array: the channel-list drag gate reads it (`src/webpage/channel.ts`, canManageChannels).
+	MANAGE_CHANNELS: 4n,
 	SEND_POLLS: 49n,
 };
 
@@ -1398,6 +1400,11 @@ export async function mountMockInstance(
 				pathname === "/api/v9/users/@me/settings-proto/2/json"
 			) {
 				return fulfillJson(MOCK_SETTINGS_PROTO);
+			}
+
+			// Channel reorders (Guild.calculateReorder); specs read them from capturedRequests.
+			if (method === "PATCH" && pathname === `/api/v9/guilds/${MOCK_GUILD_ID}/channels`) {
+				return fulfillJson([]);
 			}
 
 			// 7. GIF provider discovery (src/webpage/localuser.ts)
