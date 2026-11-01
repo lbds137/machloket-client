@@ -78,3 +78,30 @@ test("the video embed swaps its poster for a YouTube player iframe on tap", asyn
 	);
 	await expect(poster).toHaveCount(0);
 });
+
+test("the video embed's poster and player stay on a phone screen and keep their shape", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	await loginAndOpenChannel(page);
+	const viewportWidth = page.viewportSize()!.width;
+
+	const poster = page.locator("img.bigembedimg");
+	await poster.scrollIntoViewIfNeeded();
+	await expect(poster).toHaveJSProperty("complete", true);
+	const posterBox = (await poster.boundingBox())!;
+	expect(posterBox.x + posterBox.width, "poster's right edge").toBeLessThanOrEqual(viewportWidth);
+
+	await page.route("https://www.youtube.com/embed/**", (route) =>
+		route.fulfill({contentType: "text/html", body: "<!doctype html><title>player</title>"}),
+	);
+	await poster.tap();
+
+	const player = page.locator("iframe");
+	await expect(player).toHaveCount(1);
+	const playerBox = (await player.boundingBox())!;
+	expect(playerBox.x + playerBox.width, "player's right edge").toBeLessThanOrEqual(viewportWidth);
+	// The fixture thumbnail is 480x360.
+	expect(playerBox.height / playerBox.width, "player keeps the video's shape").toBeCloseTo(0.75, 2);
+});
