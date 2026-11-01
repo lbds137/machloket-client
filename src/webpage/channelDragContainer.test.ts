@@ -323,3 +323,94 @@ it("a consumed drop leaves no move_id to resurrect after a gateway move", async 
 	await g.calculateReorder();
 	expect(c.parent_id).toBe("catY");
 });
+
+it("a top-level channel dropped on itself stays at the same index and sends no PATCH", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const a = chan(g, "a", {position: 0});
+	const b = chan(g, "b", {position: 1});
+	const c = chan(g, "c", {position: 2});
+	g.headchannels = [a, b, c];
+	g.channels = [a, b, c];
+
+	const wrap = document.createElement("div");
+	const div = document.createElement("div");
+	wrap.append(div);
+	document.body.append(wrap);
+	b.coatDropDiv(div);
+	Channel.dragged = [b, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["a", "b", "c"]);
+	expect(sent).toEqual([]);
+
+	// Control: an ordinary sibling drop still sends its PATCH.
+	Channel.dragged = [c, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["a", "c", "b"]);
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+});
+
+it("a channel in a category dropped on itself stays at the same index and sends no PATCH", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const cat = chan(g, "cat", {type: 4, position: 0});
+	const k1 = chan(g, "k1", {position: 0, parent: cat});
+	const k2 = chan(g, "k2", {position: 1, parent: cat});
+	cat.children = [k1, k2];
+	g.headchannels = [cat];
+	g.channels = [cat, k1, k2];
+
+	const wrap = document.createElement("div");
+	const div = document.createElement("div");
+	wrap.append(div);
+	document.body.append(wrap);
+	k1.coatDropDiv(div);
+	Channel.dragged = [k1, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+
+	expect(cat.children.map((ch) => ch.id)).toEqual(["k1", "k2"]);
+	expect(sent).toEqual([]);
+
+	// Control: an ordinary sibling drop still sends its PATCH.
+	Channel.dragged = [k2, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+	expect(cat.children.map((ch) => ch.id)).toEqual(["k2", "k1"]);
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+});
+
+it("a category dropped on its own child stays at the same index and sends no PATCH", async () => {
+	const sent = captureRequests(CHANNELS, () => new Response(null, {status: 204}));
+	const g = guild();
+	const cat1 = chan(g, "cat1", {type: 4, position: 0});
+	const cat2 = chan(g, "cat2", {type: 4, position: 1});
+	const kid = chan(g, "kid", {position: 0, parent: cat1});
+	cat1.children = [kid];
+	g.headchannels = [cat1, cat2];
+	g.channels = [cat1, cat2, kid];
+
+	const outer = document.createElement("div");
+	const wrap = document.createElement("div");
+	const div = document.createElement("div");
+	wrap.append(div);
+	outer.append(wrap);
+	document.body.append(outer);
+	kid.coatDropDiv(div);
+	Channel.dragged = [cat1, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["cat1", "cat2"]);
+	expect(sent).toEqual([]);
+
+	// Control: an ordinary sibling drop still sends its PATCH.
+	Channel.dragged = [cat2, document.createElement("div")];
+	div.dispatchEvent(dropTopHalf());
+	Channel.dragged = [];
+	expect(g.headchannels.map((ch) => ch.id)).toEqual(["cat2", "cat1"]);
+	await vi.waitFor(() => expect(sent).toHaveLength(1));
+});
