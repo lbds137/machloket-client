@@ -1435,18 +1435,14 @@ class Guild extends SnowFlake {
 						const d = new Dialog("");
 						const form = d.options.addForm("", async (o) => {
 							const obj = o as {description: string};
-							const welcome_screen = {
-								description: obj.description,
-								enabled: true,
-								welcome_channels: [],
-							} satisfies extendedProperties["welcome_screen"];
-							if (await this.saveWelcomeScreen(welcome_screen)) {
-								this.welcomeScreen = welcome_screen;
+							if (await this.saveWelcomeScreen({enabled: true, description: obj.description})) {
 								d.hide();
 								genOnboard();
 							}
 						});
-						form.addTextInput(I18n.onboarding.desc(), "description");
+						form.addTextInput(I18n.onboarding.desc(), "description", {
+							initText: this.welcomeScreen?.description ?? "",
+						});
 						d.show();
 					});
 				}
