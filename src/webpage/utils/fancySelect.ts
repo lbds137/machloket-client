@@ -150,7 +150,7 @@ export class FancySelect {
 		// multiple choice sends. Desktop (phoneMode false) never builds it.
 		const multi = this.max !== 1;
 		let sheet: HTMLElement | undefined;
-		const openSheet = () => {
+		const openSheet = (fromTap = false) => {
 			if (sheet?.isConnected) return;
 			this.openedWith = this.chosen();
 
@@ -280,9 +280,10 @@ export class FancySelect {
 
 			// The opening tap's own release lands wherever the sheet just slid — under
 			// the finger sat a row (or the backdrop), and its click would answer or
-			// discard before the user ever chose. Swallow exactly that one click: a new
-			// gesture disarms the swallow (a pointerdown, or a keydown from keyboard or
-			// assistive-tech activation), and closeSheet cleans up behind it.
+			// discard before the user ever chose. Armed only for a tap (`fromTap`),
+			// swallow that one click: a new gesture disarms the swallow (a pointerdown,
+			// or a keydown from keyboard or assistive-tech activation), and closeSheet
+			// cleans up behind it.
 			let swallowOpenClick: ((e: MouseEvent) => void) | undefined;
 			const disarmOpenClick = () => {
 				if (!swallowOpenClick) return;
@@ -299,16 +300,18 @@ export class FancySelect {
 					e.stopImmediatePropagation();
 				}
 			};
-			document.addEventListener("click", swallowOpenClick, true);
-			document.addEventListener("pointerdown", disarmOpenClick, true);
-			document.addEventListener("keydown", disarmOpenClick, true);
+			if (fromTap) {
+				document.addEventListener("click", swallowOpenClick, true);
+				document.addEventListener("pointerdown", disarmOpenClick, true);
+				document.addEventListener("keydown", disarmOpenClick, true);
+			}
 		};
 
 		input.onpointerdown = (e) => {
 			if (!FancySelect.phoneMode) return;
 			// The tap opens the sheet; preventing the default keeps the on-screen keyboard shut.
 			e.preventDefault();
-			openSheet();
+			openSheet(true);
 		};
 		input.oninput = () => {
 			genList(input.value);
