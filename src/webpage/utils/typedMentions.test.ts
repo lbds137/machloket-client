@@ -91,4 +91,46 @@ describe("resolveTypedMentions", () => {
 			"hey @Alpha One there",
 		);
 	});
+
+	it("keeps @name literal inside an inline single-backtick code span", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("see ` @Alpha ` now", candidates)).toBe("see ` @Alpha ` now");
+	});
+
+	it("keeps @name literal inside a double-backtick code span", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("`` @Alpha ``", candidates)).toBe("`` @Alpha ``");
+	});
+
+	it("keeps @name literal inside a fenced multi-line code block", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("```\n@Alpha hi\n```", candidates)).toBe("```\n@Alpha hi\n```");
+	});
+
+	it("resolves @name outside code while keeping @name inside code literal", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("@Alpha ` @Alpha ` @Alpha", candidates)).toBe(
+			"<@101> ` @Alpha ` <@101>",
+		);
+	});
+
+	it("resolves @name after an unclosed single backtick", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("`oops @Alpha", candidates)).toBe("`oops <@101>");
+	});
+
+	it("ends a single-backtick span scan at a newline so @name on the next line resolves", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("`a\n@Alpha b` c", candidates)).toBe("`a\n<@101> b` c");
+	});
+
+	it("falls back one backtick at a time when a triple backtick is unclosed", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("``` @Alpha `", candidates)).toBe("``` @Alpha `");
+	});
+
+	it("treats an escaped backtick as opening no code span", () => {
+		const candidates = [{id: "101", names: ["Alpha"]}];
+		expect(resolveTypedMentions("\\` @Alpha \\`", candidates)).toBe("\\` <@101> \\`");
+	});
 });
