@@ -736,11 +736,26 @@ class Guild extends SnowFlake {
 		}
 		return true;
 	}
-	/** Saves the welcome screen as edited. A refused save puts its description back to `saved`, so
-	 * a later channel add or removal doesn't send it; returns the description the server holds. */
-	private async saveWelcomeEdits(screen: welcomeScreen, saved: string) {
-		if (await this.saveWelcomeScreen(screen)) return screen.description;
+	/** Saves the welcome screen as edited. A refused save puts its description and row descriptions
+	 * back to `saved` and `savedRows`, so a later channel add, removal, or emoji pick doesn't send
+	 * them; returns the description the server holds. */
+	private async saveWelcomeEdits(
+		screen: welcomeScreen,
+		saved: string,
+		savedRows: Map<string, string> = new Map(),
+	) {
+		if (await this.saveWelcomeScreen(screen)) {
+			for (const entry of screen.welcome_channels) {
+				savedRows.set(entry.channel_id, entry.description);
+			}
+			return screen.description;
+		}
 		screen.description = saved;
+		for (const entry of screen.welcome_channels) {
+			if (savedRows.has(entry.channel_id)) {
+				entry.description = savedRows.get(entry.channel_id)!;
+			}
+		}
 		return saved;
 	}
 	generateSettings() {
@@ -1315,8 +1330,13 @@ class Guild extends SnowFlake {
 				if (this.welcomeScreen?.enabled) {
 					const welcomeScreen = this.welcomeScreen;
 					let savedDescription = welcomeScreen.description;
+					const savedRows = new Map<string, string>();
 					onboard.afterSubmit = async () => {
-						savedDescription = await this.saveWelcomeEdits(welcomeScreen, savedDescription);
+						savedDescription = await this.saveWelcomeEdits(
+							welcomeScreen,
+							savedDescription,
+							savedRows,
+						);
 					};
 					onboard.addButtonInput("", I18n.onboarding.disable(), async () => {
 						if (await this.saveWelcomeScreen({enabled: false})) {
@@ -1378,6 +1398,7 @@ class Guild extends SnowFlake {
 						},
 					);
 					const welcome = (obj: welcomeScreen["welcome_channels"][number]) => {
+						savedRows.set(obj.channel_id, obj.description);
 						const {channel_id, description} = obj;
 						const opt = onboard.addOptions("");
 						const channel = this.getChannel(channel_id);
