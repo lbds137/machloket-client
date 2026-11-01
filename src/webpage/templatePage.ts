@@ -69,10 +69,13 @@ if (window.location.pathname.startsWith("/template"))
 					return;
 				}
 				if (!response.ok) return;
-				const json = await response.json().catch(() => null);
+				const json = await response
+					.clone()
+					.json()
+					.catch(() => null);
 				if (!json) {
-					// A 200 that isn't the template's JSON (a proxy's page). The body is consumed,
-					// so refusalText can only give its status.
+					// A 200 that isn't the template's JSON (a proxy's page): not JSON, so
+					// refusalText gives the status.
 					description.textContent = await refusalText(response);
 					return;
 				}

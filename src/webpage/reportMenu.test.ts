@@ -1,17 +1,19 @@
-import {afterEach, expect, it, vi} from "vitest";
+import {afterEach, expect, it, onTestFinished, vi} from "vitest";
 import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {ReportMenu} = await import("./reporting/report");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 const API = "http://rep.test/api/v9";
 const POSTBACK = API + "/reporting/guild";
 
 afterEach(() => {
 	vi.restoreAllMocks();
-	document.querySelectorAll(".background").forEach((e) => e.remove());
+	document.querySelectorAll(".background, dialog, .PopUp").forEach((e) => e.remove());
 });
 
 const node = (id: number, header: string, extra: Record<string, unknown> = {}) => ({
@@ -159,4 +161,68 @@ it("a report missing what it's about shows the failure screen", async () => {
 
 	expect(sent).toEqual([]);
 	expect(menuText()).toContain("Report failed");
+});
+
+it("a refused report-menu GET says why and returns undefined", async () => {
+	captureRequests(API + "/reporting/menu/guild", () =>
+		Response.json({message: "boom"}, {status: 403}),
+	);
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+	expect(menu).toBeUndefined();
+});
+
+it("an offline report-menu GET says the network failed with no unhandled rejection", async () => {
+	const unhandled = vi.fn();
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	captureRequests(API + "/reporting/menu/guild", () =>
+		Promise.reject(new TypeError("offline")),
+	);
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("offline"));
+	expect(menu).toBeUndefined();
+	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a report-menu 200 that isn't JSON says why and returns undefined", async () => {
+	captureRequests(API + "/reporting/menu/guild", () => new Response("<html>"));
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	expect(menu).toBeUndefined();
+});
+
+it("a report-menu 200 of the wrong shape says why and returns undefined", async () => {
+	captureRequests(API + "/reporting/menu/guild", () => Response.json({version: "2.0"}));
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	expect(menu).toBeUndefined();
+});
+
+it("an accepted report-menu GET returns a ReportMenu (the control)", async () => {
+	captureRequests(API + "/reporting/menu/guild", () =>
+		Response.json({
+			version: "1.0",
+			name: "guild",
+			variant: "1",
+			postback_url: POSTBACK,
+			root_node_id: 1,
+			success_node_id: 1,
+			fail_node_id: 1,
+			nodes: {1: node(1, "Root")},
+		}),
+	);
+
+	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
+
+	expect(menu).toBeInstanceOf(ReportMenu);
+	expect(document.body.textContent?.trim()).toBe("");
 });

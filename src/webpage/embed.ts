@@ -409,11 +409,6 @@ class Embed {
 			} else {
 				[json, info] = this.invcache;
 			}
-			if (!json) {
-				div.append(this.generateLink());
-				div.classList.remove("embed", "inviteEmbed", "flexttb");
-				return;
-			}
 			if (json.guild.banner) {
 				const banner = document.createElement("img");
 				banner.src =

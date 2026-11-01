@@ -7,6 +7,7 @@ import {Message} from "../message.js";
 import {User} from "../user.js";
 import {removeAni} from "../utils/utils.js";
 import {externalUrl} from "../utils/netUtils.js";
+import {showRefusal} from "../utils/showRefusal.js";
 import {
 	buttonTypes,
 	report,
@@ -98,10 +99,22 @@ export class ReportMenu {
 	static async makeReport(type: reportTypes, localuser: Localuser, infoMap: InfoMap = {}) {
 		const res = await fetch(localuser.info.api + "/reporting/menu/" + type, {
 			headers: localuser.headers,
-		});
-		if (!res.ok) return;
-		const json = (await res.json()) as report;
-		return new ReportMenu(json, localuser, infoMap);
+		}).catch(() => undefined);
+		if (!res?.ok) {
+			await showRefusal(res);
+			return;
+		}
+		const json = (await res
+			.clone()
+			.json()
+			.catch(() => null)) as report;
+		try {
+			return new ReportMenu(json, localuser, infoMap);
+		} catch (e) {
+			console.error("report menu: could not build from the server's answer", e);
+			await showRefusal(res);
+			return;
+		}
 	}
 	private submitting = false;
 	/** Sends the report once, however often Submit is tapped (or auto-submit fires with it). */

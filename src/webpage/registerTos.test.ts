@@ -47,10 +47,10 @@ afterEach(() => {
  * Registers on a fresh instance whose /ping answers `ping`, and settles once tosLogic has read
  * the answer; returns the page errors nothing caught meanwhile.
  */
-async function pickWithPing(origin: string, ping: Response) {
+async function pickWithPing(origin: string, ping: Response, {waitForParse = true} = {}) {
 	addInstance(origin);
 	const parsed = vi.spyOn(ping, "json");
-	captureRequests(origin + "/api/v9/ping", () => ping);
+	const asked = captureRequests(origin + "/api/v9/ping", () => ping);
 	const rejections: string[] = [];
 	const onRejection = (e: PromiseRejectionEvent) => {
 		rejections.push(String(e.reason));
@@ -61,7 +61,9 @@ async function pickWithPing(origin: string, ping: Response) {
 
 	makeRegister(false, "", () => {});
 	await pickInstance(origin);
-	await vi.waitFor(() => expect(parsed).toHaveBeenCalled());
+	await vi.waitFor(() =>
+		waitForParse ? expect(parsed).toHaveBeenCalled() : expect(asked).toHaveLength(1),
+	);
 	// A rejection lands a few tasks after the read; flush them before asserting.
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
 	return rejections;
@@ -92,4 +94,15 @@ it("a ping answer with no terms page says the instance has none (the control)", 
 
 	expect(rejections).toEqual([]);
 	expect(tosArea().textContent).toBe(I18n.register.noTOS());
+});
+
+it("a refused ping whose body has a terms page still leaves the terms area empty", async () => {
+	const rejections = await pickWithPing(
+		"http://tos500.test",
+		Response.json({instance: {tosPage: "https://x.test/tos"}}, {status: 500}),
+		{waitForParse: false},
+	);
+
+	expect(rejections).toEqual([]);
+	expect(tosArea().textContent).toBe("");
 });

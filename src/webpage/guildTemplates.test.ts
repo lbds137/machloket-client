@@ -105,6 +105,18 @@ describe("guild templates", () => {
 		expect(button.addHTMLArea).not.toHaveBeenCalled();
 	});
 
+	it("a refused list GET says the server's reason", async () => {
+		const button = templateButton();
+		const guild = guildWith(button);
+		captureRequests(`${API}/guilds/g1/templates`, () =>
+			Response.json({message: "boom"}, {status: 403}),
+		);
+
+		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
+		expect(button.addText).toHaveBeenLastCalledWith(I18n.requestFailed("boom"));
+		expect(button.addHTMLArea).not.toHaveBeenCalled();
+	});
+
 	it("a non-JSON refusal lists nothing instead of throwing", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);

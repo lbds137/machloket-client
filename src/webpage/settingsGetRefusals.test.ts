@@ -455,8 +455,7 @@ it("a teams answer that isn't an array degrades the same way", async () => {
 	await vi.waitFor(() =>
 		expect(document.querySelector("#app-list-container")!.textContent).toContain("Listed App"),
 	);
-	// Quiet like its siblings: the reason a non-array teams answer would carry (the body is
-	// consumed by the guarded json(), so "HTTP 200") shows nowhere, and Create App stays.
+	// Quiet like its siblings: no message in the body, and "HTTP 200" shows nowhere; Create App stays.
 	expect(document.body.textContent).not.toContain(I18n.requestFailed("HTTP 200"));
 	expect(
 		[...document.querySelectorAll("button")].some(
@@ -509,11 +508,23 @@ it("an applications answer that isn't an array says so inside the panel", async 
 
 	await openDevPortal();
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200"
-	// here (refusalText's pre-parsed-body gap is tracker row 14).
+	// No message in the body, so refusalText gives the status.
 	await vi.waitFor(() =>
 		expect(document.querySelector("#app-list-container p")!.textContent).toBe(
 			I18n.requestFailed("HTTP 200"),
+		),
+	);
+});
+
+it("an applications 200 carrying an error message says that message inside the panel", async () => {
+	stubUserSettings();
+	captureRequests(API + "/applications", () => Response.json({message: "apps off"}));
+
+	await openDevPortal();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector("#app-list-container p")!.textContent).toBe(
+			I18n.requestFailed("apps off"),
 		),
 	);
 });
@@ -525,9 +536,42 @@ it("an application answer that isn't JSON says why and builds no application for
 
 	await u.manageApplication("a1", new Dialog("").options, () => {}).catch(() => {});
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	// Not JSON, so refusalText gives the status.
 	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
 	expect(addSubForm).not.toHaveBeenCalled();
+});
+
+it("an application answer without a name says why and builds no application form", async () => {
+	captureRequests(API + "/applications/a1", () => Response.json(true));
+	const addSubForm = vi.spyOn(Options.prototype, "addSubForm");
+	const u = appUser();
+
+	await u.manageApplication("a1", new Dialog("").options, () => {}).catch(() => {});
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200"));
+	expect(addSubForm).not.toHaveBeenCalled();
+});
+
+it("an application 200 carrying an error message says that message and builds no application form", async () => {
+	captureRequests(API + "/applications/a1", () => Response.json({message: "no app"}));
+	const addSubForm = vi.spyOn(Options.prototype, "addSubForm");
+	const u = appUser();
+
+	await u.manageApplication("a1", new Dialog("").options, () => {}).catch(() => {});
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("no app"));
+	expect(addSubForm).not.toHaveBeenCalled();
+});
+
+it("a bot-manager 200 carrying an error message says that message and alerts nothing", async () => {
+	captureRequests(API + "/applications/a1", () => Response.json({message: "no bot app"}));
+	const alerted = vi.spyOn(window, "alert").mockImplementation(() => {});
+	const u = appUser();
+
+	await u.manageBot("a1", new Dialog("").options as never).catch(() => {});
+
+	expect(document.body.textContent).toContain(I18n.requestFailed("no bot app"));
+	expect(alerted).not.toHaveBeenCalled();
 });
 
 /** Opens a MANAGE_GUILD member's settings, the widget GET answering `widget`, and the section. */
@@ -569,7 +613,7 @@ it("a widget GET that never arrived says the network failed and builds no form",
 it("a widget answer that isn't JSON says why and builds no form", async () => {
 	openWidget(() => new Response("<html>"));
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	// Not JSON, so refusalText gives the status.
 	await vi.waitFor(() =>
 		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
 	);
@@ -581,6 +625,15 @@ it("a widget answer without an enabled flag says why and builds no form", async 
 
 	await vi.waitFor(() =>
 		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
+	expect(document.body.textContent).not.toContain(I18n.widgetEnabled());
+});
+
+it("a widget 200 carrying an error message says that message and builds no form", async () => {
+	openWidget(() => Response.json({message: "disabled"}));
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("disabled")),
 	);
 	expect(document.body.textContent).not.toContain(I18n.widgetEnabled());
 });
@@ -643,4 +696,22 @@ it("a refused sticker upload still shows the server's own message on the file fi
 	await form.submit();
 
 	expect(document.querySelector(".suberror")?.textContent).toBe("Missing Permissions");
+});
+
+it("a sticker upload refused with 50035 shows the field error on the file field", async () => {
+	captureRequests(API + "/guilds/g1/stickers", () =>
+		Response.json(
+			{
+				code: 50035,
+				message: "Invalid Form Body",
+				errors: {file: {_errors: [{message: "too big"}]}},
+			},
+			{status: 400},
+		),
+	);
+	const form = stickerForm();
+
+	await form.submit();
+
+	expect(document.querySelector(".suberror")?.textContent).toBe("too big");
 });

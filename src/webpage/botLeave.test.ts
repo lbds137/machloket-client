@@ -116,8 +116,30 @@ it("a guilds-list 200 whose body isn't an array says so instead of dying silentl
 	);
 
 	bot.settings();
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200"
-	// here (refusalText's pre-parsed-body gap is tracker row 14) — if row 14 lands, this
-	// assertion's meaning changes with it.
+	// No message in the body, so refusalText gives the status.
 	await vi.waitFor(() => expect(document.body.textContent).toContain("HTTP 200"));
+});
+
+it("a guilds-list 200 carrying an error message says that message", async () => {
+	captureRequests(API + "/users/@me/guilds/", () =>
+		Response.json({message: "rate limited"}),
+	);
+	vi.spyOn(User.prototype, "buildprofile").mockResolvedValue(document.createElement("div"));
+	vi.spyOn(User.prototype, "clone").mockReturnValue({
+		pronouns: "",
+		bio: "",
+		buildprofile: async () => document.createElement("div"),
+	} as never);
+	const owner = await makeBotOwner(API);
+	const bot = new Bot(
+		new User({id: "b1", username: "Bot", bot: true} as never, owner, true),
+		"tok",
+		owner,
+	);
+
+	bot.settings();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("rate limited")),
+	);
 });

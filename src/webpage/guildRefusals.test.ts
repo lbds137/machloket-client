@@ -409,8 +409,21 @@ it("a member-counts answer that isn't JSON says why in the admins menu", async (
 
 	await guild.findAdmin().catch(() => {});
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	// Not JSON, so refusalText gives the status.
 	expect(adminsText()).toContain(I18n.requestFailed("HTTP 200"));
+	expect(adminsText()).not.toContain(I18n.loading());
+});
+
+it("a member-counts 200 carrying an error message says that message in the admins menu", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () =>
+		Response.json({message: "capped"}),
+	);
+	const {guild} = adminGuild();
+
+	await guild.findAdmin().catch(() => {});
+
+	expect(adminsText()).toContain(I18n.requestFailed("capped"));
 	expect(adminsText()).not.toContain(I18n.loading());
 });
 
@@ -454,8 +467,23 @@ it("a role member-ids answer that isn't an id list says why in the admins menu",
 
 	await guild.findAdmin();
 
-	// The body is consumed by the guarded json(), so refusalText can only say "HTTP 200".
+	// Not JSON, so refusalText gives the status.
 	await vi.waitFor(() => expect(adminsText()).toContain(I18n.requestFailed("HTTP 200")));
+	expect(resolvemember).not.toHaveBeenCalled();
+});
+
+it("a role member-ids 200 carrying an error message says that message in the admins menu", async () => {
+	await I18n.done;
+	captureRequests(API + "/guilds/g1/roles/member-counts/", () => Response.json({}));
+	captureRequests(API + "/guilds/g1/roles/r1/member-ids", () => Response.json(["u1"]));
+	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () =>
+		Response.json({message: "capped"}),
+	);
+	const {guild, resolvemember} = adminGuild();
+
+	await guild.findAdmin();
+
+	await vi.waitFor(() => expect(adminsText()).toContain(I18n.requestFailed("capped")));
 	expect(resolvemember).not.toHaveBeenCalled();
 });
 
