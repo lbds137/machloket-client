@@ -101,6 +101,80 @@ describe("component spoilers", () => {
 		plain.remove();
 	});
 
+	it("spoilered container has tabindex=\"0\", role=\"button\", and spoiler aria-label", () => {
+		const spoiled = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "hidden text"}],
+		});
+		expect(spoiled.getAttribute("tabindex")).toBe("0");
+		expect(spoiled.getAttribute("role")).toBe("button");
+		expect(spoiled.getAttribute("aria-label")).toBe("Spoiler");
+	});
+
+	it("spoilered container reveals on Enter and on Space", () => {
+		const byEnter = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "hidden text"}],
+		});
+		const enterEv = new KeyboardEvent("keydown", {
+			key: "Enter",
+			bubbles: true,
+			cancelable: true,
+		});
+		byEnter.dispatchEvent(enterEv);
+		expect(byEnter.classList.contains("componentSpoiler")).toBe(false);
+		expect(Array.from(byEnter.children).some((c) => (c as HTMLElement).inert)).toBe(false);
+		expect(enterEv.defaultPrevented).toBe(true);
+
+		const bySpace = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "hidden text"}],
+		});
+		const spaceEv = new KeyboardEvent("keydown", {
+			key: " ",
+			bubbles: true,
+			cancelable: true,
+		});
+		bySpace.dispatchEvent(spaceEv);
+		expect(bySpace.classList.contains("componentSpoiler")).toBe(false);
+		expect(Array.from(bySpace.children).some((c) => (c as HTMLElement).inert)).toBe(false);
+		expect(spaceEv.defaultPrevented).toBe(true);
+	});
+
+	it("spoilered container has no tabindex or role after reveal", () => {
+		const spoiled = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "hidden text"}],
+		});
+		spoiled.click();
+		expect(spoiled.hasAttribute("tabindex")).toBe(false);
+		expect(spoiled.hasAttribute("role")).toBe(false);
+		expect(spoiled.hasAttribute("aria-label")).toBe(false);
+		expect(spoiled.onkeydown).toBeNull();
+	});
+
+	it("key event whose target is a child does not reveal the spoilered container", () => {
+		const spoiled = renderComponent({
+			type: MessageComponentType.Container,
+			spoiler: true,
+			components: [{type: MessageComponentType.TextDisplay, content: "hidden text"}],
+		});
+		const child = spoiled.firstElementChild as HTMLElement;
+		const ev = new KeyboardEvent("keydown", {
+			key: "Enter",
+			bubbles: true,
+			cancelable: true,
+		});
+		child.dispatchEvent(ev);
+		expect(spoiled.classList.contains("componentSpoiler")).toBe(true);
+		expect(child.inert).toBe(true);
+		expect(ev.defaultPrevented).toBe(false);
+	});
+
 	// The sensitive-content setting (utils/sensitiveContent.ts) governs every spoiler path:
 	// show renders the media raw, block replaces it with a placeholder, blur is today's cover.
 	it("mediaGallery spoiler: show drops the cover, block replaces the media", () => {
