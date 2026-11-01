@@ -46,7 +46,6 @@ function guildWithCategory() {
 		owner: {channelids},
 		channels: [cat, a, b],
 		headchannels: [cat, b],
-		printServers: () => {},
 	});
 	return {guild, cat, a, b};
 }

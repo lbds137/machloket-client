@@ -881,10 +881,8 @@ a=rtcp-mux\r`;
 				if (this.speaking) {
 					this.speaking = false;
 					this.sendSpeaking();
-					console.log("not speaking");
 				}
 			} else if (!this.speaking) {
-				console.log("speaking");
 				this.speaking = true;
 				this.sendSpeaking();
 			}
@@ -1068,7 +1066,6 @@ a=rtcp-mux\r`;
 			this.onconnect();
 			const media = e.streams[0];
 			if (!media) {
-				console.log(e);
 				return;
 			}
 			const userId = media.id.split("-")[0];
@@ -1089,7 +1086,6 @@ a=rtcp-mux\r`;
 				video.autoplay = true;
 				const settings = e.track.getConstraints();
 
-				console.log("gotVideo?", media, settings);
 				settings.height = 300;
 				settings.width = 300;
 				e.track.applyConstraints(settings);
@@ -1099,7 +1095,6 @@ a=rtcp-mux\r`;
 				return;
 			}
 
-			console.log("got audio:", e);
 			const a = new UserVolume(media, userId);
 			this.uVolMap.set(userId, a);
 			this.onUserVol(a);

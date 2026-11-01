@@ -427,7 +427,10 @@ it("stays silent and skips updateChannel when the re-read GET answers 500", asyn
 
 it("discards the re-read when a new drag snapshots the layout before the GET answers", async () => {
 	const getAnswer = deferred();
+	const server = [{id: "a", position: 0}];
+	let getCount = 0;
 	const {g, a, b, c, patches, bodies, update} = reorderFixture(() => {
+		if (++getCount > 1) return Response.json(server);
 		g.snapshotLayout();
 		return getAnswer.promise;
 	});
@@ -443,9 +446,77 @@ it("discards the re-read when a new drag snapshots the layout before the GET ans
 	patches[0].resolve(refused());
 	await moveA;
 	patches[1].resolve(ok());
-	getAnswer.resolve(Response.json([{id: "a", position: 0}]));
+	getAnswer.resolve(Response.json([{id: "stale", position: 0}]));
 	await moveB;
 
+	// The discarded answer applies nothing, and the lost move still gets a read.
+	expect(gets(bodies)).toBe(2);
+	expect(update.mock.calls.map(([json]) => json.id)).toEqual(["a"]);
+});
+
+it("a re-read discarded while the newer drag is in flight reads again once it settles", async () => {
+	const getAnswer = deferred();
+	let getCount = 0;
+	const {g, a, b, c, patches, bodies} = reorderFixture(() =>
+		++getCount === 1 ? getAnswer.promise : Response.json([]),
+	);
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+	patches[0].resolve(refused());
+	patches[1].resolve(ok());
+	await vi.waitFor(() => expect(gets(bodies)).toBe(1));
+
+	const restoreC = g.snapshotLayout();
+	g.headchannels = [a, b, c];
+	const moveC = g.calculateReorder("a", restoreC);
+	getAnswer.resolve(Response.json([]));
+	await Promise.all([moveA, moveB]);
 	expect(gets(bodies)).toBe(1);
-	expect(update).not.toHaveBeenCalled();
+
+	patches[2].resolve(ok());
+	await moveC;
+	expect(gets(bodies)).toBe(2);
+});
+
+it("a re-read puts the channels in the server's order, on screen", async () => {
+	const server = ["c", "a", "b"].map((id, position) => ({
+		id,
+		position,
+		type: 0,
+		name: id,
+		parent_id: null,
+		guild_id: "g1",
+		permission_overwrites: [],
+	}));
+	const {g, a, b, c, patches, update} = reorderFixture(() => Response.json(server));
+	update.mockRestore();
+	g.localuser.channelids = new Map([a, b, c].map((x) => [x.id, x]));
+	for (const x of [a, b, c]) {
+		Object.assign(x, {
+			renderIcon: () => {},
+			slowmode: () => {},
+			refreshComposerLock: () => {},
+			nameSpan: {deref: () => undefined},
+			permission_overwrites: new Map(),
+			updateEvents: new Set(),
+		});
+	}
+
+	const restoreA = g.snapshotLayout();
+	g.headchannels = [b, a, c];
+	const moveA = g.calculateReorder("a", restoreA);
+	const restoreB = g.snapshotLayout();
+	g.headchannels = [b, c, a];
+	const moveB = g.calculateReorder("c", restoreB);
+	patches[0].resolve(refused());
+	patches[1].resolve(ok());
+	await Promise.all([moveA, moveB]);
+
+	await vi.waitFor(() => expect(g.headchannels.map((x) => x.id)).toEqual(["c", "a", "b"]));
+	expect(document.getElementById("channels")!.textContent).toBe("cab");
 });

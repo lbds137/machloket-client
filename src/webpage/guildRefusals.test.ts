@@ -175,12 +175,12 @@ it("a refused welcome screen save puts its description back, so a later save won
 	captureRequests(API + "/guilds/g1/welcome-screen", () => new Response(null, {status: 403}));
 	const screen = {enabled: true, description: "edited", welcome_channels: []};
 
-	expect(await guild.saveWelcomeEdits(screen, "saved")).toBe("saved");
+	expect(await guild.saveWelcomeEdits(screen, "saved", new Map())).toBe("saved");
 	expect(screen.description).toBe("saved");
 
 	captureRequests(API + "/guilds/g1/welcome-screen", () => new Response(null, {status: 204}));
 	screen.description = "edited again";
-	expect(await guild.saveWelcomeEdits(screen, "saved")).toBe("edited again");
+	expect(await guild.saveWelcomeEdits(screen, "saved", new Map())).toBe("edited again");
 	expect(screen.description).toBe("edited again");
 });
 

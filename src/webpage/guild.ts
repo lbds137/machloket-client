@@ -742,7 +742,7 @@ class Guild extends SnowFlake {
 	private async saveWelcomeEdits(
 		screen: welcomeScreen,
 		saved: string,
-		savedRows: Map<string, string> = new Map(),
+		savedRows: Map<string, string>,
 	) {
 		if (await this.saveWelcomeScreen(screen)) {
 			for (const entry of screen.welcome_channels) {
@@ -2093,16 +2093,6 @@ class Guild extends SnowFlake {
 			headers: this.headers,
 		}).catch(() => undefined);
 	}
-	printServers() {
-		let build = "";
-		for (const thing of this.headchannels) {
-			build += thing.name + ":" + thing.position + "\n";
-			for (const thingy of thing.children) {
-				build += "   " + thingy.name + ":" + thingy.position + "\n";
-			}
-		}
-		console.log(build);
-	}
 	/** Counts layout snapshots: only the newest drag's refusal may put the layout back. */
 	private layoutSeq?: number;
 	private reordersInFlight?: number;
@@ -2115,13 +2105,25 @@ class Guild extends SnowFlake {
 			channels.appendChild(this.buildChannelList());
 		}
 	}
+	/** With nothing in flight, a refusal no snapshot could put back re-reads the server's layout. */
+	private async settleReorders() {
+		if (this.reordersInFlight || !this.reorderLost) return;
+		this.reorderLost = false;
+		await this.resyncChannels();
+	}
 	private async resyncChannels() {
 		const seq = this.layoutSeq;
 		const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const channels: unknown = res?.ok ? await res.json().catch(() => undefined) : undefined;
-		if (!Array.isArray(channels) || this.layoutSeq !== seq) return;
+		if (this.layoutSeq !== seq) {
+			// A newer drag owns the layout, and its delta omits the lost move: read again once it settles.
+			this.reorderLost = true;
+			await this.settleReorders();
+			return;
+		}
+		if (!Array.isArray(channels)) return;
 		for (const json of channels as channeljson[]) {
 			this.updateChannel(json);
 		}
@@ -2215,7 +2217,6 @@ class Guild extends SnowFlake {
 		} else {
 			if (channel) find.parent_id = channel.parent?.id || null;
 		}
-		this.printServers();
 		if (build.length === 0) {
 			return;
 		}
@@ -2240,10 +2241,7 @@ class Guild extends SnowFlake {
 				if (restore() === false) this.reorderLost = true;
 				await showRefusal(res);
 			}
-			if (!(this.reordersInFlight ?? 0) && this.reorderLost) {
-				this.reorderLost = false;
-				await this.resyncChannels();
-			}
+			await this.settleReorders();
 		}
 	}
 	get localuser() {
@@ -2454,7 +2452,6 @@ class Guild extends SnowFlake {
 		const searchBox = document.getElementById("searchBox");
 		if (searchBox) searchBox.textContent = "";
 
-		this.printServers();
 		return this.buildChannelList();
 	}
 	isAdmin() {
@@ -2595,7 +2592,6 @@ class Guild extends SnowFlake {
 				channel.children = channel.children.sort((a, b) => a.position - b.position);
 			}
 			this.sortchannels();
-			this.printServers();
 		}
 	}
 	createChannelpac(json: channeljson) {
@@ -2611,7 +2607,6 @@ class Guild extends SnowFlake {
 		// Children of a category keep their arrival order: their sort can't take a thread's
 		// missing position.
 		this.sortchannels();
-		this.printServers();
 		return thischannel;
 	}
 	goToChannelDelay(id: string) {
@@ -2679,7 +2674,6 @@ class Guild extends SnowFlake {
 		}
 		this.channels=build;
 		*/
-		this.printServers();
 	}
 	async createChannel(name: string, type: number): Promise<boolean> {
 		const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
