@@ -174,6 +174,25 @@ describe("FancySelect phone sheet", () => {
 		expect(count()).toBe("1 selected");
 	});
 
+	it("swallows no click when opened by focus", () => {
+		const select = new FancySelect(options(), {min: 1, max: 2});
+		const {input, row, count} = mount(select);
+
+		input.focus();
+		row("alpha").click();
+		expect(count()).toBe("1 selected");
+	});
+
+	it("still swallows the opening tap's click when the tap also focuses the input", () => {
+		const select = new FancySelect(options(), {min: 1, max: 2});
+		const {input, open, row, count} = mount(select);
+
+		open();
+		input.focus();
+		row("alpha").click();
+		expect(count()).toBe("0 selected");
+	});
+
 	it("lets a keyboard or assistive-tech activation through after the opening tap", () => {
 		// A keydown starts a new gesture with no pointerdown: it must disarm the swallow,
 		// or the activation's click would be eaten.
