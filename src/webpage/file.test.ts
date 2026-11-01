@@ -201,4 +201,68 @@ describe("a spoiler-tagged attachment follows the sensitive-content setting", ()
 		expect(html.querySelector(".fSpoil")).not.toBeNull();
 		expect(html.querySelector(".fSpoilBlocked")).toBeNull();
 	});
+
+	it("gives the .fSpoil overlay tabIndex 0 and role=\"button\"", () => {
+		const spoil = spoilerFile().getHTML().querySelector(".fSpoil") as HTMLElement;
+		expect(spoil.tabIndex).toBe(0);
+		expect(spoil.getAttribute("role")).toBe("button");
+	});
+
+	it("removes the .fSpoil overlay and prevents default on Enter and Space", () => {
+		const byEnter = spoilerFile().getHTML();
+		const enterSpoil = byEnter.querySelector(".fSpoil") as HTMLElement;
+		const enterEv = new KeyboardEvent("keydown", {
+			key: "Enter",
+			bubbles: true,
+			cancelable: true,
+		});
+		enterSpoil.dispatchEvent(enterEv);
+		expect(byEnter.querySelector(".fSpoil")).toBeNull();
+		expect(enterEv.defaultPrevented).toBe(true);
+
+		const bySpace = spoilerFile().getHTML();
+		const spaceSpoil = bySpace.querySelector(".fSpoil") as HTMLElement;
+		const spaceEv = new KeyboardEvent("keydown", {
+			key: " ",
+			bubbles: true,
+			cancelable: true,
+		});
+		spaceSpoil.dispatchEvent(spaceEv);
+		expect(bySpace.querySelector(".fSpoil")).toBeNull();
+		expect(spaceEv.defaultPrevented).toBe(true);
+	});
+
+	it("stops the reveal keydown from reaching a listener on the overlay's parent", () => {
+		const html = spoilerFile().getHTML();
+		const onParentKey = vi.fn();
+		html.addEventListener("keydown", onParentKey);
+		const spoil = html.querySelector(".fSpoil") as HTMLElement;
+		spoil.dispatchEvent(
+			new KeyboardEvent("keydown", {
+				key: "Enter",
+				bubbles: true,
+				cancelable: true,
+			}),
+		);
+		expect(onParentKey).not.toHaveBeenCalled();
+	});
+
+	it("leaves the .fSpoil overlay in place and does not prevent default on another key", () => {
+		const html = spoilerFile().getHTML();
+		const spoil = html.querySelector(".fSpoil") as HTMLElement;
+		const ev = new KeyboardEvent("keydown", {
+			key: "a",
+			bubbles: true,
+			cancelable: true,
+		});
+		spoil.dispatchEvent(ev);
+		expect(html.querySelector(".fSpoil")).not.toBeNull();
+		expect(ev.defaultPrevented).toBe(false);
+	});
+
+	it("removes the .fSpoil overlay on click", () => {
+		const html = spoilerFile().getHTML();
+		(html.querySelector(".fSpoil") as HTMLElement).click();
+		expect(html.querySelector(".fSpoil")).toBeNull();
+	});
 });

@@ -44,10 +44,19 @@ class File {
 		function makeSpoilerHTML(): HTMLElement {
 			const spoil = document.createElement("div");
 			spoil.classList.add("fSpoil");
+			spoil.tabIndex = 0;
+			spoil.setAttribute("role", "button");
 			const stext = document.createElement("span");
 			stext.textContent = I18n.spoiler();
 			spoil.append(stext);
 			spoil.onclick = () => spoil.remove();
+			spoil.onkeydown = (e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					e.preventDefault();
+					e.stopPropagation();
+					spoil.remove();
+				}
+			};
 			return spoil;
 		}
 		OSpoiler ||= this.filename.startsWith("SPOILER_");
