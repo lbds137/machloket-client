@@ -2298,6 +2298,14 @@ class Localuser {
 	}
 	/** Counts guild-folder saves, so a newer one cancels an older one's 429 retry. */
 	private folderSeq?: number;
+	private acceptedFolderSeq?: number;
+	private refusedFolderSeq?: number;
+	private rollbackGuildOrder() {
+		this.guildFolders = this.acceptedFolders;
+		document.getElementById("servers")?.replaceChildren();
+		this.buildservers();
+		this.lookingguild?.html?.classList.add("serveropen");
+	}
 	async saveGuildOrder() {
 		const seq = (this.folderSeq = (this.folderSeq ?? 0) + 1);
 		const guild_folders: guildFolder[] = this.guildOrder.map((elm) => {
@@ -2328,18 +2336,22 @@ class Localuser {
 			{shouldRetry: () => seq === this.folderSeq},
 		).catch(() => undefined);
 		if (res?.ok) {
+			if (seq > (this.acceptedFolderSeq ?? 0)) {
+				this.acceptedFolderSeq = seq;
+				this.acceptedFolders = guild_folders;
+				if (this.refusedFolderSeq === this.folderSeq) {
+					this.rollbackGuildOrder();
+				}
+			}
 			// A newer save superseded this one: its late success must not overwrite that state.
 			if (seq === this.folderSeq) {
-				this.acceptedFolders = guild_folders;
 				this.guildFolders = guild_folders;
 			}
 			return;
 		}
 		if (seq !== this.folderSeq) return;
-		this.guildFolders = this.acceptedFolders;
-		document.getElementById("servers")?.replaceChildren();
-		this.buildservers();
-		this.lookingguild?.html?.classList.add("serveropen");
+		this.refusedFolderSeq = seq;
+		this.rollbackGuildOrder();
 		await showRefusal(res);
 	}
 	makeGuildIcon(guild: Guild) {
