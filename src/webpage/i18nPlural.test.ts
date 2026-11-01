@@ -8,6 +8,26 @@ afterEach(async () => {
 	await I18n.create("en");
 });
 
+describe("media.length", () => {
+	it.each([
+		["es", "Duración: 1 minuto y 1 segundo", "Duración: 2 minutos y 2 segundos"],
+		["de", "Länge: 1 Minute und 1 Sekunde", "Länge: 2 Minuten und 2 Sekunden"],
+		["fr", "Durée : 1 minute et 1 seconde", "Durée : 2 minutes et 2 secondes"],
+		["it", "Durata: 1 minuto e 1 secondo", "Durata: 2 minuti e 2 secondi"],
+		["nl", "Lengte: 1 minuut en 1 seconde", "Lengte: 2 minuten en 2 seconden"],
+		["pt-br", "Duração: 1 minuto e 1 segundo", "Duração: 2 minutos e 2 segundos"],
+		["lb", "Längt: 1 Minutt a(n) 1 Sekonn", "Längt: 2 Minutten a(n) 2 Sekonnen"],
+		["mk", "Траење: 1 минута и 1 секунда", "Траење: 2 минути и 2 секунди"],
+		["cs", "Délka: 1 minuta a 1 sekunda", "Délka: 2 minuty a 2 sekundy"],
+		["pl", "Długość: 1 minuta i 1 sekunda", "Długość: 2 minuty i 2 sekundy"],
+		["ru", "Продолжительность: 1 минута 1 секунда", "Продолжительность: 2 минуты 2 секунды"],
+	])("%s agrees with its counts", async (lang, one, two) => {
+		await I18n.create(lang);
+		expect(I18n.media.length("1", "1")).toBe(one);
+		expect(I18n.media.length("2", "2")).toBe(two);
+	});
+});
+
 describe("PLURAL", () => {
 	// Czech classes its counts as 1 / 2-4 / 0-and-5+ — 12-14 included in the rest (Intl:
 	// PluralRules("cs").select(22) is "other", unlike Polish where 22 is "few"). A

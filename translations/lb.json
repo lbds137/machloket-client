@@ -257,7 +257,7 @@
     "media": {
         "artist": "Kënschtler: $1",
         "composer": "Komponist: $1",
-        "length": "Längt: $1 Minutten a(n) $2 Sekonnen",
+        "length": "Längt: $1 {{PLURAL:$1|Minutt|Minutten}} a(n) $2 {{PLURAL:$2|Sekonn|Sekonnen}}",
         "loading": "Lueden",
         "moreInfo": "Méi Informatiounen"
     },

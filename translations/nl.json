@@ -645,7 +645,7 @@
         "artist": "Artiest: $1",
         "composer": "Componist: $1",
         "download": "Mediabestand downloaden",
-        "length": "Lengte: $1 minuten en $2 seconden",
+        "length": "Lengte: $1 {{PLURAL:$1|minuut|minuten}} en $2 {{PLURAL:$2|seconde|seconden}}",
         "loading": "Wordt geladen",
         "moreInfo": "Meer informatie",
         "notFound": "Mediabestand kon niet worden gevonden"
