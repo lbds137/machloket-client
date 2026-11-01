@@ -1,4 +1,26 @@
 const RESERVED = new Set(["everyone", "here"]);
+// Mirrors ESCAPE_CHARS in src/webpage/markdown.ts (rule owned by markdown.ts).
+const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
+
+function codeSpanEnd(text: string, i: number): number | undefined {
+	let count = 1;
+	if (text[i + 1] === "`") {
+		count++;
+		if (text[i + 2] === "`") {
+			count++;
+		}
+	}
+	let find = 0;
+	let j = i + count;
+	for (; text[j] !== undefined && (text[j] !== "\n" || count === 3) && find !== count; j++) {
+		if (text[j] === "`") {
+			find++;
+		} else {
+			find = 0;
+		}
+	}
+	return find === count ? j : undefined;
+}
 
 export function resolveTypedMentions(
 	text: string,
@@ -24,6 +46,19 @@ export function resolveTypedMentions(
 
 	let out = "";
 	for (let i = 0; i < text.length; i++) {
+		if (text[i] === "\\" && ESCAPE_CHARS.has(text[i + 1])) {
+			out += text[i] + text[i + 1];
+			i++;
+			continue;
+		}
+		if (text[i] === "`") {
+			const end = codeSpanEnd(text, i);
+			if (end !== undefined) {
+				out += text.slice(i, end);
+				i = end - 1;
+				continue;
+			}
+		}
 		if (text[i] === "<" && text[i + 1] === "@") {
 			const close = text.indexOf(">", i + 2);
 			if (close !== -1 && !text.slice(i + 2, close).includes("<")) {
