@@ -524,4 +524,126 @@ describe("EMOJI-B skin tone & EMOJI-E footer", () => {
 			typebox.remove();
 		}
 	});
+
+	it("6d. V22: TBEmojiMenu opens the picker when getSelection() has no ranges", async () => {
+		assignTwoEmojiFixture();
+		const typebox = document.createElement("div") as HTMLDivElement & {
+			markdown: {rawString: string; txt: string; boxupdate: ReturnType<typeof vi.fn>};
+		};
+		typebox.id = "typebox";
+		typebox.contentEditable = "true";
+		typebox.textContent = "hello";
+		typebox.markdown = {rawString: "hello", txt: "hello", boxupdate: vi.fn()};
+		document.body.append(typebox);
+
+		window.getSelection()!.removeAllRanges();
+
+		const user = Object.assign(Object.create(Localuser.prototype), {
+			guilds: [],
+			lookingguild: undefined,
+			favorites: {
+				emojiRecentsMerged: () => [],
+				addEmoji: vi.fn(),
+			},
+		}) as InstanceType<typeof Localuser>;
+
+		try {
+			const menuPromise = user.TBEmojiMenu(new DOMRect(100, 100, 20, 20));
+			const picker = document.querySelector(".emojiPicker");
+			expect(picker).not.toBeNull();
+
+			document.body.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+			await raceWithTimeout(menuPromise);
+		} finally {
+			typebox.remove();
+		}
+	});
+
+	it("6e. V22: TBEmojiMenu appends to the draft when the selection is inside another element", async () => {
+		assignTwoEmojiFixture();
+		const other = document.createElement("div");
+		other.textContent = "other";
+		const typebox = document.createElement("div") as HTMLDivElement & {
+			markdown: {rawString: string; txt: string; boxupdate: ReturnType<typeof vi.fn>};
+		};
+		typebox.id = "typebox";
+		typebox.contentEditable = "true";
+		typebox.textContent = "hello";
+		typebox.markdown = {rawString: "hello", txt: "hello", boxupdate: vi.fn()};
+		document.body.append(other, typebox);
+
+		const range = document.createRange();
+		range.selectNodeContents(other);
+		const sel = window.getSelection()!;
+		sel.removeAllRanges();
+		sel.addRange(range);
+
+		const user = Object.assign(Object.create(Localuser.prototype), {
+			guilds: [],
+			lookingguild: undefined,
+			favorites: {
+				emojiRecentsMerged: () => [],
+				addEmoji: vi.fn(),
+			},
+		}) as InstanceType<typeof Localuser>;
+
+		try {
+			const menuPromise = user.TBEmojiMenu(new DOMRect(100, 100, 20, 20));
+			const picker = document.querySelector(".emojiPicker")!;
+			expect(picker).not.toBeNull();
+
+			const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+			cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+			await raceWithTimeout(menuPromise);
+			expect(typebox.markdown.txt).toBe("hello😀");
+			expect(typebox.markdown.boxupdate).toHaveBeenCalledWith("😀".length, false, 5);
+		} finally {
+			other.remove();
+			typebox.remove();
+		}
+	});
+
+	it("6f. V22 control: TBEmojiMenu with a mid-draft caret inserts at the caret", async () => {
+		assignTwoEmojiFixture();
+		const typebox = document.createElement("div") as HTMLDivElement & {
+			markdown: {rawString: string; txt: string; boxupdate: ReturnType<typeof vi.fn>};
+		};
+		typebox.id = "typebox";
+		typebox.contentEditable = "true";
+		typebox.textContent = "hello";
+		typebox.markdown = {rawString: "hello", txt: "hello", boxupdate: vi.fn()};
+		document.body.append(typebox);
+
+		const range = document.createRange();
+		range.setStart(typebox.firstChild!, 2);
+		range.collapse(true);
+		const sel = window.getSelection()!;
+		sel.removeAllRanges();
+		sel.addRange(range);
+
+		const user = Object.assign(Object.create(Localuser.prototype), {
+			guilds: [],
+			lookingguild: undefined,
+			favorites: {
+				emojiRecentsMerged: () => [],
+				addEmoji: vi.fn(),
+			},
+		}) as InstanceType<typeof Localuser>;
+
+		try {
+			const menuPromise = user.TBEmojiMenu(new DOMRect(100, 100, 20, 20));
+			const picker = document.querySelector(".emojiPicker")!;
+			expect(picker).not.toBeNull();
+
+			const cells = picker.querySelectorAll(".emojiBody .emojiSelect");
+			cells[1]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+
+			await raceWithTimeout(menuPromise);
+			expect(typebox.markdown.txt).toBe("he😀llo");
+			expect(typebox.markdown.boxupdate).toHaveBeenCalledWith("😀".length, false, 2);
+		} finally {
+			typebox.remove();
+		}
+	});
 });

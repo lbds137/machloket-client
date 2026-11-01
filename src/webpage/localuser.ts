@@ -5452,6 +5452,17 @@ class Localuser {
 	}
 	async TBEmojiMenu(rect: DOMRect) {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		// emojiTB's mousedown calls preventDefault so a caret already in typebox stays put; when
+		// there is no selection or it sits outside typebox (e.g. in the message list above), place
+		// a collapsed caret at the end of typebox without focusing it (which raises a phone keyboard).
+		const sel = window.getSelection();
+		if (sel && (!sel.anchorNode || !typebox.contains(sel.anchorNode))) {
+			const range = document.createRange();
+			range.selectNodeContents(typebox);
+			range.collapse(false);
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}
 		const p = saveCaretPosition(typebox);
 		if (!p) return;
 
