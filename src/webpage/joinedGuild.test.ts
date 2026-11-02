@@ -104,4 +104,5 @@ it("GUILD_CREATE adds the joined guild to guildOrder, so the next save keeps it"
 		expect((user.guildOrder[1] as {id?: string} | undefined)?.id).toBe("g9"),
 	);
 	expect(user.guildOrder[0]).toBe(existing);
+	expect(icon.nextElementSibling?.id, "a mid-session join mounts its icon").toBe("bottomseparator");
 });
