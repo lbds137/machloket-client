@@ -278,9 +278,9 @@ describe("opening a channel whose first history page is rate-limited", () => {
 		expect(asked).toHaveLength(2);
 	});
 
-	it("re-clicking the channel in view doesn't cancel the re-ask", async () => {
+	it("a generation bump that isn't a newer build doesn't cancel the re-ask", async () => {
 		const {asked, builtAround} = await openChannel([limited, page]);
-		// getHTML's early return for the channel already in view bumps the generation.
+		// The global generation moves on any open; only the channel's own token cancels.
 		Channel.genid++;
 
 		await new Promise((r) => setTimeout(r, 200)); // well past the 0.05 s window
