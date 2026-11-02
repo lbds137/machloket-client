@@ -236,7 +236,8 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.isThread() && !!this.member;
+					// Refused with 50083 while archived, like Join below.
+					return this.isThread() && !!this.member && !this.threadData?.archived;
 				},
 			},
 		);
@@ -252,7 +253,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return this.isThread() && !this.member;
+					return this.isThread() && !this.member && !this.threadData?.archived;
 				},
 			},
 		);

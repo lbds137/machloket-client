@@ -290,7 +290,7 @@ export const MOCK_BOT_USER: userjson = {
 };
 
 // src/webpage/role.ts & src/webpage/channel.ts (hasPermission checks @everyone role id === guild.id)
-// Bits: VIEW_CHANNEL (1<<10 = 1024) | SEND_MESSAGES (1<<11 = 2048) | READ_MESSAGE_HISTORY (1<<16 = 65536) = 68608.
+// Bits: VIEW_CHANNEL (1<<10) | SEND_MESSAGES (1<<11) | READ_MESSAGE_HISTORY (1<<16) | USE_APPLICATION_COMMANDS (1<<31) = 2147552256.
 // Deliberately NOT admin (no 1<<3): the slash-perm pins need a member whose filtering is
 // visible - an ADMINISTRATOR passes memberCanSee for everything.
 export const MOCK_EVERYONE_ROLE: rolesjson = {
@@ -300,7 +300,7 @@ export const MOCK_EVERYONE_ROLE: rolesjson = {
 	color: 0,
 	hoist: false,
 	position: 0,
-	permissions: "68608",
+	permissions: "2147552256",
 	managed: false,
 	mentionable: false,
 	icon: "",
@@ -687,7 +687,7 @@ export const MOCK_INVITE = {
 
 // src/webpage/guild.ts (getCommandsFetch / getCommands: chat-input type 1 only;
 // memberCanSee: per-command overrides via commandAllowedFor, then default_member_permissions
-// where "0" is Discord's admins-only). The member holds only 68608 - no ADMINISTRATOR - so
+// where "0" is Discord's admins-only). The member holds only 2147552256 - no ADMINISTRATOR - so
 // the two hidden commands below are hidden BY the pins being tested. The app's owner is the
 // bot itself, so the app-owner bypass can't leak the denied command either.
 let commandIdCounter = 500;
@@ -1111,6 +1111,9 @@ export interface MockInstanceOptions {
 	 * where the array's index is the bit) merged via bitwise OR into the `@everyone` role's
 	 * `permissions` string served to the app. */
 	extraEveryonePermissions?: string[];
+	/** The `@everyone` role's own `permissions` string in place of the fixture's, for a spec
+	 * about a member who lacks a bit the fixture grants. */
+	everyonePermissions?: string;
 	/** Override guild stickers served in GUILD_CREATE (defaults to MOCK_GUILD.stickers = []). */
 	stickers?: stickerJson[];
 	/** Guild roles served in GUILD_CREATE beside @everyone (a spec's viewer-only "Moderator"
@@ -1160,6 +1163,7 @@ export async function mountMockInstance(
 		suppressChangelog = true,
 		policiesConfig,
 		extraEveryonePermissions,
+		everyonePermissions,
 		stickers,
 		extraRoles,
 		members: memberOverrides,
@@ -1180,13 +1184,14 @@ export async function mountMockInstance(
 	let guildCreateFrame = MOCK_GUILD_CREATE_FRAME;
 	if (
 		(extraEveryonePermissions && extraEveryonePermissions.length > 0) ||
+		everyonePermissions !== undefined ||
 		stickers !== undefined ||
 		(extraRoles && extraRoles.length > 0)
 	) {
 		let roles = MOCK_GUILD.roles;
-		if (extraEveryonePermissions && extraEveryonePermissions.length > 0) {
-			let merged = BigInt(MOCK_EVERYONE_ROLE.permissions);
-			for (const name of extraEveryonePermissions) {
+		if (everyonePermissions !== undefined || extraEveryonePermissions?.length) {
+			let merged = BigInt(everyonePermissions ?? MOCK_EVERYONE_ROLE.permissions);
+			for (const name of extraEveryonePermissions ?? []) {
 				if (!Object.hasOwn(PERM_BITS, name)) {
 					throw new Error(
 						`Unsupported permission "${name}" in extraEveryonePermissions (supported: ${Object.keys(PERM_BITS).join(", ")})`,

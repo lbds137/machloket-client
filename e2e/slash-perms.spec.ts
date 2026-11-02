@@ -46,3 +46,26 @@ test("the bare slash browse panel filters the same way", async ({page, mockInsta
 	await expect(popup).not.toContainText("e2eadminonly");
 	await expect(popup).not.toContainText("e2edenied");
 });
+
+// The server refuses every command (50013) from a member without USE_APPLICATION_COMMANDS,
+// the app's own owner included, so nothing is offered. Rule by the server's reading, not a
+// mock's: this pins only that the client reads the bit from the role it's served.
+test.describe("a member without USE_APPLICATION_COMMANDS", () => {
+	// VIEW_CHANNEL | SEND_MESSAGES | READ_MESSAGE_HISTORY.
+	test.use({mockInstanceOptions: {everyonePermissions: "68608"}});
+
+	test("the slash popup offers no commands", async ({page, mockInstance}) => {
+		void mockInstance; // mount the mock's routes; the handle stays unread
+		await loginAndOpenChannel(page);
+
+		const indexAnswered = page.waitForResponse(/application-command-index/);
+		const typebox = page.locator("#typebox");
+		await typebox.click();
+		await typebox.pressSequentially("/");
+		await indexAnswered;
+		// The list renders right after the answer; a frame later a row would be on the page.
+		await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))));
+
+		await expect(page.locator("#searchOptions")).not.toContainText("e2evisible");
+	});
+});
