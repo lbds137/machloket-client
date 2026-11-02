@@ -100,6 +100,7 @@ import {
 	QUESTION_MAX_CHARS,
 	validatePoll,
 } from "./utils/pollValidation.js";
+import {fetchMessageLimit} from "./utils/messageLimit.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 type traceObj = {
 	micros: number;
@@ -175,6 +176,8 @@ class Localuser {
 	};
 	mfa_enabled!: boolean;
 	private mfaAuth?: {token: string; exp: number};
+	/** The instance's limit on a message's length; undefined until read, or where it can't be. */
+	messageLimit?: number;
 	private recoveryBannerState?: RecoveryBanner;
 	private get recoveryBanner(): RecoveryBanner {
 		return (this.recoveryBannerState ??= new RecoveryBanner(
@@ -422,6 +425,10 @@ class Localuser {
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
 		this.ready = ready;
+		// Each READY, so a reconnect picks up a changed limit.
+		void fetchMessageLimit(this.info.api).then((limit) => {
+			this.messageLimit = limit;
+		});
 		// Not behind the slower fetches below: this warns of an account takeover.
 		if (!this.swapped) void this.recoveryBanner.refresh();
 		this.guilds = [];

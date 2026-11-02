@@ -1,9 +1,10 @@
-import {afterEach, expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {User} = await import("./user");
+const {Channel} = await import("./channel");
 const {I18n} = await import("./i18n");
 await I18n.done;
 
@@ -59,7 +60,71 @@ it("the typed message goes to the DM the server created, found by its id", async
 
 	await userWithNoDm(goTo, channelids).opendm("hi");
 
-	expect(sendMessage).toHaveBeenCalledWith("hi", expect.objectContaining({replyingto: null}));
+	expect(sendMessage).toHaveBeenCalledWith(
+		"hi",
+		expect.objectContaining({replyingto: null}),
+		expect.any(Function),
+	);
+});
+
+describe("a popout's message that's refused", () => {
+	afterEach(() => {
+		document.getElementById("typebox")?.remove();
+		vi.unstubAllGlobals();
+	});
+
+	/** A user with an open DM on an instance limiting messages to 5, its composer holding `typed`. */
+	function openDm(typed = "") {
+		const typebox = Object.assign(document.createElement("div"), {
+			id: "typebox",
+			textContent: typed,
+			markdown: {txt: typed, boxupdate: vi.fn()},
+		});
+		document.body.append(typebox);
+		const dm = Object.assign(Object.create(Channel.prototype), {
+			id: "dm1",
+			type: 1,
+			users: [{id: "u2"}],
+			owner: {info: {api: "http://dm.test/api/v9"}},
+			headers: {},
+			setStoredDraft: vi.fn(),
+			makeFakeMessage: vi.fn(async () => ({progress() {}, failed() {}, void() {}})),
+		}) as InstanceType<typeof Channel>;
+		Object.defineProperty(dm, "localuser", {value: {channelfocus: dm, messageLimit: 5}});
+		const user = userWithNoDm(vi.fn(async () => {}));
+		user.localuser.guildids.get("@me")!.channels.push(dm as never);
+		return {user, typebox, dm};
+	}
+
+	it("comes back in the DM's composer: the popout it was typed in has closed", async () => {
+		const {user, typebox, dm} = openDm();
+
+		await user.opendm("x".repeat(6));
+
+		expect(typebox.textContent).toBe("x".repeat(6));
+		expect(typebox.markdown.txt).toBe("x".repeat(6));
+		expect(dm.textSave).toBe("x".repeat(6));
+	});
+
+	it("leaves what's already in that composer alone", async () => {
+		const {user, typebox} = openDm("mine");
+		const send = vi.fn();
+		vi.stubGlobal(
+			"XMLHttpRequest",
+			class {
+				upload = {};
+				open() {}
+				setRequestHeader() {}
+				send = send;
+			},
+		);
+
+		void user.opendm("x".repeat(6));
+
+		// Not put back, so it goes the way that keeps it: to the server, for a failed bubble.
+		await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+		expect(typebox.textContent).toBe("mine");
+	});
 });
 
 // A regression pin for the success path (passes before the fix too).
@@ -78,5 +143,9 @@ it("a new DM opens, then gets the typed message", async () => {
 	await user.opendm("hi");
 
 	expect(goTo).toHaveBeenCalledWith("dm9");
-	expect(sendMessage).toHaveBeenCalledWith("hi", expect.objectContaining({replyingto: null}));
+	expect(sendMessage).toHaveBeenCalledWith(
+		"hi",
+		expect.objectContaining({replyingto: null}),
+		expect.any(Function),
+	);
 });

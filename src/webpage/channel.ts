@@ -44,6 +44,7 @@ import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLi
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
+import {tooLongReason} from "./utils/messageLimit.js";
 import {formErrors, refusalText, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
 
@@ -2297,6 +2298,22 @@ class Channel extends SnowFlake {
 		this.textSave = content;
 		this.setStoredDraft(content);
 	}
+	/** Refused text typed somewhere that's gone (a popout) comes back to this channel's composer,
+	 * or its draft when it isn't open. False when that would overwrite what's there. */
+	putBackRefused(content: string): boolean {
+		if (this.localuser.channelfocus !== this) {
+			if (this.textSave) return false;
+			this.setDraft(content);
+			return true;
+		}
+		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
+		if (typebox.textContent) return false;
+		typebox.textContent = content;
+		typebox.markdown.txt = content;
+		typebox.markdown.boxupdate(Infinity);
+		this.setDraft(content);
+		return true;
+	}
 	collectBox() {
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		const [files, html] = this.localuser.fileExtange([], new WeakMap<Blob, HTMLElement>());
@@ -3009,6 +3026,11 @@ class Channel extends SnowFlake {
 				const content = md.rawString;
 				if (!content) {
 					showError(I18n.forum.errors.requireText());
+					return;
+				}
+				const tooLong = tooLongReason(content, this.localuser.messageLimit);
+				if (tooLong) {
+					showError(tooLong);
 					return;
 				}
 				// One post per tap: a second tap while this one is out would post it twice.
@@ -4567,6 +4589,22 @@ class Channel extends SnowFlake {
 						}))
 					: memberCandidates,
 			);
+		}
+		// Over the instance's limit (as sent, so after the mentions grow): refused as the server
+		// would, without asking it. When the text can't go back it does go, since the server's
+		// refusal leaves a failed bubble holding it and there's no bubble yet to do that here.
+		const tooLong = tooLongReason(content, this.localuser?.messageLimit);
+		if (tooLong) {
+			let putBack: boolean | void = false;
+			try {
+				putBack = onRes("NotOk");
+			} catch (e) {
+				console.error(e);
+			}
+			if (putBack !== false) {
+				if (this.localuser?.channelfocus === this) Channel.showSendError(tooLong);
+				return;
+			}
 		}
 		let replyjson: any;
 		if (replyingto) {

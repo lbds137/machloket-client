@@ -31,6 +31,7 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {BOT_HIDE_TAG, getBotConfigs} from "./utils/storage/botConfigs.js";
 import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {tooLongReason} from "./utils/messageLimit.js";
 import {showRefusal} from "./utils/showRefusal.js";
 
 export interface ForwardSnapshot {
@@ -1015,7 +1016,12 @@ class Message extends SnowFlake {
 	 * editor reopens with what was typed, unless an editor (this one again, or another message's)
 	 * is open by then: what's typed there is newer. */
 	async saveEdit(text: string) {
-		const saving = this.edit(text);
+		// Over the instance's limit: refused here, as the newest edit, an older one's retry dropped.
+		// An unchanged text isn't an edit, whatever its length.
+		const tooLong =
+			text === this.editBase() ? null : tooLongReason(text, this.localuser.messageLimit);
+		if (tooLong) this.editSeq = (this.editSeq ?? 0) + 1;
+		const saving = tooLong ? Promise.resolve(null) : this.edit(text);
 		const seq = this.editSeq;
 		const res = await saving.catch(() => null);
 		// Nothing to send, saved, or a newer edit has taken over.
@@ -1024,7 +1030,8 @@ class Message extends SnowFlake {
 			this.editDraft = text;
 			this.setEdit();
 		}
-		await showRefusal(res ?? undefined);
+		if (tooLong) new Dialog(tooLong).show();
+		else await showRefusal(res ?? undefined);
 	}
 	async delete() {
 		const res = await fetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {

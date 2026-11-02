@@ -176,6 +176,7 @@
 		"selectName": "Name of channel",
 		"selectType": "Select channel type",
 		"sendFailed": "Your message couldn't be sent.",
+		"tooLong": "Your message is too long: $1 characters, and the limit is $2.",
 		"settings": "Settings",
 		"settingsFor": "Settings for $1",
 		"slowmode": "Slowmode:",

@@ -229,6 +229,18 @@ describe("the reply bar when the composer locks", () => {
 		expect(document.getElementById("replybox")!.textContent).toBe("");
 	});
 
+	// Any lock, not just a thread's: the send right gone, as a role change takes it.
+	it("goes when the send right goes", () => {
+		const {channel, message} = replying(OPEN);
+
+		Object.assign(channel, {hasPermission: () => false});
+		channel.refreshComposerLock();
+
+		expect(channel.replyingto).toBeNull();
+		expect(message.div!.classList.contains("replying")).toBe(false);
+		expect(document.getElementById("replybox")!.textContent).toBe("");
+	});
+
 	it("stays while the composer still takes the send", () => {
 		const {channel, message} = replying(OPEN);
 
