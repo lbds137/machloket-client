@@ -51,6 +51,34 @@ test("a refused login shows the field refusal and stays on the form", async ({
 	).toHaveLength(1);
 });
 
+// A reason on no field of this form, nested deep: still the reason, not "Invalid Form Body".
+test("a nested field refusal the form has no field for says its reason", async ({page, mockInstance}) => {
+	mockInstance.onLogin = (route) =>
+		route.fulfill({
+			status: 400,
+			contentType: "application/json",
+			body: JSON.stringify({
+				code: 50035,
+				message: "Invalid Form Body",
+				errors: {extra: {nested: {_errors: [{code: "X", message: "The nested reason"}]}}},
+			}),
+		});
+
+	await page.goto("/");
+	const loginForm = await openLoginForm(page);
+	await loginForm
+		.locator(".optionElement", {has: page.getByText("Email:", {exact: true})})
+		.locator("input")
+		.fill("testuser@example.test");
+	await loginForm
+		.locator(".optionElement", {has: page.getByText("Password:", {exact: true})})
+		.locator("input")
+		.fill("wrong-password");
+	await loginForm.getByRole("button", {name: "Login", exact: true}).click();
+
+	await expect(loginForm.locator(".suberror", {hasText: "The nested reason"})).toBeVisible();
+});
+
 // The refusal Spacebar actually sends for a bad login: a 400 FieldError with the message
 // under both fields (machloket-server src/api/routes/auth/login.ts, util/FieldError.ts) -
 // the case above pins only the top-level-message fallback.

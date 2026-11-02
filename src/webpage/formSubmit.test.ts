@@ -157,6 +157,47 @@ describe("form submit", () => {
 		expect(document.body.textContent).toContain("Too short");
 	});
 
+	// The same field, as the server's nested errors say it.
+	it.each([
+		["a dotted key", {"data.name": {_errors: [{message: "Too short"}]}}],
+		["a tree", {data: {name: {_errors: [{message: "Too short"}]}}}],
+	])("a field error in %s lands on the field with that path", async (_shape, errors) => {
+		document.body.replaceChildren();
+		captureRequests(URL_, () => json({code: 50035, message: "Invalid Form Body", errors}, 400));
+		const dialog = new Dialog("");
+		const form = dialog.options.addForm("", () => {}, {fetchURL: URL_, method: "POST"});
+		form.addTextInput("Name", "data.name");
+		dialog.show();
+		const heard: string[] = [];
+		form.onFormError = (e) => void heard.push(e.message);
+
+		await form.submit();
+		await settle();
+
+		expect(heard).toEqual(["Too short"]);
+		expect(document.querySelector(".suberror")?.parentElement?.textContent).toContain("Name");
+	});
+
+	it.each([
+		["a tree's root", {_errors: [{message: "The form is wrong"}]}],
+		["a flat root", {"": {_errors: [{message: "The form is wrong"}]}}],
+		["a path with no field", {other: {deep: {_errors: [{message: "The form is wrong"}]}}}],
+	])("a reason on %s goes in a popup, not on a field that's never sent", async (_shape, errors) => {
+		document.body.replaceChildren();
+		captureRequests(URL_, () => json({code: 50035, message: "Invalid Form Body", errors}, 400));
+		const dialog = new Dialog("");
+		const form = dialog.options.addForm("", () => {}, {fetchURL: URL_, method: "POST"});
+		form.addTextInput("Confirm", "");
+		dialog.show();
+
+		await form.submit();
+		await settle();
+
+		expect(document.querySelector(".suberror")).toBeNull();
+		expect(document.body.textContent).toContain("The form is wrong");
+		expect(document.body.textContent).not.toContain("Invalid Form Body");
+	});
+
 	it("a success whose body has a code of its own (an invite) still reaches onSubmit", async () => {
 		captureRequests(URL_, () => json({code: 404, message: "a channel topic"}));
 		const {form, calls} = postingForm();
