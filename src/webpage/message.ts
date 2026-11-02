@@ -233,7 +233,22 @@ class Message extends SnowFlake {
 		return (
 			this.author.id === this.localuser.user.id &&
 			[0, 19].includes(this.type) &&
-			this.message_reference?.type !== 1
+			this.message_reference?.type !== 1 &&
+			// The server refuses an edit in an archived thread, and asks what a send asks otherwise
+			// (the send right; MANAGE_THREADS in a locked thread).
+			!this.channel.threadData?.archived &&
+			this.channel.canMessage
+		);
+	}
+	canReply() {
+		return !this.ephemeral && this.channel.canMessage;
+	}
+	/** Adding a reaction, not removing your own: the server refuses only the add while archived. */
+	canAddReaction() {
+		return (
+			!this.ephemeral &&
+			this.channel.hasPermission("ADD_REACTIONS") &&
+			!this.channel.threadData?.archived
 		);
 	}
 	static setupcmenu() {
@@ -290,7 +305,7 @@ class Message extends SnowFlake {
 					css: "svg-reply",
 				},
 				visible: function () {
-					return !this.ephemeral && this.channel.hasPermission("SEND_MESSAGES");
+					return this.canReply();
 				},
 			},
 		);
@@ -324,7 +339,7 @@ class Message extends SnowFlake {
 				},
 				visible: function () {
 					// An ephemeral message is yours alone: the server has nothing to react to.
-					return !this.ephemeral && this.channel.hasPermission("ADD_REACTIONS");
+					return this.canAddReaction();
 				},
 			},
 		);
@@ -906,7 +921,7 @@ class Message extends SnowFlake {
 					return;
 				}
 
-				if (x < -REPLY_DISTANCE) {
+				if (x < -REPLY_DISTANCE && this.canReply()) {
 					this.channel.setReplying(this);
 				}
 				reset();
@@ -2084,7 +2099,7 @@ class Message extends SnowFlake {
 				buttons = document.createElement("div");
 				buttons.classList.add("messageButtons", "flexltr");
 				let addedRec = false;
-				if (!this.ephemeral && this.channel.hasPermission("ADD_REACTIONS")) {
+				if (this.canAddReaction()) {
 					const favs = this.localuser.favorites
 						.emojiReactFreq()
 						.slice(0, 6)
@@ -2112,7 +2127,7 @@ class Message extends SnowFlake {
 				if (addedRec) {
 					Array.from(buttons.children).at(-1)?.classList.add("vr-message");
 				}
-				if (this.channel.hasPermission("SEND_MESSAGES") && !this.ephemeral) {
+				if (this.canReply()) {
 					const container = document.createElement("button");
 					const reply = document.createElement("span");
 					reply.classList.add("svg-reply", "svgicon");
@@ -2122,7 +2137,7 @@ class Message extends SnowFlake {
 						this.channel.setReplying(this);
 					};
 				}
-				if (!this.ephemeral && this.channel.hasPermission("ADD_REACTIONS")) {
+				if (this.canAddReaction()) {
 					const container = document.createElement("button");
 					const reply = document.createElement("span");
 					reply.classList.add("svg-emoji", "svgicon");
@@ -2220,6 +2235,8 @@ class Message extends SnowFlake {
 			reaction.classList.add("reaction");
 			if (thing.me) {
 				reaction.classList.add("meReacted");
+			} else if (this.channel.threadData?.archived) {
+				reaction.classList.add("reactionClosed");
 			}
 			let emoji: HTMLElement;
 			if (thing.emoji.id || /\d{17,21}/.test(thing.emoji.name)) {
@@ -2266,6 +2283,8 @@ class Message extends SnowFlake {
 			reactdiv.append(reaction);
 
 			reaction.onclick = (_) => {
+				// Read at the tap: the thread may have been archived since this was drawn.
+				if (!thing.me && this.channel.threadData?.archived) return;
 				this.reactionToggle(new Emoji(thing.emoji, this.guild));
 			};
 		}

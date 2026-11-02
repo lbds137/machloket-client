@@ -50,6 +50,7 @@ describe("received forwarded messages (message_snapshots)", () => {
 		(channel.guild as any).cachedContextCommands = () => [];
 		(channel.guild as any).goToThread = () => {};
 		(channel as any).hasPermission = () => false;
+		(channel as any).canMessage = true;
 		(channel as any).lastmessageid = "0";
 		return {channel, localuser};
 	}

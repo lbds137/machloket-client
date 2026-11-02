@@ -4478,6 +4478,12 @@ span .quote:last-of-type .quoteline {
 	transform: scale(0.95);
 }
 
+.reaction.reactionClosed {
+	border-color: transparent;
+	cursor: default;
+	transform: none;
+}
+
 .reaction.meReacted {
 	border-color: color-mix(in srgb, var(--accent-color), transparent);
 	background: var(--reaction-reacted-bg);
