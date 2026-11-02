@@ -564,6 +564,7 @@ class Embed {
 						iframe.allow = "autoplay; encrypted-media; picture-in-picture";
 						iframe.referrerPolicy = "strict-origin-when-cross-origin";
 						// The poster's shape isn't the video's: a 4:3 poster would letterbox a 16:9 video.
+						// Both sides come from one source: a video missing one falls back to the poster's pair.
 						const size = [this.json.video, this.json.thumbnail].find((m) => m.width && m.height);
 						if (size) {
 							iframe.style.width = size.width + "px";

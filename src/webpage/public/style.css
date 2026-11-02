@@ -904,7 +904,6 @@ video {
 
 iframe {
 	max-width: 100%;
-	border: 0;
 }
 
 audio::-webkit-media-controls-panel {
@@ -4514,6 +4513,11 @@ span .quote:last-of-type .quoteline {
 
 	> p {
 		line-height: 20px;
+	}
+
+	/* The YouTube player: the browser's border would throw off its shape. */
+	iframe {
+		border: 0;
 	}
 }
 .countpollspan {
