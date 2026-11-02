@@ -2191,7 +2191,17 @@ class Channel extends SnowFlake {
 		updateLiveIcon();
 		chat.onclick = async () => {
 			this.voiceMode = this.voiceMode === "VoiceOnly" ? "ChatAndVoice" : "VoiceOnly";
-			this.getHTML(true);
+			const chatArea = document.getElementById("chatArea") as HTMLElement;
+			if (this.voiceMode === "VoiceOnly") {
+				chatArea.style.setProperty("display", "none");
+				return;
+			}
+			chatArea.style.removeProperty("display");
+			// The chat area holds the age gate's panel: answering it is what opens the messages.
+			if (this.nsfwGated()) return;
+			// Not through getHTML: this channel already has focus, so that's a re-tap, which
+			// builds nothing, and a new page in the history for what's still the same channel.
+			await this.openMessages(++Channel.genid, true);
 		};
 		chat.classList.add("callVoiceIcon");
 
@@ -2304,6 +2314,7 @@ class Channel extends SnowFlake {
 		this.curCommand = undefined;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		typebox.removeEventListener("keyup", this.curWatch);
+		typebox.removeEventListener("input", this.curWatch);
 		typebox.markdown.boxEnabled = true;
 		typebox.innerHTML = "";
 		typebox.markdown.boxupdate();
@@ -2333,10 +2344,11 @@ class Channel extends SnowFlake {
 		this.curCommand = command;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		typebox.markdown.boxEnabled = false;
-		const func = (e?: KeyboardEvent) => {
+		// keyup follows the caret, input an edit that comes with no key (a cut, dictation).
+		const func = (e?: Event) => {
 			// Escape closes the option popup (handleEnter clears it first); refreshing the
 			// offer on this same keyup would reopen it out from under the close.
-			if (e?.key === "Escape") return;
+			if (e instanceof KeyboardEvent && e.key === "Escape") return;
 			const node = window.getSelection()?.focusNode;
 			if (this.localuser.channelfocus === this) {
 				const out = command.collect(typebox, this, node || undefined);
@@ -2344,11 +2356,13 @@ class Channel extends SnowFlake {
 					typebox.markdown.boxEnabled = true;
 					typebox.markdown.boxupdate();
 					typebox.removeEventListener("keyup", func);
+					typebox.removeEventListener("input", func);
 				}
 			}
 		};
 		this.curWatch = func;
 		typebox.addEventListener("keyup", func);
+		typebox.addEventListener("input", func);
 		command.render(typebox, this);
 		// The picker's subcommand rows ("/name sub") start the command with the branch
 		// already chosen.
@@ -3092,7 +3106,7 @@ class Channel extends SnowFlake {
 		container.append(theadList);
 
 		let curidsearch = 0;
-		text.onkeyup = async () => {
+		text.oninput = async () => {
 			const thisid = ++curidsearch;
 			await new Promise((res) => setTimeout(res, 120));
 			if (thisid !== curidsearch) return;
@@ -3266,9 +3280,9 @@ class Channel extends SnowFlake {
 			}
 		}
 
-		// Neither panel builds messages, and the channel being left has abandoned its build, so
-		// its skeleton is this open's to take down.
-		if (this.nsfwGated() || this.isForum()) {
+		// Neither panel nor a voice-only call builds messages, and the channel being left has
+		// abandoned its build, so its skeleton is this open's to take down.
+		if (this.nsfwGated() || this.isForum() || !getMessages) {
 			document.getElementById("loadingdiv")?.classList.remove("loading");
 		}
 		if (this.nsfwGated()) {
@@ -3282,6 +3296,11 @@ class Channel extends SnowFlake {
 			return;
 		}
 
+		await this.openMessages(id, getMessages, aroundMessage);
+	}
+	/** The text side of an open: `id` is the Channel.genid this open holds, so a newer open
+	 * abandons it. */
+	private async openMessages(id: number, getMessages: boolean, aroundMessage?: string) {
 		const prom = this.infinite.delete();
 		if (getMessages) {
 			const loading = document.getElementById("loadingdiv") as HTMLDivElement;

@@ -361,6 +361,7 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
 		const input = chip.querySelector("input") as HTMLInputElement;
 		input.value = "Tz";
+		input.dispatchEvent(new Event("input", {bubbles: true}));
 		input.dispatchEvent(new KeyboardEvent("keyup", {key: "T"}));
 
 		const candidate = searchOptions.querySelector("span") as HTMLElement;
@@ -906,6 +907,7 @@ describe("subcommand options (types 1 and 2)", () => {
 		expect(chips[1].classList.contains("commandHidden")).toBe(false);
 		const leafInput = chips[1].querySelector("input") as HTMLInputElement;
 		leafInput.value = "Zed";
+		leafInput.dispatchEvent(new Event("input", {bubbles: true}));
 		leafInput.dispatchEvent(new KeyboardEvent("keyup", {key: "d"}));
 
 		expect(command.getState(command.options[0], channel as never)).toBe("view");
@@ -1075,6 +1077,7 @@ describe("subcommand options (types 1 and 2)", () => {
 			const branchInput = html.querySelector(".commandinput input") as HTMLInputElement;
 			branchInput.focus();
 			branchInput.value = "del";
+			branchInput.dispatchEvent(new Event("input", {bubbles: true}));
 			branchInput.dispatchEvent(new KeyboardEvent("keyup", {key: "l"}));
 			const candidate = searchOptions.querySelector("span") as HTMLElement;
 			expect(candidate).not.toBeNull();
@@ -1090,6 +1093,7 @@ describe("subcommand options (types 1 and 2)", () => {
 			const idInput = idChip.querySelector("input") as HTMLInputElement;
 			expect(idInput).toBeTruthy();
 			idInput.value = "42";
+			idInput.dispatchEvent(new Event("input", {bubbles: true}));
 			idInput.dispatchEvent(new KeyboardEvent("keyup", {key: "2"}));
 
 			const sent = captureRequests(API + "/interactions");
@@ -1159,6 +1163,7 @@ describe("progressive composer model", () => {
 
 			const message = chips()[0].querySelector("input") as HTMLInputElement;
 			message.value = "hello";
+			message.dispatchEvent(new Event("input", {bubbles: true}));
 			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
 			// Filling the only required option reveals no optional field — Discord keeps those
 			// behind the option popup until they are picked.
@@ -1252,6 +1257,7 @@ describe("progressive composer model", () => {
 			const chips = () => [...html.querySelectorAll(".commandinput")];
 			const message = chips()[0].querySelector("input") as HTMLInputElement;
 			message.value = "hello";
+			message.dispatchEvent(new Event("input", {bubbles: true}));
 			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
 
 			// The optional field joins only by an explicit pick: reveal it as the popup would.
@@ -1281,6 +1287,7 @@ describe("progressive composer model", () => {
 
 			const first = chips[0].querySelector("input") as HTMLInputElement;
 			first.value = "done";
+			first.dispatchEvent(new Event("input", {bubbles: true}));
 			first.dispatchEvent(new KeyboardEvent("keyup", {key: "e"}));
 
 			await expect(command.submit(html, channel as never)).resolves.toBe(false);
@@ -1371,6 +1378,7 @@ describe("progressive composer model", () => {
 			const chips = [...html.querySelectorAll(".commandinput")];
 			const message = chips[0].querySelector("input") as HTMLInputElement;
 			message.value = "hello";
+			message.dispatchEvent(new Event("input", {bubbles: true}));
 			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
 
 			const tag = chips[1].querySelector("input") as HTMLInputElement;
@@ -1398,12 +1406,14 @@ describe("progressive composer model", () => {
 
 			const message = chips()[0].querySelector("input") as HTMLInputElement;
 			message.value = "hello";
+			message.dispatchEvent(new Event("input", {bubbles: true}));
 			message.dispatchEvent(new KeyboardEvent("keyup", {key: "o"}));
 			expect(chips()[1].classList.contains("commandHidden")).toBe(false);
 			expect(chips()[2].classList.contains("commandHidden")).toBe(true);
 
 			const name = chips()[1].querySelector("input") as HTMLInputElement;
 			name.value = "alice";
+			name.dispatchEvent(new Event("input", {bubbles: true}));
 			name.dispatchEvent(new KeyboardEvent("keyup", {key: "a"}));
 			// The last required filled reveals no optional field.
 			expect(chips()[2].classList.contains("commandHidden")).toBe(true);
@@ -1545,6 +1555,35 @@ describe("progressive composer model", () => {
 		} finally {
 			html.remove();
 			searchOptions.remove();
+		}
+	});
+
+	it("an edit with no key (a cut, dictation) that removes the command ends command mode", async () => {
+		const {Channel} = await import("../channel");
+		const typebox = document.createElement("div");
+		typebox.id = "typebox";
+		const markdown = {boxEnabled: false, boxupdate: () => {}};
+		(typebox as unknown as {markdown: unknown}).markdown = markdown;
+		document.body.append(typebox);
+		const {localuser} = messageIn("100");
+		const chan = Object.assign(Object.create(Channel.prototype), {
+			id: "200",
+			owner: {id: "100", localuser, info: {api: API}, headers: {}},
+		});
+		(localuser as unknown as {channelfocus: unknown}).channelfocus = chan;
+		const command = new Command(commandJson([{type: 3, name: "query", description: ""}]), localuser);
+		try {
+			chan.startCommand(command);
+			await new Promise((r) => setTimeout(r, 0));
+			expect(markdown.boxEnabled).toBe(false);
+
+			typebox.replaceChildren();
+			typebox.dispatchEvent(new Event("input", {bubbles: true}));
+
+			expect(markdown.boxEnabled).toBe(true);
+		} finally {
+			typebox.remove();
+			document.getElementById("searchOptions")?.remove();
 		}
 	});
 
@@ -1816,6 +1855,7 @@ describe("progressive composer model", () => {
 				".commandinput[commandName='count'] input",
 			) as HTMLInputElement;
 			count.value = "5";
+			count.dispatchEvent(new Event("input", {bubbles: true}));
 			count.dispatchEvent(new KeyboardEvent("keyup", {key: "5"}));
 
 			// view's required `limit` must reveal — not be shadowed by browse's optional one.
@@ -1861,6 +1901,7 @@ describe("progressive composer model", () => {
 				".commandinput[commandName='count'] input",
 			) as HTMLInputElement;
 			count.value = "5";
+			count.dispatchEvent(new Event("input", {bubbles: true}));
 			count.dispatchEvent(new KeyboardEvent("keyup", {key: "5"}));
 
 			// The re-render a channel switch performs keeps what was typed.
@@ -1894,6 +1935,7 @@ describe("keyboard and sequence regressions (GLM-week audit)", () => {
 	/** One keystroke the way the browser delivers it: the chip input's own keyup, then the
 	 * typebox's bubbled handler (index.ts runs localuser.handleKeyUp). */
 	function key(input: HTMLInputElement, localuser: {handleKeyUp: (e: KeyboardEvent) => boolean}, k: string) {
+		if (k.length === 1) input.dispatchEvent(new Event("input", {bubbles: true}));
 		input.dispatchEvent(new KeyboardEvent("keyup", {key: k}));
 		return localuser.handleKeyUp(new KeyboardEvent("keyup", {key: k}));
 	}
@@ -2058,6 +2100,7 @@ describe("keyboard and sequence regressions (GLM-week audit)", () => {
 			const seen: boolean[][] = [];
 			for (const ch of ["h", "he", "hel"]) {
 				a.value = ch;
+				a.dispatchEvent(new Event("input", {bubbles: true}));
 				a.dispatchEvent(new KeyboardEvent("keyup", {key: ch.at(-1)}));
 				seen.push(shown());
 			}

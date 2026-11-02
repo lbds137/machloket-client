@@ -5447,7 +5447,7 @@ class Localuser {
 			);
 		};
 		const debouncedSearch = debounce(() => searchBox(selectedProvider), 350);
-		search.onkeyup = () => {
+		search.oninput = () => {
 			debouncedSearch();
 		};
 		search.classList.add("searchGifBar");

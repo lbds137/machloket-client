@@ -168,7 +168,18 @@ describe("saving from the editor", () => {
 
 	it("a refused edit reopens the editor with what was typed, and says why", async () => {
 		captureRequests(API + "/channels/c1/messages/m3", () =>
-			Response.json({code: 50035, message: "Must be 2000 or fewer in length."}, {status: 400}),
+			Response.json(
+				{
+					code: 50035,
+					message: "Invalid Form Body",
+					errors: {
+						content: {
+							_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 4000 or fewer in length."}],
+						},
+					},
+				},
+				{status: 400},
+			),
 		);
 		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
 		const message = Object.assign(messageSaying("old"), {id: "m3"});
@@ -177,7 +188,8 @@ describe("saving from the editor", () => {
 
 		expect(reopen).toHaveBeenCalledOnce();
 		expect(message.editDraft).toBe("new text");
-		expect(document.body.textContent).toContain("Must be 2000 or fewer in length.");
+		expect(document.body.textContent).toContain("Must be 4000 or fewer in length.");
+		expect(document.body.textContent).not.toContain("Invalid Form Body");
 	});
 
 	it("an edit that never reached the server reopens the editor too", async () => {
@@ -205,7 +217,14 @@ describe("saving from the editor", () => {
 	});
 
 	const refused = () =>
-		Response.json({code: 50035, message: "Must be 2000 or fewer in length."}, {status: 400});
+		Response.json(
+			{
+				code: 50035,
+				message: "Invalid Form Body",
+				errors: {content: {_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 4000 or fewer in length."}]}},
+			},
+			{status: 400},
+		);
 
 	it("a refusal leaves alone an editor the user has opened on the message again", async () => {
 		captureRequests(API + "/channels/c1/messages/m6", refused);
@@ -218,7 +237,7 @@ describe("saving from the editor", () => {
 
 		expect(reopen).not.toHaveBeenCalled();
 		expect(message.editDraft).toBeUndefined();
-		expect(document.body.textContent).toContain("Must be 2000 or fewer in length.");
+		expect(document.body.textContent).toContain("Must be 4000 or fewer in length.");
 	});
 
 	it("a refusal doesn't take over another message's open editor", async () => {

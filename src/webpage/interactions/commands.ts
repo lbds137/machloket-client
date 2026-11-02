@@ -923,19 +923,17 @@ class StringOption extends Option {
 		input.onkeydown = (e) => {
 			chipBackspace(div, input, channel, e);
 		};
-		const follow = () => {
+		input.onkeyup = (e) => {
+			chipExit(div, input, this.owner, channel, e);
+		};
+		// On input, not keyup: a paste, dictation or a keyboard suggestion comes with no key.
+		input.oninput = () => {
 			const last = this.owner.getState(this, channel);
 			this.owner.stateChange(this, channel, input.value);
 			if (this.choices?.length && last !== input.value) {
 				this.displayChoices(input, channel);
 			}
 		};
-		input.onkeyup = (e) => {
-			chipExit(div, input, this.owner, channel, e);
-			follow();
-		};
-		// A paste, dictation or a keyboard suggestion changes the value with no key events.
-		input.oninput = follow;
 
 		div.append(label, input);
 		return div;
@@ -1222,8 +1220,8 @@ class EntityOption extends Option {
 		const hit = this.collect(channel).find((_) => _.value === state);
 		return hit ? hit.display : state;
 	}
-	/** Per input: the text the state last followed (a typed query or a pick's display). A keyup
-	 * that leaves the text as it was — Enter, Tab, an arrow — must not touch the state or the
+	/** Per input: the text the state last followed (a typed query or a pick's display). An input
+	 * event that leaves the text as it was must not touch the state or the
 	 * popup: rewriting the state to "@Name" would lose the picked id, and rebuilding the popup
 	 * would reset its selection and make the sending Enter pick again. */
 	private followed = new WeakMap<HTMLInputElement, string>();
@@ -1270,18 +1268,16 @@ class EntityOption extends Option {
 		input.onkeydown = (e) => {
 			chipBackspace(div, input, channel, e);
 		};
-		const follow = () => {
+		input.onkeyup = (e) => {
+			chipExit(div, input, this.owner, channel, e);
+		};
+		// On input, not keyup: a paste, dictation or a keyboard suggestion comes with no key.
+		input.oninput = () => {
 			if (this.followed.get(input) === input.value) return;
 			this.followed.set(input, input.value);
 			this.owner.stateChange(this, channel, input.value);
 			this.displayCandidates(input, channel);
 		};
-		input.onkeyup = (e) => {
-			chipExit(div, input, this.owner, channel, e);
-			follow();
-		};
-		// A paste, dictation or a keyboard suggestion changes the value with no key events.
-		input.oninput = follow;
 
 		div.append(label, input);
 		return div;

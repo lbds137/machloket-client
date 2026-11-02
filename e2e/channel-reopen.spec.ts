@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {DESKTOP, MOCK_CHANNEL, loginAndOpenChannel, test} from "./fixtures";
+import {DESKTOP, MOCK_CHANNEL, MOCK_FORUM_CHANNEL, loginAndOpenChannel, test} from "./fixtures";
 
 // Tapping a channel's row while that channel is still loading: the guild's tile opens its
 // channel, and the row is the next tap. Only a slow answer keeps the first build in flight,
@@ -74,5 +74,26 @@ test.describe("on desktop", () => {
 			"This is a NSFW channel, do you wish to proceed?",
 		);
 		await expect(page.locator("#loadingdiv")).not.toHaveClass(/loading/);
+	});
+
+	test.describe("with a forum", () => {
+		test.use({mockInstanceOptions: {extraChannels: [MOCK_FORUM_CHANNEL]}});
+
+		test("leaving a channel still loading for a forum takes its skeleton down", async ({
+			page,
+			mockInstance,
+		}) => {
+			void mockInstance; // mount the mock's routes; the handle stays unread
+			await page.route(`**/channels/${MOCK_CHANNEL.id}/messages?*`, () => {
+				// Never answered: the channel is left while its fetch is still out.
+			});
+
+			await loginAndOpenChannel(page);
+			await expect(page.locator("#loadingdiv")).toHaveClass(/loading/);
+			await page.locator("#channels button.channelbutton", {hasText: MOCK_FORUM_CHANNEL.name}).click();
+
+			await expect(page.locator(".forumSearch")).toBeVisible();
+			await expect(page.locator("#loadingdiv")).not.toHaveClass(/loading/);
+		});
 	});
 });

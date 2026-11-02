@@ -32,7 +32,7 @@ async function newPostEditor() {
 		availableTags: [],
 		hasPermission: () => true,
 	}) as InstanceType<typeof Channel>;
-	vi.spyOn(forum, "forumSearch").mockResolvedValue(undefined);
+	const search = vi.spyOn(forum, "forumSearch").mockResolvedValue(undefined);
 	forum.renderForum();
 	const post = document.querySelector<HTMLButtonElement>(".newPostForumButton")!;
 	post.click(); // opens the editor
@@ -40,8 +40,17 @@ async function newPostEditor() {
 	const area = document.querySelector<HTMLElement>(".editMessage")!;
 	area.textContent = "Hello";
 	area.dispatchEvent(new InputEvent("input", {bubbles: true}));
-	return {post, goTo, error: () => document.querySelector(".forumPostError")!.textContent};
+	return {post, goTo, search, error: () => document.querySelector(".forumPostError")!.textContent};
 }
+
+it("the post search follows text that arrives without a key (paste, dictation)", async () => {
+	const {search} = await newPostEditor();
+	const box = document.querySelector<HTMLInputElement>(".forumSearch")!;
+	box.value = "zebra";
+	box.dispatchEvent(new Event("input"));
+
+	await vi.waitFor(() => expect(search.mock.lastCall?.[0]).toBe("zebra"));
+});
 
 it("a refused new post says so instead of opening a channel that doesn't exist", async () => {
 	vi.spyOn(globalThis, "fetch").mockResolvedValue(

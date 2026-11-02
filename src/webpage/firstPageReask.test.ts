@@ -247,3 +247,19 @@ it("getHTML without a message fetch leaves the first-page state alone", async ()
 	expect(begin).not.toHaveBeenCalled();
 	expect((channel as unknown as {firstPageRefusals?: number}).firstPageRefusals).toBe(2);
 });
+
+it("a re-tap scrolls to the newest message, except while the build it would race is in flight", async () => {
+	const channel = scaffoldedChannel();
+	const focus = vi.spyOn(channel.infinite, "focus");
+	Object.assign(channel, {lastmessageid: "900"});
+	Object.assign(channel.localuser, {channelfocus: channel});
+	const skeleton = document.getElementById("loadingdiv")!;
+
+	skeleton.classList.add("loading");
+	await channel.getHTML(false);
+	expect(focus).not.toHaveBeenCalled();
+
+	skeleton.classList.remove("loading");
+	await channel.getHTML(false);
+	expect(focus).toHaveBeenCalledWith("900", false, true);
+});

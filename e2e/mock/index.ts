@@ -364,6 +364,25 @@ export const MOCK_NSFW_CHANNEL: channeljson = {
 	nsfw: true,
 };
 
+// Served only to a spec asking through `extraChannels`, so the sidebar the screenshot pins see
+// stays as it is.
+export const MOCK_VOICE_CHANNEL: channeljson = {
+	...MOCK_CHANNEL,
+	id: "1200000000000000203",
+	name: "hangout",
+	type: 2,
+	topic: "",
+	position: 3,
+};
+export const MOCK_FORUM_CHANNEL: channeljson = {
+	...MOCK_CHANNEL,
+	id: "1200000000000000204",
+	name: "questions",
+	type: 15,
+	topic: "",
+	position: 4,
+};
+
 // src/webpage/guild.ts (Guild constructor) & (generateGuildIcon)
 // src/webpage/jsontypes.ts (guildjson)
 export const MOCK_GUILD: guildjson = {
@@ -1123,6 +1142,8 @@ export interface MockInstanceOptions {
 	 * REST member lookup and the `member` of every message by that user all answer with
 	 * them. An id the fixture doesn't know is served too (a third person for the member list). */
 	members?: memberjson[];
+	/** Channels served in GUILD_CREATE after the fixture's own (MOCK_VOICE_CHANNEL, MOCK_FORUM_CHANNEL). */
+	extraChannels?: channeljson[];
 }
 
 export interface MockInstanceHandle {
@@ -1167,6 +1188,7 @@ export async function mountMockInstance(
 		stickers,
 		extraRoles,
 		members: memberOverrides,
+		extraChannels,
 	} = options;
 
 	const memberById = new Map<string, memberjson>([
@@ -1186,7 +1208,8 @@ export async function mountMockInstance(
 		(extraEveryonePermissions && extraEveryonePermissions.length > 0) ||
 		everyonePermissions !== undefined ||
 		stickers !== undefined ||
-		(extraRoles && extraRoles.length > 0)
+		(extraRoles && extraRoles.length > 0) ||
+		(extraChannels && extraChannels.length > 0)
 	) {
 		let roles = MOCK_GUILD.roles;
 		if (everyonePermissions !== undefined || extraEveryonePermissions?.length) {
@@ -1207,6 +1230,7 @@ export async function mountMockInstance(
 			d: {
 				...MOCK_GUILD,
 				roles,
+				channels: [...MOCK_GUILD.channels, ...(extraChannels ?? [])],
 				...(stickers !== undefined ? {stickers} : {}),
 			},
 		};
@@ -1638,6 +1662,11 @@ export async function mountMockInstance(
 			// res.text() and slices the first 7 chars).
 			if (method === "GET" && pathname === "/getupdates") {
 				return route.fulfill({status: 200, contentType: "text/plain", body: "e2e-mock"});
+			}
+
+			// A forum with no posts (src/webpage/channel.ts fetchThreads).
+			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+\/threads\/search$/.test(pathname)) {
+				return fulfillJson({threads: [], members: [], messages: [], total_results: 0, has_more: false});
 			}
 
 			// No MFA recovery hold on the mock account (src/webpage/recoveryBanner.ts reads this at

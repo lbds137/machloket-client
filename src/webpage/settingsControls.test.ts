@@ -78,8 +78,12 @@ describe("member search box", () => {
 		(html.querySelector(".svg-plus") as HTMLElement).click();
 		const input = document.querySelector<HTMLInputElement>(".amsBox input")!;
 		const type = (text: string, key = text.at(-1)!) => {
+			if (key === "Enter") {
+				input.dispatchEvent(new KeyboardEvent("keyup", {key}));
+				return;
+			}
 			input.value = text;
-			input.dispatchEvent(new KeyboardEvent("keyup", {key}));
+			input.dispatchEvent(new Event("input"));
 		};
 		return {ams, type, html};
 	}
@@ -96,6 +100,17 @@ describe("member search box", () => {
 		// And the handler must actually close the box, not merely exist.
 		input.blur();
 		await vi.waitFor(() => expect(document.querySelector(".amsBox")).toBeNull());
+	});
+
+	it("searches text that arrives without a key (paste, dictation)", async () => {
+		openBox();
+		await after(30);
+		const input = document.querySelector<HTMLInputElement>(".amsBox input")!;
+		input.value = "pasted";
+		input.dispatchEvent(new Event("input", {bubbles: true}));
+		await after(100);
+
+		expect(document.querySelector(".amsBox .reses")!.textContent).toBe("match for pasted");
 	});
 
 	it("shows the newest search's results, not a slower older one's", async () => {

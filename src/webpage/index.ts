@@ -477,7 +477,7 @@ if (window.location.pathname.startsWith("/channels")) {
 				thisUser.mSearch(markdown.rawString);
 			}
 		});
-		searchBox.addEventListener("keyup", () => {
+		searchBox.addEventListener("input", () => {
 			if (searchBox.textContent === "") {
 				setTimeout(() => (searchBox.innerHTML = ""), 0);
 				searchX.classList.add("svg-search");
