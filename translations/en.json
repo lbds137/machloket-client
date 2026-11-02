@@ -803,6 +803,13 @@
 	},
 	"messageLink": "Message in # $1",
 	"messagesLoadFailed": "Couldn't load the messages. Open the channel again to retry.",
+	"mfaRecovery": {
+		"anyMoment": "Any moment now",
+		"cancel": "Cancel removal",
+		"cancelFailed": "Couldn't cancel it. Try again.",
+		"pending": "Someone asked to remove two-factor authentication from your account. If this wasn't you, cancel it now.",
+		"pendingAt": "Someone asked to remove two-factor authentication from your account. On $1 it will be removed and you'll be signed out everywhere. If this wasn't you, cancel it now."
+	},
 	"muteDuration": "Unmute in:",
 	"nevermind": "Nevermind",
 	"no": "No",

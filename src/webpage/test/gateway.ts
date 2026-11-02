@@ -1,3 +1,5 @@
+import {vi} from "vitest";
+
 // Callers import ./localuser before this module, in the entry's order (see the suites using it).
 const {Localuser} = await import("../localuser");
 
@@ -41,6 +43,8 @@ export class FakeWebSocket {
 export function gatewayUser() {
 	const user = Object.assign(Object.create(Localuser.prototype), {
 		serverurls: {gateway: "wss://gw.test"},
+		// A resume reads the MFA recovery state; these suites aren't about it, and no network answers.
+		recoveryBannerState: {refresh: vi.fn(async () => {}), apply: vi.fn(), stop: vi.fn()},
 		messages: new Map(),
 		idToPrev: new Map(),
 		idToNext: new Map(),

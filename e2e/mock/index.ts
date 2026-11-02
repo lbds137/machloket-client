@@ -41,6 +41,7 @@
  * - POST /api/v9/invites/:code                      -> {guild: {id}} (acceptInvite's join)
  * - GET  /api/v9/channels/:channelId                -> a fixture channel, else 404 10003
  * - GET  /api/v9/users/@me/export                   -> MOCK_USER_EXPORT (attachment download)
+ * - *    /api/v9/users/@me/mfa/recovery             -> 404 (no hold pending)
  * - GET  http://127.0.0.1:4173/e2e-assets/*          -> the embed fixture's inline SVGs
  * - Any other /api/*, /.well-known/*, /_spacebar/*  -> route.abort("failed") so missed routes fail loudly
  *
@@ -1632,6 +1633,12 @@ export async function mountMockInstance(
 			// res.text() and slices the first 7 chars).
 			if (method === "GET" && pathname === "/getupdates") {
 				return route.fulfill({status: 200, contentType: "text/plain", body: "e2e-mock"});
+			}
+
+			// No MFA recovery hold on the mock account (src/webpage/recoveryBanner.ts reads this at
+			// READY); e2e/recovery-banner.spec.ts routes over it.
+			if (pathname === "/api/v9/users/@me/mfa/recovery") {
+				return route.fulfill({status: 404, json: {message: "No pending MFA recovery request"}});
 			}
 
 			// 19. User settings routes (src/webpage/localuser.ts showusersettings)

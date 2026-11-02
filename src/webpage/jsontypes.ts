@@ -1,4 +1,5 @@
 import type {ModalCreateEvent} from "./interactions/modal.js";
+import type {MfaRecoveryUpdate} from "./recoveryBanner.js";
 
 interface readyjson {
 	op: 0;
@@ -1312,6 +1313,12 @@ type wsjson =
 			op: 0;
 			t: "RESUMED";
 			d: unknown;
+			s: number;
+	  }
+	| {
+			op: 0;
+			t: "MFA_RECOVERY_UPDATE";
+			d: MfaRecoveryUpdate;
 			s: number;
 	  }
 	| {

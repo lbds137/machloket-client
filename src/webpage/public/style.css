@@ -12,13 +12,14 @@ body {
 
 :root {
 	--app-height: 100svh;
+	--page-height: calc(var(--app-height) - var(--notice-height, 0px));
 	--safe-top: env(safe-area-inset-top, 0);
 	--safe-bottom: env(safe-area-inset-bottom, 0);
 }
 
 #page {
-	height: var(--app-height);
-	min-height: var(--app-height);
+	height: var(--page-height);
+	min-height: var(--page-height);
 	background: var(--primary-bg);
 }
 
@@ -7301,12 +7302,12 @@ fieldset input[type="radio"] {
 	#page {
 		display: block;
 		position: fixed;
-		top: 0;
+		top: var(--notice-height, 0px);
 		right: 0;
 		bottom: 0;
 		left: 0;
-		height: var(--app-height);
-		min-height: var(--app-height);
+		height: var(--page-height);
+		min-height: var(--page-height);
 	}
 
 	#servers,
@@ -7315,7 +7316,7 @@ fieldset input[type="radio"] {
 		position: absolute;
 		top: 0;
 		bottom: 0;
-		height: var(--app-height);
+		height: var(--page-height);
 		min-height: 0;
 	}
 
@@ -7424,7 +7425,7 @@ fieldset input[type="radio"] {
 		transition, when the panel is already invisible. */
 	#page.mobileSearchOpen #sideContainDiv {
 		position: fixed;
-		inset: 0;
+		inset: var(--notice-height, 0px) 0 0;
 		width: 100vw;
 		margin: 0;
 		z-index: 5;
@@ -8735,6 +8736,37 @@ textarea.interactionModalInput {
 }
 
 #notifyBanner button {
+	cursor: pointer;
+}
+
+#recoveryBanner {
+	box-sizing: border-box;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 12px;
+	padding: 8px 12px;
+	/* Darkened: white body text on the theme red alone is too faint for a warning to be read. */
+	background: color-mix(in srgb, var(--red) 65%, black);
+	color: white;
+}
+
+/* .flexltr's display:flex would beat the UA's [hidden] rule (#gimmefile precedent). */
+#recoveryBanner[hidden] {
+	display: none;
+}
+
+#recoveryBannerText {
+	flex: 1 1 240px;
+	min-width: 0;
+}
+
+#recoveryBannerWhen {
+	font-weight: bold;
+	white-space: nowrap;
+}
+
+#recoveryBannerCancel {
+	flex-shrink: 0;
 	cursor: pointer;
 }
 
