@@ -104,6 +104,19 @@ test("a bare guild deep link auto-opens the guild's channel", async ({page, mock
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
 });
 
+// The mock's GUILD_CREATE sits queued behind READY, so it lands before the pillar exists.
+test("a guild arriving before the pillar is built shows one icon, below Home", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance; // mount the mock's routes; the handle stays unread
+	await loginAndOpenChannel(page);
+	const entries = page.locator("#servers > .servernoti");
+	await expect(entries).toHaveCount(2);
+	await expect(entries.nth(0).locator(".home")).toHaveCount(1);
+	await expect(entries.nth(1).locator("img.servericon")).toHaveCount(1);
+});
+
 // Class sweep, channel-shaped deep link (/channels/:guildId/:channelId): the channels
 // register synchronously at GUILD_CREATE, so the URL's channel resolves without waiting
 // on the member fetch - this pins that the shape boots into the named channel.

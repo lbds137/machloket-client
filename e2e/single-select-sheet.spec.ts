@@ -31,8 +31,9 @@ test("the single-select sheet answers on tap with radio markers and no Apply", a
 	await expect(sheet.locator(".selectSheetMarker:not(.selectSheetRadio)")).toHaveCount(0);
 	await expect(sheet.locator(".selectSheetFooter")).toHaveCount(0);
 
-	// The sheet's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
-	await pinShot(page.locator(".selectSheetBackdrop"), "single-sheet-open.png");
+	// The sheet's look, Deck-local baseline (DOM asserts lead; this pins the chrome). The
+	// sheet alone: the backdrop shows the chat through it, and a settling list moves that.
+	await pinShot(sheet, "single-sheet-open.png");
 
 	// The tap is the answer: one value out, sheet gone.
 	await sheet.locator(".selectSheetRow", {hasText: "Beta"}).tap();

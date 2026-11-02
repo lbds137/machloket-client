@@ -1122,11 +1122,9 @@ class Localuser {
 						this.guildids.set(guildy.id, guildy);
 						this.guildOrder.push(guildy);
 						const divy = this.makeGuildIcon(guildy);
-						guildy.HTMLicon = divy;
-						(document.getElementById("servers") as HTMLDivElement).insertBefore(
-							divy,
-							document.getElementById("bottomseparator"),
-						);
+						// A frame queued behind READY lands before the pillar exists: buildservers
+						// then builds this guild's icon from this.guilds, so nothing to mount yet.
+						document.getElementById("bottomseparator")?.before(divy);
 						guildy.message_notifications = guildy.properties.default_message_notifications;
 						guildy.showWelcome();
 						this.guildArrived(guildy.id);

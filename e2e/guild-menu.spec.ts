@@ -17,8 +17,7 @@ test.beforeEach(({mockInstance}) => {
 	void mockInstance;
 });
 
-/** The open guild's pillar entry. Not "the first icon": the mock's GUILD_CREATE lands during boot
- * and leaves a second, unlinked icon above Home that a mute never touches. */
+/** The open guild's pillar entry. */
 const openGuildIcon = (page: Page) => page.locator("#servers .servernoti.serveropen");
 /** Every pillar entry showing as muted (Guild.showMuteState toggles the class). */
 const guildPillar = (page: Page) => page.locator("#servers .servernoti.muted");
