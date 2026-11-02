@@ -102,6 +102,6 @@ test("the video embed's poster and player stay on a phone screen and keep their 
 	await expect(player).toHaveCount(1);
 	const playerBox = (await player.boundingBox())!;
 	expect(playerBox.x + playerBox.width, "player's right edge").toBeLessThanOrEqual(viewportWidth);
-	// The fixture thumbnail is 480x360.
-	expect(playerBox.height / playerBox.width, "player keeps the video's shape").toBeCloseTo(0.75, 2);
+	// The fixture video is 1280x720, under a 480x360 poster.
+	expect(playerBox.height / playerBox.width, "player keeps the video's shape").toBeCloseTo(0.5625, 2);
 });
