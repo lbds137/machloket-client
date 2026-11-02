@@ -3229,8 +3229,6 @@ class Channel extends SnowFlake {
 		if (this.myhtml) {
 			this.myhtml.classList.add("viewChannel");
 		}
-		const id = ++Channel.genid;
-
 		if (this.localuser.channelfocus && this.localuser.channelfocus !== this) {
 			this.localuser.channelfocus.infinite.delete();
 
@@ -3240,10 +3238,15 @@ class Channel extends SnowFlake {
 				prev.parent?.createguildHTML();
 			}
 		} else if (this.localuser.channelfocus === this && !aroundMessage && !this.isForum()) {
-			if (this.lastmessageid)
+			// While the skeleton is up the build in flight does its own focus when it finishes.
+			const building = document.getElementById("loadingdiv")?.classList.contains("loading");
+			if (this.lastmessageid && !building)
 				this.infinite.focus(aroundMessage || this.lastmessageid, !!aroundMessage, true);
 			return;
 		}
+		// Past the re-tap above: a build of this channel still in flight must stay the newest, or
+		// it abandons itself and nothing takes its skeleton down.
+		const id = ++Channel.genid;
 		this.guild.prevchannel = this;
 		this.guild.perminfo.prevchannel = this.id;
 		this.localuser.channelfocus = this;
@@ -3257,6 +3260,11 @@ class Channel extends SnowFlake {
 			}
 		}
 
+		// Neither panel builds messages, and the channel being left has abandoned its build, so
+		// its skeleton is this open's to take down.
+		if (this.nsfwGated() || this.isForum()) {
+			document.getElementById("loadingdiv")?.classList.remove("loading");
+		}
 		if (this.nsfwGated()) {
 			this.nsfwPannel();
 			return;
@@ -3822,8 +3830,8 @@ class Channel extends SnowFlake {
 					? cooldownRemaining
 					: Math.max(cooldownRemaining, backoff);
 				const token = this.reaskToken;
-				// The token (not the global generation, which any click on the channel in view
-				// bumps) says no newer build of this channel has started; the focus check says
+				// The token (not the global generation, which any open bumps) says no newer build
+				// of this channel has started; the focus check says
 				// the user is still here. Both are checked again after the fetch.
 				const current = () => this.localuser.channelfocus === this && token === this.reaskToken;
 				setTimeout(async () => {

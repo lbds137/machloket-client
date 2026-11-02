@@ -83,7 +83,7 @@ it("a build overtaken by something other than a newer build lets the next one ru
 	);
 
 	const jump = channel.buildmessages("5");
-	Channel.genid++; // re-opening the channel already in view bumps the generation, builds nothing
+	Channel.genid++; // a newer open overtakes this build; it builds nothing of this channel's
 	found();
 	await jump;
 
