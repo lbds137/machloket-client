@@ -34,7 +34,7 @@ function newest<T extends Element>(selector: string) {
 async function pickInstance(value: string) {
 	const input = newest<HTMLInputElement>('input[list="instances"]');
 	input.value = value;
-	input.dispatchEvent(new KeyboardEvent("keyup"));
+	input.dispatchEvent(new Event("input"));
 	await vi.waitUntil(() => storedInstance()?.api === value + "/api/v9", {timeout: 2000});
 }
 
@@ -114,7 +114,7 @@ describe("InstancePicker", () => {
 		const div = picker.generateHTML();
 		const input = div.querySelector<HTMLInputElement>("input")!;
 		input.value = "https://unregistered.test:9999";
-		input.dispatchEvent(new KeyboardEvent("keyup"));
+		input.dispatchEvent(new Event("input"));
 		await vi.waitUntil(() => picker.validationState === "invalid", {timeout: 2000});
 
 		expect(div.querySelector(".verify")!.textContent).toContain("certificate");
@@ -286,9 +286,26 @@ describe("InstancePicker gate edges (GLM-week audit)", () => {
 		expect(button.disabled).toBe(false);
 
 		input.value = "http://first.tes";
-		input.dispatchEvent(new KeyboardEvent("keyup", {key: "Backspace"}));
+		input.dispatchEvent(new Event("input"));
 
 		// Within the 500ms debounce, an Enter must not log in on the previous check's "ok".
+		expect(picker.validationState).toBe("pending");
+		expect(button.disabled).toBe(true);
+	});
+
+	it("a value that arrives without a key (a suggestion, a paste) voids the last check", async () => {
+		await instancefetch;
+		addInstance("http://first.test", 0);
+		const {picker, button} = pickerWithButton();
+		const div = picker.generateHTML();
+		const input = div.querySelector<HTMLInputElement>("input")!;
+		input.value = "http://first.test";
+		await picker.validate();
+		expect(picker.validationState).toBe("ok");
+
+		input.value = "http://other.test";
+		input.dispatchEvent(new Event("input"));
+
 		expect(picker.validationState).toBe("pending");
 		expect(button.disabled).toBe(true);
 	});
@@ -310,7 +327,7 @@ describe("InstancePicker gate edges (GLM-week audit)", () => {
 		input.value = "http://slow.test";
 		const inFlight = picker.validate();
 		input.value = "http://slow.tes";
-		input.dispatchEvent(new KeyboardEvent("keyup", {key: "Backspace"}));
+		input.dispatchEvent(new Event("input"));
 		await inFlight;
 		expect(picker.validationState).toBe("pending");
 		expect(button.disabled).toBe(true);

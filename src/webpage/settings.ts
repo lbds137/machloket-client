@@ -987,19 +987,17 @@ class AsyncMultiSelect implements OptionsElement<string[]> {
 		};
 		const search = () => (latest = runSearch());
 
+		input.oninput = search;
 		input.onkeyup = async (e) => {
-			if (e.key === "Enter") {
-				// The top result for what's typed now, not for an earlier keystroke: wait until
-				// no newer search started while waiting.
-				let waited;
-				do {
-					waited = latest;
-					await waited;
-				} while (waited !== latest);
-				if (opts[0]) pick(opts[0]);
-			} else {
-				search();
-			}
+			if (e.key !== "Enter") return;
+			// The top result for what's typed now, not for an earlier keystroke: wait until
+			// no newer search started while waiting.
+			let waited;
+			do {
+				waited = latest;
+				await waited;
+			} while (waited !== latest);
+			if (opts[0]) pick(opts[0]);
 		};
 
 		search();
@@ -1586,8 +1584,8 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		suggest.classList.add("instancesuggest");
 		div.append(suggest);
 		let cur = 0;
-		input.onkeyup = async () => {
-			// A key that edits nothing (Tab, arrows, the submitting Enter) leaves the check alone.
+		input.oninput = async () => {
+			// An edit back to the value just checked leaves the check alone.
 			if (input.value === this.checkedValue) return;
 			// The edit voids the last check NOW: through the debounce an Enter would otherwise
 			// submit on the previous value's "ok" (and a check still in flight must not land).
@@ -1710,7 +1708,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 					// A ?instance= link locks the input; a row must not unlock it by the side.
 					if (!picker || picker.input.readOnly) return;
 					picker.input.value = url;
-					picker.input.dispatchEvent(new KeyboardEvent("keyup"));
+					picker.input.dispatchEvent(new Event("input"));
 				};
 				suggest.append(row);
 			}

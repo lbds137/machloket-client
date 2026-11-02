@@ -26,7 +26,7 @@ function newest<T extends Element>(selector: string) {
 async function pickInstance(value: string) {
 	const input = newest<HTMLInputElement>('input[list="instances"]');
 	input.value = value;
-	input.dispatchEvent(new KeyboardEvent("keyup"));
+	input.dispatchEvent(new Event("input"));
 	await vi.waitUntil(() => storedInstance()?.api === value + "/api/v9", {timeout: 2000});
 }
 
