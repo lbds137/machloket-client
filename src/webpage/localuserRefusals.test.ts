@@ -73,20 +73,13 @@ it("a refused server creation brings its form back before the refusal opens, so 
 
 it("saveGuildOrder records accepted folders on 200, and on 403 restores guildFolders, rebuilds #servers, and opens a dialog", async () => {
 	await I18n.done;
-	const servers = document.createElement("div");
-	servers.id = "servers";
-	document.body.append(servers);
 
 	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
-	const lookingHtml = document.createElement("div");
 	const user = makeUser({
 		guildFolders: [],
 		guildOrder: [folder("first")],
-		lookingguild: {html: lookingHtml},
 	});
-	const buildservers = vi.spyOn(user, "buildservers").mockImplementation(() => {
-		servers.append(document.createElement("span"));
-	});
+	const buildservers = vi.spyOn(user, "buildservers").mockImplementation(() => {});
 	const shown = vi.spyOn(Dialog.prototype, "show");
 
 	// Accepted save: records the sent guild_folders without rebuilding.
@@ -97,8 +90,8 @@ it("saveGuildOrder records accepted folders on 200, and on 403 restores guildFol
 	expect(buildservers).not.toHaveBeenCalled();
 	expect(shown).not.toHaveBeenCalled();
 
-	// Refused save: restores guildFolders to accepted, empties and rebuilds #servers, marks open guild, opens dialog.
-	servers.append(document.createElement("div"), document.createElement("div"));
+	// Refused save: restores guildFolders to accepted, rebuilds #servers, opens dialog.
+	// What the rebuild leaves (one pillar, the open guild marked): buildservers.test.ts, on the real builder.
 	user.guildFolders = [{id: 1, name: "mutated", guild_ids: ["g1"], color: 0}];
 	user.guildOrder = [folder("refused")] as never;
 	captureRequests(API + "/users/@me/settings", () => new Response(null, {status: 403}));
@@ -106,8 +99,6 @@ it("saveGuildOrder records accepted folders on 200, and on 403 restores guildFol
 
 	expect(user.guildFolders).toEqual(accepted);
 	expect(buildservers).toHaveBeenCalledOnce();
-	expect(servers.childElementCount).toBe(1);
-	expect(lookingHtml.classList.contains("serveropen")).toBe(true);
 	expect(shown).toHaveBeenCalledOnce();
 });
 
