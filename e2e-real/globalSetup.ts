@@ -4,7 +4,9 @@ import {pathToFileURL} from "node:url";
 // and the checkout's built server on ephemeral localhost ports. It lives outside this repo,
 // so the environment names the file.
 interface ServerHarness {
-	bootInstance(): Promise<{port: number; logPath: string; close(): Promise<void>}>;
+	bootInstance(options: {
+		config: Record<string, unknown>;
+	}): Promise<{port: number; logPath: string; close(): Promise<void>}>;
 }
 
 async function loadHarness(): Promise<ServerHarness> {
@@ -20,7 +22,11 @@ async function loadHarness(): Promise<ServerHarness> {
 
 export default async function globalSetup() {
 	const {bootInstance} = await loadHarness();
-	const inst = await bootInstance();
+	// Every spec registers its own accounts, and the default instance-wide cap is reached within
+	// one run of this tier.
+	const inst = await bootInstance({
+		config: {limits: {absoluteRate: {register: {enabled: false}}}},
+	});
 	// Workers inherit this process's environment.
 	process.env.MACHLOKET_E2E_PORT = String(inst.port);
 	// The harness labels its postgres container with the pid that booted it.

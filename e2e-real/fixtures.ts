@@ -168,8 +168,9 @@ export async function newAccount(label: string): Promise<RealAccount> {
 		}),
 		signal: AbortSignal.timeout(30_000),
 	});
-	const body = (await res.json().catch(() => null)) as {token?: string} | null;
-	if (!res.ok || !body?.token) throw new Error(`register ${name}: ${res.status}`);
+	const text = await res.text();
+	const body = (text.startsWith("{") ? JSON.parse(text) : null) as {token?: string} | null;
+	if (!res.ok || !body?.token) throw new Error(`register ${name}: ${res.status} ${text.slice(0, 300)}`);
 	const me = await rest<{id: string; username: string}>(body.token, "GET", "/users/@me");
 	// The instance auto-joins every new account to the first guild ever created on it, which
 	// would make a spec's "the account's one guild" depend on the specs that ran before it.
@@ -373,6 +374,108 @@ export const test = base.extend<{
 		{auto: true},
 	],
 });
+
+export interface BotInteraction {
+	id: string;
+	token: string;
+	type: number;
+	data: any;
+	message?: {id: string};
+}
+
+/** A bot's gateway session in the spec's process: a bot framework's minimum, with the
+ * interactions it receives queued for the spec to answer. */
+export class BotGateway {
+	private readonly socket: WebSocket;
+	private readonly queue: BotInteraction[] = [];
+	private readonly waiting: ((interaction: BotInteraction) => void)[] = [];
+	private heartbeat?: ReturnType<typeof setInterval>;
+	private seq: number | null = null;
+
+	private constructor(socket: WebSocket) {
+		this.socket = socket;
+	}
+
+	static async connect(token: string): Promise<BotGateway> {
+		const socket = new WebSocket(`${gatewayOrigin()}/?v=9&encoding=json`);
+		const bot = new BotGateway(socket);
+		let timer: ReturnType<typeof setTimeout> | undefined;
+		const identified = new Promise<void>((ready, fail) => {
+			timer = setTimeout(() => fail(new Error("the bot got no READY in 20 s")), 20_000);
+			socket.addEventListener("error", () => fail(new Error("the bot's gateway socket failed")));
+			socket.addEventListener("message", (event) => {
+				const frame = JSON.parse(String(event.data));
+				if (frame.s) bot.seq = frame.s;
+				if (frame.op === 10) {
+					bot.heartbeat = setInterval(
+						() => socket.send(JSON.stringify({op: 1, d: bot.seq})),
+						frame.d.heartbeat_interval,
+					);
+					socket.send(
+						JSON.stringify({
+							op: 2,
+							d: {token, intents: 1, properties: {os: "linux", browser: "e2e", device: "e2e"}},
+						}),
+					);
+				} else if (frame.t === "READY") {
+					ready();
+				} else if (frame.t === "INTERACTION_CREATE") {
+					const waiter = bot.waiting.shift();
+					if (waiter) waiter(frame.d);
+					else bot.queue.push(frame.d);
+				}
+			});
+		});
+		try {
+			await identified;
+		} catch (e) {
+			// The caller never gets a handle to close.
+			bot.close();
+			throw e;
+		} finally {
+			clearTimeout(timer);
+		}
+		return bot;
+	}
+
+	/** The next interaction the bot receives. */
+	next(timeoutMs = 15_000): Promise<BotInteraction> {
+		const queued = this.queue.shift();
+		if (queued) return Promise.resolve(queued);
+		return new Promise((resolve, reject) => {
+			const timer = setTimeout(() => {
+				this.waiting.splice(this.waiting.indexOf(waiter), 1);
+				reject(new Error(`the bot got no interaction in ${timeoutMs} ms`));
+			}, timeoutMs);
+			const waiter = (interaction: BotInteraction) => {
+				clearTimeout(timer);
+				resolve(interaction);
+			};
+			this.waiting.push(waiter);
+		});
+	}
+
+	close(): void {
+		clearInterval(this.heartbeat);
+		this.socket.close();
+	}
+}
+
+/** Answers an interaction as a bot does: the callback route takes no authorization. */
+export async function answerInteraction(interaction: BotInteraction, body: unknown): Promise<void> {
+	const res = await fetch(
+		`${origin()}/api/v9/interactions/${interaction.id}/${interaction.token}/callback`,
+		{
+			method: "POST",
+			headers: {"Content-Type": "application/json"},
+			body: JSON.stringify(body),
+			signal: AbortSignal.timeout(30_000),
+		},
+	);
+	if (!res.ok) {
+		throw new Error(`callback ${JSON.stringify(body)}: ${res.status} ${(await res.text()).slice(0, 300)}`);
+	}
+}
 
 /** The instance's WebSocket origin, for a spec asserting the gateway really opened. */
 export function gatewayOrigin(): string {
