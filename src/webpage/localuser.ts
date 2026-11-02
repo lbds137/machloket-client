@@ -47,6 +47,7 @@ import {
 import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
 import {showBackupCodes} from "./backupCodes.js";
+import {RecoveryBanner} from "./recoveryBanner.js";
 import {Dialog, fetchWithMfa, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
 import {Bot} from "./bot.js";
@@ -174,6 +175,13 @@ class Localuser {
 	};
 	mfa_enabled!: boolean;
 	private mfaAuth?: {token: string; exp: number};
+	private recoveryBannerState?: RecoveryBanner;
+	private get recoveryBanner(): RecoveryBanner {
+		return (this.recoveryBannerState ??= new RecoveryBanner(
+			() => this.info.api,
+			() => this.headers,
+		));
+	}
 	mfaRetry(): MfaRetry {
 		return {
 			factor: this.mfa_enabled ? "totp" : "webauthn",
@@ -414,6 +422,8 @@ class Localuser {
 		document.body.style.setProperty("--view-rest", I18n.message.viewrest());
 		this.initialized = true;
 		this.ready = ready;
+		// Not behind the slower fetches below: this warns of an account takeover.
+		if (!this.swapped) void this.recoveryBanner.refresh();
 		this.guilds = [];
 		this.guildids = new Map();
 		this.user = new User(ready.d.user, this);
@@ -528,6 +538,7 @@ class Localuser {
 	}
 	unload(): void {
 		this.initialized = false;
+		this.recoveryBannerState?.stop();
 		this.disconnectComposer();
 		this.outoffocus();
 		this.guilds = [];
@@ -1026,6 +1037,14 @@ class Localuser {
 					// dropped socket abandoned go out on this one.
 					this.errorBackoff = 0;
 					this.getmembers();
+					if (!this.swapped) {
+						void this.recoveryBanner.refresh();
+					}
+					break;
+				case "MFA_RECOVERY_UPDATE":
+					if (this.initialized) {
+						this.recoveryBanner.apply(temp.d);
+					}
 					break;
 				case "MESSAGE_UPDATE": {
 					temp.d.guild_id ??= "@me";

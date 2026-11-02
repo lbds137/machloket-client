@@ -23,6 +23,8 @@ export default async function globalSetup() {
 	const inst = await bootInstance();
 	// Workers inherit this process's environment.
 	process.env.MACHLOKET_E2E_PORT = String(inst.port);
+	// The harness labels its postgres container with the pid that booted it.
+	process.env.MACHLOKET_E2E_BOOT_PID = String(process.pid);
 	console.log(`real tier: throwaway instance on 127.0.0.1:${inst.port}, log ${inst.logPath}`);
 	return () => inst.close();
 }

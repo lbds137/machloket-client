@@ -1,3 +1,4 @@
+import {execFileSync} from "node:child_process";
 import {createHmac, randomBytes} from "node:crypto";
 import {test as base, expect, type BrowserContext, type Page} from "@playwright/test";
 
@@ -101,6 +102,41 @@ export async function rest<T = any>(
 	const text = await res.text();
 	if (!res.ok) throw new Error(`${method} ${path}: ${res.status} ${text.slice(0, 300)}`);
 	return (text ? JSON.parse(text) : undefined) as T;
+}
+
+/** Starts an operator's MFA recovery hold on an account, straight in the instance's database: the
+ * operator's CLI needs the server's environment, and no route starts one. `completesAt` null is a
+ * hold whose notice is being sent, a claim the 5-minute notice sweep leaves alone until its lease
+ * runs out; a date is one the owner was told about. */
+export function seedMfaRecovery(userId: string, completesAt: Date | null): void {
+	const pid = process.env.MACHLOKET_E2E_BOOT_PID;
+	if (!pid) throw new Error("MACHLOKET_E2E_BOOT_PID unset: e2e-real/globalSetup.ts did not run");
+	const engine = process.env.CONTAINER_ENGINE ?? "podman";
+	const container = execFileSync(
+		engine,
+		["ps", "--filter", `label=machloket-e2e.pid=${pid}`, "--format", "{{.Names}}"],
+		{encoding: "utf8"},
+	).trim();
+	if (!container) throw new Error(`no postgres container labelled with boot pid ${pid}`);
+	const at = completesAt ? `'${completesAt.toISOString()}'` : "NULL";
+	const id = `${Date.now()}${++accountSerial}`;
+	const sql =
+		"INSERT INTO mfa_recovery_requests " +
+		"(id, user_id, reason, requested_by, requested_at, completes_at, status, notified_at, notice_claimed_at) VALUES " +
+		`('${id}', '${userId}', 'e2e', 'e2e', now(), ${at}, 'pending', ${completesAt ? "now()" : "NULL"}, now())`;
+	execFileSync(engine, [
+		"exec",
+		container,
+		"psql",
+		"-U",
+		"spacebar",
+		"-d",
+		"spacebar",
+		"-v",
+		"ON_ERROR_STOP=1",
+		"-c",
+		sql,
+	]);
 }
 
 let accountSerial = 0;
