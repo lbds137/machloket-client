@@ -32,7 +32,7 @@ function base32Decode(text: string): Buffer {
 	return Buffer.from(out);
 }
 
-/** A fresh base32 TOTP secret (20 random bytes, 32 characters). */
+/** A fresh base32 TOTP secret (32 random base32 characters). */
 export function newTotpSecret(): string {
 	let out = "";
 	for (const byte of randomBytes(32)) out += BASE32[byte & 31];
@@ -170,13 +170,9 @@ export async function enableTotp(who: RealAccount): Promise<string> {
 	return secret;
 }
 
-/** Lists the throwaway instance in the picker, then logs in through the real form. An account
- * with TOTP on passes its secret, and the second-step prompt gets a code. */
-export async function logIn(
-	page: Page,
-	who: RealAccount,
-	{totpSecret}: {totpSecret?: string} = {},
-): Promise<void> {
+/** Lists the throwaway instance in the picker and submits the real login form, stopping at
+ * whatever the answer brings up. */
+export async function submitLogin(page: Page, who: RealAccount): Promise<void> {
 	await page.addInitScript(() => {
 		// The first-boot changelog Dialog would sit over #servers.
 		localStorage.setItem("fermoChangelogVersion", "0");
@@ -204,7 +200,22 @@ export async function logIn(
 		.locator("input")
 		.fill(who.password);
 	await submit.click();
+}
 
+/** Waits out a finished login: the app is up on the DM home. */
+export async function expectLoggedIn(page: Page): Promise<void> {
+	await expect(page).toHaveURL(/\/channels\/@me$/, {timeout: 30_000});
+	await expect(page.locator("#loading")).toHaveClass(/doneloading/, {timeout: 30_000});
+}
+
+/** Logs in through the real form. An account with TOTP on passes its secret, and the second-step
+ * prompt gets a code. */
+export async function logIn(
+	page: Page,
+	who: RealAccount,
+	{totpSecret}: {totpSecret?: string} = {},
+): Promise<void> {
+	await submitLogin(page, who);
 	if (totpSecret) {
 		const prompt = codePrompt(page);
 		// The code is taken once the prompt shows: the login POST can outlast a TOTP step.
@@ -212,8 +223,7 @@ export async function logIn(
 		await prompt.locator("input").fill(await currentTotp(totpSecret));
 		await prompt.getByRole("button", {name: "Submit", exact: true}).click();
 	}
-	await expect(page).toHaveURL(/\/channels\/@me$/, {timeout: 30_000});
-	await expect(page.locator("#loading")).toHaveClass(/doneloading/, {timeout: 30_000});
+	await expectLoggedIn(page);
 }
 
 /** Opens settings (when not open) and jumps to the card with this label, at desktop width. */
@@ -231,13 +241,16 @@ export async function closeSettings(page: Page): Promise<void> {
 	await expect(page.locator(".settingbuttons")).toHaveCount(0);
 }
 
+/** Matches a channel row whose whole text is this name. */
+export function channelRowText(channelName: string): RegExp {
+	return new RegExp(`^\\s*${channelName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`);
+}
+
 /** Opens a channel of the account's one guild. A guild with no icon renders a blank tile. */
 export async function openOnlyGuildChannel(page: Page, channelName: string): Promise<void> {
 	await page.locator("#servers .blankserver.servericon").first().click();
 	await page
-		.locator("#channels button.channelbutton", {
-			hasText: new RegExp(`^\\s*${channelName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`),
-		})
+		.locator("#channels button.channelbutton", {hasText: channelRowText(channelName)})
 		.click();
 	await expect(page.locator("#channelname")).toHaveText("#" + channelName);
 }

@@ -46,6 +46,7 @@ import {
 } from "./jsontypes.js";
 import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
+import {showBackupCodes} from "./backupCodes.js";
 import {Dialog, fetchWithMfa, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
 import {Bot} from "./bot.js";
@@ -1043,6 +1044,9 @@ class Localuser {
 					break;
 				case "USER_UPDATE":
 					if (this.initialized) {
+						if (temp.d.id === this.user.id && typeof temp.d.mfa_enabled === "boolean") {
+							this.mfa_enabled = temp.d.mfa_enabled;
+						}
 						const users = this.userMap.get(temp.d.id);
 						if (users) {
 							users.userupdate(temp.d);
@@ -3659,7 +3663,9 @@ class Localuser {
 						const secret = newTotpSecret();
 						const form = security.addSubForm(
 							I18n.localuser.setUp2fa(),
-							() => {
+							(res) => {
+								// First: shown only once, so nothing below may cost them.
+								showBackupCodes(res);
 								// The grid's 2FA button reads mfa_enabled: set it before rebuilding.
 								this.mfa_enabled = true;
 								genSecurity();
@@ -3771,6 +3777,8 @@ class Localuser {
 											.catch(() => null)) as {name: string; id: string} | null)
 									: null;
 								if (!key) return showRefusal(res);
+								// First: shown only once, so nothing below may cost them.
+								showBackupCodes(key);
 								addKey(key);
 								keyMenu.returnFromSub();
 							},

@@ -1,5 +1,14 @@
 import type {Page} from "@playwright/test";
-import {DESKTOP, expect, logIn, newAccount, rest, test, type RealAccount} from "./fixtures";
+import {
+	DESKTOP,
+	channelRowText,
+	expect,
+	logIn,
+	newAccount,
+	rest,
+	test,
+	type RealAccount,
+} from "./fixtures";
 
 test.use(DESKTOP);
 
@@ -34,7 +43,7 @@ function sidebarRows(page: Page): Promise<Record<string, string[]>> {
 
 async function openChannelMenu(page: Page, name: string): Promise<void> {
 	await page
-		.locator("#channels button.channelbutton", {hasText: new RegExp(`^\\s*${name}\\s*$`)})
+		.locator("#channels button.channelbutton", {hasText: channelRowText(name)})
 		.click({button: "right"});
 	await expect(page.locator(".contextmenu")).toBeVisible();
 }
@@ -49,7 +58,7 @@ test("Move to lands a channel at the end of the target category, on the server a
 	await page.locator("#servers .blankserver.servericon").first().click();
 	await expect(page.locator("#channels button.channelbutton", {hasText: "a-one"})).toBeVisible();
 	const before = await sidebarRows(page);
-	expect(before["Cat A"].sort()).toEqual(["a-one", "a-two"]);
+	expect([...before["Cat A"]].sort()).toEqual(["a-one", "a-two"]);
 	expect([...before["Cat B"]].sort()).toEqual(["b-one", "b-two"]);
 
 	await openChannelMenu(page, "a-one");
