@@ -1143,7 +1143,13 @@ class Channel extends SnowFlake {
 		if (sendDependent.has(name) && !this.hasPermission(sendBit, member)) return false;
 		return true;
 	}
+	/** A locked thread refuses sends and edits from anyone without MANAGE_THREADS. */
+	get threadLockedToMe(): boolean {
+		return !!this.threadData?.locked && !this.hasPermission("MANAGE_THREADS");
+	}
+	/** Whether a send would be taken. An archived thread takes one: the send unarchives it. */
 	get canMessage(): boolean {
+		if (this.threadLockedToMe) return false;
 		return this.isThread()
 			? this.hasPermission("SEND_MESSAGES_IN_THREADS")
 			: this.hasPermission("SEND_MESSAGES");

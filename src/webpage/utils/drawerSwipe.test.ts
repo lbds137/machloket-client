@@ -197,7 +197,9 @@ describe("swiping the drawer shut", () => {
 
 /** Binds the real message gestures to the chat's message row; returns its setReplying spy. */
 function bindMessage(setReplying = vi.fn()) {
-	const message = Object.assign(Object.create(Message.prototype), {owner: {setReplying}});
+	const message = Object.assign(Object.create(Message.prototype), {
+		owner: {setReplying, canMessage: true},
+	});
 	message.messageevents(chat);
 	return setReplying;
 }
