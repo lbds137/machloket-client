@@ -923,14 +923,19 @@ class StringOption extends Option {
 		input.onkeydown = (e) => {
 			chipBackspace(div, input, channel, e);
 		};
-		input.onkeyup = (e) => {
-			chipExit(div, input, this.owner, channel, e);
+		const follow = () => {
 			const last = this.owner.getState(this, channel);
 			this.owner.stateChange(this, channel, input.value);
 			if (this.choices?.length && last !== input.value) {
 				this.displayChoices(input, channel);
 			}
 		};
+		input.onkeyup = (e) => {
+			chipExit(div, input, this.owner, channel, e);
+			follow();
+		};
+		// A paste, dictation or a keyboard suggestion changes the value with no key events.
+		input.oninput = follow;
 
 		div.append(label, input);
 		return div;
@@ -1265,13 +1270,18 @@ class EntityOption extends Option {
 		input.onkeydown = (e) => {
 			chipBackspace(div, input, channel, e);
 		};
-		input.onkeyup = (e) => {
-			chipExit(div, input, this.owner, channel, e);
+		const follow = () => {
 			if (this.followed.get(input) === input.value) return;
 			this.followed.set(input, input.value);
 			this.owner.stateChange(this, channel, input.value);
 			this.displayCandidates(input, channel);
 		};
+		input.onkeyup = (e) => {
+			chipExit(div, input, this.owner, channel, e);
+			follow();
+		};
+		// A paste, dictation or a keyboard suggestion changes the value with no key events.
+		input.oninput = follow;
 
 		div.append(label, input);
 		return div;
