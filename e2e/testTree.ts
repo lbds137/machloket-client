@@ -20,7 +20,10 @@ function git(args: string): string {
 /** Names the tree a test run exercises, so a run from the wrong worktree shows in its first line. */
 export function printTestTree(runner: string): void {
 	const branch = git("branch --show-current") || "(detached)";
+	// Changes on top of the sha, untracked files included: a new spec runs without being committed.
+	const changes = git("status --porcelain");
+	const dirty = changes && changes !== "unknown" ? "+dirty" : "";
 	console.log(
-		`${runner}: tree=${git("rev-parse --show-toplevel")} branch=${branch} sha=${git("rev-parse --short HEAD")}`,
+		`${runner}: tree=${git("rev-parse --show-toplevel")} branch=${branch} sha=${git("rev-parse --short HEAD")}${dirty}`,
 	);
 }

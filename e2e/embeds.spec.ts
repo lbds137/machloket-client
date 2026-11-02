@@ -102,6 +102,22 @@ test("the video embed's poster and player stay on a phone screen and keep their 
 	await expect(player).toHaveCount(1);
 	const playerBox = (await player.boundingBox())!;
 	expect(playerBox.x + playerBox.width, "player's right edge").toBeLessThanOrEqual(viewportWidth);
+	// First: a leftover border misses the shape below by only 0.0005 at this width.
+	await expect(player, "the browser's border is off the player").toHaveCSS("border-top-style", "none");
 	// The fixture video is 1280x720, under a 480x360 poster.
 	expect(playerBox.height / playerBox.width, "player keeps the video's shape").toBeCloseTo(0.5625, 2);
+});
+
+test("the player's border reset stays on the player, away from hCaptcha's frames", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	await loginAndOpenChannel(page);
+
+	const border = await page.evaluate(() => {
+		const frame = document.body.appendChild(document.createElement("iframe"));
+		return getComputedStyle(frame).borderTopStyle;
+	});
+	expect(border, "a frame outside an embed keeps the browser's border").toBe("inset");
 });

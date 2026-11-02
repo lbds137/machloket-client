@@ -1,7 +1,7 @@
 import {defineConfig, devices} from "@playwright/test";
 import {printTestTree} from "./e2e/testTree";
 
-// Workers load this config too; only the run's own process prints.
+// Workers load this config too and stay quiet; every other load prints, `--list` included.
 if (process.env.TEST_WORKER_INDEX === undefined) printTestTree("e2e-real");
 
 // The real-server e2e tier: the built client against a throwaway Spacebar instance, for
