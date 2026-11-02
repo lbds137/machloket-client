@@ -1,4 +1,8 @@
 import {defineConfig, devices} from "@playwright/test";
+import {printTestTree} from "./e2e/testTree";
+
+// Workers load this config too; only the run's own process prints.
+if (process.env.TEST_WORKER_INDEX === undefined) printTestTree("e2e");
 
 // e2e tier: drives the BUILT app with real CSS at a phone viewport.
 // The webServer command builds first, so
