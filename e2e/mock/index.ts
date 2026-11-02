@@ -1135,6 +1135,9 @@ export interface MockInstanceHandle {
 		fromApp: unknown[];
 	};
 	sendGatewayEvent: (frame: {op: number; t?: string; s?: number; d: unknown}) => void;
+	/** Set per test: the code the app's own ws.close() completes with, in place of the one it
+	 * asked for - a connection that drops mid-close never reports the app's code back. */
+	closeCompletesWith?: number;
 	/** Reassignable per test: a custom handler for POST /api/v9/auth/login (refusal tests
 	 * fulfill a 401 here). Runs INSTEAD of the default fulfill when set. */
 	onLogin?: (route: Route, body: unknown) => Promise<void> | void;
@@ -1329,11 +1332,11 @@ export async function mountMockInstance(
 
 		// Setting onClose disables Playwright's default close forwarding, so the mock must
 		// complete the app's close itself - without it the app's ws.close(4041) never fires
-		// its close event and no reconnect path can run.
+		// its close event and no reconnect path can run. closeCompletesWith swaps the code it reports.
 		ws.onClose((code, reason) => {
 			activeSockets.delete(send);
 			// A page or context already closing rejects this; nothing is left to complete.
-			ws.close({code, reason}).catch(() => {});
+			ws.close({code: handle.closeCompletesWith ?? code, reason}).catch(() => {});
 		});
 	});
 

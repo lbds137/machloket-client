@@ -234,6 +234,39 @@ test("a reconnect re-init leaves a closed chat closed", async ({page, mockInstan
 	await expect(page.locator("#maintoggle")).not.toBeChecked();
 });
 
+// op 9 clears the session and closes 4041, which unloads first. If the connection drops during
+// that close, another code comes back and the quick retry identifies with the pillar still up.
+test("a session-less retry over a live pillar leaves one pillar, the open guild marked", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	await expect(page.locator("#servers .serveropen")).toHaveCount(1);
+	const closes: string[] = [];
+	page.on("console", (message) => {
+		if (message.text().startsWith("WebSocket closed")) closes.push(message.text());
+	});
+	const home = page.locator("#servers .svg-home");
+	await home.evaluate((el) => el.setAttribute("data-before-retry", ""));
+
+	mockInstance.closeCompletesWith = 1001;
+	mockInstance.sendGatewayEvent({op: 9, d: false});
+
+	// The rebuild has run once a Home the stamp didn't reach exists.
+	await expect(page.locator("#servers .svg-home:not([data-before-retry])")).toHaveCount(1, {
+		timeout: 15_000,
+	});
+	expect(closes, "the quick retry's close, not the 4041 that unloads").toEqual([
+		"WebSocket closed with code 1001",
+	]);
+	// First: the guild's own frame sits behind READY, and a count before it lands would miss a late icon.
+	await expect(page.locator("#servers .serveropen img.servericon")).toHaveCount(1);
+	await expect(home, "one Home: the new one beside no old one").toHaveCount(1);
+	await expect(page.locator("#servers > .servernoti")).toHaveCount(2);
+	await expect(page.locator("#servers #sentdms")).toHaveCount(1);
+	await expect(page.locator("#servers #bottomseparator")).toHaveCount(1);
+});
+
 // The send button's box is CSS-reserved, not content-sized: the img carries no
 // width/height attributes, so only the stylesheet holds a 25x25 tap target open - a
 // slow first paint must show a blank button, never a missing one (the 10-25 send-probe
