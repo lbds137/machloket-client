@@ -4,6 +4,8 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Channel, createMachloketNonce} = await import("./channel");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 /** An XMLHttpRequest that answers every send with `status` and `response`. */
 function fakeXHR(status: number, response: unknown) {
@@ -431,6 +433,110 @@ describe("the composer's send-error notice", () => {
 			},
 		});
 		expect(notice()).toBe("Must be 2000 or fewer in length.");
+	});
+});
+
+describe("a message over the instance's limit", () => {
+	let realbox: HTMLDivElement;
+	afterEach(() => realbox.remove());
+	const notice = () => realbox.querySelector(".sendError")?.textContent ?? null;
+	/** The channel on screen, on an instance limiting messages to `limit`. */
+	function onScreen(limit: number | undefined) {
+		realbox = document.createElement("div");
+		realbox.id = "realbox";
+		document.body.append(realbox);
+		const {channel, bubble} = sendingChannel();
+		Object.defineProperty(channel, "localuser", {
+			value: {channelfocus: channel, messageLimit: limit},
+			configurable: true,
+		});
+		Object.defineProperty(channel, "guild", {
+			value: {id: "1", members: new Set([{id: "123456789", user: {username: "nyx"}}])},
+		});
+		const {XHR, sent} = fakeXHRSequence([{status: 200, response: {id: "1"}}]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		return {channel, bubble, sent};
+	}
+	/** Sends and returns what the composer was told. */
+	async function send(channel: InstanceType<typeof Channel>, content: string) {
+		const answers: string[] = [];
+		void channel.sendMessage(content, {nonce: "n" + Math.random()}, (r) => void answers.push(r));
+		await vi.waitFor(() => expect(answers.length).toBe(1));
+		return answers;
+	}
+
+	it("isn't sent, draws no bubble, and tells the composer to take it back", async () => {
+		const {channel, sent} = onScreen(5);
+
+		expect(await send(channel, "x".repeat(6))).toEqual(["NotOk"]);
+
+		expect(sent).toEqual([]);
+		expect((channel as unknown as {makeFakeMessage: unknown}).makeFakeMessage).not.toHaveBeenCalled();
+		expect(notice()).toBe(I18n.channel.tooLong("6", "5"));
+	});
+
+	it("goes out at exactly the limit", async () => {
+		const {channel, sent} = onScreen(5);
+
+		expect(await send(channel, "x".repeat(5))).toEqual(["Ok"]);
+
+		expect(sent.length).toBe(1);
+		expect(notice()).toBeNull();
+	});
+
+	it("counts what goes on the wire: a typed mention grows into its id", async () => {
+		const {channel, sent} = onScreen(5);
+
+		expect(await send(channel, "@nyx")).toEqual(["NotOk"]);
+
+		expect(sent).toEqual([]);
+		expect(notice()).toBe(I18n.channel.tooLong("12", "5"));
+	});
+
+	it("counts as the server does: an emoji is 2, and space it would trim still counts", async () => {
+		const emoji = onScreen(5);
+		expect(await send(emoji.channel, "😀😀😀")).toEqual(["NotOk"]);
+		expect(emoji.sent).toEqual([]);
+		realbox.remove();
+
+		const spaces = onScreen(5);
+		expect(await send(spaces.channel, "x     ")).toEqual(["NotOk"]);
+		expect(spaces.sent).toEqual([]);
+	});
+
+	it("is the server's call when the limit isn't known", async () => {
+		const {channel, sent} = onScreen(undefined);
+
+		expect(await send(channel, "x".repeat(6000))).toEqual(["Ok"]);
+
+		expect(sent.length).toBe(1);
+	});
+
+	it.each([
+		["couldn't put the text back", () => false],
+		[
+			"threw putting it back",
+			(res: "Ok" | "NotOk") => {
+				if (res === "NotOk") throw new Error("no composer");
+			},
+		],
+	])("goes to the server when the composer %s, so the failed bubble keeps it", async (_name, onRes) => {
+		const {channel, sent} = onScreen(5);
+
+		void channel.sendMessage("x".repeat(6), {nonce: "n" + Math.random()}, onRes);
+		await vi.waitFor(() => expect(sent.length).toBe(1));
+
+		expect(notice()).toBeNull();
+	});
+
+	it("says nothing under a channel the user has left", async () => {
+		const {channel, sent} = onScreen(5);
+		Object.defineProperty(channel, "localuser", {value: {channelfocus: null, messageLimit: 5}});
+
+		expect(await send(channel, "x".repeat(6))).toEqual(["NotOk"]);
+
+		expect(sent).toEqual([]);
+		expect(notice()).toBeNull();
 	});
 });
 

@@ -324,12 +324,16 @@ class User extends SnowFlake {
 			if ((dm.type === 1 || dm.type === undefined) && dm.users[0].id === this.id) {
 				await this.localuser.goToChannel(dm.id);
 				if (message) {
-					await dm.sendMessage(message, {
-						attachments: [],
-						embeds: [],
-						replyingto: null,
-						sticker_ids: [],
-					});
+					await dm.sendMessage(
+						message,
+						{
+							attachments: [],
+							embeds: [],
+							replyingto: null,
+							sticker_ids: [],
+						},
+						(res) => (res === "NotOk" ? dm.putBackRefused(message) : undefined),
+					);
 				}
 
 				return;
@@ -349,12 +353,17 @@ class User extends SnowFlake {
 		// Resolves once CHANNEL_CREATE has added the DM, so it can be looked up here.
 		await this.localuser.goToChannel(json.id);
 		if (message) {
-			await this.localuser.channelids.get(json.id)?.sendMessage(message, {
-				attachments: [],
-				embeds: [],
-				replyingto: null,
-				sticker_ids: [],
-			});
+			const dm = this.localuser.channelids.get(json.id);
+			await dm?.sendMessage(
+				message,
+				{
+					attachments: [],
+					embeds: [],
+					replyingto: null,
+					sticker_ids: [],
+				},
+				(res) => (res === "NotOk" ? dm.putBackRefused(message) : undefined),
+			);
 		}
 	}
 	async changeRelationship(type: 0 | 1 | 2 | 3 | 4 | 5) {

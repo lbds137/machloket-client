@@ -1125,7 +1125,7 @@ export interface MockInstanceOptions {
 	/** Suppress the first-run "What's new" changelog modal (src/webpage/changelog.ts). Defaults to true. */
 	suppressChangelog?: boolean;
 	/** Override fields returned by GET /api/v9/policies/instance/config. */
-	policiesConfig?: Partial<typeof MOCK_POLICIES_CONFIG>;
+	policiesConfig?: Partial<typeof MOCK_POLICIES_CONFIG> & {limits_message_maxCharacters?: number};
 	/** Permission names (entries of `Permissions.permisions` in `src/webpage/permissions.ts`,
 	 * where the array's index is the bit) merged via bitwise OR into the `@everyone` role's
 	 * `permissions` string served to the app. */

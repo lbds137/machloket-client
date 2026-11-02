@@ -6,6 +6,8 @@ import {captureRequests} from "./test/setup";
 await import("./localuser");
 const {Message} = await import("./message");
 const {MarkDown} = await import("./markdown");
+const {I18n} = await import("./i18n");
+await I18n.done;
 
 const API = "http://edit.test/api/v9";
 
@@ -190,6 +192,78 @@ describe("saving from the editor", () => {
 		expect(message.editDraft).toBe("new text");
 		expect(document.body.textContent).toContain("Must be 4000 or fewer in length.");
 		expect(document.body.textContent).not.toContain("Invalid Form Body");
+	});
+
+	/** A message on an instance limiting messages to `limit`, and the requests its edits make. */
+	function underLimit(id: string, raw: string, limit: number) {
+		const sent = captureRequests(API + "/channels/c1/messages/" + id, () => Response.json({}));
+		const message = Object.assign(messageSaying(raw), {
+			id,
+			owner: {id: "c1", info: {api: API}, localuser: {messageLimit: limit}},
+		});
+		return {sent, message};
+	}
+
+	it("an edit over the limit isn't sent: it reopens with what was typed, and says why", async () => {
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const {sent, message} = underLimit("l1", "old", 5);
+
+		await message.saveEdit("x".repeat(6));
+
+		expect(sent).toEqual([]);
+		expect(reopen).toHaveBeenCalledOnce();
+		expect(message.editDraft).toBe("x".repeat(6));
+		expect(document.body.textContent).toContain(I18n.channel.tooLong("6", "5"));
+	});
+
+	it("an over-limit edit reopens though Enter closes the editor right after the call", async () => {
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const {message} = underLimit("l2", "old", 5);
+		const channel = message.channel as unknown as {editing: unknown};
+		channel.editing = message;
+
+		// What the editor's Enter does: saves, then closes, in one go.
+		const saving = message.saveEdit("x".repeat(6));
+		channel.editing = null;
+		await saving;
+
+		expect(reopen).toHaveBeenCalledOnce();
+	});
+
+	it("an edit at the limit is sent", async () => {
+		const {sent, message} = underLimit("l3", "old", 5);
+
+		await message.saveEdit("x".repeat(5));
+
+		expect(sent).toEqual([{content: "xxxxx"}]);
+	});
+
+	it("an over-limit edit drops an older edit's pending retry, as any newer edit does", async () => {
+		vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const sent = captureRequests(API + "/channels/c1/messages/l4", () =>
+			Response.json({retry_after: 0.01}, {status: 429}),
+		);
+		const message = Object.assign(messageSaying("old"), {
+			id: "l4",
+			owner: {id: "c1", info: {api: API}, localuser: {messageLimit: 5}},
+		});
+
+		const older = message.edit("fits");
+		await vi.waitFor(() => expect(sent.length).toBe(1));
+		await message.saveEdit("x".repeat(6));
+		await older;
+
+		expect(sent).toEqual([{content: "fits"}]);
+	});
+
+	it("saving a message already over a lowered limit, unchanged, stays a no-op", async () => {
+		const reopen = vi.spyOn(Message.prototype, "setEdit").mockImplementation(() => {});
+		const {sent, message} = underLimit("l5", "x".repeat(6), 5);
+
+		await message.saveEdit("x".repeat(6));
+
+		expect(sent).toEqual([]);
+		expect(reopen).not.toHaveBeenCalled();
 	});
 
 	it("an edit that never reached the server reopens the editor too", async () => {
