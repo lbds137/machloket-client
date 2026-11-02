@@ -12,6 +12,10 @@ import {
 } from "fs";
 import {execSync} from "child_process";
 import {mergeInstanceLists} from "./src/webpage/utils/instanceOverlay.ts";
+import {printTestTree} from "./e2e/testTree.ts";
+
+// Dev and build load this config too, and neither is a test run.
+if (process.env.VITEST) printTestTree("vitest");
 
 // A deployment's own instances (git-ignored, so public builds and CI never see one) lead the
 // served instance list: the picker's default is then that deployment's instance. See
