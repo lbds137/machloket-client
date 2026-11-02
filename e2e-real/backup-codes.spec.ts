@@ -5,17 +5,45 @@ import {
 	currentTotp,
 	expect,
 	expectLoggedIn,
+	instanceSql,
 	logIn,
 	newAccount,
+	newTotpSecret,
 	openSettingsCard,
 	submitLogin,
 	test,
+	type RealAccount,
 } from "./fixtures";
 import type {Locator, Page} from "@playwright/test";
 
 test.use(DESKTOP);
 
 const screen = (page: Page) => page.locator(".dialogModal", {has: page.locator(".backupCodeGrid")});
+
+/** Through the open key menu, with the account's password. */
+async function addKey(page: Page, me: RealAccount, name: string): Promise<void> {
+	await page.getByRole("button", {name: "Add key", exact: true}).click();
+	const form = page.locator(".FormSettings", {
+		has: page.getByRole("button", {name: "Submit", exact: true}),
+	});
+	await form
+		.locator("div", {has: page.getByText("Password:", {exact: true})})
+		.locator("input[type=password]")
+		.last()
+		.fill(me.password);
+	await form
+		.locator("div", {has: page.getByText("Key name:", {exact: true})})
+		.locator("input")
+		.last()
+		.fill(name);
+	await form.getByRole("button", {name: "Submit", exact: true}).click();
+	await expect(page.getByRole("button", {name, exact: true})).toBeVisible();
+}
+
+// The browser's own key sheet can't be cancelled from here: this is its answer to a cancel.
+const cancelKeyPrompt = () =>
+	(navigator.credentials.get = () =>
+		Promise.reject(new DOMException("cancelled", "NotAllowedError")));
 
 /** The codes on the screen, after checking a stray Escape leaves them up, then closes it. */
 async function takeCodes(page: Page): Promise<string[]> {
@@ -97,35 +125,12 @@ test("a first key shows codes and a second doesn't; a cancelled key prompt at lo
 	await openSettingsCard(page, "Account settings");
 	await page.getByRole("button", {name: "Manage security keys", exact: true}).click();
 
-	const addKey = async (name: string) => {
-		await page.getByRole("button", {name: "Add key", exact: true}).click();
-		const form = page.locator(".FormSettings", {
-			has: page.getByRole("button", {name: "Submit", exact: true}),
-		});
-		await form
-			.locator("div", {has: page.getByText("Password:", {exact: true})})
-			.locator("input[type=password]")
-			.last()
-			.fill(me.password);
-		await form
-			.locator("div", {has: page.getByText("Key name:", {exact: true})})
-			.locator("input")
-			.last()
-			.fill(name);
-		await form.getByRole("button", {name: "Submit", exact: true}).click();
-		await expect(page.getByRole("button", {name, exact: true})).toBeVisible();
-	};
-
-	await addKey("Key one");
+	await addKey(page, me, "Key one");
 	const [code] = await takeCodes(page);
 
-	await addKey("Key two");
+	await addKey(page, me, "Key two");
 	await expect(screen(page)).toHaveCount(0);
 
-	// The browser's own key sheet can't be cancelled from here: this is its answer to a cancel.
-	const cancelKeyPrompt = () =>
-		(navigator.credentials.get = () =>
-			Promise.reject(new DOMException("cancelled", "NotAllowedError")));
 	const away = await extraPage();
 	await away.addInitScript(cancelKeyPrompt);
 	await submitLogin(away, me);
@@ -147,4 +152,46 @@ test("a first key shows codes and a second doesn't; a cancelled key prompt at lo
 		await submitCode(secondPrompt, code);
 		await expect(secondPrompt.locator(".suberror")).toBeVisible();
 	});
+});
+
+// The server's `totp` flag decides this: with the codes gone, `backup` alone would strand the account.
+test("a key + authenticator account is offered its code at a cancelled key prompt, even with no backup codes left", async ({
+	page,
+	extraPage,
+}) => {
+	const me = await newAccount("keytotp");
+	await addVirtualAuthenticator(page);
+	await logIn(page, me);
+	await openSettingsCard(page, "Account settings");
+	await page.getByRole("button", {name: "Manage security keys", exact: true}).click();
+	await addKey(page, me, "Key one");
+	await takeCodes(page);
+
+	// Adding the authenticator over a key asks for the key: not this spec's subject.
+	const secret = newTotpSecret();
+	instanceSql(
+		`UPDATE users SET totp_secret = '${secret}', mfa_enabled = true WHERE id = '${me.id}'`,
+	);
+
+	await test.step("with codes left, either kind is offered", async () => {
+		const both = await extraPage();
+		await both.addInitScript(cancelKeyPrompt);
+		await submitLogin(both, me);
+		const prompt = both.locator(".dialogModal", {
+			has: both.getByText("Enter a code:", {exact: true}),
+		});
+		await expect(prompt).toBeVisible({timeout: 30_000});
+	});
+
+	instanceSql(`UPDATE backup_codes SET expired = true WHERE user_id = '${me.id}'`);
+
+	const away = await extraPage();
+	await away.addInitScript(cancelKeyPrompt);
+	await submitLogin(away, me);
+	const prompt = away.locator(".dialogModal", {
+		has: away.getByText("Enter your authenticator code:", {exact: true}),
+	});
+	await expect(prompt).toBeVisible({timeout: 30_000});
+	await submitCode(prompt, await currentTotp(secret));
+	await expectLoggedIn(away);
 });

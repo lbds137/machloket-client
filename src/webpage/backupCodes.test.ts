@@ -427,6 +427,115 @@ describe("login 2FA and backup code entry", () => {
 		}
 	});
 
+	describe("the key prompt's fallback follows what the login answer says can finish it", () => {
+		async function cancelKeyWith(answer: {totp?: boolean; backup?: boolean}) {
+			captureRequests(KEY_LOGIN_URL, () =>
+				Response.json({token: null, mfa: true, webauthn: challenge, ticket: "tk-f", ...answer}),
+			);
+			const totpSent = captureRequests(KEY_TOTP_URL, () => Response.json({token: "tok-code"}));
+			const realKey = globalThis.PublicKeyCredential;
+			Object.assign(globalThis, {
+				PublicKeyCredential: {parseRequestOptionsFromJSON: (options: unknown) => options},
+			});
+			const getKey = vi
+				.spyOn(navigator.credentials, "get")
+				.mockRejectedValue(new DOMException("cancelled", "NotAllowedError"));
+			const loggedIn = vi.fn();
+			const form = new Dialog("").options.addForm("", loggedIn, {
+				fetchURL: KEY_LOGIN_URL,
+				method: "POST",
+			});
+			return {
+				form,
+				totpSent,
+				loggedIn,
+				restore() {
+					Object.assign(globalThis, {PublicKeyCredential: realKey});
+					getKey.mockRestore();
+				},
+			};
+		}
+
+		it.each([
+			["totp only", {totp: true, backup: false}, "keyPromptTotpTitle", "keyPromptTotpHint"],
+			["totp, flag for backup absent", {totp: true}, "keyPromptTotpTitle", "keyPromptTotpHint"],
+			["both", {totp: true, backup: true}, "keyPromptEitherTitle", "keyPromptEitherHint"],
+			["backup only", {totp: false, backup: true}, "keyPromptTitle", "keyPromptHint"],
+		] as const)("%s", async (_name, answer, title, hint) => {
+			const {form, totpSent, loggedIn, restore} = await cancelKeyWith(answer);
+			try {
+				const submit = form.submit();
+				const prompt = await vi.waitFor(() => {
+					const p = [...document.querySelectorAll<HTMLElement>(".background")].at(-1);
+					expect(p?.textContent).toContain(I18n.backupCodes[title]());
+					return p!;
+				});
+				expect(prompt.textContent).toContain(I18n.backupCodes[hint]());
+				enterAndSubmitCode(prompt, "123456");
+				await submit;
+				expect(totpSent).toEqual([{code: "123456", ticket: "tk-f"}]);
+				expect(loggedIn).toHaveBeenCalledWith({token: "tok-code"}, {});
+			} finally {
+				restore();
+			}
+		});
+
+		it("totp: false and no backup offers nothing", async () => {
+			const {form, loggedIn, restore} = await cancelKeyWith({totp: false, backup: false});
+			try {
+				await expect(form.submit()).resolves.toBeUndefined();
+				expect(document.querySelector(".background")).toBeNull();
+				expect(loggedIn).not.toHaveBeenCalled();
+			} finally {
+				restore();
+			}
+		});
+	});
+
+	it("a refused assertion on an account with an authenticator says a code can finish it", async () => {
+		captureRequests(KEY_LOGIN_URL, () =>
+			Response.json({token: null, mfa: true, webauthn: challenge, ticket: "tk-r", totp: true}),
+		);
+		captureRequests(KEY_WEBAUTHN_URL, () =>
+			Response.json({message: "Invalid security key", code: 60008}, {status: 400}),
+		);
+		const realKey = globalThis.PublicKeyCredential;
+		Object.assign(globalThis, {
+			PublicKeyCredential: {parseRequestOptionsFromJSON: (options: unknown) => options},
+		});
+		const buffer = () => new Uint8Array([1, 2]).buffer;
+		const getKey = vi.spyOn(navigator.credentials, "get").mockResolvedValue({
+			rawId: buffer(),
+			response: {authenticatorData: buffer(), clientDataJSON: buffer(), signature: buffer()},
+		} as never);
+		try {
+			await new Dialog("").options
+				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, method: "POST"})
+				.submit();
+			expect(document.body.textContent).toContain(
+				"Invalid security key " + I18n.backupCodes.retryLoginCode(),
+			);
+		} finally {
+			Object.assign(globalThis, {PublicKeyCredential: realKey});
+			getKey.mockRestore();
+		}
+	});
+
+	it("a key prompt that can't run and no code to fall back on says why instead of doing nothing", async () => {
+		captureRequests(KEY_LOGIN_URL, () =>
+			Response.json({token: null, mfa: true, webauthn: "not json", ticket: "tk-u"}),
+		);
+		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			await new Dialog("").options
+				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, method: "POST"})
+				.submit();
+			expect(document.body.textContent).toContain(I18n.backupCodes.keyUnavailable());
+		} finally {
+			errors.mockRestore();
+		}
+	});
+
 	it("WebAuthn fallback code prompt shows 400 message in .suberror, stays open, and retries with the same ticket", async () => {
 		captureRequests(KEY_LOGIN_URL, () =>
 			Response.json({token: null, mfa: true, webauthn: challenge, ticket: "tk-retry", backup: true}),
