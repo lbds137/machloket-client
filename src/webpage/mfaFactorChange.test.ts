@@ -795,3 +795,140 @@ it("control: guild delete with a wrong code's 60008 shows the error on its field
 	expect(hide).not.toHaveBeenCalled();
 	expect(document.querySelector(".suberror")?.textContent).toBe(I18n.localuser.badCode());
 });
+
+it("TOTP enable answered with backup_codes shows the backup codes screen, sets mfa_enabled true, and closes the subform", async () => {
+	await I18n.done;
+	stubUserSettings();
+	const {subForms} = capturePrompts();
+	captureRequests(API + "/users/@me/mfa/totp/enable/", () =>
+		Response.json({
+			token: "new-tok",
+			backup_codes: [
+				{code: "aaaa1111", consumed: false},
+				{code: "bbbb2222", consumed: false},
+			],
+		}),
+	);
+	const user = settingsUser(false);
+	await user.showusersettings();
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.localuser.accountSettings())!
+		.click();
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.localuser["2faEnable"]())!
+		.click();
+
+	const sub = subForms.at(-1)!;
+	sub.names.get("password")!.value = "pw";
+	sub.names.get("code")!.value = "123456";
+	await sub.submit();
+
+	expect(user.mfa_enabled).toBe(true);
+	expect((sub as unknown as {owner: {subOptions: unknown}}).owner.subOptions).toBeUndefined();
+	expect([...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent)).toEqual([
+		"aaaa1111",
+		"bbbb2222",
+	]);
+});
+
+it("TOTP enable answered with {} shows no .backupCodeGrid", async () => {
+	await I18n.done;
+	stubUserSettings();
+	const {subForms} = capturePrompts();
+	captureRequests(API + "/users/@me/mfa/totp/enable/", () => Response.json({}));
+	const user = settingsUser(false);
+	await user.showusersettings();
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.localuser.accountSettings())!
+		.click();
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.localuser["2faEnable"]())!
+		.click();
+
+	const sub = subForms.at(-1)!;
+	sub.names.get("password")!.value = "pw";
+	sub.names.get("code")!.value = "123456";
+	await sub.submit();
+
+	expect(user.mfa_enabled).toBe(true);
+	expect((sub as unknown as {owner: {subOptions: unknown}}).owner.subOptions).toBeUndefined();
+	expect(document.querySelector(".backupCodeGrid")).toBeNull();
+});
+
+it("first key enrollment with backup_codes lists the key and shows the screen; key without backup_codes lists the key and shows no screen", async () => {
+	await I18n.done;
+	stubUserSettings();
+	const {subForms} = capturePrompts();
+	captureRequests(API + "/users/@me/mfa/webauthn/credentials", () => Response.json([]));
+	const user = settingsUser(false);
+	await user.showusersettings();
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.localuser.accountSettings())!
+		.click();
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.webauth.manage())!
+		.click();
+
+	vi.spyOn(PublicKeyCredential, "parseCreationOptionsFromJSON").mockReturnValue({} as never);
+	const buf = new Uint8Array([1, 2]).buffer;
+	vi.spyOn(navigator.credentials, "create").mockResolvedValue({
+		rawId: buf,
+		response: {attestationObject: buf, clientDataJSON: buf},
+	} as never);
+
+	let createAnswer: Record<string, unknown> = {
+		id: "k1",
+		name: "First Key",
+		backup_codes: [{code: "cccc3333", consumed: false}],
+	};
+	const bodies = captureRequests(API + "/users/@me/mfa/webauthn/credentials", () => {
+		const body = bodies.at(-1) as {ticket?: string} | undefined;
+		if (body?.ticket) {
+			return Response.json(createAnswer);
+		}
+		return Response.json({
+			ticket: "t-gen",
+			challenge: JSON.stringify({publicKey: {challenge: "abc="}}),
+		});
+	});
+
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.webauth.addKey())!
+		.click();
+	const sub1 = subForms.at(-1)!;
+	sub1.names.get("password")!.value = "pw";
+	await sub1.submit();
+
+	await vi.waitFor(() =>
+		expect([...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent)).toEqual([
+			"cccc3333",
+		]),
+	);
+	expect(
+		[...document.querySelectorAll<HTMLButtonElement>("button")].some(
+			(b) => b.textContent === "First Key",
+		),
+	).toBe(true);
+
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.backupCodes.done())!
+		.click();
+	await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+	createAnswer = {id: "k2", name: "Second Key"};
+
+	[...document.querySelectorAll<HTMLButtonElement>("button")]
+		.find((b) => b.textContent === I18n.webauth.addKey())!
+		.click();
+	const sub2 = subForms.at(-1)!;
+	sub2.names.get("password")!.value = "pw";
+	await sub2.submit();
+
+	await vi.waitFor(() =>
+		expect(
+			[...document.querySelectorAll<HTMLButtonElement>("button")].some(
+				(b) => b.textContent === "Second Key",
+			),
+		).toBe(true),
+	);
+	expect(document.querySelector(".backupCodeGrid")).toBeNull();
+});

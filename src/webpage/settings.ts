@@ -2290,6 +2290,47 @@ class FormError extends Error {
 		this.elem = elem;
 	}
 }
+function promptLoginCode(
+	json: any,
+	api: string,
+	title: string,
+	hint?: string,
+): Promise<false | any> {
+	return new Promise<boolean>((resolution) => {
+		const better = new Dialog("");
+		const form = better.options.addForm(
+			"",
+			(res: any) => {
+				resolution(res);
+				better.hide();
+			},
+			{
+				fetchURL: api + "/auth/mfa/totp",
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			},
+		);
+		form.addTitle(title);
+		if (hint) {
+			form.addText(hint);
+		}
+		form.addPreprocessor((e: any) => {
+			if (typeof e.code === "string") {
+				e.code = e.code.replace(/[\s-]+/g, "").toLowerCase();
+			}
+			e.ticket = json.ticket;
+		});
+		const ti = form.addTextInput("", "code");
+		form.onErrorBody = (res) => {
+			if (typeof res.message === "string") throw new FormError(ti, res.message);
+		};
+		// Dismissed (outside tap, Escape): no second factor.
+		better.onhide = () => resolution(false);
+		better.show().parentElement!.style.zIndex = "200";
+	});
+}
 /** The second login step's answer, or false when it was cancelled or refused (a refusal's
  * reason goes to `onRefused`). */
 async function handle2fa(
@@ -2299,26 +2340,44 @@ async function handle2fa(
 ): Promise<false | any> {
 	if (json.ticket) {
 		if (json.webauthn) {
-			const challenge = JSON.parse(json.webauthn)
-				.publicKey as PublicKeyCredentialRequestOptionsJSON;
-			challenge.challenge = challenge.challenge
-				.split("=")[0]
-				.replaceAll("+", "-")
-				.replaceAll("/", "_");
-			challenge.allowCredentials?.forEach(
-				(_) => (_.id = _.id.split("=")[0].replaceAll("+", "-").replaceAll("/", "_")),
-			);
-			const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
-			// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
-			const credential = (await navigator.credentials
-				.get({publicKey: options})
-				.catch(() => null)) as unknown as {
+			type WebauthnAssertion = {
 				rawId: ArrayBuffer;
 				response: {
 					[key: string]: ArrayBuffer;
 				};
-			} | null;
-			if (!credential) return false;
+			};
+			let credential: WebauthnAssertion | null = null;
+			try {
+				const challenge = JSON.parse(json.webauthn)
+					.publicKey as PublicKeyCredentialRequestOptionsJSON;
+				challenge.challenge = challenge.challenge
+					.split("=")[0]
+					.replaceAll("+", "-")
+					.replaceAll("/", "_");
+				challenge.allowCredentials?.forEach(
+					(_) => (_.id = _.id.split("=")[0].replaceAll("+", "-").replaceAll("/", "_")),
+				);
+				const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
+				// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
+				credential = (await navigator.credentials
+					.get({publicKey: options})
+					.catch(() => null)) as unknown as WebauthnAssertion | null;
+			} catch (e) {
+				// No key API on this origin, or a malformed challenge: same as a cancel, but say why.
+				console.error(e);
+				credential = null;
+			}
+			if (!credential) {
+				if (json.backup === true) {
+					return promptLoginCode(
+						json,
+						api,
+						I18n.backupCodes.keyPromptTitle(),
+						I18n.backupCodes.keyPromptHint(),
+					);
+				}
+				return false;
+			}
 			function toBase64(buf: ArrayBuffer) {
 				return btoa(String.fromCharCode(...new Uint8Array(buf)));
 			}
@@ -2340,11 +2399,11 @@ async function handle2fa(
 			}).catch(() => undefined);
 			if (!resObj?.ok) {
 				const body = await resObj?.json().catch(() => null);
-				onRefused(
+				const msg =
 					typeof body?.message === "string"
 						? body.message
-						: I18n.requestFailed(resObj ? "HTTP " + resObj.status : "offline"),
-				);
+						: I18n.requestFailed(resObj ? "HTTP " + resObj.status : "offline");
+				onRefused(json.backup === true ? msg + " " + I18n.backupCodes.retryLogin() : msg);
 				return false;
 			}
 			let jsonRes: unknown;
@@ -2364,35 +2423,12 @@ async function handle2fa(
 			}
 			return jsonRes;
 		} else {
-			return new Promise<boolean>((resolution) => {
-				const better = new Dialog("");
-				const form = better.options.addForm(
-					"",
-					(res: any) => {
-						resolution(res);
-						better.hide();
-					},
-					{
-						fetchURL: api + "/auth/mfa/totp",
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-						},
-					},
-				);
-				form.addTitle(I18n["2faCode"]());
-				form.addPreprocessor((e) => {
-					//@ts-ignore
-					e.ticket = json.ticket;
-				});
-				const ti = form.addTextInput("", "code");
-				form.onErrorBody = (res) => {
-					if (typeof res.message === "string") throw new FormError(ti, res.message);
-				};
-				// Dismissed (outside tap, Escape): no second factor.
-				better.onhide = () => resolution(false);
-				better.show().parentElement!.style.zIndex = "200";
-			});
+			return promptLoginCode(
+				json,
+				api,
+				I18n["2faCode"](),
+				json.backup === true ? I18n.backupCodes.loginHint() : undefined,
+			);
 		}
 	} else {
 		return false;

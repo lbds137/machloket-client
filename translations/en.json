@@ -88,6 +88,19 @@
 		"delete": "Delete Application",
 		"sure": "Are you sure you want to delete $1?"
 	},
+	"backupCodes": {
+		"copied": "Copied",
+		"copy": "Copy codes",
+		"copyFailed": "Couldn't copy. Select the codes and copy them by hand.",
+		"done": "I've saved them",
+		"download": "Download codes",
+		"explain": "If you lose your security key or authenticator, a backup code lets you log in. Each code works once. You won't see these codes again, so keep them somewhere safe. Any backup codes you saved earlier no longer work.",
+		"keyPromptHint": "Without your security key, you can log in with a backup code. Each code works once.",
+		"keyPromptTitle": "Enter a backup code:",
+		"loginHint": "You can also use a backup code.",
+		"retryLogin": "To use a backup code instead, log in again and cancel the security key prompt.",
+		"title": "Save your backup codes"
+	},
 	"badge": {
 		"active_developer": "Active Developer",
 		"application_guild_subscription": "has Premium",

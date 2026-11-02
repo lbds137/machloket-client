@@ -74,6 +74,8 @@ test("with a key present, the second key and a removal each ask for the key firs
 	await addKey(page, me, "Key one");
 	await expect(page.getByRole("button", {name: "Key one", exact: true})).toBeVisible();
 	expect(mfaCalls).toEqual([]);
+	// The first factor's backup codes sit over the menu until they're acknowledged.
+	await page.getByRole("button", {name: "I've saved them", exact: true}).click();
 
 	await test.step("the second key is gated: the server asks, the first key answers", async () => {
 		const before = (await authenticator.credentials())[0].signCount;
@@ -96,13 +98,18 @@ test("with a key present, the second key and a removal each ask for the key firs
 		await openKeyMenu(page);
 		await expect(page.getByRole("button", {name: "Key two", exact: true})).toBeVisible();
 		await page.getByRole("button", {name: "Key two", exact: true}).click();
+		// The retry is the one that lands: wait past the first answer, the 60003 that starts the
+		// challenge, and judge the last status on its own.
 		const removal = page.waitForResponse(
 			(res) =>
-				res.request().method() === "DELETE" && res.url().includes("/mfa/webauthn/") && res.ok(),
+				res.request().method() === "DELETE" &&
+				res.url().includes("/mfa/webauthn/") &&
+				res.status() !== 400,
 		);
 		await page.getByRole("button", {name: "Delete", exact: true}).click();
 		expect((await removal).status()).toBeLessThan(300);
-		expect(mfaCalls.length).toBeGreaterThan(0);
+		// Both steps of the challenge: the options, then the signed answer.
+		expect(mfaCalls).toEqual(["POST", "POST"]);
 		expect((await listed()).map((k) => k.name)).toEqual(["Key one"]);
 		// Back on the list: the other key stays, the removed one is gone.
 		await expect(page.getByRole("button", {name: "Key one", exact: true})).toBeVisible();
