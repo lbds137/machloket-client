@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {loginAndOpenChannel, pinShot, test} from "./fixtures";
+import {MOCK_SPOILER_MESSAGE, loginAndOpenChannel, pinShot, test} from "./fixtures";
 
 // The verification tooling's long tail, first item: the embed card look (walk item:
 // "rich embed with a thumbnail — small image top-right in-card") and the YouTube card's
@@ -108,7 +108,7 @@ test("the video embed's poster and player stay on a phone screen and keep their 
 	expect(playerBox.height / playerBox.width, "player keeps the video's shape").toBeCloseTo(0.5625, 2);
 });
 
-test("the player's border reset stays on the player, away from hCaptcha's frames", async ({
+test("the player's border reset stays on the player, away from other frames", async ({
 	page,
 	mockInstance,
 }) => {
@@ -120,4 +120,52 @@ test("the player's border reset stays on the player, away from hCaptcha's frames
 		return getComputedStyle(frame).borderTopStyle;
 	});
 	expect(border, "a frame outside an embed keeps the browser's border").toBe("inset");
+});
+
+test.describe("an article embed whose image reports no size", () => {
+	// On this block's mount only, so the shared #general layout stays as every other spec knows it.
+	const WIDE_IMAGE_URL = "http://127.0.0.1:4173/e2e-assets/wide.gif";
+	test.use({
+		mockInstanceOptions: {
+			messages: [
+				{
+					...MOCK_SPOILER_MESSAGE,
+					content: "an unsized image:",
+					attachments: [],
+					embeds: [
+						{
+							type: "article",
+							author: {},
+							provider: {name: "e2e"},
+							title: "wide",
+							// embedjson calls the size required; generateArticle already allows for its absence.
+							thumbnail: {url: WIDE_IMAGE_URL, proxy_url: WIDE_IMAGE_URL} as never,
+						},
+					],
+				},
+			],
+		},
+	});
+
+	// generateArticle sizes an image only when told its width; here `.message img` is the only cap.
+	test("stays on a phone screen and keeps its shape", async ({page, mockInstance}) => {
+		void mockInstance;
+		await page.route(WIDE_IMAGE_URL, (route) =>
+			route.fulfill({
+				contentType: "image/svg+xml",
+				body: '<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="400"><rect width="1600" height="400" fill="#8a5a2b"/></svg>',
+			}),
+		);
+		await loginAndOpenChannel(page);
+		const viewportWidth = page.viewportSize()!.width;
+
+		const image = page.locator("img.bigembedimg");
+		await image.scrollIntoViewIfNeeded();
+		await expect(image).toHaveJSProperty("complete", true);
+		await expect(image).toHaveJSProperty("naturalWidth", 1600);
+
+		const box = (await image.boundingBox())!;
+		expect(box.x + box.width, "image's right edge").toBeLessThanOrEqual(viewportWidth);
+		expect(box.height / box.width, "image keeps its shape").toBeCloseTo(0.25, 2);
+	});
 });

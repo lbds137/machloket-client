@@ -2300,9 +2300,7 @@ class Localuser {
 	private refusedFolderSeq?: number;
 	private rollbackGuildOrder() {
 		this.guildFolders = this.acceptedFolders;
-		document.getElementById("servers")?.replaceChildren();
 		this.buildservers();
-		this.lookingguild?.html?.classList.add("serveropen");
 	}
 	async saveGuildOrder() {
 		const seq = (this.folderSeq = (this.folderSeq ?? 0) + 1);
@@ -2444,6 +2442,8 @@ class Localuser {
 	)[] = [];
 	buildservers(): void {
 		const serverlist = document.getElementById("servers") as HTMLDivElement; //
+		// A rollback or a session-less re-identify builds over a pillar that's still up.
+		serverlist.replaceChildren();
 		const outdiv = document.createElement("div");
 		const home: any = document.createElement("span");
 		const div = document.createElement("div");
@@ -2549,6 +2549,8 @@ class Localuser {
 				this.guildDiscovery();
 			});
 		}
+		// The icons are new, and loadGuild returns early for the guild already open.
+		this.lookingguild?.html?.classList.add("serveropen");
 		this.unreads();
 		dirrect.unreaddms();
 	}

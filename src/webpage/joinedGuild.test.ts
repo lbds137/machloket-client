@@ -63,9 +63,8 @@ it("going elsewhere drops the wait, so a late arrival doesn't pull the view back
 	expect(load).not.toHaveBeenCalledWith("g1");
 });
 
-it("GUILD_CREATE adds the joined guild to guildOrder, so the next save keeps it", async () => {
-	document.body.innerHTML = '<div id="servers"><div id="bottomseparator"></div></div>';
-	const existing = {id: "g0"};
+/** Delivers a GUILD_CREATE for g9 to a session whose order already holds `existing`. */
+async function guildCreate(existing: {id: string}) {
 	const user = Object.assign(Object.create(Localuser.prototype), {
 		headers: {},
 		guilds: [],
@@ -103,6 +102,27 @@ it("GUILD_CREATE adds the joined guild to guildOrder, so the next save keeps it"
 	await vi.waitFor(() =>
 		expect((user.guildOrder[1] as {id?: string} | undefined)?.id).toBe("g9"),
 	);
+	return {user, icon};
+}
+
+it("GUILD_CREATE adds the joined guild to guildOrder, so the next save keeps it", async () => {
+	document.body.innerHTML = '<div id="servers"><div id="bottomseparator"></div></div>';
+	const existing = {id: "g0"};
+
+	const {user, icon} = await guildCreate(existing);
+
 	expect(user.guildOrder[0]).toBe(existing);
 	expect(icon.nextElementSibling?.id, "a mid-session join mounts its icon").toBe("bottomseparator");
+});
+
+// A frame queued behind READY runs before init() builds the pillar: buildservers draws this
+// guild from this.guilds, so an icon mounted now would be a stale second one.
+it("GUILD_CREATE before the pillar is built keeps the guild and mounts nothing", async () => {
+	document.body.innerHTML = '<div id="servers"></div>';
+
+	const {user, icon} = await guildCreate({id: "g0"});
+
+	expect(user.guilds.map((guild) => guild.id)).toEqual(["g9"]);
+	expect(icon.isConnected, "buildservers draws this guild's icon later").toBe(false);
+	expect(document.getElementById("servers")!.childElementCount).toBe(0);
 });
