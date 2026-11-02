@@ -2802,7 +2802,10 @@ class Guild extends SnowFlake {
 			(_) => _.type === 3 && this.memberCanSee(_.rawJson, memberBits, channelId, entry?.appOwners),
 		);
 	}
-	/** Discord parity: what a member sees of the command index. Per-command overrides first
+	/** Discord parity: what a member sees of the command index. The channel's own gates first,
+	 * the server's refusals ahead of reading any command: nothing in an archived thread (50083,
+	 * admins too), nothing without USE_APPLICATION_COMMANDS in that channel (50013; guild owner
+	 * and ADMINISTRATOR hold every bit, an app's owner doesn't). Then per-command overrides
 	 * (commandAllowedFor's table, after the bypasses: guild owner, ADMINISTRATOR, app owner),
 	 * then a command whose default_member_permissions the member doesn't hold isn't offered
 	 * (admins pass everything). Applied on every read, not at fetch, so a role granted or a
@@ -2815,6 +2818,9 @@ class Guild extends SnowFlake {
 		channelId?: string,
 		appOwners?: Map<string, string>,
 	): boolean {
+		if (this.id === "@me") return true;
+		const channel = channelId === undefined ? undefined : this.localuser.channelids.get(channelId);
+		if (channel?.threadData?.archived) return false;
 		if (memberBits === undefined) return true;
 		const ADMINISTRATOR = 1n << BigInt(Permissions.permisions.indexOf("ADMINISTRATOR"));
 		// The owner is admin without the bit (isAdmin()'s owner branch).
@@ -2825,6 +2831,15 @@ class Guild extends SnowFlake {
 			return true;
 		}
 		if ((memberBits & ADMINISTRATOR) === ADMINISTRATOR) return true;
+		// A channel this client doesn't hold has no overwrites to read: the role bits decide,
+		// and a timeout takes the bit away as it does in any channel.
+		const USE_APPLICATION_COMMANDS =
+			1n << BigInt(Permissions.permisions.indexOf("USE_APPLICATION_COMMANDS"));
+		const canUseCommands = channel
+			? channel.hasPermission("USE_APPLICATION_COMMANDS")
+			: (memberBits & USE_APPLICATION_COMMANDS) === USE_APPLICATION_COMMANDS &&
+				!this.member?.commuicationDisabledLeft();
+		if (!canUseCommands) return false;
 		// App owner bypass (the member is the owner of the app owning the command).
 		const appOwner = appOwners?.get(raw.application_id);
 		if (appOwner !== undefined && this.member?.user?.id === appOwner) return true;

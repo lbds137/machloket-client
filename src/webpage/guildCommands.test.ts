@@ -239,9 +239,9 @@ describe("application-command index fetch", () => {
 				{headers: {"Content-Type": "application/json"}},
 			),
 		);
-		// The member holds MANAGE_MESSAGES only — no ADMINISTRATOR bit.
+		// The member holds MANAGE_MESSAGES and USE_APPLICATION_COMMANDS — no ADMINISTRATOR bit.
 		const member = Object.create(Member.prototype);
-		Object.defineProperty(member, "roles", {value: [{permissions: {allow: 8192n}}]});
+		Object.defineProperty(member, "roles", {value: [{permissions: {allow: 8192n | (1n << 31n)}}]});
 		const guild = Object.assign(Object.create(Guild.prototype), {
 			id: "1554722916606791818",
 			owner: {
@@ -340,9 +340,12 @@ describe("application-command index fetch", () => {
 				{headers: {"Content-Type": "application/json"}},
 			),
 		);
-		// A plain member: @everyone's usual bits (VIEW_CHANNEL | SEND_MESSAGES), no admin.
+		// A plain member: @everyone's usual bits (VIEW_CHANNEL | SEND_MESSAGES |
+		// USE_APPLICATION_COMMANDS), no admin.
 		const member = Object.create(Member.prototype);
-		Object.defineProperty(member, "roles", {value: [{permissions: {allow: (1n << 10n) | (1n << 11n)}}]});
+		Object.defineProperty(member, "roles", {
+			value: [{permissions: {allow: (1n << 10n) | (1n << 11n) | (1n << 31n)}}],
+		});
 		Object.defineProperty(member, "user", {value: {id: "me"}});
 		const guild = Object.assign(Object.create(Guild.prototype), {
 			id: "1554722916606791818",
