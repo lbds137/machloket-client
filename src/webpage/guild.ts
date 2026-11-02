@@ -2785,10 +2785,7 @@ class Guild extends SnowFlake {
 		const {apps, commands} = await this.commandIndex(channelId);
 		this.apps = apps;
 		const appOwners = this.commandIndexes?.get(scope)?.appOwners;
-		const memberBits = this.id === "@me" ? undefined : this.member?.usableBits();
-		return commands.filter(
-			(_) => _.type === 1 && this.memberCanSee(_.rawJson, memberBits, channelId, appOwners),
-		);
+		return this.visibleCommands(commands, 1, channelId, appOwners);
 	}
 	/** MESSAGE context-menu commands for `channelId`'s scope, synchronously: what has already
 	 * been fetched (a menu can't wait). An unfetched scope starts its fetch and reads empty. */
@@ -2797,40 +2794,48 @@ class Guild extends SnowFlake {
 		const entry = this.commandIndexes?.get(scope);
 		const settled = entry?.settled;
 		if (!settled) void this.commandIndex(channelId);
-		const memberBits = this.id === "@me" ? undefined : this.member?.usableBits();
-		return (settled ?? []).filter(
-			(_) => _.type === 3 && this.memberCanSee(_.rawJson, memberBits, channelId, entry?.appOwners),
-		);
+		return this.visibleCommands(settled ?? [], 3, channelId, entry?.appOwners);
 	}
-	/** Discord parity: what a member sees of the command index. The channel's own gates first,
-	 * the server's refusals ahead of reading any command: nothing in an archived thread (50083,
-	 * admins too), nothing without USE_APPLICATION_COMMANDS in that channel (50013; guild owner
-	 * and ADMINISTRATOR hold every bit, an app's owner doesn't). Then per-command overrides
-	 * (commandAllowedFor's table, after the bypasses: guild owner, ADMINISTRATOR, app owner),
-	 * then a command whose default_member_permissions the member doesn't hold isn't offered
-	 * (admins pass everything). Applied on every read, not at fetch, so a role granted or a
-	 * member attached mid-session counts without refetching the cached index. `memberBits` is
-	 * undefined for DMs and for a guild whose member isn't resolved yet (nothing to filter
-	 * by), which also keeps DM lists unfiltered — the server scopes those. */
-	private memberCanSee(
-		raw: commandJson,
-		memberBits: bigint | undefined,
+	/** Discord parity: what a member sees of the command index, read at every call, not at fetch,
+	 * so a role granted or a member attached mid-session counts without refetching the index. */
+	private visibleCommands(
+		commands: Command[],
+		type: number,
 		channelId?: string,
 		appOwners?: Map<string, string>,
-	): boolean {
-		if (this.id === "@me") return true;
+	): Command[] {
+		const memberBits = this.id === "@me" ? undefined : this.member?.usableBits();
+		const access = this.channelCommandAccess(memberBits, channelId);
+		if (access === "none") return [];
+		return commands.filter(
+			(_) =>
+				_.type === type &&
+				(access === "all" || this.memberCanSee(_.rawJson, memberBits!, channelId, appOwners)),
+		);
+	}
+	/** The channel's own gates, one verdict for the whole index, the server's refusals ahead of
+	 * reading any command: nothing in an archived thread (50083, admins too), nothing without
+	 * USE_APPLICATION_COMMANDS in that channel (50013; guild owner and ADMINISTRATOR hold every
+	 * bit, an app's owner doesn't). "all" is past every per-command rule: admins, and `memberBits`
+	 * undefined, for DMs and for a guild whose member isn't resolved yet (nothing to filter by),
+	 * which also keeps DM lists unfiltered — the server scopes those. */
+	private channelCommandAccess(
+		memberBits: bigint | undefined,
+		channelId?: string,
+	): "none" | "all" | "each" {
+		if (this.id === "@me") return "all";
 		const channel = channelId === undefined ? undefined : this.localuser.channelids.get(channelId);
-		if (channel?.threadData?.archived) return false;
-		if (memberBits === undefined) return true;
+		if (channel?.threadData?.archived) return "none";
+		if (memberBits === undefined) return "all";
 		const ADMINISTRATOR = 1n << BigInt(Permissions.permisions.indexOf("ADMINISTRATOR"));
 		// The owner is admin without the bit (isAdmin()'s owner branch).
 		if (
 			this.properties?.owner_id !== undefined &&
 			this.member?.user?.id === this.properties.owner_id
 		) {
-			return true;
+			return "all";
 		}
-		if ((memberBits & ADMINISTRATOR) === ADMINISTRATOR) return true;
+		if ((memberBits & ADMINISTRATOR) === ADMINISTRATOR) return "all";
 		// A channel this client doesn't hold has no overwrites to read: the role bits decide,
 		// and a timeout takes the bit away as it does in any channel.
 		const USE_APPLICATION_COMMANDS =
@@ -2839,7 +2844,17 @@ class Guild extends SnowFlake {
 			? channel.hasPermission("USE_APPLICATION_COMMANDS")
 			: (memberBits & USE_APPLICATION_COMMANDS) === USE_APPLICATION_COMMANDS &&
 				!this.member?.commuicationDisabledLeft();
-		if (!canUseCommands) return false;
+		return canUseCommands ? "each" : "none";
+	}
+	/** One command, for a member past channelCommandAccess: per-command overrides
+	 * (commandAllowedFor's table) after the app-owner bypass, then a command whose
+	 * default_member_permissions the member doesn't hold isn't offered. */
+	private memberCanSee(
+		raw: commandJson,
+		memberBits: bigint,
+		channelId?: string,
+		appOwners?: Map<string, string>,
+	): boolean {
 		// App owner bypass (the member is the owner of the app owning the command).
 		const appOwner = appOwners?.get(raw.application_id);
 		if (appOwner !== undefined && this.member?.user?.id === appOwner) return true;

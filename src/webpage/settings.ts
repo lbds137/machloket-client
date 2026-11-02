@@ -2397,8 +2397,12 @@ async function handle2fa(
 				keyUnavailable = true;
 			}
 			if (!credential) {
-				if (fallback) return promptLoginCode(json, api, fallback.title, fallback.hint);
-				if (keyUnavailable) onRefused(I18n.backupCodes.keyUnavailable());
+				const why = keyUnavailable ? I18n.backupCodes.keyUnavailable() : undefined;
+				if (fallback) {
+					const hint = why ? `${why} ${fallback.hint}` : fallback.hint;
+					return promptLoginCode(json, api, fallback.title, hint);
+				}
+				if (why) onRefused(why);
 				return false;
 			}
 			function toBase64(buf: ArrayBuffer) {

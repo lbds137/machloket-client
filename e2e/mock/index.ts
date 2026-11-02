@@ -292,7 +292,7 @@ export const MOCK_BOT_USER: userjson = {
 // src/webpage/role.ts & src/webpage/channel.ts (hasPermission checks @everyone role id === guild.id)
 // Bits: VIEW_CHANNEL (1<<10) | SEND_MESSAGES (1<<11) | READ_MESSAGE_HISTORY (1<<16) | USE_APPLICATION_COMMANDS (1<<31) = 2147552256.
 // Deliberately NOT admin (no 1<<3): the slash-perm pins need a member whose filtering is
-// visible - an ADMINISTRATOR passes memberCanSee for everything.
+// visible - an ADMINISTRATOR skips the per-command filter (channelCommandAccess).
 export const MOCK_EVERYONE_ROLE: rolesjson = {
 	id: MOCK_GUILD_ID,
 	guild_id: MOCK_GUILD_ID,
@@ -406,7 +406,7 @@ export const MOCK_GUILD: guildjson = {
 		banner: "",
 		features: [],
 		preferred_locale: "en-US",
-		// NOT the fixture member: guild.ts memberCanSee's owner bypass passes everything,
+		// NOT the fixture member: guild.ts channelCommandAccess's owner bypass passes everything,
 		// which would silent the slash-perm pins. The bot persona owns the guild.
 		owner_id: MOCK_BOT_USER_ID,
 		application_id: "",
@@ -451,7 +451,7 @@ export const MOCK_MEMBER: memberjson = {
 	user: MOCK_USER,
 	guild: {id: MOCK_GUILD_ID},
 	guild_id: MOCK_GUILD_ID,
-	roles: [MOCK_GUILD_ID],
+	roles: [],
 	joined_at: "2025-01-01T00:00:00.000Z",
 	premium_since: "",
 	deaf: false,
@@ -464,7 +464,7 @@ export const MOCK_BOT_MEMBER: memberjson = {
 	user: MOCK_BOT_USER,
 	guild: {id: MOCK_GUILD_ID},
 	guild_id: MOCK_GUILD_ID,
-	roles: [MOCK_GUILD_ID],
+	roles: [],
 	joined_at: "2025-01-01T00:00:00.000Z",
 	premium_since: "",
 	deaf: false,
@@ -497,7 +497,7 @@ export const MOCK_BLOCKED_MEMBER: memberjson = {
 	user: MOCK_BLOCKED_USER,
 	guild: {id: MOCK_GUILD_ID},
 	guild_id: MOCK_GUILD_ID,
-	roles: [MOCK_GUILD_ID],
+	roles: [],
 	joined_at: "2025-01-01T00:00:00.000Z",
 	premium_since: "",
 	deaf: false,
@@ -1161,7 +1161,8 @@ export interface MockInstanceHandle {
 	};
 	sendGatewayEvent: (frame: {op: number; t?: string; s?: number; d: unknown}) => void;
 	/** Set per test: the code the app's own ws.close() completes with, in place of the one it
-	 * asked for - a connection that drops mid-close never reports the app's code back. */
+	 * asked for - a connection that drops mid-close never reports the app's code back. It stays
+	 * set until the test ends, so every later close the app makes completes with it too. */
 	closeCompletesWith?: number;
 	/** Reassignable per test: a custom handler for POST /api/v9/auth/login (refusal tests
 	 * fulfill a 401 here). Runs INSTEAD of the default fulfill when set. */

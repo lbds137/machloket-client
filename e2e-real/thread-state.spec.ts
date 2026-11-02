@@ -132,13 +132,18 @@ test("archived: no edit or new reaction, your own reaction comes off, a send reo
 			puts.push(request.url());
 		}
 	});
+	await expect(pill(message, "🔥")).toHaveClass(/reactionClosed/);
 	await pill(message, "🔥").click();
-	await page.waitForTimeout(300);
-	expect(puts).toEqual([]);
 	await expect(pill(message, "🔥")).toContainText("1");
 
-	// Your own comes off: the server's DELETE has no archived rule.
+	// Your own comes off: the server's DELETE has no archived rule. Its request is what the no-PUT
+	// check above stands on: a click that was going to send has sent by now.
+	const removal = page.waitForRequest(
+		(request) => request.method() === "DELETE" && request.url().includes("/reactions/"),
+	);
 	await pill(message, "👍").click();
+	await removal;
+	expect(puts).toEqual([]);
 	await expect(pill(message, "👍")).toHaveCount(0);
 
 	// A send unarchives, for the sender too.
@@ -147,6 +152,7 @@ test("archived: no edit or new reaction, your own reaction comes off, a send reo
 	await page.keyboard.press("Enter");
 	await expect(row(page, "waking it")).toBeVisible();
 	await expect.poll(async () => (await hoverBar(message)).edit).toBe(true);
+	await expect(pill(message, "🔥")).not.toHaveClass(/reactionClosed/);
 });
 
 test("locked: without MANAGE_THREADS no send, edit or reply, but reactions stand", async ({
@@ -157,10 +163,14 @@ test("locked: without MANAGE_THREADS no send, edit or reply, but reactions stand
 	const message = row(page, "from the member");
 	await expect(pill(message, "🔥")).toContainText("1");
 	expect(await composerOpen(page)).toBe(true);
+	await message.hover();
+	await message.locator(".messageButtons .svg-reply").click();
+	await expect(page.locator("#replybox")).toContainText("Replying to");
 
 	await rest(world.owner.token, "PATCH", `/channels/${world.threadId}`, {locked: true});
 
 	await expect.poll(() => composerOpen(page)).toBe(false);
+	await expect(page.locator("#replybox")).toBeEmpty();
 	expect(await hoverBar(message)).toEqual({edit: false, react: true, reply: false});
 	const labels = await menuLabels(page, message);
 	expect(labels).toContain("Add reaction");

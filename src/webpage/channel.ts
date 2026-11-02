@@ -2307,14 +2307,16 @@ class Channel extends SnowFlake {
 	}
 	curCommand?: Command;
 	curWatch = () => {};
+	private static readonly COMMAND_WATCH_EVENTS = ["keydown", "keyup", "input"] as const;
 	/** Tears command mode down: chips and the command front go, the composer types again, and
 	 * the command's per-channel state is dropped so a later start begins clean. */
 	exitCommand() {
 		this.curCommand?.state.delete(this);
 		this.curCommand = undefined;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		typebox.removeEventListener("keyup", this.curWatch);
-		typebox.removeEventListener("input", this.curWatch);
+		for (const type of Channel.COMMAND_WATCH_EVENTS) {
+			typebox.removeEventListener(type, this.curWatch);
+		}
 		typebox.markdown.boxEnabled = true;
 		typebox.innerHTML = "";
 		typebox.markdown.boxupdate();
@@ -2344,8 +2346,17 @@ class Channel extends SnowFlake {
 		this.curCommand = command;
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
 		typebox.markdown.boxEnabled = false;
-		// keyup follows the caret, input an edit that comes with no key (a cut, dictation).
+		// input reads every edit, keyed or not (a cut, dictation); keyup follows the caret, for a
+		// key that edited nothing. keydown clears the mark so an edit with no key before it can't
+		// swallow a later key's keyup.
+		let edited = false;
 		const func = (e?: Event) => {
+			if (e?.type === "keydown") {
+				edited = false;
+				return;
+			}
+			if (e?.type === "input") edited = true;
+			else if (edited) return;
 			// Escape closes the option popup (handleEnter clears it first); refreshing the
 			// offer on this same keyup would reopen it out from under the close.
 			if (e instanceof KeyboardEvent && e.key === "Escape") return;
@@ -2355,14 +2366,16 @@ class Channel extends SnowFlake {
 				if (!out) {
 					typebox.markdown.boxEnabled = true;
 					typebox.markdown.boxupdate();
-					typebox.removeEventListener("keyup", func);
-					typebox.removeEventListener("input", func);
+					for (const type of Channel.COMMAND_WATCH_EVENTS) {
+						typebox.removeEventListener(type, func);
+					}
 				}
 			}
 		};
 		this.curWatch = func;
-		typebox.addEventListener("keyup", func);
-		typebox.addEventListener("input", func);
+		for (const type of Channel.COMMAND_WATCH_EVENTS) {
+			typebox.addEventListener(type, func);
+		}
 		command.render(typebox, this);
 		// The picker's subcommand rows ("/name sub") start the command with the branch
 		// already chosen.
@@ -3957,7 +3970,15 @@ class Channel extends SnowFlake {
 		this.icon = json.icon;
 		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
 		this.renderIcon();
+		const wasArchived = !!this.threadData?.archived;
 		this.threadData = json.thread_metadata;
+		// Pills drawn before the flip carry its look (.reactionClosed). The map is the client's
+		// one, every channel's messages in it.
+		if (wasArchived !== !!this.threadData?.archived) {
+			for (const message of this.messages.values()) {
+				if (message.channel === this && message.reactions.length) message.updateReactions();
+			}
+		}
 		this.rate_limit_per_user = json.rate_limit_per_user || 0;
 		this.appliedTags = json.applied_tags || this.appliedTags;
 		this.availableTags =
@@ -4345,6 +4366,12 @@ class Channel extends SnowFlake {
 	refreshComposerLock() {
 		if (this !== this.localuser.channelfocus || this.isForum() || this.nsfwGated()) return;
 		const canMessage = this.canMessage;
+		// The reply bar goes with the send it was for.
+		if (!canMessage && this.replyingto) {
+			this.replyingto.div?.classList.remove("replying");
+			this.replyingto = null;
+			this.makereplybox();
+		}
 		try {
 			(document.getElementById("typebox") as HTMLDivElement).contentEditable = canMessage
 				? "plaintext-only"

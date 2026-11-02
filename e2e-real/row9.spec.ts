@@ -139,7 +139,9 @@ async function clearComposer(page: Page): Promise<void> {
 	await expect(page.locator("#searchOptions")).toBeEmpty();
 }
 
-/** The next frame after an awaited answer, by when a row would be on the page. */
+/** The next frame after an awaited answer, by when a row would be on the page. An empty list
+ * draws nothing to wait for (renderCommandPanel), so each negative stands on the same test
+ * seeing the row while it was allowed. */
 async function settle(page: Page): Promise<void> {
 	await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))));
 }

@@ -36,7 +36,7 @@ test.use({
 				...MOCK_BOT_MEMBER,
 				nick: "Helper Nick",
 				bio: `Ask <@&${KNIGHTS_ID}> for help`,
-				roles: [MOCK_GUILD_ID, KNIGHTS_ID],
+				roles: [KNIGHTS_ID],
 			},
 		],
 	},

@@ -249,6 +249,7 @@ test("a session-less retry over a live pillar leaves one pillar, the open guild 
 	const home = page.locator("#servers .svg-home");
 	await home.evaluate((el) => el.setAttribute("data-before-retry", ""));
 
+	// 1001 stands in for the 1006 of a real drop: a server-side close can't report 1006.
 	mockInstance.closeCompletesWith = 1001;
 	mockInstance.sendGatewayEvent({op: 9, d: false});
 

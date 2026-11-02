@@ -1587,6 +1587,50 @@ describe("progressive composer model", () => {
 		}
 	});
 
+	it("a typed key reads the command once, and a key that edits nothing still follows the caret", async () => {
+		const {Channel} = await import("../channel");
+		const typebox = document.createElement("div");
+		typebox.id = "typebox";
+		(typebox as unknown as {markdown: unknown}).markdown = {
+			boxEnabled: false,
+			boxupdate: () => {},
+		};
+		document.body.append(typebox);
+		const {localuser} = messageIn("100");
+		const chan = Object.assign(Object.create(Channel.prototype), {
+			id: "200",
+			owner: {id: "100", localuser, info: {api: API}, headers: {}},
+		});
+		(localuser as unknown as {channelfocus: unknown}).channelfocus = chan;
+		const command = new Command(commandJson([{type: 3, name: "query", description: ""}]), localuser);
+		try {
+			chan.startCommand(command);
+			await new Promise((r) => setTimeout(r, 0));
+			const collect = vi.spyOn(command, "collect");
+			const down = (key: string) => typebox.dispatchEvent(new KeyboardEvent("keydown", {key}));
+			const up = (key: string) => typebox.dispatchEvent(new KeyboardEvent("keyup", {key}));
+
+			down("q");
+			typebox.dispatchEvent(new Event("input", {bubbles: true}));
+			up("q");
+			expect(collect).toHaveBeenCalledTimes(1);
+
+			down("ArrowLeft");
+			up("ArrowLeft");
+			expect(collect).toHaveBeenCalledTimes(2);
+
+			// Dictation: an edit with no key before it, so the next key is judged on its own.
+			typebox.dispatchEvent(new Event("input", {bubbles: true}));
+			expect(collect).toHaveBeenCalledTimes(3);
+			down("ArrowLeft");
+			up("ArrowLeft");
+			expect(collect).toHaveBeenCalledTimes(4);
+		} finally {
+			typebox.remove();
+			document.getElementById("searchOptions")?.remove();
+		}
+	});
+
 	it("Escape does not reopen the option popup on the same keyup", async () => {
 		const {Channel} = await import("../channel");
 		const searchOptions = document.createElement("div");

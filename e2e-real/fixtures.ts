@@ -118,7 +118,8 @@ export function seedMfaRecovery(userId: string, completesAt: Date | null): void 
 	);
 }
 
-/** Runs one statement in the throwaway instance's database, for a state no route can reach. */
+/** Runs one statement in the throwaway instance's database, for a state no route can reach. The
+ * text runs as written: trusted SQL the test built itself, never a value from a response. */
 export function instanceSql(sql: string): void {
 	const pid = process.env.MACHLOKET_E2E_BOOT_PID;
 	if (!pid) throw new Error("MACHLOKET_E2E_BOOT_PID unset: e2e-real/globalSetup.ts did not run");
@@ -397,12 +398,26 @@ const BOT_HEARTBEAT_MS = 30_000;
 export class BotGateway {
 	private readonly socket: WebSocket;
 	private readonly queue: BotInteraction[] = [];
-	private readonly waiting: ((interaction: BotInteraction) => void)[] = [];
+	private readonly waiting: {
+		resolve: (interaction: BotInteraction) => void;
+		reject: (cause: Error) => void;
+	}[] = [];
 	private heartbeat?: ReturnType<typeof setInterval>;
 	private seq: number | null = null;
+	/** Why the session is gone, so a wait for an interaction names it and doesn't just time out. */
+	private dead?: Error;
 
 	private constructor(socket: WebSocket) {
 		this.socket = socket;
+		socket.addEventListener("close", (event) =>
+			this.die(new Error(`the bot's gateway closed: ${event.code} ${event.reason}`)),
+		);
+	}
+
+	private die(cause: Error): void {
+		this.dead ??= cause;
+		clearInterval(this.heartbeat);
+		for (const waiter of this.waiting.splice(0)) waiter.reject(this.dead);
 	}
 
 	static async connect(token: string): Promise<BotGateway> {
@@ -412,10 +427,17 @@ export class BotGateway {
 		const identified = new Promise<void>((ready, fail) => {
 			timer = setTimeout(() => fail(new Error("the bot got no READY in 20 s")), 20_000);
 			socket.addEventListener("error", () => fail(new Error("the bot's gateway socket failed")));
+			socket.addEventListener("close", (event) =>
+				fail(new Error(`the bot's gateway closed before READY: ${event.code} ${event.reason}`)),
+			);
 			socket.addEventListener("message", (event) => {
 				const frame = JSON.parse(String(event.data));
 				if (frame.s) bot.seq = frame.s;
-				if (frame.op === 10) {
+				if (frame.op === 7 || frame.op === 9) {
+					// A bot framework would resume or re-identify; a test wants to hear about it.
+					bot.die(new Error(`the server told the bot to reconnect (op ${frame.op})`));
+					socket.close();
+				} else if (frame.op === 10) {
 					bot.heartbeat = setInterval(
 						() => socket.send(JSON.stringify({op: 1, d: bot.seq})),
 						BOT_HEARTBEAT_MS,
@@ -430,7 +452,7 @@ export class BotGateway {
 					ready();
 				} else if (frame.t === "INTERACTION_CREATE") {
 					const waiter = bot.waiting.shift();
-					if (waiter) waiter(frame.d);
+					if (waiter) waiter.resolve(frame.d);
 					else bot.queue.push(frame.d);
 				}
 			});
@@ -451,14 +473,21 @@ export class BotGateway {
 	next(timeoutMs = 15_000): Promise<BotInteraction> {
 		const queued = this.queue.shift();
 		if (queued) return Promise.resolve(queued);
+		if (this.dead) return Promise.reject(this.dead);
 		return new Promise((resolve, reject) => {
 			const timer = setTimeout(() => {
 				this.waiting.splice(this.waiting.indexOf(waiter), 1);
 				reject(new Error(`the bot got no interaction in ${timeoutMs} ms`));
 			}, timeoutMs);
-			const waiter = (interaction: BotInteraction) => {
-				clearTimeout(timer);
-				resolve(interaction);
+			const waiter = {
+				resolve: (interaction: BotInteraction) => {
+					clearTimeout(timer);
+					resolve(interaction);
+				},
+				reject: (cause: Error) => {
+					clearTimeout(timer);
+					reject(cause);
+				},
 			};
 			this.waiting.push(waiter);
 		});
