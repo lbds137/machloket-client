@@ -32,6 +32,31 @@ test("re-tapping a channel still loading doesn't leave its skeleton up", async (
 test.describe("on desktop", () => {
 	test.use(DESKTOP);
 
+	// The same re-tap with the row tapped here, so it doesn't rest on what the login helper taps.
+	test("tapping a loading channel's own row doesn't leave its skeleton up", async ({
+		page,
+		mockInstance,
+	}) => {
+		void mockInstance; // mount the mock's routes; the handle stays unread
+		let release = () => {};
+		const held = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		await page.route(`**/channels/${MOCK_CHANNEL.id}/messages?*`, async (route) => {
+			await held;
+			await route.fallback();
+		});
+
+		await loginAndOpenChannel(page);
+		await expect(page.locator("#loadingdiv")).toHaveClass(/loading/);
+		await page.locator("#channels button.channelbutton", {hasText: MOCK_CHANNEL.name}).click();
+		await expect(page.locator("#loadingdiv")).toHaveClass(/loading/);
+		release();
+
+		await expect(page.locator("#loadingdiv")).not.toHaveClass(/loading/);
+		await expect(page.locator("#scrollWrap .messagediv").first()).toBeVisible();
+	});
+
 	test("leaving a channel still loading for a panel channel takes its skeleton down", async ({
 		page,
 		mockInstance,

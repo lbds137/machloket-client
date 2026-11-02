@@ -367,8 +367,8 @@ test.describe("an archived thread", () => {
 		const menu = page.locator(".contextmenu");
 		await expect(menu).toBeVisible();
 		const labels = await menu.locator("button").allTextContents();
-		await page.keyboard.press("Escape");
-		await page.mouse.click(640, 400);
+		// A click outside closes it; the channel's name in the header does nothing else.
+		await page.locator("#channelname").click();
 		await expect(menu).toHaveCount(0);
 		return labels;
 	}
