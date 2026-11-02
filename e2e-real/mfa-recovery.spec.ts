@@ -1,4 +1,13 @@
-import {DESKTOP, expect, logIn, newAccount, rest, seedMfaRecovery, test} from "./fixtures";
+import {
+	DESKTOP,
+	enableTotp,
+	expect,
+	logIn,
+	newAccount,
+	rest,
+	seedMfaRecovery,
+	test,
+} from "./fixtures";
 
 test.use(DESKTOP);
 
@@ -41,5 +50,20 @@ test("a running hold shows its time left; cancelling on one session clears the o
 	await expect(page.locator(bar)).toBeHidden();
 	await expect(other.locator(bar)).toBeHidden();
 
+	await expect(rest(me.token, "GET", "/users/@me/mfa/recovery")).rejects.toThrow(/: 404 /);
+});
+
+// A hold is what a recovery is for, so its account usually holds a factor. The server's DELETE
+// asks for no code on it, and this is where that reading runs.
+test("cancelling needs no second factor on an account with an authenticator", async ({page}) => {
+	const me = await newAccount("recoverytotp");
+	const secret = await enableTotp(me);
+	seedMfaRecovery(me.id, new Date(Date.now() + 72 * 3_600_000));
+	await logIn(page, me, {totpSecret: secret});
+	await expect(page.locator(bar)).toBeVisible();
+
+	await page.getByRole("button", {name: "Cancel removal"}).click();
+
+	await expect(page.locator(bar)).toBeHidden();
 	await expect(rest(me.token, "GET", "/users/@me/mfa/recovery")).rejects.toThrow(/: 404 /);
 });

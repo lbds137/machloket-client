@@ -67,7 +67,7 @@ test.use({
 	...DESKTOP,
 	mockInstanceOptions: {
 		extraRoles: [MODERATOR_ROLE],
-		members: [{...MOCK_MEMBER, id: MOCK_USER_ID, roles: [MOCK_GUILD_ID, MODERATOR_ROLE_ID]}, ALICE_MEMBER],
+		members: [{...MOCK_MEMBER, id: MOCK_USER_ID, roles: [MODERATOR_ROLE_ID]}, ALICE_MEMBER],
 		messages: [ALICE_MESSAGE, ...MOCK_MESSAGES],
 	},
 });

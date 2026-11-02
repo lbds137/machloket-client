@@ -124,7 +124,7 @@ test("the player's border reset stays on the player, away from other frames", as
 
 test.describe("an article embed whose image reports no size", () => {
 	// On this block's mount only, so the shared #general layout stays as every other spec knows it.
-	const WIDE_IMAGE_URL = "http://127.0.0.1:4173/e2e-assets/wide.gif";
+	const WIDE_IMAGE_URL = "http://127.0.0.1:4173/e2e-assets/wide.svg";
 	test.use({
 		mockInstanceOptions: {
 			messages: [

@@ -544,10 +544,7 @@ export class Command extends SnowFlake {
 				: undefined
 			: pickedBranch?.localizedName;
 		const input = chip.querySelector("input");
-		if (input && display) {
-			input.value = display;
-			branchShown.set(input, display);
-		}
+		if (input && display) input.value = display;
 		this.stateChange(branch, channel, picked);
 		branch.renderLeaves(chip, picked, channel);
 	}
@@ -1040,9 +1037,8 @@ class NumberishOption extends Option {
 		};
 		input.onkeyup = (e) => {
 			chipExit(div, input, this.owner, channel, e);
-			this.owner.stateChange(this, channel, input.value);
 		};
-		// Spinner clicks change the value without firing any key event.
+		// On input, not keyup: spinner clicks and a paste come with no key.
 		input.oninput = () => {
 			this.owner.stateChange(this, channel, input.value);
 		};
@@ -1289,11 +1285,6 @@ class EntityOption extends Option {
 		throw new OptionError(I18n.commands.errorNotValid(state || '""', this.localizedName));
 	}
 }
-/** Per branch-picker input: the text its popup was last built for, or a pick displayed (the
- * popup's own pick or prePick's). A keyup that leaves the text unchanged — an arrow, Enter,
- * Tab — must not rebuild the popup: that resets the selection, and after a pick it re-offers
- * the branch so the sending Enter picks again. */
-const branchShown = new WeakMap<HTMLInputElement, string>();
 /** Upload ref ids must differ across the picks of one command: the server pairs each option's
  * value with its data.attachments entry by id. */
 let attachmentRefIds = 0;
@@ -1520,9 +1511,7 @@ class SubCommandOption extends Option {
 		input.value = state;
 		// A group command picks twice: the group, then its subcommand.
 		let group: SubCommandGroupOption | undefined;
-		branchShown.set(input, input.value);
 		const offer = () => {
-			branchShown.set(input, input.value);
 			const entries =
 				group === undefined
 					? this.branches()
@@ -1555,7 +1544,6 @@ class SubCommandOption extends Option {
 											? branch.name
 											: group.name + "/" + branch.name;
 									input.value = branch.localizedName;
-									branchShown.set(input, input.value);
 									this.owner.stateChange(this, channel, picked);
 									this.renderLeaves(div, picked, channel);
 								}
@@ -1571,8 +1559,9 @@ class SubCommandOption extends Option {
 		};
 		input.onkeyup = (e) => {
 			chipExit(div, input, this.owner, channel, e);
-			if (input.value !== branchShown.get(input)) offer();
 		};
+		// On input, not keyup: an arrow, Enter or Tab must not rebuild the popup. That resets the
+		// selection, and after a pick it re-offers the branch so the sending Enter picks again.
 		input.oninput = offer;
 
 		div.append(input);

@@ -21,7 +21,8 @@ function git(args: string): string {
 export function printTestTree(runner: string): void {
 	const branch = git("branch --show-current") || "(detached)";
 	// Changes on top of the sha, untracked files included: a new spec runs without being committed.
-	const changes = git("status --porcelain");
+	// No optional locks: a banner mustn't take the index lock from a git command running beside it.
+	const changes = git("--no-optional-locks status --porcelain");
 	const dirty = changes && changes !== "unknown" ? "+dirty" : "";
 	console.log(
 		`${runner}: tree=${git("rev-parse --show-toplevel")} branch=${branch} sha=${git("rev-parse --short HEAD")}${dirty}`,

@@ -1100,7 +1100,7 @@ class Message extends SnowFlake {
 			if (update.d.user_id === this.localuser.user.id) ans.me_voted = false;
 		}
 	}
-	reactdiv!: WeakRef<HTMLDivElement>;
+	reactdiv?: WeakRef<HTMLDivElement>;
 	blockedPropigate() {
 		const previd = this.channel.idToPrev.get(this.id);
 		if (!previd) {
@@ -2226,7 +2226,7 @@ class Message extends SnowFlake {
 		diaolog.show();
 	}
 	updateReactions() {
-		const reactdiv = this.reactdiv.deref();
+		const reactdiv = this.reactdiv?.deref();
 		if (!reactdiv) return;
 		const func = this.channel.infinite.snapBottom();
 		reactdiv.innerHTML = "";

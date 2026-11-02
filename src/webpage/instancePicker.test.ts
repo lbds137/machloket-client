@@ -310,7 +310,7 @@ describe("InstancePicker gate edges (GLM-week audit)", () => {
 		expect(button.disabled).toBe(true);
 	});
 
-	it("a key that edits nothing keeps the check; a check in flight never lands after an edit", async () => {
+	it("an edit back to the checked value keeps the check; a check in flight never lands after an edit", async () => {
 		await instancefetch;
 		addInstance("http://kept.test", 0);
 		addInstance("http://slow.test", 300);
@@ -320,7 +320,7 @@ describe("InstancePicker gate edges (GLM-week audit)", () => {
 		input.value = "http://kept.test";
 		await picker.validate();
 
-		input.dispatchEvent(new KeyboardEvent("keyup", {key: "Tab"}));
+		input.dispatchEvent(new Event("input"));
 		expect(picker.validationState).toBe("ok");
 		expect(button.disabled).toBe(false);
 

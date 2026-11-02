@@ -1,4 +1,4 @@
-import {expect, it, vi} from "vitest";
+import {afterEach, describe, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -26,7 +26,10 @@ function threadChannel(
 		infinite: {snapBottom: () => () => {}},
 		hasPermission: (name: string) => granted.includes(name),
 	});
-	Object.defineProperty(channel, "localuser", {value: {user: ME, favorites: noFavorites}});
+	Object.defineProperty(channel, "localuser", {
+		value: {user: ME, favorites: noFavorites},
+		configurable: true,
+	});
 	Object.defineProperty(channel, "guild", {
 		value: {id: "1", cachedContextCommands: () => []},
 	});
@@ -129,6 +132,112 @@ it("in an archived thread a pill of yours comes off and one of others' does noth
 	open.reaction.click();
 	expect(open.toggle).toHaveBeenCalledOnce();
 	expect(open.reaction.classList.contains("reactionClosed")).toBe(false);
+});
+
+/** updateChannel on a real channel, with only the drawing it doesn't exercise stubbed. */
+function threadUpdates(channel: InstanceType<typeof Channel>, messages: InstanceType<typeof Message>[]) {
+	Object.assign(channel, {
+		messages: new Map(messages.map((message, i) => [String(i), message])),
+		renderIcon: () => {},
+		slowmode: () => {},
+		refreshComposerLock: () => {},
+		fireEvents: () => {},
+		nameSpan: new WeakRef(document.createElement("span")),
+		permission_overwrites: new Map(),
+	});
+	Object.defineProperty(channel, "localuser", {
+		value: {user: ME, favorites: noFavorites, channelids: new Map()},
+	});
+	return (thread_metadata: typeof OPEN) =>
+		channel.updateChannel({type: 11, name: "t", thread_metadata} as never);
+}
+
+it("archiving and unarchiving redraw the pills, leaving messages not on the page alone", () => {
+	const channel = threadChannel(OPEN);
+	const message = ownMessage(channel);
+	const {reaction} = pill(message, false);
+	const reactdiv = reaction.parentElement!;
+	expect(reaction.classList.contains("reactionClosed")).toBe(false);
+	const undrawn = Object.assign(ownMessage(channel), {reactions: [{count: 1, me: false, emoji: {name: "👍"}}]});
+	const update = threadUpdates(channel, [message, undrawn]);
+
+	update(ARCHIVED);
+	expect(reactdiv.querySelector(".reaction")!.classList.contains("reactionClosed")).toBe(true);
+
+	update(OPEN);
+	expect(reactdiv.querySelector(".reaction")!.classList.contains("reactionClosed")).toBe(false);
+});
+
+// channel.messages is the client's one map, every channel's messages in it.
+it("a flip redraws this thread's pills only, and a thread's first update isn't a flip", () => {
+	const channel = threadChannel(OPEN);
+	const elsewhere = ownMessage(threadChannel(OPEN));
+	const {reaction} = pill(elsewhere, false);
+	const reactdiv = reaction.parentElement!;
+	threadUpdates(channel, [elsewhere])(ARCHIVED);
+	expect(reactdiv.querySelector(".reaction")).toBe(reaction);
+
+	const fresh = threadChannel(undefined);
+	const mine = ownMessage(fresh);
+	const first = pill(mine, false);
+	const freshDiv = first.reaction.parentElement!;
+	threadUpdates(fresh, [mine])(OPEN);
+	expect(freshDiv.querySelector(".reaction")).toBe(first.reaction);
+});
+
+it("an update that doesn't flip archived leaves the pills as they are", () => {
+	const channel = threadChannel(OPEN);
+	const message = ownMessage(channel);
+	const {reaction} = pill(message, false);
+	const reactdiv = reaction.parentElement!;
+	const update = threadUpdates(channel, [message]);
+
+	update(OPEN);
+	update(LOCKED);
+
+	expect(reactdiv.querySelector(".reaction")).toBe(reaction);
+});
+
+describe("the reply bar when the composer locks", () => {
+	const IDS = ["typebox", "replybox", "upload", "gifTB", "stickerTB", "emojiTB", "mobileSend"];
+	afterEach(() => IDS.forEach((id) => document.getElementById(id)?.remove()));
+
+	function replying(threadData: typeof OPEN) {
+		for (const id of IDS) {
+			const element = document.createElement("div");
+			element.id = id;
+			document.body.append(element);
+		}
+		const channel = threadChannel(threadData);
+		Object.assign(channel, {nsfwGated: () => false});
+		Object.defineProperty(channel, "localuser", {value: {user: ME, channelfocus: channel}});
+		const message = Object.assign(ownMessage(channel), {author: {...ME, username: "nyx"}});
+		channel.setReplying(message);
+		expect(document.getElementById("replybox")!.textContent).not.toBe("");
+		return {channel, message};
+	}
+
+	// 160005 on the send it was for, and the composer it sits on no longer types.
+	it("goes with the composer", () => {
+		const {channel, message} = replying(OPEN);
+
+		Object.assign(channel, {threadData: LOCKED});
+		channel.refreshComposerLock();
+
+		expect(channel.replyingto).toBeNull();
+		expect(message.div!.classList.contains("replying")).toBe(false);
+		expect(document.getElementById("replybox")!.textContent).toBe("");
+	});
+
+	it("stays while the composer still takes the send", () => {
+		const {channel, message} = replying(OPEN);
+
+		Object.assign(channel, {threadData: ARCHIVED});
+		channel.refreshComposerLock();
+
+		expect(channel.replyingto).toBe(message);
+		expect(document.getElementById("replybox")!.textContent).not.toBe("");
+	});
 });
 
 it("a pill that was open when drawn does nothing once the thread is archived", () => {

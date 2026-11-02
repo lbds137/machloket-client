@@ -1,5 +1,6 @@
 import {expect} from "@playwright/test";
 import {loginAndOpenChannel, pinShot, test} from "./fixtures";
+import {MOCK_EVERYONE_ROLE, MOCK_GUILD_ID} from "./mock";
 
 // Walk item 1h mechanized: the slash popup's command list is permission-filtered. The
 // fixture member holds VIEW/SEND/HISTORY but no ADMINISTRATOR (the @everyone role's
@@ -54,8 +55,7 @@ test.describe("a member without USE_APPLICATION_COMMANDS", () => {
 	// VIEW_CHANNEL | SEND_MESSAGES | READ_MESSAGE_HISTORY.
 	test.use({mockInstanceOptions: {everyonePermissions: "68608"}});
 
-	test("the slash popup offers no commands", async ({page, mockInstance}) => {
-		void mockInstance; // mount the mock's routes; the handle stays unread
+	test("the slash popup offers no commands, until the bit is granted", async ({page, mockInstance}) => {
 		await loginAndOpenChannel(page);
 
 		const indexAnswered = page.waitForResponse(/application-command-index/);
@@ -66,6 +66,30 @@ test.describe("a member without USE_APPLICATION_COMMANDS", () => {
 		// The list renders right after the answer; a frame later a row would be on the page.
 		await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))));
 
-		await expect(page.locator("#searchOptions")).not.toContainText("e2evisible");
+		const popup = page.locator("#searchOptions");
+		await expect(popup).not.toContainText("e2evisible");
+
+		// An empty list draws nothing to wait for, so the same popup must offer it once the bit
+		// is granted: a popup that stopped drawing would have passed the line above.
+		await page.keyboard.press("Backspace");
+		mockInstance.sendGatewayEvent({
+			op: 0,
+			t: "GUILD_ROLE_UPDATE",
+			d: {
+				guild_id: MOCK_GUILD_ID,
+				role: {...MOCK_EVERYONE_ROLE, permissions: "2147552256"},
+			},
+		});
+		await expect
+			.poll(async () => {
+				await typebox.pressSequentially("/");
+				await page.evaluate(
+					() => new Promise((done) => requestAnimationFrame(() => setTimeout(done))),
+				);
+				const shown = await popup.textContent();
+				await page.keyboard.press("Backspace");
+				return shown;
+			})
+			.toContain("e2evisible");
 	});
 });

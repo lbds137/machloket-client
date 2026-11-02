@@ -79,6 +79,8 @@ export class RecoveryBanner {
 			this.generation++;
 			this.clearRetry();
 			this.hide();
+		} else {
+			console.warn(`Unknown MFA recovery status: ${String(update.status)}`);
 		}
 	}
 

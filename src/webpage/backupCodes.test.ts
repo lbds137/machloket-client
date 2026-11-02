@@ -536,6 +536,24 @@ describe("login 2FA and backup code entry", () => {
 		}
 	});
 
+	it("a key prompt that can't run with a code to fall back on says why the code is being asked for", async () => {
+		captureRequests(KEY_LOGIN_URL, () =>
+			Response.json({token: null, mfa: true, webauthn: "not json", ticket: "tk-w", totp: true}),
+		);
+		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+		try {
+			void new Dialog("").options
+				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, method: "POST"})
+				.submit();
+			await vi.waitFor(() =>
+				expect(document.body.textContent).toContain(I18n.backupCodes.keyPromptTotpHint()),
+			);
+			expect(document.body.textContent).toContain(I18n.backupCodes.keyUnavailable());
+		} finally {
+			errors.mockRestore();
+		}
+	});
+
 	it("WebAuthn fallback code prompt shows 400 message in .suberror, stays open, and retries with the same ticket", async () => {
 		captureRequests(KEY_LOGIN_URL, () =>
 			Response.json({token: null, mfa: true, webauthn: challenge, ticket: "tk-retry", backup: true}),

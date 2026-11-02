@@ -164,6 +164,19 @@ it("7. apply pending shows; cancelled hides; completed hides; an unknown status 
 	expect(banner.hidden).toBe(true);
 });
 
+it("an unknown status leaves a trace, and the known ones don't", () => {
+	const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+	const instance = makeBanner();
+
+	instance.apply({status: "pending", completes_at: null} as never);
+	instance.apply({status: "cancelled"} as never);
+	expect(warn).not.toHaveBeenCalled();
+
+	instance.apply({status: "held"} as never);
+	expect(warn).toHaveBeenCalledOnce();
+	expect(warn.mock.calls[0][0]).toContain("held");
+});
+
 it("8. apply pending without completes_at over a running countdown drops the countdown", async () => {
 	vi.useFakeTimers();
 	vi.setSystemTime(new Date("2026-11-02T12:00:00Z"));
