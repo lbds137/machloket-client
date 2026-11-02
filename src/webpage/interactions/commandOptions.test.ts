@@ -1169,6 +1169,77 @@ describe("progressive composer model", () => {
 		}
 	});
 
+	// A paste, dictation or a keyboard suggestion changes the field with no key events.
+	it("text that arrives without a key press counts, in a text chip", async () => {
+		const {channel, command} = flatCommand([
+			{type: 3, name: "message", description: "", required: true},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const input = html.querySelector(".commandinput input") as HTMLInputElement;
+			input.value = "pasted";
+			input.dispatchEvent(new Event("input", {bubbles: true}));
+			expect(command.getState(command.options[0], channel as never)).toBe("pasted");
+		} finally {
+			html.remove();
+		}
+	});
+
+	it("text that arrives without a key press counts, in a text chip with choices", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const {channel, command} = flatCommand([
+			{
+				type: 3,
+				name: "pick",
+				description: "",
+				required: true,
+				choices: [
+					{name: "pasted one", value: "one"},
+					{name: "other", value: "two"},
+				],
+			},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const input = html.querySelector(".commandinput input") as HTMLInputElement;
+			input.value = "pasted";
+			input.dispatchEvent(new Event("input", {bubbles: true}));
+			expect(command.getState(command.options[0], channel as never)).toBe("pasted");
+			expect(searchOptions.textContent).toContain("pasted one");
+			expect(searchOptions.textContent).not.toContain("other");
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
+	it("text that arrives without a key press counts, in an entity chip", async () => {
+		const searchOptions = document.createElement("div");
+		searchOptions.id = "searchOptions";
+		document.body.append(searchOptions);
+		const {channel, command} = flatCommand([
+			{type: 6, name: "who", description: "", required: true},
+		]);
+		const html = document.createElement("div");
+		document.body.append(html);
+		try {
+			command.render(html, channel as never);
+			const input = html.querySelector(".commandinput input") as HTMLInputElement;
+			input.value = "1553128655016763451";
+			input.dispatchEvent(new Event("input", {bubbles: true}));
+			expect(command.getState(command.options[0], channel as never)).toBe("1553128655016763451");
+		} finally {
+			html.remove();
+			searchOptions.remove();
+		}
+	});
+
 	it("an answered-false boolean still counts as filled", async () => {
 		const {channel, command} = flatCommand([
 			{type: 3, name: "message", description: "", required: true},
