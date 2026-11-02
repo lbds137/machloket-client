@@ -661,7 +661,8 @@ export const MOCK_VIDEO_EMBED: embedjson = {
 	author: {},
 	provider: {name: "YouTube"},
 	title: "e2e fixture clip",
-	video: {url: "https://www.youtube.com/embed/e2eFixtured01"},
+	// 16:9 under a 4:3 poster, and wider than a phone: the player must follow the video and still fit.
+	video: {url: "https://www.youtube.com/embed/e2eFixtured01", width: 1280, height: 720},
 	thumbnail: {url: MOCK_EMBED_POSTER_URL, proxy_url: MOCK_EMBED_POSTER_URL, width: 480, height: 360},
 };
 

@@ -563,10 +563,12 @@ class Embed {
 						// A cross-origin frame may autoplay only when allowed to.
 						iframe.allow = "autoplay; encrypted-media; picture-in-picture";
 						iframe.referrerPolicy = "strict-origin-when-cross-origin";
-						if (this.json.thumbnail.width && this.json.thumbnail.height) {
-							iframe.style.width = this.json.thumbnail.width + "px";
+						// The poster's shape isn't the video's: a 4:3 poster would letterbox a 16:9 video.
+						const size = [this.json.video, this.json.thumbnail].find((m) => m.width && m.height);
+						if (size) {
+							iframe.style.width = size.width + "px";
 							// Not a fixed height: a narrow screen caps the width, and the video keeps its shape.
-							iframe.style.aspectRatio = `${this.json.thumbnail.width} / ${this.json.thumbnail.height}`;
+							iframe.style.aspectRatio = `${size.width} / ${size.height}`;
 						}
 						div.append(iframe);
 					}
