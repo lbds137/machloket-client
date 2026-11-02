@@ -2296,7 +2296,7 @@ function promptLoginCode(
 	title: string,
 	hint?: string,
 ): Promise<false | any> {
-	return new Promise<boolean>((resolution) => {
+	return new Promise<false | any>((resolution) => {
 		const better = new Dialog("");
 		const form = better.options.addForm(
 			"",
@@ -2331,6 +2331,34 @@ function promptLoginCode(
 		better.show().parentElement!.style.zIndex = "200";
 	});
 }
+/** What can finish a login whose key prompt didn't, by what the login's answer says; null is
+ * nothing. A missing flag counts as false: older servers send neither, or only `backup`. */
+function keyFallback(json: {totp?: unknown; backup?: unknown}) {
+	const totp = json.totp === true;
+	const backup = json.backup === true;
+	if (totp && backup) {
+		return {
+			title: I18n.backupCodes.keyPromptEitherTitle(),
+			hint: I18n.backupCodes.keyPromptEitherHint(),
+			retry: I18n.backupCodes.retryLoginCode(),
+		};
+	}
+	if (totp) {
+		return {
+			title: I18n.backupCodes.keyPromptTotpTitle(),
+			hint: I18n.backupCodes.keyPromptTotpHint(),
+			retry: I18n.backupCodes.retryLoginCode(),
+		};
+	}
+	if (backup) {
+		return {
+			title: I18n.backupCodes.keyPromptTitle(),
+			hint: I18n.backupCodes.keyPromptHint(),
+			retry: I18n.backupCodes.retryLogin(),
+		};
+	}
+	return null;
+}
 /** The second login step's answer, or false when it was cancelled or refused (a refusal's
  * reason goes to `onRefused`). */
 async function handle2fa(
@@ -2346,7 +2374,9 @@ async function handle2fa(
 					[key: string]: ArrayBuffer;
 				};
 			};
+			const fallback = keyFallback(json);
 			let credential: WebauthnAssertion | null = null;
+			let keyUnavailable = false;
 			try {
 				const challenge = JSON.parse(json.webauthn)
 					.publicKey as PublicKeyCredentialRequestOptionsJSON;
@@ -2366,16 +2396,11 @@ async function handle2fa(
 				// No key API on this origin, or a malformed challenge: same as a cancel, but say why.
 				console.error(e);
 				credential = null;
+				keyUnavailable = true;
 			}
 			if (!credential) {
-				if (json.backup === true) {
-					return promptLoginCode(
-						json,
-						api,
-						I18n.backupCodes.keyPromptTitle(),
-						I18n.backupCodes.keyPromptHint(),
-					);
-				}
+				if (fallback) return promptLoginCode(json, api, fallback.title, fallback.hint);
+				if (keyUnavailable) onRefused(I18n.backupCodes.keyUnavailable());
 				return false;
 			}
 			function toBase64(buf: ArrayBuffer) {
@@ -2403,7 +2428,7 @@ async function handle2fa(
 					typeof body?.message === "string"
 						? body.message
 						: I18n.requestFailed(resObj ? "HTTP " + resObj.status : "offline");
-				onRefused(json.backup === true ? msg + " " + I18n.backupCodes.retryLogin() : msg);
+				onRefused(fallback ? msg + " " + fallback.retry : msg);
 				return false;
 			}
 			let jsonRes: unknown;

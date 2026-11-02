@@ -109,21 +109,32 @@ export async function rest<T = any>(
  * hold whose notice is being sent, a claim the 5-minute notice sweep leaves alone until its lease
  * runs out; a date is one the owner was told about. */
 export function seedMfaRecovery(userId: string, completesAt: Date | null): void {
+	const at = completesAt ? `'${completesAt.toISOString()}'` : "NULL";
+	const id = `${Date.now()}${++accountSerial}`;
+	instanceSql(
+		"INSERT INTO mfa_recovery_requests " +
+			"(id, user_id, reason, requested_by, requested_at, completes_at, status, notified_at, notice_claimed_at) VALUES " +
+			`('${id}', '${userId}', 'e2e', 'e2e', now(), ${at}, 'pending', ${completesAt ? "now()" : "NULL"}, now())`,
+	);
+}
+
+/** Runs one statement in the throwaway instance's database, for a state no route can reach. */
+export function instanceSql(sql: string): void {
 	const pid = process.env.MACHLOKET_E2E_BOOT_PID;
 	if (!pid) throw new Error("MACHLOKET_E2E_BOOT_PID unset: e2e-real/globalSetup.ts did not run");
 	const engine = process.env.CONTAINER_ENGINE ?? "podman";
-	const container = execFileSync(
+	const containers = execFileSync(
 		engine,
 		["ps", "--filter", `label=machloket-e2e.pid=${pid}`, "--format", "{{.Names}}"],
 		{encoding: "utf8"},
-	).trim();
-	if (!container) throw new Error(`no postgres container labelled with boot pid ${pid}`);
-	const at = completesAt ? `'${completesAt.toISOString()}'` : "NULL";
-	const id = `${Date.now()}${++accountSerial}`;
-	const sql =
-		"INSERT INTO mfa_recovery_requests " +
-		"(id, user_id, reason, requested_by, requested_at, completes_at, status, notified_at, notice_claimed_at) VALUES " +
-		`('${id}', '${userId}', 'e2e', 'e2e', now(), ${at}, 'pending', ${completesAt ? "now()" : "NULL"}, now())`;
+	)
+		.trim()
+		.split("\n")
+		.filter(Boolean);
+	if (containers.length !== 1) {
+		throw new Error(`expected one postgres container for boot pid ${pid}, got: ${containers}`);
+	}
+	const [container] = containers;
 	execFileSync(engine, [
 		"exec",
 		container,

@@ -95,10 +95,16 @@
 		"done": "I've saved them",
 		"download": "Download codes",
 		"explain": "If you lose your security key or authenticator, a backup code lets you log in. Each code works once. You won't see these codes again, so keep them somewhere safe. Any backup codes you saved earlier no longer work.",
+		"keyPromptEitherHint": "Without your security key, you can log in with a code from your authenticator app or a backup code. Each backup code works once.",
+		"keyPromptEitherTitle": "Enter a code:",
 		"keyPromptHint": "Without your security key, you can log in with a backup code. Each code works once.",
 		"keyPromptTitle": "Enter a backup code:",
+		"keyPromptTotpHint": "Without your security key, you can log in with a code from your authenticator app.",
+		"keyPromptTotpTitle": "Enter your authenticator code:",
+		"keyUnavailable": "Your security key can't be used here. Try logging in from another browser or device.",
 		"loginHint": "You can also use a backup code.",
 		"retryLogin": "To use a backup code instead, log in again and cancel the security key prompt.",
+		"retryLoginCode": "To use a code instead, log in again and cancel the security key prompt.",
 		"title": "Save your backup codes"
 	},
 	"badge": {
