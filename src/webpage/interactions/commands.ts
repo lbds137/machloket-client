@@ -7,6 +7,7 @@ import {SnowFlake} from "../snowflake.js";
 import {wireGuildId} from "./compontents.js";
 import {removeAni} from "../utils/utils.js";
 import {fetchRetryOnce} from "../utils/rateLimit.js";
+import {rejectedProperty} from "../utils/refusalText.js";
 
 /** One pickable row of the command list: the command itself, or one branch of a subcommand
  * command — Discord lists every runnable path ("/name sub", "/name group sub"), never a
@@ -657,15 +658,12 @@ export class Command extends SnowFlake {
 				try {
 					const body = (await res.json()) as {
 						message?: string;
-						errors?: Record<string, {_errors?: {params?: {additionalProperty?: string}}[]}>;
+						errors?: unknown;
 					};
 					if (body.message) message = `${res.status}: ${body.message}`;
 					// The enforcement validator names the offending field; showing it turns
 					// a bare "Invalid Form Body" into something actionable.
-					const extra = Object.values(body.errors ?? {})
-						.flatMap((e) => e?._errors ?? [])
-						.map((e) => e.params?.additionalProperty)
-						.filter(Boolean)[0];
+					const extra = rejectedProperty(body.errors);
 					if (extra) message += ` (${extra})`;
 				} catch {
 					// A non-JSON body (a bare proxy error page) keeps the bare status.

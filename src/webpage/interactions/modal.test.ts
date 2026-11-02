@@ -295,6 +295,76 @@ describe("InteractionModal", () => {
 		expect(nameError.textContent).toBe("Name is taken");
 	});
 
+	it("puts a nested tree's field error under its field too", async () => {
+		captureRequests(API + "/interactions", () =>
+			Response.json(
+				{
+					code: 50035,
+					message: "Invalid Form Body",
+					errors: {
+						data: {components: {"1": {component: {value: {_errors: [{message: "Name is taken"}]}}}}},
+					},
+				},
+				{status: 400},
+			),
+		);
+		const modal = new InteractionModal(sampleModal(), host());
+		root = modal.show();
+		q<HTMLInputElement>('input[value="dry"]').click();
+
+		expect(await modal.submit()).toBe(false);
+
+		const nameError = field("name")
+			.closest(".interactionModalField")!
+			.querySelector(".interactionModalError")!;
+		expect(nameError.textContent).toBe("Name is taken");
+	});
+
+	it("a malformed root keeps the server's message", async () => {
+		captureRequests(API + "/interactions", () =>
+			Response.json(
+				{code: 50035, message: "Invalid Form Body", errors: {_errors: [null]}},
+				{status: 400},
+			),
+		);
+		const modal = new InteractionModal(sampleModal(), host());
+		root = modal.show();
+		q<HTMLInputElement>('input[value="dry"]').click();
+
+		expect(await modal.submit()).toBe(false);
+
+		expect(q(".interactionModalFormError").textContent).toBe("Invalid Form Body");
+	});
+
+	it("a row with an empty list doesn't take a message from below it", async () => {
+		captureRequests(API + "/interactions", () =>
+			Response.json(
+				{
+					code: 50035,
+					message: "Invalid Form Body",
+					errors: {
+						data: {
+							components: {
+								"1": {
+									_errors: [],
+									components: {"1": {_errors: [{message: "Not this row's"}]}},
+								},
+							},
+						},
+					},
+				},
+				{status: 400},
+			),
+		);
+		const modal = new InteractionModal(sampleModal(), host());
+		root = modal.show();
+		q<HTMLInputElement>('input[value="dry"]').click();
+
+		expect(await modal.submit()).toBe(false);
+
+		expect(root.textContent).not.toContain("Not this row's");
+	});
+
 	it("stays open on a tap outside it, so typed answers survive", async () => {
 		root = new InteractionModal(sampleModal(), host()).show();
 		const background = root.closest(".background") as HTMLElement;

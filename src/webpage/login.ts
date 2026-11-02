@@ -3,6 +3,7 @@ import {I18n} from "./i18n.js";
 import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
 import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
+import {formErrors} from "./utils/refusalText.js";
 function generateRecArea(recover = document.getElementById("recover")) {
 	if (!recover) return;
 	recover.innerHTML = "";
@@ -119,9 +120,8 @@ export async function makeLogin(
 		},
 	);
 	// Field errors on login/password are placed by Form itself; any other refusal lands here.
-	form.onErrorBody = (res: {message?: unknown; errors?: {[key: string]: {_errors?: {message?: string}[]}}}) => {
-		const fieldMessage = Object.values(res.errors ?? {})[0]?._errors?.[0]?.message;
-		const message = fieldMessage ?? res.message;
+	form.onErrorBody = (res: {message?: unknown; errors?: unknown}) => {
+		const message = formErrors(res.errors)[0] ?? res.message;
 		if (typeof message === "string") throw new FormError(password, message);
 	};
 	form.addPreprocessor((sent) => {

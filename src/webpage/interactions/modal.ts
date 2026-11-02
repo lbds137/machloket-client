@@ -5,6 +5,7 @@ import {removeAni} from "../utils/utils.js";
 import {fetchRetryOnce} from "../utils/rateLimit.js";
 import type {Channel} from "../channel.js";
 import type {Localuser} from "../localuser.js";
+import {errorPaths, nodeMessages} from "../utils/refusalText.js";
 
 // Discord-style application modals: a bot answers an interaction with a modal (callback type
 // 9), the gateway delivers INTERACTION_MODAL_CREATE, and the user's answers go back as a
@@ -473,7 +474,7 @@ export class InteractionModal {
 		this.formError.textContent = body.message ?? I18n.interactions.failed();
 		for (const [path, errors] of errorPaths(body.errors)) {
 			const match = path.match(/^data\.components\.(\d+)(?:\.components\.(\d+))?/);
-			const message = firstErrorMessage(errors);
+			const message = nodeMessages(errors)[0];
 			if (!match || !message) continue;
 			const fields = this.fieldsAt.get(Number(match[1]));
 			const field = fields?.[match[2] === undefined ? 0 : Number(match[2])];
@@ -489,28 +490,4 @@ export class InteractionModal {
 
 function idOf(component: {id?: number}) {
 	return component.id !== undefined ? {id: component.id} : {};
-}
-
-/** Every `[dotted path, error node]` in an error body, flat keys and nested objects alike. */
-function errorPaths(errors: unknown, prefix = ""): [string, unknown][] {
-	if (!errors || typeof errors !== "object") return [];
-	const out: [string, unknown][] = [];
-	for (const [key, value] of Object.entries(errors)) {
-		if (key === "_errors") continue;
-		const path = prefix ? prefix + "." + key : key;
-		if ((value as {_errors?: unknown})?._errors) out.push([path, value]);
-		else out.push(...errorPaths(value, path));
-	}
-	return out;
-}
-
-function firstErrorMessage(errors: unknown): string | undefined {
-	if (!errors || typeof errors !== "object") return undefined;
-	const list = (errors as {_errors?: {message?: string}[]})._errors;
-	if (list?.length) return list[0].message;
-	for (const value of Object.values(errors)) {
-		const message = firstErrorMessage(value);
-		if (message) return message;
-	}
-	return undefined;
 }

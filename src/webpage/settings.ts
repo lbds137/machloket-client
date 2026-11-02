@@ -12,6 +12,7 @@ import {I18n} from "./i18n.js";
 import {Localuser} from "./localuser.js";
 import {MarkDown} from "./markdown.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {errorPaths, nodeMessages, serverReason} from "./utils/refusalText.js";
 import packageJson from "./../../package.json";
 
 let initialBootHash = typeof window !== "undefined" ? window.location.hash : "";
@@ -3124,8 +3125,7 @@ class Form implements OptionsElement<object> {
 							}
 							console.error(e);
 						}
-						const message = typeof json.message === "string" ? json.message : undefined;
-						this.showPrimError(message ?? I18n.requestFailed(String(status)));
+						this.showPrimError(serverReason(json) ?? I18n.requestFailed(String(status)));
 						return;
 					}
 					await onSubmit(json);
@@ -3154,14 +3154,16 @@ class Form implements OptionsElement<object> {
 	errors(errors: {
 		code: number;
 		message: string;
-		errors: {[key: string]: {_errors: {message: string; code: string}[]}};
+		errors: unknown;
 	}) {
 		if (!(errors instanceof Object)) {
 			return;
 		}
-		for (const error of Object.keys(errors.errors)) {
-			const elm = this.names.get(error);
-			const errorMessage = errors.errors[error]?._errors?.[0]?.message;
+		for (const [path, node] of errorPaths(errors.errors)) {
+			// The empty path is the whole form's; the empty name is a field that's never sent.
+			if (!path) continue;
+			const elm = this.names.get(path);
+			const errorMessage = nodeMessages(node)[0];
 			if (elm && typeof errorMessage === "string" && this.options.html.get(elm)?.deref()) {
 				// Through handleError, so the form's onFormError (e.g. closing a loading dialog) runs.
 				this.handleError(new FormError(elm, errorMessage));
