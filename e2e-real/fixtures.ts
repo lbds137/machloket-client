@@ -169,14 +169,19 @@ export async function newAccount(label: string): Promise<RealAccount> {
 		signal: AbortSignal.timeout(30_000),
 	});
 	const text = await res.text();
-	const body = (text.startsWith("{") ? JSON.parse(text) : null) as {token?: string} | null;
-	if (!res.ok || !body?.token) throw new Error(`register ${name}: ${res.status} ${text.slice(0, 300)}`);
-	const me = await rest<{id: string; username: string}>(body.token, "GET", "/users/@me");
+	let token: string | undefined;
+	try {
+		token = JSON.parse(text).token;
+	} catch {
+		// Not the JSON a success sends: the error below quotes what came instead.
+	}
+	if (!res.ok || !token) throw new Error(`register ${name}: ${res.status} ${text.slice(0, 300)}`);
+	const me = await rest<{id: string; username: string}>(token, "GET", "/users/@me");
 	// The instance auto-joins every new account to the first guild ever created on it, which
 	// would make a spec's "the account's one guild" depend on the specs that ran before it.
-	const inherited = await rest<{id: string}[]>(body.token, "GET", "/users/@me/guilds");
-	for (const guild of inherited) await rest(body.token, "DELETE", `/users/@me/guilds/${guild.id}`);
-	return {token: body.token, id: me.id, username: me.username, email, password};
+	const inherited = await rest<{id: string}[]>(token, "GET", "/users/@me/guilds");
+	for (const guild of inherited) await rest(token, "DELETE", `/users/@me/guilds/${guild.id}`);
+	return {token, id: me.id, username: me.username, email, password};
 }
 
 /** The second-factor code prompt (the login's and the MFA challenge's share their title). */
@@ -383,6 +388,10 @@ export interface BotInteraction {
 	message?: {id: string};
 }
 
+/** What the instance's HELLO offers, inside the 45 s it allows between heartbeats. Fixed rather
+ * than read from the frame, so a timer's length never comes off the wire. */
+const BOT_HEARTBEAT_MS = 30_000;
+
 /** A bot's gateway session in the spec's process: a bot framework's minimum, with the
  * interactions it receives queued for the spec to answer. */
 export class BotGateway {
@@ -409,7 +418,7 @@ export class BotGateway {
 				if (frame.op === 10) {
 					bot.heartbeat = setInterval(
 						() => socket.send(JSON.stringify({op: 1, d: bot.seq})),
-						frame.d.heartbeat_interval,
+						BOT_HEARTBEAT_MS,
 					);
 					socket.send(
 						JSON.stringify({
