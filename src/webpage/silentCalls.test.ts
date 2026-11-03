@@ -29,6 +29,8 @@ function localuser() {
 		headers: {Authorization: "t"},
 		inrelation: new Set(),
 		channelids: new Map(),
+		// A new channel takes back any files a rebuild kept for its id: none here.
+		keptFiles: new Map(),
 		idToNext: new Map(),
 		idToPrev: new Map(),
 		messages: new Map(),

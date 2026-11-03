@@ -17,6 +17,8 @@ function guildWithoutThread() {
 		// `localuser`, `info` and `headers`-reading getters go through the owner.
 		owner: {
 			channelids: new Map(),
+			// A new channel takes back any files a rebuild kept for its id: none here.
+			takeKeptFiles: () => undefined,
 			goToChannel,
 			info: {api: API},
 			perminfo: {guilds: {g1: {channels: {}}}},

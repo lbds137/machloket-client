@@ -57,6 +57,8 @@ export function gatewayUser() {
 		swapped: false,
 		guilds: [],
 		guildids: new Map(),
+		// An unload keeps every channel's waiting files: a session with no channels keeps none.
+		channelids: new Map(),
 		generateFavicon: () => {},
 	});
 	Object.defineProperty(user, "token", {value: "t", writable: true});

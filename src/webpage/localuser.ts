@@ -417,6 +417,8 @@ class Localuser {
 	async gottenReady(ready: readyjson): Promise<void> {
 		await I18n.done;
 		this.errorBackoff = 0;
+		// Not every rebuild unloads first (a retried close identifies straight away).
+		this.keepWaitingFiles();
 		this.channelids.clear();
 		this.inrelation.clear();
 		this.userMap.clear();
@@ -543,7 +545,28 @@ class Localuser {
 		if (!c) return;
 		new Message(m, c);
 	}
+	/** Files waiting in each channel's composer when a new session rebuilds the channels, by
+	 * channel id: the rebuilt channel takes its own back (Channel's constructor). The lists
+	 * themselves, so each thumbnail's controls keep acting on the list that sends. An entry no
+	 * channel has taken yet (a thread built only when it's opened) waits for it, across further
+	 * rebuilds, for as long as this account's session object lives. */
+	private keptFiles = new Map<string, [Blob[], WeakMap<Blob, HTMLElement>]>();
+	/** The files kept for `id` across a rebuild, handed over once. */
+	takeKeptFiles(id: string): [Blob[], WeakMap<Blob, HTMLElement>] | undefined {
+		const kept = this.keptFiles.get(id);
+		this.keptFiles.delete(id);
+		return kept;
+	}
+	/** Keeps every channel's waiting files for the rebuild, alongside what earlier rebuilds kept
+	 * and no channel has taken. The open channel's list is the composer's own, so its files are
+	 * kept too. */
+	keepWaitingFiles() {
+		for (const [id, channel] of this.channelids) {
+			if (channel.files.length) this.keptFiles.set(id, [channel.files, channel.htmls]);
+		}
+	}
 	unload(): void {
+		this.keepWaitingFiles();
 		this.initialized = false;
 		this.recoveryBannerState?.stop();
 		this.disconnectComposer();

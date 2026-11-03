@@ -916,6 +916,12 @@ class Channel extends SnowFlake {
 
 		this.owner = owner;
 		this.headers = this.owner.headers;
+		// A new session's rebuild: files that were waiting in this channel come back to it. Ahead
+		// of the -1 return, which DMs and group DMs take with their own id.
+		if (id) {
+			const kept = owner.localuser.takeKeptFiles(id);
+			if (kept) [this.files, this.htmls] = kept;
+		}
 
 		if (json === -1) {
 			return;
