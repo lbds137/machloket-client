@@ -8,10 +8,8 @@ export type ComposerParts = {
 	pasteImageElement: HTMLElement;
 	/** The thumbnails of the files in the strip, by file. */
 	imagesHtml: WeakMap<Blob, HTMLElement>;
-	/** The composer's attached-files list as it is now. */
+	/** The composer's attached-files list, itself: it's the channel's list and its thumbnails'. */
 	getImages: () => Blob[];
-	/** Replaces the composer's attached-files list. */
-	setImages: (images: Blob[]) => void;
 };
 
 /** Whether a channel that isn't open can keep refused text as its draft: not over a draft or saved
@@ -48,9 +46,9 @@ export function restoreFailedSend(args: {
 		}
 		return false;
 	}
-	const {typebox, pasteImageElement, imagesHtml, getImages, setImages} = composer;
+	const {typebox, pasteImageElement, imagesHtml, getImages} = composer;
 	if (typebox.textContent || getImages().length) return false;
-	setImages(attachments);
+	getImages().push(...attachments);
 	for (const file of attachments) {
 		const img = imagesHtml.get(file);
 		if (!img) continue;
