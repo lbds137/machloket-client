@@ -45,6 +45,7 @@ import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
 import {tooLongReason} from "./utils/messageLimit.js";
+import {draftIsFree} from "./composerRestore.js";
 import {formErrors, refusalText, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
 
@@ -2299,15 +2300,16 @@ class Channel extends SnowFlake {
 		this.setStoredDraft(content);
 	}
 	/** Refused text typed somewhere that's gone (a popout) comes back to this channel's composer,
-	 * or its draft when it isn't open. False when that would overwrite what's there. */
+	 * or its draft when it isn't open. False when that would overwrite what's there, or join files
+	 * waiting there and send with them. */
 	putBackRefused(content: string): boolean {
 		if (this.localuser.channelfocus !== this) {
-			if (this.textSave) return false;
+			if (!draftIsFree(this)) return false;
 			this.setDraft(content);
 			return true;
 		}
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		if (typebox.textContent) return false;
+		if (typebox.textContent || document.getElementById("pasteimage")?.childElementCount) return false;
 		typebox.textContent = content;
 		typebox.markdown.txt = content;
 		typebox.markdown.boxupdate(Infinity);
@@ -4555,7 +4557,9 @@ class Channel extends SnowFlake {
 			nonce?: string;
 			poll?: creatPollJSON;
 		},
-		onRes: (_e: "Ok" | "NotOk") => boolean | void = () => {},
+		// Returning false on "NotOk" says the text didn't go back, so a failed bubble must keep it.
+		// With no caller to take it back, nothing does.
+		onRes: (_e: "Ok" | "NotOk") => boolean | void = () => false,
 	) {
 		let ressy = (_e: "Ok" | "NotOk") => {};
 		let resOnce = false;
@@ -4729,7 +4733,8 @@ class Channel extends SnowFlake {
 			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
 			res.setRequestHeader("Authorization", this.headers.Authorization);
 			funcs = await this.makeFakeMessage(
-				content,
+				// The bubble doesn't draw a poll: its question says which one a failed bubble is.
+				content || poll?.question.text || "",
 				[],
 				body.message_reference,
 				sticker_ids,

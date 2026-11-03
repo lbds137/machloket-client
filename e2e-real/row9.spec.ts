@@ -159,6 +159,29 @@ async function runRow9(page: Page, world: World, note: string) {
 	return world.bot.next();
 }
 
+test("a command the validator refuses names the field it rejected", async ({page}) => {
+	const world = await setUp();
+	try {
+		await logIn(page, world.member);
+		await openOnlyGuildChannel(page, world.channelName);
+		// The client sends nothing the schema refuses, so the one extra field goes in on the way.
+		await page.route("**/api/v9/interactions", (route) =>
+			route.continue({
+				postData: JSON.stringify({...route.request().postDataJSON(), not_a_field: true}),
+			}),
+		);
+
+		await openPopup(page, "/row9");
+		await popupRow(page).click();
+		await page.locator('.commandinput[commandname="note"] input').fill("x");
+		await page.locator("#mobileSend").tap();
+
+		await expect(page.locator(".commandError")).toHaveText("400: Invalid Form Body (not_a_field)");
+	} finally {
+		world.close();
+	}
+});
+
 test("the walk: popup, option, reply, button, ephemeral, selects, modal", async ({
 	page,
 	extraPage,
