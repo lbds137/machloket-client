@@ -2048,7 +2048,8 @@ class Localuser {
 			}
 			// The URL's resolution checks permissions, which need the viewer's member — its
 			// fetch starts in the Guild constructor and settles after READY. Without this
-			// wait every channel reads invisible and a bare guild link parks in noChannel.
+			// wait every channel reads invisible and a bare guild link parks in noChannel. The
+			// list loadGuild just built redraws itself when the member lands (Guild's constructor).
 			await guild.memberReady;
 			const messageId = parts[6]?.split("?")[0]?.split("#")[0];
 			await guild.loadChannel(parts[5], true, messageId);

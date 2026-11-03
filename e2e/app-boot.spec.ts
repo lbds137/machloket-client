@@ -128,6 +128,18 @@ test("a channel deep link boots into the named channel", async ({page, mockInsta
 	await expect(page.getByText("Welcome to the mock guild!", {exact: true})).toBeVisible();
 });
 
+// The boot opens the URL's guild before the viewer's member lands; the channel list built
+// then reads every channel invisible, so it must build again once the member is in.
+test("a channel deep link boots with the guild's channels listed", async ({page, mockInstance}) => {
+	void mockInstance; // mount the mock's routes; the handle stays unread
+	await loginAndOpenChannel(page);
+	await page.goto(`/channels/${MOCK_GUILD_ID}/${MOCK_CHANNEL.id}`);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+	await expect(
+		page.locator("#channels button.channelbutton").filter({hasText: MOCK_CHANNEL.name}),
+	).toHaveCount(1);
+});
+
 // The deep-link landing must not just resolve the channel but OPEN the mobile chat: the
 // main area rests off-canvas until #maintoggle is checked, and a boot passes no click,
 // so the unresolved state parks the composer off screen (the F1 regression pin - the
