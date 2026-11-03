@@ -1928,11 +1928,11 @@ class Guild extends SnowFlake {
 		this.sortRoles();
 		// A deep-link boot (the invite accept's landing, a bare /channels/:guildId URL)
 		// resolves its URL while this member fetch is still in flight; without the member
-		// every channel reads invisible and the boot parks in noChannel. init() awaits this
-		// before resolving the URL's channel, so the channels are visible when it looks at
-		// them. The fetch failure settles resolved with the member unset (init then parks in
-		// noChannel, as before this field existed) — a rejection here would throw out of
-		// init's callers.
+		// every channel reads invisible and the boot parks in noChannel. loadChannel (and init()
+		// before it) awaits this before picking a channel, so the channels are visible when it
+		// looks at them. The fetch failure settles resolved with the member unset (the pick
+		// then parks in noChannel, as before this field existed) — a rejection here would throw
+		// out of its callers.
 		this.memberReady = (member instanceof User
 			? Member.resolveMember(member, this)
 			: Member.new(member, this)
@@ -2520,6 +2520,15 @@ class Guild extends SnowFlake {
 		return this.member.hasRole(r);
 	}
 	async loadChannel(ID?: string | undefined | null, addstate = true, message?: string) {
+		if (this.id !== "@me" && !this.member) {
+			// Every channel reads invisible until the viewer's member lands (a server just joined,
+			// a click soon after load): picking now would park in noChannel. If the user went
+			// elsewhere meanwhile, what they opened stands.
+			const looking = this.localuser.lookingguild;
+			const focus = this.localuser.channelfocus;
+			await this.memberReady;
+			if (this.localuser.lookingguild !== looking || this.localuser.channelfocus !== focus) return;
+		}
 		if (ID) {
 			const channel = this.localuser.channelids.get(ID);
 			if (channel) {
