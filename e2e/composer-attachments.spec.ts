@@ -260,6 +260,49 @@ test("files and text waiting in the composer survive a trip to another server", 
 	expect(await sendAndReadFiles(page)).toEqual(["one.txt"]);
 });
 
+test("files and text waiting in the composer survive the home page and then another server", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	const otherServer = await addOtherServer(page, mockInstance);
+	await attach(page, "one.txt");
+	await page.locator("#typebox").click();
+	await page.keyboard.type("a draft");
+
+	// The home page leaves no channel open, so the next channel takes over the composer from it.
+	await page.locator("#servers .home").first().click();
+	await expect(page).toHaveURL(/\/channels\/@me/);
+	await otherServerAndBack(page, otherServer);
+
+	await expect(page.locator("#typebox")).toHaveText("a draft");
+	await expect(thumbnails(page)).toHaveCount(1);
+	expect(await sendAndReadFiles(page)).toEqual(["one.txt"]);
+});
+
+test("files and text waiting in the composer survive a reconnect that starts a new session", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	await attach(page, "one.txt");
+	await page.locator("#typebox").click();
+	await page.keyboard.type("a draft");
+
+	// op 9 can't resume: the client unloads, identifies again and rebuilds from a fresh READY.
+	const identifies = () =>
+		mockInstance.gatewayFrames.fromApp.filter((f) => (f as {op?: number}).op === 2).length;
+	const before = identifies();
+	mockInstance.sendGatewayEvent({op: 9, d: false});
+	await expect.poll(identifies, {timeout: 15_000}).toBeGreaterThan(before);
+	await expect(page.locator("#loading")).toHaveClass(/doneloading/);
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+
+	await expect(page.locator("#typebox")).toHaveText("a draft");
+	await expect(thumbnails(page)).toHaveCount(1);
+	expect(await sendAndReadFiles(page)).toEqual(["one.txt"]);
+});
+
 test("files and text waiting in the composer survive a trip to the home page", async ({page}) => {
 	await loginAndOpenChannel(page);
 	await attach(page, "one.txt");
