@@ -100,7 +100,7 @@ describe("a refused send", () => {
 		expect(sent.setDraft).not.toHaveBeenCalled();
 		expect(sent.textSave).toBe("");
 		expect(s.getImages()).toEqual([]);
-		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
+		expect(s.pasteImageElement.childElementCount).toBe(0);
 	});
 
 	it("doesn't overwrite a draft the user wrote in the sent channel meanwhile", () => {
@@ -137,7 +137,7 @@ describe("a refused send", () => {
 
 		expect(s.typebox.textContent).toBe("a newer message");
 		expect(s.getImages()).toEqual([]);
-		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
+		expect(s.pasteImageElement.childElementCount).toBe(0);
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 		expect(sent.replyingto).toBeNull();
 	});
