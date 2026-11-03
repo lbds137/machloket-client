@@ -51,7 +51,7 @@
  * - Client -> Server op 2 (IDENTIFY)                -> Server op 0 READY (carries the blocked
  *                                                      peer's type-2 relationship), then op 0
  *                                                      GUILD_CREATE
- * - Client -> Server op 8 (REQUEST_GUILD_MEMBERS)   -> Server op 0 GUILD_MEMBERS_CHUNK (+ CHANNEL_UPDATE)
+ * - Client -> Server op 8 (REQUEST_GUILD_MEMBERS)   -> Server op 0 GUILD_MEMBERS_CHUNK
  * - Client -> Server op 6 (RESUME)                  -> Server op 9 invalid session: no state is
  *                                                      kept, the app re-identifies afresh and the
  *                                                      op 2 path replays READY + GUILD_CREATE
@@ -1164,6 +1164,12 @@ export interface MockInstanceHandle {
 	 * asked for - a connection that drops mid-close never reports the app's code back. It stays
 	 * set until the test ends, so every later close the app makes completes with it too. */
 	closeCompletesWith?: number;
+	/** Set per test: REST member lookups (GET /guilds/:id/members/:id, how a guild created
+	 * mid-session resolves the viewer's member) get no answer until releaseMembers(), so the
+	 * member is still on its way (a slow server). op 8 chunks are not held. */
+	holdMembers?: boolean;
+	/** Stops holding and sends every held member answer, in request order. */
+	releaseMembers: () => void;
 	/** Reassignable per test: a custom handler for POST /api/v9/auth/login (refusal tests
 	 * fulfill a 401 here). Runs INSTEAD of the default fulfill when set. */
 	onLogin?: (route: Route, body: unknown) => Promise<void> | void;
@@ -1252,6 +1258,8 @@ export async function mountMockInstance(
 		fromApp: [],
 	};
 	const activeSockets = new Set<(payload: string) => void>();
+	// REST member lookups waiting while a test holds them (holdMembers).
+	const heldMemberAnswers: (() => void)[] = [];
 	let seq = 2;
 
 	const sendFrame = (
@@ -1278,6 +1286,10 @@ export async function mountMockInstance(
 			for (const send of activeSockets) {
 				sendFrame(send, frame);
 			}
+		},
+		releaseMembers() {
+			handle.holdMembers = false;
+			for (const answer of heldMemberAnswers.splice(0)) answer();
 		},
 	};
 
@@ -1349,14 +1361,6 @@ export async function mountMockInstance(
 						not_found: notFound,
 						presences: [],
 					},
-				});
-				// Ensure #channels redraws once guild.member has settled even if the guild icon
-				// was clicked before the 10ms getmembers() batch timer fired.
-				sendFrame(send, {
-					op: 0,
-					t: "CHANNEL_UPDATE",
-					s: ++seq,
-					d: MOCK_CHANNEL,
 				});
 			}
 		});
@@ -1552,7 +1556,12 @@ export async function mountMockInstance(
 			// 10b. Single member lookup (Member.resolveMember -> localuser.resolvemember)
 			const memberMatch = pathname.match(/^\/api\/v9\/guilds\/[^/]+\/members\/([^/]+)$/);
 			if (method === "GET" && memberMatch) {
-				return fulfillJson(memberById.get(memberMatch[1]) ?? memberById.get(MOCK_USER_ID)!);
+				const answer = () =>
+					fulfillJson(memberById.get(memberMatch[1]) ?? memberById.get(MOCK_USER_ID)!);
+				if (!handle.holdMembers) return answer();
+				return new Promise<void>((settled) =>
+					heldMemberAnswers.push(() => void answer().then(settled, settled)),
+				);
 			}
 
 			// 10c. A guild mute / unmute (Guild.sendMuteConfig); a spec pins the body from
