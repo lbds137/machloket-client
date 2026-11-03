@@ -1,7 +1,13 @@
 import {expect, type Locator, type Page} from "@playwright/test";
 import type {channeljson} from "../src/webpage/jsontypes";
 import {DESKTOP, loginAndOpenChannel, test} from "./fixtures";
-import {MOCK_CHANNEL, MOCK_CHANNEL_ID, MOCK_GUILD, type MockInstanceHandle} from "./mock";
+import {
+	MOCK_CHANNEL,
+	MOCK_CHANNEL_ID,
+	MOCK_GUILD,
+	MOCK_GUILD_ID,
+	type MockInstanceHandle,
+} from "./mock";
 
 // The files waiting in the composer belong to a channel: they leave with it and come back with it,
 // and each thumbnail's own controls keep acting on the list that gets sent.
@@ -23,6 +29,9 @@ test.beforeEach(({mockInstance}) => {
 const channelRow = (page: Page, name: string) =>
 	page.locator("#channels button.channelbutton", {hasText: name});
 const thumbnails = (page: Page) => page.locator("#pasteimage .containedFile");
+/** The mock's own server in the server list, by its icon. */
+const mockServer = (page: Page) =>
+	page.locator(`#servers img.servericon[src*="/icons/${MOCK_GUILD_ID}/"]`).filter({visible: true});
 
 /** Pastes files into the composer the way the browser hands them over. */
 async function attach(page: Page, ...names: string[]) {
@@ -121,14 +130,13 @@ test("a file removed after a channel switch stays out of the send", async ({page
 
 /** Sends the composer once, refused, and waits for its files to come back. */
 async function refuseSend(page: Page, files: number) {
-	await page.route(
-		"**/api/v9/channels/*/messages",
-		(route) =>
-			route.request().method() === "POST"
-				? route.fulfill({status: 403, json: {code: 50013, message: "Missing Permissions"}})
-				: route.fallback(),
-		{times: 1},
-	);
+	let refused = false;
+	await page.route("**/api/v9/channels/*/messages", (route) => {
+		// The first send only: a history read on the way must not use the refusal up.
+		if (refused || route.request().method() !== "POST") return route.fallback();
+		refused = true;
+		return route.fulfill({status: 403, json: {code: 50013, message: "Missing Permissions"}});
+	});
 	await page.locator("#typebox").click();
 	await page.keyboard.press("Enter");
 	await expect(page.getByRole("alert")).toContainText("Missing Permissions");
@@ -144,6 +152,51 @@ test("a spoiler marked on a file a refused send gave back is the one that resend
 
 	await thumbnails(page).locator(".svg-spoiler").click();
 
+	expect(await sendAndReadFiles(page)).toEqual(["SPOILER_one.txt"]);
+});
+
+/** Holds the next message POST until the returned function refuses it. */
+async function holdSend(page: Page) {
+	let refuse = () => {};
+	const released = new Promise<void>((resolve) => {
+		refuse = resolve;
+	});
+	let held = false;
+	await page.route("**/api/v9/channels/*/messages", async (route) => {
+		// The first send only: a history read on the way must not use the hold up.
+		if (held || route.request().method() !== "POST") return route.fallback();
+		held = true;
+		await released;
+		await route.fulfill({status: 403, json: {code: 50013, message: "Missing Permissions"}});
+	});
+	return refuse;
+}
+
+/** Sends the composer and holds the send, once it's left the client, until the returned function
+ * refuses it. */
+async function sendHeld(page: Page) {
+	const refuse = await holdSend(page);
+	const sent = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/messages"));
+	await page.locator("#typebox").click();
+	await page.keyboard.press("Enter");
+	await sent;
+	await expect(thumbnails(page)).toHaveCount(0);
+	return refuse;
+}
+
+test("a file refused after a switch away and back comes back, and its controls still work", async ({
+	page,
+}) => {
+	await loginAndOpenChannel(page);
+	await attach(page, "one.txt");
+	const refuse = await sendHeld(page);
+
+	await awayAndBack(page);
+	refuse();
+
+	await expect(page.getByRole("alert")).toContainText("Missing Permissions");
+	await expect(thumbnails(page)).toHaveCount(1);
+	await thumbnails(page).locator(".svg-spoiler").click();
 	expect(await sendAndReadFiles(page)).toEqual(["SPOILER_one.txt"]);
 });
 
@@ -171,7 +224,7 @@ async function otherServerAndBack(page: Page, otherServer: Locator) {
 	await otherServer.click();
 	await expect(page.locator("#channelname")).toHaveText("#" + OTHER_CHANNEL.name);
 	await expect(thumbnails(page)).toHaveCount(0);
-	await page.locator("#servers img.servericon").filter({visible: true}).first().click();
+	await mockServer(page).click();
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
 }
 
@@ -215,7 +268,7 @@ test("files and text waiting in the composer survive a trip to the home page", a
 
 	await page.locator("#servers .home").first().click();
 	await expect(page).toHaveURL(/\/channels\/@me/);
-	await page.locator("#servers img.servericon").filter({visible: true}).first().click();
+	await mockServer(page).click();
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
 
 	await expect(page.locator("#typebox")).toHaveText("a draft");

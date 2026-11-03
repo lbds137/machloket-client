@@ -217,7 +217,8 @@ if (window.location.pathname.startsWith("/channels")) {
 			thisUser.channelfocus.replyingto = null;
 			thisUser.channelfocus.makereplybox();
 		}
-		const attachments = images.filter((_) => document.contains(imagesHtml.get(_) || null));
+		// Every file in the list is one the strip shows: its own controls keep the two in step.
+		const attachments = [...images];
 		while (images.length) {
 			const elm = imagesHtml.get(images.pop() as Blob) as HTMLElement;
 			if (pasteImageElement.contains(elm)) pasteImageElement.removeChild(elm);
