@@ -74,7 +74,7 @@ describe("a refused send", () => {
 		expect(s.typebox.textContent).toBe("typing in the other channel");
 		expect(s.typebox.markdown.txt).toBe("typing in the other channel");
 		expect(s.getImages()).toEqual([]);
-		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
+		expect(s.pasteImageElement.childElementCount).toBe(0);
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 		expect(sent.replyingto).toBeNull();
 		expect(other.replyingto).toEqual({id: "other-reply"});
@@ -184,7 +184,7 @@ describe("a refused send", () => {
 			// A file in the list sends, so one the strip can't show would send unseen.
 			expect(putBack).toBe(false);
 			expect(s.getImages()).toEqual([]);
-			expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
+			expect(s.pasteImageElement.childElementCount).toBe(0);
 			expect(s.typebox.textContent).toBe("");
 			expect(s.typebox.markdown.txt).toBe("");
 			expect(sent.replyingto).toBeNull();
