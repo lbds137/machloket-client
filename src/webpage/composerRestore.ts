@@ -25,7 +25,8 @@ export function draftIsFree(channel: Channel): boolean {
  *   that a draft can't carry and that channel has no draft or saved files of its own by now
  *   (otherwise returns false so the refused message stays in the channel as failed, with
  *   retry or delete).
- * - The same channel, the composer still empty: the text, files and reply target come back.
+ * - The same channel, the composer still empty: the text, files and reply target come back,
+ *   unless a file has no thumbnail to show it by (returns false; the failed message keeps it).
  * - The same channel, but the user has typed or attached since: the composer is left alone
  *   on purpose. Restoring would overwrite the new text, and the caller keeps the refused
  *   message in the channel as failed (retry or delete) whenever this returns false. */
@@ -48,12 +49,15 @@ export function restoreFailedSend(args: {
 	}
 	const {typebox, pasteImageElement, imagesHtml, getImages} = composer;
 	if (typebox.textContent || getImages().length) return false;
+	// A safety net, not an expected path: every writer of the list also sets its thumbnail. But
+	// every file in the list sends, so one the strip can't show would send unseen: the failed
+	// message keeps them all instead.
+	const thumbnails = attachments
+		.map((file) => imagesHtml.get(file))
+		.filter((img): img is HTMLElement => !!img);
+	if (thumbnails.length !== attachments.length) return false;
 	getImages().push(...attachments);
-	for (const file of attachments) {
-		const img = imagesHtml.get(file);
-		if (!img) continue;
-		pasteImageElement.append(img);
-	}
+	pasteImageElement.append(...thumbnails);
 	channel.replyingto = replyingTo;
 	channel.makereplybox();
 	typebox.textContent = content;

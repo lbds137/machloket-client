@@ -162,6 +162,37 @@ describe("a refused send", () => {
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 	});
 
+	it.each([
+		["one of them", true],
+		["none of them", false],
+	])(
+		"puts nothing back when %s has a thumbnail to show, so the failed message keeps the files",
+		(_, withShown) => {
+			const s = setup();
+			const sent = s.channel();
+			const unshown = new Blob(["no thumbnail"]);
+
+			const putBack = restoreFailedSend({
+				channel: sent,
+				focused: sent,
+				content: "hello",
+				attachments: withShown ? [s.file, unshown] : [unshown],
+				replyingTo: {id: "r1"} as never,
+				composer: s,
+			});
+
+			// A file in the list sends, so one the strip can't show would send unseen.
+			expect(putBack).toBe(false);
+			expect(s.getImages()).toEqual([]);
+			expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
+			expect(s.typebox.textContent).toBe("");
+			expect(s.typebox.markdown.txt).toBe("");
+			expect(sent.replyingto).toBeNull();
+			expect(sent.makereplybox).not.toHaveBeenCalled();
+			expect(sent.setDraft).not.toHaveBeenCalled();
+		},
+	);
+
 	it("says whether it put the message back, so the caller knows to keep the failed one", () => {
 		const restore = (
 			prepare: (
