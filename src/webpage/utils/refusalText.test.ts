@@ -59,19 +59,49 @@ describe("the server's reason", () => {
 	it("is found on a tree's root", () => {
 		expect(serverReason({code: 50035, message: "Invalid Form Body", errors: node("root")})).toBe("root");
 	});
+
+	it("falls back to the message when a body nests past the walk", () => {
+		const nested = (levels: number) => {
+			let deep: unknown = node("deep");
+			for (let i = 0; i < levels; i++) deep = {a: deep};
+			return {code: 50035, message: "Invalid Form Body", errors: deep};
+		};
+		expect(serverReason(nested(32))).toBe("deep");
+		expect(serverReason(nested(33))).toBe("Invalid Form Body");
+	});
 });
 
 describe("rejectedProperty", () => {
-	const named = {_errors: [{params: {additionalProperty: "nope"}}]};
+	// `_ajvErrors` sits beside `errors` in the body. The real-server tier runs the same refusal.
+	const ajv = (keyword: string, params: unknown) => ({
+		instancePath: "",
+		schemaPath: "#/" + keyword,
+		keyword,
+		params,
+		message: "must NOT have additional properties",
+	});
 
-	it("names the field wherever the validator put it", () => {
-		expect(rejectedProperty({"": named})).toBe("nope");
-		expect(rejectedProperty(named)).toBe("nope");
-		expect(rejectedProperty({data: {"0": named}})).toBe("nope");
+	it("names the field the validator rejected, past entries that name none", () => {
+		expect(
+			rejectedProperty([
+				ajv("required", {missingProperty: "x"}),
+				ajv("additionalProperties", {additionalProperty: "nope"}),
+			]),
+		).toBe("nope");
 	});
 
 	it("is undefined when none is named", () => {
-		expect(rejectedProperty({a: node("x")})).toBeUndefined();
+		expect(rejectedProperty([ajv("required", {missingProperty: "x"})])).toBeUndefined();
+		expect(rejectedProperty([])).toBeUndefined();
 		expect(rejectedProperty(undefined)).toBeUndefined();
+	});
+
+	it("takes only a string from a malformed body", () => {
+		for (const bad of [1, {}, null, ""]) {
+			expect(rejectedProperty([ajv("additionalProperties", {additionalProperty: bad})])).toBeUndefined();
+		}
+		for (const list of ["x", {}, [null], ["x"], [{params: null}]]) {
+			expect(rejectedProperty(list)).toBeUndefined();
+		}
 	});
 });

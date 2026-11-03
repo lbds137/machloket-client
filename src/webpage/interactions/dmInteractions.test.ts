@@ -109,6 +109,62 @@ describe("component and command interactions in a DM", () => {
 			application_id: "300",
 		});
 	});
+
+	it("a refused slash command names the field the validator rejected", async () => {
+		// The body as a real server answers an extra field on this route.
+		captureRequests(API + "/interactions", () =>
+			Response.json(
+				{
+					code: 50035,
+					message: "Invalid Form Body",
+					errors: {
+						"": {
+							_errors: [
+								{message: "must NOT have additional properties", code: "additionalProperties"},
+							],
+						},
+					},
+					_ajvErrors: [
+						{
+							instancePath: "",
+							schemaPath: "#/additionalProperties",
+							keyword: "additionalProperties",
+							params: {additionalProperty: "not_a_field"},
+							message: "must NOT have additional properties",
+						},
+					],
+					request: "POST /api/v9/interactions",
+				},
+				{status: 400},
+			),
+		);
+		const {localuser, channel} = dmMessage();
+		const command = new Command(
+			{
+				id: "900",
+				type: 1,
+				application_id: "300",
+				name: "ask",
+				description: "",
+				dm_permission: true,
+				nsfw: false,
+				global_popularity_rank: 0,
+				handler: 1,
+				version: "1",
+				options: [{type: 3, name: "msg", description: "", required: true}],
+			},
+			localuser,
+		);
+		command.state.set(channel as never, [{option: command.options[0], state: "hi"}]);
+		const box = document.createElement("div");
+		const html = box.appendChild(document.createElement("div"));
+
+		expect(await command.submit(html, channel as never)).toBe(false);
+
+		expect(box.querySelector(".commandError")?.textContent).toBe(
+			"400: Invalid Form Body (not_a_field)",
+		);
+	});
 });
 
 describe("a reply in a DM", () => {

@@ -658,12 +658,12 @@ export class Command extends SnowFlake {
 				try {
 					const body = (await res.json()) as {
 						message?: string;
-						errors?: unknown;
+						_ajvErrors?: unknown;
 					};
 					if (body.message) message = `${res.status}: ${body.message}`;
 					// The enforcement validator names the offending field; showing it turns
 					// a bare "Invalid Form Body" into something actionable.
-					const extra = rejectedProperty(body.errors);
+					const extra = rejectedProperty(body._ajvErrors);
 					if (extra) message += ` (${extra})`;
 				} catch {
 					// A non-JSON body (a bare proxy error page) keeps the bare status.

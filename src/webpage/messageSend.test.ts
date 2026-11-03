@@ -125,6 +125,34 @@ describe("a message the server refuses", () => {
 		expect(bubble.void).not.toHaveBeenCalled();
 	});
 
+	it("keeps its bubble as failed when the caller gave no way to take it back", async () => {
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(403, {code: 50013, message: "Missing Permissions"}));
+		const {channel, bubble} = sendingChannel();
+
+		void channel.sendMessage("hi", {nonce: "n1"});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+
+		expect(bubble.void).not.toHaveBeenCalled();
+	});
+
+	it("a poll's bubble says which poll, so a failed one isn't blank, and its question isn't sent as text", async () => {
+		vi.stubGlobal("XMLHttpRequest", fakeXHR(403, {code: 50013, message: "Missing Permissions"}));
+		const send = vi.spyOn(XMLHttpRequest.prototype, "send");
+		const {channel, bubble} = sendingChannel();
+		const poll = {
+			question: {text: "Lunch?"},
+			answers: [{poll_media: {text: "Soup"}}],
+			duration: 24,
+		};
+
+		void channel.sendMessage("", {nonce: "n1", poll});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+
+		const fake = (channel as unknown as {makeFakeMessage: ReturnType<typeof vi.fn>}).makeFakeMessage;
+		expect(fake.mock.calls[0][0]).toBe("Lunch?");
+		expect(JSON.parse(send.mock.calls[0][0] as string)).toMatchObject({content: "", poll});
+	});
+
 	it("keeps its bubble as failed, and still settles, when putting the message back throws", async () => {
 		vi.stubGlobal("XMLHttpRequest", fakeXHR(403, {code: 50013, message: "Missing Permissions"}));
 		const {channel, bubble} = sendingChannel();
@@ -524,6 +552,15 @@ describe("a message over the instance's limit", () => {
 		const {channel, sent} = onScreen(5);
 
 		void channel.sendMessage("x".repeat(6), {nonce: "n" + Math.random()}, onRes);
+		await vi.waitFor(() => expect(sent.length).toBe(1));
+
+		expect(notice()).toBeNull();
+	});
+
+	it("goes to the server when the caller gave no way to take it back", async () => {
+		const {channel, sent} = onScreen(5);
+
+		void channel.sendMessage("x".repeat(6), {nonce: "n" + Math.random()});
 		await vi.waitFor(() => expect(sent.length).toBe(1));
 
 		expect(notice()).toBeNull();

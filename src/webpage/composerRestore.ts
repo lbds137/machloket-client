@@ -14,6 +14,12 @@ export type ComposerParts = {
 	setImages: (images: Blob[]) => void;
 };
 
+/** Whether a channel that isn't open can keep refused text as its draft: not over a draft or saved
+ * files of its own, which would send with it. */
+export function draftIsFree(channel: Channel): boolean {
+	return !channel.textSave && !channel.files.length;
+}
+
 /** Puts a refused send back where the user can resend it. `focused` is the channel open in
  * the composer right now.
  * - Another channel is open: the composer belongs to that channel and is left alone; the
@@ -36,7 +42,7 @@ export function restoreFailedSend(args: {
 	const {channel, focused, content, attachments, replyingTo, composer} = args;
 	if (focused !== channel) {
 		// Not when the send had attachments a draft can't carry, or over a draft written since.
-		if (!attachments.length && !channel.textSave && !channel.files.length) {
+		if (!attachments.length && draftIsFree(channel)) {
 			channel.setDraft(content);
 			return true;
 		}

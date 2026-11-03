@@ -8,7 +8,7 @@ export function formErrors(errors: unknown): string[] {
 }
 
 /** An error node in an invalid form's `errors`. */
-type ErrorNode = {_errors: {message?: string; params?: {additionalProperty?: string}}[]};
+type ErrorNode = {_errors: {message?: string}[]};
 
 /** No real form nests this deep, and the instance decides what's in the body. */
 const MAX_ERROR_DEPTH = 32;
@@ -34,12 +34,15 @@ export function errorPaths(errors: unknown): [string, ErrorNode][] {
 	return out;
 }
 
-/** The field an invalid form's validator says doesn't belong, when it names one. */
-export function rejectedProperty(errors: unknown): string | undefined {
-	return errorPaths(errors)
-		.flatMap(([, node]) => node._errors)
-		.map((e) => e?.params?.additionalProperty)
-		.filter(Boolean)[0];
+/** The field the validator says doesn't belong, when it names one. Read from `_ajvErrors`, beside
+ * `errors` in an invalid form's body: `errors` only has the validator's generic message. */
+export function rejectedProperty(ajvErrors: unknown): string | undefined {
+	if (!Array.isArray(ajvErrors)) return undefined;
+	for (const error of ajvErrors) {
+		const name: unknown = error?.params?.additionalProperty;
+		if (name && typeof name === "string") return name;
+	}
+	return undefined;
 }
 
 /** The server's own reason in a JSON error body: the 50035 field errors joined by a space, else a

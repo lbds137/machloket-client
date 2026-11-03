@@ -70,8 +70,24 @@ it("the typed message goes to the DM the server created, found by its id", async
 describe("a popout's message that's refused", () => {
 	afterEach(() => {
 		document.getElementById("typebox")?.remove();
+		document.getElementById("pasteimage")?.remove();
 		vi.unstubAllGlobals();
 	});
+
+	/** Counts what reaches the server: text that wasn't put back goes there for a failed bubble. */
+	function countSends() {
+		const send = vi.fn();
+		vi.stubGlobal(
+			"XMLHttpRequest",
+			class {
+				upload = {};
+				open() {}
+				setRequestHeader() {}
+				send = send;
+			},
+		);
+		return send;
+	}
 
 	/** A user with an open DM on an instance limiting messages to 5, its composer holding `typed`. */
 	function openDm(typed = "") {
@@ -80,20 +96,26 @@ describe("a popout's message that's refused", () => {
 			textContent: typed,
 			markdown: {txt: typed, boxupdate: vi.fn()},
 		});
-		document.body.append(typebox);
+		const pasted = Object.assign(document.createElement("div"), {id: "pasteimage"});
+		document.body.append(typebox, pasted);
 		const dm = Object.assign(Object.create(Channel.prototype), {
 			id: "dm1",
 			type: 1,
 			users: [{id: "u2"}],
+			files: [] as Blob[],
+			textSave: "",
 			owner: {info: {api: "http://dm.test/api/v9"}},
 			headers: {},
 			setStoredDraft: vi.fn(),
 			makeFakeMessage: vi.fn(async () => ({progress() {}, failed() {}, void() {}})),
 		}) as InstanceType<typeof Channel>;
-		Object.defineProperty(dm, "localuser", {value: {channelfocus: dm, messageLimit: 5}});
+		Object.defineProperty(dm, "localuser", {
+			value: {channelfocus: dm, messageLimit: 5},
+			configurable: true,
+		});
 		const user = userWithNoDm(vi.fn(async () => {}));
 		user.localuser.guildids.get("@me")!.channels.push(dm as never);
-		return {user, typebox, dm};
+		return {user, typebox, pasted, dm};
 	}
 
 	it("comes back in the DM's composer: the popout it was typed in has closed", async () => {
@@ -108,22 +130,67 @@ describe("a popout's message that's refused", () => {
 
 	it("leaves what's already in that composer alone", async () => {
 		const {user, typebox} = openDm("mine");
-		const send = vi.fn();
-		vi.stubGlobal(
-			"XMLHttpRequest",
-			class {
-				upload = {};
-				open() {}
-				setRequestHeader() {}
-				send = send;
-			},
-		);
+		const send = countSends();
 
 		void user.opendm("x".repeat(6));
 
 		// Not put back, so it goes the way that keeps it: to the server, for a failed bubble.
 		await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
 		expect(typebox.textContent).toBe("mine");
+	});
+
+	it("doesn't join a file waiting in that composer, which would send with it", async () => {
+		const {user, typebox, pasted} = openDm();
+		pasted.append(document.createElement("img"));
+		const send = countSends();
+
+		void user.opendm("x".repeat(6));
+
+		await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+		expect(typebox.textContent).toBe("");
+	});
+
+	describe("with another channel open", () => {
+		function openElsewhere() {
+			const opened = openDm();
+			Object.defineProperty(opened.dm, "localuser", {
+				value: {channelfocus: {id: "other"}, messageLimit: 5},
+			});
+			return opened;
+		}
+
+		it("becomes the DM's draft, leaving the open composer alone", async () => {
+			const {user, typebox, dm} = openElsewhere();
+			const send = countSends();
+
+			await user.opendm("x".repeat(6));
+
+			expect(dm.textSave).toBe("x".repeat(6));
+			expect(typebox.textContent).toBe("");
+			expect(send).not.toHaveBeenCalled();
+		});
+
+		it("doesn't overwrite the DM's draft", async () => {
+			const {user, dm} = openElsewhere();
+			dm.textSave = "mine";
+			const send = countSends();
+
+			void user.opendm("x".repeat(6));
+
+			await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+			expect(dm.textSave).toBe("mine");
+		});
+
+		it("doesn't join files saved with the DM, which would send with it", async () => {
+			const {user, dm} = openElsewhere();
+			dm.files = [new Blob(["x"])];
+			const send = countSends();
+
+			void user.opendm("x".repeat(6));
+
+			await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+			expect(dm.textSave).toBe("");
+		});
 	});
 });
 

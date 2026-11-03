@@ -467,8 +467,8 @@ export class InteractionModal {
 	}
 
 	/**
-	 * The server's field errors under their fields. Spacebar sends flat dotted keys
-	 * (`data.components.<i>[.components.<j>]…`); Discord nests the same path as objects.
+	 * The server's field errors under their fields, at `data.components.<i>[.components.<j>]…`,
+	 * as flat dotted keys or the same path nested as objects.
 	 */
 	private showServerErrors(body: {message?: string; errors?: unknown}) {
 		this.formError.textContent = body.message ?? I18n.interactions.failed();
