@@ -180,8 +180,9 @@ class Guild extends SnowFlake {
 	parent_id!: string;
 	member!: Member;
 	/** Settles once `member` is resolved (or the resolve failed): deep-link boots await it
-	 * before resolving the URL, so permission checks see the viewer's member. The shell
-	 * constructor (-1) keeps it resolved — nothing to wait for. */
+	 * before resolving the URL's channel, so permission checks see the viewer's member; the
+	 * open guild's channel list redraws as it settles. The shell constructor (-1) keeps it
+	 * resolved — nothing to wait for. */
 	memberReady: Promise<void> = Promise.resolve();
 	html!: HTMLElement;
 	emojis: emojipjson[] = [];
@@ -1928,8 +1929,8 @@ class Guild extends SnowFlake {
 		// A deep-link boot (the invite accept's landing, a bare /channels/:guildId URL)
 		// resolves its URL while this member fetch is still in flight; without the member
 		// every channel reads invisible and the boot parks in noChannel. init() awaits this
-		// before touching the URL, so the channels are visible when it looks at them. The
-		// fetch failure settles resolved with the member unset (init then parks in
+		// before resolving the URL's channel, so the channels are visible when it looks at
+		// them. The fetch failure settles resolved with the member unset (init then parks in
 		// noChannel, as before this field existed) — a rejection here would throw out of
 		// init's callers.
 		this.memberReady = (member instanceof User
@@ -1942,6 +1943,9 @@ class Guild extends SnowFlake {
 					return;
 				}
 				this.member = _;
+				// The URL's guild opens before its member lands (a boot, a reconnect that starts a
+				// new session), and a list built then has every channel invisible: build it again.
+				this.redrawChannelList();
 			})
 			.catch((e) => console.error("Member fetch failed", e));
 

@@ -303,6 +303,29 @@ test("files and text waiting in the composer survive a reconnect that starts a n
 	expect(await sendAndReadFiles(page)).toEqual(["one.txt"]);
 });
 
+test("a file left in a channel that isn't open survives a new session, and its controls still work", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	await attach(page, "one.txt");
+	await channelRow(page, OTHER_CHANNEL.name).click();
+	await expect(page.locator("#channelname")).toHaveText("#" + OTHER_CHANNEL.name);
+
+	const identifies = () =>
+		mockInstance.gatewayFrames.fromApp.filter((f) => (f as {op?: number}).op === 2).length;
+	const before = identifies();
+	mockInstance.sendGatewayEvent({op: 9, d: false});
+	await expect.poll(identifies, {timeout: 15_000}).toBeGreaterThan(before);
+	await expect(page.locator("#loading")).toHaveClass(/doneloading/);
+	await channelRow(page, MOCK_CHANNEL.name).click();
+	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
+
+	await expect(thumbnails(page)).toHaveCount(1);
+	await thumbnails(page).locator(".svg-spoiler").click();
+	expect(await sendAndReadFiles(page)).toEqual(["SPOILER_one.txt"]);
+});
+
 test("files and text waiting in the composer survive a trip to the home page", async ({page}) => {
 	await loginAndOpenChannel(page);
 	await attach(page, "one.txt");
