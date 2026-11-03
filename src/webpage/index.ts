@@ -73,28 +73,19 @@ if (window.location.pathname.startsWith("/channels")) {
 			thisUser = l;
 			regSwap(l);
 		};
-		l.fileExtange = (img, html) => {
-			const blobArr: Blob[] = [];
-			const htmlArr = imagesHtml;
-			let i = 0;
-			for (const file of images) {
-				const img = imagesHtml.get(file);
-				if (!img) continue;
-				if (pasteImageElement.contains(img)) {
-					pasteImageElement.removeChild(img);
-					blobArr.push(images[i]);
-				} else {
-					i++;
-				}
-			}
-			images = img;
+		// Hands over the lists themselves, not copies: each thumbnail's spoiler and delete controls
+		// act on the list it was attached to, for as long as that list's channel keeps it.
+		l.fileExtange = (files, html) => {
+			const leaving: [Blob[], WeakMap<Blob, HTMLElement>] = [images, imagesHtml];
+			for (const file of images) imagesHtml.get(file)?.remove();
+			images = files;
 			imagesHtml = html;
 			for (const file of images) {
 				const img = imagesHtml.get(file);
 				if (!img) throw new Error("Image without HTML, exiting");
 				pasteImageElement.append(img);
 			}
-			return [blobArr, htmlArr];
+			return leaving;
 		};
 	}
 	const loaddesc = document.getElementById("load-desc") as HTMLSpanElement;
@@ -262,9 +253,6 @@ if (window.location.pathname.startsWith("/channels")) {
 								pasteImageElement,
 								imagesHtml,
 								getImages: () => images,
-								setImages: (list) => {
-									images = list;
-								},
 							},
 						});
 						rej();

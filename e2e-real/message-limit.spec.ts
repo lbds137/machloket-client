@@ -100,7 +100,11 @@ test.describe("a forum post over the limit", () => {
 
 		await post.click();
 
-		expect((await refused).status()).toBe(400);
+		const response = await refused;
+		expect(response.status()).toBe(400);
+		// A thread's starter is nested under `message`, and the tree follows the path.
+		const body = (await response.json()) as {errors: {message: {content: {_errors: {message: string}[]}}}};
+		expect(body.errors.message.content._errors[0].message).toBe(`Must be ${LIMIT} or fewer in length.`);
 		await expect(page.getByText(`Must be ${LIMIT} or fewer in length.`)).toBeVisible();
 		await expect(area).toHaveText(tooLong);
 		expect(await threads()).toEqual([]);

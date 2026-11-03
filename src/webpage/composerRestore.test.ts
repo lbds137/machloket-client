@@ -10,11 +10,8 @@ function setup() {
 	const file = new Blob(["x"]);
 	const thumb = document.createElement("img");
 	const imagesHtml = new WeakMap<Blob, HTMLElement>([[file, thumb]]);
-	let images: Blob[] = [];
+	const images: Blob[] = [];
 	const getImages = () => images;
-	const setImages = vi.fn((list: Blob[]) => {
-		images = list;
-	});
 	const channel = () => {
 		const c = {
 			replyingto: null,
@@ -27,7 +24,7 @@ function setup() {
 		};
 		return c as unknown as Parameters<typeof restoreFailedSend>[0]["channel"];
 	};
-	return {typebox, pasteImageElement, file, thumb, imagesHtml, getImages, setImages, channel};
+	return {typebox, pasteImageElement, file, thumb, imagesHtml, getImages, channel};
 }
 
 describe("a refused send", () => {
@@ -48,7 +45,7 @@ describe("a refused send", () => {
 		expect(putBack).toBe(true);
 		expect(s.typebox.textContent).toBe("hello");
 		expect(s.typebox.markdown.txt).toBe("hello");
-		expect(s.setImages).toHaveBeenCalledWith([s.file]);
+		expect(s.getImages()).toEqual([s.file]);
 		expect(s.pasteImageElement.contains(s.thumb)).toBe(true);
 		expect(sent.replyingto).toBe(reply);
 		expect(sent.makereplybox).toHaveBeenCalled();
@@ -76,7 +73,7 @@ describe("a refused send", () => {
 		// The composer belongs to the channel in front of the user: it is left alone.
 		expect(s.typebox.textContent).toBe("typing in the other channel");
 		expect(s.typebox.markdown.txt).toBe("typing in the other channel");
-		expect(s.setImages).not.toHaveBeenCalled();
+		expect(s.getImages()).toEqual([]);
 		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 		expect(sent.replyingto).toBeNull();
@@ -102,7 +99,7 @@ describe("a refused send", () => {
 		expect(putBack).toBe(false);
 		expect(sent.setDraft).not.toHaveBeenCalled();
 		expect(sent.textSave).toBe("");
-		expect(s.setImages).not.toHaveBeenCalled();
+		expect(s.getImages()).toEqual([]);
 		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
 	});
 
@@ -139,7 +136,7 @@ describe("a refused send", () => {
 		});
 
 		expect(s.typebox.textContent).toBe("a newer message");
-		expect(s.setImages).not.toHaveBeenCalled();
+		expect(s.getImages()).toEqual([]);
 		expect(s.pasteImageElement.contains(s.thumb)).toBe(false);
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 		expect(sent.replyingto).toBeNull();
@@ -148,8 +145,8 @@ describe("a refused send", () => {
 	it("leaves a composer alone that holds new attachments, in the same channel", () => {
 		const s = setup();
 		const sent = s.channel();
-		s.setImages([new Blob(["new"])]);
-		s.setImages.mockClear();
+		const attachedSince = new Blob(["new"]);
+		s.getImages().push(attachedSince);
 
 		restoreFailedSend({
 			channel: sent,
@@ -161,7 +158,7 @@ describe("a refused send", () => {
 		});
 
 		expect(s.typebox.textContent).toBe("");
-		expect(s.setImages).not.toHaveBeenCalled();
+		expect(s.getImages()).toEqual([attachedSince]);
 		expect(sent.makereplybox).not.toHaveBeenCalled();
 	});
 
