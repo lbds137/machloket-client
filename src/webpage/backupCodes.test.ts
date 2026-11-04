@@ -34,10 +34,9 @@ describe("showBackupCodes screen", () => {
 		});
 		expect(document.body.textContent).toContain(I18n.backupCodes.title());
 		expect(document.body.textContent).toContain(I18n.backupCodes.explain());
-		expect([...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent)).toEqual([
-			"a1b2c3d4",
-			"e5f60718",
-		]);
+		expect(
+			[...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent),
+		).toEqual(["a1b2c3d4", "e5f60718"]);
 
 		document.body.replaceChildren();
 		const ten = Array.from({length: 10}, (_, i) => ({
@@ -45,24 +44,29 @@ describe("showBackupCodes screen", () => {
 			consumed: false,
 		}));
 		showBackupCodes({backup_codes: ten});
-		expect([...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent)).toEqual(
-			ten.map((e) => e.code),
-		);
+		expect(
+			[...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent),
+		).toEqual(ten.map((e) => e.code));
 	});
 
-	it("shows nothing and does not throw for invalid or empty inputs, and filters mixed arrays to valid unconsumed entries", () => {
+	it("shows nothing for non-array inputs; any array answer with no usable codes says there are none", () => {
+		for (const input of [undefined, {}, {backup_codes: "x"}]) {
+			expect(() => showBackupCodes(input)).not.toThrow();
+			expect(document.querySelector(".backupCodeGrid")).toBeNull();
+			expect(document.querySelector(".background")).toBeNull();
+		}
+		document.body.replaceChildren();
+		// Empty, junk, or all consumed: the array is the answer, so it says so.
 		for (const input of [
-			undefined,
-			{},
-			{backup_codes: "x"},
 			{backup_codes: []},
 			{backup_codes: [{consumed: false}]},
 			{backup_codes: [{code: "", consumed: false}]},
 			{backup_codes: [{code: "12345678", consumed: true}]},
 		]) {
 			expect(() => showBackupCodes(input)).not.toThrow();
+			expect(document.body.textContent).toContain(I18n.backupCodes.none());
 			expect(document.querySelector(".backupCodeGrid")).toBeNull();
-			expect(document.querySelector(".background")).toBeNull();
+			document.body.replaceChildren();
 		}
 
 		showBackupCodes({
@@ -76,10 +80,15 @@ describe("showBackupCodes screen", () => {
 				{code: "55556666"},
 			],
 		});
-		expect([...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent)).toEqual([
-			"33334444",
-			"55556666",
-		]);
+		expect(
+			[...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent),
+		).toEqual(["33334444", "55556666"]);
+	});
+
+	it("a valid empty answer says there are no codes instead of doing nothing", () => {
+		showBackupCodes({backup_codes: []});
+		expect(document.body.textContent).toContain(I18n.backupCodes.none());
+		expect(document.querySelector(".backupCodeGrid")).toBeNull();
 	});
 
 	it("leaves the screen up on Escape and background click, and removes it on Done", async () => {
@@ -131,11 +140,11 @@ describe("showBackupCodes screen", () => {
 		const createUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:backup-codes");
 		const revokeUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
 		let downloadName = "";
-		const clickSpy = vi
-			.spyOn(HTMLAnchorElement.prototype, "click")
-			.mockImplementation(function (this: HTMLAnchorElement) {
-				downloadName = this.download;
-			});
+		const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+			this: HTMLAnchorElement,
+		) {
+			downloadName = this.download;
+		});
 
 		showBackupCodes({
 			backup_codes: [
@@ -159,6 +168,128 @@ describe("showBackupCodes screen", () => {
 			timeout: 2000,
 		});
 		clickSpy.mockRestore();
+	});
+
+	describe("regenerate callback", () => {
+		const codesNow = () =>
+			[...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent);
+		const regenButton = () =>
+			[...document.querySelectorAll<HTMLButtonElement>("button")].find(
+				(b) => b.textContent === I18n.backupCodes.regenerate(),
+			);
+
+		it("without a callback there is no regenerate button", () => {
+			showBackupCodes({backup_codes: [{code: "aaaa1111", consumed: false}]});
+			expect(regenButton()).toBeUndefined();
+		});
+
+		it("regenerating re-renders the grid with the new codes and copy follows them", async () => {
+			const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => ({
+						backup_codes: [
+							{code: "new22222", consumed: false},
+							{code: "new33333", consumed: false},
+						],
+					}),
+				},
+			);
+			expect(codesNow()).toEqual(["old11111"]);
+
+			const btn = regenButton();
+			expect(btn, "no regenerate button").toBeDefined();
+			btn!.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222", "new33333"]));
+
+			const copyBtn = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+				(b) => b.textContent === I18n.backupCodes.copy(),
+			)!;
+			copyBtn.click();
+			await vi.waitFor(() =>
+				expect(document.body.textContent).toContain(I18n.backupCodes.copied()),
+			);
+			expect(writeText).toHaveBeenLastCalledWith("new22222\nnew33333");
+		});
+
+		it("a successful regenerate clears a stale copied note", async () => {
+			const writeText = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{regenerate: async () => ({backup_codes: [{code: "new22222", consumed: false}]})},
+			);
+			const copyBtn = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+				(b) => b.textContent === I18n.backupCodes.copy(),
+			)!;
+			copyBtn.click();
+			await vi.waitFor(() =>
+				expect(document.body.textContent).toContain(I18n.backupCodes.copied()),
+			);
+			expect(writeText).toHaveBeenLastCalledWith("old11111");
+
+			const btn = regenButton();
+			expect(btn, "no regenerate button").toBeDefined();
+			btn!.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
+			// the note was about the old batch; it must not read as covering the new one
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.copied());
+		});
+
+		it("a refused regenerate (null) keeps the old codes and the dialog open", async () => {
+			let refused = false;
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: () => {
+						refused = true;
+						return null;
+					},
+				},
+			);
+
+			const btn = regenButton();
+			expect(btn, "no regenerate button").toBeDefined();
+			btn!.click();
+			await vi.waitFor(() => expect(refused).toBe(true));
+			expect(codesNow()).toEqual(["old11111"]);
+			expect(document.querySelector(".backupCodeGrid")).not.toBeNull();
+		});
+
+		it("an empty answer with a callback offers regenerating into a full screen", async () => {
+			showBackupCodes(
+				{backup_codes: []},
+				{regenerate: async () => ({backup_codes: [{code: "nEwC0de9", consumed: false}]})},
+			);
+			expect(document.body.textContent).toContain(I18n.backupCodes.none());
+			const btn = regenButton();
+			expect(btn, "no regenerate button").toBeDefined();
+			btn!.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["nEwC0de9"]));
+		});
+
+		it("one tap sends one regenerate however often it is clicked", async () => {
+			let calls = 0;
+			let release: (() => void) | undefined;
+			const gate = new Promise<void>((r) => (release = r));
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: () => {
+						calls++;
+						return gate.then(() => ({backup_codes: [{code: "new22222", consumed: false}]}));
+					},
+				},
+			);
+			const btn = regenButton();
+			expect(btn, "no regenerate button").toBeDefined();
+			btn!.click();
+			btn!.click();
+			btn!.click();
+			expect(calls).toBe(1);
+			release!();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
+		});
 	});
 });
 
@@ -385,7 +516,13 @@ describe("login 2FA and backup code entry", () => {
 
 		try {
 			captureRequests(KEY_LOGIN_URL, () =>
-				Response.json({token: null, mfa: true, webauthn: challenge, ticket: "tk-ref1", backup: true}),
+				Response.json({
+					token: null,
+					mfa: true,
+					webauthn: challenge,
+					ticket: "tk-ref1",
+					backup: true,
+				}),
 			);
 			const loggedIn = vi.fn();
 			const form1 = new Dialog("").options.addForm("", loggedIn, {
@@ -556,7 +693,13 @@ describe("login 2FA and backup code entry", () => {
 
 	it("WebAuthn fallback code prompt shows 400 message in .suberror, stays open, and retries with the same ticket", async () => {
 		captureRequests(KEY_LOGIN_URL, () =>
-			Response.json({token: null, mfa: true, webauthn: challenge, ticket: "tk-retry", backup: true}),
+			Response.json({
+				token: null,
+				mfa: true,
+				webauthn: challenge,
+				ticket: "tk-retry",
+				backup: true,
+			}),
 		);
 		let attempt = 0;
 		const totpSent = captureRequests(KEY_TOTP_URL, () => {
