@@ -206,11 +206,12 @@ describe("the application edit form's flags wiring", () => {
 	});
 
 	it("a second save folds onto the PATCH answer's flags, not the boot-time read", async () => {
-		// Save 1 flips members on; the server answers with a mask that now also carries
-		// presence's limited bit. Save 2 flips content off and touches nothing else: presence
-		// must keep the bit the ANSWER carries — the fold ran on the refreshed read, and the
-		// untouched members toggle reads its (cleared) bit from the answer too.
-		const second = READ | INTENT_LIMITED_BITS.presence;
+		// Save 1 flips members on; the server answers with a mask that now carries the bit
+		// save 1 set plus a presence limited bit (the story's server-side addition). Save 2
+		// flips content off and touches nothing else: presence must keep the bit the ANSWER
+		// carries — the fold ran on the refreshed read — and members, now at its per-save
+		// baseline of on, reads as untouched and stays set.
+		const second = READ | INTENT_LIMITED_BITS.presence | INTENT_LIMITED_BITS.guildMembers;
 		const {sent, form} = await openAppForm(READ, (n) => (n === 1 ? READ : second));
 		(form.names.get("intent_members") as {value: boolean}).value = true;
 		await form.submit();
@@ -221,9 +222,27 @@ describe("the application edit form's flags wiring", () => {
 
 		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
 		expect(saves).toHaveLength(2);
-		expect(saves[1].flags).toBe(
-			(second | INTENT_LIMITED_BITS.guildMembers) & ~INTENT_LIMITED_BITS.messageContent,
-		);
+		expect(saves[1].flags).toBe(second & ~INTENT_LIMITED_BITS.messageContent);
+	});
+
+	it("a toggle switched back to its starting value is honoured on a later save", async () => {
+		// Content starts on (its limited bit is in READ). Save 1 turns it off and the server
+		// answers without the bit; save 2 turns it back ON. The baseline must be "the last
+		// save", not the form open: on = false baseline after save 1, so save 2's on is a
+		// change and re-sets the bit. With the baseline stuck at open (true), the on reads as
+		// untouched and the save silently keeps the intent off — the checkbox lies.
+		const answer2 = READ & ~INTENT_LIMITED_BITS.messageContent;
+		const {sent, form} = await openAppForm(READ, (n) => (n === 1 ? READ : n === 2 ? answer2 : READ));
+		(form.names.get("intent_content") as {value: boolean}).value = false;
+		await form.submit();
+		await settle(sent);
+		(form.names.get("intent_content") as {value: boolean}).value = true;
+		await form.submit();
+		await settle(sent, 2);
+
+		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
+		expect(saves).toHaveLength(2);
+		expect(saves[1].flags).toBe(READ);
 	});
 
 	it("a read without a numeric flags PATCHes no flags at all instead of garbage", async () => {
