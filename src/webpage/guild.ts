@@ -1946,6 +1946,17 @@ class Guild extends SnowFlake {
 				// The URL's guild opens before its member lands (a boot, a reconnect that starts a
 				// new session), and a list built then has every channel invisible: build it again.
 				this.redrawChannelList();
+				// Announced as a macrotask so every memberReady awaiter (microtasks, the
+				// went-elsewhere decision in loadChannel included) has run first: an observer of
+				// the event sees the decision made, not the landing mid-decision. Nothing in src/
+				// listens yet; the e2e tier does (e2e/guild-open.spec.ts).
+				setTimeout(
+					() =>
+						document.dispatchEvent(
+							new CustomEvent("guildmemberready", {detail: {guildId: this.id}}),
+						),
+					0,
+				);
 			})
 			.catch((e) => console.error("Member fetch failed", e));
 
@@ -2522,8 +2533,9 @@ class Guild extends SnowFlake {
 	async loadChannel(ID?: string | undefined | null, addstate = true, message?: string) {
 		if (this.id !== "@me" && !this.member) {
 			// Every channel reads invisible until the viewer's member lands (a server just joined,
-			// a click soon after load): picking now would park in noChannel. If the user went
-			// elsewhere meanwhile, what they opened stands.
+			// a click soon after load; explicit-ID opens — a notification click, a goto — wait
+			// here too): picking now would park in noChannel. If the user went elsewhere
+			// meanwhile, what they opened stands.
 			const looking = this.localuser.lookingguild;
 			const focus = this.localuser.channelfocus;
 			await this.memberReady;
