@@ -76,15 +76,30 @@ test("a server left before its member arrives doesn't pull the user back when it
 	const memberAnswer = page.waitForResponse((res) =>
 		new URL(res.url()).pathname.startsWith(`/api/v9/guilds/${OTHER_GUILD_ID}/members/`),
 	);
+	// Installed before the member is released. Nothing on screen marks the member landing on a
+	// guild no longer open, so the wait is the app's own announcement: "guildmemberready"
+	// fires as a macrotask after every memberReady awaiter has run — the went-elsewhere
+	// decision included — so once it does, what follows can prove nothing moved.
+	const memberSettled = page.evaluate(
+		(guildId) =>
+			new Promise<string>((done) => {
+				const listener = (event: Event) => {
+					if ((event as CustomEvent<{guildId: string}>).detail.guildId === guildId) {
+						document.removeEventListener("guildmemberready", listener);
+						done(guildId);
+					}
+				};
+				document.addEventListener("guildmemberready", listener);
+			}),
+		OTHER_GUILD_ID,
+	);
 
 	await icon.click();
 	await page.locator("#servers .home").first().click();
 	await expect(page).toHaveURL(/\/channels\/@me/);
 	mockInstance.releaseMembers();
 	await memberAnswer;
-	// Nothing on screen marks the member landing on a guild no longer open: give its body read,
-	// promise chain and the waiting pick time to run before checking nothing moved.
-	await page.evaluate(() => new Promise((done) => setTimeout(done, 250)));
+	await memberSettled;
 
 	await expect(page).toHaveURL(/\/channels\/@me/);
 	await expect(page.locator("#channelname")).not.toHaveText("#" + OTHER_CHANNEL.name);
