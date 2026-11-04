@@ -2545,9 +2545,8 @@ class Guild extends SnowFlake {
 			loading.classList.add("loading");
 			await this.memberReady;
 			if (this.localuser.lookingguild !== looking || this.localuser.channelfocus !== focus) {
-				// The pick that went elsewhere renders over this wait; undo this stand-down's
-				// skeleton (its own build manages composer and skeleton from here).
-				loading.classList.remove("loading");
+				// The pick that went elsewhere owns the screen now: its own build chain (or
+				// noChannel) manages the skeleton class from here — nothing to undo.
 				return;
 			}
 		}

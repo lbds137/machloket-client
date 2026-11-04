@@ -29,7 +29,8 @@
  *                                                      commands: visible / admins-only / denied)
  * - GET  /api/v9/guilds/:guildId/members/:userId    -> MOCK member (Member.resolveMember)
  * - PATCH /api/v9/users/@me/guilds/:guildId/settings -> {} (the guild mute / unmute)
- * - GET  /api/v9/channels/:channelId/messages       -> MOCK_MESSAGES (newest-first; before/
+ * - GET  /api/v9/channels/:channelId/messages       -> per-channel history, grouped from the
+ *                                                      messages option (newest-first; before/
  *                                                      after/around pages served from it)
  * - POST /api/v9/channels/:channelId/messages       -> 200 {} (a sent message, e.g. the forward
  *                                                      flow's send; pinned from capturedRequests)
@@ -1211,6 +1212,16 @@ export async function mountMockInstance(
 				m.member && memberById.has(m.member.id) ? {...m, member: memberById.get(m.member.id)} : m,
 			)
 		: baseMessages;
+	// History is per channel: the app's id maps span the whole account, so two channels
+	// serving the same message ids read as one chain (cost 11-02: a false data-loss bug,
+	// ~an hour of probing). A spec's `messages` override lands on whatever channel its
+	// entries name — default fixtures all live in the fixture channel.
+	const messagesByChannel = new Map<string, messagejson[]>();
+	for (const m of messages) {
+		const list = messagesByChannel.get(m.channel_id);
+		if (list) list.push(m);
+		else messagesByChannel.set(m.channel_id, [m]);
+	}
 
 	let guildCreateFrame = MOCK_GUILD_CREATE_FRAME;
 	if (
@@ -1577,12 +1588,8 @@ export async function mountMockInstance(
 
 			// 11. Channel messages history (src/webpage/channel.ts putmessages)
 			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+\/messages$/.test(pathname)) {
-				// Per-channel history: the app's id maps span the whole account, so two
-				// channels serving the same message ids read as one chain (cost 11-02: a
-				// false data-loss bug, ~an hour of probing). Only the fixture channel
-				// carries history; a second channel answers empty.
-				const channelId = pathname.split("/").at(-2);
-				const history = channelId === MOCK_CHANNEL_ID ? messages : [];
+				// Per channel (see messagesByChannel): a channel with no fixtures answers empty.
+				const history = messagesByChannel.get(pathname.split("/").at(-2) ?? "") ?? [];
 				const before = searchParams.get("before");
 				const around = searchParams.get("around");
 				const after = searchParams.get("after");
