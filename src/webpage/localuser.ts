@@ -5074,12 +5074,19 @@ class Localuser {
 			messageContent: intentShown(json.flags, "messageContent"),
 		};
 		// The read is live: the PATCH answer carries the stored (masked) flags, so a second
-		// save in this form session folds onto it instead of the boot-time read.
+		// save in this form session folds onto it instead of the boot-time read, and the
+		// delta baseline moves to the last save — "changed" means changed since then, or a
+		// toggle switched back to its starting value would be silently dropped.
 		let readFlags = json.flags;
 		const form = container.addSubForm(
 			json.name,
 			(res: any) => {
-				if (res && typeof res.flags === "number") readFlags = res.flags;
+				if (res && typeof res.flags === "number") {
+					readFlags = res.flags;
+					initStates.presence = intentShown(res.flags, "presence");
+					initStates.guildMembers = intentShown(res.flags, "guildMembers");
+					initStates.messageContent = intentShown(res.flags, "messageContent");
+				}
 			},
 			{
 			fetchURL: this.info.api + "/applications/" + appId,
