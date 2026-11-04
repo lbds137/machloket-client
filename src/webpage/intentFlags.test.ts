@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {captureRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
@@ -98,7 +98,7 @@ describe("the application edit form's flags wiring", () => {
 	 * read leaves flags out of the answer entirely (a shape the server answer says shouldn't
 	 * happen, but the form must not PATCH garbage derived from it). No default parameter:
 	 * an explicit `undefined` argument must not silently become READ. */
-	async function openAppForm(read?: number) {
+	async function openAppForm(read?: number, answerFlags?: (call: number) => number | undefined) {
 		const answerBody: Record<string, unknown> = {
 			name: "Intent App",
 			description: "",
@@ -111,7 +111,16 @@ describe("the application edit form's flags wiring", () => {
 			verify_key: "",
 		};
 		if (read !== undefined) answerBody.flags = read;
-		const answer = () => json(answerBody);
+		let call = 0;
+		const answer = () => {
+			call++;
+			if (answerFlags) {
+				const flags = answerFlags(call);
+				if (flags === undefined) delete answerBody.flags;
+				else answerBody.flags = flags;
+			}
+			return json(answerBody);
+		};
 		const sent = captureRequests(`${API}/applications/${APP_ID}`, answer);
 		const stub = Object.create(Localuser.prototype) as InstanceType<typeof Localuser>;
 		// Fields the constructor would have set; perminfo reads userinfo.localuserStore.
@@ -132,8 +141,13 @@ describe("the application edit form's flags wiring", () => {
 		return {sent, form: forms[0]};
 	}
 
-	/** Lets the form's fetch chain run to its end. */
-	const settle = () => new Promise((res) => setTimeout(res, 50));
+	/** Waits for the form's fetch chain: `atLeast` bodies captured on the form's URL. */
+	const settle = (sent: unknown[], atLeast = 1) =>
+		vi.waitFor(() =>
+			expect(sent.filter((b) => b && typeof b === "object").length).toBeGreaterThanOrEqual(
+				atLeast,
+			),
+		);
 
 	it("inits the toggles from either bit and PATCHes flags with the limited bits folded", async () => {
 		const {sent, form} = await openAppForm(READ);
@@ -150,26 +164,65 @@ describe("the application edit form's flags wiring", () => {
 		// the clearing path through the form, not just the pure function.
 		(form.names.get("intent_content") as {value: boolean}).value = false;
 		await form.submit();
-		await settle();
+		await settle(sent);
 
 		const patch = sent.find(
 			(body) => body && typeof body === "object",
 		) as Record<string, number>;
 		expect(patch).toBeDefined();
-		// The PATCH declares what the toggles show: members flipped on adds its limited bit,
-		// presence's toggle — on via its full bit alone — folds its limited bit on too, and
-		// content flipped off clears its limited bit. The server's withSelfServeFlags mask has
-		// the final word on all three.
+		// Only changed toggles fold: members flipped on adds its limited bit, content flipped
+		// off clears its. Presence is untouched — on via its full bit alone — so it stays
+		// as-read: no limited bit is granted on a save the user never aimed there.
 		expect(patch.flags).toBe(
-			(READ & ~INTENT_LIMITED_BITS.messageContent) |
-				INTENT_LIMITED_BITS.guildMembers |
-				INTENT_LIMITED_BITS.presence,
+			(READ & ~INTENT_LIMITED_BITS.messageContent) | INTENT_LIMITED_BITS.guildMembers,
 		);
 		// The checkbox fields are form-local names; the PATCH carries only real fields.
 		expect(Object.keys(patch).filter((key) => key.startsWith("intent_"))).toEqual([]);
 		// The full bit and the unrelated flag passed through as read.
 		expect(patch.flags & (INTENT_FULL_BITS.presence | (1 << 24))).toBe(
 			INTENT_FULL_BITS.presence | (1 << 24),
+		);
+	});
+
+	it("an untouched full-bit-only intent gains no limited bit on save", async () => {
+		// Presence granted outright (full bit, no limited bit) plus an unrelated flag: the
+		// toggles show presence on, but the user touches nothing. The PATCH must carry the
+		// read back unchanged — an untouched toggle says nothing about its limited bit, so a
+		// save must not grant it (the owner's later revocation of the full bit would
+		// otherwise leave the intent in force through a bit the user never chose).
+		const read = INTENT_FULL_BITS.presence | (1 << 24);
+		const {sent, form} = await openAppForm(read);
+		expect(form).toBeDefined();
+		expect(form.names.get("intent_presence").value).toBe(true);
+
+		await form.submit();
+		await settle(sent);
+
+		const patch = sent.find(
+			(body) => body && typeof body === "object",
+		) as Record<string, number>;
+		expect(patch).toBeDefined();
+		expect(patch.flags).toBe(read);
+	});
+
+	it("a second save folds onto the PATCH answer's flags, not the boot-time read", async () => {
+		// Save 1 flips members on; the server answers with a mask that now also carries
+		// presence's limited bit. Save 2 flips content off and touches nothing else: presence
+		// must keep the bit the ANSWER carries — the fold ran on the refreshed read, and the
+		// untouched members toggle reads its (cleared) bit from the answer too.
+		const second = READ | INTENT_LIMITED_BITS.presence;
+		const {sent, form} = await openAppForm(READ, (n) => (n === 1 ? READ : second));
+		(form.names.get("intent_members") as {value: boolean}).value = true;
+		await form.submit();
+		await settle(sent);
+		(form.names.get("intent_content") as {value: boolean}).value = false;
+		await form.submit();
+		await settle(sent, 2);
+
+		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
+		expect(saves).toHaveLength(2);
+		expect(saves[1].flags).toBe(
+			(second | INTENT_LIMITED_BITS.guildMembers) & ~INTENT_LIMITED_BITS.messageContent,
 		);
 	});
 
@@ -181,7 +234,7 @@ describe("the application edit form's flags wiring", () => {
 		expect(form.names.get("intent_presence").value).toBe(false);
 
 		await form.submit();
-		await settle();
+		await settle(sent);
 
 		const patch = sent.find(
 			(body) => body && typeof body === "object",
