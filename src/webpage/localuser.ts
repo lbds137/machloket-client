@@ -1,4 +1,5 @@
 import {Guild} from "./guild.js";
+import {foldIntentFlags, intentShown} from "./intentFlags.js";
 import {bumpCommandRecency} from "./commandRecency.js";
 import {slashCommandQuery} from "./slashQuery.js";
 import {
@@ -5100,6 +5101,35 @@ class Localuser {
 		});
 		form.addCheckboxInput(I18n.localuser.requireCode(), "bot_require_code_grant", {
 			initState: json.bot_require_code_grant,
+		});
+		// The three privileged intents a self-serve app may toggle: shown on when either of the
+		// intent's bits is set, and folded into flags replacing only the limited bits — the
+		// checkbox fields below are form-local names the preprocessor strips before the PATCH.
+		form.addText(I18n.localuser.intentsHint());
+		form.addCheckboxInput(I18n.localuser.intentPresence(), "intent_presence", {
+			initState: intentShown(json.flags, "presence"),
+		});
+		form.addCheckboxInput(I18n.localuser.intentGuildMembers(), "intent_members", {
+			initState: intentShown(json.flags, "guildMembers"),
+		});
+		form.addCheckboxInput(I18n.localuser.intentMessageContent(), "intent_content", {
+			initState: intentShown(json.flags, "messageContent"),
+		});
+		// addPreprocessor replaces, never chains: a second one on this form would silently drop
+		// the flags fold and leak the intent_* keys (the wiring test pins their absence).
+		// A read without a numeric flags must not PATCH a value derived from undefined — the
+		// other fields go through with no flags key, and the server keeps the stored ones.
+		form.addPreprocessor((obj: any) => {
+			if (typeof json.flags === "number") {
+				obj.flags = foldIntentFlags(json.flags, {
+					presence: obj.intent_presence,
+					guildMembers: obj.intent_members,
+					messageContent: obj.intent_content,
+				});
+			}
+			delete obj.intent_presence;
+			delete obj.intent_members;
+			delete obj.intent_content;
 		});
 		form.addButtonInput("", I18n.localuser[json.bot ? "manageBot" : "addBot"](), async () => {
 			if (!json.bot) {
