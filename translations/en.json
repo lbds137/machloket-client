@@ -434,6 +434,7 @@
 		"roles": "Roles",
 		"ruleId": "Rules channel:",
 		"selectnoti": "Select notifications type:",
+		"slashArchived": "Commands are unavailable in archived threads.",
 		"sendrandomwelcome?": "Send a random message when someone joins this guild:",
 		"serverName": "Name of guild:",
 		"settings": "Settings",

@@ -5968,6 +5968,22 @@ class Localuser {
 		const guild = this.lookingguild;
 		if (!guild) return;
 		const commands = await guild.getCommands(this.channelfocus?.id);
+		if (this.channelfocus?.threadData?.archived) {
+			// The gate filters every command out of an archived thread (channelCommandAccess);
+			// an empty list would read as breakage, so the verdict says why. The check sits
+			// AFTER the await: search() wipes the box synchronously after calling this
+			// (localuser.ts:6117), and every surviving render lands past it the same way —
+			// a synchronous hint would be wiped the tick it is placed.
+			// The key handlers stand down like the empty browse panel does, or a stale row
+			// handler from an earlier popup would stay live with the hint in the box.
+			this.keyup = () => false;
+			this.keydown = () => {};
+			const hint = document.createElement("div");
+			hint.className = "commandArchivedHint";
+			hint.textContent = I18n.guild.slashArchived();
+			box.replaceChildren(hint);
+			return;
+		}
 		// Discord's popup: with no search, the browse panel — a Frequently Used rail and one
 		// section per app; with a search, best match first (ties A-Z). MDSearchOptions renders
 		// the list BACKWARDS (it prepends each row), so the top ten is picked first, then
