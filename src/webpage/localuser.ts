@@ -3746,6 +3746,78 @@ class Localuser {
 						form.setValue("secret", secret);
 					});
 				}
+				addToGrid(I18n.localuser.viewBackupCodes(), () => {
+					const form = security.addSubForm(
+						I18n.localuser.viewBackupCodes(),
+						async (challenge) => {
+							const {nonce, regenerate_nonce} = (challenge ?? {}) as {
+								nonce?: unknown;
+								regenerate_nonce?: unknown;
+							};
+							if (typeof nonce !== "string" || typeof regenerate_nonce !== "string") return;
+							const codesFetch = (body: {nonce: string; regenerate: boolean}) =>
+								fetchWithMfa(
+									this.mfaRetry(),
+									this.info.api,
+									this.headers,
+									(mfaHeaders) =>
+										fetch(this.info.api + "/users/@me/mfa/codes-verification", {
+											headers: {...this.headers, ...mfaHeaders},
+											method: "POST",
+											body: JSON.stringify({key: pw.value, ...body}),
+										}).catch(() => undefined),
+									(m) => new Dialog(m).show(),
+								);
+							const res = await codesFetch({nonce, regenerate: false});
+							if (!res?.ok) return showRefusal(res);
+							const answer = await res
+								.clone()
+								.json()
+								.catch(() => null);
+							// A 2xx body that isn't our JSON (a proxy's error page) must refuse,
+							// not close the pane in silence — the same defense Form.submit and
+							// handle2fa run; the regen leg needs it even more, since the server
+							// expires the old codes before answering.
+							if (typeof answer !== "object" || answer === null || Array.isArray(answer))
+								return new Dialog(I18n.requestFailed("HTTP " + res.status + ", bad body")).show();
+							showBackupCodes(answer, {
+								regenerate: async () => {
+									const regenRes = await codesFetch({nonce: regenerate_nonce, regenerate: true});
+									if (!regenRes?.ok) {
+										showRefusal(regenRes);
+										return null;
+									}
+									const next = await regenRes
+										.clone()
+										.json()
+										.catch(() => null);
+									if (typeof next !== "object" || next === null || Array.isArray(next)) {
+										new Dialog(
+											I18n.requestFailed("HTTP " + regenRes.status + ", bad body"),
+										).show();
+										return null;
+									}
+									return next;
+								},
+							});
+							security.returnFromSub();
+						},
+						{
+							fetchURL: this.info.api + "/auth/verify/view-backup-codes-challenge",
+							headers: this.headers,
+						},
+					);
+					form.onErrorBody = (e) => {
+						// 400: the server's INVALID_PASSWORD (the challenge's only field error).
+						if (e.code !== 400) return false;
+						form.error("password", I18n.localuser.badPassword());
+						return true;
+					};
+					const pw = form.addTextInput(I18n.localuser["password:"](), "password", {
+						required: true,
+						password: true,
+					});
+				});
 				addToGrid(I18n.webauth.manage(), () => {
 					const keyMenu = security.addSubOptions(I18n.webauth.manage());
 					const addKey = (key: {name: string; id: string}) => {
@@ -5972,8 +6044,8 @@ class Localuser {
 			// The gate filters every command out of an archived thread (channelCommandAccess);
 			// an empty list would read as breakage, so the verdict says why. The check sits
 			// AFTER the await: search() wipes the box synchronously after calling this
-			// (localuser.ts:6117), and every surviving render lands past it the same way —
-			// a synchronous hint would be wiped the tick it is placed.
+			// (the trailing `box.innerHTML = ""`), and every surviving render lands past it
+			// the same way — a synchronous hint would be wiped the tick it is placed.
 			// The key handlers stand down like the empty browse panel does, or a stale row
 			// handler from an earlier popup would stay live with the hint in the box.
 			this.keyup = () => false;

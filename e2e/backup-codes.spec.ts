@@ -5,6 +5,7 @@ import {loginAndOpenChannel, test} from "./fixtures";
 // The codes screen at phone width, where a stray tap must not lose codes shown only once. What
 // the server mints and accepts is e2e-real/backup-codes.spec.ts; the rendering is here.
 const CODES = Array.from({length: 10}, (_, i) => `${i}a${i}b${i}c${i}d`);
+const REGEN_CODES = Array.from({length: 10}, (_, i) => `${i}z${i}y${i}x${i}w`);
 
 async function openEnrollment(page: Page): Promise<void> {
 	await loginAndOpenChannel(page);
@@ -71,4 +72,47 @@ test("the codes fit a phone and survive a tap outside and Escape, until I've sav
 	if (process.env.E2E_SHOTS) await page.screenshot({path: "docs/local/backup-codes-phone.png"});
 	await done.tap();
 	await expect(screen).toHaveCount(0);
+});
+
+test("viewing codes from the security grid shows them once; regenerate replaces them in the same dialog", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	// The mock user has no second factor, so the verification answers without the
+	// MFA header (requireApplicationMfa passes for a factorless owner).
+	await page.route("**/api/v9/auth/verify/view-backup-codes-challenge", (route) =>
+		route.fulfill({json: {nonce: "n-view", regenerate_nonce: "n-regen"}}),
+	);
+	let regenerations = 0;
+	await page.route("**/api/v9/users/@me/mfa/codes-verification", (route) => {
+		const body = route.request().postDataJSON() as {regenerate?: boolean};
+		if (body?.regenerate === true) {
+			regenerations++;
+			return route.fulfill({
+				json: {backup_codes: REGEN_CODES.map((code) => ({code, consumed: false}))},
+			});
+		}
+		return route.fulfill({json: {backup_codes: CODES.map((code) => ({code, consumed: false}))}});
+	});
+
+	await loginAndOpenChannel(page);
+	await page.locator("#settings").dispatchEvent("click");
+	await page.locator(".settingbuttons .cardLink", {hasText: "Account settings"}).click();
+	await page.getByRole("button", {name: "View backup codes", exact: true}).click();
+	// The pane's id scopes this form away from the account-deletion form's password field.
+	const card = page.locator("#card-account-settings");
+	await card.locator("input[type=password]").fill("pw");
+	await card.getByRole("button", {name: "Submit", exact: true}).click();
+
+	const screen = page.locator(".dialogModal", {has: page.locator(".backupCodeGrid")});
+	await expect(screen).toBeVisible();
+	await expect(screen.locator(".backupCodeGrid code")).toHaveText(CODES);
+	await page.mouse.click(2, 2);
+	await page.keyboard.press("Escape");
+	await expect(screen).toBeVisible();
+
+	await screen.getByRole("button", {name: "Regenerate codes", exact: true}).tap();
+	await expect(screen.locator(".backupCodeGrid code")).toHaveText(REGEN_CODES);
+	expect(regenerations).toBe(1);
 });
