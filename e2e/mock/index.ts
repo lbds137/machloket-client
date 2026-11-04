@@ -92,6 +92,8 @@ export const MOCK_TOKEN = "e2e-mock-token";
 export const MOCK_USER_ID = "1200000000000000001";
 export const MOCK_BOT_USER_ID = "1200000000000000002";
 export const MOCK_GUILD_ID = "1200000000000000100";
+/** A second guild, joined mid-session via the gateway (guild-open, join-landing). */
+export const OTHER_GUILD_ID = "1200000000000000106";
 export const MOCK_CHANNEL_ID = "1200000000000000200";
 export const MOCK_BUTTON_MESSAGE_ID = "1200000000000000300";
 export const MOCK_TEXT_MESSAGE_ID = "1200000000000000301";
@@ -1575,25 +1577,31 @@ export async function mountMockInstance(
 
 			// 11. Channel messages history (src/webpage/channel.ts putmessages)
 			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+\/messages$/.test(pathname)) {
+				// Per-channel history: the app's id maps span the whole account, so two
+				// channels serving the same message ids read as one chain (cost 11-02: a
+				// false data-loss bug, ~an hour of probing). Only the fixture channel
+				// carries history; a second channel answers empty.
+				const channelId = pathname.split("/").at(-2);
+				const history = channelId === MOCK_CHANNEL_ID ? messages : [];
 				const before = searchParams.get("before");
 				const around = searchParams.get("around");
 				const after = searchParams.get("after");
 				if (before) {
 					const beforeId = BigInt(before);
-					return fulfillJson(messages.filter((m) => BigInt(m.id) < beforeId));
+					return fulfillJson(history.filter((m) => BigInt(m.id) < beforeId));
 				}
 				if (around) {
-					// getmessage fetches ?limit=1&around=<id> and takes json[0].
-					return fulfillJson(messages.filter((m) => m.id === around));
+					// getmessage matches the answer by id: a deleted target reads as gone.
+					return fulfillJson(history.filter((m) => m.id === around));
 				}
 				if (after) {
 					const afterId = BigInt(after);
 					// grabAfter links each response element forward from the anchor, so an
 					// after page must be ASCENDING (Discord ?after= semantics); the stored
 					// fixture is newest-first.
-					return fulfillJson(messages.filter((m) => BigInt(m.id) > afterId).reverse());
+					return fulfillJson(history.filter((m) => BigInt(m.id) > afterId).reverse());
 				}
-				return fulfillJson(messages);
+				return fulfillJson(history);
 			}
 
 			// 12. Message read-state acks (src/webpage/channel.ts & src/webpage/guild.ts)
@@ -1647,6 +1655,11 @@ export async function mountMockInstance(
 			// generateInvite, utils/acceptInvite.ts).
 			if (method === "GET" && /^\/api\/v9\/invites\/[^/]+$/.test(pathname)) {
 				return fulfillJson(MOCK_INVITE);
+			}
+			// The join-landing spec's code: the answer names the OTHER guild, so the
+			// in-app join arms (openJoinedGuild / guildArrived) get a guild to open.
+			if (method === "POST" && pathname === "/api/v9/invites/join-other") {
+				return fulfillJson({guild: {id: OTHER_GUILD_ID}});
 			}
 			if (method === "POST" && /^\/api\/v9\/invites\/[^/]+$/.test(pathname)) {
 				return fulfillJson({guild: {id: MOCK_GUILD_ID}});

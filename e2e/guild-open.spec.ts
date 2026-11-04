@@ -1,44 +1,10 @@
-import {expect, type Page} from "@playwright/test";
-import type {channeljson} from "../src/webpage/jsontypes";
-import {DESKTOP, loginAndOpenChannel, test} from "./fixtures";
-import {MOCK_CHANNEL, MOCK_GUILD, type MockInstanceHandle} from "./mock";
+import {expect} from "@playwright/test";
+import {DESKTOP, joinOtherServer, loginAndOpenChannel, OTHER_GUILD_ID, test} from "./fixtures";
 
 // A server opened while the viewer's own member in it is still on its way: until the member
 // lands every channel reads invisible, so what opens must wait for it.
-const OTHER_GUILD_ID = "1200000000000000106";
-const OTHER_CHANNEL: channeljson = {
-	...MOCK_CHANNEL,
-	id: "1200000000000000206",
-	guild_id: OTHER_GUILD_ID,
-	name: "elsewhere",
-	topic: "",
-	position: 5,
-};
 
 test.use({...DESKTOP});
-
-/** A server joined mid-session (GUILD_CREATE), with OTHER_CHANNEL as its one channel. */
-async function joinOtherServer(page: Page, mockInstance: MockInstanceHandle) {
-	mockInstance.sendGatewayEvent({
-		op: 0,
-		t: "GUILD_CREATE",
-		d: {
-			...MOCK_GUILD,
-			id: OTHER_GUILD_ID,
-			properties: {...MOCK_GUILD.properties, id: OTHER_GUILD_ID, name: "Other Place", icon: null},
-			// @everyone's role has the guild's id, and it's what lets the member see the channel.
-			roles: MOCK_GUILD.roles.map((role) => ({
-				...role,
-				id: OTHER_GUILD_ID,
-				guild_id: OTHER_GUILD_ID,
-			})),
-			channels: [OTHER_CHANNEL],
-		},
-	});
-	const icon = page.locator("#servers .blankserver", {hasText: "OP"});
-	await expect(icon).toBeVisible();
-	return icon;
-}
 
 test("a server opened before its member arrives opens its channel once the member does", async ({
 	page,
@@ -60,9 +26,9 @@ test("a server opened before its member arrives opens its channel once the membe
 	await icon.click();
 	mockInstance.releaseMembers();
 
-	await expect(page.locator("#channelname")).toHaveText("#" + OTHER_CHANNEL.name);
+	await expect(page.locator("#channelname")).toHaveText("#elsewhere");
 	await expect(
-		page.locator("#channels button.channelbutton", {hasText: OTHER_CHANNEL.name}),
+		page.locator("#channels button.channelbutton", {hasText: "elsewhere"}),
 	).toHaveCount(1);
 });
 
@@ -102,5 +68,5 @@ test("a server left before its member arrives doesn't pull the user back when it
 	await memberSettled;
 
 	await expect(page).toHaveURL(/\/channels\/@me/);
-	await expect(page.locator("#channelname")).not.toHaveText("#" + OTHER_CHANNEL.name);
+	await expect(page.locator("#channelname")).not.toHaveText("#elsewhere");
 });

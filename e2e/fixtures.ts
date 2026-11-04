@@ -1,12 +1,15 @@
 import {readFileSync} from "node:fs";
 import {test as base, expect, type Locator, type Page} from "@playwright/test";
 import type {ModalCreateEvent} from "../src/webpage/interactions/modal";
+import type {channeljson} from "../src/webpage/jsontypes";
 import {
 	type CapturedRequest,
 	type MockInstanceHandle,
 	type MockInstanceOptions,
 	MOCK_CHANNEL,
+	MOCK_GUILD,
 	MOCK_INSTANCE_NAME,
+	OTHER_GUILD_ID,
 	mountMockInstance,
 } from "./mock";
 
@@ -169,5 +172,38 @@ export const DESKTOP = {
 	isMobile: false,
 	hasTouch: false,
 } as const;
+
+/** A server joined mid-session (GUILD_CREATE for OTHER_GUILD_ID, one channel "elsewhere"),
+ * with the REST member lookup it triggers. Returns the new guild's pillar icon. */
+export async function joinOtherServer(page: Page, mockInstance: MockInstanceHandle) {
+	mockInstance.sendGatewayEvent({
+		op: 0,
+		t: "GUILD_CREATE",
+		d: {
+			...MOCK_GUILD,
+			id: OTHER_GUILD_ID,
+			properties: {...MOCK_GUILD.properties, id: OTHER_GUILD_ID, name: "Other Place", icon: null},
+			// @everyone's role has the guild's id, and it's what lets the member see the channel.
+			roles: MOCK_GUILD.roles.map((role) => ({
+				...role,
+				id: OTHER_GUILD_ID,
+				guild_id: OTHER_GUILD_ID,
+			})),
+			channels: [
+				{
+					...MOCK_CHANNEL,
+					id: "1200000000000000206",
+					guild_id: OTHER_GUILD_ID,
+					name: "elsewhere",
+					topic: "",
+					position: 5,
+				} as channeljson,
+			],
+		},
+	});
+	const icon = page.locator("#servers .blankserver", {hasText: "OP"});
+	await expect(icon).toBeVisible();
+	return icon;
+}
 
 export * from "./mock";
