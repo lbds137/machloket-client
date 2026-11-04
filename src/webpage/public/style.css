@@ -8648,6 +8648,11 @@ textarea.interactionModalInput {
 	border-radius: 8px;
 	cursor: pointer;
 }
+/* The archived-thread verdict ahead of any rows: muted text, not a clickable row.
+ * The box is .searchOptions (the popup rows container), not .searchPanel. */
+.searchOptions .commandArchivedHint {
+	color: var(--secondary-text);
+}
 .searchPanel .commandRow img,
 .searchPanel .commandAppIconFallback {
 	width: 0.3in;
