@@ -2538,8 +2538,18 @@ class Guild extends SnowFlake {
 			// meanwhile, what they opened stands.
 			const looking = this.localuser.lookingguild;
 			const focus = this.localuser.channelfocus;
+			// Until the pick replaces the pane, the old channel's composer is still live: stand
+			// it down and show the skeleton, so nothing sends into the channel being left.
+			this.standDownComposer();
+			const loading = document.getElementById("loadingdiv") as HTMLDivElement;
+			loading.classList.add("loading");
 			await this.memberReady;
-			if (this.localuser.lookingguild !== looking || this.localuser.channelfocus !== focus) return;
+			if (this.localuser.lookingguild !== looking || this.localuser.channelfocus !== focus) {
+				// The pick that went elsewhere renders over this wait; undo this stand-down's
+				// skeleton (its own build manages composer and skeleton from here).
+				loading.classList.remove("loading");
+				return;
+			}
 		}
 		if (ID) {
 			const channel = this.localuser.channelids.get(ID);
@@ -2579,14 +2589,21 @@ class Guild extends SnowFlake {
 		this.prevchannel = undefined;
 		this.localuser.channelfocus = undefined;
 		Channel.clearScrollWrapLeaks();
+		this.standDownComposer();
+		(document.getElementById("sideDiv") as HTMLElement).innerHTML = "";
+	}
+
+	/** The composer's stand-down: a channel being left — or one not yet open while a guild's
+	 * member lands — must not take input (typing would send there). The next channel build
+	 * re-enables what the new channel allows. */
+	standDownComposer() {
 		const replybox = document.getElementById("replybox") as HTMLElement;
-		const typebox = document.getElementById("typebox") as HTMLElement;
+		const typebox = document.getElementById("typebox") as HTMLDivElement;
 		replybox.classList.add("hideReplyBox");
 		typebox.classList.remove("typeboxreplying");
-		(document.getElementById("typebox") as HTMLDivElement).contentEditable = "false";
+		typebox.contentEditable = "false";
 		(document.getElementById("upload") as HTMLElement).style.visibility = "hidden";
 		(document.getElementById("typediv") as HTMLElement).style.visibility = "hidden";
-		(document.getElementById("sideDiv") as HTMLElement).innerHTML = "";
 	}
 	noChannel(addstate: boolean) {
 		for (const c of this.channels) {
