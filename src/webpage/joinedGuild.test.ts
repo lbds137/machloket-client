@@ -63,6 +63,46 @@ it("going elsewhere drops the wait, so a late arrival doesn't pull the view back
 	expect(load).not.toHaveBeenCalledWith("g1");
 });
 
+it("the join landing opens the guild's channel only when the guild actually switched", () => {
+	const guild = {id: "g1", loadChannel: vi.fn()};
+	const user = Object.assign(Object.create(Localuser.prototype), {
+		guildids: new Map([["g1", guild]]),
+		lookingguild: undefined,
+	}) as InstanceType<typeof Localuser>;
+	const loadGuild = vi.spyOn(user, "loadGuild").mockImplementation(() => guild as never);
+
+	user.loadGuildAndOpenChannel("g1");
+	expect(loadGuild).toHaveBeenCalledWith("g1");
+	expect(guild.loadChannel, "the switch opens the guild's channel").toHaveBeenCalledTimes(1);
+
+	// Already looking at that guild: the sidebar didn't switch, nothing reopens.
+	user.lookingguild = guild as never;
+	user.loadGuildAndOpenChannel("g1");
+	expect(guild.loadChannel).toHaveBeenCalledTimes(1);
+});
+
+it("both join arms land through the helper: a known guild and an arrived one", () => {
+	const guild = {id: "g1", loadChannel: vi.fn()};
+	const known = Object.assign(Object.create(Localuser.prototype), {
+		guildids: new Map([["g1", guild]]),
+		joinedGuildId: undefined,
+		lookingguild: undefined,
+	}) as InstanceType<typeof Localuser>;
+	vi.spyOn(known, "loadGuild").mockImplementation(() => guild as never);
+	known.openJoinedGuild("g1");
+	expect(guild.loadChannel).toHaveBeenCalledTimes(1);
+
+	const arrivedGuild = {id: "g2", loadChannel: vi.fn()};
+	const waiting = Object.assign(Object.create(Localuser.prototype), {
+		guildids: new Map([["g2", arrivedGuild]]),
+		joinedGuildId: "g2",
+		lookingguild: undefined,
+	}) as InstanceType<typeof Localuser>;
+	vi.spyOn(waiting, "loadGuild").mockImplementation(() => arrivedGuild as never);
+	waiting.guildArrived("g2");
+	expect(arrivedGuild.loadChannel, "the arrival lands too").toHaveBeenCalledTimes(1);
+});
+
 /** Delivers a GUILD_CREATE for g9 to a session whose order already holds `existing`. */
 async function guildCreate(existing: {id: string}) {
 	const user = Object.assign(Object.create(Localuser.prototype), {

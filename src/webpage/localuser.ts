@@ -2099,7 +2099,7 @@ class Localuser {
 	openJoinedGuild(id: string) {
 		if (this.guildids.has(id)) {
 			this.joinedGuildId = undefined;
-			this.loadGuild(id);
+			this.loadGuildAndOpenChannel(id);
 		} else {
 			this.joinedGuildId = id;
 		}
@@ -2107,7 +2107,16 @@ class Localuser {
 	guildArrived(id: string) {
 		if (this.joinedGuildId !== id) return;
 		this.joinedGuildId = undefined;
-		this.loadGuild(id);
+		this.loadGuildAndOpenChannel(id);
+	}
+	/** The join flows' landing: loadGuild, and when it switched guilds, open the guild's
+	 * channel — the invite page's fresh boot lands in a channel, and the in-app joins (the
+	 * pillar "+" dialog, an invite embed's Accept) must too. Already looking there: nothing
+	 * to reopen. */
+	loadGuildAndOpenChannel(id: string) {
+		const was = this.lookingguild;
+		const guild = this.loadGuild(id);
+		if (guild && guild !== was) guild.loadChannel();
 	}
 	loadGuild(id: string, forceReload = false): Guild | undefined {
 		// The user went somewhere else: a joined guild arriving later mustn't pull them back.
@@ -2639,7 +2648,7 @@ class Localuser {
 						.then((res) => res.json())
 						.catch(() => undefined)) as {guild_id?: string; guild?: {id?: string}} | undefined;
 					const guildId = json?.guild?.id ?? json?.guild_id;
-					if (guildId) this.loadGuild(guildId);
+					if (guildId) this.loadGuildAndOpenChannel(guildId);
 				}
 			});
 			const text = form.addTextInput(I18n.invite.inviteLinkCode(), "code");
