@@ -5,7 +5,16 @@ test.use({viewport: {width: 1280, height: 800}});
 // The spoiler message rides THIS spec's own mount (mockInstanceOptions), not the
 // shared MOCK_MESSAGES — shared #general layout stays byte-identical for every
 // other spec (the icons.spec drawer click loses its hit-test to layout shifts).
-test.use({mockInstanceOptions: {messages: [MOCK_SPOILER_MESSAGE]}});
+// History is per channel, so after-dark gets its own copy under its own id (the
+// app's id maps span channels; a shared id would read as one chain).
+test.use({
+	mockInstanceOptions: {
+		messages: [
+			MOCK_SPOILER_MESSAGE,
+			{...MOCK_SPOILER_MESSAGE, id: "1200000000000000306", channel_id: MOCK_NSFW_CHANNEL_ID},
+		],
+	},
+});
 
 // S4: the Privacy card's sensitive-content selects must drive the enforcement paths
 // (spoiler covers on attachments/components, the NSFW channel gate), not just persist.
