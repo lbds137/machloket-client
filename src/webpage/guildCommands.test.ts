@@ -364,6 +364,60 @@ describe("application-command index fetch", () => {
 });
 
 describe("command picker rows", () => {
+	it("an archived thread shows the hint instead of command rows", async () => {
+		const {Localuser} = await import("./localuser");
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			lookingguild: {
+				getCommands: async () => [],
+				apps: [],
+			},
+			channelfocus: {threadData: {archived: true}},
+			info: {cdn: "http://cdn.test"},
+		});
+		const box = document.createElement("div");
+		document.body.append(box);
+		try {
+			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
+				.findCommands("r", box, {} as never);
+
+			const hint = box.querySelector(".commandArchivedHint") as HTMLElement;
+			expect(hint).not.toBeNull();
+			expect(hint.textContent).not.toBe("");
+			expect(box.querySelectorAll(".commandRow")).toHaveLength(0);
+		} finally {
+			box.remove();
+		}
+	});
+
+	it("the hint survives search()'s synchronous wipe: the render lands after it", async () => {
+		// search() calls findCommands without awaiting and wipes the box right after
+		// (localuser.ts search()). A hint rendered synchronously inside the call is gone the
+		// tick it is placed; the archived branch must render past the await, like every
+		// surviving path. This reproduces that ordering: call unawaited, wipe same-tick,
+		// then let the chain finish.
+		const {Localuser} = await import("./localuser");
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			lookingguild: {
+				getCommands: async () => [],
+				apps: [],
+			},
+			channelfocus: {threadData: {archived: true}},
+			info: {cdn: "http://cdn.test"},
+		});
+		const box = document.createElement("div");
+		document.body.append(box);
+		try {
+			const promise = (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
+				.findCommands("r", box, {} as never);
+			box.innerHTML = "";
+			await promise;
+
+			expect(box.querySelector(".commandArchivedHint")).not.toBeNull();
+		} finally {
+			box.remove();
+		}
+	});
+
 	it("each search-result row shows its bot: the app's icon, the /name, and the app's name", async () => {
 		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
