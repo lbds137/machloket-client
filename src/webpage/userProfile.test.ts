@@ -267,6 +267,57 @@ it("a profile answer without a mutual-guilds list says why instead of throwing",
 	expect(unhandled).not.toHaveBeenCalled();
 });
 
+it("a connected-account type matching only an inherited key draws no profile row", async () => {
+	const unhandled = vi.fn((e: PromiseRejectionEvent) => e.preventDefault());
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	captureRequests("http://profile.test/api/v9/connections", () =>
+		Response.json({github: {enabled: true}, 42: {enabled: true}}),
+	);
+	const guildids = new Map([
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				connected_accounts: [
+					// Hostile shape classes the draw must skip without dropping the rows
+					// after them: a bare null element (reading .type of it used to throw
+					// and kill the uncaught IIFE), a non-string type whose ToPropertyKey
+					// ("42") is an own key of the connections map, the inherited-key class
+					// ("toString" with no such own key), and — the positive control — a
+					// well-formed github entry that must still draw.
+					null,
+					{type: 42, name: "evil", external_id: "1"},
+					{type: "toString", name: "sneak", external_id: "3"},
+					{type: "github", name: "octocat", external_id: "2"},
+				],
+			}),
+		guildids,
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	// The connections rows mount in the User info pane, not the mutual-guilds one.
+	const infoTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.userInfo(),
+	);
+	expect(infoTab).not.toBeUndefined();
+	infoTab!.click();
+	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.profile.bio()));
+	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
+	const rows = profile.querySelectorAll(".conProfDiv");
+	expect(rows).toHaveLength(1);
+	expect(rows[0]?.textContent).toContain("octocat");
+	expect(unhandled).not.toHaveBeenCalled();
+});
+
 it("a profile answer without a connected-accounts list renders the mutual guilds", async () => {
 	const unhandled = vi.fn();
 	window.addEventListener("unhandledrejection", unhandled);
