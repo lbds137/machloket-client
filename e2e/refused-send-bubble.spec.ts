@@ -121,7 +121,10 @@ test("a send the gateway already delivered gets no failed bubble when its reques
 	// the browser's network stack, the same signal the renderer's fetch rejection is
 	// generated from; the drain's frames then wait out the rejection's continuation
 	// (failed()), which alone had no ordering link to the abort.
-	const requestFailed = page.waitForEvent("requestfailed", (r) => r.method() === "POST" && /\/messages$/.test(r.url()));
+	const requestFailed = page.waitForEvent(
+		"requestfailed",
+		(r) => r.method() === "POST" && r.url().includes(`/channels/${MOCK_CHANNEL_ID}/messages`),
+	);
 	abort();
 	await requestFailed;
 	// The delivered branch returns silently - nothing marks its completion in the DOM.
