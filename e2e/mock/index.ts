@@ -1154,6 +1154,8 @@ export interface MockInstanceHandle {
 	api: string;
 	gateway: string;
 	token: string;
+	/** The page the instance is mounted on, for the shared fixture helpers (drain). */
+	page: Page;
 	capturedRequests: CapturedRequest[];
 	/** "METHOD /path" of each same-origin API request no route answered; the shared
 	 * fixture fails the test at teardown unless this is empty. */
@@ -1289,6 +1291,7 @@ export async function mountMockInstance(
 		api: `${MOCK_INSTANCE_ORIGIN}/api/v9`,
 		gateway: "ws://localhost:4173",
 		token: MOCK_TOKEN,
+		page,
 		capturedRequests,
 		unmocked: [],
 		gatewayFrames,

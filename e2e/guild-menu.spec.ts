@@ -25,6 +25,10 @@ const menuRow = (page: Page, name: string) =>
 	page.locator(".contextmenu").getByRole("button", {name, exact: true});
 
 async function openGuildMenu(page: Page) {
+	// A previous menu's removal is a later task (removeAni: the close animation runs
+	// first, detached after it or a 500 ms fallback) - the fresh right-click would stack
+	// the new menu under the detaching one and trip strict mode.
+	await expect(page.locator(".contextmenu")).toHaveCount(0);
 	await openGuildIcon(page).locator("img.servericon").click({button: "right"});
 	await expect(page.locator(".contextmenu")).toBeVisible();
 }
