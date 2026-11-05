@@ -311,6 +311,12 @@ it("a connected-account type matching only an inherited key draws no profile row
 	expect(infoTab).not.toBeUndefined();
 	infoTab!.click();
 	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.profile.bio()));
+	// The rows draw once the connections fetch resolves; wait for the first row
+	// instead of trusting ticks to cover that chain, then pin "exactly one" —
+	// the trailing ticks still catch a hostile row drawing late.
+	await vi.waitFor(() =>
+		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
+	);
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
 	const rows = profile.querySelectorAll(".conProfDiv");
 	expect(rows).toHaveLength(1);
