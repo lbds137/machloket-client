@@ -96,7 +96,11 @@ export async function expectRequests(
 ): Promise<CapturedRequest[]> {
 	const matching = () => mockInstance.capturedRequests.filter(match);
 	await expect.poll(() => matching().length, message).toBe(count);
-	await drain(mockInstance.page).catch(() => undefined);
+	await drain(mockInstance.page).catch((e: unknown) => {
+		// Only the navigation case settles the same question (the page that could
+		// schedule a duplicate is gone); a closed or crashed page fails loudly here.
+		if (!/Execution context was destroyed|navigation/i.test(String(e))) throw e;
+	});
 	expect(matching(), message).toHaveLength(count);
 	return matching();
 }
