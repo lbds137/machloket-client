@@ -1,5 +1,5 @@
 import {expect, type Page} from "@playwright/test";
-import {loginAndOpenChannel, test} from "./fixtures";
+import {drain, loginAndOpenChannel, test} from "./fixtures";
 import {MOCK_CHANNEL_ID, MOCK_GUILD_ID, MOCK_USER} from "./mock";
 
 // A refused send the composer can't take back stays in its channel as a failed message with
@@ -118,7 +118,11 @@ test("a send the gateway already delivered gets no failed bubble when its reques
 	});
 	await expect(page.locator(".messagediv:not(.loadingMessage)", {hasText: "first message"})).toHaveCount(1);
 	abort();
-	await new Promise((resolve) => setTimeout(resolve, 500));
+	// The delivered branch returns silently - nothing marks its completion in the DOM.
+	// The drain makes sure the rejected fetch's continuation ran; the nonce stays in the
+	// set for five minutes after delivery (channel.ts messageCreate), so a late
+	// classification can't expire into the errored branch.
+	await drain(page);
 
 	await expect(page.locator(".erroredMessage")).toHaveCount(0);
 	await expect(page.locator(".messagediv", {hasText: "first message"})).toHaveCount(1);
@@ -144,7 +148,13 @@ test("a refusal that arrives late does not pull the view down from history", asy
 		await expect(oldest).toBeInViewport();
 		refuse();
 		await expect(page.getByRole("alert")).toContainText("Missing Permissions");
-		await new Promise((resolve) => setTimeout(resolve, 300));
+		// The scroll-pull this test says must not happen (failed()'s focus call) is decided
+		// synchronously from inView at the errored class, but it EXECUTES behind deleteId's
+		// later-task row removal and addedBottom's fill loop, which spans frames. The
+		// errored bubble keeps .loadingMessage by design (an unconfirmed send), so there is
+		// no mid-chain DOM marker; two drains bound the chain without a clock.
+		await drain(page);
+		await drain(page);
 
 		await expect(oldest).toBeInViewport();
 	}
