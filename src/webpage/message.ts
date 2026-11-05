@@ -806,6 +806,9 @@ class Message extends SnowFlake {
 		}
 	}
 	canDelete() {
+		// The reference read holds for own messages because User.checkuser interns users:
+		// every construction of this author (localuser.user included) returns the same
+		// instance, so canEdit's id comparison implies this one for the emptied-edit path.
 		return this.channel.hasPermission("MANAGE_MESSAGES") || this.author === this.localuser.user;
 	}
 	get channel() {
@@ -1018,6 +1021,18 @@ class Message extends SnowFlake {
 	}
 	/** Text the editor opens with instead of the message's own: an edit that didn't save. */
 	editDraft?: string;
+	/** Discord parity: an edit emptied out — the message held nothing but text, and none is
+	 * left — offers to delete the message instead of saving nothing. Attachments, stickers
+	 * and a poll are content of their own: the text is only part of the message, so those
+	 * edits still save, and the server answers what it answers. */
+	emptiedEditOffersDelete(text: string) {
+		return (
+			text.trim() === "" &&
+			this.attachments.length === 0 &&
+			this.stickers.length === 0 &&
+			!this.poll
+		);
+	}
 	/** Saves the editor's text (Enter in the editor). When it doesn't save, it says why, and the
 	 * editor reopens with what was typed, unless an editor (this one again, or another message's)
 	 * is open by then: what's typed there is newer. */
@@ -1511,7 +1526,11 @@ class Message extends SnowFlake {
 				area.addEventListener("keyup", (event) => {
 					if (this.localuser.keyup(event)) return;
 					if (event.key === "Enter" && !event.shiftKey) {
-						void this.saveEdit(md.rawString);
+						if (this.emptiedEditOffersDelete(md.rawString)) {
+							this.confirmDelete();
+						} else {
+							void this.saveEdit(md.rawString);
+						}
 						this.channel.editing = null;
 						this.generateMessage();
 					}
