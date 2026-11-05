@@ -3277,7 +3277,17 @@ class Localuser {
 			onRefused?.(res);
 			return {};
 		}
-		return json as {[key: string]: {enabled: boolean; icon_url?: string}};
+		// An entry whose value isn't a connection ({"github": null} from a broken server)
+		// is dropped here, so neither consumer's read of .enabled can throw. "__proto__"
+		// is skipped with it: through Object's setter it would re-prototype the map
+		// instead of becoming an own key, and a profile lookup could then hit it.
+		const cons: {[key: string]: {enabled: boolean; icon_url?: string}} = {};
+		for (const [key, value] of Object.entries(json)) {
+			if (key !== "__proto__" && typeof value === "object" && value !== null) {
+				cons[key] = value as {enabled: boolean; icon_url?: string};
+			}
+		}
+		return cons;
 	}
 	async showusersettings() {
 		const prefs = await getPreferences();
@@ -4197,7 +4207,11 @@ class Localuser {
 						: null;
 					if (seq !== remakeSeq) return;
 					const actCons = Array.isArray(parsed)
-						? parsed.filter((c) => typeof c === "object" && c !== null)
+						? // Without a string type an entry would land in the map under undefined,
+						  // matching no server type; dropped here rather than carried.
+						  parsed.filter(
+								(c) => typeof c === "object" && c !== null && typeof c.type === "string",
+						  )
 						: [];
 					if (!Array.isArray(parsed)) failures.unshift(consRes);
 					const actConMap = new Map<string, ConnectionJson>(
@@ -5100,7 +5114,7 @@ class Localuser {
 						autoCreateBotUsers: false;
 						publicUrl: string | null;
 					} | null;
-					if (!json || typeof json !== "object") {
+					if (!json || typeof json !== "object" || Array.isArray(json)) {
 						instanceInfo.addText(await refusalText(_));
 						return null;
 					}
