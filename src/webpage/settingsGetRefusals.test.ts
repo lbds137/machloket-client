@@ -244,6 +244,36 @@ it("a connections map with a null value doesn't stop the other types from listin
 	);
 });
 
+it("a connections entry with a non-string icon_url doesn't stop the other types from listing", async () => {
+	stubUserSettings();
+	// Pre-fix tumblr's draw throws at cssUrl (url.replace on 42) and aborts the draw
+	// mid-list, so the container never reaches both rows.
+	captureRequests(API + "/connections", () =>
+		Response.json({tumblr: {enabled: true, icon_url: 42}, github: {enabled: true}}),
+	);
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector(".connection-container")?.children.length).toBe(2),
+	);
+});
+
+it("connections entries keyed like inherited members don't draw rows", async () => {
+	stubUserSettings();
+	captureRequests(API + "/connections", () =>
+		Response.json({
+			github: {enabled: true},
+			constructor: {enabled: true},
+			toString: {enabled: true},
+		}),
+	);
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector(".connection-container")?.children.length).toBe(1),
+	);
+});
+
 it("a later good connections answer clears the note", async () => {
 	stubUserSettings();
 	captureRequests(API + "/users/@me/connections", refused);
