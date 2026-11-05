@@ -274,6 +274,42 @@ it("connections entries keyed like inherited members don't draw rows", async () 
 	);
 });
 
+it("a truthy non-boolean enabled doesn't draw a clickable row", async () => {
+	stubUserSettings();
+	captureRequests(API + "/connections", () =>
+		Response.json({ebay: {enabled: "false"}, github: {enabled: true}}),
+	);
+	await openConnections();
+
+	const rows = await vi.waitFor(() => {
+		const els = [...document.querySelectorAll<HTMLElement>(".connection-container > div")];
+		expect(els).toHaveLength(2);
+		return els;
+	});
+	const disabled = new Map(rows.map((r) => [r.textContent, r.classList.contains("disabled")]));
+	expect(disabled.get("Ebay")).toBe(true);
+	expect(disabled.get("Github")).toBe(false);
+});
+
+it("enabled connections list before disabled ones, insertion order within each class", async () => {
+	stubUserSettings();
+	captureRequests(API + "/connections", () =>
+		Response.json({
+			tumblr: {enabled: true},
+			reddit: {enabled: false},
+			github: {enabled: true},
+		}),
+	);
+	await openConnections();
+
+	const rows = await vi.waitFor(() => {
+		const els = [...document.querySelectorAll<HTMLElement>(".connection-container > div")];
+		expect(els).toHaveLength(3);
+		return els;
+	});
+	expect(rows.map((r) => r.textContent)).toEqual(["Tumblr", "Github", "Reddit"]);
+});
+
 it("a later good connections answer clears the note", async () => {
 	stubUserSettings();
 	captureRequests(API + "/users/@me/connections", refused);
