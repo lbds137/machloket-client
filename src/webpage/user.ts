@@ -1988,7 +1988,18 @@ class User extends SnowFlake {
 				const cons = await this.localuser.getConnections();
 
 				for (const con of high.connected_accounts) {
-					const conic = cons[con.type];
+					// Only a string-typed entry object draws: reading .type of a null or
+					// non-object element throws, and a non-string type can pass the
+					// hasOwn lookup via its ToPropertyKey (42 → "42") and then throw at
+					// charAt or draw a bogus row — the same skip the panel's actCons
+					// filter makes.
+					if (con === null || typeof con !== "object" || typeof con.type !== "string") {
+						continue;
+					}
+					// hasOwn keeps a type like "toString" from resolving an inherited
+					// member of the map and drawing a bogus row — assignableKey guards
+					// the map's build side, this guards the lookup side.
+					const conic = Object.hasOwn(cons, con.type) ? cons[con.type] : undefined;
 					if (!conic) continue;
 					const conDiv = document.createElement("div");
 					conDiv.classList.add("flexltr", "conProfDiv");

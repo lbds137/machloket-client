@@ -3290,12 +3290,13 @@ class Localuser {
 				continue;
 			}
 			// A truthy non-string icon_url would throw at cssUrl (url.replace): strip it
-			// so the row falls back to the provider's initial.
-			const entry = value as {enabled: boolean; icon_url?: unknown};
-			if (entry.icon_url !== undefined && typeof entry.icon_url !== "string") {
-				delete entry.icon_url;
-			}
-			cons[key] = entry as {enabled: boolean; icon_url?: string};
+			// so the row falls back to the provider's initial. `enabled === true` keeps
+			// a truthy non-boolean ({"enabled": "false"} from a broken server) from
+			// drawing its row as live.
+			const entry = value as {enabled?: unknown; icon_url?: unknown};
+			const clean: {enabled: boolean; icon_url?: string} = {enabled: entry.enabled === true};
+			if (typeof entry.icon_url === "string") clean.icon_url = entry.icon_url;
+			cons[key] = clean;
 		}
 		return cons;
 	}
@@ -4227,7 +4228,12 @@ class Localuser {
 					const actConMap = new Map<string, ConnectionJson>(
 						actCons.map((_) => [_.type, _] as const),
 					);
-					const serverConnections = Object.keys(json).sort((key) => (json[key].enabled ? -1 : 1));
+					// A real two-arg comparator: enabled entries first, insertion order
+					// otherwise (a one-arg comparator answers about a single key and
+					// shuffles 3+ mixed entries).
+					const serverConnections = Object.keys(json).sort(
+						(a, b) => Number(json[b].enabled) - Number(json[a].enabled),
+					);
 
 					serverConnections
 						.filter((_) => !actConMap.has(_))
