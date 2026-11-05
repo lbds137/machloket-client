@@ -69,6 +69,19 @@ export function acceptAuth(origin: string, route: "login" | "register", token: s
 }
 
 /**
+ * Settles the fetch-continuation chains a test started, for a negative assert that follows:
+ * animation frames stretch under a loaded runner instead of expiring, unlike a fixed sleep
+ * (the unit-tier twin of the e2e drain). Same caveat as its twin: rAF pauses on a hidden
+ * page, so a drain there hangs to the test timeout — visible, never a false pass.
+ */
+export async function drain() {
+	for (let i = 0; i < 2; i++) {
+		await new Promise((r) => requestAnimationFrame(() => r(undefined)));
+		await new Promise((r) => setTimeout(r, 0));
+	}
+}
+
+/**
  * Records every request to `url` (origin + path) and answers each with `respond()`; returns the
  * recorded requests' parsed JSON bodies, in order.
  */

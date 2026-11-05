@@ -1,5 +1,5 @@
 import {afterEach, expect, it, vi} from "vitest";
-import {captureRequests} from "./test/setup";
+import {captureRequests, drain} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -232,6 +232,18 @@ it("a connections list with a null entry still lists the instance's types", asyn
 	);
 });
 
+it("a connections map with a null value doesn't stop the other types from listing", async () => {
+	stubUserSettings();
+	captureRequests(API + "/connections", () =>
+		Response.json({github: {enabled: true}, tumblr: null}),
+	);
+	await openConnections();
+
+	await vi.waitFor(() =>
+		expect(document.querySelector(".connection-container")?.children.length).toBe(1),
+	);
+});
+
 it("a later good connections answer clears the note", async () => {
 	stubUserSettings();
 	captureRequests(API + "/users/@me/connections", refused);
@@ -274,7 +286,7 @@ it("an older connections read arriving late doesn't draw its rows twice", async 
 		expect(document.querySelector(".connection-container")?.children.length).toBe(1),
 	);
 	answerFirst(Response.json([]));
-	await new Promise((r) => setTimeout(r, 50));
+	await drain();
 	expect(document.querySelector(".connection-container")?.children.length).toBe(1);
 });
 
@@ -397,6 +409,21 @@ it("an instance-policy 200 that isn't JSON says why", async () => {
 it("an instance-policy 200 that's a bare string says why", async () => {
 	stubUserSettings();
 	captureRequests(API + "/policies/instance/", () => Response.json("nope"));
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.instanceInfo.name())!
+		.click();
+
+	await vi.waitFor(() =>
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200")),
+	);
+});
+
+it("an instance-policy 200 that's an array says why", async () => {
+	stubUserSettings();
+	captureRequests(API + "/policies/instance/", () => Response.json([]));
 	const u = settingsUser();
 
 	await u.showusersettings().catch(() => {});
