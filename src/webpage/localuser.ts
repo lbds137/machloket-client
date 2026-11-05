@@ -28,6 +28,7 @@ import {
 	mobile,
 	pingResponse,
 } from "./utils/utils.js";
+import {assignableKey} from "./utils/assignableKey.js";
 import {CDN_LINK_MARGIN_MS, cssUrl} from "./utils/netUtils.js";
 import {
 	channeljson,
@@ -3277,15 +3278,24 @@ class Localuser {
 			onRefused?.(res);
 			return {};
 		}
-		// An entry whose value isn't a connection ({"github": null} from a broken server)
-		// is dropped here, so neither consumer's read of .enabled can throw. "__proto__"
-		// is skipped with it: through Object's setter it would re-prototype the map
-		// instead of becoming an own key, and a profile lookup could then hit it.
+		// assignableKey skips the prototype link — through Object's setter "__proto__"
+		// would re-prototype this map instead of becoming an own key, and a profile
+		// lookup could then hit it — and with it constructor/toString and the other
+		// inherited members. An entry whose value isn't a connection ({"github": null}
+		// from a broken server) is dropped so neither consumer's read of .enabled can
+		// throw.
 		const cons: {[key: string]: {enabled: boolean; icon_url?: string}} = {};
 		for (const [key, value] of Object.entries(json)) {
-			if (key !== "__proto__" && typeof value === "object" && value !== null) {
-				cons[key] = value as {enabled: boolean; icon_url?: string};
+			if (typeof value !== "object" || value === null || !assignableKey(cons, key)) {
+				continue;
 			}
+			// A truthy non-string icon_url would throw at cssUrl (url.replace): strip it
+			// so the row falls back to the provider's initial.
+			const entry = value as {enabled: boolean; icon_url?: unknown};
+			if (entry.icon_url !== undefined && typeof entry.icon_url !== "string") {
+				delete entry.icon_url;
+			}
+			cons[key] = entry as {enabled: boolean; icon_url?: string};
 		}
 		return cons;
 	}
