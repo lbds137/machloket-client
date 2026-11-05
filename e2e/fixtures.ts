@@ -62,7 +62,9 @@ export const test = base.extend<{mockInstance: MockInstanceHandle; mockInstanceO
  * handlers and the render after them) plus a macrotask tick, so continuations and timers
  * those handlers queued run before the caller asserts. Replaces fixed-clock sleeps in
  * negatives: under runner load the frames stretch with the work instead of expiring and
- * letting a late effect land unobserved. */
+ * letting a late effect land unobserved. The frames ride requestAnimationFrame, which a
+ * hidden or backgrounded page throttles or pauses: a drain there stalls until the test's
+ * own timeout names this await. Every current spec drains the visible, focused page. */
 export async function drain(page: Page): Promise<void> {
 	await page.evaluate(
 		() =>
@@ -76,8 +78,12 @@ export async function drain(page: Page): Promise<void> {
  * action's request reaches the mock asynchronously, so a read right after the tap can
  * race it: this polls first, then drains the page and re-reads. The drain waits out the
  * action's handler chain, so a duplicate its continuation schedules is initiated before
- * the re-read - and its interception reaches the runner before the drain's answer does
- * (same CDP connection, ordered), so the re-read sees it. A duplicate on a longer timer
+ * the re-read. Whether its interception is captured before the re-read is an
+ * in-practice ordering, not a guaranteed one: the evaluate reply and the
+ * Fetch.requestPaused event travel different paths through the browser. Duplicates from
+ * the handler chain are initiated well before the drain ends, and a frame plus the
+ * evaluate roundtrip have covered the capture so far; one started in the drain's last
+ * task could still slip past. A duplicate on a longer timer
  * (a 429 retry's window) stays out of reach: no caller answers 429 to a path this
  * helper matches. The action may navigate (an invite accept boots the guild page): a
  * destroyed context means the page that could schedule a duplicate is gone, which
