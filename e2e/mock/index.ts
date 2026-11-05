@@ -1655,6 +1655,33 @@ export async function mountMockInstance(
 				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
 			}
 
+			// 14b'. A message edit (Message.edit): mirrors the real server, which refuses
+			// whitespace-only content with 400 50006 (Machloket Server ae29815eb). Nothing
+			// reads the ok answer today (Message.edit reads res.ok), so it stays the send's
+			// empty {}.
+			if (method === "PATCH" && /^\/api\/v9\/channels\/[^/]+\/messages\/[^/]+$/.test(pathname)) {
+				const sent = parsedBody as {content?: unknown} | undefined;
+				if (typeof sent?.content === "string" && sent.content.trim() === "") {
+					return fulfillJson({code: 50006, message: "Cannot send an empty message"}, 400);
+				}
+				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
+			}
+
+			// 14b''. A message delete (Message.delete): the stored fixture is dropped and
+			// MESSAGE_DELETE echoes what the real server broadcasts, so the client's
+			// deleteEvent removes the bubble. An unknown id is the server's 404.
+			const deleteMatch =
+				method === "DELETE" && pathname.match(/^\/api\/v9\/channels\/([^/]+)\/messages\/([^/]+)$/);
+			if (deleteMatch) {
+				const [, channelId, messageId] = deleteMatch;
+				const history = messagesByChannel.get(channelId);
+				const index = history?.findIndex((m) => m.id === messageId) ?? -1;
+				if (index < 0) return fulfillJson({code: 10008, message: "Unknown Message"}, 404);
+				history?.splice(index, 1);
+				handle.sendGatewayEvent({op: 0, t: "MESSAGE_DELETE", d: {id: messageId, channel_id: channelId}});
+				return route.fulfill({status: 204, body: ""});
+			}
+
 			// 14c. The composer's typing indicator (the slash popup's typing fires it; the
 			// app ignores the answer).
 			if (method === "POST" && /^\/api\/v9\/channels\/[^/]+\/typing$/.test(pathname)) {

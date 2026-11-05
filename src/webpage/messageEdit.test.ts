@@ -346,3 +346,31 @@ describe("saving from the editor", () => {
 		expect(document.body.textContent).not.toContain("Must be 2000");
 	});
 });
+
+describe("an edit emptied out offers delete (Discord parity)", () => {
+	const bare = () =>
+		Object.assign(messageSaying("whatever"), {
+			attachments: [],
+			stickers: [],
+			poll: undefined,
+		}) as InstanceType<typeof Message>;
+
+	it("nothing but text: empty and whitespace are deletes", () => {
+		const message = bare();
+		expect(message.emptiedEditOffersDelete("")).toBe(true);
+		expect(message.emptiedEditOffersDelete("   ")).toBe(true);
+	});
+
+	it("text left: not a delete", () => {
+		expect(bare().emptiedEditOffersDelete("still here")).toBe(false);
+	});
+
+	it("an attachment, a sticker or a poll is content of its own", () => {
+		const withFile = Object.assign(bare(), {attachments: [{}]});
+		const withSticker = Object.assign(bare(), {stickers: [{}]});
+		const withPoll = Object.assign(bare(), {poll: {}});
+		expect(withFile.emptiedEditOffersDelete("")).toBe(false);
+		expect(withSticker.emptiedEditOffersDelete("")).toBe(false);
+		expect(withPoll.emptiedEditOffersDelete("")).toBe(false);
+	});
+});
