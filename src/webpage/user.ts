@@ -153,8 +153,10 @@ class User extends SnowFlake {
 			console.error("missing localuser");
 		}
 		this.uid = userjson.id;
+		// A webhook message carries its own name and avatar, so both key the cached user: keyed by
+		// name alone, the last-loaded message's avatar overwrote every other message's.
 		if (userjson.webhook) {
-			this.uid += ":::" + userjson.username;
+			this.uid += ":::" + userjson.username + ":::" + (userjson.avatar ?? "");
 		}
 		userjson.uid = this.uid;
 		if (dontclone) {
