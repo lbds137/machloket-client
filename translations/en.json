@@ -560,6 +560,7 @@
 		"invitedBy": "You've been invited by $1",
 		"invitedTo": "You've been invited to join $1",
 		"joinUsing": "Join a guild using an invite",
+		"joinedNotOpened": "You joined, but the server didn't open. Tap Accept again to go there.",
 		"loginOrCreateAccount": "Login or create an account ⇌",
 		"longInvitedBy": "$1 invited you to join $2",
 		"maxUses": "Max uses: $1",

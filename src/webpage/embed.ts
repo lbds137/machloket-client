@@ -483,10 +483,12 @@ class Embed {
 					)
 					// A throw while landing is not the request's failure: the join went through,
 					// so the "offline" alert above stays the request's alone. The button comes back
-					// (a retry lands as already-member) and the error is logged, not left unhandled.
+					// (a retry lands as already-member), the error is logged, not left unhandled,
+					// and the user is told the join worked and how to get there.
 					.catch((err: unknown) => {
 						button.disabled = false;
 						console.error(err);
+						alert(I18n.invite.joinedNotOpened());
 					});
 				} else {
 					if (this.json.invite) {

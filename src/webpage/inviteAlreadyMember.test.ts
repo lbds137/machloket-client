@@ -307,6 +307,8 @@ describe("an invite to a guild the user is already in", () => {
 			expect(accept.disabled).toBe(false);
 			expect(rejections).toEqual([]);
 			expect(errorSpy).toHaveBeenCalledWith(new Error("landing boom"));
+			// The join went through, so the user is told that, and how to get there (owner ruling 11-08).
+			expect(alert).toHaveBeenCalledWith(I18n.invite.joinedNotOpened());
 		} finally {
 			window.removeEventListener("unhandledrejection", onRejection);
 		}
