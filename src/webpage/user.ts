@@ -154,9 +154,10 @@ class User extends SnowFlake {
 		}
 		this.uid = userjson.id;
 		// A webhook message carries its own name and avatar, so both key the cached user: keyed by
-		// name alone, the last-loaded message's avatar overwrote every other message's.
+		// name alone, the last-loaded message's avatar overwrote every other message's. JSON keeps the
+		// fields apart: joined with a delimiter, a name containing it could pose as another author.
 		if (userjson.webhook) {
-			this.uid += ":::" + userjson.username + ":::" + (userjson.avatar ?? "");
+			this.uid = JSON.stringify([userjson.id, userjson.username, userjson.avatar ?? null]);
 		}
 		userjson.uid = this.uid;
 		if (dontclone) {
