@@ -166,6 +166,7 @@ it("a full profile formats account creation and server join dates with I18n.loca
 async function openMutualGuilds(
 	respond: () => Response | Promise<Response>,
 	guildids: Map<string, unknown> = new Map(),
+	beforeOpen?: (localuser: InstanceType<typeof Localuser>) => void,
 ) {
 	captureRequests("http://profile.test/api/v9/users/1553128655016763450/profile", respond);
 	const localuser = Object.assign(Object.create(Localuser.prototype), {
@@ -176,10 +177,14 @@ async function openMutualGuilds(
 		},
 		headers: {},
 		user: {id: "me"},
+		// Decorations on: buildpfp then reads avatar_decoration_data, which is how a payload
+		// with a bad decoration throws for an already-cached id.
+		userinfo: {localuserStore: {user: {decorations: true}}},
 		userMap: new Map(),
 		guilds: [],
 		guildids,
 	});
+	beforeOpen?.(localuser);
 	const user = new User(
 		{
 			id: "1553128655016763450",
@@ -397,6 +402,29 @@ it("a refused /connections GET while opening a profile stays quiet and renders m
 	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
 });
 
+const bob = {
+	id: "1553128655016763451",
+	username: "bob",
+	discriminator: "0002",
+	avatar: null,
+	bot: false,
+	public_flags: 0,
+	badge_ids: [],
+	accent_color: 0,
+	bio: "",
+	premium_type: 0,
+	premium_since: "",
+	theme_colors: null,
+};
+
+const friendGuildIds = new Map<string, unknown>([
+	["@me", {id: "@me"}],
+	[
+		"g1",
+		{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+	],
+]);
+
 it("a null mutual-friends entry is skipped so the valid friend and connection row still draw", async () => {
 	const unhandled = vi.fn((e: PromiseRejectionEvent) => e.preventDefault());
 	window.addEventListener("unhandledrejection", unhandled);
@@ -407,37 +435,14 @@ it("a null mutual-friends entry is skipped so the valid friend and connection ro
 	captureRequests("http://profile.test/api/v9/connections", () =>
 		Response.json({github: {enabled: true}}),
 	);
-	const guildids = new Map<string, unknown>([
-		["@me", {id: "@me"}],
-		[
-			"g1",
-			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
-		],
-	]);
 	const profile = await openMutualGuilds(
 		() =>
 			Response.json({
 				mutual_guilds: [{id: "g1"}],
-				mutual_friends: [
-					null,
-					{
-						id: "1553128655016763451",
-						username: "bob",
-						discriminator: "0002",
-						avatar: null,
-						bot: false,
-						public_flags: 0,
-						badge_ids: [],
-						accent_color: 0,
-						bio: "",
-						premium_type: 0,
-						premium_since: "",
-						theme_colors: null,
-					},
-				],
+				mutual_friends: [null, bob],
 				connected_accounts: [{type: "github", name: "octocat", external_id: "2"}],
 			}),
-		guildids,
+		friendGuildIds,
 	);
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
@@ -474,27 +479,6 @@ it("a mutual friend whose widget can't be built is skipped; the valid friend and
 	captureRequests("http://profile.test/api/v9/connections", () =>
 		Response.json({github: {enabled: true}}),
 	);
-	const guildids = new Map<string, unknown>([
-		["@me", {id: "@me"}],
-		[
-			"g1",
-			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
-		],
-	]);
-	const bob = {
-		id: "1553128655016763451",
-		username: "bob",
-		discriminator: "0002",
-		avatar: null,
-		bot: false,
-		public_flags: 0,
-		badge_ids: [],
-		accent_color: 0,
-		bio: "",
-		premium_type: 0,
-		premium_since: "",
-		theme_colors: null,
-	};
 	const profile = await openMutualGuilds(
 		() =>
 			Response.json({
@@ -504,7 +488,7 @@ it("a mutual friend whose widget can't be built is skipped; the valid friend and
 				mutual_friends: [{...bob, id: "x", username: "mallory"}, bob],
 				connected_accounts: [{type: "github", name: "octocat", external_id: "2"}],
 			}),
-		guildids,
+		friendGuildIds,
 	);
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
@@ -528,6 +512,82 @@ it("a mutual friend whose widget can't be built is skipped; the valid friend and
 	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
 	expect({widgets, rows}).toEqual({widgets: ["bob"], rows: ["octocat"]});
 	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a mutual friend that throws while drawing leaves no new userMap entry, while a pre-existing cached user stays", async () => {
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	let localuser!: InstanceType<typeof Localuser>;
+	let cached!: InstanceType<typeof User>;
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				mutual_friends: [
+					{...bob, id: "x", username: "mallory"},
+					{
+						...bob,
+						id: cached.id,
+						username: "carol",
+						// Throws in buildpfp (asset.startsWith) after checkuser updates the
+						// already-cached user in place.
+						avatar_decoration_data: {asset: 1 as unknown as string, sku_id: "s"},
+					},
+					bob,
+				],
+				connected_accounts: [],
+			}),
+		friendGuildIds,
+		(lu) => {
+			localuser = lu;
+			cached = new User({...bob, id: "1553128655016763452", username: "carol"}, lu);
+		},
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	const friendsTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.mutFriends(),
+	);
+	expect(friendsTab).not.toBeUndefined();
+	friendsTab!.click();
+	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
+		(b) => b.textContent,
+	);
+	expect(widgets).toEqual(["bob"]);
+	expect(localuser.userMap.has("x")).toBe(false);
+	expect(localuser.userMap.get(cached.id)).toBe(cached);
+});
+
+it("a throwing mutual friend whose payload carries its own uid is still evicted under the key the cache used", async () => {
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	let localuser!: InstanceType<typeof Localuser>;
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				// A non-snowflake id throws in the default avatar; the wire `uid` is not the cache key.
+				mutual_friends: [{...bob, id: "y", uid: "other", username: "eve"}, bob],
+				connected_accounts: [],
+			}),
+		friendGuildIds,
+		(lu) => {
+			localuser = lu;
+		},
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	const friendsTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.mutFriends(),
+	);
+	friendsTab!.click();
+	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
+		(b) => b.textContent,
+	);
+	expect(widgets).toEqual(["bob"]);
+	expect(localuser.userMap.has("y"), "the thrower stayed cached").toBe(false);
 });
 
 it("a null mutual-guilds entry is skipped so the known guild and connection row still draw", async () => {
@@ -555,6 +615,7 @@ it("a null mutual-guilds entry is skipped so the known guild and connection row 
 		guildids,
 	);
 
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
 	const guilds = [...profile.querySelectorAll(".mutGuildBox")].map((g) => g.textContent);
 	const infoTab = [...profile.querySelectorAll("button")].find(
