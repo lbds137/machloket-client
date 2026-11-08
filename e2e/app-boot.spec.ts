@@ -243,10 +243,13 @@ test("a reconnect re-init leaves a closed chat closed", async ({page, mockInstan
 	await expect(page.locator("#loading")).toHaveClass(/doneloading/);
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
 	// init()'s landing open runs in the microtask chain that resolves its loadChannel
-	// await - after the history build (the channel name and the loading clear both precede
-	// it). History on screen plus a drain waits that chain out; a fixed sleep expires
-	// while a loaded runner is still building.
+	// await. loadChannel's last step clears #loadingdiv's loading class (channel.ts
+	// tryfocusinfinate), which ends a fresh build whatever its size; this is a re-init over
+	// a built page, though, where these markers already hold from the first boot, so the
+	// drain is what waits the re-init's chain out. A fixed sleep expires while a loaded
+	// runner is still building.
 	await expect(page.locator(".messagediv:not(.loadingMessage)").first()).toBeVisible();
+	await expect(page.locator("#loadingdiv")).not.toHaveClass(/(^|\s)loading(\s|$)/);
 	await drain(page);
 	await expect(page.locator("#page")).not.toHaveClass(/mobileMainOpen/);
 	await expect(page.locator("#maintoggle")).not.toBeChecked();

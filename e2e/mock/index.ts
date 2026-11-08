@@ -385,6 +385,24 @@ export const MOCK_FORUM_CHANNEL: channeljson = {
 	topic: "",
 	position: 4,
 };
+export const MOCK_ARCHIVED_THREAD_ID = "1200000000000000207";
+export const MOCK_ARCHIVED_THREAD: channeljson = {
+	...MOCK_CHANNEL,
+	id: MOCK_ARCHIVED_THREAD_ID,
+	name: "archived-thread",
+	type: 11,
+	topic: "",
+	position: 5,
+	parent_id: MOCK_CHANNEL_ID,
+	last_message_id: "",
+	thread_metadata: {
+		archived: true,
+		auto_archive_duration: 1440,
+		archive_timestamp: "2025-01-02T00:00:00.000Z",
+		locked: false,
+		create_timestamp: "2025-01-01T00:00:00.000Z",
+	},
+};
 
 // src/webpage/guild.ts (Guild constructor) & (generateGuildIcon)
 // src/webpage/jsontypes.ts (guildjson)
@@ -1104,6 +1122,7 @@ const PERM_BITS: Record<string, bigint> = {
 	KICK_MEMBERS: 1n,
 	BAN_MEMBERS: 2n,
 	MANAGE_ROLES: 28n,
+	SEND_MESSAGES_IN_THREADS: 38n,
 	MODERATE_MEMBERS: 40n,
 };
 
@@ -1147,6 +1166,11 @@ export interface MockInstanceOptions {
 	members?: memberjson[];
 	/** Channels served in GUILD_CREATE after the fixture's own (MOCK_VOICE_CHANNEL, MOCK_FORUM_CHANNEL). */
 	extraChannels?: channeljson[];
+	/** Serve `MOCK_ARCHIVED_THREAD` under `#general` the way the server does: never in GUILD_CREATE
+	 * (READY lists only active threads), but at `GET /api/v9/channels/:id` (the client's
+	 * goToThread on a URL entry) and in `#general`'s `/threads/search`. Adds
+	 * `SEND_MESSAGES_IN_THREADS` on `@everyone` so the thread's composer is editable. */
+	archivedThread?: boolean;
 }
 
 export interface MockInstanceHandle {
@@ -1201,6 +1225,7 @@ export async function mountMockInstance(
 		extraRoles,
 		members: memberOverrides,
 		extraChannels,
+		archivedThread = false,
 	} = options;
 
 	const memberById = new Map<string, memberjson>([
@@ -1231,12 +1256,17 @@ export async function mountMockInstance(
 		everyonePermissions !== undefined ||
 		stickers !== undefined ||
 		(extraRoles && extraRoles.length > 0) ||
-		(extraChannels && extraChannels.length > 0)
+		(extraChannels && extraChannels.length > 0) ||
+		archivedThread
 	) {
 		let roles = MOCK_GUILD.roles;
-		if (everyonePermissions !== undefined || extraEveryonePermissions?.length) {
+		const extraPerms = [
+			...(extraEveryonePermissions ?? []),
+			...(archivedThread ? ["SEND_MESSAGES_IN_THREADS"] : []),
+		];
+		if (everyonePermissions !== undefined || extraPerms.length > 0) {
 			let merged = BigInt(everyonePermissions ?? MOCK_EVERYONE_ROLE.permissions);
-			for (const name of extraEveryonePermissions ?? []) {
+			for (const name of extraPerms) {
 				if (!Object.hasOwn(PERM_BITS, name)) {
 					throw new Error(
 						`Unsupported permission "${name}" in extraEveryonePermissions (supported: ${Object.keys(PERM_BITS).join(", ")})`,
@@ -1726,7 +1756,11 @@ export async function mountMockInstance(
 			// viewer's visible channel, else Spacebar's unknown-channel 404 - the hidden
 			// channel included, as a real server refuses one the viewer can't see.
 			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+$/.test(pathname)) {
-				if (pathname.split("/").at(-1) === MOCK_CHANNEL.id) return fulfillJson(MOCK_CHANNEL);
+				const channelId = pathname.split("/").at(-1);
+				if (channelId === MOCK_CHANNEL.id) return fulfillJson(MOCK_CHANNEL);
+				if (archivedThread && channelId === MOCK_ARCHIVED_THREAD.id) {
+					return fulfillJson(MOCK_ARCHIVED_THREAD);
+				}
 				return fulfillJson({code: 10003, message: "Unknown Channel"}, 404);
 			}
 
@@ -1746,7 +1780,17 @@ export async function mountMockInstance(
 
 			// A forum with no posts (src/webpage/channel.ts fetchThreads).
 			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+\/threads\/search$/.test(pathname)) {
-				return fulfillJson({threads: [], members: [], messages: [], total_results: 0, has_more: false});
+				const threads =
+					archivedThread && pathname.split("/").at(-3) === MOCK_CHANNEL.id
+						? [MOCK_ARCHIVED_THREAD]
+						: [];
+				return fulfillJson({
+					threads,
+					members: [],
+					messages: [],
+					total_results: threads.length,
+					has_more: false,
+				});
 			}
 
 			// No MFA recovery hold on the mock account (src/webpage/recoveryBanner.ts reads this at

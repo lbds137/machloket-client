@@ -418,6 +418,56 @@ describe("command picker rows", () => {
 		}
 	});
 
+	it("a locked non-archived thread and a plain channel still show command rows and no hint", async () => {
+		const {Localuser} = await import("./localuser");
+		const {Command} = await import("./interactions/commands.js");
+		const check = async (channelfocus: {threadData?: {archived: boolean; locked: boolean}}) => {
+			const localuser = Object.assign(Object.create(Localuser.prototype), {
+				lookingguild: {
+					getCommands: async () => [
+						new Command(
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+								nsfw: false,
+								global_popularity_rank: 0,
+								version: "1",
+								handler: 1,
+							},
+							localuser,
+						),
+					],
+					apps: [{id: "300", name: "Echo", icon: null, description: "", flags: 0}],
+				},
+				channelfocus,
+				info: {cdn: "http://cdn.test"},
+			});
+			const box = document.createElement("div");
+			document.body.append(box);
+			try {
+				await (
+					localuser as never as {
+						findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>;
+					}
+				).findCommands("", box, {} as never);
+
+				expect(box.querySelector(".commandArchivedHint")).toBeNull();
+				expect(
+					[...box.querySelectorAll(".commandRowName")].map((s) => s.textContent),
+				).toEqual(["/random"]);
+			} finally {
+				box.remove();
+			}
+		};
+
+		await check({threadData: {archived: false, locked: true}});
+		await check({});
+	});
+
 	it("each search-result row shows its bot: the app's icon, the /name, and the app's name", async () => {
 		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
