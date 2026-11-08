@@ -355,10 +355,12 @@ describe("showBackupCodes screen", () => {
 				expect(btn, "no regenerate button").toBeDefined();
 				btn!.click();
 				await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+				void Promise.reject(new Error("sentinel"));
+				await vi.waitFor(() => expect(rejections).toContain("Error: sentinel"));
+				expect(rejections).toEqual(["Error: sentinel"]);
 				for (const b of buttons) {
 					expect(b.disabled).toBe(false);
 				}
-				expect(rejections).toEqual([]);
 			} finally {
 				window.removeEventListener("unhandledrejection", onRejection);
 			}
@@ -384,8 +386,10 @@ describe("showBackupCodes screen", () => {
 				const btn = regenButton();
 				expect(btn, "no regenerate button").toBeDefined();
 				btn!.click();
-				for (let tick = 0; tick < 5; tick++) await new Promise((r) => setTimeout(r, 0));
-				expect(rejections).toEqual([]);
+				await vi.waitFor(() => expect(btn!.getAttribute("aria-busy")).toBeNull());
+				void Promise.reject(new Error("sentinel"));
+				await vi.waitFor(() => expect(rejections).toContain("Error: sentinel"));
+				expect(rejections).toEqual(["Error: sentinel"]);
 				for (const b of buttons) {
 					expect(b.disabled).toBe(false);
 				}
