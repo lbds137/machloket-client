@@ -152,13 +152,7 @@ class User extends SnowFlake {
 		if (!owner) {
 			console.error("missing localuser");
 		}
-		this.uid = userjson.id;
-		// A webhook message carries its own name and avatar, so both key the cached user: keyed by
-		// name alone, the last-loaded message's avatar overwrote every other message's. JSON keeps the
-		// fields apart: joined with a delimiter, a name containing it could pose as another author.
-		if (userjson.webhook) {
-			this.uid = JSON.stringify([userjson.id, userjson.username, userjson.avatar ?? null]);
-		}
+		this.uid = User.cacheKey(userjson);
 		userjson.uid = this.uid;
 		if (dontclone) {
 			this.userupdate(userjson);
@@ -816,6 +810,18 @@ class User extends SnowFlake {
 		}
 	}
 
+	/**
+	 * The userMap key the constructor gives a payload, whatever `uid` the payload carries.
+	 * A webhook message carries its own name and avatar, so both key the cached user: keyed by
+	 * name alone, the last-loaded message's avatar overwrote every other message's. JSON keeps the
+	 * fields apart: joined with a delimiter, a name containing it could pose as another author.
+	 */
+	static cacheKey(userjson: userjson): string {
+		if (userjson.webhook) {
+			return JSON.stringify([userjson.id, userjson.username, userjson.avatar ?? null]);
+		}
+		return userjson.id;
+	}
 	static checkuser(user: User | userjson, owner: Localuser): User {
 		const tempUser = owner.userMap.get(user.uid || user.id);
 		if (tempUser) {
@@ -1979,12 +1985,19 @@ class User extends SnowFlake {
 						// Built one friend at a time: an element with a string id can still
 						// throw while its widget is built (a non-snowflake id reaches the
 						// default avatar's BigInt), and that friend is skipped, not the rest.
+						// User.checkuser caches in userMap before createWidget runs, so the
+						// catch deletes the entry only when this call created it (a valid
+						// cached user that checkuser merely updated stays).
+						// The constructor's key, not a wire `uid`: it overwrites that before caching.
+						const key = User.cacheKey(_);
+						const cached = this.localuser.userMap.has(key);
 						let user: User;
 						let html: HTMLElement;
 						try {
 							user = new User(_, this.localuser);
 							html = user.createWidget();
 						} catch (e) {
+							if (!cached) this.localuser.userMap.delete(key);
 							console.warn("skipping a mutual friend that could not be drawn", e);
 							return [];
 						}
