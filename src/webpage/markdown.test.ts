@@ -154,24 +154,40 @@ describe("parsing hostile or nested input", () => {
 		expect(render("<t:0000000000000001:R>").textContent).not.toContain("<t:");
 	});
 
-	it("doesn't re-scan to the end of the message for every unmatched [ or <:", () => {
-		// Compared with plain text of the same length, each the best of 5 runs, so a busy test
-		// run's pauses don't count (the quadratic scans took ~10-20x as long).
-		const time = (txt: string) => {
-			let best = Infinity;
-			for (let k = 0; k < 5; k++) {
+	it("renders a run of unmatched [, <: or <t: within 3x of plain text of the same length", () => {
+		// Plain text is the baseline because render's own cost grows with length on any input;
+		// a per-token re-scan to the end of the message multiplies on top of it. Measured on the
+		// Deck: the old char-by-char scans give "<t:" 4.4x, "<:" 6.4x, "[" 8.6x; a correct parser
+		// stayed under 1.4x quiet and 1.9x with every core busy (10 trials each; memory pressure
+		// not measured), so 3 splits the two. The rounds
+		// interleave the two sides, alternating which goes first, so a load window covers both;
+		// each side keeps its best round, which drops short spikes.
+		const best = (plainTxt: string, txt: string) => {
+			const ms = (t: string) => {
 				const t0 = performance.now();
-				render(txt);
-				best = Math.min(best, performance.now() - t0);
+				render(t);
+				return performance.now() - t0;
+			};
+			let plain = Infinity;
+			let run = Infinity;
+			for (let round = 0; round < 7; round++) {
+				if (round % 2) {
+					run = Math.min(run, ms(txt));
+					plain = Math.min(plain, ms(plainTxt));
+				} else {
+					plain = Math.min(plain, ms(plainTxt));
+					run = Math.min(run, ms(txt));
+				}
 			}
-			return best;
+			// Guards a zero reading on a coarse timer; plain takes ~27 ms at this length.
+			return {plain: Math.max(plain, 2), run};
 		};
 		render("[a](https://example.com) <:x:12345678901> <t:1>"); // warm up
 		for (const txt of ["[".repeat(8000), "<:".repeat(4000), "<t:".repeat(2666)]) {
-			const plain = Math.max(time("a".repeat(txt.length)), 2);
-			expect(time(txt) / plain, JSON.stringify(txt.slice(0, 3))).toBeLessThan(4);
+			const {plain, run} = best("a".repeat(txt.length), txt);
+			expect(run / plain, JSON.stringify(txt.slice(0, 3))).toBeLessThan(3);
 		}
-	}, 20000); // ~2s of deliberate re-rendering; room for a loaded test run
+	}, 20000); // ~1.5s of deliberate re-rendering; room for a loaded test run
 
 	it("renders a :word: before the emoji list has loaded", () => {
 		const emoji = MarkDown.emoji!;
