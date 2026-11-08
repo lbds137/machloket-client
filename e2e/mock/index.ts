@@ -1168,8 +1168,10 @@ export interface MockInstanceOptions {
 	extraChannels?: channeljson[];
 	/** Serve `MOCK_ARCHIVED_THREAD` under `#general` the way the server does: never in GUILD_CREATE
 	 * (READY lists only active threads), but at `GET /api/v9/channels/:id` (the client's
-	 * goToThread on a URL entry) and in `#general`'s `/threads/search`. Adds
-	 * `SEND_MESSAGES_IN_THREADS` on `@everyone` so the thread's composer is editable. */
+	 * goToThread on a URL entry) and in `#general`'s `/threads/search`. The search arm is server
+	 * parity only: the client asks `/threads/search` from the forum view alone (channel.ts
+	 * forumSearch -> fetchThreads), never for a text channel like `#general`, so no spec reads it.
+	 * Adds `SEND_MESSAGES_IN_THREADS` on `@everyone` so the thread's composer is editable. */
 	archivedThread?: boolean;
 }
 
@@ -1792,7 +1794,8 @@ export async function mountMockInstance(
 				return route.fulfill({status: 200, contentType: "text/plain", body: "e2e-mock"});
 			}
 
-			// A forum with no posts (src/webpage/channel.ts fetchThreads).
+			// A forum with no posts (src/webpage/channel.ts fetchThreads). The archivedThread
+			// arm is server parity only: the client never searches a text channel's threads.
 			if (method === "GET" && /^\/api\/v9\/channels\/[^/]+\/threads\/search$/.test(pathname)) {
 				const threads =
 					archivedThread && pathname.split("/").at(-3) === MOCK_CHANNEL.id

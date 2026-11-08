@@ -1,6 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {captureRequests} from "./test/setup";
 import type {commandJson as commandJsonT} from "./jsontypes.js";
+import type {Localuser} from "./localuser";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first) — same bootstrap as pinsPanel.test.ts.
@@ -19,6 +20,27 @@ function guildWithId(id: string) {
 			headers: {"Content-type": "application/json", Authorization: "token"},
 		},
 	}) as InstanceType<typeof Guild>;
+}
+
+/** A Localuser with only what findCommands reads: the looking guild's commands and apps, the
+ * focused channel (a pick calls its startCommand) and the CDN origin. `commands` receives the
+ * stub, since every Command needs its owner. */
+async function pickerUser({
+	commands = () => [],
+	apps = [],
+	channelfocus,
+}: {
+	commands?: (owner: Localuser) => unknown[];
+	apps?: unknown[];
+	channelfocus?: unknown;
+} = {}): Promise<Localuser> {
+	const localuserModule = await import("./localuser");
+	const localuser: Localuser = Object.assign(Object.create(localuserModule.Localuser.prototype), {
+		lookingguild: {getCommands: async () => commands(localuser), apps},
+		channelfocus,
+		info: {cdn: "http://cdn.test"},
+	});
+	return localuser;
 }
 
 describe("application-command index fetch", () => {
@@ -365,20 +387,11 @@ describe("application-command index fetch", () => {
 
 describe("command picker rows", () => {
 	it("an archived thread shows the hint instead of command rows", async () => {
-		const {Localuser} = await import("./localuser");
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [],
-				apps: [],
-			},
-			channelfocus: {threadData: {archived: true}},
-			info: {cdn: "http://cdn.test"},
-		});
+		const localuser = await pickerUser({channelfocus: {threadData: {archived: true}}});
 		const box = document.createElement("div");
 		document.body.append(box);
 		try {
-			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-				.findCommands("r", box, {} as never);
+			await localuser.findCommands("r", box, {} as never);
 
 			const hint = box.querySelector(".commandArchivedHint") as HTMLElement;
 			expect(hint).not.toBeNull();
@@ -395,20 +408,11 @@ describe("command picker rows", () => {
 		// tick it is placed; the archived branch must render past the await, like every
 		// surviving path. This reproduces that ordering: call unawaited, wipe same-tick,
 		// then let the chain finish.
-		const {Localuser} = await import("./localuser");
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [],
-				apps: [],
-			},
-			channelfocus: {threadData: {archived: true}},
-			info: {cdn: "http://cdn.test"},
-		});
+		const localuser = await pickerUser({channelfocus: {threadData: {archived: true}}});
 		const box = document.createElement("div");
 		document.body.append(box);
 		try {
-			const promise = (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-				.findCommands("r", box, {} as never);
+			const promise = localuser.findCommands("r", box, {} as never);
 			box.innerHTML = "";
 			await promise;
 
@@ -419,41 +423,33 @@ describe("command picker rows", () => {
 	});
 
 	it("a locked non-archived thread and a plain channel still show command rows and no hint", async () => {
-		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
 		const check = async (channelfocus: {threadData?: {archived: boolean; locked: boolean}}) => {
-			const localuser = Object.assign(Object.create(Localuser.prototype), {
-				lookingguild: {
-					getCommands: async () => [
-						new Command(
-							{
-								id: "1",
-								type: 1,
-								application_id: "300",
-								name: "random",
-								description: "",
-								dm_permission: true,
-								nsfw: false,
-								global_popularity_rank: 0,
-								version: "1",
-								handler: 1,
-							},
-							localuser,
-						),
-					],
-					apps: [{id: "300", name: "Echo", icon: null, description: "", flags: 0}],
-				},
+			const localuser = await pickerUser({
+				commands: (owner) => [
+					new Command(
+						{
+							id: "1",
+							type: 1,
+							application_id: "300",
+							name: "random",
+							description: "",
+							dm_permission: true,
+							nsfw: false,
+							global_popularity_rank: 0,
+							version: "1",
+							handler: 1,
+						},
+						owner,
+					),
+				],
+				apps: [{id: "300", name: "Echo", icon: null, description: "", flags: 0}],
 				channelfocus,
-				info: {cdn: "http://cdn.test"},
 			});
 			const box = document.createElement("div");
 			document.body.append(box);
 			try {
-				await (
-					localuser as never as {
-						findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>;
-					}
-				).findCommands("", box, {} as never);
+				await localuser.findCommands("", box, {} as never);
 
 				expect(box.querySelector(".commandArchivedHint")).toBeNull();
 				expect(
@@ -469,7 +465,6 @@ describe("command picker rows", () => {
 	});
 
 	it("each search-result row shows its bot: the app's icon, the /name, and the app's name", async () => {
-		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
 		const commandJson = (over: Partial<commandJsonT>): commandJsonT => ({
 			id: "1",
@@ -484,25 +479,20 @@ describe("command picker rows", () => {
 			handler: 1,
 			...over,
 		});
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [
-					new Command(commandJson({id: "1", name: "random", application_id: "300"}), localuser),
-					new Command(commandJson({id: "2", name: "roll", application_id: "400"}), localuser),
-				],
-				apps: [
-					{id: "300", name: "Echo", icon: "ab", description: "", flags: 0},
-					{id: "400", name: "Helper", icon: null, description: "", flags: 0},
-				],
-			},
-			channelfocus: undefined,
-			info: {cdn: "http://cdn.test"},
+		const localuser = await pickerUser({
+			commands: (owner) => [
+				new Command(commandJson({id: "1", name: "random", application_id: "300"}), owner),
+				new Command(commandJson({id: "2", name: "roll", application_id: "400"}), owner),
+			],
+			apps: [
+				{id: "300", name: "Echo", icon: "ab", description: "", flags: 0},
+				{id: "400", name: "Helper", icon: null, description: "", flags: 0},
+			],
 		});
 		const box = document.createElement("div");
 		document.body.append(box);
 		try {
-			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-				.findCommands("r", box, {} as never);
+			await localuser.findCommands("r", box, {} as never);
 
 			const rows = [...box.children];
 			expect(rows).toHaveLength(2);
@@ -531,7 +521,6 @@ describe("command picker rows", () => {
 	});
 
 	it("the browse panel sections commands by bot, with a Frequently Used rail that filters", async () => {
-		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
 		// Recency keys carry the app id (invocationKey): random is Echo's (300), roll
 		// Helper's (400).
@@ -556,26 +545,22 @@ describe("command picker rows", () => {
 			...over,
 		});
 		const started: unknown[] = [];
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [
-					new Command(commandJson({id: "1", name: "random", application_id: "300"}), localuser),
-					new Command(commandJson({id: "2", name: "roll", application_id: "400"}), localuser),
-					new Command(commandJson({id: "3", name: "ask", application_id: "400"}), localuser),
-				],
-				apps: [
-					{id: "300", name: "Echo", icon: "ab", description: "Echo the bot", flags: 0},
-					{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
-				],
-			},
+		const localuser = await pickerUser({
+			commands: (owner) => [
+				new Command(commandJson({id: "1", name: "random", application_id: "300"}), owner),
+				new Command(commandJson({id: "2", name: "roll", application_id: "400"}), owner),
+				new Command(commandJson({id: "3", name: "ask", application_id: "400"}), owner),
+			],
+			apps: [
+				{id: "300", name: "Echo", icon: "ab", description: "Echo the bot", flags: 0},
+				{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
+			],
 			channelfocus: {startCommand: (c: unknown) => started.push(c)},
-			info: {cdn: "http://cdn.test"},
 		});
 		const box = document.createElement("div");
 		document.body.append(box);
 		try {
-			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-				.findCommands("", box, {} as never);
+			await localuser.findCommands("", box, {} as never);
 
 			// The rail: Frequently Used first, then the apps alphabetical.
 			const rail = [...box.querySelectorAll(".searchRailButton")].map(
@@ -625,7 +610,6 @@ describe("command picker rows", () => {
 	});
 
 	it("the picker lists one row per subcommand; picking one pre-selects it", async () => {
-		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
 		const commandJson = (over: Partial<commandJsonT>): commandJsonT => ({
 			id: "1",
@@ -641,45 +625,38 @@ describe("command picker rows", () => {
 			...over,
 		});
 		const started: {name?: string; branch?: string}[] = [];
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [
-					new Command(
-						commandJson({
-							id: "1",
-							name: "character",
-							options: [
-								{
-									type: 1,
-									name: "browse",
-									description: "Browse characters",
-									options: [{type: 3, name: "query", description: ""}],
-								},
-								{
-									type: 1,
-									name: "view",
-									description: "View one",
-									options: [{type: 3, name: "name", description: "", required: true}],
-								},
-							],
-						}),
-						localuser,
-					),
-					new Command(
-						commandJson({id: "2", name: "roll", application_id: "400"}),
-						localuser,
-					),
-				],
-				apps: [
-					{id: "300", name: "Echo", icon: "ab", description: "Echo the bot", flags: 0},
-					{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
-				],
-			},
+		const localuser = await pickerUser({
+			commands: (owner) => [
+				new Command(
+					commandJson({
+						id: "1",
+						name: "character",
+						options: [
+							{
+								type: 1,
+								name: "browse",
+								description: "Browse characters",
+								options: [{type: 3, name: "query", description: ""}],
+							},
+							{
+								type: 1,
+								name: "view",
+								description: "View one",
+								options: [{type: 3, name: "name", description: "", required: true}],
+							},
+						],
+					}),
+					owner,
+				),
+				new Command(commandJson({id: "2", name: "roll", application_id: "400"}), owner),
+			],
+			apps: [
+				{id: "300", name: "Echo", icon: "ab", description: "Echo the bot", flags: 0},
+				{id: "400", name: "Helper", icon: null, description: "Helps", flags: 0},
+			],
 			channelfocus: {
-				startCommand: (c: {name: string}, branch?: string) =>
-					started.push({name: c.name, branch}),
+				startCommand: (c: {name: string}, branch?: string) => started.push({name: c.name, branch}),
 			},
-			info: {cdn: "http://cdn.test"},
 		});
 		const box = document.createElement("div");
 		document.body.append(box);
@@ -689,8 +666,7 @@ describe("command picker rows", () => {
 			JSON.stringify({"400/roll": Date.now()}),
 		);
 		try {
-			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-				.findCommands("", box, {} as never);
+			await localuser.findCommands("", box, {} as never);
 
 			// Discord's list: one row per runnable path, alphabetical by the full text.
 			const sectionOf = (title: string) => {
@@ -775,20 +751,11 @@ describe("command picker rows", () => {
 	});
 
 	it("a command-less context renders an empty popup that doesn't eat Enter", async () => {
-		const {Localuser} = await import("./localuser");
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [],
-				apps: [],
-			},
-			channelfocus: undefined,
-			info: {cdn: "http://cdn.test"},
-		});
+		const localuser = await pickerUser();
 		const box = document.createElement("div");
 		document.body.append(box);
 		try {
-			await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-				.findCommands("", box, {} as never);
+			await localuser.findCommands("", box, {} as never);
 
 			expect(box.childElementCount).toBe(0);
 			// No handlers stuck holding the keyboard: Enter falls through to sending.
@@ -801,41 +768,35 @@ describe("command picker rows", () => {
 
 describe("space commits a typed command name", () => {
 	async function picker(options: commandJsonT["options"]) {
-		const {Localuser} = await import("./localuser");
 		const {Command} = await import("./interactions/commands.js");
 		const started: {name: string; branch?: string}[] = [];
-		const localuser = Object.assign(Object.create(Localuser.prototype), {
-			lookingguild: {
-				getCommands: async () => [
-					new Command(
-						{
-							id: "1",
-							type: 1,
-							application_id: "300",
-							name: "character",
-							description: "",
-							dm_permission: true,
-							nsfw: false,
-							global_popularity_rank: 0,
-							version: "1",
-							handler: 1,
-							options,
-						},
-						localuser,
-					),
-				],
-				apps: [],
-			},
+		const localuser = await pickerUser({
+			commands: (owner) => [
+				new Command(
+					{
+						id: "1",
+						type: 1,
+						application_id: "300",
+						name: "character",
+						description: "",
+						dm_permission: true,
+						nsfw: false,
+						global_popularity_rank: 0,
+						version: "1",
+						handler: 1,
+						options,
+					},
+					owner,
+				),
+			],
 			channelfocus: {
 				startCommand: (command: {name: string}, branch?: string) =>
 					started.push({name: command.name, branch}),
 			},
-			info: {cdn: "http://cdn.test"},
 		});
 		const box = document.createElement("div");
 		document.body.append(box);
-		await (localuser as never as {findCommands: (s: string, b: HTMLDivElement, m: unknown) => Promise<void>})
-			.findCommands("character", box, {} as never);
+		await localuser.findCommands("character", box, {} as never);
 		return {localuser, box, started};
 	}
 

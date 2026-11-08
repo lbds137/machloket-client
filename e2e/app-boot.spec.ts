@@ -237,19 +237,40 @@ test("a reconnect re-init leaves a closed chat closed", async ({page, mockInstan
 	const identifies = () =>
 		mockInstance.gatewayFrames.fromApp.filter((f) => (f as {op?: number}).op === 2).length;
 	const before = identifies();
+	const requestsBefore = mockInstance.capturedRequests.length;
 	mockInstance.sendGatewayEvent({op: 9, d: false});
 	// Positive control: the retry really re-identified and the re-init finished its URL pass.
 	await expect.poll(identifies, {timeout: 15_000}).toBeGreaterThan(before);
 	await expect(page.locator("#loading")).toHaveClass(/doneloading/);
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_CHANNEL.name);
-	// init()'s landing open runs in the microtask chain that resolves its loadChannel
-	// await. loadChannel's last step clears #loadingdiv's loading class (channel.ts
-	// tryfocusinfinate), which ends a fresh build whatever its size; this is a re-init over
-	// a built page, though, where these markers already hold from the first boot, so the
-	// drain is what waits the re-init's chain out. A fixed sleep expires while a loaded
-	// runner is still building.
-	await expect(page.locator(".messagediv:not(.loadingMessage)").first()).toBeVisible();
+	// init()'s landing open runs in the microtask chain that resolves its loadChannel await.
+	// The re-init re-opens the channel and fetches its opening history page again (probed);
+	// the open sets #loadingdiv's loading class before that GET goes out, and the build at
+	// the chain's end clears it (channel.ts openMessages, tryfocusinfinate). So once the
+	// re-init's own GET is seen, "not loading" waits the build out, and the drain then
+	// waits out the landing's microtasks. Before that GET, these markers still hold from
+	// the first boot and order nothing; a fixed sleep expires while a loaded runner builds.
+	// A page slower than 300 ms makes focus() clear the class one step early (channel.ts
+	// focus); with this fixture's one-page history the rest of the build needs no request,
+	// and with that page held 1.5 s the clear and the landing still fell in the same
+	// millisecond (probed). A fixture whose fill-in fetches another page would reopen the gap.
+	const historyPath = `/api/v9/channels/${MOCK_CHANNEL.id}/messages`;
+	await expect
+		.poll(
+			() =>
+				mockInstance.capturedRequests
+					.slice(requestsBefore)
+					.filter(
+						(req) =>
+							req.method === "GET" &&
+							req.pathname === historyPath &&
+							new URL(req.url).search === "?limit=100",
+					).length,
+			{message: "the re-init must re-fetch the channel's opening history page", timeout: 15_000},
+		)
+		.toBeGreaterThan(0);
 	await expect(page.locator("#loadingdiv")).not.toHaveClass(/(^|\s)loading(\s|$)/);
+	await expect(page.locator(".messagediv:not(.loadingMessage)").first()).toBeVisible();
 	await drain(page);
 	await expect(page.locator("#page")).not.toHaveClass(/mobileMainOpen/);
 	await expect(page.locator("#maintoggle")).not.toBeChecked();
