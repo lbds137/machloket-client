@@ -502,6 +502,29 @@ it("an instance-policy 200 that's an array says why", async () => {
 	);
 });
 
+it("an instance-policy 200 without a string instanceName draws no undefined title and keeps the stats button", async () => {
+	stubUserSettings();
+	captureRequests(API + "/policies/instance/", () => Response.json({}));
+	const u = settingsUser();
+
+	await u.showusersettings().catch(() => {});
+	[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+		.find((b) => b.textContent === I18n.instanceInfo.name())!
+		.click();
+
+	const stats = await vi.waitFor(() => {
+		const b = [...document.querySelectorAll<HTMLButtonElement>(".settingsHTMLArea button")].find(
+			(el) => el.textContent === I18n.instInfo(),
+		);
+		expect(b).not.toBeUndefined();
+		return b;
+	});
+	expect(stats).toBeDefined();
+	expect(
+		[...document.querySelectorAll(".settingsHTMLArea *")].map((e) => e.textContent),
+	).not.toContain("undefined");
+});
+
 it("an instance-connection-types GET that never arrived says why and still mounts the pane", async () => {
 	const shown = vi.spyOn(Dialog.prototype, "show");
 	stubUserSettings();

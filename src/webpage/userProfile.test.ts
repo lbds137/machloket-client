@@ -396,3 +396,177 @@ it("a refused /connections GET while opening a profile stays quiet and renders m
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
 	expect(document.body.textContent).not.toContain(I18n.requestFailed("boom"));
 });
+
+it("a null mutual-friends entry is skipped so the valid friend and connection row still draw", async () => {
+	const unhandled = vi.fn((e: PromiseRejectionEvent) => e.preventDefault());
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	captureRequests("http://profile.test/api/v9/connections", () =>
+		Response.json({github: {enabled: true}}),
+	);
+	const guildids = new Map<string, unknown>([
+		["@me", {id: "@me"}],
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				mutual_friends: [
+					null,
+					{
+						id: "1553128655016763451",
+						username: "bob",
+						discriminator: "0002",
+						avatar: null,
+						bot: false,
+						public_flags: 0,
+						badge_ids: [],
+						accent_color: 0,
+						bio: "",
+						premium_type: 0,
+						premium_since: "",
+						theme_colors: null,
+					},
+				],
+				connected_accounts: [{type: "github", name: "octocat", external_id: "2"}],
+			}),
+		guildids,
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
+	const friendsTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.mutFriends(),
+	);
+	expect(friendsTab).not.toBeUndefined();
+	friendsTab!.click();
+	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
+		(b) => b.textContent,
+	);
+	const infoTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.userInfo(),
+	);
+	expect(infoTab).not.toBeUndefined();
+	infoTab!.click();
+	// The connections draw after their own fetch: wait for a row, not for ticks.
+	await vi.waitFor(() =>
+		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
+	);
+	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
+	expect({widgets, rows}).toEqual({widgets: ["bob"], rows: ["octocat"]});
+	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a mutual friend whose widget can't be built is skipped; the valid friend and connection row still draw", async () => {
+	const unhandled = vi.fn((e: PromiseRejectionEvent) => e.preventDefault());
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	captureRequests("http://profile.test/api/v9/connections", () =>
+		Response.json({github: {enabled: true}}),
+	);
+	const guildids = new Map<string, unknown>([
+		["@me", {id: "@me"}],
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const bob = {
+		id: "1553128655016763451",
+		username: "bob",
+		discriminator: "0002",
+		avatar: null,
+		bot: false,
+		public_flags: 0,
+		badge_ids: [],
+		accent_color: 0,
+		bio: "",
+		premium_type: 0,
+		premium_since: "",
+		theme_colors: null,
+	};
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [{id: "g1"}],
+				// A string id that isn't a snowflake: the default-avatar path's BigInt throws
+				// while the widget is built, which must skip this friend, not the whole profile.
+				mutual_friends: [{...bob, id: "x", username: "mallory"}, bob],
+				connected_accounts: [{type: "github", name: "octocat", external_id: "2"}],
+			}),
+		guildids,
+	);
+
+	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
+	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
+	const friendsTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.mutFriends(),
+	);
+	expect(friendsTab).not.toBeUndefined();
+	friendsTab!.click();
+	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
+		(b) => b.textContent,
+	);
+	const infoTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.userInfo(),
+	);
+	expect(infoTab).not.toBeUndefined();
+	infoTab!.click();
+	await vi.waitFor(() =>
+		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
+	);
+	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
+	expect({widgets, rows}).toEqual({widgets: ["bob"], rows: ["octocat"]});
+	expect(unhandled).not.toHaveBeenCalled();
+});
+
+it("a null mutual-guilds entry is skipped so the known guild and connection row still draw", async () => {
+	const unhandled = vi.fn((e: PromiseRejectionEvent) => e.preventDefault());
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+	onTestFinished(() =>
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove()),
+	);
+	captureRequests("http://profile.test/api/v9/connections", () =>
+		Response.json({github: {enabled: true}}),
+	);
+	const guildids = new Map([
+		[
+			"g1",
+			{generateGuildIcon: () => document.createElement("img"), properties: {name: "Wonderland"}},
+		],
+	]);
+	const profile = await openMutualGuilds(
+		() =>
+			Response.json({
+				mutual_guilds: [null, {id: "g1"}],
+				connected_accounts: [{type: "github", name: "octocat", external_id: "2"}],
+			}),
+		guildids,
+	);
+
+	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
+	const guilds = [...profile.querySelectorAll(".mutGuildBox")].map((g) => g.textContent);
+	const infoTab = [...profile.querySelectorAll("button")].find(
+		(b) => b.textContent === I18n.profile.userInfo(),
+	);
+	expect(infoTab).not.toBeUndefined();
+	infoTab!.click();
+	// The connections draw after their own fetch: wait for a row, not for ticks.
+	await vi.waitFor(() =>
+		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
+	);
+	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
+	expect({guilds, rows}).toEqual({guilds: ["Wonderland"], rows: ["octocat"]});
+	expect(unhandled).not.toHaveBeenCalled();
+});
