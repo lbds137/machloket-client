@@ -36,6 +36,9 @@ const patchOnMessage =
 /** Opens the editor of the message named by its text (hover -> the edit button). */
 async function openEdit(page: Page, text: string) {
 	const message = page.locator(".messagediv", {hasText: text});
+	// The buttons are built on mouseenter. A message re-rendered under a still pointer (an edit's
+	// MESSAGE_UPDATE) gets none until the pointer moves, so enter it from outside every time.
+	await page.mouse.move(0, 0);
 	await message.hover();
 	await message.locator(".messageButtons .svg-edit").click();
 	const box = editBox(page);
@@ -86,6 +89,42 @@ test.describe("a text message", () => {
 		expect(patches[0].body).toEqual({content: edited});
 		await expect(page.locator(".messageEditContainer")).toHaveCount(0);
 		await expect(page.locator(".dialogModal", {hasText: deleteConfirm})).toHaveCount(0);
+	});
+
+	test("editing a message twice shows the latest text and keeps it in channel history", async ({
+		page,
+		mockInstance,
+	}) => {
+		await loginAndOpenChannel(page);
+		const first = `${welcome} (first edit)`;
+		const second = `${welcome} (second edit)`;
+
+		const box1 = await openEdit(page, welcome);
+		await box1.fill(first);
+		await page.keyboard.press("Enter");
+		const firstPatches = await expectRequests(
+			mockInstance,
+			patchOnMessage(MOCK_TEXT_MESSAGE_ID),
+			1,
+		);
+		expect(firstPatches[0].body).toEqual({content: first});
+		await expect(page.locator(".messagediv", {hasText: first})).toBeVisible();
+
+		const box2 = await openEdit(page, first);
+		await expect(box2).toHaveText(first);
+		await box2.fill(second);
+		await page.keyboard.press("Enter");
+		const secondPatches = await expectRequests(
+			mockInstance,
+			patchOnMessage(MOCK_TEXT_MESSAGE_ID),
+			2,
+		);
+		expect(secondPatches[1].body).toEqual({content: second});
+		await expect(page.locator(".messagediv", {hasText: second})).toBeVisible();
+
+		await page.reload();
+		await expect(page.locator("#loading")).toHaveClass(/doneloading/, {timeout: 15_000});
+		await expect(page.locator(".messagediv", {hasText: second})).toBeVisible();
 	});
 
 	test("the confirm's No keeps the message and its text", async ({page, mockInstance}) => {

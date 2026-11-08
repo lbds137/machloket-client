@@ -1,4 +1,4 @@
-import {afterEach, expect, it, vi} from "vitest";
+import {afterEach, expect, it, onTestFinished, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -20,15 +20,46 @@ function session(known: string[]) {
 }
 
 it("a guild joined before its GUILD_CREATE opens when it arrives, not the DMs now", () => {
+	const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
 	const {user, loadGuild} = session([]);
+	const focus = {id: "c1"} as never;
+	user.channelfocus = focus;
 
 	user.openJoinedGuild("g1");
 	expect(loadGuild).not.toHaveBeenCalled();
 
+	now.mockReturnValue(1_000 + 15_000);
 	user.guildArrived("g2"); // someone else's guild: not the one waited for
 	expect(loadGuild).not.toHaveBeenCalled();
 	user.guildArrived("g1");
 	expect(loadGuild).toHaveBeenCalledWith("g1");
+});
+
+it("an arrival after the join window does not open the guild and clears the wait", () => {
+	const now = vi.spyOn(Date, "now").mockReturnValue(1_000);
+	const guild = {id: "g1", loadChannel: vi.fn(async () => {})};
+	const {user, loadGuild} = session([]);
+
+	user.openJoinedGuild("g1");
+	user.guildids.set("g1", guild);
+	now.mockReturnValue(1_000 + 15_001);
+	user.guildArrived("g1");
+
+	expect(loadGuild).not.toHaveBeenCalled();
+	expect(guild.loadChannel).not.toHaveBeenCalled();
+	expect((user as unknown as {joinedGuild?: unknown}).joinedGuild).toBeUndefined();
+});
+
+it("focusing another channel drops the wait, so a late arrival does not open the joined guild", () => {
+	const {user, loadGuild} = session([]);
+	user.channelfocus = {id: "c1"} as never;
+
+	user.openJoinedGuild("g1");
+	user.channelfocus = {id: "c2"} as never;
+	user.guildArrived("g1");
+
+	expect(loadGuild).not.toHaveBeenCalled();
+	expect((user as unknown as {joinedGuild?: unknown}).joinedGuild).toBeUndefined();
 });
 
 it("a guild already known opens at once", () => {
@@ -44,20 +75,25 @@ it("a guild already known opens at once", () => {
 });
 
 it("going elsewhere drops the wait, so a late arrival doesn't pull the view back", () => {
-	const {user, loadGuild} = session(["g2"]);
+	const {user, loadGuild} = session([]);
+	// The real loadGuild("g2") runs to its end: the guild and page pieces its body reads.
+	user.guildids.set("g2", {
+		id: "g2",
+		properties: {name: "Other"},
+		getHTML: () => document.createElement("div"),
+	});
+	const page = document.createElement("div");
+	page.innerHTML = '<div id="serverName"></div><div id="channels"></div>';
+	document.body.append(page);
+	onTestFinished(() => page.remove());
 	loadGuild.mockRestore();
 	const load = vi.spyOn(user, "loadGuild");
-	// loadGuild's own body needs a page; only its entry matters here.
 	load
 		.mockImplementationOnce(Object.getPrototypeOf(user).loadGuild.bind(user))
 		.mockImplementation(() => undefined);
 
 	user.openJoinedGuild("g1");
-	try {
-		user.loadGuild("g2");
-	} catch {
-		// the page-less body throws past the part under test
-	}
+	user.loadGuild("g2");
 	user.guildArrived("g1");
 
 	expect(load).not.toHaveBeenCalledWith("g1");
@@ -101,7 +137,7 @@ it("both join arms land through the helper: a known guild and an arrived one", (
 	const guild = {id: "g1", loadChannel: vi.fn(async () => {})};
 	const known = Object.assign(Object.create(Localuser.prototype), {
 		guildids: new Map([["g1", guild]]),
-		joinedGuildId: undefined,
+		joinedGuild: undefined,
 		lookingguild: undefined,
 	}) as InstanceType<typeof Localuser>;
 	vi.spyOn(known, "loadGuild").mockImplementation(() => guild as never);
@@ -111,7 +147,7 @@ it("both join arms land through the helper: a known guild and an arrived one", (
 	const arrivedGuild = {id: "g2", loadChannel: vi.fn(async () => {})};
 	const waiting = Object.assign(Object.create(Localuser.prototype), {
 		guildids: new Map([["g2", arrivedGuild]]),
-		joinedGuildId: "g2",
+		joinedGuild: {id: "g2", until: Date.now() + 15_000, focus: undefined},
 		lookingguild: undefined,
 	}) as InstanceType<typeof Localuser>;
 	vi.spyOn(waiting, "loadGuild").mockImplementation(() => arrivedGuild as never);

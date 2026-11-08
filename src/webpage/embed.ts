@@ -465,8 +465,8 @@ class Embed {
 						this.localuser.info.api,
 						json.code,
 						this.localuser.headers.Authorization,
-					)
-						.then((result) => {
+					).then(
+						(result) => {
 							// The accept and the already-member refusal both land in the guild; a real refusal alerts.
 							if (result.ok) {
 								this.localuser.openJoinedGuild(guild.id);
@@ -474,10 +474,13 @@ class Embed {
 								button.disabled = false;
 								alert(result.message);
 							}
-						})
-						.catch(() => {
+						},
+						(err) => {
 							button.disabled = false;
-						});
+							console.error(err);
+							alert(I18n.requestFailed("offline"));
+						},
+					);
 				} else {
 					if (this.json.invite) {
 						const params = new URLSearchParams("");

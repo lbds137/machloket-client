@@ -118,6 +118,9 @@ type inboxEntry = {
 	isDm: boolean;
 };
 const wsCodesRetry = new Set([4000, 4001, 4002, 4003, 4005, 4007, 4008, 4009]);
+// How long a join waits for its GUILD_CREATE before a late one no longer opens the guild: the
+// window the removed discovery poll used.
+const JOIN_ARRIVAL_WINDOW_MS = 15_000;
 interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
 }
@@ -2120,21 +2123,28 @@ class Localuser {
 	}
 
 	/** A guild just joined, waiting for its GUILD_CREATE. */
-	private joinedGuildId?: string;
+	private joinedGuild?: {id: string; until: number; focus: Channel | undefined};
 	/** Opens a guild the user just joined. The join's HTTP answer can beat the gateway's
 	 * GUILD_CREATE, and loadGuild falls back to the DMs for an unknown id: wait for it instead. */
 	openJoinedGuild(id: string) {
 		if (this.guildids.has(id)) {
-			this.joinedGuildId = undefined;
+			this.joinedGuild = undefined;
 			this.loadGuildAndOpenChannel(id);
 		} else {
-			this.joinedGuildId = id;
+			this.joinedGuild = {
+				id,
+				until: Date.now() + JOIN_ARRIVAL_WINDOW_MS,
+				focus: this.channelfocus,
+			};
 		}
 	}
 	guildArrived(id: string) {
-		if (this.joinedGuildId !== id) return;
-		this.joinedGuildId = undefined;
-		this.loadGuildAndOpenChannel(id);
+		const waiting = this.joinedGuild;
+		if (waiting?.id !== id) return;
+		this.joinedGuild = undefined;
+		if (Date.now() <= waiting.until && this.channelfocus === waiting.focus) {
+			this.loadGuildAndOpenChannel(id);
+		}
 	}
 	/** The join flows' landing: loadGuild, and when it switched guilds, open the guild's
 	 * channel — the invite page's fresh boot lands in a channel, and the in-app joins (the
@@ -2147,7 +2157,7 @@ class Localuser {
 	}
 	loadGuild(id: string, forceReload = false): Guild | undefined {
 		// The user went somewhere else: a joined guild arriving later mustn't pull them back.
-		if (id !== this.joinedGuildId) this.joinedGuildId = undefined;
+		if (id !== this.joinedGuild?.id) this.joinedGuild = undefined;
 		this.searching = false;
 		let guild = this.guildids.get(id);
 		if (!guild) {
@@ -2661,7 +2671,13 @@ class Localuser {
 				} else {
 					parsed = e.code;
 				}
-				const result = await acceptInvite(this.info.api, parsed, this.headers.Authorization);
+				// The form shows only a FormError; a raw network failure would vanish without a word.
+				const result = await acceptInvite(this.info.api, parsed, this.headers.Authorization).catch(
+					(err: unknown) => {
+						console.error(err);
+						throw new FormError(text, I18n.requestFailed("offline"));
+					},
+				);
 				if (!result.ok) {
 					throw new FormError(text, result.message ?? "");
 				}

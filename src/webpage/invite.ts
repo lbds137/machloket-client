@@ -146,17 +146,24 @@ if (window.location.pathname.startsWith("/invite"))
 						]),
 				},
 			).show();
-			acceptInvite(urls!.api, code, user.token).then(async (result) => {
-				// The in-app accept shows the server's message in its form; this page has no form.
-				if (!result.ok) return alert(result.message);
-				users.currentuser = user.uid;
-				sessionStorage.setItem("currentuser", user.uid);
-				localStorage.setItem("userinfos", JSON.stringify(users));
-				// The details may still be loading (or have failed): wait a while for them rather than
-				// read an unset guild or stall. With no guild to name, the home page is where the join lands.
-				const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
-				pageNav.go("/channels/" + (guildinfo?.id ?? "@me"));
-			});
+			acceptInvite(urls!.api, code, user.token).then(
+				async (result) => {
+					// The in-app accept shows the server's message in its form; this page has no form.
+					if (!result.ok) return alert(result.message);
+					users.currentuser = user.uid;
+					sessionStorage.setItem("currentuser", user.uid);
+					localStorage.setItem("userinfos", JSON.stringify(users));
+					// The details may still be loading (or have failed): wait a while for them rather than
+					// read an unset guild or stall. With no guild to name, the home page is where the join lands.
+					const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
+					pageNav.go("/channels/" + (guildinfo?.id ?? "@me"));
+				},
+				// Only the request's own failure (no network): a throw in the landing above isn't one.
+				(err) => {
+					console.error(err);
+					alert(I18n.requestFailed("offline"));
+				},
+			);
 		}
 
 		document.getElementById("AcceptInvite")!.addEventListener("click", (e) => {
