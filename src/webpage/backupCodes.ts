@@ -26,6 +26,22 @@ export function codesOf(answer: unknown): string[] {
  * 4xx): the codes on screen are still the valid ones, so the grid stays as it is. */
 export const REGEN_UNCHANGED: unique symbol = Symbol("regen-unchanged");
 
+/**
+ * Disabling the focused Regenerate dropped focus; give it back once the action
+ * settles. Never to a dialog that is closing, and never away from a live dialog
+ * opened on top (a refusal); a prompt that is itself fading out lets go of it.
+ */
+function refocus(dialog: Dialog, el: HTMLElement | undefined) {
+	if (!el?.isConnected || el.closest(".removeElm")) return;
+	const active = document.activeElement;
+	const free =
+		!active ||
+		active === document.body ||
+		!!dialog.background.deref()?.contains(active) ||
+		!!active.closest(".removeElm");
+	if (free) el.focus();
+}
+
 export function showBackupCodes(
 	answer: unknown,
 	opts?: {regenerate?: () => Promise<unknown> | null},
@@ -44,22 +60,44 @@ export function showBackupCodes(
 			// One request per action, however often it's tapped. New codes land on a
 			// fresh full screen, the same one a view with codes opens.
 			let regenerating = false;
-			dialog.options.addButtonInput("", I18n.backupCodes.regenerate(), async () => {
-				if (regenerating) return;
-				regenerating = true;
-				try {
-					// No codes on screen here, so a throw or an unchanged answer just ends the action.
-					const next = await Promise.resolve(regenerate()).catch(() => null);
-					if (codesOf(next).length > 0) {
-						dialog.hide();
-						showBackupCodes(next, opts);
+			const regenBtn = dialog.options.addButtonInput(
+				"",
+				I18n.backupCodes.regenerate(),
+				async () => {
+					if (regenerating) return;
+					regenerating = true;
+					for (const btn of [regenBtn, doneBtn]) {
+						if (btn.buttonHtml) btn.buttonHtml.disabled = true;
 					}
-				} finally {
-					regenerating = false;
-				}
-			});
+					if (regenBtn.buttonHtml) {
+						regenBtn.buttonHtml.setAttribute("aria-busy", "true");
+					}
+					try {
+						// No codes on screen here, so a throw or an unchanged answer just ends the action.
+						let next: unknown;
+						try {
+							next = await regenerate();
+						} catch {
+							next = null;
+						}
+						if (codesOf(next).length > 0) {
+							dialog.hide();
+							showBackupCodes(next, opts);
+						}
+					} finally {
+						regenerating = false;
+						for (const btn of [regenBtn, doneBtn]) {
+							if (btn.buttonHtml) btn.buttonHtml.disabled = false;
+						}
+						if (regenBtn.buttonHtml) {
+							regenBtn.buttonHtml.removeAttribute("aria-busy");
+						}
+						refocus(dialog, regenBtn.buttonHtml);
+					}
+				},
+			);
 		}
-		dialog.options.addButtonInput("", I18n.backupCodes.done(), () => {
+		const doneBtn = dialog.options.addButtonInput("", I18n.backupCodes.done(), () => {
 			dialog.hide();
 		});
 		dialog.show(false).parentElement!.style.zIndex = "200";
@@ -118,7 +156,12 @@ export function showBackupCodes(
 			}
 			try {
 				// A throw can't say whether the server got as far as expiring: same as null.
-				const result = await Promise.resolve(regenerate()).catch(() => null);
+				let result: unknown;
+				try {
+					result = await regenerate();
+				} catch {
+					result = null;
+				}
 				// A refusal before anything expired: the codes on screen are still valid.
 				if (result === REGEN_UNCHANGED) return;
 				const next = codesOf(result);
@@ -141,6 +184,7 @@ export function showBackupCodes(
 				if (regenBtn.buttonHtml) {
 					regenBtn.buttonHtml.removeAttribute("aria-busy");
 				}
+				refocus(dialog, regenBtn.buttonHtml);
 			}
 		});
 	}
