@@ -177,8 +177,8 @@ async function openMutualGuilds(
 		},
 		headers: {},
 		user: {id: "me"},
-		// Decorations on: buildpfp then reads avatar_decoration_data, which is how a payload
-		// with a bad decoration throws for an already-cached id.
+		// Decorations on, as Localuser defaults them (`decorations ??= true`), so buildpfp reads
+		// avatar_decoration_data the way a real session does.
 		userinfo: {localuserStore: {user: {decorations: true}}},
 		userMap: new Map(),
 		guilds: [],
@@ -224,6 +224,13 @@ async function openMutualGuilds(
 	});
 	tab.click();
 	return profile;
+}
+
+/** Clicks the open profile's tab labelled `label`; fails the test if there is none. */
+function clickTab(profile: HTMLElement, label: string) {
+	const tab = [...profile.querySelectorAll("button")].find((b) => b.textContent === label);
+	expect(tab, `no "${label}" tab`).not.toBeUndefined();
+	tab!.click();
 }
 
 it("an accepted profile GET opens the mutual-guilds tab without a note (the control)", async () => {
@@ -310,11 +317,7 @@ it("a connected-account type matching only an inherited key draws no profile row
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
 	// The connections rows mount in the User info pane, not the mutual-guilds one.
-	const infoTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.userInfo(),
-	);
-	expect(infoTab).not.toBeUndefined();
-	infoTab!.click();
+	clickTab(profile, I18n.profile.userInfo());
 	await vi.waitFor(() => expect(profile.textContent).toContain(I18n.profile.bio()));
 	// The rows draw once the connections fetch resolves; wait for the first row
 	// instead of trusting ticks to cover that chain, then pin "exactly one" —
@@ -447,19 +450,11 @@ it("a null mutual-friends entry is skipped so the valid friend and connection ro
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
-	const friendsTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.mutFriends(),
-	);
-	expect(friendsTab).not.toBeUndefined();
-	friendsTab!.click();
+	clickTab(profile, I18n.profile.mutFriends());
 	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
 		(b) => b.textContent,
 	);
-	const infoTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.userInfo(),
-	);
-	expect(infoTab).not.toBeUndefined();
-	infoTab!.click();
+	clickTab(profile, I18n.profile.userInfo());
 	// The connections draw after their own fetch: wait for a row, not for ticks.
 	await vi.waitFor(() =>
 		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
@@ -493,19 +488,11 @@ it("a mutual friend whose widget can't be built is skipped; the valid friend and
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
-	const friendsTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.mutFriends(),
-	);
-	expect(friendsTab).not.toBeUndefined();
-	friendsTab!.click();
+	clickTab(profile, I18n.profile.mutFriends());
 	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
 		(b) => b.textContent,
 	);
-	const infoTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.userInfo(),
-	);
-	expect(infoTab).not.toBeUndefined();
-	infoTab!.click();
+	clickTab(profile, I18n.profile.userInfo());
 	await vi.waitFor(() =>
 		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
 	);
@@ -531,7 +518,8 @@ it("a mutual friend that throws while drawing leaves no new userMap entry, while
 						id: cached.id,
 						username: "carol",
 						// Throws in buildpfp (asset.startsWith) after checkuser updates the
-						// already-cached user in place.
+						// already-cached user in place. Needs the fixture's decorations on:
+						// buildpfp reads the asset only then.
 						avatar_decoration_data: {asset: 1 as unknown as string, sku_id: "s"},
 					},
 					bob,
@@ -546,11 +534,7 @@ it("a mutual friend that throws while drawing leaves no new userMap entry, while
 	);
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
-	const friendsTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.mutFriends(),
-	);
-	expect(friendsTab).not.toBeUndefined();
-	friendsTab!.click();
+	clickTab(profile, I18n.profile.mutFriends());
 	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
 		(b) => b.textContent,
 	);
@@ -579,10 +563,7 @@ it("a throwing mutual friend whose payload carries its own uid is still evicted 
 	);
 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
-	const friendsTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.mutFriends(),
-	);
-	friendsTab!.click();
+	clickTab(profile, I18n.profile.mutFriends());
 	const widgets = [...profile.querySelectorAll(".mutFriends .createdWebhook b")].map(
 		(b) => b.textContent,
 	);
@@ -618,11 +599,7 @@ it("a null mutual-guilds entry is skipped so the known guild and connection row 
 	await vi.waitFor(() => expect(profile.querySelector(".mutGuildBox")).not.toBeNull());
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
 	const guilds = [...profile.querySelectorAll(".mutGuildBox")].map((g) => g.textContent);
-	const infoTab = [...profile.querySelectorAll("button")].find(
-		(b) => b.textContent === I18n.profile.userInfo(),
-	);
-	expect(infoTab).not.toBeUndefined();
-	infoTab!.click();
+	clickTab(profile, I18n.profile.userInfo());
 	// The connections draw after their own fetch: wait for a row, not for ticks.
 	await vi.waitFor(() =>
 		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
