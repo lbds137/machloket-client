@@ -2142,6 +2142,9 @@ class Localuser {
 		const waiting = this.joinedGuild;
 		if (waiting?.id !== id) return;
 		this.joinedGuild = undefined;
+		// Object identity on purpose: any change of focus during the wait (another channel
+		// opened, or the focus cleared by a guild switch, the discovery view or a reset) means
+		// the user moved on, and the late open is dropped rather than pulling them back.
 		if (Date.now() <= waiting.until && this.channelfocus === waiting.focus) {
 			this.loadGuildAndOpenChannel(id);
 		}

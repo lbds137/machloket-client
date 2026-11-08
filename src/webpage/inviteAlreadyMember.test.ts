@@ -258,12 +258,17 @@ describe("an invite to a guild the user is already in", () => {
 		expect(errorSpy).toHaveBeenCalledWith(err);
 	});
 
-	it("a throw inside openJoinedGuild after a successful accept does not alert a network failure", async () => {
+	it("a throw inside openJoinedGuild after a successful accept re-enables the button and is caught, not alerted as a network failure", async () => {
 		const posts = captureRequests(API + "/invites/abc", () =>
 			Response.json({guild: {id: GUILD_ID}}),
 		);
 		const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
-		const onRejection = (e: PromiseRejectionEvent) => e.preventDefault();
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const rejections: unknown[] = [];
+		const onRejection = (e: PromiseRejectionEvent) => {
+			rejections.push(e.reason);
+			e.preventDefault();
+		};
 		window.addEventListener("unhandledrejection", onRejection);
 		try {
 			const localuser = Object.assign(Object.create(Localuser.prototype), {
@@ -296,6 +301,12 @@ describe("an invite to a guild the user is already in", () => {
 
 			expect(openJoinedGuild).toHaveBeenCalledWith(GUILD_ID);
 			expect(alert).not.toHaveBeenCalledWith(I18n.requestFailed("offline"));
+			// The join went through, so a retry lands as already-member: the button comes back
+			// instead of staying dead, and the throw is logged rather than left unhandled.
+			// unhandledrejection fires a task after the rejection: the flush above outlasts it.
+			expect(accept.disabled).toBe(false);
+			expect(rejections).toEqual([]);
+			expect(errorSpy).toHaveBeenCalledWith(new Error("landing boom"));
 		} finally {
 			window.removeEventListener("unhandledrejection", onRejection);
 		}
