@@ -5,7 +5,8 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 const {Localuser} = await import("./localuser");
 const {Embed} = await import("./embed");
-const {Dialog, Options} = await import("./settings");
+const {Dialog, Form, FormError, Options} = await import("./settings");
+const {I18n} = await import("./i18n");
 
 const API = "http://invite.test/api/v9";
 const WELLKNOWN = "http://invite.test";
@@ -194,5 +195,109 @@ describe("an invite to a guild the user is already in", () => {
 		// A FormError here is what the dialog shows as the failure.
 		await expect(joinSubmit({code: "abc"}, {})).resolves.toBeUndefined();
 		expect(hide).toHaveBeenCalled();
+	});
+
+	it("joining by a code with no network shows the failure in the form, instead of nothing", async () => {
+		const err = new TypeError("Failed to fetch");
+		captureRequests(API + "/invites/abc", () => Promise.reject(err));
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const hide = vi.spyOn(Dialog.prototype, "hide");
+		const addForm = vi.spyOn(Options.prototype, "addForm");
+		const addTextInput = vi.spyOn(Form.prototype, "addTextInput");
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API, wellknown: WELLKNOWN},
+			headers: {Authorization: "tok"},
+		});
+		localuser.createGuild();
+		const joinSubmit = addForm.mock.calls[0][1] as (fields: object, sent: object) => Promise<void>;
+		const codeInput = addTextInput.mock.results.find((_, i) => addTextInput.mock.calls[i][1] === "code")
+			?.value;
+
+		// The form shows a FormError inline, on the field it names; anything else it drops without a word.
+		const failure = await joinSubmit({code: "abc"}, {}).catch((e: unknown) => e);
+		expect(failure).toBeInstanceOf(FormError);
+		expect((failure as InstanceType<typeof FormError>).message).toBe(I18n.requestFailed("offline"));
+		expect(codeInput).toBeDefined();
+		expect((failure as InstanceType<typeof FormError>).elem).toBe(codeInput);
+		expect(errorSpy).toHaveBeenCalledWith(err);
+		expect(hide).not.toHaveBeenCalled();
+	});
+
+	it("the embed's accept re-enables and alerts when the fetch rejects", async () => {
+		const err = new TypeError("offline");
+		const posts = captureRequests(API + "/invites/abc", () => Promise.reject(err));
+		const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+		const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API, wellknown: WELLKNOWN},
+			headers: {Authorization: "tok"},
+			guildids: new Map(),
+		});
+		const embed = new Embed(
+			{type: "invite", invite: {url: WELLKNOWN, code: "abc"}} as never,
+			{channel: {guild: {localuser}}} as never,
+		);
+		embed.invcache = [
+			{
+				code: "abc",
+				guild: {id: GUILD_ID, name: "Guild", member_count: 3, icon: null, banner: null},
+				channel: {name: "general"},
+			} as never,
+			{cdn: WELLKNOWN + "/cdn", api: API},
+		];
+		const div = embed.generateHTML() as HTMLElement;
+		document.body.append(div);
+		const accept = div.querySelector("button.acceptinvbutton") as HTMLButtonElement;
+
+		accept.click();
+		await vi.waitFor(() => expect(posts).toHaveLength(1));
+		await flush();
+
+		expect(accept.disabled).toBe(false);
+		expect(alert).toHaveBeenCalledWith(I18n.requestFailed("offline"));
+		expect(errorSpy).toHaveBeenCalledWith(err);
+	});
+
+	it("a throw inside openJoinedGuild after a successful accept does not alert a network failure", async () => {
+		const posts = captureRequests(API + "/invites/abc", () =>
+			Response.json({guild: {id: GUILD_ID}}),
+		);
+		const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+		const onRejection = (e: PromiseRejectionEvent) => e.preventDefault();
+		window.addEventListener("unhandledrejection", onRejection);
+		try {
+			const localuser = Object.assign(Object.create(Localuser.prototype), {
+				info: {api: API, wellknown: WELLKNOWN},
+				headers: {Authorization: "tok"},
+				guildids: new Map(),
+			});
+			const openJoinedGuild = vi.spyOn(localuser, "openJoinedGuild").mockImplementation(() => {
+				throw new Error("landing boom");
+			});
+			const embed = new Embed(
+				{type: "invite", invite: {url: WELLKNOWN, code: "abc"}} as never,
+				{channel: {guild: {localuser}}} as never,
+			);
+			embed.invcache = [
+				{
+					code: "abc",
+					guild: {id: GUILD_ID, name: "Guild", member_count: 3, icon: null, banner: null},
+					channel: {name: "general"},
+				} as never,
+				{cdn: WELLKNOWN + "/cdn", api: API},
+			];
+			const div = embed.generateHTML() as HTMLElement;
+			document.body.append(div);
+			const accept = div.querySelector("button.acceptinvbutton") as HTMLButtonElement;
+
+			accept.click();
+			await vi.waitFor(() => expect(posts).toHaveLength(1));
+			await flush();
+
+			expect(openJoinedGuild).toHaveBeenCalledWith(GUILD_ID);
+			expect(alert).not.toHaveBeenCalledWith(I18n.requestFailed("offline"));
+		} finally {
+			window.removeEventListener("unhandledrejection", onRejection);
+		}
 	});
 });

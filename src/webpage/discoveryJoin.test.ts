@@ -6,7 +6,9 @@ const {Discovery} = await import("./discovery");
 
 const API = "http://discover.test/api/v9";
 
-afterEach(() => document.querySelectorAll("dialog, .flexttb").forEach((e) => e.remove()));
+afterEach(() =>
+	document.querySelectorAll("dialog, .flexttb, #serverName, #channels").forEach((e) => e.remove()),
+);
 
 describe("joining a server from discovery", () => {
 	it("a refused join says why and stops, instead of polling forever", async () => {
@@ -55,6 +57,10 @@ describe("joining a server from discovery", () => {
 	});
 
 	it("going elsewhere before the joined guild arrives does not pull the user into it when it arrives", async () => {
+		document.body.insertAdjacentHTML(
+			"beforeend",
+			'<div id="serverName"></div><div id="channels"></div>',
+		);
 		const asked = captureRequests(
 			API + "/guilds/g9/members/@me",
 			() => new Response(null, {status: 204}),
@@ -64,7 +70,12 @@ describe("joining a server from discovery", () => {
 			loadGuild: vi.fn(() => localuser.loadGuild("g9")),
 			loadChannel: vi.fn(async () => {}),
 		};
-		const other = {id: "g2", loadChannel: vi.fn(async () => {})};
+		const other = {
+			id: "g2",
+			properties: {name: "Other"},
+			getHTML: () => document.createElement("div"),
+			loadChannel: vi.fn(async () => {}),
+		};
 		const localuser = Object.assign(Object.create(Localuser.prototype), {
 			guildids: new Map([["g2", other]]),
 		}) as InstanceType<typeof Localuser>;
@@ -81,13 +92,9 @@ describe("joining a server from discovery", () => {
 		// The join has registered its wait for g9 (not a fixed sleep: a slow PUT would
 		// otherwise let loadGuild("g2") run first).
 		await vi.waitFor(() =>
-			expect((localuser as unknown as {joinedGuildId?: string}).joinedGuildId).toBe("g9"),
+			expect((localuser as unknown as {joinedGuild?: {id: string}}).joinedGuild?.id).toBe("g9"),
 		);
-		try {
-			localuser.loadGuild("g2");
-		} catch {
-			// the page-less body throws past the joinedGuildId clear at the entry
-		}
+		localuser.loadGuild("g2");
 		localuser.guildids.set("g9", joined as never);
 		localuser.guildArrived("g9");
 		await joining;

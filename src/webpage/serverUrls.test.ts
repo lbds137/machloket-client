@@ -39,25 +39,26 @@ it("a server banner name can't add a second background image", () => {
 	name.id = "serverName";
 	const banner = document.createElement("div");
 	banner.id = "servertd";
-	document.body.append(name, banner);
+	// The rest of the guild switch draws the channel list: the real loadGuild runs to its end.
+	const channels = document.createElement("div");
+	channels.id = "channels";
+	document.body.append(name, banner, channels);
 	const guild = {
 		id: "g1",
 		banner: "b1),url(https://tracker.test/c.png",
 		properties: {name: "G"},
+		getHTML: () => document.createElement("div"),
 	};
 	const me = Object.assign(Object.create(Localuser.prototype), {
 		info: {cdn: "http://cdn.test"},
 		guildids: new Map([["g1", guild]]),
 	}) as InstanceType<typeof Localuser>;
 
-	try {
-		me.loadGuild("g1");
-	} catch {
-		// The rest of the guild switch needs a whole account; the banner is set before it.
-	}
+	me.loadGuild("g1");
 	const layers = getComputedStyle(banner).backgroundImage;
 	name.remove();
 	banner.remove();
+	channels.remove();
 
 	expect(layers.match(/url\("/g)).toHaveLength(1);
 });

@@ -1691,13 +1691,17 @@ export async function mountMockInstance(
 			// stored message with MESSAGE_PUBLIC_RELATIONS (attachments, not stickers) and spreads
 			// it under the body, and handleMessage (src/api/util/handlers/Message.ts) refuses with
 			// 400 50006 only when nothing else carries the message: no attachments, embeds or
-			// components, and not a forward. Nothing reads the ok answer today (Message.edit
-			// reads res.ok), so it stays the send's empty {}.
+			// components, and not a forward. An accepted edit replaces the stored entry with a
+			// spread copy (never mutating the shared fixture object), echoes MESSAGE_UPDATE on
+			// purpose so the mock exercises Message.edit's seq/echo handling as the real server
+			// does, and answers the updated message JSON (or `{}` for an unknown id).
 			const editMatch =
 				method === "PATCH" && pathname.match(/^\/api\/v9\/channels\/([^/]+)\/messages\/([^/]+)$/);
 			if (editMatch) {
 				const [, channelId, messageId] = editMatch;
-				const stored = messagesByChannel.get(channelId)?.find((m) => m.id === messageId) as
+				const history = messagesByChannel.get(channelId);
+				const index = history?.findIndex((m) => m.id === messageId) ?? -1;
+				const stored = (index >= 0 ? history?.[index] : undefined) as
 					| (messagejson & {message_reference?: {type?: number}})
 					| undefined;
 				if (stored?.poll) {
@@ -1713,6 +1717,16 @@ export async function mountMockInstance(
 					if (!hasOtherContent) {
 						return fulfillJson({code: 50006, message: "Cannot send an empty message"}, 400);
 					}
+				}
+				if (history && index >= 0 && stored) {
+					const updated: messagejson = {
+						...stored,
+						...(typeof sent?.content === "string" ? {content: sent.content} : {}),
+						edited_timestamp: new Date().toISOString(),
+					};
+					history[index] = updated;
+					handle.sendGatewayEvent({op: 0, t: "MESSAGE_UPDATE", d: updated});
+					return fulfillJson(updated);
 				}
 				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
 			}
