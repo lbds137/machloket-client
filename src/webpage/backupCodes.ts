@@ -27,9 +27,11 @@ export function codesOf(answer: unknown): string[] {
 export const REGEN_UNCHANGED: unique symbol = Symbol("regen-unchanged");
 
 /**
- * Disabling the focused Regenerate dropped focus; give it back once the action
- * settles. Never to a dialog that is closing, and never away from a live dialog
- * opened on top (a refusal); a prompt that is itself fading out lets go of it.
+ * Disabling the focused Regenerate dropped focus to body; give it back once the
+ * action settles. Never to a dialog that is closing, and never away from a live
+ * dialog opened on top (a refusal); a prompt that is itself fading out lets go of
+ * it. Body counts as free even when the user put focus there (the two can't be
+ * told apart); returning focus inside the still-open dialog is intended.
  */
 function refocus(dialog: Dialog, el: HTMLElement | undefined) {
 	if (!el?.isConnected || el.closest(".removeElm")) return;
@@ -40,6 +42,35 @@ function refocus(dialog: Dialog, el: HTMLElement | undefined) {
 		!!dialog.background.deref()?.contains(active) ||
 		!!active.closest(".removeElm");
 	if (free) el.focus();
+}
+
+type Btn = ReturnType<Dialog["options"]["addButtonInput"]>;
+
+/** Both screens' regenerate: lock `buttons` and mark Regenerate busy (synchronously,
+ * before the first await), run, then unlock and give focus back. */
+async function withBusy(
+	dialog: Dialog,
+	regenBtn: Btn,
+	buttons: readonly Btn[],
+	run: () => Promise<void>,
+): Promise<void> {
+	for (const btn of buttons) {
+		if (btn.buttonHtml) btn.buttonHtml.disabled = true;
+	}
+	if (regenBtn.buttonHtml) {
+		regenBtn.buttonHtml.setAttribute("aria-busy", "true");
+	}
+	try {
+		await run();
+	} finally {
+		for (const btn of buttons) {
+			if (btn.buttonHtml) btn.buttonHtml.disabled = false;
+		}
+		if (regenBtn.buttonHtml) {
+			regenBtn.buttonHtml.removeAttribute("aria-busy");
+		}
+		refocus(dialog, regenBtn.buttonHtml);
+	}
 }
 
 export function showBackupCodes(
@@ -56,6 +87,7 @@ export function showBackupCodes(
 		const dialog = new Dialog("");
 		dialog.options.addTitle(I18n.backupCodes.title());
 		dialog.options.addText(I18n.backupCodes.none());
+		const busy: Btn[] = [];
 		if (regenerate) {
 			// One request per action, however often it's tapped. New codes land on a
 			// fresh full screen, the same one a view with codes opens.
@@ -66,40 +98,31 @@ export function showBackupCodes(
 				async () => {
 					if (regenerating) return;
 					regenerating = true;
-					for (const btn of [regenBtn, doneBtn]) {
-						if (btn.buttonHtml) btn.buttonHtml.disabled = true;
-					}
-					if (regenBtn.buttonHtml) {
-						regenBtn.buttonHtml.setAttribute("aria-busy", "true");
-					}
 					try {
-						// No codes on screen here, so a throw or an unchanged answer just ends the action.
-						let next: unknown;
-						try {
-							next = await regenerate();
-						} catch {
-							next = null;
-						}
-						if (codesOf(next).length > 0) {
-							dialog.hide();
-							showBackupCodes(next, opts);
-						}
+						await withBusy(dialog, regenBtn, busy, async () => {
+							// No codes on screen here, so a throw or an unchanged answer just ends the action.
+							let next: unknown;
+							try {
+								next = await regenerate();
+							} catch {
+								next = null;
+							}
+							if (codesOf(next).length > 0) {
+								dialog.hide();
+								showBackupCodes(next, opts);
+							}
+						});
 					} finally {
 						regenerating = false;
-						for (const btn of [regenBtn, doneBtn]) {
-							if (btn.buttonHtml) btn.buttonHtml.disabled = false;
-						}
-						if (regenBtn.buttonHtml) {
-							regenBtn.buttonHtml.removeAttribute("aria-busy");
-						}
-						refocus(dialog, regenBtn.buttonHtml);
 					}
 				},
 			);
+			busy.push(regenBtn);
 		}
 		const doneBtn = dialog.options.addButtonInput("", I18n.backupCodes.done(), () => {
 			dialog.hide();
 		});
+		busy.push(doneBtn);
 		dialog.show(false).parentElement!.style.zIndex = "200";
 		return;
 	}
@@ -124,6 +147,7 @@ export function showBackupCodes(
 	dialog.options.addHTMLArea(grid);
 
 	const copyStatus = dialog.options.addText("");
+	const busy: Btn[] = [];
 	const copyBtn = dialog.options.addButtonInput("", I18n.backupCodes.copy(), async () => {
 		try {
 			await navigator.clipboard.writeText(shown.join("\n"));
@@ -132,6 +156,7 @@ export function showBackupCodes(
 			copyStatus.setText(I18n.backupCodes.copyFailed());
 		}
 	});
+	busy.push(copyBtn);
 	const downloadBtn = dialog.options.addButtonInput("", I18n.backupCodes.download(), () => {
 		const blob = new Blob([shown.join("\n") + "\n"], {type: "text/plain"});
 		const url = URL.createObjectURL(blob);
@@ -142,55 +167,47 @@ export function showBackupCodes(
 		// Later, not now: some browsers still read the blob after click() returns.
 		setTimeout(() => URL.revokeObjectURL(url), 1000);
 	});
+	busy.push(downloadBtn);
 	if (regenerate) {
 		// One request and one replacement per action, however often it's tapped.
 		let regenerating = false;
 		const regenBtn = dialog.options.addButtonInput("", I18n.backupCodes.regenerate(), async () => {
 			if (regenerating) return;
 			regenerating = true;
-			for (const btn of [copyBtn, downloadBtn, regenBtn, doneBtn]) {
-				if (btn.buttonHtml) btn.buttonHtml.disabled = true;
-			}
-			if (regenBtn.buttonHtml) {
-				regenBtn.buttonHtml.setAttribute("aria-busy", "true");
-			}
 			try {
-				// A throw can't say whether the server got as far as expiring: same as null.
-				let result: unknown;
-				try {
-					result = await regenerate();
-				} catch {
-					result = null;
-				}
-				// A refusal before anything expired: the codes on screen are still valid.
-				if (result === REGEN_UNCHANGED) return;
-				const next = codesOf(result);
-				// The server expires the old batch before answering; without a usable
-				// replacement, the codes on screen can no longer be trusted.
-				if (next.length === 0) {
-					dialog.hide();
-				} else {
-					shown = next;
-					renderGrid();
-					// The copied note was about the old batch; it must not read as
-					// covering the new one.
-					copyStatus.setText("");
-				}
+				await withBusy(dialog, regenBtn, busy, async () => {
+					// A throw can't say whether the server got as far as expiring: same as null.
+					let result: unknown;
+					try {
+						result = await regenerate();
+					} catch {
+						result = null;
+					}
+					// A refusal before anything expired: the codes on screen are still valid.
+					if (result === REGEN_UNCHANGED) return;
+					const next = codesOf(result);
+					// The server expires the old batch before answering; without a usable
+					// replacement, the codes on screen can no longer be trusted.
+					if (next.length === 0) {
+						dialog.hide();
+					} else {
+						shown = next;
+						renderGrid();
+						// The copied note was about the old batch; it must not read as
+						// covering the new one.
+						copyStatus.setText("");
+					}
+				});
 			} finally {
 				regenerating = false;
-				for (const btn of [copyBtn, downloadBtn, regenBtn, doneBtn]) {
-					if (btn.buttonHtml) btn.buttonHtml.disabled = false;
-				}
-				if (regenBtn.buttonHtml) {
-					regenBtn.buttonHtml.removeAttribute("aria-busy");
-				}
-				refocus(dialog, regenBtn.buttonHtml);
 			}
 		});
+		busy.push(regenBtn);
 	}
 	const doneBtn = dialog.options.addButtonInput("", I18n.backupCodes.done(), () => {
 		dialog.hide();
 	});
+	busy.push(doneBtn);
 
 	dialog.show(false).parentElement!.style.zIndex = "200";
 }

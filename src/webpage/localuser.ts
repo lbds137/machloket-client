@@ -3871,6 +3871,9 @@ class Localuser {
 										// valid, so keep the grid without re-reading (which would prompt for
 										// MFA again). A proxy's 4xx (408, 499), a 5xx, or a network failure
 										// can follow an upstream commit, so those fall through to the re-read.
+										// A gateway/WAF 4xx that carries a JSON numeric `code` would be
+										// treated as the server's own refusal (grid kept); narrowing needs
+										// the server's code set.
 										const fields =
 											typeof errBody === "object" && errBody !== null
 												? (errBody as {code?: unknown; retry_after?: unknown})
