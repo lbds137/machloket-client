@@ -282,6 +282,21 @@ describe("the application edit form's flags wiring", () => {
 		expect(unmounted.value).toBe(true);
 	});
 
+	it("CheckboxInput.disabled is read-only: only setDisabled changes it, and the DOM follows", () => {
+		const box = new Dialog("").options.addCheckboxInput("z", () => {});
+		box.generateHTML();
+		const input = box.input.deref()!;
+		box.setDisabled(true);
+		expect(box.disabled).toBe(true);
+		expect(input.disabled).toBe(true);
+		expect(() => {
+			// @ts-expect-error disabled has no setter; a direct write would skip the DOM
+			box.disabled = false;
+		}).toThrow(TypeError);
+		expect(box.disabled).toBe(true);
+		expect(input.disabled).toBe(true);
+	});
+
 	it("disables the three intent inputs on an invalid flags read (-1) and keeps them enabled on a valid read", async () => {
 		const {form: invalidForm} = await openAppForm(-1);
 		invalidForm.generateHTML();
