@@ -5238,36 +5238,22 @@ class Localuser {
 			await showRefusal(res);
 			return;
 		}
-		// The init states are the delta baseline: only a toggle the user CHANGED moves its
-		// limited bit, so an untouched full-bit-only grant never gains one on an unrelated
-		// save — the owner's later revocation of the full bit then really ends the intent.
-		const initStates = {
-			presence: isFlagsValue(json.flags) && intentShown(json.flags, "presence"),
-			guildMembers: isFlagsValue(json.flags) && intentShown(json.flags, "guildMembers"),
-			messageContent: isFlagsValue(json.flags) && intentShown(json.flags, "messageContent"),
-		};
 		// The read is live: the PATCH answer carries the stored (masked) flags, so a second
 		// save in this form session folds onto it instead of the boot-time read, and the
 		// delta baseline moves to the last save — "changed" means changed since then, or a
 		// toggle switched back to its starting value would be silently dropped.
 		let readFlags = json.flags;
-		// What the last PATCH carried per box: the boxes stay editable while it's in flight,
-		// so the refresh moves only a box the user hasn't touched since; a box they changed
-		// keeps their value and counts as a change against the new baseline.
-		let sentStates = {...initStates};
 		const form = container.addSubForm(
 			json.name,
 			(res: any) => {
 				if (res && isFlagsValue(res.flags)) {
 					readFlags = res.flags;
-					initStates.presence = intentShown(res.flags, "presence");
-					initStates.guildMembers = intentShown(res.flags, "guildMembers");
-					initStates.messageContent = intentShown(res.flags, "messageContent");
-					if (presenceBox.value === sentStates.presence) presenceBox.setState(initStates.presence);
-					if (membersBox.value === sentStates.guildMembers)
-						membersBox.setState(initStates.guildMembers);
-					if (contentBox.value === sentStates.messageContent)
-						contentBox.setState(initStates.messageContent);
+					for (const [name, , box] of intents) {
+						initStates[name] = intentShown(res.flags, name);
+						if (box.value === sentStates[name]) box.setState(initStates[name]);
+						// A valid answer makes the boxes savable, even if the boot read wasn't.
+						box.setDisabled(false);
+					}
 				}
 			},
 			{
@@ -5312,23 +5298,34 @@ class Localuser {
 		// intent's bits is set, and folded into flags replacing only the limited bits — the
 		// checkbox fields below are form-local names the preprocessor strips before the PATCH.
 		form.addText(I18n.localuser.intentsHint());
-		const presenceBox = form.addCheckboxInput(I18n.localuser.intentPresence(), "intent_presence", {
-			initState: initStates.presence,
-		});
-		const membersBox = form.addCheckboxInput(
-			I18n.localuser.intentGuildMembers(),
-			"intent_members",
-			{
-				initState: initStates.guildMembers,
-			},
+		const validFlags = isFlagsValue(json.flags);
+		const intents = (
+			[
+				["presence", "intent_presence", I18n.localuser.intentPresence()],
+				["guildMembers", "intent_members", I18n.localuser.intentGuildMembers()],
+				["messageContent", "intent_content", I18n.localuser.intentMessageContent()],
+			] as const
+		).map(
+			([name, field, label]) =>
+				[
+					name,
+					field,
+					form.addCheckboxInput(label, field, {
+						initState: validFlags && intentShown(json.flags, name),
+						disabled: !validFlags,
+					}),
+				] as const,
 		);
-		const contentBox = form.addCheckboxInput(
-			I18n.localuser.intentMessageContent(),
-			"intent_content",
-			{
-				initState: initStates.messageContent,
-			},
-		);
+		// The init states are the delta baseline: only a toggle the user CHANGED moves its
+		// limited bit, so an untouched full-bit-only grant never gains one on an unrelated
+		// save — the owner's later revocation of the full bit then really ends the intent.
+		const initStates = Object.fromEntries(
+			intents.map(([name, , box]) => [name, box.value]),
+		) as Record<IntentName, boolean>;
+		// What the last PATCH carried per box: the boxes stay editable while it's in flight,
+		// so the refresh moves only a box the user hasn't touched since; a box they changed
+		// keeps their value and counts as a change against the new baseline.
+		let sentStates = {...initStates};
 		// The intent_* fields are form-local names: the preprocessor deletes them before the
 		// PATCH, and folds them into flags only when an intent toggle changed and the read
 		// carries a valid flags integer (an invalid or missing read, or a save that touched no
@@ -5336,33 +5333,28 @@ class Localuser {
 		// a second one on this form would silently drop this fold and leak the keys (the wiring
 		// test pins their absence).
 		form.addPreprocessor((obj: any) => {
-			sentStates = {
-				presence: obj.intent_presence,
-				guildMembers: obj.intent_members,
-				messageContent: obj.intent_content,
-			};
-			const changed =
-				obj.intent_presence !== initStates.presence ||
-				obj.intent_members !== initStates.guildMembers ||
-				obj.intent_content !== initStates.messageContent;
+			sentStates = Object.fromEntries(
+				intents.map(([name, field]) => [name, obj[field]]),
+			) as Record<IntentName, boolean>;
+			const changed = intents.some(([name, field]) => obj[field] !== initStates[name]);
 			if (changed && isFlagsValue(readFlags)) {
 				const read = readFlags;
 				// When another toggle changed, unchanged ones keep their bit as it stands in `read`.
-				const toggle = (name: IntentName, value: boolean, init: boolean): boolean =>
-					value === init ? (read & INTENT_LIMITED_BITS[name]) !== 0 : value;
-				obj.flags = foldIntentFlags(read, {
-					presence: toggle("presence", obj.intent_presence, initStates.presence),
-					guildMembers: toggle("guildMembers", obj.intent_members, initStates.guildMembers),
-					messageContent: toggle(
-						"messageContent",
-						obj.intent_content,
-						initStates.messageContent,
-					),
-				});
+				obj.flags = foldIntentFlags(
+					read,
+					Object.fromEntries(
+						intents.map(([name, field]) => [
+							name,
+							obj[field] === initStates[name]
+								? (read & INTENT_LIMITED_BITS[name]) !== 0
+								: obj[field],
+						]),
+					) as Record<IntentName, boolean>,
+				);
 			}
-			delete obj.intent_presence;
-			delete obj.intent_members;
-			delete obj.intent_content;
+			for (const [, field] of intents) {
+				delete obj[field];
+			}
 		});
 		form.addButtonInput("", I18n.localuser[json.bot ? "manageBot" : "addBot"](), async () => {
 			if (!json.bot) {

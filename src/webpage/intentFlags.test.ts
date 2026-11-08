@@ -240,7 +240,13 @@ describe("the application edit form's flags wiring", () => {
 		let formRef: any;
 		const answer1 = READ | INTENT_LIMITED_BITS.guildMembers;
 		const {sent, form} = await openAppForm(READ, (n) => {
-			if (n === 2) (formRef.names.get("intent_content") as {value: boolean}).value = false;
+			if (n === 2) {
+				const input = (
+					formRef.names.get("intent_content") as {input: WeakRef<HTMLInputElement>}
+				).input.deref()!;
+				input.checked = false;
+				input.dispatchEvent(new Event("input"));
+			}
 			return n === 1 ? READ : answer1;
 		});
 		formRef = form;
@@ -256,6 +262,42 @@ describe("the application edit form's flags wiring", () => {
 		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
 		expect(saves).toHaveLength(2);
 		expect(saves[1].flags).toBe(answer1 & ~INTENT_LIMITED_BITS.messageContent);
+	});
+
+	it("CheckboxInput.setState updates value when the input was never generated", () => {
+		const options = new Dialog("").options;
+		options.container = {deref: () => undefined} as WeakRef<HTMLDivElement>;
+		const ungenerated = options.addCheckboxInput("x", () => {});
+		expect(ungenerated.input).toBeUndefined();
+		ungenerated.setState(true);
+		expect(ungenerated.value).toBe(true);
+	});
+
+	it("CheckboxInput.setState updates value when its WeakRef target is gone", () => {
+		const unmounted = new Dialog("").options.addCheckboxInput("y", () => {});
+		unmounted.input = {deref: () => undefined} as WeakRef<HTMLInputElement>;
+		unmounted.setState(true);
+		expect(unmounted.value).toBe(true);
+	});
+
+	it("disables the three intent inputs on an invalid flags read (-1) and keeps them enabled on a valid read", async () => {
+		const {form: invalidForm} = await openAppForm(-1);
+		invalidForm.generateHTML();
+		for (const field of ["intent_presence", "intent_members", "intent_content"]) {
+			expect(
+				(invalidForm.names.get(field) as {input: WeakRef<HTMLInputElement>}).input.deref()!
+					.disabled,
+			).toBe(true);
+		}
+
+		const {form: validForm} = await openAppForm(READ);
+		validForm.generateHTML();
+		for (const field of ["intent_presence", "intent_members", "intent_content"]) {
+			expect(
+				(validForm.names.get(field) as {input: WeakRef<HTMLInputElement>}).input.deref()!
+					.disabled,
+			).toBe(false);
+		}
 	});
 
 	it("an answer with invalid flags moves neither the boxes nor the baseline", async () => {
@@ -352,6 +394,23 @@ describe("the application edit form's flags wiring", () => {
 		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
 		expect(saves).toHaveLength(2);
 		expect(saves[1].flags).toBe(READ);
+	});
+
+	it("boxes disabled by an invalid read come back on once a save answers with valid flags", async () => {
+		// Call 1 is the boot read (invalid); call 2 answers the save with valid flags.
+		const {sent, form} = await openAppForm(-1, (call) => (call === 1 ? -1 : READ));
+		form.generateHTML();
+		const inputOf = (field: string) =>
+			(form.names.get(field) as {input: WeakRef<HTMLInputElement>}).input.deref()!;
+		expect(inputOf("intent_presence").disabled).toBe(true);
+
+		await form.submit();
+		await settle(sent);
+
+		for (const field of ["intent_presence", "intent_members", "intent_content"]) {
+			expect(inputOf(field).disabled, `${field} stayed disabled`).toBe(false);
+		}
+		expect(form.names.get("intent_presence").value).toBe(true);
 	});
 
 	it("a read without a numeric flags PATCHes no flags at all instead of garbage", async () => {

@@ -715,15 +715,17 @@ class CheckboxInput implements OptionsElement<boolean> {
 	readonly owner: Options;
 	readonly onSubmit: (str: boolean) => void;
 	value: boolean;
+	disabled: boolean;
 	input!: WeakRef<HTMLInputElement>;
 	constructor(
 		label: string,
 		onSubmit: (str: boolean) => void,
 		owner: Options,
-		{initState = false} = {},
+		{initState = false, disabled = false} = {},
 	) {
 		this.label = label;
 		this.value = initState;
+		this.disabled = disabled;
 		this.owner = owner;
 		this.onSubmit = onSubmit;
 	}
@@ -735,6 +737,7 @@ class CheckboxInput implements OptionsElement<boolean> {
 		const input = document.createElement("input");
 		input.type = "checkbox";
 		input.checked = this.value;
+		input.disabled = this.disabled;
 		input.oninput = this.onChange.bind(this);
 		this.input = new WeakRef(input);
 		div.append(input);
@@ -750,13 +753,18 @@ class CheckboxInput implements OptionsElement<boolean> {
 		}
 	}
 	setState(state: boolean) {
+		this.value = state;
 		if (this.input) {
 			const checkbox = this.input.deref();
 			if (checkbox) {
 				checkbox.checked = state;
-				this.value = state;
 			}
 		}
+	}
+	setDisabled(disabled: boolean) {
+		this.disabled = disabled;
+		const checkbox = this.input?.deref();
+		if (checkbox) checkbox.disabled = disabled;
 	}
 	onchange: (str: boolean) => void = (_) => {};
 	watchForChange(func: (str: boolean) => void) {
@@ -1963,8 +1971,12 @@ class Options implements OptionsElement<void> {
 		this.generate(button);
 		return button;
 	}
-	addCheckboxInput(label: string, onSubmit: (str: boolean) => void, {initState = false} = {}) {
-		const box = new CheckboxInput(label, onSubmit, this, {initState});
+	addCheckboxInput(
+		label: string,
+		onSubmit: (str: boolean) => void,
+		{initState = false, disabled = false} = {},
+	) {
+		const box = new CheckboxInput(label, onSubmit, this, {initState, disabled});
 		this.options.push(box);
 		this.generate(box);
 		return box;
@@ -2877,8 +2889,12 @@ class Form implements OptionsElement<object> {
 	addOptions(name: string, {ltr = false, noSubmit = false} = {}) {
 		return this.options.addOptions(name, {ltr, noSubmit});
 	}
-	addCheckboxInput(label: string, formName: string, {initState = false, required = false} = {}) {
-		const box = this.options.addCheckboxInput(label, (_) => {}, {initState});
+	addCheckboxInput(
+		label: string,
+		formName: string,
+		{initState = false, required = false, disabled = false} = {},
+	) {
+		const box = this.options.addCheckboxInput(label, (_) => {}, {initState, disabled});
 		this.names.set(formName, box);
 		if (required) {
 			this.required.add(box);
