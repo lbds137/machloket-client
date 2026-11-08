@@ -1655,14 +1655,34 @@ export async function mountMockInstance(
 				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
 			}
 
-			// 14b'. A message edit (Message.edit): mirrors the real server, which refuses
-			// whitespace-only content with 400 50006 (Machloket Server ae29815eb). Nothing
-			// reads the ok answer today (Message.edit reads res.ok), so it stays the send's
-			// empty {}.
-			if (method === "PATCH" && /^\/api\/v9\/channels\/[^/]+\/messages\/[^/]+$/.test(pathname)) {
+			// 14b'. A message edit (Message.edit), mirroring the real server's edit route
+			// (src/api/routes/channels/#channel_id/messages/#message_id/index.ts): a poll message
+			// can't be edited at all (520003, before anything else); otherwise the route loads the
+			// stored message with MESSAGE_PUBLIC_RELATIONS (attachments, not stickers) and spreads
+			// it under the body, and handleMessage (src/api/util/handlers/Message.ts) refuses with
+			// 400 50006 only when nothing else carries the message: no attachments, embeds or
+			// components, and not a forward. Nothing reads the ok answer today (Message.edit
+			// reads res.ok), so it stays the send's empty {}.
+			const editMatch =
+				method === "PATCH" && pathname.match(/^\/api\/v9\/channels\/([^/]+)\/messages\/([^/]+)$/);
+			if (editMatch) {
+				const [, channelId, messageId] = editMatch;
+				const stored = messagesByChannel.get(channelId)?.find((m) => m.id === messageId) as
+					| (messagejson & {message_reference?: {type?: number}})
+					| undefined;
+				if (stored?.poll) {
+					return fulfillJson({code: 520003, message: "Cannot edit a poll message"}, 400);
+				}
 				const sent = parsedBody as {content?: unknown} | undefined;
 				if (typeof sent?.content === "string" && sent.content.trim() === "") {
-					return fulfillJson({code: 50006, message: "Cannot send an empty message"}, 400);
+					const hasOtherContent =
+						(stored?.attachments?.length ?? 0) > 0 ||
+						(stored?.embeds?.length ?? 0) > 0 ||
+						(stored?.components?.length ?? 0) > 0 ||
+						stored?.message_reference?.type === 1;
+					if (!hasOtherContent) {
+						return fulfillJson({code: 50006, message: "Cannot send an empty message"}, 400);
+					}
 				}
 				return route.fulfill({status: 200, contentType: "application/json", body: "{}"});
 			}

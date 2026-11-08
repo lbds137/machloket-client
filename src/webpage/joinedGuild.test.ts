@@ -64,7 +64,7 @@ it("going elsewhere drops the wait, so a late arrival doesn't pull the view back
 });
 
 it("the join landing opens the guild's channel only when the guild actually switched", () => {
-	const guild = {id: "g1", loadChannel: vi.fn()};
+	const guild = {id: "g1", loadChannel: vi.fn(async () => {})};
 	const user = Object.assign(Object.create(Localuser.prototype), {
 		guildids: new Map([["g1", guild]]),
 		lookingguild: undefined,
@@ -81,8 +81,24 @@ it("the join landing opens the guild's channel only when the guild actually swit
 	expect(guild.loadChannel).toHaveBeenCalledTimes(1);
 });
 
+it("loadGuildAndOpenChannel catches a rejected loadChannel with console.error", async () => {
+	const err = new Error("channel load failed");
+	const guild = {id: "g1", loadChannel: vi.fn(() => Promise.reject(err))};
+	const user = Object.assign(Object.create(Localuser.prototype), {
+		guildids: new Map([["g1", guild]]),
+		lookingguild: undefined,
+	}) as InstanceType<typeof Localuser>;
+	vi.spyOn(user, "loadGuild").mockImplementation(() => guild as never);
+	const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+	user.loadGuildAndOpenChannel("g1");
+	await Promise.resolve();
+
+	expect(errorSpy).toHaveBeenCalledWith(err);
+});
+
 it("both join arms land through the helper: a known guild and an arrived one", () => {
-	const guild = {id: "g1", loadChannel: vi.fn()};
+	const guild = {id: "g1", loadChannel: vi.fn(async () => {})};
 	const known = Object.assign(Object.create(Localuser.prototype), {
 		guildids: new Map([["g1", guild]]),
 		joinedGuildId: undefined,
@@ -92,7 +108,7 @@ it("both join arms land through the helper: a known guild and an arrived one", (
 	known.openJoinedGuild("g1");
 	expect(guild.loadChannel).toHaveBeenCalledTimes(1);
 
-	const arrivedGuild = {id: "g2", loadChannel: vi.fn()};
+	const arrivedGuild = {id: "g2", loadChannel: vi.fn(async () => {})};
 	const waiting = Object.assign(Object.create(Localuser.prototype), {
 		guildids: new Map([["g2", arrivedGuild]]),
 		joinedGuildId: "g2",

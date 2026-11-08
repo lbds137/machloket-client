@@ -323,14 +323,6 @@ export class Discovery {
 			new Dialog(I18n.requestFailed(message)).show();
 			return;
 		}
-		// The server's GUILD_CREATE adds the guild; give it a while, not forever.
-		let guildObj = this.localuser.guildids.get(guild.id);
-		for (let waited = 0; !guildObj && waited < 15000; waited += 100) {
-			await new Promise((res) => setTimeout(res, 100));
-			guildObj = this.localuser.guildids.get(guild.id);
-		}
-		if (!guildObj) return;
-		guildObj.loadGuild();
-		guildObj.loadChannel();
+		this.localuser.openJoinedGuild(guild.id);
 	}
 }
