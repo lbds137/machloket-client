@@ -232,6 +232,35 @@ describe("view backup codes from the security grid", () => {
 		const {subForms} = capturePrompts();
 		clickButton(I18n.localuser.viewBackupCodes());
 		const {bodies: challengeSent} = captureWithHeaders(CHALLENGE_URL, () =>
+			Response.json(
+				{
+					code: 50035,
+					message: "Invalid Form Body",
+					errors: {
+						password: {
+							_errors: [{code: "INVALID_PASSWORD", message: "Password is invalid"}],
+						},
+					},
+				},
+				{status: 400},
+			),
+		);
+		const verifySent = captureRequests(VERIFY_URL, () => Response.json({}));
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "wrong";
+		await form.submit();
+
+		expect(challengeSent).toEqual([{password: "wrong"}]);
+		expect(verifySent).toHaveLength(0);
+		expect(document.body.textContent).toContain("Password is invalid");
+	});
+
+	it("a bare {code: 400} challenge refusal falls back to onErrorBody and never reaches codes-verification", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		const {bodies: challengeSent} = captureWithHeaders(CHALLENGE_URL, () =>
 			Response.json({code: 400, message: "Password is invalid"}, {status: 400}),
 		);
 		const verifySent = captureRequests(VERIFY_URL, () => Response.json({}));
@@ -245,22 +274,30 @@ describe("view backup codes from the security grid", () => {
 		expect(document.body.textContent).toContain(I18n.localuser.badPassword());
 	});
 
-	it("a 2xx answer that is not our JSON refuses visibly instead of closing the pane in silence", async () => {
+	it("a 2xx challenge answer without nonces refuses visibly instead of closing the pane in silence", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () => Response.json({}));
+		const verifySent = captureRequests(VERIFY_URL, () => Response.json({}));
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+
+		expect(verifySent).toHaveLength(0);
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200, bad body"));
+		expect(document.querySelector(".backupCodeGrid")).toBeNull();
+	});
+
+	it("a 2xx HTML answer on the view leg refuses visibly instead of closing the pane in silence", async () => {
 		await openSecurityGrid();
 		const {subForms} = capturePrompts();
 		clickButton(I18n.localuser.viewBackupCodes());
 		captureRequests(CHALLENGE_URL, () =>
 			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
 		);
-		// Both shapes of a proxy's error page: unparseable text, then valid JSON
-		// that isn't an answer object.
-		let attempts = 0;
-		captureRequests(VERIFY_URL, () => {
-			attempts++;
-			return attempts === 1
-				? new Response("<html>proxy error</html>", {status: 200})
-				: Response.json("ok");
-		});
+		captureRequests(VERIFY_URL, () => new Response("<html>proxy error</html>", {status: 200}));
 
 		const form = subForms.at(-1)!;
 		form.names.get("password")!.value = "hunter22";
@@ -270,18 +307,166 @@ describe("view backup codes from the security grid", () => {
 		expect(document.querySelector(".backupCodeGrid")).toBeNull();
 	});
 
-	it("a 2xx bad body on the regenerate leg refuses and keeps the last shown batch up", async () => {
+	it("a 2xx non-object JSON answer on the view leg refuses visibly instead of closing the pane in silence", async () => {
 		await openSecurityGrid();
 		const {subForms} = capturePrompts();
 		clickButton(I18n.localuser.viewBackupCodes());
 		captureRequests(CHALLENGE_URL, () =>
 			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
 		);
+		captureRequests(VERIFY_URL, () => Response.json("ok"));
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+
+		expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200, bad body"));
+		expect(document.querySelector(".backupCodeGrid")).toBeNull();
+	});
+
+	it("disables Done, Copy, Download and Regenerate while a regenerate is in flight so Done cannot dismiss past the new batch", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let releaseRegen!: () => void;
+		const regenGate = new Promise<void>((r) => {
+			releaseRegen = r;
+		});
 		captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean};
+			if (body?.regenerate === true) {
+				return regenGate.then(() =>
+					Response.json({backup_codes: [{code: "nEwC0de1", consumed: false}]}),
+				);
+			}
+			return Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		const findBtn = (label: string) =>
+			[...document.querySelectorAll<HTMLButtonElement>("button")].find(
+				(b) => b.textContent === label,
+			)!;
+		const doneBtn = findBtn(I18n.backupCodes.done());
+		const copyBtn = findBtn(I18n.backupCodes.copy());
+		const downloadBtn = findBtn(I18n.backupCodes.download());
+		const regenBtn = findBtn(I18n.backupCodes.regenerate());
+
+		regenBtn.click();
+		expect(doneBtn.disabled).toBe(true);
+		expect(copyBtn.disabled).toBe(true);
+		expect(downloadBtn.disabled).toBe(true);
+		expect(regenBtn.disabled).toBe(true);
+		expect(regenBtn.getAttribute("aria-busy")).toBe("true");
+
+		doneBtn.click();
+		releaseRegen();
+
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["nEwC0de1"]));
+		expect(document.querySelector(".backupCodeGrid")).not.toBeNull();
+		expect(doneBtn.disabled).toBe(false);
+		expect(copyBtn.disabled).toBe(false);
+		expect(downloadBtn.disabled).toBe(false);
+		expect(regenBtn.disabled).toBe(false);
+		expect(regenBtn.getAttribute("aria-busy")).toBeNull();
+	});
+
+	it("a failed regenerate re-reads with the view nonce and shows the new batch the server holds", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean};
+			if (body?.regenerate === true) {
+				return new Response("err", {status: 500});
+			}
+			viewCalls++;
+			return Response.json({
+				backup_codes: [{code: viewCalls === 1 ? "0ldC0de1" : "nEwC0de1", consumed: false}],
+			});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		clickButton(I18n.backupCodes.regenerate());
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 500")),
+		);
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["nEwC0de1"]));
+		expect(verifySent).toEqual([
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+			{key: "hunter22", nonce: "n-regen", regenerate: true},
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+		]);
+	});
+
+	it("a failed regenerate whose follow-up view read also fails hides the grid so dead codes never stay on screen", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean};
+			if (body?.regenerate === true) {
+				return new Response("err", {status: 500});
+			}
+			viewCalls++;
+			return viewCalls === 1
+				? Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]})
+				: new Response("err", {status: 500});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		clickButton(I18n.backupCodes.regenerate());
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 500")),
+		);
+		await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+		expect(verifySent).toEqual([
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+			{key: "hunter22", nonce: "n-regen", regenerate: true},
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+		]);
+	});
+
+	it("a 2xx HTML answer on the regenerate leg refuses, re-reads with the view nonce, and hides the grid when no codes remain", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
 			const body = req.body as {regenerate?: boolean} | undefined;
-			return body?.regenerate === true
-				? new Response("<html>proxy error</html>", {status: 200})
-				: Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]});
+			if (body?.regenerate === true) {
+				return new Response("<html>proxy error</html>", {status: 200});
+			}
+			viewCalls++;
+			return viewCalls === 1
+				? Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]})
+				: Response.json({backup_codes: []});
 		});
 
 		const form = subForms.at(-1)!;
@@ -293,8 +478,126 @@ describe("view backup codes from the security grid", () => {
 		await vi.waitFor(() =>
 			expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200, bad body")),
 		);
-		// The server has already expired these; the dialog stays the last truth while
-		// the refusal says the refresh failed.
+		await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+		expect(verifySent).toEqual([
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+			{key: "hunter22", nonce: "n-regen", regenerate: true},
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+		]);
+	});
+
+	it("a 2xx non-object JSON answer on the regenerate leg refuses, re-reads with the view nonce, and updates the grid", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean} | undefined;
+			if (body?.regenerate === true) {
+				return Response.json("ok");
+			}
+			viewCalls++;
+			return Response.json({
+				backup_codes: [{code: viewCalls === 1 ? "0ldC0de1" : "nEwC0de1", consumed: false}],
+			});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		clickButton(I18n.backupCodes.regenerate());
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200, bad body")),
+		);
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["nEwC0de1"]));
+		expect(verifySent).toEqual([
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+			{key: "hunter22", nonce: "n-regen", regenerate: true},
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+		]);
+	});
+
+	it("a 4xx regenerate refusal keeps the shown codes and never re-reads: the server expired nothing", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean} | undefined;
+			// The server checks MFA and the nonce BEFORE expiring anything, so its 4xx
+			// answers (here an expired nonce) leave the old batch valid.
+			if (body?.regenerate === true) {
+				return Response.json(
+					{
+						code: 50035,
+						message: "Invalid Form Body",
+						errors: {nonce: {_errors: [{code: "INVALID_NONCE", message: "Invalid or expired nonce"}]}},
+					},
+					{status: 400},
+				);
+			}
+			return Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		const regen = [...document.querySelectorAll("button")].find(
+			(b) => b.textContent === I18n.backupCodes.regenerate(),
+		)!;
+		regen.click();
+		await vi.waitFor(() => expect(verifySent).toHaveLength(2));
+		// The finally re-enables Regenerate: the handler has run to its end.
+		await vi.waitFor(() => expect(regen.disabled).toBe(false));
 		expect(gridCodes()).toEqual(["0ldC0de1"]);
+		expect(document.querySelector(".backupCodeGrid")?.closest(".removeElm")).toBeNull();
+		expect(verifySent).toHaveLength(2);
+	});
+
+	it("a 2xx regenerate answer with no usable code refuses and re-reads instead of closing in silence", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean} | undefined;
+			// An object with the right key but nothing usable in it: the old batch is
+			// already expired server-side, so the grid must not just vanish unexplained.
+			if (body?.regenerate === true) {
+				return Response.json({backup_codes: [{code: "", consumed: false}]});
+			}
+			viewCalls++;
+			return Response.json({
+				backup_codes: [{code: viewCalls === 1 ? "0ldC0de1" : "nEwC0de1", consumed: false}],
+			});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		clickButton(I18n.backupCodes.regenerate());
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 200, bad body")),
+		);
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["nEwC0de1"]));
+		expect(verifySent).toEqual([
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+			{key: "hunter22", nonce: "n-regen", regenerate: true},
+			{key: "hunter22", nonce: "n-view", regenerate: false},
+		]);
 	});
 });

@@ -4,7 +4,7 @@ import {I18n} from "./i18n";
 type BackupCodeEntry = {code?: unknown; consumed?: unknown};
 
 /** The unconsumed, non-empty code strings in a codes-verification answer. */
-function codesOf(answer: unknown): string[] {
+export function codesOf(answer: unknown): string[] {
 	const raw = (answer as {backup_codes?: unknown} | null | undefined)?.backup_codes;
 	if (!Array.isArray(raw)) return [];
 	const codes: string[] = [];
@@ -21,6 +21,10 @@ function codesOf(answer: unknown): string[] {
 	}
 	return codes;
 }
+
+/** What a regenerate callback returns when the server refused before expiring anything (a
+ * 4xx): the codes on screen are still the valid ones, so the grid stays as it is. */
+export const REGEN_UNCHANGED: unique symbol = Symbol("regen-unchanged");
 
 export function showBackupCodes(
 	answer: unknown,
@@ -44,7 +48,8 @@ export function showBackupCodes(
 				if (regenerating) return;
 				regenerating = true;
 				try {
-					const next = await regenerate();
+					// No codes on screen here, so a throw or an unchanged answer just ends the action.
+					const next = await Promise.resolve(regenerate()).catch(() => null);
 					if (codesOf(next).length > 0) {
 						dialog.hide();
 						showBackupCodes(next, opts);
@@ -81,7 +86,7 @@ export function showBackupCodes(
 	dialog.options.addHTMLArea(grid);
 
 	const copyStatus = dialog.options.addText("");
-	dialog.options.addButtonInput("", I18n.backupCodes.copy(), async () => {
+	const copyBtn = dialog.options.addButtonInput("", I18n.backupCodes.copy(), async () => {
 		try {
 			await navigator.clipboard.writeText(shown.join("\n"));
 			copyStatus.setText(I18n.backupCodes.copied());
@@ -89,7 +94,7 @@ export function showBackupCodes(
 			copyStatus.setText(I18n.backupCodes.copyFailed());
 		}
 	});
-	dialog.options.addButtonInput("", I18n.backupCodes.download(), () => {
+	const downloadBtn = dialog.options.addButtonInput("", I18n.backupCodes.download(), () => {
 		const blob = new Blob([shown.join("\n") + "\n"], {type: "text/plain"});
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
@@ -102,14 +107,26 @@ export function showBackupCodes(
 	if (regenerate) {
 		// One request and one replacement per action, however often it's tapped.
 		let regenerating = false;
-		dialog.options.addButtonInput("", I18n.backupCodes.regenerate(), async () => {
+		const regenBtn = dialog.options.addButtonInput("", I18n.backupCodes.regenerate(), async () => {
 			if (regenerating) return;
 			regenerating = true;
+			for (const btn of [copyBtn, downloadBtn, regenBtn, doneBtn]) {
+				if (btn.buttonHtml) btn.buttonHtml.disabled = true;
+			}
+			if (regenBtn.buttonHtml) {
+				regenBtn.buttonHtml.setAttribute("aria-busy", "true");
+			}
 			try {
-				const next = codesOf(await regenerate());
-				// A regenerate that answers nothing leaves the last shown batch up:
-				// blanking the grid would read as the codes being gone.
-				if (next.length > 0) {
+				// A throw can't say whether the server got as far as expiring: same as null.
+				const result = await Promise.resolve(regenerate()).catch(() => null);
+				// A refusal before anything expired: the codes on screen are still valid.
+				if (result === REGEN_UNCHANGED) return;
+				const next = codesOf(result);
+				// The server expires the old batch before answering; without a usable
+				// replacement, the codes on screen can no longer be trusted.
+				if (next.length === 0) {
+					dialog.hide();
+				} else {
 					shown = next;
 					renderGrid();
 					// The copied note was about the old batch; it must not read as
@@ -118,10 +135,16 @@ export function showBackupCodes(
 				}
 			} finally {
 				regenerating = false;
+				for (const btn of [copyBtn, downloadBtn, regenBtn, doneBtn]) {
+					if (btn.buttonHtml) btn.buttonHtml.disabled = false;
+				}
+				if (regenBtn.buttonHtml) {
+					regenBtn.buttonHtml.removeAttribute("aria-busy");
+				}
 			}
 		});
 	}
-	dialog.options.addButtonInput("", I18n.backupCodes.done(), () => {
+	const doneBtn = dialog.options.addButtonInput("", I18n.backupCodes.done(), () => {
 		dialog.hide();
 	});
 

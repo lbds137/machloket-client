@@ -6,7 +6,7 @@ import {captureRequests} from "./test/setup";
 await import("./localuser");
 const {Dialog} = await import("./settings");
 const {I18n} = await import("./i18n");
-const {showBackupCodes} = await import("./backupCodes");
+const {showBackupCodes, REGEN_UNCHANGED} = await import("./backupCodes");
 await I18n.done;
 
 afterEach(() => {
@@ -236,7 +236,7 @@ describe("showBackupCodes screen", () => {
 			expect(document.body.textContent).not.toContain(I18n.backupCodes.copied());
 		});
 
-		it("a refused regenerate (null) keeps the old codes and the dialog open", async () => {
+		it("a refused regenerate (null) closes the grid: the old codes may already be expired", async () => {
 			let refused = false;
 			showBackupCodes(
 				{backup_codes: [{code: "old11111", consumed: false}]},
@@ -252,8 +252,9 @@ describe("showBackupCodes screen", () => {
 			expect(btn, "no regenerate button").toBeDefined();
 			btn!.click();
 			await vi.waitFor(() => expect(refused).toBe(true));
-			expect(codesNow()).toEqual(["old11111"]);
-			expect(document.querySelector(".backupCodeGrid")).not.toBeNull();
+			// hide() detaches after removeAni's animation race, so wait for the detach
+			// rather than reading the DOM on the next microtask.
+			await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
 		});
 
 		it("an empty answer with a callback offers regenerating into a full screen", async () => {
@@ -266,6 +267,46 @@ describe("showBackupCodes screen", () => {
 			expect(btn, "no regenerate button").toBeDefined();
 			btn!.click();
 			await vi.waitFor(() => expect(codesNow()).toEqual(["nEwC0de9"]));
+		});
+
+		it("a regenerate that throws closes the grid and leaves no button disabled", async () => {
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => {
+						throw new Error("boom");
+					},
+				},
+			);
+			const btn = regenButton();
+			expect(btn, "no regenerate button").toBeDefined();
+			btn!.click();
+			// A throw can't say whether the server expired the old batch: same as null.
+			await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+			expect(btn!.disabled).toBe(false);
+		});
+
+		it("an unchanged answer keeps the grid and the old codes", async () => {
+			let answered = false;
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => {
+						answered = true;
+						return REGEN_UNCHANGED;
+					},
+				},
+			);
+			const btn = regenButton();
+			btn!.click();
+			await vi.waitFor(() => expect(answered).toBe(true));
+			// The finally re-enables the button: the handler has run to its end.
+			await vi.waitFor(() => expect(btn!.disabled).toBe(false));
+			expect(codesNow()).toEqual(["old11111"]);
+			// hide() marks the background synchronously (removeAni's removeElm) and detaches
+			// it only after the animation race, so the marker is the prompt signal.
+			expect(document.querySelector(".backupCodeGrid")?.closest(".removeElm")).toBeNull();
+			expect(document.querySelector(".backupCodeGrid")).not.toBeNull();
 		});
 
 		it("one tap sends one regenerate however often it is clicked", async () => {
@@ -284,8 +325,10 @@ describe("showBackupCodes screen", () => {
 			const btn = regenButton();
 			expect(btn, "no regenerate button").toBeDefined();
 			btn!.click();
-			btn!.click();
-			btn!.click();
+			// The button is disabled now, so click() would be ignored; call the handler
+			// directly so the in-flight flag stays pinned on its own.
+			btn!.onclick!(new PointerEvent("click"));
+			btn!.onclick!(new PointerEvent("click"));
 			expect(calls).toBe(1);
 			release!();
 			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
