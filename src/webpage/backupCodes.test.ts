@@ -333,6 +333,201 @@ describe("showBackupCodes screen", () => {
 			release!();
 			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
 		});
+
+		it("a regenerate that throws synchronously closes the grid and leaves no button disabled", async () => {
+			const rejections: string[] = [];
+			const onRejection = (e: PromiseRejectionEvent) => {
+				rejections.push(String(e.reason));
+				e.preventDefault();
+			};
+			window.addEventListener("unhandledrejection", onRejection);
+			try {
+				showBackupCodes(
+					{backup_codes: [{code: "old11111", consumed: false}]},
+					{
+						regenerate: () => {
+							throw new Error("sync boom");
+						},
+					},
+				);
+				const buttons = [...document.querySelectorAll<HTMLButtonElement>("button")];
+				const btn = regenButton();
+				expect(btn, "no regenerate button").toBeDefined();
+				btn!.click();
+				await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+				for (const b of buttons) {
+					expect(b.disabled).toBe(false);
+				}
+				expect(rejections).toEqual([]);
+			} finally {
+				window.removeEventListener("unhandledrejection", onRejection);
+			}
+		});
+
+		it("a regenerate that throws synchronously on the none dialog produces no unhandled rejection and leaves its buttons enabled", async () => {
+			const rejections: string[] = [];
+			const onRejection = (e: PromiseRejectionEvent) => {
+				rejections.push(String(e.reason));
+				e.preventDefault();
+			};
+			window.addEventListener("unhandledrejection", onRejection);
+			try {
+				showBackupCodes(
+					{backup_codes: []},
+					{
+						regenerate: () => {
+							throw new Error("sync boom");
+						},
+					},
+				);
+				const buttons = [...document.querySelectorAll<HTMLButtonElement>("button")];
+				const btn = regenButton();
+				expect(btn, "no regenerate button").toBeDefined();
+				btn!.click();
+				for (let tick = 0; tick < 5; tick++) await new Promise((r) => setTimeout(r, 0));
+				expect(rejections).toEqual([]);
+				for (const b of buttons) {
+					expect(b.disabled).toBe(false);
+				}
+			} finally {
+				window.removeEventListener("unhandledrejection", onRejection);
+			}
+		});
+
+		it("disables Done and Regenerate on the none dialog while a regenerate is pending, then re-enables them", async () => {
+			let release!: () => void;
+			const gate = new Promise<void>((r) => (release = r));
+			showBackupCodes(
+				{backup_codes: []},
+				{
+					regenerate: () => gate.then(() => null),
+				},
+			);
+			const doneBtn = [...document.querySelectorAll<HTMLButtonElement>("button")].find(
+				(b) => b.textContent === I18n.backupCodes.done(),
+			)!;
+			const btn = regenButton()!;
+			expect(doneBtn).toBeDefined();
+			expect(btn).toBeDefined();
+
+			btn.click();
+			expect(doneBtn.disabled).toBe(true);
+			expect(btn.disabled).toBe(true);
+			expect(btn.getAttribute("aria-busy")).toBe("true");
+
+			release();
+			await vi.waitFor(() => expect(doneBtn.disabled).toBe(false));
+			expect(btn.disabled).toBe(false);
+			expect(btn.getAttribute("aria-busy")).toBeNull();
+		});
+
+		it("restores focus to the Regenerate button after a regenerate settles with the grid still open", async () => {
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => ({
+						backup_codes: [{code: "new22222", consumed: false}],
+					}),
+				},
+			);
+			const btn = regenButton()!;
+			// A real tap focuses the button; disabling it in flight then drops focus.
+			btn.focus();
+			btn.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(document.activeElement).toBe(btn);
+		});
+
+		it("leaves focus on a refusal dialog opened over the grid", async () => {
+			let refusal!: HTMLButtonElement;
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => {
+						// Stands in for showRefusal: another dialog takes focus on top.
+						refusal = document.createElement("button");
+						document.body.append(refusal);
+						refusal.focus();
+						return REGEN_UNCHANGED;
+					},
+				},
+			);
+			const btn = regenButton()!;
+			btn.click();
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(document.activeElement, "focus moved back under the refusal").toBe(refusal);
+		});
+
+		/** Stands in for an MFA prompt that took focus and is fading out when the action settles. */
+		const fadingPromptTakesFocus = () => {
+			const prompt = document.createElement("div");
+			prompt.classList.add("removeElm");
+			const field = document.createElement("input");
+			prompt.append(field);
+			document.body.append(prompt);
+			field.focus();
+		};
+
+		it("takes focus back from a prompt that is fading out (grid)", async () => {
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => {
+						fadingPromptTakesFocus();
+						return REGEN_UNCHANGED;
+					},
+				},
+			);
+			const btn = regenButton()!;
+			btn.click();
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(document.activeElement, "focus stranded in a closing prompt").toBe(btn);
+		});
+
+		it("takes focus back from a prompt that is fading out (no codes on screen)", async () => {
+			showBackupCodes(
+				{backup_codes: []},
+				{
+					regenerate: async () => {
+						fadingPromptTakesFocus();
+						return null;
+					},
+				},
+			);
+			const btn = regenButton()!;
+			btn.click();
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(document.activeElement, "focus stranded in a closing prompt").toBe(btn);
+		});
+
+		it("the no-codes screen never refocuses its own Regenerate once new codes replace it", async () => {
+			showBackupCodes(
+				{backup_codes: []},
+				{regenerate: async () => ({backup_codes: [{code: "new22222", consumed: false}]})},
+			);
+			const btn = regenButton()!;
+			const focused: Element[] = [];
+			btn.addEventListener("focus", () => focused.push(btn));
+			btn.click();
+			await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).not.toBeNull());
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(focused, "the closing screen took focus").toEqual([]);
+		});
+
+		it("does not focus the Regenerate button of a grid that is closing", async () => {
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{regenerate: async () => null},
+			);
+			const btn = regenButton()!;
+			const focused: Element[] = [];
+			btn.addEventListener("focus", () => focused.push(btn));
+			btn.click();
+			await vi.waitFor(() => expect(btn.closest(".removeElm")).not.toBeNull());
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(focused, "a closing grid took focus").toEqual([]);
+		});
 	});
 });
 

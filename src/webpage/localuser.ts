@@ -3841,12 +3841,28 @@ class Localuser {
 								regenerate: async () => {
 									const regenRes = await codesFetch({nonce: regenerate_nonce, regenerate: true});
 									if (!regenRes?.ok) {
+										const errBody = regenRes
+											? await regenRes
+													.clone()
+													.json()
+													.catch(() => null)
+											: null;
 										await showRefusal(regenRes);
-										// The server checks MFA and the nonce before it expires anything,
-										// so a 4xx leaves the shown batch valid: no re-read (which would
-										// prompt for MFA again), keep the grid. A 5xx or a network failure
-										// may come after the expiry, so those fall through to the re-read.
-										if (regenRes && regenRes.status >= 400 && regenRes.status < 500)
+										// The server refuses before it expires anything: its rate limiter
+										// runs before the route (a 429 whose JSON has a numeric
+										// `retry_after`), and the route checks MFA and the nonce first (a
+										// 4xx whose JSON has a numeric `code`). Those leave the shown batch
+										// valid, so keep the grid without re-reading (which would prompt for
+										// MFA again). A proxy's 4xx (408, 499), a 5xx, or a network failure
+										// can follow an upstream commit, so those fall through to the re-read.
+										const fields =
+											typeof errBody === "object" && errBody !== null
+												? (errBody as {code?: unknown; retry_after?: unknown})
+												: {};
+										const serverRefusal =
+											typeof fields.code === "number" ||
+											(regenRes?.status === 429 && typeof fields.retry_after === "number");
+										if (regenRes && regenRes.status >= 400 && regenRes.status < 500 && serverRefusal)
 											return REGEN_UNCHANGED;
 									} else {
 										const next = await regenRes

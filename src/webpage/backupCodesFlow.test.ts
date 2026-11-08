@@ -563,6 +563,41 @@ describe("view backup codes from the security grid", () => {
 		expect(verifySent).toHaveLength(2);
 	});
 
+	it("the server's rate-limit 429 keeps the shown codes and never re-reads: the limiter runs before the route", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean} | undefined;
+			// The server's limiter body (middlewares/RateLimit.ts): no `code`, a numeric retry_after.
+			if (body?.regenerate === true) {
+				return Response.json(
+					{message: "You are being rate limited.", retry_after: 3, global: false},
+					{status: 429},
+				);
+			}
+			return Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		const regen = [...document.querySelectorAll("button")].find(
+			(b) => b.textContent === I18n.backupCodes.regenerate(),
+		)!;
+		regen.click();
+		await vi.waitFor(() => expect(verifySent).toHaveLength(2));
+		await vi.waitFor(() => expect(regen.disabled).toBe(false));
+		expect(verifySent, "a rate-limited regenerate must not re-read").toHaveLength(2);
+		expect(gridCodes()).toEqual(["0ldC0de1"]);
+		expect(document.querySelector(".backupCodeGrid")?.closest(".removeElm")).toBeNull();
+	});
+
 	it("a 2xx regenerate answer with no usable code refuses and re-reads instead of closing in silence", async () => {
 		await openSecurityGrid();
 		const {subForms} = capturePrompts();
@@ -599,5 +634,81 @@ describe("view backup codes from the security grid", () => {
 			{key: "hunter22", nonce: "n-regen", regenerate: true},
 			{key: "hunter22", nonce: "n-view", regenerate: false},
 		]);
+	});
+
+	it("a 408 non-JSON answer on the regenerate leg refuses, re-reads with the view nonce, and shows the re-read's codes", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean} | undefined;
+			if (body?.regenerate === true) {
+				return new Response("Request Timeout", {status: 408});
+			}
+			viewCalls++;
+			return Response.json({
+				backup_codes: [{code: viewCalls === 1 ? "0ldC0de1" : "nEwC0de1", consumed: false}],
+			});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		clickButton(I18n.backupCodes.regenerate());
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 408")),
+		);
+		await vi.waitFor(() =>
+			expect(verifySent).toEqual([
+				{key: "hunter22", nonce: "n-view", regenerate: false},
+				{key: "hunter22", nonce: "n-regen", regenerate: true},
+				{key: "hunter22", nonce: "n-view", regenerate: false},
+			]),
+		);
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["nEwC0de1"]));
+	});
+
+	it("a network rejection on the regenerate leg re-reads with the view nonce and shows the re-read's codes", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		let viewCalls = 0;
+		const {bodies: verifySent} = captureWithHeaders(VERIFY_URL, (req) => {
+			const body = req.body as {regenerate?: boolean} | undefined;
+			if (body?.regenerate === true) {
+				throw new TypeError("Failed to fetch");
+			}
+			viewCalls++;
+			return Response.json({
+				backup_codes: [{code: viewCalls === 1 ? "0ldC0de1" : "nEwC0de1", consumed: false}],
+			});
+		});
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+
+		clickButton(I18n.backupCodes.regenerate());
+		await vi.waitFor(() =>
+			expect(document.body.textContent).toContain(I18n.requestFailed("offline")),
+		);
+		await vi.waitFor(() =>
+			expect(verifySent).toEqual([
+				{key: "hunter22", nonce: "n-view", regenerate: false},
+				{key: "hunter22", nonce: "n-regen", regenerate: true},
+				{key: "hunter22", nonce: "n-view", regenerate: false},
+			]),
+		);
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["nEwC0de1"]));
 	});
 });
