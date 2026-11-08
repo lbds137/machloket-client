@@ -18,6 +18,8 @@ test("an archived thread shows the unavailable hint and no command rows", async 
 	await loginAndOpenChannel(page);
 	await page.goto(`/channels/${MOCK_GUILD_ID}/${MOCK_ARCHIVED_THREAD.id}`);
 	await expect(page.locator("#channelname")).toHaveText("#" + MOCK_ARCHIVED_THREAD.name);
+	// Not about the hint: on the phone layout the composer sits off canvas until the
+	// deep-link landing slides the chat in, so this waits for that open before typing.
 	await expect(page.locator("#page")).toHaveClass(/mobileMainOpen/);
 
 	const typebox = page.locator("#typebox");
