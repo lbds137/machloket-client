@@ -23,6 +23,11 @@ export const INTENT_FULL_BITS = {
 
 export type IntentName = keyof typeof INTENT_LIMITED_BITS;
 
+/** Whether a read `flags` value is a non-negative 31-bit integer safe for 32-bit bitwise ops. */
+export function isFlagsValue(x: unknown): x is number {
+	return typeof x === "number" && Number.isInteger(x) && x >= 0 && x <= 0x7fffffff;
+}
+
 /** What the edit form shows for an intent: on when its limited OR its full bit is set. */
 export function intentShown(read: number, name: IntentName): boolean {
 	return (read & (INTENT_LIMITED_BITS[name] | INTENT_FULL_BITS[name])) !== 0;

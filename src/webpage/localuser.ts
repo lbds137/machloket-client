@@ -1,5 +1,5 @@
 import {Guild} from "./guild.js";
-import {foldIntentFlags, intentShown, INTENT_LIMITED_BITS} from "./intentFlags.js";
+import {foldIntentFlags, intentShown, INTENT_LIMITED_BITS, isFlagsValue} from "./intentFlags.js";
 import type {IntentName} from "./intentFlags.js";
 import {bumpCommandRecency} from "./commandRecency.js";
 import {slashCommandQuery} from "./slashQuery.js";
@@ -5226,23 +5226,32 @@ class Localuser {
 		// limited bit, so an untouched full-bit-only grant never gains one on an unrelated
 		// save — the owner's later revocation of the full bit then really ends the intent.
 		const initStates = {
-			presence: intentShown(json.flags, "presence"),
-			guildMembers: intentShown(json.flags, "guildMembers"),
-			messageContent: intentShown(json.flags, "messageContent"),
+			presence: isFlagsValue(json.flags) && intentShown(json.flags, "presence"),
+			guildMembers: isFlagsValue(json.flags) && intentShown(json.flags, "guildMembers"),
+			messageContent: isFlagsValue(json.flags) && intentShown(json.flags, "messageContent"),
 		};
 		// The read is live: the PATCH answer carries the stored (masked) flags, so a second
 		// save in this form session folds onto it instead of the boot-time read, and the
 		// delta baseline moves to the last save — "changed" means changed since then, or a
 		// toggle switched back to its starting value would be silently dropped.
 		let readFlags = json.flags;
+		// What the last PATCH carried per box: the boxes stay editable while it's in flight,
+		// so the refresh moves only a box the user hasn't touched since; a box they changed
+		// keeps their value and counts as a change against the new baseline.
+		let sentStates = {...initStates};
 		const form = container.addSubForm(
 			json.name,
 			(res: any) => {
-				if (res && typeof res.flags === "number") {
+				if (res && isFlagsValue(res.flags)) {
 					readFlags = res.flags;
 					initStates.presence = intentShown(res.flags, "presence");
 					initStates.guildMembers = intentShown(res.flags, "guildMembers");
 					initStates.messageContent = intentShown(res.flags, "messageContent");
+					if (presenceBox.value === sentStates.presence) presenceBox.setState(initStates.presence);
+					if (membersBox.value === sentStates.guildMembers)
+						membersBox.setState(initStates.guildMembers);
+					if (contentBox.value === sentStates.messageContent)
+						contentBox.setState(initStates.messageContent);
 				}
 			},
 			{
@@ -5287,24 +5296,42 @@ class Localuser {
 		// intent's bits is set, and folded into flags replacing only the limited bits — the
 		// checkbox fields below are form-local names the preprocessor strips before the PATCH.
 		form.addText(I18n.localuser.intentsHint());
-		form.addCheckboxInput(I18n.localuser.intentPresence(), "intent_presence", {
-			initState: intentShown(json.flags, "presence"),
+		const presenceBox = form.addCheckboxInput(I18n.localuser.intentPresence(), "intent_presence", {
+			initState: initStates.presence,
 		});
-		form.addCheckboxInput(I18n.localuser.intentGuildMembers(), "intent_members", {
-			initState: intentShown(json.flags, "guildMembers"),
-		});
-		form.addCheckboxInput(I18n.localuser.intentMessageContent(), "intent_content", {
-			initState: intentShown(json.flags, "messageContent"),
-		});
-		// The intent_* fields are form-local names: the preprocessor folds them into flags and
-		// deletes them before the PATCH. A read without a numeric flags PATCHes no flags key
-		// at all (folding into undefined would derive a number the server could store).
-		// addPreprocessor replaces, never chains: a second one on this form would silently
-		// drop this fold and leak the keys (the wiring test pins their absence).
+		const membersBox = form.addCheckboxInput(
+			I18n.localuser.intentGuildMembers(),
+			"intent_members",
+			{
+				initState: initStates.guildMembers,
+			},
+		);
+		const contentBox = form.addCheckboxInput(
+			I18n.localuser.intentMessageContent(),
+			"intent_content",
+			{
+				initState: initStates.messageContent,
+			},
+		);
+		// The intent_* fields are form-local names: the preprocessor deletes them before the
+		// PATCH, and folds them into flags only when an intent toggle changed and the read
+		// carries a valid flags integer (an invalid or missing read, or a save that touched no
+		// intent toggle, PATCHes no flags key at all). addPreprocessor replaces, never chains:
+		// a second one on this form would silently drop this fold and leak the keys (the wiring
+		// test pins their absence).
 		form.addPreprocessor((obj: any) => {
-			const read = typeof readFlags === "number" ? readFlags : undefined;
-			if (read !== undefined) {
-				// Unchanged toggles read as their bit stands in `read`; only a change folds.
+			sentStates = {
+				presence: obj.intent_presence,
+				guildMembers: obj.intent_members,
+				messageContent: obj.intent_content,
+			};
+			const changed =
+				obj.intent_presence !== initStates.presence ||
+				obj.intent_members !== initStates.guildMembers ||
+				obj.intent_content !== initStates.messageContent;
+			if (changed && isFlagsValue(readFlags)) {
+				const read = readFlags;
+				// When another toggle changed, unchanged ones keep their bit as it stands in `read`.
 				const toggle = (name: IntentName, value: boolean, init: boolean): boolean =>
 					value === init ? (read & INTENT_LIMITED_BITS[name]) !== 0 : value;
 				obj.flags = foldIntentFlags(read, {
