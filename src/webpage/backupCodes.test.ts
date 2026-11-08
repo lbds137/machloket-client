@@ -88,7 +88,31 @@ describe("showBackupCodes screen", () => {
 	it("a valid empty answer says there are no codes instead of doing nothing", () => {
 		showBackupCodes({backup_codes: []});
 		expect(document.body.textContent).toContain(I18n.backupCodes.none());
+		expect(document.body.textContent).not.toContain(I18n.backupCodes.noneRegenerate());
 		expect(document.querySelector(".backupCodeGrid")).toBeNull();
+	});
+
+	it("the none screen with a regenerate callback shows noneRegenerate", () => {
+		showBackupCodes({backup_codes: []}, {regenerate: async () => null});
+		expect(document.body.textContent).toContain(I18n.backupCodes.none());
+		expect(document.body.textContent).toContain(I18n.backupCodes.noneRegenerate());
+	});
+
+	it("without view: true, the grid shows explain and not viewExplain", () => {
+		showBackupCodes({
+			backup_codes: [{code: "a1b2c3d4", consumed: false}],
+		});
+		expect(document.body.textContent).toContain(I18n.backupCodes.explain());
+		expect(document.body.textContent).not.toContain(I18n.backupCodes.viewExplain());
+	});
+
+	it("view: true shows viewExplain and not explain", () => {
+		showBackupCodes(
+			{backup_codes: [{code: "a1b2c3d4", consumed: false}]},
+			{view: true},
+		);
+		expect(document.body.textContent).toContain(I18n.backupCodes.viewExplain());
+		expect(document.body.textContent).not.toContain(I18n.backupCodes.explain());
 	});
 
 	it("leaves the screen up on Escape and background click, and removes it on Done", async () => {
@@ -531,6 +555,76 @@ describe("showBackupCodes screen", () => {
 			await vi.waitFor(() => expect(btn.closest(".removeElm")).not.toBeNull());
 			await vi.waitFor(() => expect(btn.disabled).toBe(false));
 			expect(focused, "a closing grid took focus").toEqual([]);
+		});
+
+		it("after a successful regenerate on a view: true grid, explain replaces viewExplain", async () => {
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					view: true,
+					regenerate: async () => ({
+						backup_codes: [{code: "new22222", consumed: false}],
+					}),
+				},
+			);
+			expect(document.body.textContent).toContain(I18n.backupCodes.viewExplain());
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.explain());
+
+			regenButton()!.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
+			expect(document.body.textContent).toContain(I18n.backupCodes.explain());
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.viewExplain());
+		});
+
+		it("the none screen's regenerate opens a grid showing explain", async () => {
+			showBackupCodes(
+				{backup_codes: []},
+				{
+					view: true,
+					regenerate: async () => ({
+						backup_codes: [{code: "nEwC0de9", consumed: false}],
+					}),
+				},
+			);
+			regenButton()!.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["nEwC0de9"]));
+			expect(document.body.textContent).toContain(I18n.backupCodes.explain());
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.viewExplain());
+		});
+
+		it("a regenerate resolving null on the grid shows regenLost after .backupCodeGrid is gone", async () => {
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{regenerate: async () => null},
+			);
+			regenButton()!.click();
+			await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+			expect(document.body.textContent).toContain(I18n.backupCodes.regenLost());
+		});
+
+		it("REGEN_UNCHANGED and a successful new batch show no regenLost", async () => {
+			let step = 0;
+			showBackupCodes(
+				{backup_codes: [{code: "old11111", consumed: false}]},
+				{
+					regenerate: async () => {
+						step++;
+						return step === 1
+							? REGEN_UNCHANGED
+							: {backup_codes: [{code: "new22222", consumed: false}]};
+					},
+				},
+			);
+			const btn = regenButton()!;
+			btn.click();
+			await vi.waitFor(() => expect(step).toBe(1));
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.regenLost());
+
+			btn.click();
+			await vi.waitFor(() => expect(codesNow()).toEqual(["new22222"]));
+			await vi.waitFor(() => expect(btn.disabled).toBe(false));
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.regenLost());
 		});
 	});
 });

@@ -46,8 +46,10 @@ function refocus(dialog: Dialog, el: HTMLElement | undefined) {
 
 type Btn = ReturnType<Dialog["options"]["addButtonInput"]>;
 
-/** Both screens' regenerate: lock `buttons` and mark Regenerate busy (synchronously,
- * before the first await), run, then unlock and give focus back. */
+/**
+ * Both screens' regenerate: lock `buttons` and mark Regenerate busy (synchronously,
+ * before the first await), run, then unlock and give focus back.
+ */
 async function withBusy(
 	dialog: Dialog,
 	regenBtn: Btn,
@@ -75,7 +77,7 @@ async function withBusy(
 
 export function showBackupCodes(
 	answer: unknown,
-	opts?: {regenerate?: () => Promise<unknown> | null},
+	opts?: {regenerate?: () => Promise<unknown> | null; view?: boolean},
 ): void {
 	const regenerate = opts?.regenerate;
 	const codes = codesOf(answer);
@@ -89,6 +91,7 @@ export function showBackupCodes(
 		dialog.options.addText(I18n.backupCodes.none());
 		const busy: Btn[] = [];
 		if (regenerate) {
+			dialog.options.addText(I18n.backupCodes.noneRegenerate());
 			// One request per action, however often it's tapped. New codes land on a
 			// fresh full screen, the same one a view with codes opens.
 			let regenerating = false;
@@ -109,7 +112,7 @@ export function showBackupCodes(
 							}
 							if (codesOf(next).length > 0) {
 								dialog.hide();
-								showBackupCodes(next, opts);
+								showBackupCodes(next, {...opts, view: false});
 							}
 						});
 					} finally {
@@ -143,7 +146,9 @@ export function showBackupCodes(
 
 	const dialog = new Dialog("");
 	dialog.options.addTitle(I18n.backupCodes.title());
-	dialog.options.addText(I18n.backupCodes.explain());
+	const explain = dialog.options.addText(
+		opts?.view ? I18n.backupCodes.viewExplain() : I18n.backupCodes.explain(),
+	);
 	dialog.options.addHTMLArea(grid);
 
 	const copyStatus = dialog.options.addText("");
@@ -190,9 +195,11 @@ export function showBackupCodes(
 					// replacement, the codes on screen can no longer be trusted.
 					if (next.length === 0) {
 						dialog.hide();
+						new Dialog(I18n.backupCodes.regenLost()).show();
 					} else {
 						shown = next;
 						renderGrid();
+						explain.setText(I18n.backupCodes.explain());
 						// The copied note was about the old batch; it must not read as
 						// covering the new one.
 						copyStatus.setText("");

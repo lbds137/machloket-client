@@ -6,9 +6,11 @@ import {captureRequests} from "./test/setup";
 await import("./localuser");
 const {Localuser} = await import("./localuser");
 const {Dialog} = await import("./settings");
+const {I18n} = await import("./i18n");
 const {INTENT_LIMITED_BITS, INTENT_FULL_BITS, foldIntentFlags, intentShown} = await import(
 	"./intentFlags"
 );
+await I18n.done;
 
 function json(body: unknown, status = 200) {
 	return new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json"}});
@@ -396,13 +398,28 @@ describe("the application edit form's flags wiring", () => {
 		expect(saves[1].flags).toBe(READ);
 	});
 
+	it("an invalid boot read shows intentsUnreadable", async () => {
+		const {form: validForm} = await openAppForm(READ);
+		const {form} = await openAppForm(-1);
+		const html = form.generateHTML();
+		expect(html.textContent).toContain(I18n.localuser.intentsUnreadable());
+		expect(form.options.options).toHaveLength(validForm.options.options.length + 1);
+	});
+
+	it("a valid boot read does not show intentsUnreadable", async () => {
+		const {form} = await openAppForm(READ);
+		const html = form.generateHTML();
+		expect(html.textContent).not.toContain(I18n.localuser.intentsUnreadable());
+	});
+
 	it("boxes disabled by an invalid read come back on once a save answers with valid flags", async () => {
 		// Call 1 is the boot read (invalid); call 2 answers the save with valid flags.
 		const {sent, form} = await openAppForm(-1, (call) => (call === 1 ? -1 : READ));
-		form.generateHTML();
+		const html = form.generateHTML();
 		const inputOf = (field: string) =>
 			(form.names.get(field) as {input: WeakRef<HTMLInputElement>}).input.deref()!;
 		expect(inputOf("intent_presence").disabled).toBe(true);
+		expect(html.textContent).toContain(I18n.localuser.intentsUnreadable());
 
 		await form.submit();
 		await settle(sent);
@@ -411,6 +428,7 @@ describe("the application edit form's flags wiring", () => {
 			expect(inputOf(field).disabled, `${field} stayed disabled`).toBe(false);
 		}
 		expect(form.names.get("intent_presence").value).toBe(true);
+		expect(html.textContent).not.toContain(I18n.localuser.intentsUnreadable());
 	});
 
 	it("a read without a numeric flags PATCHes no flags at all instead of garbage", async () => {

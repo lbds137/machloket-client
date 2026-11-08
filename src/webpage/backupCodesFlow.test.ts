@@ -140,6 +140,26 @@ describe("view backup codes from the security grid", () => {
 		).toBe(true);
 	});
 
+	it("the codes-verification View path shows viewExplain and not explain", async () => {
+		await openSecurityGrid();
+		const {subForms} = capturePrompts();
+		clickButton(I18n.localuser.viewBackupCodes());
+		captureRequests(CHALLENGE_URL, () =>
+			Response.json({nonce: "n-view", regenerate_nonce: "n-regen"}),
+		);
+		captureRequests(VERIFY_URL, () =>
+			Response.json({backup_codes: [{code: "0ldC0de1", consumed: false}]}),
+		);
+
+		const form = subForms.at(-1)!;
+		form.names.get("password")!.value = "hunter22";
+		await form.submit();
+
+		await vi.waitFor(() => expect(gridCodes()).toEqual(["0ldC0de1"]));
+		expect(document.body.textContent).toContain(I18n.backupCodes.viewExplain());
+		expect(document.body.textContent).not.toContain(I18n.backupCodes.explain());
+	});
+
 	it("password → challenge → codes-verification shows the codes; regenerate posts the regenerate nonce and replaces them", async () => {
 		await openSecurityGrid();
 		const {subForms} = capturePrompts();
