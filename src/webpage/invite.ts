@@ -163,7 +163,10 @@ if (window.location.pathname.startsWith("/invite"))
 					console.error(err);
 					alert(I18n.requestFailed("offline"));
 				},
-			);
+			)
+				// A throw in the landing (a full localStorage, the navigation) comes after the join
+				// went through: logged here, not left unhandled. Accepting again lands as already-member.
+				.catch((err: unknown) => console.error(err));
 		}
 
 		document.getElementById("AcceptInvite")!.addEventListener("click", (e) => {

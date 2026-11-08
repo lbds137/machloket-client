@@ -480,7 +480,14 @@ class Embed {
 							console.error(err);
 							alert(I18n.requestFailed("offline"));
 						},
-					);
+					)
+					// A throw while landing is not the request's failure: the join went through,
+					// so the "offline" alert above stays the request's alone. The button comes back
+					// (a retry lands as already-member) and the error is logged, not left unhandled.
+					.catch((err: unknown) => {
+						button.disabled = false;
+						console.error(err);
+					});
 				} else {
 					if (this.json.invite) {
 						const params = new URLSearchParams("");
