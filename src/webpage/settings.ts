@@ -715,7 +715,11 @@ class CheckboxInput implements OptionsElement<boolean> {
 	readonly owner: Options;
 	readonly onSubmit: (str: boolean) => void;
 	value: boolean;
-	disabled: boolean;
+	// Changed only through setDisabled, which also updates the rendered input.
+	private isDisabled: boolean;
+	get disabled(): boolean {
+		return this.isDisabled;
+	}
 	input!: WeakRef<HTMLInputElement>;
 	constructor(
 		label: string,
@@ -725,7 +729,7 @@ class CheckboxInput implements OptionsElement<boolean> {
 	) {
 		this.label = label;
 		this.value = initState;
-		this.disabled = disabled;
+		this.isDisabled = disabled;
 		this.owner = owner;
 		this.onSubmit = onSubmit;
 	}
@@ -762,7 +766,7 @@ class CheckboxInput implements OptionsElement<boolean> {
 		}
 	}
 	setDisabled(disabled: boolean) {
-		this.disabled = disabled;
+		this.isDisabled = disabled;
 		const checkbox = this.input?.deref();
 		if (checkbox) checkbox.disabled = disabled;
 	}
