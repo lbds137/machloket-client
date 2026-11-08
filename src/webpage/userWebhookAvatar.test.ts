@@ -25,6 +25,34 @@ describe("webhook authors with one name and different avatars", () => {
 		expect(without.avatar).toBeNull();
 	});
 
+	it("keep their avatars when the avatar-less one loads first", () => {
+		const owner = {userMap: new Map(), guilds: []} as unknown as Owner;
+		const webhook = {id: "w1", name: "Rick"} as UserJson["webhook"];
+		const json = (avatar: string | null) =>
+			({id: "w1", username: "Rick", avatar, webhook}) as unknown as UserJson;
+
+		const without = new User(json(null), owner);
+		const withAvatar = new User(json("hash1"), owner);
+
+		expect(without).not.toBe(withAvatar);
+		expect(without.avatar).toBeNull();
+		expect(withAvatar.avatar).toBe("hash1");
+	});
+
+	it("stay apart when the name and avatar would join into the same text", () => {
+		const owner = {userMap: new Map(), guilds: []} as unknown as Owner;
+		const webhook = {id: "w1", name: "A"} as UserJson["webhook"];
+		const json = (username: string, avatar: string | null) =>
+			({id: "w1", username, avatar, webhook}) as unknown as UserJson;
+
+		const first = new User(json("A:::B", null), owner);
+		const second = new User(json("A", "B:::"), owner);
+
+		expect(first).not.toBe(second);
+		expect(first.username).toBe("A:::B");
+		expect(second.avatar).toBe("B:::");
+	});
+
 	it("still share one user when name and avatar match", () => {
 		const owner = {userMap: new Map(), guilds: []} as unknown as Owner;
 		const webhook = {id: "w1", name: "Rick"} as UserJson["webhook"];
