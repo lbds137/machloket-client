@@ -98,7 +98,11 @@ describe("the application edit form's flags wiring", () => {
 	 * read leaves flags out of the answer entirely (a shape the server answer says shouldn't
 	 * happen, but the form must not PATCH garbage derived from it). No default parameter:
 	 * an explicit `undefined` argument must not silently become READ. */
-	async function openAppForm(read?: number, answerFlags?: (call: number) => number | undefined) {
+	async function openAppForm(
+		read?: unknown,
+		answerFlags?: (call: number) => number | undefined,
+		answerStatus?: (call: number) => number,
+	) {
 		const answerBody: Record<string, unknown> = {
 			name: "Intent App",
 			description: "",
@@ -119,7 +123,7 @@ describe("the application edit form's flags wiring", () => {
 				if (flags === undefined) delete answerBody.flags;
 				else answerBody.flags = flags;
 			}
-			return json(answerBody);
+			return json(answerBody, answerStatus?.(call));
 		};
 		const sent = captureRequests(`${API}/applications/${APP_ID}`, answer);
 		const stub = Object.create(Localuser.prototype) as InstanceType<typeof Localuser>;
@@ -186,10 +190,9 @@ describe("the application edit form's flags wiring", () => {
 
 	it("an untouched full-bit-only intent gains no limited bit on save", async () => {
 		// Presence granted outright (full bit, no limited bit) plus an unrelated flag: the
-		// toggles show presence on, but the user touches nothing. The PATCH must carry the
-		// read back unchanged — an untouched toggle says nothing about its limited bit, so a
-		// save must not grant it (the owner's later revocation of the full bit would
-		// otherwise leave the intent in force through a bit the user never chose).
+		// toggles show presence on, but the user touches nothing. A save that changes no
+		// intent toggle sends no flags key at all — it can neither grant a limited bit the
+		// user never chose nor overwrite a concurrent intent change from another tab.
 		const read = INTENT_FULL_BITS.presence | (1 << 24);
 		const {sent, form} = await openAppForm(read);
 		expect(form).toBeDefined();
@@ -200,9 +203,115 @@ describe("the application edit form's flags wiring", () => {
 
 		const patch = sent.find(
 			(body) => body && typeof body === "object",
-		) as Record<string, number>;
+		) as Record<string, unknown>;
 		expect(patch).toBeDefined();
-		expect(patch.flags).toBe(read);
+		expect("flags" in patch).toBe(false);
+	});
+
+	it("refreshes the checkboxes from the PATCH answer so a masked-back bit can be cleared again", async () => {
+		const both = INTENT_FULL_BITS.presence | INTENT_LIMITED_BITS.presence;
+		const fullOnly = INTENT_FULL_BITS.presence;
+		const {sent, form} = await openAppForm(both, (n) => (n === 1 ? both : fullOnly));
+		expect(form.names.get("intent_presence").value).toBe(true);
+
+		(form.names.get("intent_presence") as {value: boolean}).value = false;
+		await form.submit();
+		await settle(sent);
+
+		// The server cleared only the limited bit; the full bit keeps the intent on, so the
+		// checkbox must follow the answer back to true along with the baseline.
+		expect(form.names.get("intent_presence").value).toBe(true);
+
+		(form.names.get("intent_presence") as {value: boolean}).value = false;
+		await form.submit();
+		await settle(sent, 2);
+
+		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
+		expect(saves).toHaveLength(2);
+		expect("flags" in saves[1]).toBe(true);
+		expect(saves[1].flags & INTENT_LIMITED_BITS.presence).toBe(0);
+		expect(saves[1].flags).toBe(fullOnly);
+	});
+
+	it("a box the user changed while the PATCH was in flight keeps their change", async () => {
+		// READ has content on, members off. Save 1 turns members on; while that PATCH is out,
+		// the user unticks content. The answer (members on, content still on) must not re-tick
+		// content: it moves the baseline, and the untick then counts as a change on save 2.
+		let formRef: any;
+		const answer1 = READ | INTENT_LIMITED_BITS.guildMembers;
+		const {sent, form} = await openAppForm(READ, (n) => {
+			if (n === 2) (formRef.names.get("intent_content") as {value: boolean}).value = false;
+			return n === 1 ? READ : answer1;
+		});
+		formRef = form;
+		(form.names.get("intent_members") as {value: boolean}).value = true;
+		await form.submit();
+		await settle(sent);
+
+		expect(form.names.get("intent_content").value).toBe(false);
+		expect(form.names.get("intent_members").value).toBe(true);
+
+		await form.submit();
+		await settle(sent, 2);
+		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
+		expect(saves).toHaveLength(2);
+		expect(saves[1].flags).toBe(answer1 & ~INTENT_LIMITED_BITS.messageContent);
+	});
+
+	it("an answer with invalid flags moves neither the boxes nor the baseline", async () => {
+		const {sent, form} = await openAppForm(READ, (n) => (n === 1 ? READ : -1));
+		(form.names.get("intent_members") as {value: boolean}).value = true;
+		await form.submit();
+		await settle(sent);
+
+		// -1 would read as every intent on, moving the baseline to "all on" so save 2 would
+		// see no change and send no flags; the refresh must skip it, keeping members a change.
+		await form.submit();
+		await settle(sent, 2);
+		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
+		expect(saves).toHaveLength(2);
+		expect(saves[1].flags).toBe(READ | INTENT_LIMITED_BITS.guildMembers);
+	});
+
+	it.each(["8192", 1.5, -1, 2147483648])(
+		"an invalid flags read (%j) inits the toggles off and PATCHes no flags key",
+		async (bad) => {
+			const {sent, form} = await openAppForm(bad);
+			expect(form).toBeDefined();
+			expect(form.names.get("intent_presence").value).toBe(false);
+			expect(form.names.get("intent_members").value).toBe(false);
+			expect(form.names.get("intent_content").value).toBe(false);
+
+			(form.names.get("intent_members") as {value: boolean}).value = true;
+			await form.submit();
+			await settle(sent);
+
+			const patch = sent.find(
+				(body) => body && typeof body === "object",
+			) as Record<string, unknown>;
+			expect(patch).toBeDefined();
+			expect("flags" in patch).toBe(false);
+		},
+	);
+
+	it("a failed save keeps the baseline so a retry still PATCHes the changed toggle", async () => {
+		const {sent, form} = await openAppForm(
+			READ,
+			undefined,
+			(n) => (n === 2 ? 500 : 200),
+		);
+		(form.names.get("intent_members") as {value: boolean}).value = true;
+		await form.submit();
+		await settle(sent);
+
+		// No further change before the retry: because save 1 failed (500), onSubmit never
+		// moved initStates, so members is still changed relative to the baseline.
+		await form.submit();
+		await settle(sent, 2);
+
+		const saves = sent.filter((b) => b && typeof b === "object") as Record<string, number>[];
+		expect(saves).toHaveLength(2);
+		expect(saves[1].flags).toBe(READ | INTENT_LIMITED_BITS.guildMembers);
 	});
 
 	it("a second save folds onto the PATCH answer's flags, not the boot-time read", async () => {
@@ -252,6 +361,8 @@ describe("the application edit form's flags wiring", () => {
 		// would PATCH a derived number and let the server zero the stored flags.
 		expect(form.names.get("intent_presence").value).toBe(false);
 
+		// A toggle changes, so the save reaches the read guard rather than the no-change path.
+		(form.names.get("intent_members") as {value: boolean}).value = true;
 		await form.submit();
 		await settle(sent);
 
