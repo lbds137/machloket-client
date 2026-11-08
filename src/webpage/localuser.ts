@@ -49,7 +49,7 @@ import {
 } from "./jsontypes.js";
 import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
-import {showBackupCodes} from "./backupCodes.js";
+import {codesOf, REGEN_UNCHANGED, showBackupCodes} from "./backupCodes.js";
 import {RecoveryBanner} from "./recoveryBanner.js";
 import {Dialog, fetchWithMfa, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
@@ -3810,7 +3810,8 @@ class Localuser {
 								nonce?: unknown;
 								regenerate_nonce?: unknown;
 							};
-							if (typeof nonce !== "string" || typeof regenerate_nonce !== "string") return;
+							if (typeof nonce !== "string" || typeof regenerate_nonce !== "string")
+								return new Dialog(I18n.requestFailed("HTTP 200, bad body")).show();
 							const codesFetch = (body: {nonce: string; regenerate: boolean}) =>
 								fetchWithMfa(
 									this.mfaRetry(),
@@ -3840,20 +3841,37 @@ class Localuser {
 								regenerate: async () => {
 									const regenRes = await codesFetch({nonce: regenerate_nonce, regenerate: true});
 									if (!regenRes?.ok) {
-										showRefusal(regenRes);
-										return null;
-									}
-									const next = await regenRes
-										.clone()
-										.json()
-										.catch(() => null);
-									if (typeof next !== "object" || next === null || Array.isArray(next)) {
+										await showRefusal(regenRes);
+										// The server checks MFA and the nonce before it expires anything,
+										// so a 4xx leaves the shown batch valid: no re-read (which would
+										// prompt for MFA again), keep the grid. A 5xx or a network failure
+										// may come after the expiry, so those fall through to the re-read.
+										if (regenRes && regenRes.status >= 400 && regenRes.status < 500)
+											return REGEN_UNCHANGED;
+									} else {
+										const next = await regenRes
+											.clone()
+											.json()
+											.catch(() => null);
+										// Only an answer with a usable code is a new batch; anything else
+										// (even `{backup_codes: []}`) refuses and falls through to the re-read.
+										if (codesOf(next).length > 0) return next;
 										new Dialog(
 											I18n.requestFailed("HTTP " + regenRes.status + ", bad body"),
 										).show();
-										return null;
 									}
-									return next;
+									// The server expires the old batch before minting the new one;
+									// re-reading with the 5-minute view nonce recovers whichever batch
+									// the server now holds (or lets the grid close if none remain).
+									const viewRes = await codesFetch({nonce, regenerate: false});
+									if (!viewRes?.ok) return null;
+									const current = await viewRes
+										.clone()
+										.json()
+										.catch(() => null);
+									if (typeof current !== "object" || current === null || Array.isArray(current))
+										return null;
+									return current;
 								},
 							});
 							security.returnFromSub();
@@ -3864,7 +3882,9 @@ class Localuser {
 						},
 					);
 					form.onErrorBody = (e) => {
-						// 400: the server's INVALID_PASSWORD (the challenge's only field error).
+						// Fallback for servers that answer a bare {code: 400}; this server answers
+						// 50035 with an errors map, which Form.errors places on the password field
+						// before onErrorBody runs.
 						if (e.code !== 400) return false;
 						form.error("password", I18n.localuser.badPassword());
 						return true;
