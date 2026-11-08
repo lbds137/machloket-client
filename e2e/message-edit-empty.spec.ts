@@ -14,8 +14,8 @@ import {
 
 // Discord parity: an edit emptied out (the message has no attachments) opens the
 // delete confirm on Enter instead of saving. The mock mirrors the real server's
-// refusal of whitespace-only content (400 50006), so a save that still went out
-// would show a refusal, never this dialog.
+// refusal of whitespace-only content for a message with no other content (400 50006),
+// so a save that still went out would show a refusal, never this dialog.
 
 // deleteConfirm, yes and no sit at the top level of en.json, outside EN's two-level shape.
 const dialogButtons = EN as unknown as {
@@ -125,20 +125,28 @@ test.describe("a text message", () => {
 test.describe("a message with attachments", () => {
 	test.use({mockInstanceOptions: {messages: [MOCK_SPOILER_MESSAGE]}});
 
-	test("an edit emptied out still saves; the server's refusal is the answer", async ({
+	test("an edit emptied out still saves", async ({
 		page,
 		mockInstance,
 	}) => {
 		await loginAndOpenChannel(page);
 		const box = await openEdit(page, MOCK_SPOILER_MESSAGE.content);
 		await box.fill("");
+		const answered = page.waitForResponse(
+			(res) =>
+				res.request().method() === "PATCH" &&
+				new URL(res.url()).pathname.endsWith(`/messages/${MOCK_SPOILER_MESSAGE_ID}`),
+		);
 		await page.keyboard.press("Enter");
 
-		// Unchanged branch: the save goes out, the mock's 50006 refusal shows as any
-		// dialog, and the editor reopens with the emptied text (saveEdit's draft path).
-		await expectRequests(mockInstance, patchOnMessage(MOCK_SPOILER_MESSAGE_ID), 1);
-		await expect(page.locator(".dialogModal", {hasText: deleteConfirm})).toHaveCount(0);
-		await expect(page.locator(".dialogModal").first()).toBeVisible();
-		await expect(page.locator(".messageEditContainer")).toHaveCount(1);
+		// The attachment stays content of its own: the emptied edit saves and closes the editor
+		// with no delete confirm or refusal dialog. The answer's status is the positive signal:
+		// the editor closes at once on Enter, so the count-0 checks alone could pass before a
+		// refusal reached the page.
+		expect((await answered).status()).toBe(200);
+		const patches = await expectRequests(mockInstance, patchOnMessage(MOCK_SPOILER_MESSAGE_ID), 1);
+		expect(patches[0].body).toEqual({content: ""});
+		await expect(page.locator(".dialogModal")).toHaveCount(0);
+		await expect(page.locator(".messageEditContainer")).toHaveCount(0);
 	});
 });

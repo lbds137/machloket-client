@@ -2143,7 +2143,7 @@ class Localuser {
 	loadGuildAndOpenChannel(id: string) {
 		const was = this.lookingguild;
 		const guild = this.loadGuild(id);
-		if (guild && guild !== was) guild.loadChannel();
+		if (guild && guild !== was) guild.loadChannel().catch(console.error);
 	}
 	loadGuild(id: string, forceReload = false): Guild | undefined {
 		// The user went somewhere else: a joined guild arriving later mustn't pull them back.
@@ -2675,7 +2675,7 @@ class Localuser {
 						.then((res) => res.json())
 						.catch(() => undefined)) as {guild_id?: string; guild?: {id?: string}} | undefined;
 					const guildId = json?.guild?.id ?? json?.guild_id;
-					if (guildId) this.loadGuildAndOpenChannel(guildId);
+					if (guildId) this.openJoinedGuild(guildId);
 				}
 			});
 			const text = form.addTextInput(I18n.invite.inviteLinkCode(), "code");

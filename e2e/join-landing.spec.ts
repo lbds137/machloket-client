@@ -47,7 +47,11 @@ test("joining a guild before its GUILD_CREATE lands in it when it arrives", asyn
 }) => {
 	await loginAndOpenChannel(page);
 	// The join POST resolves before the guild exists: the wait-for-arrival arm.
+	const joinAnswered = page.waitForResponse(
+		(res) => new URL(res.url()).pathname === "/api/v9/invites/join-other",
+	);
 	await joinViaDialog(page);
+	await joinAnswered;
 	await joinOtherServer(page, mockInstance);
 
 	await expect(page).toHaveURL(new RegExp(`/channels/${OTHER_GUILD_ID}`));

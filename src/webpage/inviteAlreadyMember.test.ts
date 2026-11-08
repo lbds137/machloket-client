@@ -30,8 +30,8 @@ describe("an invite to a guild the user is already in", () => {
 	it("the embed's accept opens the guild instead of alerting", async () => {
 		const posts = captureRequests(API + "/invites/abc", alreadyMember);
 		const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
-		// The guild is not in guildids yet (the list hasn't loaded), so the disabled-button
-		// guard misses it and the accept stays live, as in the bug.
+		// At render time the guild is not in guildids yet (the list hasn't loaded), so the
+		// disabled-button guard misses it and the accept stays live, as in the bug.
 		const loadGuild = vi.fn();
 		const localuser = Object.assign(Object.create(Localuser.prototype), {
 			info: {api: API, wellknown: WELLKNOWN},
@@ -55,6 +55,8 @@ describe("an invite to a guild the user is already in", () => {
 		const div = embed.generateHTML() as HTMLElement;
 		document.body.append(div);
 		const accept = div.querySelector("button.acceptinvbutton") as HTMLButtonElement;
+		// The guild arrives after the embed rendered, so the button stayed enabled at render time.
+		localuser.guildids.set(GUILD_ID, {id: GUILD_ID, loadChannel: vi.fn(async () => {})});
 
 		accept.click();
 		await vi.waitFor(() => expect(posts).toHaveLength(1));
@@ -63,6 +65,118 @@ describe("an invite to a guild the user is already in", () => {
 		// The refusal is a success here: no alert, and the guild is opened.
 		expect(alert).not.toHaveBeenCalled();
 		expect(loadGuild).toHaveBeenCalledWith(GUILD_ID);
+	});
+
+	it("an already-member result for an id not yet in guildids does not open the DMs and lands once guildArrived fires", async () => {
+		const posts = captureRequests(API + "/invites/abc", alreadyMember);
+		const dms = {id: "@me", loadChannel: vi.fn(async () => {})};
+		const guild = {id: GUILD_ID, loadChannel: vi.fn(async () => {})};
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API, wellknown: WELLKNOWN},
+			headers: {Authorization: "tok"},
+			guildids: new Map([["@me", dms]]),
+			lookingguild: undefined,
+		});
+		const loadGuild = vi
+			.spyOn(localuser, "loadGuild")
+			.mockImplementation((id) => (localuser.guildids.get(id) ?? localuser.guildids.get("@me")) as never);
+		const embed = new Embed(
+			{type: "invite", invite: {url: WELLKNOWN, code: "abc"}} as never,
+			{channel: {guild: {localuser}}} as never,
+		);
+		embed.invcache = [
+			{
+				code: "abc",
+				guild: {id: GUILD_ID, name: "Guild", member_count: 3, icon: null, banner: null},
+				channel: {name: "general"},
+			} as never,
+			{cdn: WELLKNOWN + "/cdn", api: API},
+		];
+		const div = embed.generateHTML() as HTMLElement;
+		document.body.append(div);
+		const accept = div.querySelector("button.acceptinvbutton") as HTMLButtonElement;
+
+		accept.click();
+		await vi.waitFor(() => expect(posts).toHaveLength(1));
+		await flush();
+
+		expect(loadGuild, "must not call loadGuild while the guild id is unknown").not.toHaveBeenCalled();
+		expect(dms.loadChannel, "must not bounce to the DMs").not.toHaveBeenCalled();
+
+		localuser.guildids.set(GUILD_ID, guild);
+		localuser.guildArrived(GUILD_ID);
+		expect(loadGuild).toHaveBeenCalledWith(GUILD_ID);
+		expect(guild.loadChannel, "lands in the guild once guildArrived fires").toHaveBeenCalledOnce();
+	});
+
+	it("joining by code when already a member of an id not yet in guildids waits for guildArrived instead of opening the DMs", async () => {
+		let calls = 0;
+		captureRequests(API + "/invites/abc", () =>
+			calls++ === 0 ? alreadyMember() : Response.json({guild: {id: GUILD_ID}}),
+		);
+		const addForm = vi.spyOn(Options.prototype, "addForm");
+		const dms = {id: "@me", loadChannel: vi.fn(async () => {})};
+		const guild = {id: GUILD_ID, loadChannel: vi.fn(async () => {})};
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API, wellknown: WELLKNOWN},
+			headers: {Authorization: "tok"},
+			guildids: new Map([["@me", dms]]),
+			lookingguild: undefined,
+		});
+		const loadGuild = vi
+			.spyOn(localuser, "loadGuild")
+			.mockImplementation((id) => (localuser.guildids.get(id) ?? localuser.guildids.get("@me")) as never);
+		localuser.createGuild();
+		const joinSubmit = addForm.mock.calls[0][1] as (fields: object, sent: object) => Promise<void>;
+
+		await joinSubmit({code: "abc"}, {});
+
+		expect(loadGuild, "must not call loadGuild while the guild id is unknown").not.toHaveBeenCalled();
+		expect(dms.loadChannel, "must not bounce to the DMs").not.toHaveBeenCalled();
+
+		localuser.guildids.set(GUILD_ID, guild);
+		localuser.guildArrived(GUILD_ID);
+		expect(loadGuild).toHaveBeenCalledWith(GUILD_ID);
+		expect(guild.loadChannel, "lands in the guild once guildArrived fires").toHaveBeenCalledOnce();
+	});
+
+	it("the embed's accept disables on click and re-enables on a refusal", async () => {
+		let resolvePost!: (res: Response) => void;
+		captureRequests(
+			API + "/invites/abc",
+			() =>
+				new Promise<Response>((resolve) => {
+					resolvePost = resolve;
+				}),
+		);
+		const alert = vi.spyOn(window, "alert").mockImplementation(() => {});
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API, wellknown: WELLKNOWN},
+			headers: {Authorization: "tok"},
+			guildids: new Map(),
+		});
+		const embed = new Embed(
+			{type: "invite", invite: {url: WELLKNOWN, code: "abc"}} as never,
+			{channel: {guild: {localuser}}} as never,
+		);
+		embed.invcache = [
+			{
+				code: "abc",
+				guild: {id: GUILD_ID, name: "Guild", member_count: 3, icon: null, banner: null},
+				channel: {name: "general"},
+			} as never,
+			{cdn: WELLKNOWN + "/cdn", api: API},
+		];
+		const div = embed.generateHTML() as HTMLElement;
+		document.body.append(div);
+		const accept = div.querySelector("button.acceptinvbutton") as HTMLButtonElement;
+
+		accept.click();
+		expect(accept.disabled).toBe(true);
+		await vi.waitFor(() => expect(resolvePost).toBeTypeOf("function"));
+		resolvePost(Response.json({message: "Invite expired"}, {status: 404}));
+		await vi.waitFor(() => expect(alert).toHaveBeenCalledWith("Invite expired"));
+		expect(accept.disabled).toBe(false);
 	});
 
 	it("joining by a code already a member of resolves as success, not a form error", async () => {

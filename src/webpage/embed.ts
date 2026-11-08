@@ -460,19 +460,24 @@ class Embed {
 			div.append(button);
 			button.onclick = (_) => {
 				if (this.localuser.info.api.startsWith(info.api)) {
+					button.disabled = true;
 					acceptInvite(
 						this.localuser.info.api,
 						json.code,
 						this.localuser.headers.Authorization,
-					).then((result) => {
-						// The accept and the already-member refusal both land in the guild; a real refusal alerts.
-						if (result.ok) {
-							if (result.alreadyMember) this.localuser.loadGuildAndOpenChannel(guild.id);
-							else this.localuser.openJoinedGuild(guild.id);
-						} else {
-							alert(result.message);
-						}
-					});
+					)
+						.then((result) => {
+							// The accept and the already-member refusal both land in the guild; a real refusal alerts.
+							if (result.ok) {
+								this.localuser.openJoinedGuild(guild.id);
+							} else {
+								button.disabled = false;
+								alert(result.message);
+							}
+						})
+						.catch(() => {
+							button.disabled = false;
+						});
 				} else {
 					if (this.json.invite) {
 						const params = new URLSearchParams("");
