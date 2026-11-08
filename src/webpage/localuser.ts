@@ -5158,7 +5158,7 @@ class Localuser {
 				})
 				.then((json) => {
 					if (!json) return;
-					instanceInfo.addTitle(json.instanceName);
+					if (typeof json.instanceName === "string") instanceInfo.addTitle(json.instanceName);
 					if (json.correspondenceEmail) {
 						const a = document.createElement("a");
 						a.target = "_blank";

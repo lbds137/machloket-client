@@ -1924,8 +1924,14 @@ class User extends SnowFlake {
 				return;
 			}
 
+			// A null or id-less element must not abort the IIFE before the connections draw
+			// (the friends list also guards each widget build, below).
+			const hasStringId = (e: {id?: unknown} | null | undefined) =>
+				e !== null && typeof e === "object" && typeof e.id === "string";
+
 			mutDiv.append(
 				...high.mutual_guilds
+					.filter(hasStringId)
 					.map((_) => [this.localuser.guildids.get(_.id), _.nick] as const)
 					.map(([guild, nick]) => {
 						if (!guild) return;
@@ -1969,21 +1975,30 @@ class User extends SnowFlake {
 				const div = document.createElement("div");
 				div.classList.add("mutFriends");
 				div.append(
-					...high.mutual_friends
-						.map((_) => new User(_, this.localuser))
-						.map((user) => {
-							// No guild context: a mutual friend may simply never have been in
-							// the looked-at guild, and the not-found note would read as a
-							// false claim about them.
-							const html = user.createWidget();
-							html.onclick = (e) => {
-								e.stopImmediatePropagation();
-								e.preventDefault();
-								user.fullProfile(guild);
-								removeAni(background);
-							};
-							return html;
-						}),
+					...high.mutual_friends.filter(hasStringId).flatMap((_) => {
+						// Built one friend at a time: an element with a string id can still
+						// throw while its widget is built (a non-snowflake id reaches the
+						// default avatar's BigInt), and that friend is skipped, not the rest.
+						let user: User;
+						let html: HTMLElement;
+						try {
+							user = new User(_, this.localuser);
+							html = user.createWidget();
+						} catch (e) {
+							console.warn("skipping a mutual friend that could not be drawn", e);
+							return [];
+						}
+						// No guild context: a mutual friend may simply never have been in
+						// the looked-at guild, and the not-found note would read as a
+						// false claim about them.
+						html.onclick = (e) => {
+							e.stopImmediatePropagation();
+							e.preventDefault();
+							user.fullProfile(guild);
+							removeAni(background);
+						};
+						return [html];
+					}),
 				);
 				friends.addHTMLArea(div);
 			}
