@@ -91,4 +91,9 @@ it("a throw while landing after a successful accept is logged, not left unhandle
 	expect(rejections).toEqual([]);
 	expect(errorSpy).toHaveBeenCalledWith(boom);
 	expect(alert).not.toHaveBeenCalledWith(I18n.requestFailed("offline"));
+	// The join went through, so the user is told that, and how to get there (owner ruling 11-08).
+	expect(I18n.invite.joinedNotOpened()).toBe(
+		"You joined, but the server didn't open. Tap Accept again to go there.",
+	);
+	expect(alert).toHaveBeenCalledWith(I18n.invite.joinedNotOpened());
 });

@@ -165,8 +165,12 @@ if (window.location.pathname.startsWith("/invite"))
 				},
 			)
 				// A throw in the landing (a full localStorage, the navigation) comes after the join
-				// went through: logged here, not left unhandled. Accepting again lands as already-member.
-				.catch((err: unknown) => console.error(err));
+				// went through: logged here, not left unhandled, and the user is told the join worked.
+				// Accepting again lands as already-member.
+				.catch((err: unknown) => {
+					console.error(err);
+					alert(I18n.invite.joinedNotOpened());
+				});
 		}
 
 		document.getElementById("AcceptInvite")!.addEventListener("click", (e) => {
