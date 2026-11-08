@@ -558,6 +558,9 @@ describe("showBackupCodes screen", () => {
 		});
 
 		it("after a successful regenerate on a view: true grid, explain replaces viewExplain", async () => {
+			// The not.toContain checks in these view tests need neither text to contain the other.
+			expect(I18n.backupCodes.explain()).not.toContain(I18n.backupCodes.viewExplain());
+			expect(I18n.backupCodes.viewExplain()).not.toContain(I18n.backupCodes.explain());
 			showBackupCodes(
 				{backup_codes: [{code: "old11111", consumed: false}]},
 				{
@@ -592,11 +595,17 @@ describe("showBackupCodes screen", () => {
 			expect(document.body.textContent).not.toContain(I18n.backupCodes.viewExplain());
 		});
 
-		it("a regenerate resolving null on the grid shows regenLost after .backupCodeGrid is gone", async () => {
-			showBackupCodes(
-				{backup_codes: [{code: "old11111", consumed: false}]},
-				{regenerate: async () => null},
-			);
+		it.each([
+			["resolving null", async () => null],
+			[
+				"rejecting",
+				async () => {
+					throw new Error("boom");
+				},
+			],
+		])("a regenerate %s on the grid shows regenLost after .backupCodeGrid is gone", async (_, regenerate) => {
+			showBackupCodes({backup_codes: [{code: "old11111", consumed: false}]}, {regenerate});
+			expect(document.body.textContent).not.toContain(I18n.backupCodes.regenLost());
 			regenButton()!.click();
 			await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
 			expect(document.body.textContent).toContain(I18n.backupCodes.regenLost());

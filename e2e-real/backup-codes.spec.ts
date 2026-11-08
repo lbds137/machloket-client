@@ -65,7 +65,7 @@ async function submitCode(prompt: Locator, code: string): Promise<void> {
 }
 
 // The server decides what a code is good for: it mints them, spends them, and refuses a reuse.
-test("TOTP set up in settings shows its codes once; one logs in, mangled as a paste would, and is spent", async ({
+test("TOTP set up in settings shows its codes on setup; one logs in, mangled as a paste would, and is spent", async ({
 	page,
 	extraPage,
 }) => {
