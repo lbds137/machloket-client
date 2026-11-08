@@ -2,7 +2,7 @@ import {readFileSync} from "node:fs";
 import {expect, type Page} from "@playwright/test";
 import {loginAndOpenChannel, test} from "./fixtures";
 
-// The codes screen at phone width, where a stray tap must not lose codes shown only once. What
+// The codes screen at phone width, where a stray tap must not close it before the codes are saved. What
 // the server mints and accepts is e2e-real/backup-codes.spec.ts; the rendering is here.
 const CODES = Array.from({length: 10}, (_, i) => `${i}a${i}b${i}c${i}d`);
 const REGEN_CODES = Array.from({length: 10}, (_, i) => `${i}z${i}y${i}x${i}w`);
@@ -74,7 +74,7 @@ test("the codes fit a phone and survive a tap outside and Escape, until I've sav
 	await expect(screen).toHaveCount(0);
 });
 
-test("viewing codes from the security grid shows them once; regenerate replaces them in the same dialog", async ({
+test("viewing codes from the security grid shows them; regenerate replaces them in the same dialog", async ({
 	page,
 	mockInstance,
 }) => {

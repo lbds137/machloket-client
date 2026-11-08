@@ -3788,7 +3788,7 @@ class Localuser {
 						const form = security.addSubForm(
 							I18n.localuser.setUp2fa(),
 							(res) => {
-								// First: shown only once, so nothing below may cost them.
+								// First, so nothing below may cost the user the codes screen.
 								showBackupCodes(res);
 								// The grid's 2FA button reads mfa_enabled: set it before rebuilding.
 								this.mfa_enabled = true;
@@ -3854,6 +3854,7 @@ class Localuser {
 							if (typeof answer !== "object" || answer === null || Array.isArray(answer))
 								return new Dialog(I18n.requestFailed("HTTP " + res.status + ", bad body")).show();
 							showBackupCodes(answer, {
+								view: true,
 								regenerate: async () => {
 									const regenRes = await codesFetch({nonce: regenerate_nonce, regenerate: true});
 									if (!regenRes?.ok) {
@@ -4012,7 +4013,7 @@ class Localuser {
 											.catch(() => null)) as {name: string; id: string} | null)
 									: null;
 								if (!key) return showRefusal(res);
-								// First: shown only once, so nothing below may cost them.
+								// First, so nothing below may cost the user the codes screen.
 								showBackupCodes(key);
 								addKey(key);
 								keyMenu.returnFromSub();
@@ -5273,6 +5274,7 @@ class Localuser {
 						// A valid answer makes the boxes savable, even if the boot read wasn't.
 						box.setDisabled(false);
 					}
+					intentsUnreadable?.setText("");
 				}
 			},
 			{
@@ -5313,11 +5315,15 @@ class Localuser {
 		form.addCheckboxInput(I18n.localuser.requireCode(), "bot_require_code_grant", {
 			initState: json.bot_require_code_grant,
 		});
+		const validFlags = isFlagsValue(json.flags);
 		// The three privileged intents a self-serve app may toggle: shown on when either of the
 		// intent's bits is set, and folded into flags replacing only the limited bits — the
 		// checkbox fields below are form-local names the preprocessor strips before the PATCH.
+		// The failure is gateway close code 4014 (disallowed intents).
 		form.addText(I18n.localuser.intentsHint());
-		const validFlags = isFlagsValue(json.flags);
+		const intentsUnreadable = !validFlags
+			? form.addText(I18n.localuser.intentsUnreadable())
+			: undefined;
 		const intents = (
 			[
 				["presence", "intent_presence", I18n.localuser.intentPresence()],
