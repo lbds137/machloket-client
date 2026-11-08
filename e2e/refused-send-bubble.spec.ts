@@ -118,12 +118,14 @@ test("a send the gateway already delivered gets no failed bubble when its reques
 	});
 	await expect(page.locator(".messagediv:not(.loadingMessage)", {hasText: "first message"})).toHaveCount(1);
 	// The failure must be known to the page before the drain: requestfailed fires from
-	// the browser's network stack, the same signal the renderer's fetch rejection is
+	// the browser's network stack, the same signal the XHR's error event is
 	// generated from; the drain's frames then wait out the rejection's continuation
 	// (failed()), which alone had no ordering link to the abort.
 	const requestFailed = page.waitForEvent(
 		"requestfailed",
-		(r) => r.method() === "POST" && r.url().includes(`/channels/${MOCK_CHANNEL_ID}/messages`),
+		(r) =>
+			r.method() === "POST" &&
+			new URL(r.url()).pathname.endsWith(`/channels/${MOCK_CHANNEL_ID}/messages`),
 	);
 	abort();
 	await requestFailed;

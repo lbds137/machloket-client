@@ -86,8 +86,8 @@ export async function drain(page: Page): Promise<void> {
  * task could still slip past. A duplicate on a longer timer
  * (a 429 retry's window) stays out of reach: no caller answers 429 to a path this
  * helper matches. The action may navigate (an invite accept boots the guild page): a
- * destroyed context means the page that could schedule a duplicate is gone, which
- * settles the same question, so the drain's failure is not fatal here. */
+ * destroyed context (the page navigated) settles the question; every other drain
+ * failure throws. */
 export async function expectRequests(
 	mockInstance: MockInstanceHandle,
 	match: (req: CapturedRequest) => boolean,
@@ -99,7 +99,7 @@ export async function expectRequests(
 	await drain(mockInstance.page).catch((e: unknown) => {
 		// Only the navigation case settles the same question (the page that could
 		// schedule a duplicate is gone); a closed or crashed page fails loudly here.
-		if (!/Execution context was destroyed|navigation/i.test(String(e))) throw e;
+		if (!/Execution context was destroyed/.test(String(e))) throw e;
 	});
 	expect(matching(), message).toHaveLength(count);
 	return matching();
