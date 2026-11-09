@@ -1,4 +1,5 @@
 import {afterAll, expect, it, vi} from "vitest";
+import {mountServedPage} from "./test/servedPage";
 // @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
 import pageHtml from "./invite.html?raw";
 
@@ -33,9 +34,7 @@ localStorage.setItem(
 
 await import("./localuser");
 const {I18n} = await import("./i18n");
-const page = new DOMParser().parseFromString(pageHtml as string, "text/html");
-page.querySelectorAll("script").forEach((s) => s.remove());
-document.body.innerHTML = page.body.innerHTML;
+mountServedPage(pageHtml);
 
 const button = () => document.getElementById("AcceptInvite")!;
 const text = (id: string) => document.getElementById(id)!.textContent!.trim();

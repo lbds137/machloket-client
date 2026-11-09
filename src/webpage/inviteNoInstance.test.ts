@@ -1,4 +1,7 @@
 import {expect, it, vi} from "vitest";
+import {mountServedPage} from "./test/servedPage";
+// @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
+import pageHtml from "./invite.html?raw";
 
 // invite.ts runs its page code when it is imported, and only on an /invite path (setup as in
 // inviteNoAccountLabel.test.ts). Here the invite names an instance nobody can find: no stored
@@ -9,9 +12,7 @@ localStorage.setItem("userinfos", JSON.stringify({users: {}, currentuser: null})
 
 await import("./localuser");
 const {I18n} = await import("./i18n");
-document.body.innerHTML = `<button id="AcceptInvite" style="visibility: hidden"></button>
-	<div id="invitename"></div><div id="invitedescription"></div><div id="invitebody"></div>
-	<div id="inviteimg"></div><div id="inviteBanner"></div>`;
+mountServedPage(pageHtml);
 const rejections: unknown[] = [];
 window.addEventListener("unhandledrejection", (e) => {
 	rejections.push(e.reason);
@@ -27,7 +28,8 @@ it("an invite to an instance that can't be found says so instead of leaving a bl
 		{timeout: 5000},
 	);
 	expect(document.getElementById("invitedescription")?.textContent).toBe(
-		I18n.instanceUnreachable(WELLKNOWN),
+		// The host only: the rest of the link's ?instance= is the link author's text.
+		I18n.instanceUnreachable("nowhereinvite.test"),
 	);
 	// Nothing to accept with: the button stays hidden.
 	expect(getComputedStyle(document.getElementById("AcceptInvite")!).visibility).toBe("hidden");
