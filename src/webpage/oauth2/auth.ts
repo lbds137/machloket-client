@@ -10,8 +10,8 @@ if (window.location.pathname.startsWith("/oauth2")) {
 	await instancefetch;
 	const well = params.get("instance") || getDefaultInstanceUrl();
 	// No ?instance= and none listed to default to (an empty instance list): no instance to add the
-	// bot on, so the button stays hidden.
-	if (!well) await showNoInstance(() => I18n.instanceUnreachableUnnamed());
+	// bot on (nothing was unreachable: the client has none at all), so the button stays hidden.
+	if (!well) await showNoInstance(() => I18n.noInstanceConfigured());
 	else await showBotInvite(well, params);
 }
 

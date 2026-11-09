@@ -23,5 +23,6 @@ it("an invite's ?instance= that is no address puts none of its text on the page"
 	expect(document.getElementById("invitedescription")?.textContent).toBe(
 		I18n.instanceUnreachableUnnamed(),
 	);
+	expect(document.getElementById("invitename")?.textContent).toBe(I18n.invite.heading());
 	expect(document.body.textContent).not.toContain("555-0100");
 });

@@ -223,7 +223,8 @@ it("with no ?instance= and no listed instance to default to, the page says so an
 	await import(/* @vite-ignore */ "./templatePage.ts?run=" + ++runs);
 
 	const description = document.getElementById("templatedescription")!;
-	await expect.poll(() => description.textContent).toBe(I18n.instanceUnreachableUnnamed());
+	// Nothing was unreachable: the client has no instance at all (a deploy problem).
+	await expect.poll(() => description.textContent).toBe(I18n.noInstanceConfigured());
 	expect(document.getElementById("templatename")!.textContent).toBe(I18n.templateHeading());
 	expect(getComputedStyle(document.getElementById("usetemplate")!).visibility).toBe("hidden");
 });

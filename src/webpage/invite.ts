@@ -56,6 +56,7 @@ if (window.location.pathname.startsWith("/invite"))
 				// The invite's instance can't be found (unreachable, or not an instance): there is
 				// nothing to accept with, so the button stays hidden and the page says what failed.
 				await I18n.done;
+				document.getElementById("invitename")!.textContent = I18n.invite.heading();
 				document.getElementById("invitedescription")!.textContent =
 					instanceUnreachableText(well);
 				return;
@@ -83,6 +84,8 @@ if (window.location.pathname.startsWith("/invite"))
 				// A dead invite is a 404 (code 10006); any other failure says nothing about the
 				// invite, so the page keeps its Accept.
 				if (response?.status === 404) return null;
+				// No name came back: a generic heading above the failure.
+				document.getElementById("invitename")!.textContent = I18n.invite.heading();
 				document.getElementById("invitedescription")!.textContent = I18n.requestFailed(
 					response ? "HTTP " + response.status : "offline",
 				);
