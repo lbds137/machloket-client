@@ -1,3 +1,5 @@
+import {trySetItem} from "./trySetItem.js";
+
 export class DeveloperSettings {
 	gatewayLogging: boolean = false;
 	gatewayCompression: boolean = true;
@@ -23,52 +25,49 @@ export function setDeveloperSettings(settings: DeveloperSettings): void {
 //region Migration from untyped storage
 async function migrateOldDeveloperSettings(): Promise<void> {
 	const devSettings = getDeveloperSettings();
-	let mod = false;
+	const migratedKeys: string[] = [];
 
 	const oldGatewayLogging = localStorage.getItem("logGateway");
 	if (oldGatewayLogging !== null) {
 		devSettings.gatewayLogging = oldGatewayLogging === "true";
-		localStorage.removeItem("logGateway");
-		mod = true;
+		migratedKeys.push("logGateway");
 	}
 
 	const oldGatewayCompression = localStorage.getItem("gateWayComp");
 	if (oldGatewayCompression !== null) {
 		devSettings.gatewayCompression = oldGatewayCompression === "true";
-		localStorage.removeItem("gateWayComp");
-		mod = true;
+		migratedKeys.push("gateWayComp");
 	}
 
 	const oldShowTraces = localStorage.getItem("traces");
 	if (oldShowTraces !== null) {
 		devSettings.showTraces = oldShowTraces === "true";
-		localStorage.removeItem("traces");
-		mod = true;
+		migratedKeys.push("traces");
 	}
 
 	const oldInterceptApiTraces = localStorage.getItem("capTrace");
 	if (oldInterceptApiTraces !== null) {
 		devSettings.interceptApiTraces = oldInterceptApiTraces === "true";
-		localStorage.removeItem("capTrace");
-		mod = true;
+		migratedKeys.push("capTrace");
 	}
 
 	const oldCacheSourceMaps = localStorage.getItem("isDev");
 	if (oldCacheSourceMaps !== null) {
 		devSettings.cacheSourceMaps = oldCacheSourceMaps === "true";
-		localStorage.removeItem("isDev");
-		mod = true;
+		migratedKeys.push("isDev");
 	}
 
 	const oldLogBannedFields = localStorage.getItem("logbad");
 	if (oldLogBannedFields !== null) {
 		devSettings.logBannedFields = oldLogBannedFields === "true";
-		localStorage.removeItem("logbad");
-		mod = true;
+		migratedKeys.push("logbad");
 	}
 
-	if (mod) {
-		setDeveloperSettings(devSettings);
+	// Awaited at module load: a refused write must not stop the app booting, and a legacy
+	// key goes only once its value is saved.
+	if (migratedKeys.length === 0) return;
+	if (trySetItem("developerSettings", JSON.stringify(devSettings))) {
+		for (const key of migratedKeys) localStorage.removeItem(key);
 	}
 }
 await migrateOldDeveloperSettings();

@@ -6,6 +6,7 @@ import {isLoopback, trimTrailingSlashes} from "./netUtils";
 import {getLocalSettings, ServiceWorkerMode, setLocalSettings} from "./storage/localSettings";
 import {getPreferences} from "./storage/userPreferences";
 import {getDeveloperSettings} from "./storage/devSettings";
+import {trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
 
 fix();
@@ -62,22 +63,36 @@ export function getBulkUsers() {
 export function getBulkInfo() {
 	return JSON.parse(localStorage.getItem("userinfos") as string);
 }
-export function setDefaults() {
-	let userinfos = getBulkInfo();
-	if (!userinfos) {
-		localStorage.setItem(
-			"userinfos",
-			JSON.stringify({
-				currentuser: null,
-				users: {},
-				preferences: {
-					notifications: false,
-					notisound: "three",
-				},
-			}),
-		);
-		userinfos = getBulkInfo();
+/** A refused perminfo value at least this long (serialised) is dropped when the account saves
+ * without it; shorter ones stay in memory. The boot path's structural writes are tens of
+ * characters; the favourites blob, the unbounded writer, runs to many kilobytes. */
+const PROXY_SAVE_DROP_CHARS = 4096;
+/** A value that can't be serialised (a BigInt, a cycle, a function) can't be stored either:
+ * it counts as too large. */
+function serialisedLength(value: unknown): number {
+	try {
+		return JSON.stringify(value ?? null)?.length ?? Infinity;
+	} catch {
+		return Infinity;
 	}
+}
+// Runs at module load on every page. It writes only when a default was missing, and a refused
+// write (a full store) is logged, not thrown: a throw here stops the app booting.
+export function setDefaults() {
+	const stored = localStorage.getItem("userinfos");
+	const parsed = JSON.parse(stored as string);
+	// Anything but an object (none stored, or a stray `false`) starts over from the defaults.
+	const userinfos =
+		parsed !== null && typeof parsed === "object"
+			? parsed
+			: {
+					currentuser: null,
+					users: {},
+					preferences: {
+						notifications: false,
+						notisound: "three",
+					},
+				};
 	if (userinfos.users === undefined) {
 		userinfos.users = {};
 	}
@@ -97,7 +112,8 @@ export function setDefaults() {
 	if (userinfos.preferences && userinfos.preferences.notisound === undefined) {
 		userinfos.preferences.notisound = "three";
 	}
-	localStorage.setItem("userinfos", JSON.stringify(userinfos));
+	const next = JSON.stringify(userinfos);
+	if (next !== stored) trySetItem("userinfos", next);
 }
 setDefaults();
 export class Specialuser {
@@ -182,32 +198,40 @@ export class Specialuser {
 	}
 	set pfpsrc(e) {
 		this.json.pfpsrc = e;
-		this.updateLocal();
+		this.tryUpdateLocal();
 	}
 	get pfpsrc() {
 		return this.json.pfpsrc;
 	}
 	set username(e) {
 		this.json.username = e;
-		this.updateLocal();
+		this.tryUpdateLocal();
 	}
 	get username() {
 		return this.json.username;
 	}
 	set localuserStore(e) {
 		this.json.localuserStore = e;
-		this.updateLocal();
+		this.tryUpdateLocal();
 	}
 	proxySave(e: Object) {
 		return new Proxy(e, {
 			set: (target, p, newValue, receiver) => {
+				const had = Object.hasOwn(target, p);
+				const previous = Reflect.get(target, p, receiver) as unknown;
 				const bool = Reflect.set(target, p, newValue, receiver);
-				try {
-					this.updateLocal();
-				} catch (_) {
-					Reflect.deleteProperty(target, p);
-					throw _;
-				}
+				if (this.tryUpdateLocal()) return bool;
+				// Refused. Boot writes here (a guild's `perminfo ??= {channels: {}}`, the focused
+				// channel): rolling one of those back hands the next read an undefined, so a small
+				// value stays for this session; the store is full or at its edge, and the next
+				// save fails with or without it. A large value that the store takes the account
+				// without is what doesn't fit: drop it, or it sinks every later save.
+				if (serialisedLength(newValue) < PROXY_SAVE_DROP_CHARS) return bool;
+				if (had) Reflect.set(target, p, previous, receiver);
+				else Reflect.deleteProperty(target, p);
+				if (this.updateLocalQuietly()) return bool;
+				// The store refuses even the account without it (full): keep it for this session.
+				Reflect.set(target, p, newValue, receiver);
 				return bool;
 			},
 			get: (target, p, receiver) => {
@@ -230,14 +254,14 @@ export class Specialuser {
 	/** The account's saved status as last seen, so the next connect announces it. */
 	set status(e: string | undefined) {
 		this.json.status = e;
-		this.updateLocal();
+		this.tryUpdateLocal();
 	}
 	get status(): string | undefined {
 		return this.json.status;
 	}
 	set id(e) {
 		this.json.id = e;
-		this.updateLocal();
+		this.tryUpdateLocal();
 	}
 	get id() {
 		return this.json.id;
@@ -248,10 +272,32 @@ export class Specialuser {
 	toJSON() {
 		return this.json;
 	}
+	/** Saves this account into userinfos. Throws a refused write (a full store). */
 	updateLocal() {
 		const info = getBulkInfo();
 		info.users[this.uid] = this.toJSON();
 		localStorage.setItem("userinfos", JSON.stringify(info));
+	}
+	/** updateLocal for the saves that run while the app boots (name, avatar, id, status, token,
+	 * localuserStore): a refused write (a full store) is logged, and the value still holds in
+	 * memory for this session. Thrown, it would abort READY and the app would never boot. */
+	tryUpdateLocal(): boolean {
+		try {
+			this.updateLocal();
+			return true;
+		} catch (error) {
+			console.error(error);
+			return false;
+		}
+	}
+	/** tryUpdateLocal without the log: proxySave's retry after a refusal it already logged. */
+	private updateLocalQuietly(): boolean {
+		try {
+			this.updateLocal();
+			return true;
+		} catch {
+			return false;
+		}
 	}
 }
 export function trimswitcher() {

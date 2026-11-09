@@ -1,4 +1,5 @@
 import type {NotificationSoundConfig} from "../notificationSound.js";
+import {trySetItem} from "./trySetItem.js";
 
 // Async in order to account for maybe some day Spacebar supporting account data...
 export const enum AnimateTristateValue {
@@ -86,68 +87,63 @@ export async function updatePreferences(patch: Partial<UserPreferences>): Promis
 }
 
 //region Migration from untyped storage
+// Runs on every boot. It writes only when something changed (a full store refuses the write,
+// and this module is awaited at load, so a throw here stops the app booting), and it drops a
+// legacy key only once its value is saved in userPreferences.
 async function migrateOldPreferences(): Promise<void> {
 	const prefs = await getPreferences();
-	let mod = false;
+	const migratedKeys: string[] = [];
 
 	const oldAnimateGifs = localStorage.getItem("gifSetting");
 	if (oldAnimateGifs !== null) {
 		prefs.animateGifs = oldAnimateGifs as AnimateTristateValue;
-		localStorage.removeItem("gifSetting");
-		mod = true;
+		migratedKeys.push("gifSetting");
 	}
 
 	const oldAnimateIcons = localStorage.getItem("iconSetting");
 	if (oldAnimateIcons !== null) {
 		prefs.animateIcons = oldAnimateIcons as AnimateTristateValue;
-		localStorage.removeItem("iconSetting");
-		mod = true;
+		migratedKeys.push("iconSetting");
 	}
 
 	const oldTheme = localStorage.getItem("theme");
 	if (oldTheme !== null) {
 		prefs.theme = oldTheme as ThemeOption;
-		localStorage.removeItem("theme");
-		mod = true;
+		migratedKeys.push("theme");
 	}
 
 	const oldLocale = localStorage.getItem("locale");
 	if (oldLocale !== null) {
 		prefs.locale = oldLocale;
-		localStorage.removeItem("locale");
-		mod = true;
+		migratedKeys.push("locale");
 	}
 
 	const oldEmojiFont = localStorage.getItem("emoji-font");
 	if (oldEmojiFont !== null) {
 		prefs.emojiFont = oldEmojiFont;
-		localStorage.removeItem("emoji-font");
-		mod = true;
+		migratedKeys.push("emoji-font");
 	}
 
+	let volumeChanged = false;
 	const userinfosRaw = localStorage.getItem("userinfos");
 	if (userinfosRaw) {
 		try {
-			const userinfos = JSON.parse(userinfosRaw) as {
-				preferences?: {notisound?: string; volume?: number};
-			};
-			if (userinfos.preferences?.volume !== undefined && prefs.notificationVolume === 75) {
-				prefs.notificationVolume = userinfos.preferences.volume;
-				mod = true;
+			const userinfos = JSON.parse(userinfosRaw) as {preferences?: {volume?: number}};
+			const oldVolume = userinfos.preferences?.volume;
+			if (oldVolume !== undefined && prefs.notificationVolume === 75 && oldVolume !== 75) {
+				prefs.notificationVolume = oldVolume;
+				volumeChanged = true;
 			}
-			if (userinfos.preferences?.notisound !== undefined && prefs.notificationSound === "Default") {
-				const oldSound = userinfos.preferences.notisound;
-				prefs.notificationSound = oldSound === "custom" ? "Default" : "Default";
-				mod = true;
-			}
+			// The legacy userinfos.preferences.notisound maps to "Default" whatever it holds,
+			// which is already the default: nothing to carry over.
 		} catch {
 			// ignore malformed userinfos
 		}
 	}
 
-	if (mod) {
-		// TODO: proper saving and versioning and crap...
-		localStorage.setItem("userPreferences", JSON.stringify(prefs));
+	if (migratedKeys.length === 0 && !volumeChanged) return;
+	if (trySetItem("userPreferences", JSON.stringify(prefs))) {
+		for (const key of migratedKeys) localStorage.removeItem(key);
 	}
 }
 
