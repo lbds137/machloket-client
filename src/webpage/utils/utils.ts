@@ -103,8 +103,18 @@ function serialisedLength(value: unknown): number {
 // Runs at module load on every page. It writes only when a default was missing, and a refused
 // write (a full store) is logged, not thrown: a throw here stops the app booting.
 export function setDefaults() {
+	getPreferences().then((perfs) =>
+		document.documentElement.style.setProperty("--accent-color", perfs.accentColor),
+	);
 	const stored = localStorage.getItem("userinfos");
-	const parsed = JSON.parse(stored as string);
+	let parsed; // stays JSON.parse's any, as before
+	try {
+		parsed = JSON.parse(stored as string);
+	} catch (error) {
+		// It holds the signed-in accounts: leave it as found instead of replacing it.
+		console.warn("userinfos store is malformed, leaving it as found", error);
+		return;
+	}
 	// Anything but an object (none stored, or a stray `false`) starts over from the defaults.
 	const userinfos =
 		parsed !== null && typeof parsed === "object"
@@ -123,10 +133,6 @@ export function setDefaults() {
 	if (userinfos.accent_color === undefined) {
 		userinfos.accent_color = "#3096f7";
 	}
-
-	getPreferences().then((perfs) =>
-		document.documentElement.style.setProperty("--accent-color", perfs.accentColor),
-	);
 	if (userinfos.preferences === undefined) {
 		userinfos.preferences = {
 			notifications: false,

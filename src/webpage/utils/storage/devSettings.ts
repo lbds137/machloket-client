@@ -1,4 +1,4 @@
-import {readItem, saveSetting} from "./settingOverlay.js";
+import {readStoredObject, saveSetting} from "./settingOverlay.js";
 import {trySetItem} from "./trySetItem.js";
 
 export class DeveloperSettings {
@@ -16,7 +16,7 @@ export class DeveloperSettings {
 }
 
 export function getDeveloperSettings(): DeveloperSettings {
-	return new DeveloperSettings(JSON.parse(readItem("developerSettings") || "{}"));
+	return new DeveloperSettings(readStoredObject("developerSettings"));
 }
 
 export function setDeveloperSettings(settings: DeveloperSettings): void {

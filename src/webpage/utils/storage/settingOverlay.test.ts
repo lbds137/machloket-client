@@ -1,4 +1,4 @@
-import {afterEach, beforeEach, expect, it, vi} from "vitest";
+import {afterEach, beforeEach, expect, it, onTestFinished, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -16,11 +16,8 @@ const {MarkDown} = await import("../../markdown.js");
 const {Channel} = await import("../../channel.js");
 const {bumpCommandRecency} = await import("../../commandRecency.js");
 const {showChangelogPopup} = await import("../../changelog.js");
-const settingOverlay = (await import("./settingOverlay.js")) as {
-	readItem?: (key: string) => string | null;
-	saveSetting?: (key: string, value: string) => boolean;
-	resetSettingOverlayForTests?: () => void;
-};
+const {readItem, resetSettingOverlayForTests, saveSetting} = await import("./settingOverlay.js");
+const {I18n} = await import("../../i18n.js");
 
 const EXPECTED_COPY =
 	"Couldn't save this setting: this browser's storage for Machloket is full. It applies until you reload.";
@@ -46,18 +43,18 @@ async function flushAsyncDialog() {
 
 beforeEach(() => {
 	localStorage.clear();
-	settingOverlay.resetSettingOverlayForTests?.();
+	resetSettingOverlayForTests();
 	document.querySelectorAll(".background").forEach((el) => el.remove());
 });
 
 afterEach(() => {
 	vi.restoreAllMocks();
 	localStorage.clear();
-	settingOverlay.resetSettingOverlayForTests?.();
+	resetSettingOverlayForTests();
 	document.querySelectorAll(".background").forEach((el) => el.remove());
 });
 
-it("1. a refused updatePreferences({theme}) shows one Dialog with the ruling's text", async () => {
+it("a refused updatePreferences({theme}) shows one Dialog with the ruling's text", async () => {
 	stubFullStorage();
 
 	let threw: unknown;
@@ -73,7 +70,7 @@ it("1. a refused updatePreferences({theme}) shows one Dialog with the ruling's t
 	expect(threw).toBeUndefined();
 });
 
-it("2. a second refused setting write in the same session shows no second Dialog", async () => {
+it("a second refused setting write in the same session shows no second Dialog", async () => {
 	stubFullStorage();
 
 	await updatePreferences({theme: ThemeOption.Light}).catch(() => {});
@@ -91,7 +88,7 @@ it("2. a second refused setting write in the same session shows no second Dialog
 	expect(dialogTexts()).toEqual([EXPECTED_COPY]);
 });
 
-it("3. after a refused write, getPreferences and getSensitiveContentSync read through the session overlay", async () => {
+it("after a refused write, getPreferences and getSensitiveContentSync read through the session overlay", async () => {
 	stubFullStorage();
 
 	await updatePreferences({theme: ThemeOption.Light}).catch(() => {});
@@ -113,7 +110,7 @@ it("3. after a refused write, getPreferences and getSensitiveContentSync read th
 	expect(MarkDown.getTrusted().has("trusted.example.test")).toBe(true);
 });
 
-it("4. a later write that lands clears the overlay so readItem equals localStorage", async () => {
+it("a later write that lands clears the overlay so readItem equals localStorage", async () => {
 	localStorage.setItem(
 		"userPreferences",
 		JSON.stringify(new UserPreferences({theme: ThemeOption.Dark})),
@@ -130,19 +127,17 @@ it("4. a later write that lands clears the overlay so readItem equals localStora
 	// Directly replacing localStorage proves the overlay entry was deleted on the write that landed.
 	const direct = JSON.stringify(new UserPreferences({theme: ThemeOption.White}));
 	localStorage.setItem("userPreferences", direct);
-	expect(settingOverlay.readItem?.("userPreferences")).toBe(
-		localStorage.getItem("userPreferences"),
-	);
+	expect(readItem("userPreferences")).toBe(localStorage.getItem("userPreferences"));
 	expect((await getPreferences()).theme).toBe(ThemeOption.White);
 });
 
-it("5. setItem throwing a TypeError rethrows from saveSetting with no Dialog and no overlay", async () => {
+it("setItem throwing a TypeError rethrows from saveSetting with no Dialog and no overlay", async () => {
 	const bug = new TypeError("caller bug");
 	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
 		throw bug;
 	});
 
-	expect(() => settingOverlay.saveSetting!("userPreferences", "{}")).toThrow(bug);
+	expect(() => saveSetting("userPreferences", "{}")).toThrow(bug);
 	expect(() => setSkinTone(2)).toThrow(bug);
 	expect(() => setBotConfigs("example.test", {b1: 1})).toThrow(bug);
 	await flushAsyncDialog();
@@ -150,7 +145,7 @@ it("5. setItem throwing a TypeError rethrows from saveSetting with no Dialog and
 	expect(getSkinTone()).toBe(0);
 });
 
-it("6. quiet sites log a refused write without throwing or showing a Dialog, and rethrow a TypeError", async () => {
+it("quiet sites log a refused write without throwing or showing a Dialog, and rethrow a TypeError", async () => {
 	const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 	const setItemSpy = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
 		throw quota();
@@ -182,7 +177,7 @@ it("6. quiet sites log a refused write without throwing or showing a Dialog, and
 	expect(() => bumpCommandRecency("300/ping")).toThrow(bug);
 });
 
-it("7. a browser that blocks storage (SecurityError) keeps the setting for the session but shows no 'storage is full' Dialog", async () => {
+it("a browser that blocks storage (SecurityError) keeps the setting for the session but shows no 'storage is full' Dialog", async () => {
 	vi.spyOn(console, "error").mockImplementation(() => {});
 	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
 		throw new DOMException("", "SecurityError");
@@ -192,4 +187,46 @@ it("7. a browser that blocks storage (SecurityError) keeps the setting for the s
 	expect(getSkinTone()).toBe(3);
 	await flushAsyncDialog();
 	expect(dialogTexts()).toEqual([]);
+});
+
+it("a Dialog that fails to load is logged with no unhandled rejection, and a later refusal shows it", async () => {
+	await I18n.done;
+	const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+		throw quota();
+	});
+	const unhandled = vi.fn((event: PromiseRejectionEvent) => event.preventDefault());
+	window.addEventListener("unhandledrejection", unhandled);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
+
+	// The notify chain rejects the way a chunk that can't load would (offline, or a deploy
+	// swapped the chunks under a running page).
+	const loadFailure = new Error("chunk failed to load");
+	const realDone = I18n.done;
+	Object.defineProperty(I18n, "done", {configurable: true, get: () => Promise.reject(loadFailure)});
+	try {
+		setSkinTone(3);
+		// Settled = the chain's failure was either logged or went unhandled.
+		await vi.waitFor(() => {
+			const logged = errorSpy.mock.calls.some((call) => call.includes(loadFailure));
+			expect(logged || unhandled.mock.calls.length > 0).toBe(true);
+		});
+		// unhandledrejection fires a task after the rejection: wait past it before reading.
+		await flushAsyncDialog();
+	} finally {
+		Object.defineProperty(I18n, "done", {
+			configurable: true,
+			enumerable: true,
+			value: realDone,
+			writable: true,
+		});
+	}
+	expect(unhandled).not.toHaveBeenCalled();
+	expect(errorSpy).toHaveBeenCalledWith(loadFailure);
+	expect(dialogTexts()).toEqual([]);
+
+	setSkinTone(4);
+	await vi.waitFor(() => {
+		expect(dialogTexts()).toEqual([EXPECTED_COPY]);
+	});
 });
