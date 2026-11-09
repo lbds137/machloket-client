@@ -1,4 +1,7 @@
 import {expect, it, vi} from "vitest";
+import {mountServedPage} from "../test/servedPage";
+// @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
+import pageHtml from "./authorize.html?raw";
 
 // auth.ts acts once, at its first import, on an /oauth2 path (as in authPage.test.ts). Here the
 // link names an instance nobody can find: no stored account, and no addInstance, so the lookup
@@ -9,10 +12,7 @@ localStorage.setItem("userinfos", JSON.stringify({users: {}, currentuser: null})
 
 await import("../localuser");
 const {I18n} = await import("../i18n");
-const body = document.createElement("div");
-body.innerHTML = `<h1 id="invitename"></h1><p id="invitedescription"></p>
-	<div id="permissions"><h1></h1></div><button id="AcceptInvite" style="visibility: hidden"></button>`;
-document.body.append(body);
+mountServedPage(pageHtml);
 const rejections: unknown[] = [];
 window.addEventListener("unhandledrejection", (e) => {
 	rejections.push(e.reason);
@@ -29,8 +29,10 @@ it("a bot invite to an instance that can't be found says so instead of leaving a
 		{timeout: 5000},
 	);
 	expect(document.getElementById("invitedescription")?.textContent).toBe(
-		I18n.instanceUnreachable(INSTANCE),
+		// The host only: the rest of the link's ?instance= is the link author's text.
+		I18n.instanceUnreachable("nowherebot.test"),
 	);
+	expect(document.getElementById("invitename")?.textContent).toBe(I18n.invite.botHeading());
 	expect(getComputedStyle(document.getElementById("AcceptInvite")!).visibility).toBe("hidden");
 	expect(rejections).toEqual([]);
 });

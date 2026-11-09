@@ -44,6 +44,8 @@ it("with no account on the bot's instance, the button says to create one, in the
 	await openAuthorizePage();
 
 	expect(document.getElementById("AcceptInvite")?.textContent).toBe("⟨invite.botNoAccount⟩");
+	// Signed out, the bot's details never load: a generic heading, not an untitled card.
+	expect(document.getElementById("invitename")?.textContent).toBe("⟨invite.botHeading⟩");
 	expect(getComputedStyle(document.getElementById("AcceptInvite")!).visibility).toBe("visible");
 });
 

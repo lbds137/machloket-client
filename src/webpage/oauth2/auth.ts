@@ -4,19 +4,35 @@ import {getBulkUsers, Specialuser} from "../utils/utils.js";
 import {Permissions} from "../permissions.js";
 import {sameApi, sameInstance} from "../utils/instanceMatch.js";
 import {authorizeBot, botjsonfetch, fetchBotInvite} from "./botInvite.js";
+import {instanceUnreachableText} from "../utils/instanceUnreachable.js";
 if (window.location.pathname.startsWith("/oauth2")) {
-	const users = getBulkUsers();
 	const params = new URLSearchParams(window.location.search);
 	await instancefetch;
 	const well = params.get("instance") || getDefaultInstanceUrl();
-	if (!well) throw new Error("No instance: pass ?instance= or list one in instances.json");
+	// No ?instance= and none listed to default to (an empty instance list): no instance to add the
+	// bot on, so the button stays hidden.
+	if (!well) await showNoInstance(() => I18n.instanceUnreachableUnnamed());
+	else await showBotInvite(well, params);
+}
+
+/** The card's heading and message when there is no instance to add the bot on. */
+async function showNoInstance(message: () => string) {
+	await I18n.done;
+	const title = document.getElementById("invitename");
+	if (title) title.textContent = I18n.invite.botHeading();
+	const desc = document.getElementById("invitedescription");
+	if (desc) desc.textContent = message();
+}
+
+async function showBotInvite(well: string, params: URLSearchParams) {
+	const users = getBulkUsers();
 	const permstr = params.get("permissions");
 	const joinable: Specialuser[] = [];
 
 	for (const key in users.users) {
 		if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 			const user: Specialuser = users.users[key];
-			if (well && sameInstance(user.serverurls.wellknown, well)) {
+			if (sameInstance(user.serverurls.wellknown, well)) {
 				joinable.push(user);
 			}
 		}
@@ -37,12 +53,9 @@ if (window.location.pathname.startsWith("/oauth2")) {
 				}
 			}
 		} else {
-			// The bot's instance can't be found (unreachable, or not an instance): there is nothing
-			// to add the bot with, so the page says what failed, and with no urls the rest below
-			// does nothing (the button stays hidden).
-			await I18n.done;
-			const desc = document.getElementById("invitedescription");
-			if (desc) desc.textContent = I18n.instanceUnreachable(well);
+			// The bot's instance can't be found (unreachable, or not an instance): the page says what
+			// failed, and with no urls the rest below does nothing (the button stays hidden).
+			await showNoInstance(() => instanceUnreachableText(well));
 		}
 	} else {
 		urls = joinable[0].serverurls;
@@ -127,14 +140,14 @@ if (window.location.pathname.startsWith("/oauth2")) {
 		td.addEventListener("click", () => {
 			const l = new URLSearchParams("?");
 			l.set("goback", window.location.href);
-			l.set("instance", well!);
+			l.set("instance", well);
 			window.location.href = "/login?" + l.toString();
 		});
 
 		if (!joinable.length) {
 			const l = new URLSearchParams("?");
 			l.set("goback", window.location.href);
-			l.set("instance", well!);
+			l.set("instance", well);
 			window.location.href = "/login?" + l.toString();
 		}
 
@@ -143,6 +156,11 @@ if (window.location.pathname.startsWith("/oauth2")) {
 		document.body.append(table);
 	}
 	const user = joinable[0];
+	if (!user && urls) {
+		// Signed out, the bot's details never load: a generic heading, not an untitled card.
+		const title = document.getElementById("invitename");
+		if (title) title.textContent = I18n.invite.botHeading();
+	}
 	if (user && urls) {
 		fetchBotInvite(urls.api, user.token, window.location.search).then((json) => {
 			const title = document.getElementById("invitename");
@@ -169,6 +187,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 
 			if (perms && permstr) {
 				perms.children[0].textContent = I18n.htmlPages.idpermissions();
+				perms.hidden = false;
 				const permisions = new Permissions(permstr);
 				for (const perm of Permissions.info()) {
 					if (permisions.hasPermission(perm.name, false)) {

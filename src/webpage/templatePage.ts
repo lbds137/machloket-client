@@ -4,6 +4,7 @@ import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {refusalText} from "./utils/refusalText.js";
+import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
 if (window.location.pathname.startsWith("/template"))
 	(async () => {
 		const users = getBulkUsers();
@@ -18,9 +19,14 @@ if (window.location.pathname.startsWith("/template"))
 			useButton.textContent = canUse ? I18n.useTemplateButton() : I18n.htmlPages.noAccount();
 			useButton.style.visibility = "";
 		};
-		// No instance to look the template up on or sign in to: nothing the button could do, so it
-		// stays hidden.
-		if (!well) return;
+		/** No instance to look the template up on or use it with: the button stays hidden. */
+		const showNoInstance = async (message: () => string) => {
+			await I18n.done;
+			document.getElementById("templatename")!.textContent = I18n.templateHeading();
+			document.getElementById("templatedescription")!.textContent = message();
+		};
+		// No ?instance= and none listed to default to (an empty instance list).
+		if (!well) return await showNoInstance(() => I18n.instanceUnreachableUnnamed());
 		const joinable: Specialuser[] = [];
 
 		for (const key in users.users) {
@@ -47,12 +53,8 @@ if (window.location.pathname.startsWith("/template"))
 					}
 				}
 			} else {
-				// The template's instance can't be found (unreachable, or not an instance): there is
-				// nothing to use it with, so the button stays hidden and the page says what failed.
-				await I18n.done;
-				document.getElementById("templatedescription")!.textContent =
-					I18n.instanceUnreachable(well);
-				return;
+				// The template's instance can't be found (unreachable, or not an instance).
+				return await showNoInstance(() => instanceUnreachableText(well));
 			}
 		} else {
 			urls = joinable[0].serverurls;
@@ -64,37 +66,35 @@ if (window.location.pathname.startsWith("/template"))
 
 		fetch(`${urls!.api}/guilds/templates/${code}`, {
 			method: "GET",
-			// Signed out, the instance may refuse (Spacebar wants a token here): name no template
-			// then, rather than an undefined one. The button still leads to sign-in.
+			// Signed out, the instance may refuse (Spacebar wants a token here): the page then names
+			// no template (a generic heading), and the button still leads to sign-in.
 			headers: joinable[0] ? {Authorization: joinable[0].token} : {},
 		})
 			.catch(() => undefined)
 			.then(async (response) => {
+				const title = document.getElementById("templatename")!;
 				const description = document.getElementById("templatedescription")!;
-				if (!response) {
-					// No answer at all: said in the page body, not an unhandled rejection.
-					description.textContent = await refusalText(response);
+				// Cloned: refusalText reads the body below when it isn't the template.
+				const json = response?.ok
+					? await response
+							.clone()
+							.json()
+							.catch(() => null)
+					: null;
+				if (typeof (json as templateSkim | null)?.name === "string") {
+					const template = json as templateSkim;
+					title.textContent = I18n.useTemplate(template.name);
+					description.textContent = template.description;
 					return;
 				}
-				if (!response.ok) return;
-				const json = await response
-					.clone()
-					.json()
-					.catch(() => null);
-				if (!json) {
-					// A 200 that isn't the template's JSON (a proxy's page): not JSON, so
-					// refusalText gives the status.
-					description.textContent = await refusalText(response);
-					return;
-				}
-				if (typeof (json as templateSkim).name !== "string") {
-					// A 200 of some other shape would write useTemplate(undefined) into the page.
-					description.textContent = await refusalText(response);
-					return;
-				}
-				const template = json as templateSkim;
-				document.getElementById("templatename")!.textContent = I18n.useTemplate(template.name);
-				description.textContent = template.description;
+				// No template to name (refused, no answer, a 200 that isn't the template's JSON):
+				// a generic heading rather than an untitled card.
+				title.textContent = I18n.templateHeading();
+				// Signed out, a refusal is expected and the button leads to sign-in: no reason shown.
+				if (response && !response.ok && !joinable[0]) return;
+				// Otherwise the body says why: no answer at all (not an unhandled rejection), the
+				// instance's refusal, or the status of an answer that isn't the template.
+				description.textContent = await refusalText(response);
 			});
 
 		function showAccounts(): void {

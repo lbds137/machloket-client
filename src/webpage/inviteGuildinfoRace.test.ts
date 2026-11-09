@@ -1,4 +1,7 @@
 import {afterAll, afterEach, expect, it, vi} from "vitest";
+import {mountServedPage} from "./test/servedPage";
+// @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
+import pageHtml from "./invite.html?raw";
 
 // invite.ts runs its page code when it is imported, and only on an /invite path. The account the
 // page offers comes from localStorage, which Localuser reads when it loads, so the URL, storage
@@ -31,9 +34,7 @@ localStorage.setItem(
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("./localuser");
-document.body.innerHTML = `<button id="AcceptInvite">Accept Invite</button>
-	<div id="invitename"></div><div id="invitedescription"></div><div id="invitebody"></div>
-	<div id="inviteimg"></div><div id="inviteBanner"></div>`;
+mountServedPage(pageHtml);
 
 // The invite's own details (GET) wait on `answerGet`: a test decides whether they load before the
 // accept (POST) completes. Until a test answers, the GET stalls.

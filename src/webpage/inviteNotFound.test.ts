@@ -1,4 +1,7 @@
 import {afterAll, expect, it} from "vitest";
+import {mountServedPage} from "./test/servedPage";
+// @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
+import pageHtml from "./invite.html?raw";
 
 // invite.ts runs its page code when it is imported, and only on an /invite path; the URL, the
 // stored account and the page elements are set before the imports below (as in
@@ -32,9 +35,7 @@ localStorage.setItem(
 await import("./localuser");
 const {I18n} = await import("./i18n");
 const {captureRequests} = await import("./test/setup");
-document.body.innerHTML = `<button id="AcceptInvite">Accept Invite</button>
-	<div id="invitename"></div><div id="invitedescription"></div><div id="invitebody"></div>
-	<div id="inviteimg"></div><div id="inviteBanner"></div>`;
+mountServedPage(pageHtml);
 
 // The server answers an unknown, expired or used-up invite with Discord's code, not 404.
 captureRequests(

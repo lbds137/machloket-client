@@ -4,6 +4,7 @@ import {createImg, getapiurls} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
+import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
 // Re-exported: the accept lives in utils (no page side effects), and this page's tests import it here.
 export {acceptInvite};
 /** How long an accept waits for the invite's details before it lands on the home page. */
@@ -55,7 +56,8 @@ if (window.location.pathname.startsWith("/invite"))
 				// The invite's instance can't be found (unreachable, or not an instance): there is
 				// nothing to accept with, so the button stays hidden and the page says what failed.
 				await I18n.done;
-				document.getElementById("invitedescription")!.textContent = I18n.instanceUnreachable(well);
+				document.getElementById("invitedescription")!.textContent =
+					instanceUnreachableText(well);
 				return;
 			}
 		} else {

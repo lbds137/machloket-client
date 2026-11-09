@@ -509,6 +509,7 @@
 	"incorrectURLS": "## This instance has likely sent the incorrect links.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Machloket to automatically try to fix this error to let you connect to the instance?",
 	"instInfo": "Instance information",
 	"instanceUnreachable": "Couldn't reach the instance at $1. Check the link.",
+	"instanceUnreachableUnnamed": "Couldn't reach this link's instance. Check the link.",
 	"instanceInfo": {
 		"contact": "Email instance admins",
 		"frontPage": "[Front page]($1)",
@@ -547,6 +548,7 @@
 		"acceptInvite": "Accept Invite",
 		"alreadyJoined": "Already joined",
 		"botAdded": "Bot added successfully",
+		"botHeading": "Invite a bot",
 		"botInviteButton": "Invite",
 		"botNoAccount": "Create an account to invite the bot",
 		"botPickServer": "Invite to server:",
@@ -1144,6 +1146,7 @@
 	"uploadBanner": "Upload banner:",
 	"uploadFilesText": "Upload your files here!",
 	"uploadPfp": "Upload avatar:",
+	"templateHeading": "Server template",
 	"useTemplate": "Use $1 as a template",
 	"useTemplateButton": "Use template",
 	"usedClient": "sent via $1",
