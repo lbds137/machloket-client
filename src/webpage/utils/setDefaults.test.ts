@@ -48,3 +48,22 @@ it("doesn't throw when a full store refuses the first userinfos", () => {
 		if (stored !== null) localStorage.setItem("userinfos", stored);
 	}
 });
+
+it("boots past an unparseable userinfos without overwriting it", () => {
+	// setDefaults runs at module load: a throw stops the app booting. The value holds the
+	// signed-in accounts, so it stays as found rather than being replaced by the defaults.
+	const stored = localStorage.getItem("userinfos");
+	localStorage.setItem("userinfos", "{bad");
+	const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+	try {
+		expect(() => setDefaults()).not.toThrow();
+		expect(localStorage.getItem("userinfos")).toBe("{bad");
+		expect(warn).toHaveBeenCalledWith(
+			"userinfos store is malformed, leaving it as found",
+			expect.any(SyntaxError),
+		);
+	} finally {
+		if (stored !== null) localStorage.setItem("userinfos", stored);
+		else localStorage.removeItem("userinfos");
+	}
+});

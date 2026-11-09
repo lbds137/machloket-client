@@ -1386,10 +1386,20 @@ class MarkDown {
 		return build;
 	}
 	static trustedDomains = this.getTrusted();
+	/** The stored list of trusted link hosts. Runs at module load (trustedDomains), so a corrupt
+	 * or non-list value reads as the defaults instead of throwing; non-string entries drop. */
 	static getTrusted() {
 		const domains = readItem("trustedDomains");
 		if (domains) {
-			return new Set(JSON.parse(domains) as string[]);
+			try {
+				const parsed: unknown = JSON.parse(domains);
+				if (Array.isArray(parsed)) {
+					return new Set(parsed.filter((d): d is string => typeof d === "string"));
+				}
+				console.warn("trustedDomains store is not a list, using defaults");
+			} catch (error) {
+				console.warn("trustedDomains store is malformed, using defaults", error);
+			}
 		}
 		return new Set([
 			location.host,

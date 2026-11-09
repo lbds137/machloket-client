@@ -1,4 +1,4 @@
-import {readItem, saveSetting} from "./settingOverlay.js";
+import {readStoredObject, saveSetting} from "./settingOverlay.js";
 import {trySetItem} from "./trySetItem.js";
 
 export const enum ServiceWorkerMode {
@@ -27,7 +27,7 @@ export class LocalSettings {
 }
 
 export function getLocalSettings(): LocalSettings {
-	return new LocalSettings(JSON.parse(readItem("localSettings") || "{}"));
+	return new LocalSettings(readStoredObject("localSettings"));
 }
 
 export function setLocalSettings(settings: LocalSettings): void {
