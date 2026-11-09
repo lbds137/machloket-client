@@ -1,5 +1,13 @@
 import {afterEach, expect, it, onTestFinished} from "vitest";
 import {addInstance, captureRequests} from "./test/setup";
+// @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
+import pageHtml from "./template.html?raw";
+
+/** template.html's card as served (its script left out): what the page shows before its code runs. */
+function servedCard(): HTMLElement {
+	const page = new DOMParser().parseFromString(pageHtml as string, "text/html");
+	return page.getElementById("invitebody")!;
+}
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -11,9 +19,7 @@ await I18n.done;
 const before = location.href;
 afterEach(() => {
 	history.replaceState(history.state, "", before);
-	for (const id of ["usetemplate", "templatename", "templatedescription"]) {
-		document.getElementById(id)?.remove();
-	}
+	document.getElementById("invitebody")?.remove();
 });
 
 let runs = 0;
@@ -28,11 +34,7 @@ async function openSignedOut(respond: () => Response | Promise<Response>) {
 	onTestFinished(() => {
 		if (saved) localStorage.setItem("userinfos", saved);
 	});
-	for (const id of ["usetemplate", "templatename", "templatedescription"]) {
-		const el = document.createElement("div");
-		el.id = id;
-		document.body.append(el);
-	}
+	document.body.append(document.importNode(servedCard(), true));
 	// Whichever instance the build lists first is the default.
 	await instancefetch;
 	const origin = new URL(getDefaultInstanceUrl()!).origin;
@@ -47,6 +49,51 @@ async function openSignedOut(respond: () => Response | Promise<Response>) {
 		use: document.getElementById("usetemplate")!,
 	};
 }
+
+it("the served page paints no untranslated text and no button before its code runs", () => {
+	// The language loads with I18n, and the button's label depends on whether an account can use
+	// the template; anything the HTML shows first would be English and possibly the wrong label.
+	const card = servedCard();
+	document.body.append(document.importNode(card, true));
+	const shown = (id: string) => document.getElementById(id)!.textContent!.trim();
+	expect({
+		name: shown("templatename"),
+		description: shown("templatedescription"),
+		label: shown("usetemplate"),
+		buttonVisibility: getComputedStyle(document.getElementById("usetemplate")!).visibility,
+	}).toEqual({name: "", description: "", label: "", buttonVisibility: "hidden"});
+});
+
+it("signed out, the button offers an account rather than Use template, and shows once labelled", async () => {
+	const {use} = await openSignedOut(() =>
+		Response.json({name: "Book club", description: "Reading together"}),
+	);
+	// The label is set before the template request goes out (openSignedOut waits for that).
+	expect(use.textContent).toBe(I18n.htmlPages.noAccount());
+	expect(getComputedStyle(use).visibility).toBe("visible");
+});
+
+it("a template link to an instance that can't be found says so instead of a blank page", async () => {
+	document.body.append(document.importNode(servedCard(), true));
+	const rejections: unknown[] = [];
+	const onRejection = (e: PromiseRejectionEvent) => {
+		rejections.push(e.reason);
+		e.preventDefault();
+	};
+	window.addEventListener("unhandledrejection", onRejection);
+	onTestFinished(() => window.removeEventListener("unhandledrejection", onRejection));
+	// No addInstance for it: the lookup comes back empty.
+	const nowhere = "http://nowheretemplate.test";
+	history.replaceState(history.state, "", "/template/abc?instance=" + encodeURIComponent(nowhere));
+	await import(/* @vite-ignore */ "./templatePage.ts?run=" + ++runs);
+
+	const description = document.getElementById("templatedescription")!;
+	await expect
+		.poll(() => description.textContent, {timeout: 5000})
+		.toBe(I18n.instanceUnreachable(nowhere));
+	expect(getComputedStyle(document.getElementById("usetemplate")!).visibility).toBe("hidden");
+	expect(rejections).toEqual([]);
+});
 
 it("a template link without ?instance= shows the template from the default instance", async () => {
 	const {name} = await openSignedOut(() =>

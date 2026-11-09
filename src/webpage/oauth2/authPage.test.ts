@@ -1,5 +1,13 @@
 import {afterEach, expect, it, vi} from "vitest";
 import {addInstance} from "../test/setup";
+// @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
+import pageHtml from "./authorize.html?raw";
+
+/** authorize.html's card as served (its script left out): what the page shows before its code runs. */
+function servedCard(): HTMLElement {
+	const page = new DOMParser().parseFromString(pageHtml as string, "text/html");
+	return document.importNode(page.getElementById("invitebody")!, true);
+}
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -21,12 +29,7 @@ let opened = false;
 async function openAuthorizePage() {
 	if (opened) throw new Error("auth.ts acts only at its first import: one page run per test file");
 	opened = true;
-	const body = document.createElement("div");
-	body.id = "invitebody";
-	body.innerHTML = `<img id="inviteimg" class="pfp" /><h1 id="invitename"></h1>
-		<p id="invitedescription"></p><div id="permissions"><h1></h1></div>
-		<button id="AcceptInvite"></button>`;
-	document.body.append(body);
+	document.body.append(servedCard());
 	history.replaceState(null, "", `/oauth2/authorize?client_id=9&instance=${INSTANCE}`);
 	await import("./auth");
 }
@@ -41,4 +44,19 @@ it("with no account on the bot's instance, the button says to create one, in the
 	await openAuthorizePage();
 
 	expect(document.getElementById("AcceptInvite")?.textContent).toBe("⟨invite.botNoAccount⟩");
+	expect(getComputedStyle(document.getElementById("AcceptInvite")!).visibility).toBe("visible");
+});
+
+it("the served page paints no untranslated text and no button before its code runs", () => {
+	// The language loads with I18n, and the bot's name, description and permissions come from
+	// the instance (signed out, never): anything the HTML shows first would stay English.
+	document.body.append(servedCard());
+	const shown = (sel: string) => document.querySelector(sel)!.textContent!.trim();
+	expect({
+		name: shown("#invitename"),
+		description: shown("#invitedescription"),
+		permissions: shown("#permissions"),
+		label: shown("#AcceptInvite"),
+		buttonVisibility: getComputedStyle(document.getElementById("AcceptInvite")!).visibility,
+	}).toEqual({name: "", description: "", permissions: "", label: "", buttonVisibility: "hidden"});
 });
