@@ -493,7 +493,7 @@ class Localuser {
 			this.userinfo.token = ready.d.auth_token;
 			this.userinfo.json.token = ready.d.auth_token;
 			this.headers.Authorization = ready.d.auth_token;
-			this.userinfo.updateLocal();
+			this.userinfo.tryUpdateLocal();
 		}
 
 		this.applySavedStatus(this.ready.d.user_settings.status);

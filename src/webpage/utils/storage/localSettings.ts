@@ -1,3 +1,5 @@
+import {trySetItem} from "./trySetItem.js";
+
 export const enum ServiceWorkerMode {
 	// Skips registering the service worker completely
 	Unregistered = "unregistered",
@@ -34,18 +36,13 @@ export function setLocalSettings(settings: LocalSettings): void {
 //region Migration from untyped storage
 function migrateOldSettings() {
 	const settings = getLocalSettings();
-	let mod = false;
 
 	const oldSWMode = localStorage.getItem("SWMode");
-	if (oldSWMode !== null) {
-		settings.serviceWorkerMode = oldSWMode as ServiceWorkerMode;
-		localStorage.removeItem("SWMode");
-		mod = true;
-	}
-
-	if (mod) {
-		localStorage.setItem("localSettings", JSON.stringify(settings));
-	}
+	if (oldSWMode === null) return;
+	settings.serviceWorkerMode = oldSWMode as ServiceWorkerMode;
+	// Runs at module load: a refused write must not stop the app booting, and the legacy key
+	// goes only once its value is saved.
+	if (trySetItem("localSettings", JSON.stringify(settings))) localStorage.removeItem("SWMode");
 }
 
 migrateOldSettings();
