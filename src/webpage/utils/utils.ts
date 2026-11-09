@@ -6,7 +6,7 @@ import {isLoopback, trimTrailingSlashes} from "./netUtils";
 import {getLocalSettings, ServiceWorkerMode, setLocalSettings} from "./storage/localSettings";
 import {getPreferences} from "./storage/userPreferences";
 import {getDeveloperSettings} from "./storage/devSettings";
-import {trySetItem} from "./storage/trySetItem";
+import {isStoreRefusal, trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
 
 fix();
@@ -62,6 +62,15 @@ export function getBulkUsers() {
 }
 export function getBulkInfo() {
 	return JSON.parse(localStorage.getItem("userinfos") as string);
+}
+/** JSON for a store write. A value JSON can't hold (a BigInt, a cycle) can't be stored either,
+ * so its failure reads as the store's refusal (a DataCloneError), not as a bug in the caller. */
+function serialiseForStore(value: unknown): string {
+	try {
+		return JSON.stringify(value);
+	} catch (error) {
+		throw new DOMException(String(error), "DataCloneError");
+	}
 }
 /** A refused perminfo value at least this long (serialised) is dropped when the account saves
  * without it; shorter ones stay in memory. The boot path's structural writes are tens of
@@ -272,22 +281,43 @@ export class Specialuser {
 	toJSON() {
 		return this.json;
 	}
-	/** Saves this account into userinfos. Throws a refused write (a full store). */
+	/** Saves this account into userinfos. Throws a refused write (a full store) or a missing
+	 * userinfos as a DOMException; any other error it throws is a bug. */
 	updateLocal() {
 		const info = getBulkInfo();
+		// Another tab cleared site data mid-session: the store's state, not a bug.
+		if (!info) throw new DOMException("userinfos is missing", "NotFoundError");
 		info.users[this.uid] = this.toJSON();
-		localStorage.setItem("userinfos", JSON.stringify(info));
+		localStorage.setItem("userinfos", serialiseForStore(info));
 	}
 	/** updateLocal for the saves that run while the app boots (name, avatar, id, status, token,
 	 * localuserStore): a refused write (a full store) is logged, and the value still holds in
-	 * memory for this session. Thrown, it would abort READY and the app would never boot. */
+	 * memory for this session. Thrown, it would abort READY and the app would never boot.
+	 * Returns whether the whole account saved; when it didn't, the account's own fields (a
+	 * refreshed token above all) still save beside the localuserStore as last stored. */
 	tryUpdateLocal(): boolean {
 		try {
 			this.updateLocal();
 			return true;
 		} catch (error) {
+			if (!isStoreRefusal(error)) throw error;
 			console.error(error);
+			this.saveFieldsQuietly();
 			return false;
+		}
+	}
+	/** The localuserStore is what grows (perminfo kept in memory once the store refused it rides
+	 * in every later save), so on a near-full store the rest of the account can still fit. It
+	 * re-reads userinfos, so other accounts and the store as last saved (by any tab) stay. */
+	private saveFieldsQuietly() {
+		try {
+			const info = getBulkInfo();
+			const saved = info?.users?.[this.uid];
+			if (!saved) return;
+			info.users[this.uid] = {...this.toJSON(), localuserStore: saved.localuserStore};
+			localStorage.setItem("userinfos", serialiseForStore(info));
+		} catch (error) {
+			if (!isStoreRefusal(error)) throw error;
 		}
 	}
 	/** tryUpdateLocal without the log: proxySave's retry after a refusal it already logged. */
@@ -295,7 +325,8 @@ export class Specialuser {
 		try {
 			this.updateLocal();
 			return true;
-		} catch {
+		} catch (error) {
+			if (!isStoreRefusal(error)) throw error;
 			return false;
 		}
 	}
