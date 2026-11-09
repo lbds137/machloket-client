@@ -7,6 +7,7 @@ import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
 import {normalizeInviteLink} from "./utils/inviteUtils.js";
 import {externalUrl} from "./utils/netUtils.js";
+import {readItem, saveSetting} from "./utils/storage/settingOverlay.js";
 
 const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
 const BULLET_CHARS = new Set("*+- ");
@@ -1386,7 +1387,7 @@ class MarkDown {
 	}
 	static trustedDomains = this.getTrusted();
 	static getTrusted() {
-		const domains = localStorage.getItem("trustedDomains");
+		const domains = readItem("trustedDomains");
 		if (domains) {
 			return new Set(JSON.parse(domains) as string[]);
 		}
@@ -1414,7 +1415,7 @@ class MarkDown {
 		}
 		const domains = JSON.stringify([...this.trustedDomains]);
 
-		localStorage.setItem("trustedDomains", domains);
+		saveSetting("trustedDomains", domains);
 	}
 	/** A link click that should act: not a right click, not inside a spoiler still hidden. */
 	static isLiveClick(elm: HTMLElement, e: MouseEvent) {

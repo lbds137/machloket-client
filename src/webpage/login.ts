@@ -4,6 +4,7 @@ import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
 import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 import {formErrors} from "./utils/refusalText.js";
+import {trySetItem} from "./utils/storage/trySetItem.js";
 function generateRecArea(recover = document.getElementById("recover")) {
 	if (!recover) return;
 	recover.innerHTML = "";
@@ -35,7 +36,7 @@ async function recover(e: InstanceInfo, recover = document.getElementById("recov
 				if (!json || !json.can_recover_account) throw Error("can't recover account");
 			}
 			res(true);
-			localStorage.setItem("canRecover", "true");
+			trySetItem("canRecover", "true");
 			generateRecArea(recover);
 		} catch {
 			res(false);

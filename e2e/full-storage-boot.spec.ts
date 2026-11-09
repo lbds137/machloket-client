@@ -1,5 +1,5 @@
 import {expect} from "@playwright/test";
-import {MOCK_CHANNEL, loginAndOpenChannel, test} from "./fixtures";
+import {MOCK_CHANNEL, drain, loginAndOpenChannel, test} from "./fixtures";
 
 // A browser whose localStorage quota is used up refuses every setItem. The app must still
 // boot a signed-in account from what it can read; it just can't save anything new.
@@ -81,4 +81,53 @@ test("a plain signed-in reload doesn't rewrite userPreferences", async ({page, m
 	expect(
 		await page.evaluate(() => (window as unknown as {preferenceWrites: string[]}).preferenceWrites),
 	).toEqual([]);
+});
+
+test("changing a setting on a full store applies it for the session and shows one dialog", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	await loginAndOpenChannel(page);
+	await expect(page.locator("body")).toHaveClass(/\bOnyx-theme\b/);
+
+	await page.evaluate(() => {
+		const realSetItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = function (key: string, value: string) {
+			if (this === window.localStorage) {
+				throw new DOMException(`Quota exceeded writing ${key}`, "QuotaExceededError");
+			}
+			return realSetItem.call(this, key, value);
+		};
+	});
+
+	await page.locator("#settings").dispatchEvent("click");
+	await page
+		.locator('.settingbuttons .cardLink[data-section="App settings"]', {hasText: "Appearance"})
+		.click();
+	const appearance = page.locator("#card-appearance");
+	await expect(appearance).toBeVisible();
+	const themeSelect = appearance
+		.locator(".optionElement")
+		.filter({has: page.locator("span", {hasText: /^Theme$/})})
+		.locator("select");
+
+	await themeSelect.selectOption({label: "Light"});
+	await page.locator(".savediv button").click();
+
+	await expect(page.locator("body")).toHaveClass(/\bLight-theme\b/);
+	const dialog = page.locator(".dialogModal");
+	await expect(dialog).toHaveCount(1);
+	await expect(dialog).toHaveText(
+		"Couldn't save this setting: this browser's storage for Machloket is full. It applies until you reload.",
+	);
+
+	await page.keyboard.press("Escape");
+	await expect(dialog).toHaveCount(0);
+
+	await themeSelect.selectOption({label: "Dark"});
+	await page.locator(".savediv button").click();
+	await expect(page.locator("body")).toHaveClass(/\bDark-theme\b/);
+	await drain(page);
+	await expect(dialog).toHaveCount(0);
 });
