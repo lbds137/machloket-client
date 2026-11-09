@@ -5,6 +5,7 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
 import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
+import {trySetItem} from "./utils/storage/trySetItem.js";
 // Re-exported: the accept lives in utils (no page side effects), and this page's tests import it here.
 export {acceptInvite};
 /** How long an accept waits for the invite's details before it lands on the home page. */
@@ -178,15 +179,11 @@ if (window.location.pathname.startsWith("/invite"))
 						if (!result.ok) return alert(result.message);
 						users.currentuser = user.uid;
 						sessionStorage.setItem("currentuser", user.uid);
-						// Only the default account for new tabs is lost if this write fails (a full
-						// localStorage): the account itself is already stored, and the app boots this tab's
-						// pick from sessionStorage, so the landing goes ahead. Throwing here would send the
-						// user round "accept again", which hits the same full storage.
-						try {
-							localStorage.setItem("userinfos", JSON.stringify(users));
-						} catch (err) {
-							console.error(err);
-						}
+						// Only the default account for new tabs is lost if the store refuses this write (a
+						// full localStorage): the account itself is already stored, and the app boots this
+						// tab's pick from sessionStorage, so the landing goes ahead. Throwing the refusal
+						// would send the user round "accept again", which hits the same full storage.
+						trySetItem("userinfos", JSON.stringify(users));
 						// The details may still be loading (or have failed): wait a while for them rather than
 						// read an unset guild or stall. With no guild to name, the home page is where the join lands.
 						const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
