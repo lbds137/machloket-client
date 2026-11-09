@@ -25,14 +25,15 @@ if (window.location.pathname.startsWith("/template"))
 			document.getElementById("templatename")!.textContent = I18n.templateHeading();
 			document.getElementById("templatedescription")!.textContent = message();
 		};
-		// No ?instance= and none listed to default to (an empty instance list).
-		if (!well) return await showNoInstance(() => I18n.instanceUnreachableUnnamed());
+		// No ?instance= and none listed to default to (an empty instance list): nothing was
+		// unreachable, the client has no instance at all.
+		if (!well) return await showNoInstance(() => I18n.noInstanceConfigured());
 		const joinable: Specialuser[] = [];
 
 		for (const key in users.users) {
 			if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 				const user: Specialuser = users.users[key];
-				if (well && sameInstance(user.serverurls.wellknown, well)) {
+				if (sameInstance(user.serverurls.wellknown, well)) {
 					joinable.push(user);
 				}
 			}
@@ -40,7 +41,7 @@ if (window.location.pathname.startsWith("/template"))
 
 		let urls: {api: string; cdn: string} | undefined;
 
-		if (!joinable.length && well) {
+		if (!joinable.length) {
 			const out = await getapiurls(well);
 			if (out) {
 				urls = out;

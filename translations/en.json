@@ -510,6 +510,7 @@
 	"instInfo": "Instance information",
 	"instanceUnreachable": "Couldn't reach the instance at $1. Check the link.",
 	"instanceUnreachableUnnamed": "Couldn't reach this link's instance. Check the link.",
+	"noInstanceConfigured": "There's no instance set up to open this link with.",
 	"instanceInfo": {
 		"contact": "Email instance admins",
 		"frontPage": "[Front page]($1)",
@@ -559,6 +560,7 @@
 		"expireAfter": "Expire after:",
 		"expires": "Expires: $1",
 		"forChannel": "For channel: $1",
+		"heading": "Server invite",
 		"inviteLinkCode": "Invite link/code",
 		"inviteMaker": "Invite maker",
 		"invitedBy": "You've been invited by $1",

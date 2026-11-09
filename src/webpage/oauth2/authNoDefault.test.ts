@@ -32,8 +32,9 @@ it("a bot invite with no instance to use says so instead of failing to load", as
 		() => expect(document.getElementById("invitedescription")?.textContent).not.toBe(""),
 		{timeout: 5000},
 	);
+	// Nothing was unreachable: the client has no instance at all (a deploy problem).
 	expect(document.getElementById("invitedescription")?.textContent).toBe(
-		I18n.instanceUnreachableUnnamed(),
+		I18n.noInstanceConfigured(),
 	);
 	expect(document.getElementById("invitename")?.textContent).toBe(I18n.invite.botHeading());
 	expect(getComputedStyle(document.getElementById("AcceptInvite")!).visibility).toBe("hidden");

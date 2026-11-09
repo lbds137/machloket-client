@@ -55,6 +55,7 @@ it("an invite the server couldn't look up says so, and keeps its Accept", async 
 	await expect
 		.poll(() => document.getElementById("invitedescription")?.textContent)
 		.toBe(I18n.requestFailed("HTTP 503"));
-	expect(document.getElementById("invitename")?.textContent).not.toBe(I18n.invite.notFound());
+	// Nothing says the invite is dead, and no name came back: a generic heading.
+	expect(document.getElementById("invitename")?.textContent).toBe(I18n.invite.heading());
 	expect(document.getElementById("AcceptInvite")).not.toBeNull();
 });

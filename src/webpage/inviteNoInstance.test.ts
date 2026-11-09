@@ -31,6 +31,8 @@ it("an invite to an instance that can't be found says so instead of leaving a bl
 		// The host only: the rest of the link's ?instance= is the link author's text.
 		I18n.instanceUnreachable("nowhereinvite.test"),
 	);
+	// No invite to name: a generic heading, not an empty one above the message.
+	expect(document.getElementById("invitename")?.textContent).toBe(I18n.invite.heading());
 	// Nothing to accept with: the button stays hidden.
 	expect(getComputedStyle(document.getElementById("AcceptInvite")!).visibility).toBe("hidden");
 	expect(rejections).toEqual([]);
