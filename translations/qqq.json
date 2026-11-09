@@ -36,8 +36,12 @@
 				"htmlPages": {
 								"box1Items": "this string is slightly atypical, it has a list of items separated by |, please try to keep the same list size as this"
 				},
+				"instanceUnreachable": "Shown on a link's landing page (server invite, bot invite, template) when the instance (server) the link points at doesn't answer. $1 is that instance's host name, such as chat.example.org. Not the same as noInstanceConfigured, where the site has no instance set up at all.",
+				"instanceUnreachableUnnamed": "As instanceUnreachable, when the link's instance can't be named safely (it is neither a web address nor the name of an instance this site lists), so the message names none.",
 				"invite": {
+								"botHeading": "Heading of the bot invite page when there is no bot name to show (for example, the bot or its instance couldn't be reached).",
 								"botTitle": "$1 is the bot's username",
+								"heading": "Heading of the server invite page when there is no server name to show (for example, the invite or its instance couldn't be reached).",
 								"members": "$1 is the formatted number of members in the guild"
 				},
 				"loading": "Generic placeholder while something loads",
@@ -51,6 +55,7 @@
 								"updateSettings": "Title of a page that allows you to adjust the update settings"
 				},
 				"messagesLoadFailed": "Shown in the message pane when the channel's opening page of messages failed to load after retrying.",
+				"noInstanceConfigured": "Shown on a link's landing page (server invite, bot invite, template) when the link names no instance (server) and the site has none set up to fall back to. A setup problem of the site, not a connection failure; compare instanceUnreachable.",
 				"ok": "Assuming that it's an Ok button",
 				"permissions": {
 								"descriptions": {
@@ -69,6 +74,7 @@
 				"register": {
 								"agreeTOS": "uses MarkDown"
 				},
+				"templateHeading": "Heading of the server template page when there is no template name to show (for example, the template couldn't be looked up or was refused).",
 				"typing": "$1 is the number of people typing and $2 is the names of the people typing separated by commas",
 				"webhooks": {
 								"sillyDefaults": "{{doc-important|This is just a list of silly default names for webhooks, do not feel the need to translate dirrectly, and no need for the same count}}"

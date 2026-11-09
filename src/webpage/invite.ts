@@ -1,6 +1,6 @@
 import {I18n} from "./i18n.js";
 import {AccountSwitcher} from "./utils/switcher.js";
-import {createImg, getapiurls} from "./utils/utils.js";
+import {createImg, getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
@@ -26,13 +26,26 @@ function guildWithin(loaded: Promise<any>, ms: number): Promise<any> {
 if (window.location.pathname.startsWith("/invite"))
 	(async () => {
 		const users = getBulkUsers();
-		const well = new URLSearchParams(window.location.search).get("instance") || "Spacebar";
+		await instancefetch;
+		// Without ?instance= (a link typed by hand), the default instance, as /template and /oauth2.
+		const asked =
+			new URLSearchParams(window.location.search).get("instance") || getDefaultInstanceUrl();
+		if (!asked) {
+			// No instance listed to default to: nothing was unreachable, the client has none at
+			// all. The button stays hidden.
+			await I18n.done;
+			document.getElementById("invitename")!.textContent = I18n.invite.heading();
+			document.getElementById("invitedescription")!.textContent = I18n.noInstanceConfigured();
+			return;
+		}
+		// Its own binding: the narrowing above doesn't reach showAccounts, a hoisted declaration.
+		const well: string = asked;
 		const joinable: Specialuser[] = [];
 
 		for (const key in users.users) {
 			if (Object.prototype.hasOwnProperty.call(users.users, key)) {
 				const user: Specialuser = users.users[key];
-				if (well && sameInstance(user.serverurls.wellknown, well)) {
+				if (sameInstance(user.serverurls.wellknown, well)) {
 					joinable.push(user);
 				}
 			}
@@ -40,7 +53,7 @@ if (window.location.pathname.startsWith("/invite"))
 
 		let urls: {api: string; cdn: string} | undefined;
 
-		if (!joinable.length && well) {
+		if (!joinable.length) {
 			const out = await getapiurls(well);
 			if (out) {
 				urls = out;
@@ -137,7 +150,7 @@ if (window.location.pathname.startsWith("/invite"))
 		async function showAccounts() {
 			const user = await new AccountSwitcher(
 				(user) => {
-					return !!(well && sameInstance(user.serverurls.wellknown, well));
+					return sameInstance(user.serverurls.wellknown, well);
 				},
 				{
 					loginText: () => I18n.login.login(),
