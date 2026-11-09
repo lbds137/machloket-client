@@ -63,6 +63,21 @@ export function getBulkUsers() {
 export function getBulkInfo() {
 	return JSON.parse(localStorage.getItem("userinfos") as string);
 }
+/** userinfos when it holds a usable `users` map; null when it is missing, unparseable or
+ * shapeless (another tab or an extension changed the store), which is the store's state. */
+function readStoredAccounts(): {users: Record<string, unknown>} | null {
+	let info: unknown;
+	try {
+		info = getBulkInfo();
+	} catch (error) {
+		if (!(error instanceof SyntaxError)) throw error;
+		return null;
+	}
+	if (!info || typeof info !== "object") return null;
+	const users = (info as {users?: unknown}).users;
+	if (!users || typeof users !== "object" || Array.isArray(users)) return null;
+	return info as {users: Record<string, unknown>};
+}
 /** JSON for a store write. A value JSON can't hold (a BigInt, a cycle) can't be stored either,
  * so its failure reads as the store's refusal (a DataCloneError), not as a bug in the caller. */
 function serialiseForStore(value: unknown): string {
@@ -281,12 +296,12 @@ export class Specialuser {
 	toJSON() {
 		return this.json;
 	}
-	/** Saves this account into userinfos. Throws a refused write (a full store) or a missing
+	/** Saves this account into userinfos. Throws a refused write (a full store) or a missing or unusable
 	 * userinfos as a DOMException; any other error it throws is a bug. */
 	updateLocal() {
-		const info = getBulkInfo();
-		// Another tab cleared site data mid-session: the store's state, not a bug.
-		if (!info) throw new DOMException("userinfos is missing", "NotFoundError");
+		const info = readStoredAccounts();
+		// Another tab cleared or corrupted site data mid-session: the store's state, not a bug.
+		if (!info) throw new DOMException("userinfos is missing or unusable", "NotFoundError");
 		info.users[this.uid] = this.toJSON();
 		localStorage.setItem("userinfos", serialiseForStore(info));
 	}
@@ -311,13 +326,14 @@ export class Specialuser {
 	 * re-reads userinfos, so other accounts and the store as last saved (by any tab) stay. */
 	private saveFieldsQuietly() {
 		try {
-			const info = getBulkInfo();
-			const saved = info?.users?.[this.uid];
-			if (!saved) return;
+			const info = readStoredAccounts();
+			const saved = info?.users[this.uid] as {localuserStore?: unknown} | undefined;
+			if (!info || !saved) return;
 			info.users[this.uid] = {...this.toJSON(), localuserStore: saved.localuserStore};
 			localStorage.setItem("userinfos", serialiseForStore(info));
 		} catch (error) {
 			if (!isStoreRefusal(error)) throw error;
+			console.warn("Account fields (token) could not be saved:", error);
 		}
 	}
 	/** tryUpdateLocal without the log: proxySave's retry after a refusal it already logged. */

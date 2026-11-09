@@ -1,3 +1,4 @@
+import {readItem, saveSetting} from "./settingOverlay.js";
 import {trySetItem} from "./trySetItem.js";
 
 export const enum ServiceWorkerMode {
@@ -26,11 +27,11 @@ export class LocalSettings {
 }
 
 export function getLocalSettings(): LocalSettings {
-	return new LocalSettings(JSON.parse(localStorage.getItem("localSettings") || "{}"));
+	return new LocalSettings(JSON.parse(readItem("localSettings") || "{}"));
 }
 
 export function setLocalSettings(settings: LocalSettings): void {
-	localStorage.setItem("localSettings", JSON.stringify(settings));
+	saveSetting("localSettings", JSON.stringify(settings));
 }
 
 //region Migration from untyped storage

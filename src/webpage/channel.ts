@@ -9,6 +9,7 @@ import {InfiniteScroller} from "./infiniteScroller.js";
 import {SnowFlake} from "./snowflake.js";
 import {closeMembersOnNavigation} from "./utils/membersView.js";
 import {closeSearchOnNavigation} from "./utils/searchView.js";
+import {trySetItem} from "./utils/storage/trySetItem.js";
 import {
 	channeljson,
 	creatPollJSON,
@@ -2285,16 +2286,20 @@ class Channel extends SnowFlake {
 		}
 	}
 	private setStoredDraft(content: string) {
+		let parsed: {[key: string]: string} = {};
 		try {
 			const raw = localStorage.getItem(Channel.DRAFT_STORAGE_KEY);
-			const parsed = (raw ? JSON.parse(raw) : {}) as {[key: string]: string};
-			if (content) {
-				parsed[this.draftStorageId] = content;
-			} else {
-				delete parsed[this.draftStorageId];
+			const stored: unknown = raw ? JSON.parse(raw) : {};
+			if (stored && typeof stored === "object" && !Array.isArray(stored)) {
+				parsed = stored as {[key: string]: string};
 			}
-			localStorage.setItem(Channel.DRAFT_STORAGE_KEY, JSON.stringify(parsed));
 		} catch {}
+		if (content) {
+			parsed[this.draftStorageId] = content;
+		} else {
+			delete parsed[this.draftStorageId];
+		}
+		trySetItem(Channel.DRAFT_STORAGE_KEY, JSON.stringify(parsed));
 	}
 	setDraft(content: string) {
 		this.textSave = content;

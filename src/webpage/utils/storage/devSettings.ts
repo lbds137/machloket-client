@@ -1,3 +1,4 @@
+import {readItem, saveSetting} from "./settingOverlay.js";
 import {trySetItem} from "./trySetItem.js";
 
 export class DeveloperSettings {
@@ -15,11 +16,11 @@ export class DeveloperSettings {
 }
 
 export function getDeveloperSettings(): DeveloperSettings {
-	return new DeveloperSettings(JSON.parse(localStorage.getItem("developerSettings") || "{}"));
+	return new DeveloperSettings(JSON.parse(readItem("developerSettings") || "{}"));
 }
 
 export function setDeveloperSettings(settings: DeveloperSettings): void {
-	localStorage.setItem("developerSettings", JSON.stringify(settings));
+	saveSetting("developerSettings", JSON.stringify(settings));
 }
 
 //region Migration from untyped storage

@@ -1,6 +1,7 @@
 import {I18n} from "./i18n.js";
 import {MarkDown} from "./markdown.js";
 import {Dialog} from "./settings.js";
+import {trySetItem} from "./utils/storage/trySetItem.js";
 
 const CHANGELOG_STORAGE_KEY = "fermoChangelogVersion";
 const CHANGELOG_IMAGE_PATTERN = /!\[([^\]]*)\]\(([^)]+)\)/g;
@@ -86,7 +87,7 @@ export function showChangelogPopup({force = false} = {}): void {
 	dialog.options.addHTMLArea(container);
 
 	dialog.options.addButtonInput("", I18n.changelog.ok(), () => {
-		localStorage.setItem(CHANGELOG_STORAGE_KEY, String(CHANGELOG_VERSION));
+		trySetItem(CHANGELOG_STORAGE_KEY, String(CHANGELOG_VERSION));
 		dialog.hide();
 	});
 

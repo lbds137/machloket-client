@@ -42,6 +42,54 @@ it("an account save with userinfos gone (another tab cleared site data) is logge
 	expect(saved).toBe(false);
 });
 
+it.each(["{", "{}"])(
+	"an account save with userinfos set to %j is logged as store state, not thrown",
+	(corrupt) => {
+		const error = vi.spyOn(console, "error").mockImplementation(() => {});
+		const user = makeUser();
+		localStorage.setItem("userinfos", corrupt);
+		let saved: boolean | undefined;
+		expect(() => (saved = user.tryUpdateLocal())).not.toThrow();
+		expect(saved).toBe(false);
+		expect(error).toHaveBeenCalledTimes(1);
+	},
+);
+
+it("warns when the fallback account-fields save is also refused", () => {
+	vi.spyOn(console, "error").mockImplementation(() => {});
+	const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+	const user = makeUser();
+	user.tryUpdateLocal();
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+		throw quota();
+	});
+
+	user.json.token = "new-token";
+	expect(user.tryUpdateLocal()).toBe(false);
+	expect(warn).toHaveBeenCalledTimes(1);
+});
+
+it("leaves the account absent when another tab removed it from stored users and the full save is refused", () => {
+	vi.spyOn(console, "error").mockImplementation(() => {});
+	const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+	const user = makeUser();
+	user.localuserStore.guilds = {g1: {note: "x".repeat(500)}};
+	// Another tab logged this account out, leaving stored users empty.
+	localStorage.setItem("userinfos", JSON.stringify({users: {}, currentuser: null}));
+	const realSetItem = Storage.prototype.setItem;
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key, value) {
+		// Refuse only the full save carrying the in-memory localuserStore; a fallback write
+		// with an empty localuserStore would fit if saveFieldsQuietly tried to write it.
+		if (this === localStorage && value.includes("g1")) throw quota();
+		return realSetItem.call(this, key, value);
+	});
+
+	user.json.token = "new-token";
+	expect(user.tryUpdateLocal()).toBe(false);
+	expect(storedUser(user.uid)).toBeUndefined();
+	expect(warn).not.toHaveBeenCalled();
+});
+
 it("a refreshed token still saves when the store can't take the whole account", () => {
 	vi.spyOn(console, "error").mockImplementation(() => {});
 	const user = makeUser();

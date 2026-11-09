@@ -28,6 +28,7 @@ import {NotificationHandler} from "./notificationHandler.js";
 import {installNotifyBanner} from "./notifyBanner.js";
 import {pickFiles} from "./utils/filePicker.js";
 import {restoreFailedSend} from "./composerRestore.js";
+import {trySetItem} from "./utils/storage/trySetItem.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -546,7 +547,7 @@ if (window.location.pathname.startsWith("/channels")) {
 	};
 	memberListToggle.onchange = () => {
 		if (!memberListToggle.checked) {
-			localStorage.setItem("memberNotChecked", "true");
+			trySetItem("memberNotChecked", "true");
 		} else {
 			localStorage.removeItem("memberNotChecked");
 		}
@@ -656,7 +657,7 @@ if (window.location.pathname.startsWith("/channels")) {
 			const rect = channelPanel.getBoundingClientRect();
 			const newWidth = Math.max(180, Math.min(420, pageX - rect.left));
 			channelPanel.style.width = `${newWidth}px`;
-			localStorage.setItem(CHANNEL_WIDTH_KEY, `${newWidth}`);
+			trySetItem(CHANNEL_WIDTH_KEY, `${newWidth}`);
 		};
 		sidebarResize.addEventListener("pointerdown", (event) => {
 			dragging = true;

@@ -4,6 +4,7 @@ import {
 	getPreferences,
 	updatePreferences,
 } from "./storage/userPreferences";
+import {readItem} from "./storage/settingOverlay.js";
 
 export type SensitiveContentAction = ContentAction;
 export type SensitiveContentSource = "spoilers" | "nsfw";
@@ -26,7 +27,7 @@ function prefField(source: SensitiveContentSource): "spoilerAction" | "nsfwActio
 export function getSensitiveContentSync(): SensitiveContentSettings {
 	let prefs: {spoilerAction?: unknown; nsfwAction?: unknown} | null = null;
 	try {
-		prefs = JSON.parse(localStorage.getItem("userPreferences") || "{}");
+		prefs = JSON.parse(readItem("userPreferences") || "{}");
 	} catch {
 		prefs = null;
 	}

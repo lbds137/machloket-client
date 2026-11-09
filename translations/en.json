@@ -1073,6 +1073,7 @@
 	"searchGifs": "Search $1",
 	"failedToLoadGifs": "Failed to load GIFs.",
 	"tenorMigrationInfo": "Tenor migration info",
+	"settingNotSaved": "Couldn't save this setting: this browser's storage for Machloket is full. It applies until you reload.",
 	"settings": {
 		"clear": "Clear",
 		"feedback": "Give feedback about this design",

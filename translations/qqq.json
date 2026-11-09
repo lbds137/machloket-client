@@ -74,6 +74,7 @@
 				"register": {
 								"agreeTOS": "uses MarkDown"
 				},
+				"settingNotSaved": "Shown in a dialog (at most once per session) when the user changes a client setting and the browser's local storage is full, so the change applies only until the page reloads.",
 				"templateHeading": "Heading of the server template page when there is no template name to show (for example, the template couldn't be looked up or was refused).",
 				"typing": "$1 is the number of people typing and $2 is the names of the people typing separated by commas",
 				"webhooks": {

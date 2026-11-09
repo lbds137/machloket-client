@@ -1,4 +1,5 @@
 import {I18n} from "./i18n.js";
+import {readItem, saveSetting} from "./utils/storage/settingOverlay.js";
 
 const DISMISS_KEY = "notifyBannerDismissed";
 
@@ -16,7 +17,7 @@ export function installNotifyBanner() {
 	const banner = document.getElementById("notifyBanner");
 	if (!banner) return;
 	try {
-		if (localStorage.getItem(DISMISS_KEY) === "1") return;
+		if (readItem(DISMISS_KEY) === "1") return;
 	} catch {}
 	if (!("Notification" in window) || Notification.permission !== "default") return;
 
@@ -32,8 +33,6 @@ export function installNotifyBanner() {
 	});
 	document.getElementById("notifyBannerDismiss")?.addEventListener("click", () => {
 		banner.hidden = true;
-		try {
-			localStorage.setItem(DISMISS_KEY, "1");
-		} catch {}
+		saveSetting(DISMISS_KEY, "1");
 	});
 }

@@ -1,3 +1,5 @@
+import {readItem, saveSetting} from "./storage/settingOverlay.js";
+
 const STORAGE_KEY = "emojiSkinTone";
 
 /** Synthesizes the Fitzpatrick skin-tone variant (tones 1..5 -> U+1F3FB..U+1F3FF) for a
@@ -19,7 +21,7 @@ export function applySkinTone(emoji: string, tone: number): string {
  * Unset, corrupt JSON, wrong type, out-of-range, or non-integer values read as 0. */
 export function getSkinTone(): number {
 	try {
-		const raw = localStorage.getItem(STORAGE_KEY);
+		const raw = readItem(STORAGE_KEY);
 		if (raw === null) return 0;
 		const parsed: unknown = JSON.parse(raw);
 		if (typeof parsed !== "number" || !Number.isInteger(parsed) || parsed < 0 || parsed > 5) {
@@ -33,12 +35,8 @@ export function getSkinTone(): number {
 
 /** Persists the default skin tone (0..5) to localStorage under `emojiSkinTone`. */
 export function setSkinTone(tone: number): void {
-	try {
-		const valid = Number.isInteger(tone) && tone >= 0 && tone <= 5 ? tone : 0;
-		localStorage.setItem(STORAGE_KEY, JSON.stringify(valid));
-	} catch {
-		// A full or blocked storage loses the persisted default; the picker still works.
-	}
+	const valid = Number.isInteger(tone) && tone >= 0 && tone <= 5 ? tone : 0;
+	saveSetting(STORAGE_KEY, JSON.stringify(valid));
 }
 
 /** Dual-tone ZWJ compositions have no single-tone RGI variants; keep base glyph and hide badge. */

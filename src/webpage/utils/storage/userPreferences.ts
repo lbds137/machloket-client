@@ -1,4 +1,5 @@
 import type {NotificationSoundConfig} from "../notificationSound.js";
+import {readItem, saveSetting} from "./settingOverlay.js";
 import {trySetItem} from "./trySetItem.js";
 
 // Async in order to account for maybe some day Spacebar supporting account data...
@@ -62,7 +63,7 @@ export class UserPreferences {
 
 function readPreferences(): UserPreferences {
 	try {
-		return new UserPreferences(JSON.parse(localStorage.getItem("userPreferences") || "{}"));
+		return new UserPreferences(JSON.parse(readItem("userPreferences") || "{}"));
 	} catch (error) {
 		// i18n awaits this at module load: a corrupt store must not kill boot. Defaults win;
 		// the next setPreferences overwrites the bad payload.
@@ -76,14 +77,14 @@ export async function getPreferences(): Promise<UserPreferences> {
 }
 
 export async function setPreferences(prefs: UserPreferences): Promise<void> {
-	localStorage.setItem("userPreferences", JSON.stringify(prefs));
+	trySetItem("userPreferences", JSON.stringify(prefs));
 }
 
 export async function updatePreferences(patch: Partial<UserPreferences>): Promise<void> {
 	// The read and write stay in one tick because Options.submit runs handlers synchronously.
 	const prefs = readPreferences();
 	Object.assign(prefs, patch);
-	localStorage.setItem("userPreferences", JSON.stringify(prefs));
+	saveSetting("userPreferences", JSON.stringify(prefs));
 }
 
 //region Migration from untyped storage
