@@ -18,7 +18,7 @@ test.use({...DESKTOP});
  * OTHER_GUILD_ID (see the join-other route in e2e/mock). */
 async function joinViaDialog(page: Page) {
 	await page.locator("#servers .svg-plus").click();
-	await page.getByRole("button", {name: "Join a guild using an invite"}).click();
+	await page.getByRole("button", {name: "Join a server using an invite"}).click();
 	await page
 		.locator(".optionElement", {has: page.getByText("Invite link/code", {exact: true})})
 		.locator("input")

@@ -58,6 +58,7 @@ if (window.location.pathname.startsWith("/invite"))
 			urls = joinable[0].serverurls;
 		}
 		await I18n.done;
+		document.getElementById("AcceptInvite")!.textContent = I18n.invite.acceptInvite();
 		if (!joinable.length) {
 			document.getElementById("AcceptInvite")!.textContent = I18n.htmlPages.noAccount();
 		}

@@ -41,9 +41,9 @@ test("Mute asks for a duration, mutes the guild icon; Unmute undoes it", async (
 	await expect(guildPillar(page)).toHaveCount(0);
 
 	await openGuildMenu(page);
-	await expect(menuRow(page, "Mute guild")).toBeVisible();
-	await expect(menuRow(page, "Unmute guild")).toHaveCount(0);
-	await menuRow(page, "Mute guild").click();
+	await expect(menuRow(page, "Mute server")).toBeVisible();
+	await expect(menuRow(page, "Unmute server")).toHaveCount(0);
+	await menuRow(page, "Mute server").click();
 
 	// The duration dialog: the default (30 minutes) is fine, Submit sends it.
 	const submit = page.getByRole("button", {name: "Submit", exact: true});
@@ -61,9 +61,9 @@ test("Mute asks for a duration, mutes the guild icon; Unmute undoes it", async (
 	expect(mute.body).toMatchObject({muted: true, mute_config: {selected_time_window: 1800}});
 
 	await openGuildMenu(page);
-	await expect(menuRow(page, "Unmute guild")).toBeVisible();
-	await expect(menuRow(page, "Mute guild")).toHaveCount(0);
-	await menuRow(page, "Unmute guild").click();
+	await expect(menuRow(page, "Unmute server")).toBeVisible();
+	await expect(menuRow(page, "Mute server")).toHaveCount(0);
+	await menuRow(page, "Unmute server").click();
 
 	await expect(guildPillar(page)).toHaveCount(0);
 	await expect(openGuildIcon(page)).toHaveCSS("opacity", "1");
@@ -71,8 +71,8 @@ test("Mute asks for a duration, mutes the guild icon; Unmute undoes it", async (
 	expect(sent[1].body).toMatchObject({muted: false});
 
 	await openGuildMenu(page);
-	await expect(menuRow(page, "Mute guild")).toBeVisible();
-	await expect(menuRow(page, "Unmute guild")).toHaveCount(0);
+	await expect(menuRow(page, "Mute server")).toBeVisible();
+	await expect(menuRow(page, "Unmute server")).toHaveCount(0);
 });
 
 test("Copy server info puts the guild's name and id on the clipboard", async ({page, context}) => {
