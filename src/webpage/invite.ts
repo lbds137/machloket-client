@@ -152,7 +152,15 @@ if (window.location.pathname.startsWith("/invite"))
 					if (!result.ok) return alert(result.message);
 					users.currentuser = user.uid;
 					sessionStorage.setItem("currentuser", user.uid);
-					localStorage.setItem("userinfos", JSON.stringify(users));
+					// Only the default account for new tabs is lost if this write fails (a full
+					// localStorage): the account itself is already stored, and the app boots this tab's
+					// pick from sessionStorage, so the landing goes ahead. Throwing here would send the
+					// user round "accept again", which hits the same full storage.
+					try {
+						localStorage.setItem("userinfos", JSON.stringify(users));
+					} catch (err) {
+						console.error(err);
+					}
 					// The details may still be loading (or have failed): wait a while for them rather than
 					// read an unset guild or stall. With no guild to name, the home page is where the join lands.
 					const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
@@ -164,7 +172,7 @@ if (window.location.pathname.startsWith("/invite"))
 					alert(I18n.requestFailed("offline"));
 				},
 			)
-				// A throw in the landing (a full localStorage, the navigation) comes after the join
+				// A throw in the landing (the navigation) comes after the join
 				// went through: logged here, not left unhandled, and the user is told the join worked.
 				// Accepting again lands as already-member.
 				.catch((err: unknown) => {
