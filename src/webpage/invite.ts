@@ -26,6 +26,11 @@ function guildWithin(loaded: Promise<any>, ms: number): Promise<any> {
 if (window.location.pathname.startsWith("/invite"))
 	(async () => {
 		const users = getBulkUsers();
+		/** No invite name to show: the generic heading above `message`. Needs I18n loaded. */
+		const showMessage = (message: string) => {
+			document.getElementById("invitename")!.textContent = I18n.invite.heading();
+			document.getElementById("invitedescription")!.textContent = message;
+		};
 		await instancefetch;
 		// Without ?instance= (a link typed by hand), the default instance, as /template and /oauth2.
 		const asked =
@@ -34,8 +39,7 @@ if (window.location.pathname.startsWith("/invite"))
 			// No instance listed to default to: nothing was unreachable, the client has none at
 			// all. The button stays hidden.
 			await I18n.done;
-			document.getElementById("invitename")!.textContent = I18n.invite.heading();
-			document.getElementById("invitedescription")!.textContent = I18n.noInstanceConfigured();
+			showMessage(I18n.noInstanceConfigured());
 			return;
 		}
 		// Its own binding: the narrowing above doesn't reach showAccounts, a hoisted declaration.
@@ -69,8 +73,7 @@ if (window.location.pathname.startsWith("/invite"))
 				// The invite's instance can't be found (unreachable, or not an instance): there is
 				// nothing to accept with, so the button stays hidden and the page says what failed.
 				await I18n.done;
-				document.getElementById("invitename")!.textContent = I18n.invite.heading();
-				document.getElementById("invitedescription")!.textContent = instanceUnreachableText(well);
+				showMessage(instanceUnreachableText(well));
 				return;
 			}
 		} else {
@@ -97,10 +100,7 @@ if (window.location.pathname.startsWith("/invite"))
 				// invite, so the page keeps its Accept.
 				if (response?.status === 404) return null;
 				// No name came back: a generic heading above the failure.
-				document.getElementById("invitename")!.textContent = I18n.invite.heading();
-				document.getElementById("invitedescription")!.textContent = I18n.requestFailed(
-					response ? "HTTP " + response.status : "offline",
-				);
+				showMessage(I18n.requestFailed(response ? "HTTP " + response.status : "offline"));
 				return undefined;
 			})
 			.then((json) => {
