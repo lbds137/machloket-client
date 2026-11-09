@@ -176,7 +176,9 @@ describe("saving from the editor", () => {
 					message: "Invalid Form Body",
 					errors: {
 						content: {
-							_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 4000 or fewer in length."}],
+							_errors: [
+								{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 4000 or fewer in length."},
+							],
 						},
 					},
 				},
@@ -295,7 +297,11 @@ describe("saving from the editor", () => {
 			{
 				code: 50035,
 				message: "Invalid Form Body",
-				errors: {content: {_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 4000 or fewer in length."}]}},
+				errors: {
+					content: {
+						_errors: [{code: "BASE_TYPE_MAX_LENGTH", message: "Must be 4000 or fewer in length."}],
+					},
+				},
 			},
 			{status: 400},
 		);

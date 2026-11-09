@@ -5,7 +5,8 @@ import {afterEach, describe, expect, it, vi} from "vitest";
 await import("./localuser");
 const {captureRequests} = await import("./test/setup");
 const {API, dmMessage, messageIn} = await import("./test/interactionFixture");
-const {Message, sendForward, canSendToChannel, getChannelDisplayName} = await import("./message.js");
+const {Message, sendForward, canSendToChannel, getChannelDisplayName} =
+	await import("./message.js");
 const {Dialog} = await import("./settings.js");
 const {I18n} = await import("./i18n");
 await I18n.done;
@@ -107,8 +108,9 @@ describe("forward send (context menu -> target picker -> POST)", () => {
 		(message as {id: string}).id = "source-message-789";
 		const targetChannel = {id: "target-channel-456"};
 
-		captureRequests(API + `/channels/${targetChannel.id}/messages`, () =>
-			new Response(null, {status: 403}),
+		captureRequests(
+			API + `/channels/${targetChannel.id}/messages`,
+			() => new Response(null, {status: 403}),
 		);
 
 		const showSpy = vi.spyOn(Dialog.prototype, "show");

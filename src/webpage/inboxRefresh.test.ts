@@ -7,7 +7,14 @@ const {I18n} = await import("./i18n");
 await I18n.done;
 
 /** A user with the inbox menu open on "unread", whose unread channels `channels()` lists. */
-function inboxUser(channels: () => {id: string; mentions: number; lastmessageid?: string; lastreadmessageid?: string}[]) {
+function inboxUser(
+	channels: () => {
+		id: string;
+		mentions: number;
+		lastmessageid?: string;
+		lastreadmessageid?: string;
+	}[],
+) {
 	const build = vi.fn(async (): Promise<never[]> => []);
 	const menu = document.createElement("div");
 	document.body.append(menu);

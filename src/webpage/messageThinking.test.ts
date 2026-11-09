@@ -14,11 +14,16 @@ function loadingMessage(flags: number, content: string) {
 		author: {id: "300", username: "TzurotBot"},
 		owner: channel,
 		headers: {},
-		content: {makeHTML: () => {
-			const d = document.createElement("div");
-			d.textContent = content;
-			return d;
-		}, rawString: content, textContent: content, onUpdate: () => {}},
+		content: {
+			makeHTML: () => {
+				const d = document.createElement("div");
+				d.textContent = content;
+				return d;
+			},
+			rawString: content,
+			textContent: content,
+			onUpdate: () => {},
+		},
 		reactions: [],
 		embeds: [],
 		attachments: [],

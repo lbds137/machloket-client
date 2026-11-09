@@ -88,10 +88,7 @@ test("Application keeps Update settings and Trusted Domains and loses Language",
 	await expect(languageCard.locator("select")).toBeVisible();
 });
 
-test("deep link #settings/app-settings pre-activates the section", async ({
-	page,
-	mockInstance,
-}) => {
+test("deep link #settings/app-settings pre-activates the section", async ({page, mockInstance}) => {
 	void mockInstance;
 	await loginAndOpenChannel(page);
 	await page.evaluate(() => {

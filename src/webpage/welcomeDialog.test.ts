@@ -65,7 +65,11 @@ function answerScreen(overrides: Partial<welcomeScreen> = {}) {
 	return screen;
 }
 
-const CHANNELS = [{id: "c1", name: "general"}, {id: "c2", name: "rules"}, {id: "c3", name: "lounge"}];
+const CHANNELS = [
+	{id: "c1", name: "general"},
+	{id: "c2", name: "rules"},
+	{id: "c3", name: "lounge"},
+];
 
 it("the welcome dialog renders the screen description, per-channel emoji and rows", async () => {
 	answerScreen();

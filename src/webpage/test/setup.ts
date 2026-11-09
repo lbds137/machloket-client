@@ -93,7 +93,10 @@ export function captureRequests(
 	captures.set(url, {bodies, respond});
 	return bodies;
 }
-const captures = new Map<string, {bodies: unknown[]; respond: () => Response | Promise<Response>}>();
+const captures = new Map<
+	string,
+	{bodies: unknown[]; respond: () => Response | Promise<Response>}
+>();
 
 const realFetch = globalThis.fetch.bind(globalThis);
 vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {

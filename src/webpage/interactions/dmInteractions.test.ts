@@ -11,10 +11,8 @@ describe("component and command interactions in a DM", () => {
 	it("a button click sends no guild_id", async () => {
 		const sent = captureRequests(API + "/interactions");
 		const {message} = dmMessage();
-		const button = new Components(
-			[{type: 2, style: 1, custom_id: "go", label: "Go"}],
-			message,
-		).components[0] as unknown as {clickEvent: () => Promise<void>};
+		const button = new Components([{type: 2, style: 1, custom_id: "go", label: "Go"}], message)
+			.components[0] as unknown as {clickEvent: () => Promise<void>};
 
 		await button.clickEvent();
 
@@ -63,10 +61,8 @@ describe("component and command interactions in a DM", () => {
 	it("a button click in a guild still sends the guild's id", async () => {
 		const sent = captureRequests(API + "/interactions");
 		const {message} = messageIn("1553128655016763450");
-		const button = new Components(
-			[{type: 2, style: 1, custom_id: "go", label: "Go"}],
-			message,
-		).components[0] as unknown as {clickEvent: () => Promise<void>};
+		const button = new Components([{type: 2, style: 1, custom_id: "go", label: "Go"}], message)
+			.components[0] as unknown as {clickEvent: () => Promise<void>};
 
 		await button.clickEvent();
 

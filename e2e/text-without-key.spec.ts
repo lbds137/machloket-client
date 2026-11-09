@@ -23,7 +23,9 @@ test("the GIF search runs on text that arrives without a key", async ({page, moc
 	await page.route("**/gifs/**", (route) => {
 		const url = new URL(route.request().url());
 		if (url.pathname.endsWith("/gifs/search")) searches.push(url.searchParams.get("q") ?? "");
-		return route.fulfill({json: url.pathname.endsWith("/gifs/search") ? [] : {categories: [], gifs: []}});
+		return route.fulfill({
+			json: url.pathname.endsWith("/gifs/search") ? [] : {categories: [], gifs: []},
+		});
 	});
 	await loginAndOpenChannel(page);
 	await page.locator("#gifTB").click();

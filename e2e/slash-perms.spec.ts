@@ -55,7 +55,10 @@ test.describe("a member without USE_APPLICATION_COMMANDS", () => {
 	// VIEW_CHANNEL | SEND_MESSAGES | READ_MESSAGE_HISTORY.
 	test.use({mockInstanceOptions: {everyonePermissions: "68608"}});
 
-	test("the slash popup offers no commands, until the bit is granted", async ({page, mockInstance}) => {
+	test("the slash popup offers no commands, until the bit is granted", async ({
+		page,
+		mockInstance,
+	}) => {
 		await loginAndOpenChannel(page);
 
 		const indexAnswered = page.waitForResponse(/application-command-index/);

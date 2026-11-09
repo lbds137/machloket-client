@@ -307,14 +307,10 @@ it("a second onboarding failure replaces the first note", async () => {
 	captureRequests(API + "/guilds/g1/welcome-screen", () => queue.shift()!);
 
 	disable.click();
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("first")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("first")));
 
 	disable.click();
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("second")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("second")));
 	expect(document.body.textContent).not.toContain(I18n.requestFailed("first"));
 });
 
@@ -336,7 +332,10 @@ function guildWithChannels(...ids: string[]) {
 }
 
 it("an older drag's restore leaves the layout alone once a newer drag has started", () => {
-	const {guild, channels: [c1]} = guildWithChannels("c1", "c2");
+	const {
+		guild,
+		channels: [c1],
+	} = guildWithChannels("c1", "c2");
 	const restoreFirst = guild.snapshotLayout();
 	c1.position = 5;
 	guild.snapshotLayout();
@@ -347,7 +346,10 @@ it("an older drag's restore leaves the layout alone once a newer drag has starte
 });
 
 it("a restore keeps a channel created since the snapshot and drops one deleted since", () => {
-	const {guild, channels: [c1, c2]} = guildWithChannels("c1", "c2");
+	const {
+		guild,
+		channels: [c1, c2],
+	} = guildWithChannels("c1", "c2");
 	const restore = guild.snapshotLayout();
 	const c3 = Object.assign(Object.create(Channel.prototype), {
 		id: "c3",
@@ -366,7 +368,10 @@ it("a restore keeps a channel created since the snapshot and drops one deleted s
 });
 
 it("a restore redraws the channel list when its guild is on screen", () => {
-	const {guild, channels: [c1]} = guildWithChannels("c1");
+	const {
+		guild,
+		channels: [c1],
+	} = guildWithChannels("c1");
 	Object.assign(guild.owner, {lookingguild: guild});
 	const channelsDiv = document.createElement("div");
 	channelsDiv.id = "channels";
@@ -506,9 +511,7 @@ it("a role member-ids 200 carrying an error message says that message in the adm
 	await I18n.done;
 	captureRequests(API + "/guilds/g1/roles/member-counts/", () => Response.json({}));
 	captureRequests(API + "/guilds/g1/roles/r1/member-ids", () => Response.json(["u1"]));
-	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () =>
-		Response.json({message: "capped"}),
-	);
+	captureRequests(API + "/guilds/g1/roles/r2/member-ids", () => Response.json({message: "capped"}));
 	const {guild, resolvemember} = adminGuild();
 
 	await guild.findAdmin();

@@ -407,13 +407,11 @@ export class Buttons implements OptionsElement<unknown> {
 						this._showMobileBack();
 					}
 				};
-				header
-					.querySelector(".sectionChevron")
-					?.addEventListener("click", (e) => {
-						e.stopPropagation();
-						const expanded = header.getAttribute("aria-expanded") !== "false";
-						this._setSectionExpanded(buttonTable, header, !expanded);
-					});
+				header.querySelector(".sectionChevron")?.addEventListener("click", (e) => {
+					e.stopPropagation();
+					const expanded = header.getAttribute("aria-expanded") !== "false";
+					this._setSectionExpanded(buttonTable, header, !expanded);
+				});
 				buttonTable.append(header);
 			}
 			this._addAllCardLinks(buttonTable, optionsArea);
@@ -426,10 +424,7 @@ export class Buttons implements OptionsElement<unknown> {
 		if (this.sectionHeaders.size) {
 			const foot = document.createElement("div");
 			foot.classList.add("settingsBuildInfo");
-			const buildInfoText = navLabel(
-				"settings.buildInfo",
-				`Machloket web ${packageJson.version}`,
-			);
+			const buildInfoText = navLabel("settings.buildInfo", `Machloket web ${packageJson.version}`);
 			foot.textContent = buildInfoText;
 			buttonTable.append(foot);
 		}
@@ -439,8 +434,7 @@ export class Buttons implements OptionsElement<unknown> {
 	private _initKeyboardNav(container: HTMLElement) {
 		container.addEventListener("keydown", (e) => {
 			const focusedHeader =
-				document.activeElement instanceof HTMLElement &&
-				container.contains(document.activeElement)
+				document.activeElement instanceof HTMLElement && container.contains(document.activeElement)
 					? document.activeElement.closest<HTMLElement>(".sectionHeader")
 					: null;
 			if (e.key === "ArrowRight" && focusedHeader) {
@@ -464,8 +458,7 @@ export class Buttons implements OptionsElement<unknown> {
 			).filter((el) => !el.hidden && el.style.display !== "none");
 			if (!navItems.length) return;
 			const focusedBtn =
-				document.activeElement instanceof HTMLElement &&
-				container.contains(document.activeElement)
+				document.activeElement instanceof HTMLElement && container.contains(document.activeElement)
 					? document.activeElement.closest<HTMLElement>(".SettingsButton")
 					: null;
 			const current =
@@ -582,7 +575,8 @@ class TextInput implements OptionsElement<string> {
 			// otherwise kept its spaces in the stored value.
 			if (this.spaceReplace !== " " && input.value.includes(" ")) {
 				const caret = input.selectionStart;
-				const before = caret === null ? "" : input.value.slice(0, caret).replace(/ /g, this.spaceReplace);
+				const before =
+					caret === null ? "" : input.value.slice(0, caret).replace(/ /g, this.spaceReplace);
 				input.value = input.value.replace(/ /g, this.spaceReplace);
 				if (caret !== null) input.setSelectionRange(before.length, before.length);
 			}
@@ -1650,9 +1644,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 				);
 			}
 			this.verify.textContent =
-				pageLocal && !targetLocal
-					? I18n.login.certHint(this.input.value)
-					: I18n.login.invalid();
+				pageLocal && !targetLocal ? I18n.login.certHint(this.input.value) : I18n.login.invalid();
 			return;
 		}
 		this.validationState = "ok";
@@ -2632,7 +2624,10 @@ async function promptMfa(
 }
 async function isMfaRequired(res: Response | undefined): Promise<boolean> {
 	if (res?.status !== 400) return false;
-	const body = await res.clone().json().catch(() => null);
+	const body = await res
+		.clone()
+		.json()
+		.catch(() => null);
 	return body?.code === 60003;
 }
 export async function fetchWithMfa(
@@ -2947,8 +2942,7 @@ class Form implements OptionsElement<object> {
 		return div;
 	}
 	onSubmit:
-		| ((arg1: object, sent: object) => void)
-		| ((arg1: object, sent: object) => Promise<void>);
+		((arg1: object, sent: object) => void) | ((arg1: object, sent: object) => Promise<void>);
 	watchForChange(func: (arg1: object) => void) {
 		this.onSubmit = func;
 	}
@@ -3171,11 +3165,7 @@ class Form implements OptionsElement<object> {
 		const pop = new PopUp(error, {goAbove: true, buttons: popUpButtonTypes.dismiss});
 		pop.show();
 	}
-	errors(errors: {
-		code: number;
-		message: string;
-		errors: unknown;
-	}) {
+	errors(errors: {code: number; message: string; errors: unknown}) {
 		if (!(errors instanceof Object)) {
 			return;
 		}

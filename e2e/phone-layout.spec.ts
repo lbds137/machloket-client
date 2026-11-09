@@ -76,17 +76,15 @@ test("with the keyboard up, the sheet fills the band above it and Submit stays i
 	expect(submit!.y + submit!.height).toBeLessThanOrEqual(420);
 
 	// One scrolling frame: the fields scroll, the sheet and its backdrop do not.
-	const scroll = await page
-		.locator(".interactionModal")
-		.evaluate((root: HTMLElement) => {
-			const body = root.querySelector<HTMLElement>(".interactionModalBody")!;
-			const frame = root.closest<HTMLElement>(".dialogModal")!;
-			return {
-				body: body.scrollHeight > body.clientHeight,
-				frame: frame.scrollHeight > frame.clientHeight,
-				root: root.scrollHeight > root.clientHeight,
-			};
-		});
+	const scroll = await page.locator(".interactionModal").evaluate((root: HTMLElement) => {
+		const body = root.querySelector<HTMLElement>(".interactionModalBody")!;
+		const frame = root.closest<HTMLElement>(".dialogModal")!;
+		return {
+			body: body.scrollHeight > body.clientHeight,
+			frame: frame.scrollHeight > frame.clientHeight,
+			root: root.scrollHeight > root.clientHeight,
+		};
+	});
 	expect(scroll).toEqual({body: true, frame: false, root: false});
 
 	// The keyboard-band look, Deck-local baseline (DOM asserts lead; this pins the chrome).
@@ -100,7 +98,8 @@ test("the form modal names the opener message in its submit", async ({page, mock
 	await expect(page.locator("#scrollWrap")).toContainText("Need some details:");
 	await openForm(page, mockInstance);
 
-	await page.locator(".interactionModalBody textarea, .interactionModalBody input:not([type=checkbox])")
+	await page
+		.locator(".interactionModalBody textarea, .interactionModalBody input:not([type=checkbox])")
 		.first()
 		.fill("hello from the e2e");
 	await page.locator(".interactionModalSubmit").tap();

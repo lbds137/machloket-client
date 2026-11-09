@@ -178,9 +178,7 @@ it("an offline report-menu GET says the network failed with no unhandled rejecti
 	const unhandled = vi.fn();
 	window.addEventListener("unhandledrejection", unhandled);
 	onTestFinished(() => window.removeEventListener("unhandledrejection", unhandled));
-	captureRequests(API + "/reporting/menu/guild", () =>
-		Promise.reject(new TypeError("offline")),
-	);
+	captureRequests(API + "/reporting/menu/guild", () => Promise.reject(new TypeError("offline")));
 
 	const menu = await ReportMenu.makeReport("guild", {info: {api: API}, headers: {}} as never);
 

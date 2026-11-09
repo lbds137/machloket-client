@@ -1,10 +1,5 @@
 import {expect, type Locator, type Page} from "@playwright/test";
-import {
-	MOCK_BOT_MEMBER,
-	MOCK_GUILD_ID,
-	loginAndOpenChannel,
-	test,
-} from "./fixtures";
+import {MOCK_BOT_MEMBER, MOCK_GUILD_ID, loginAndOpenChannel, test} from "./fixtures";
 import type {rolesjson} from "../src/webpage/jsontypes";
 
 // The user popout on a phone (src/webpage/user.ts buildprofile): the phone stylesheet makes it a
@@ -63,7 +58,9 @@ async function openPopout(page: Page, avatar: Locator): Promise<Locator> {
 	return popout;
 }
 
-test("the popout is a bottom sheet spanning a 412px phone, wherever the avatar was", async ({page}) => {
+test("the popout is a bottom sheet spanning a 412px phone, wherever the avatar was", async ({
+	page,
+}) => {
 	await loginAndOpenChannel(page);
 	const viewport = page.viewportSize()!;
 	expect(viewport.width).toBe(412);

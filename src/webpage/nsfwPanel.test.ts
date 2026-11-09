@@ -32,8 +32,16 @@ function panelChannel(nsfwAllowed: boolean | null | undefined) {
 	const channel = Object.assign(Object.create(Channel.prototype), {
 		nsfw: true,
 	}) as InstanceType<typeof Channel>;
-	Object.defineProperty(channel, "localuser", {value: localuser, writable: true, configurable: true});
-	Object.defineProperty(channel, "perminfo", {value: {nsfwOk: false}, writable: true, configurable: true});
+	Object.defineProperty(channel, "localuser", {
+		value: localuser,
+		writable: true,
+		configurable: true,
+	});
+	Object.defineProperty(channel, "perminfo", {
+		value: {nsfwOk: false},
+		writable: true,
+		configurable: true,
+	});
 	// The Yes handler clears channelfocus before refetching; start it set so the clear is observable.
 	localuser.channelfocus = channel;
 	return channel;
@@ -100,7 +108,9 @@ it("the ask's Yes confirms per-session and loads the channel", () => {
 	expect(yes).not.toBeUndefined();
 	yes!.click();
 	expect((channel as unknown as {perminfo: {nsfwOk: boolean}}).perminfo.nsfwOk).toBe(true);
-	expect((channel as unknown as {localuser: {channelfocus?: unknown}}).localuser.channelfocus).toBeUndefined();
+	expect(
+		(channel as unknown as {localuser: {channelfocus?: unknown}}).localuser.channelfocus,
+	).toBeUndefined();
 	expect(getHTML).toHaveBeenCalledWith(true, true);
 });
 

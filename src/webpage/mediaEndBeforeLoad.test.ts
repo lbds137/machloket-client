@@ -5,8 +5,7 @@ import {afterEach, expect, it, vi} from "vitest";
 await import("./localuser");
 const {makePlayBox, MediaPlayer} = await import("./media");
 
-const WAV =
-	"data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+const WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 const thing = {src: WAV, filename: "a.wav", title: "t", length: 1000};
 
 /** Stands in for the browser's Audio so the test decides when the file has loaded. Like a

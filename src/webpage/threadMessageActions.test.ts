@@ -135,7 +135,10 @@ it("in an archived thread a pill of yours comes off and one of others' does noth
 });
 
 /** updateChannel on a real channel, with only the drawing it doesn't exercise stubbed. */
-function threadUpdates(channel: InstanceType<typeof Channel>, messages: InstanceType<typeof Message>[]) {
+function threadUpdates(
+	channel: InstanceType<typeof Channel>,
+	messages: InstanceType<typeof Message>[],
+) {
 	Object.assign(channel, {
 		messages: new Map(messages.map((message, i) => [String(i), message])),
 		renderIcon: () => {},
@@ -158,7 +161,9 @@ it("archiving and unarchiving redraw the pills, leaving messages not on the page
 	const {reaction} = pill(message, false);
 	const reactdiv = reaction.parentElement!;
 	expect(reaction.classList.contains("reactionClosed")).toBe(false);
-	const undrawn = Object.assign(ownMessage(channel), {reactions: [{count: 1, me: false, emoji: {name: "👍"}}]});
+	const undrawn = Object.assign(ownMessage(channel), {
+		reactions: [{count: 1, me: false, emoji: {name: "👍"}}],
+	});
 	const update = threadUpdates(channel, [message, undrawn]);
 
 	update(ARCHIVED);

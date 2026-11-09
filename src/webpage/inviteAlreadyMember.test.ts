@@ -80,7 +80,9 @@ describe("an invite to a guild the user is already in", () => {
 		});
 		const loadGuild = vi
 			.spyOn(localuser, "loadGuild")
-			.mockImplementation((id) => (localuser.guildids.get(id) ?? localuser.guildids.get("@me")) as never);
+			.mockImplementation(
+				(id) => (localuser.guildids.get(id) ?? localuser.guildids.get("@me")) as never,
+			);
 		const embed = new Embed(
 			{type: "invite", invite: {url: WELLKNOWN, code: "abc"}} as never,
 			{channel: {guild: {localuser}}} as never,
@@ -101,7 +103,10 @@ describe("an invite to a guild the user is already in", () => {
 		await vi.waitFor(() => expect(posts).toHaveLength(1));
 		await flush();
 
-		expect(loadGuild, "must not call loadGuild while the guild id is unknown").not.toHaveBeenCalled();
+		expect(
+			loadGuild,
+			"must not call loadGuild while the guild id is unknown",
+		).not.toHaveBeenCalled();
 		expect(dms.loadChannel, "must not bounce to the DMs").not.toHaveBeenCalled();
 
 		localuser.guildids.set(GUILD_ID, guild);
@@ -126,13 +131,18 @@ describe("an invite to a guild the user is already in", () => {
 		});
 		const loadGuild = vi
 			.spyOn(localuser, "loadGuild")
-			.mockImplementation((id) => (localuser.guildids.get(id) ?? localuser.guildids.get("@me")) as never);
+			.mockImplementation(
+				(id) => (localuser.guildids.get(id) ?? localuser.guildids.get("@me")) as never,
+			);
 		localuser.createGuild();
 		const joinSubmit = addForm.mock.calls[0][1] as (fields: object, sent: object) => Promise<void>;
 
 		await joinSubmit({code: "abc"}, {});
 
-		expect(loadGuild, "must not call loadGuild while the guild id is unknown").not.toHaveBeenCalled();
+		expect(
+			loadGuild,
+			"must not call loadGuild while the guild id is unknown",
+		).not.toHaveBeenCalled();
 		expect(dms.loadChannel, "must not bounce to the DMs").not.toHaveBeenCalled();
 
 		localuser.guildids.set(GUILD_ID, guild);
@@ -210,8 +220,9 @@ describe("an invite to a guild the user is already in", () => {
 		});
 		localuser.createGuild();
 		const joinSubmit = addForm.mock.calls[0][1] as (fields: object, sent: object) => Promise<void>;
-		const codeInput = addTextInput.mock.results.find((_, i) => addTextInput.mock.calls[i][1] === "code")
-			?.value;
+		const codeInput = addTextInput.mock.results.find(
+			(_, i) => addTextInput.mock.calls[i][1] === "code",
+		)?.value;
 
 		// The form shows a FormError inline, on the field it names; anything else it drops without a word.
 		const failure = await joinSubmit({code: "abc"}, {}).catch((e: unknown) => e);

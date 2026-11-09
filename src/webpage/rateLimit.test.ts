@@ -235,10 +235,7 @@ describe("opening a channel whose first history page is rate-limited", () => {
 	it("a channel opened while the re-ask's fetch is in flight is left alone", async () => {
 		let release!: () => void;
 		const gate = new Promise<void>((r) => (release = r));
-		const {localuser, asked, builtAround} = await openChannel([
-			limited,
-			() => gate.then(page),
-		]);
+		const {localuser, asked, builtAround} = await openChannel([limited, () => gate.then(page)]);
 		await vi.waitFor(() => expect(asked).toHaveLength(2), {timeout: 1000});
 		// The user opens channel B: its getHTML bumps the generation and fills the scroller.
 		const theirs = document.createElement("div");
@@ -337,7 +334,10 @@ describe("an attachment upload's byte stream (the PUT)", () => {
 	// RED: at HEAD the 429 PUT is final, so uploadFile rejects with "attachment upload failed: 429".
 	it("a 429 waits its window, puts again once, and the upload lands", async () => {
 		const slots = captureRequests(API + "/channels/c1/attachments", slot);
-		const puts = captureRequests("http://limit.test/put", sequence(limited, () => new Response(null, {status: 200})));
+		const puts = captureRequests(
+			"http://limit.test/put",
+			sequence(limited, () => new Response(null, {status: 200})),
+		);
 
 		const got = await channelAt().uploadFile([file]);
 
@@ -358,7 +358,10 @@ describe("an attachment upload's byte stream (the PUT)", () => {
 
 describe("accepting an invite", () => {
 	it("a 429 waits its window and asks again once", async () => {
-		const asked = captureRequests(API + "/invites/abc", sequence(limited, () => Response.json({})));
+		const asked = captureRequests(
+			API + "/invites/abc",
+			sequence(limited, () => Response.json({})),
+		);
 
 		const result = await acceptInvite(API, "abc", "tok");
 
@@ -405,9 +408,7 @@ describe("a newer settings PATCH", () => {
 
 		// Mute for 30m through the real dialog: its submit button sends the PATCH.
 		channel.muteChannel();
-		[...document.querySelectorAll("button")]
-			.find((b) => b.textContent === I18n.submit())!
-			.click();
+		[...document.querySelectorAll("button")].find((b) => b.textContent === I18n.submit())!.click();
 		await vi.waitFor(() => expect(sent).toHaveLength(1));
 		// The user changes their mind while the mute waits out its window.
 		channel.unmuteChannel();
@@ -588,7 +589,10 @@ describe("a component click", () => {
 	}
 
 	it("a 429 waits its window, asks again once, and isn't a failure", async () => {
-		const asked = captureRequests(API + "/interactions", sequence(limited, () => Response.json({})));
+		const asked = captureRequests(
+			API + "/interactions",
+			sequence(limited, () => Response.json({})),
+		);
 		const session = interactionSession();
 		const interactionEvents = vi.fn();
 		const message = messageAt(session, {interactionEvents});
@@ -621,7 +625,10 @@ describe("a component click", () => {
 
 describe("a modal submit", () => {
 	it("a 429 waits its window, asks again once, and the modal closes", async () => {
-		const asked = captureRequests(API + "/interactions", sequence(limited, () => Response.json({})));
+		const asked = captureRequests(
+			API + "/interactions",
+			sequence(limited, () => Response.json({})),
+		);
 		const forgetSubmit = vi.fn();
 		const modal = new InteractionModal(
 			{
@@ -649,7 +656,10 @@ describe("a context-menu command", () => {
 	const dm = {id: "c1", owner: {id: "@me"}} as never;
 
 	it("a 429 waits its window, asks again once, and the command is sent", async () => {
-		const asked = captureRequests(API + "/interactions", sequence(limited, () => Response.json({})));
+		const asked = captureRequests(
+			API + "/interactions",
+			sequence(limited, () => Response.json({})),
+		);
 		const forgetCommandNonce = vi.fn();
 		const command = commandFor({registerCommandNonce: () => {}, forgetCommandNonce});
 
@@ -677,7 +687,10 @@ describe("a slash command", () => {
 	const dm = {id: "c1", owner: {id: "@me"}} as never;
 
 	it("a 429 waits its window, asks again once, and the command is sent", async () => {
-		const asked = captureRequests(API + "/interactions", sequence(limited, () => Response.json({})));
+		const asked = captureRequests(
+			API + "/interactions",
+			sequence(limited, () => Response.json({})),
+		);
 		const forgetCommandNonce = vi.fn();
 		const command = commandFor({registerCommandNonce: () => {}, forgetCommandNonce});
 		// What the composer collected for a command with no options.
@@ -837,8 +850,7 @@ describe("the reactions popup", () => {
 		const list = [...document.querySelectorAll<HTMLElement>(".reactionUserList")].at(-1)!;
 		const [fire, smile] = [...list.previousElementSibling!.children] as HTMLElement[];
 		const shown = () => [...list.children].map((widget) => widget.textContent);
-		const click = (button: HTMLElement) =>
-			button.onclick!.call(button, new PointerEvent("click"));
+		const click = (button: HTMLElement) => button.onclick!.call(button, new PointerEvent("click"));
 
 		await vi.waitFor(() => expect(askedFire).toHaveLength(1));
 		await click(smile);

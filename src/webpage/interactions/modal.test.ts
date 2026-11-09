@@ -302,7 +302,9 @@ describe("InteractionModal", () => {
 					code: 50035,
 					message: "Invalid Form Body",
 					errors: {
-						data: {components: {"1": {component: {value: {_errors: [{message: "Name is taken"}]}}}}},
+						data: {
+							components: {"1": {component: {value: {_errors: [{message: "Name is taken"}]}}}},
+						},
 					},
 				},
 				{status: 400},

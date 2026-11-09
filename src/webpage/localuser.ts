@@ -51,7 +51,15 @@ import type {Command, CommandInvocation} from "./interactions/commands.js";
 import {Member} from "./member.js";
 import {codesOf, REGEN_UNCHANGED, showBackupCodes} from "./backupCodes.js";
 import {RecoveryBanner} from "./recoveryBanner.js";
-import {Dialog, fetchWithMfa, Form, FormError, type MfaRetry, Options, Settings} from "./settings.js";
+import {
+	Dialog,
+	fetchWithMfa,
+	Form,
+	FormError,
+	type MfaRetry,
+	Options,
+	Settings,
+} from "./settings.js";
 import {getTextNodeAtPosition, MarkDown, saveCaretPosition} from "./markdown.js";
 import {Bot} from "./bot.js";
 import {Role} from "./role.js";
@@ -75,10 +83,7 @@ import {
 	updatePreferences,
 } from "./utils/storage/userPreferences";
 import {getDeveloperSettings, setDeveloperSettings} from "./utils/storage/devSettings";
-import {
-	getLocalSettings,
-	ServiceWorkerModeValues,
-} from "./utils/storage/localSettings.js";
+import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSettings.js";
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
@@ -724,14 +729,12 @@ class Localuser {
 						arr = temparr;
 
 						const len = array.length;
-						if (
-							!(
-								array[len - 1] === 255 &&
-								array[len - 2] === 255 &&
-								array[len - 3] === 0 &&
-								array[len - 4] === 0
-							)
-						) {
+						if (!(
+							array[len - 1] === 255 &&
+							array[len - 2] === 255 &&
+							array[len - 3] === 0 &&
+							array[len - 4] === 0
+						)) {
 							return;
 						}
 						w.write(arr.buffer);
@@ -873,12 +876,7 @@ class Localuser {
 	 * knows the interaction id, not the nonce. */
 	interactionIdLabels = new Map<string, string>();
 	/** A slash command's nonce: it has no message of its own while in flight. */
-	registerCommandNonce(
-		nonce: string,
-		channel?: Channel,
-		label?: string,
-		applicationId?: string,
-	) {
+	registerCommandNonce(nonce: string, channel?: Channel, label?: string, applicationId?: string) {
 		this.interactionNonces.add(nonce);
 		if (channel) this.commandChannels.set(nonce, channel);
 		if (label) this.commandNonceLabels.set(nonce, label);
@@ -1470,11 +1468,14 @@ class Localuser {
 			this.ws.send(JSON.stringify({op: 1, d: this.lastSequence}));
 			// The watchdog converts silence into a close event the reconnect path handles:
 			// two heartbeat intervals (30s floor) with no frame means the server is gone.
-			this.watchdogTimer = setInterval(() => {
-				if (Date.now() - this.lastFrameAt > Math.max(interval * 2, 30_000)) {
-					this.ws?.close(4000);
-				}
-			}, Math.max(interval, 5_000));
+			this.watchdogTimer = setInterval(
+				() => {
+					if (Date.now() - this.lastFrameAt > Math.max(interval * 2, 30_000)) {
+						this.ws?.close(4000);
+					}
+				},
+				Math.max(interval, 5_000),
+			);
 		} else if (temp.op === 11) {
 			// An ACK only marks the connection good. Sending a beat from here would start a
 			// second chain beside the interval — one more per interval, since every beat is ACKed.
@@ -3044,7 +3045,14 @@ class Localuser {
 		const channels = this.inboxChannels(tab);
 		// lastreadmessageid: the preview is the first UNREAD message, which a partial ack moves.
 		const row = (c: Channel) =>
-			[c.id, c.mentions, c.lastmessageid, c.lastreadmessageid, this.inboxTitle(c), this.inboxSubtitle(c)].join(":");
+			[
+				c.id,
+				c.mentions,
+				c.lastmessageid,
+				c.lastreadmessageid,
+				this.inboxTitle(c),
+				this.inboxSubtitle(c),
+			].join(":");
 		return tab + "|" + channels.map(row).join(",");
 	}
 	private inboxRenderedKey?: string;
@@ -3292,7 +3300,10 @@ class Localuser {
 			onRefused?.(res);
 			return {};
 		}
-		const json = await res.clone().json().catch(() => null);
+		const json = await res
+			.clone()
+			.json()
+			.catch(() => null);
 		if (typeof json !== "object" || json === null || Array.isArray(json)) {
 			onRefused?.(res);
 			return {};
@@ -3330,9 +3341,7 @@ class Localuser {
 				return fallback;
 			}
 		};
-		settings.addSection(
-			sectionLabel("settingsCategories.user.appSettings", "App settings"),
-		);
+		settings.addSection(sectionLabel("settingsCategories.user.appSettings", "App settings"));
 		{
 			const appearance = settings.addButton(I18n.localuser.appearance());
 			const themes = ["Dark", "WHITE", "Light", "Dark-Accent", "Onyx", "Fuzzy"];
@@ -3522,7 +3531,9 @@ class Localuser {
 			const audioDevices = await this.getAudioDeviceList().catch(() => []);
 			const deviceLabels = [
 				I18n.localuser.systemDefault(),
-				...audioDevices.map((dev, i) => dev.label || (i === 0 ? "Microphone" : `Microphone ${i + 1}`)),
+				...audioDevices.map(
+					(dev, i) => dev.label || (i === 0 ? "Microphone" : `Microphone ${i + 1}`),
+				),
 			];
 			const defaultAudio = this.getDefaultAudio();
 			const matchedDeviceIndex =
@@ -3620,9 +3631,7 @@ class Localuser {
 			langRegion.addMDText(new MarkDown(I18n.translation.wantToHelpTranslate()));
 		}
 
-		settings.addSection(
-			sectionLabel("settingsCategories.user.yourAccount", "Your account"),
-		);
+		settings.addSection(sectionLabel("settingsCategories.user.yourAccount", "Your account"));
 		{
 			const userOptions = settings.addButton(I18n.localuser.userSettings(), {
 				ltr: true,
@@ -3885,7 +3894,12 @@ class Localuser {
 										const serverRefusal =
 											typeof fields.code === "number" ||
 											(regenRes?.status === 429 && typeof fields.retry_after === "number");
-										if (regenRes && regenRes.status >= 400 && regenRes.status < 500 && serverRefusal)
+										if (
+											regenRes &&
+											regenRes.status >= 400 &&
+											regenRes.status < 500 &&
+											serverRefusal
+										)
 											return REGEN_UNCHANGED;
 									} else {
 										const next = await regenRes
@@ -3895,9 +3909,7 @@ class Localuser {
 										// Only an answer with a usable code is a new batch; anything else
 										// (even `{backup_codes: []}`) refuses and falls through to the re-read.
 										if (codesOf(next).length > 0) return next;
-										new Dialog(
-											I18n.requestFailed("HTTP " + regenRes.status + ", bad body"),
-										).show();
+										new Dialog(I18n.requestFailed("HTTP " + regenRes.status + ", bad body")).show();
 									}
 									// The server expires the old batch before minting the new one;
 									// re-reading with the 5-minute view nonce recovers whichever batch
@@ -4048,9 +4060,7 @@ class Localuser {
 							const keys = (await res
 								.clone()
 								.json()
-								.catch(() => null)) as
-								| {id: string; name: string}[]
-								| null;
+								.catch(() => null)) as {id: string; name: string}[] | null;
 							if (!Array.isArray(keys)) {
 								await showRefusal(res);
 								return;
@@ -4202,7 +4212,9 @@ class Localuser {
 				if (link) {
 					link.click();
 				} else {
-					document.getElementById(deleteCardId)?.scrollIntoView({behavior: "smooth", block: "start"});
+					document
+						.getElementById(deleteCardId)
+						?.scrollIntoView({behavior: "smooth", block: "start"});
 				}
 			});
 
@@ -4222,10 +4234,7 @@ class Localuser {
 				updateSpoilers,
 				sensitiveOptionLabels,
 				{
-					defaultIndex: Math.max(
-						0,
-						SENSITIVE_CONTENT_ACTIONS.indexOf(currentSensitive.spoilers),
-					),
+					defaultIndex: Math.max(0, SENSITIVE_CONTENT_ACTIONS.indexOf(currentSensitive.spoilers)),
 				},
 			);
 			spoilersSelect.watchForChange(updateSpoilers);
@@ -4273,15 +4282,18 @@ class Localuser {
 					// A refusal says why once inside the panel (the account leg first) and the
 					// instance's own connection types still list when they arrived.
 					const parsed = consRes?.ok
-						? ((await consRes.clone().json().catch(() => null)) as ConnectionJson[] | null)
+						? ((await consRes
+								.clone()
+								.json()
+								.catch(() => null)) as ConnectionJson[] | null)
 						: null;
 					if (seq !== remakeSeq) return;
 					const actCons = Array.isArray(parsed)
 						? // Without a string type an entry would land in the map under undefined,
-						  // matching no server type; dropped here rather than carried.
-						  parsed.filter(
+							// matching no server type; dropped here rather than carried.
+							parsed.filter(
 								(c) => typeof c === "object" && c !== null && typeof c.type === "string",
-						  )
+							)
 						: [];
 					if (!Array.isArray(parsed)) failures.unshift(consRes);
 					const actConMap = new Map<string, ConnectionJson>(
@@ -4696,8 +4708,7 @@ class Localuser {
 					// The teams list feeds one Create App <select>: a failed lookup degrades to the
 					// personal team, silently — Settings must not modal over an optional panel.
 					const parsed = (teamsRes?.ok ? await teamsRes.json().catch(() => null) : null) as
-						| {name: string}[]
-						| null;
+						{name: string}[] | null;
 					const teams = Array.isArray(parsed) ? parsed : [];
 					const button = devPortal.addButtonInput("", I18n.localuser.createApp(), () => {
 						const form = devPortal.addSubForm(
@@ -5281,11 +5292,12 @@ class Localuser {
 				}
 			},
 			{
-			fetchURL: this.info.api + "/applications/" + appId,
-			method: "PATCH",
-			headers: this.headers,
-			traditionalSubmit: true,
-		});
+				fetchURL: this.info.api + "/applications/" + appId,
+				method: "PATCH",
+				headers: this.headers,
+				traditionalSubmit: true,
+			},
+		);
 		form.addTextInput(I18n.localuser.appName(), "name", {initText: json.name});
 		form.addMDInput(I18n.localuser.description(), "description", {
 			initText: json.description,
@@ -5361,9 +5373,10 @@ class Localuser {
 		// a second one on this form would silently drop this fold and leak the keys (the wiring
 		// test pins their absence).
 		form.addPreprocessor((obj: any) => {
-			sentStates = Object.fromEntries(
-				intents.map(([name, field]) => [name, obj[field]]),
-			) as Record<IntentName, boolean>;
+			sentStates = Object.fromEntries(intents.map(([name, field]) => [name, obj[field]])) as Record<
+				IntentName,
+				boolean
+			>;
 			const changed = intents.some(([name, field]) => obj[field] !== initStates[name]);
 			if (changed && isFlagsValue(readFlags)) {
 				const read = readFlags;
@@ -5444,16 +5457,12 @@ class Localuser {
 			return alert(I18n.localuser.confuseNoBot());
 		}
 		const bot: User = new User(json.bot, this);
-		const form = container.addSubForm(
-			I18n.localuser.editingBot(bot.username),
-			() => {},
-			{
-				method: "PATCH",
-				fetchURL: this.info.api + "/applications/" + appId + "/bot",
-				headers: this.headers,
-				traditionalSubmit: true,
-			},
-		);
+		const form = container.addSubForm(I18n.localuser.editingBot(bot.username), () => {}, {
+			method: "PATCH",
+			fetchURL: this.info.api + "/applications/" + appId + "/bot",
+			headers: this.headers,
+			traditionalSubmit: true,
+		});
 		form.addTextInput(I18n.localuser.botUsername(), "username", {
 			initText: bot.username,
 		});
@@ -6213,23 +6222,16 @@ class Localuser {
 			return;
 		}
 		const top = commands
-			.flatMap((command) =>
-				command.invocations.map((inv) => ({command, inv})),
-			)
+			.flatMap((command) => command.invocations.map((inv) => ({command, inv})))
 			.map(({command, inv}) => {
 				// Match on the full "/name sub" label, keeping the command's own
 				// description matching too.
-				const score = Math.max(
-					similarLabel(invocationLabel(inv), search),
-					command.similar(search),
-				);
+				const score = Math.max(similarLabel(invocationLabel(inv), search), command.similar(search));
 				return [{command, inv}, score] as const;
 			})
 			.filter((_) => _[1] !== 0)
 			.sort(
-				(a, b) =>
-					b[1] - a[1] ||
-					invocationLabel(a[0].inv).localeCompare(invocationLabel(b[0].inv)),
+				(a, b) => b[1] - a[1] || invocationLabel(a[0].inv).localeCompare(invocationLabel(b[0].inv)),
 			)
 			.map((_) => _[0])
 			// MDSearchOptions renders at most 8 rows; feeding it ten cuts the two best after
@@ -6267,9 +6269,7 @@ class Localuser {
 			exact.click();
 			return true;
 		}
-		const base = names.find(
-			(span) => span.querySelector(".commandRowBase")?.textContent === text,
-		);
+		const base = names.find((span) => span.querySelector(".commandRowBase")?.textContent === text);
 		const command = base && this.rowCommands?.get(base.closest(".commandRow") as Element);
 		if (!command) return false;
 		this.MDSearchOptions([], "", rows);
@@ -7193,7 +7193,10 @@ class Localuser {
 		const urlObj = new URL(url);
 		if (urlObj.host === new URL(this.info.cdn).host) {
 			if (urlObj.searchParams.get("ex")) {
-				if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) > Date.now() + CDN_LINK_MARGIN_MS) {
+				if (
+					Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >
+					Date.now() + CDN_LINK_MARGIN_MS
+				) {
 					return url;
 				}
 			}

@@ -26,7 +26,8 @@ export class FakeWebSocket {
 	}
 	send(data: string) {
 		// Like the browser's: sending before "open" throws InvalidStateError.
-		if (this.readyState !== FakeWebSocket.OPEN) throw new DOMException("still connecting", "InvalidStateError");
+		if (this.readyState !== FakeWebSocket.OPEN)
+			throw new DOMException("still connecting", "InvalidStateError");
 		this.sent.push(JSON.parse(data) as {op: number});
 	}
 	close(code?: number) {

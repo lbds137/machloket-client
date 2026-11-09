@@ -174,7 +174,10 @@ it("a refused tag toggle in editTags rolls back selected and the sent list", asy
 
 it("an unmute then a mute, both refused, end on what the server still holds", async () => {
 	const answers: ((res: Response) => void)[] = [];
-	captureRequests(`${API}/users/@me/guilds/g1/settings`, () => new Promise<Response>((r) => answers.push(r)));
+	captureRequests(
+		`${API}/users/@me/guilds/g1/settings`,
+		() => new Promise<Response>((r) => answers.push(r)),
+	);
 	const original = {selected_time_window: 3600, end_time: Date.now() + 3600_000};
 	const channel = Object.assign(Object.create(Channel.prototype), {
 		id: "c1",

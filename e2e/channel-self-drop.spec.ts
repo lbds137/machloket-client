@@ -13,8 +13,7 @@ const row = (page: Page, name: string) =>
 	page.locator("#channels button.channelbutton", {hasText: name});
 /** The row's container div: the drag hover indicator (dragTopView/dragBottomView) and the
  * drop listener live here (coatDropDiv), not on the button. */
-const rowDiv = (page: Page, name: string) =>
-	page.locator("#channels div.channel", {hasText: name});
+const rowDiv = (page: Page, name: string) => page.locator("#channels div.channel", {hasText: name});
 
 /** Presses on `from`, leaves it far enough to start a drag, and releases on `to`. The
  * hover state is part of the gesture: the target row carries a drag indicator before the

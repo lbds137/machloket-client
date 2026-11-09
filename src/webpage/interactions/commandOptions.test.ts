@@ -58,10 +58,9 @@ describe("typed slash-command options", () => {
 	});
 
 	it("a number option (type 10) sends a float", async () => {
-		const {sent, run} = commandWith(
-			[{type: 10, name: "scale", description: "", required: true}],
-			{scale: "3.5"},
-		);
+		const {sent, run} = commandWith([{type: 10, name: "scale", description: "", required: true}], {
+			scale: "3.5",
+		});
 
 		await run();
 
@@ -71,10 +70,9 @@ describe("typed slash-command options", () => {
 	});
 
 	it("a non-integer value in an integer option blocks the send", async () => {
-		const {sent, run} = commandWith(
-			[{type: 4, name: "count", description: "", required: true}],
-			{count: "4.5"},
-		);
+		const {sent, run} = commandWith([{type: 4, name: "count", description: "", required: true}], {
+			count: "4.5",
+		});
 
 		await expect(run()).resolves.toBe(false);
 		expect(sent).toHaveLength(0);
@@ -91,10 +89,9 @@ describe("typed slash-command options", () => {
 	});
 
 	it("a boolean option sends a JSON boolean", async () => {
-		const {sent, run} = commandWith(
-			[{type: 5, name: "loud", description: "", required: true}],
-			{loud: "true"},
-		);
+		const {sent, run} = commandWith([{type: 5, name: "loud", description: "", required: true}], {
+			loud: "true",
+		});
 
 		await run();
 
@@ -104,30 +101,27 @@ describe("typed slash-command options", () => {
 	});
 
 	it("a required option with an empty value blocks the send", async () => {
-		const {sent, run} = commandWith(
-			[{type: 3, name: "msg", description: "", required: true}],
-			{msg: ""},
-		);
+		const {sent, run} = commandWith([{type: 3, name: "msg", description: "", required: true}], {
+			msg: "",
+		});
 
 		await expect(run()).resolves.toBe(false);
 		expect(sent).toHaveLength(0);
 	});
 
 	it("a required boolean blocks until it is answered", async () => {
-		const {sent, run} = commandWith(
-			[{type: 5, name: "loud", description: "", required: true}],
-			{loud: ""},
-		);
+		const {sent, run} = commandWith([{type: 5, name: "loud", description: "", required: true}], {
+			loud: "",
+		});
 
 		await expect(run()).resolves.toBe(false);
 		expect(sent).toHaveLength(0);
 	});
 
 	it("an answered-false boolean sends false and counts as answered", async () => {
-		const {sent, run} = commandWith(
-			[{type: 5, name: "loud", description: "", required: true}],
-			{loud: "false"},
-		);
+		const {sent, run} = commandWith([{type: 5, name: "loud", description: "", required: true}], {
+			loud: "false",
+		});
 
 		await run();
 
@@ -210,10 +204,9 @@ describe("typed slash-command options", () => {
 		// server's strict schema rejects those silently, so the whole body is pinned.
 		// application_command mirrors the index row the server sent and its schema allows
 		// it verbatim; only its presence is pinned.
-		const {sent, run} = commandWith(
-			[{type: 3, name: "msg", description: "", required: true}],
-			{msg: "hi"},
-		);
+		const {sent, run} = commandWith([{type: 3, name: "msg", description: "", required: true}], {
+			msg: "hi",
+		});
 		await run();
 		expect(sent[0]).toEqual({
 			type: 2,
@@ -268,9 +261,7 @@ describe("typed slash-command options", () => {
 				attachments: [],
 				id: "900",
 				name: "ask",
-				options: [
-					{name: "view", type: 1, options: [{name: "name", type: 3, value: "alice"}]},
-				],
+				options: [{name: "view", type: 1, options: [{name: "name", type: 3, value: "alice"}]}],
 				type: 1,
 				version: "1",
 			},
@@ -280,10 +271,9 @@ describe("typed slash-command options", () => {
 
 describe("entity slash-command options (user, channel, role, mentionable)", () => {
 	it("a user option sends the picked snowflake as a string", async () => {
-		const {sent, run} = commandWith(
-			[{type: 6, name: "who", description: "", required: true}],
-			{who: "1553128655016763450"},
-		);
+		const {sent, run} = commandWith([{type: 6, name: "who", description: "", required: true}], {
+			who: "1553128655016763450",
+		});
 
 		await run();
 
@@ -293,10 +283,9 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 	});
 
 	it("a channel option sends the picked snowflake as a string", async () => {
-		const {sent, run} = commandWith(
-			[{type: 7, name: "where", description: "", required: true}],
-			{where: "1553780562722828434"},
-		);
+		const {sent, run} = commandWith([{type: 7, name: "where", description: "", required: true}], {
+			where: "1553780562722828434",
+		});
 
 		await run();
 
@@ -306,19 +295,17 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 	});
 
 	it("role and mentionable options send snowflake strings", async () => {
-		const roleRun = commandWith(
-			[{type: 8, name: "role", description: "", required: true}],
-			{role: "1553128655016763451"},
-		);
+		const roleRun = commandWith([{type: 8, name: "role", description: "", required: true}], {
+			role: "1553128655016763451",
+		});
 		await roleRun.run();
 		expect(roleRun.sent[0]).toMatchObject({
 			data: {options: [{name: "role", type: 8, value: "1553128655016763451"}]},
 		});
 
-		const mentionRun = commandWith(
-			[{type: 9, name: "target", description: "", required: true}],
-			{target: "1553128655016763452"},
-		);
+		const mentionRun = commandWith([{type: 9, name: "target", description: "", required: true}], {
+			target: "1553128655016763452",
+		});
 		await mentionRun.run();
 		expect(mentionRun.sent[0]).toMatchObject({
 			data: {options: [{name: "target", type: 9, value: "1553128655016763452"}]},
@@ -326,10 +313,9 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 	});
 
 	it("a typed answer that isn't a picked id blocks the send", async () => {
-		const {sent, run} = commandWith(
-			[{type: 6, name: "who", description: "", required: true}],
-			{who: "alice"},
-		);
+		const {sent, run} = commandWith([{type: 6, name: "who", description: "", required: true}], {
+			who: "alice",
+		});
 
 		await expect(run()).resolves.toBe(false);
 		expect(sent).toHaveLength(0);
@@ -368,9 +354,7 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 		expect(candidate).not.toBeNull();
 		candidate.click();
 
-		expect(command.getState(command.options[0], channel as never)).toBe(
-			"1553128655016763451",
-		);
+		expect(command.getState(command.options[0], channel as never)).toBe("1553128655016763451");
 		// A pick empties the popup: leftover rows make the next Enter pick again instead of
 		// submitting the command (the live /random stall).
 		expect(searchOptions.innerHTML).toBe("");
@@ -424,8 +408,14 @@ describe("entity slash-command options (user, channel, role, mentionable)", () =
 	it("in a DM, only people are candidates: a role option offers nothing", () => {
 		const {localuser, channel} = messageIn("@me");
 		(channel as unknown as {users?: unknown}).users = [{id: "9", name: "Alice"}];
-		const userCommand = new Command(commandJson([{type: 6, name: "who", description: ""}]), localuser);
-		const roleCommand = new Command(commandJson([{type: 8, name: "role", description: ""}]), localuser);
+		const userCommand = new Command(
+			commandJson([{type: 6, name: "who", description: ""}]),
+			localuser,
+		);
+		const roleCommand = new Command(
+			commandJson([{type: 8, name: "role", description: ""}]),
+			localuser,
+		);
 		const collect = (option: unknown) =>
 			(option as {collect: (channel: unknown) => {value: string}[]}).collect(channel);
 
@@ -477,9 +467,7 @@ describe("attachment slash-command options (type 11)", () => {
 	it("picking a file uploads it and the submit pairs the option value with data.attachments", async () => {
 		const sent = captureRequests(API + "/interactions");
 		const {channel, command} = attachmentCommand();
-		command.state.set(channel as never, [
-			{option: command.options[0], state: ""},
-		]);
+		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
 		const pick = command.options[0] as unknown as {
 			pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
 		};
@@ -502,9 +490,7 @@ describe("attachment slash-command options (type 11)", () => {
 	it("a required attachment blocks until a file is picked", async () => {
 		const sent = captureRequests(API + "/interactions");
 		const {channel, command} = attachmentCommand();
-		command.state.set(channel as never, [
-			{option: command.options[0], state: ""},
-		]);
+		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
 
 		await expect(command.submit(document.createElement("div"), channel as never)).resolves.toBe(
 			false,
@@ -530,9 +516,7 @@ describe("attachment slash-command options (type 11)", () => {
 		(channel as unknown as {uploadFile: unknown}).uploadFile = async () => {
 			throw new Error("attachment upload failed: 413");
 		};
-		command.state.set(channel as never, [
-			{option: command.options[0], state: ""},
-		]);
+		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
 		const pick = command.options[0] as unknown as {
 			pick: (files: globalThis.File[], channel: unknown) => Promise<void>;
 		};
@@ -641,9 +625,7 @@ describe("context-menu commands (types 2 and 3)", () => {
 		);
 		const {channel, message, command} = contextCommand(3);
 
-		await expect(
-			command.submitContext(message.id, channel as never),
-		).resolves.toBe(false);
+		await expect(command.submitContext(message.id, channel as never)).resolves.toBe(false);
 	});
 });
 
@@ -684,9 +666,7 @@ describe("subcommand options (types 1 and 2)", () => {
 		const sent = captureRequests(API + "/interactions");
 		const {localuser, channel} = messageIn("@me");
 		const command = new Command(
-			commandJson([
-				{type: 1, name: "view", description: "", options: []},
-			]),
+			commandJson([{type: 1, name: "view", description: "", options: []}]),
 			localuser,
 		);
 		command.state.set(channel as never, [{option: command.options[0], state: ""}]);
@@ -811,7 +791,12 @@ describe("subcommand options (types 1 and 2)", () => {
 					name: "persona",
 					description: "",
 					options: [
-						{type: 1, name: "set", description: "", options: [{type: 3, name: "a", description: "", required: true}]},
+						{
+							type: 1,
+							name: "set",
+							description: "",
+							options: [{type: 3, name: "a", description: "", required: true}],
+						},
 					],
 				},
 				{
@@ -819,7 +804,12 @@ describe("subcommand options (types 1 and 2)", () => {
 					name: "locale",
 					description: "",
 					options: [
-						{type: 1, name: "set", description: "", options: [{type: 3, name: "b", description: "", required: true}]},
+						{
+							type: 1,
+							name: "set",
+							description: "",
+							options: [{type: 3, name: "b", description: "", required: true}],
+						},
 					],
 				},
 			]),
@@ -855,8 +845,18 @@ describe("subcommand options (types 1 and 2)", () => {
 		const {localuser, channel} = messageIn("@me");
 		const command = new Command(
 			commandJson([
-				{type: 1, name: "view", description: "", options: [{type: 3, name: "name", description: "", required: true}]},
-				{type: 1, name: "delete", description: "", options: [{type: 3, name: "id", description: "", required: true}]},
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
+				{
+					type: 1,
+					name: "delete",
+					description: "",
+					options: [{type: 3, name: "id", description: "", required: true}],
+				},
 			]),
 			localuser,
 		);
@@ -881,7 +881,12 @@ describe("subcommand options (types 1 and 2)", () => {
 		const {localuser, channel} = messageIn("100");
 		const command = new Command(
 			commandJson([
-				{type: 1, name: "view", description: "", options: [{type: 3, name: "name", description: "", required: true}]},
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
 			]),
 			localuser,
 		);
@@ -901,22 +906,22 @@ describe("subcommand options (types 1 and 2)", () => {
 			viewRow.click();
 			expect(command.getState(command.options[0], channel as never)).toBe("view");
 
-		const chips = [...html.querySelectorAll(".commandinput")];
-		expect(chips.length).toBe(2); // the branch chip and the required leaf's
-		expect(chips[1].getAttribute("commandName")).toBe("name");
-		expect(chips[1].classList.contains("commandHidden")).toBe(false);
-		const leafInput = chips[1].querySelector("input") as HTMLInputElement;
-		leafInput.value = "Zed";
-		leafInput.dispatchEvent(new Event("input", {bubbles: true}));
-		leafInput.dispatchEvent(new KeyboardEvent("keyup", {key: "d"}));
+			const chips = [...html.querySelectorAll(".commandinput")];
+			expect(chips.length).toBe(2); // the branch chip and the required leaf's
+			expect(chips[1].getAttribute("commandName")).toBe("name");
+			expect(chips[1].classList.contains("commandHidden")).toBe(false);
+			const leafInput = chips[1].querySelector("input") as HTMLInputElement;
+			leafInput.value = "Zed";
+			leafInput.dispatchEvent(new Event("input", {bubbles: true}));
+			leafInput.dispatchEvent(new KeyboardEvent("keyup", {key: "d"}));
 
-		expect(command.getState(command.options[0], channel as never)).toBe("view");
-		const leaf = (command.options[0] as unknown as {children: unknown[]}).children[0];
-		expect(command.getState(leaf as never, channel as never)).toBe("Zed");
+			expect(command.getState(command.options[0], channel as never)).toBe("view");
+			const leaf = (command.options[0] as unknown as {children: unknown[]}).children[0];
+			expect(command.getState(leaf as never, channel as never)).toBe("Zed");
 
-		// collect() rebuilds state from the DOM; the leaf entry must survive it.
-		command.collect(html, channel as never);
-		expect(command.getState(leaf as never, channel as never)).toBe("Zed");
+			// collect() rebuilds state from the DOM; the leaf entry must survive it.
+			command.collect(html, channel as never);
+			expect(command.getState(leaf as never, channel as never)).toBe("Zed");
 		} finally {
 			html.remove();
 			searchOptions.remove();
@@ -972,9 +977,7 @@ describe("subcommand options (types 1 and 2)", () => {
 			commandJson([{type: 3, name: "msg", description: "", required: true}]),
 			localuser,
 		);
-		command.state.set(channel as never, [
-			{option: command.options[0], state: "hello"},
-		]);
+		command.state.set(channel as never, [{option: command.options[0], state: "hello"}]);
 		const html = document.createElement("div");
 
 		await expect(command.submit(html, channel as never)).resolves.toBe(false);
@@ -1055,8 +1058,18 @@ describe("subcommand options (types 1 and 2)", () => {
 		const {localuser, channel} = messageIn("100");
 		const command = new Command(
 			commandJson([
-				{type: 1, name: "view", description: "", options: [{type: 3, name: "name", description: "", required: true}]},
-				{type: 1, name: "delete", description: "", options: [{type: 3, name: "id", description: "", required: true}]},
+				{
+					type: 1,
+					name: "view",
+					description: "",
+					options: [{type: 3, name: "name", description: "", required: true}],
+				},
+				{
+					type: 1,
+					name: "delete",
+					description: "",
+					options: [{type: 3, name: "id", description: "", required: true}],
+				},
 			]),
 			localuser,
 		);
@@ -1438,9 +1451,7 @@ describe("progressive composer model", () => {
 			node.textContent = "query:";
 			command.collect(html, channel as never, node as Text); // the keyup path
 
-			const chip = html.querySelector(
-				".commandinput[commandName='query']",
-			) as HTMLElement;
+			const chip = html.querySelector(".commandinput[commandName='query']") as HTMLElement;
 			expect(chip.classList.contains("commandHidden")).toBe(false);
 			expect(node.textContent).toBe(""); // the typed name became the field, not text
 			expect(document.activeElement).toBe(chip.querySelector("input"));
@@ -1571,7 +1582,10 @@ describe("progressive composer model", () => {
 			owner: {id: "100", localuser, info: {api: API}, headers: {}},
 		});
 		(localuser as unknown as {channelfocus: unknown}).channelfocus = chan;
-		const command = new Command(commandJson([{type: 3, name: "query", description: ""}]), localuser);
+		const command = new Command(
+			commandJson([{type: 3, name: "query", description: ""}]),
+			localuser,
+		);
 		try {
 			chan.startCommand(command);
 			await new Promise((r) => setTimeout(r, 0));
@@ -1602,7 +1616,10 @@ describe("progressive composer model", () => {
 			owner: {id: "100", localuser, info: {api: API}, headers: {}},
 		});
 		(localuser as unknown as {channelfocus: unknown}).channelfocus = chan;
-		const command = new Command(commandJson([{type: 3, name: "query", description: ""}]), localuser);
+		const command = new Command(
+			commandJson([{type: 3, name: "query", description: ""}]),
+			localuser,
+		);
 		try {
 			chan.startCommand(command);
 			await new Promise((r) => setTimeout(r, 0));
@@ -1683,9 +1700,7 @@ describe("progressive composer model", () => {
 		const searchOptions = document.createElement("div");
 		searchOptions.id = "searchOptions";
 		document.body.append(searchOptions);
-		const {channel, command, localuser} = flatCommand([
-			{type: 3, name: "query", description: ""},
-		]);
+		const {channel, command, localuser} = flatCommand([{type: 3, name: "query", description: ""}]);
 		const html = document.createElement("div");
 		document.body.append(html);
 		try {
@@ -1697,9 +1712,7 @@ describe("progressive composer model", () => {
 			expect(localuser.keyup(new KeyboardEvent("keyup", {key: "Enter"}))).toBe(false);
 			// Tab commits the highlighted row for keyboard-only picking.
 			expect(localuser.keyup(new KeyboardEvent("keyup", {key: "Tab"}))).toBe(true);
-			const chip = html.querySelector(
-				".commandinput[commandName='query']",
-			) as HTMLElement;
+			const chip = html.querySelector(".commandinput[commandName='query']") as HTMLElement;
 			expect(chip.classList.contains("commandHidden")).toBe(false);
 		} finally {
 			html.remove();
@@ -1756,9 +1769,7 @@ describe("progressive composer model", () => {
 			const node = message.closest(".commandinput")!.nextSibling as Text;
 			node.textContent = "query:";
 			command.collect(html, channel as never, node);
-			const chip = html.querySelector(
-				".commandinput[commandName='query']",
-			) as HTMLElement;
+			const chip = html.querySelector(".commandinput[commandName='query']") as HTMLElement;
 			expect(chip.classList.contains("commandHidden")).toBe(false);
 
 			// Backspace the field away from its own empty input (it isn't the first chip, so
@@ -1817,9 +1828,7 @@ describe("progressive composer model", () => {
 			// …the offer microtask did NOT clear it or open the branch popup…
 			expect(searchOptions.childElementCount).toBe(0);
 			// …and view's required leaf renders revealed and focused.
-			const name = html.querySelector(
-				".commandinput[commandName='name']",
-			) as HTMLElement;
+			const name = html.querySelector(".commandinput[commandName='name']") as HTMLElement;
 			expect(name.classList.contains("commandHidden")).toBe(false);
 			expect(document.activeElement).toBe(name.querySelector("input"));
 		} finally {
@@ -1956,9 +1965,7 @@ describe("progressive composer model", () => {
 			};
 			const countOption = branch.children.find((_) => _.name === "count");
 			expect(command.getState(countOption as never, channel as never)).toBe("5");
-			const countChip = html.querySelector(
-				".commandinput[commandName='count']",
-			) as HTMLElement;
+			const countChip = html.querySelector(".commandinput[commandName='count']") as HTMLElement;
 			expect(countChip.classList.contains("commandHidden")).toBe(false);
 			expect((countChip.querySelector("input") as HTMLInputElement).value).toBe("5");
 		} finally {
@@ -1978,7 +1985,11 @@ describe("keyboard and sequence regressions (GLM-week audit)", () => {
 	}
 	/** One keystroke the way the browser delivers it: the chip input's own keyup, then the
 	 * typebox's bubbled handler (index.ts runs localuser.handleKeyUp). */
-	function key(input: HTMLInputElement, localuser: {handleKeyUp: (e: KeyboardEvent) => boolean}, k: string) {
+	function key(
+		input: HTMLInputElement,
+		localuser: {handleKeyUp: (e: KeyboardEvent) => boolean},
+		k: string,
+	) {
 		if (k.length === 1) input.dispatchEvent(new Event("input", {bubbles: true}));
 		input.dispatchEvent(new KeyboardEvent("keyup", {key: k}));
 		return localuser.handleKeyUp(new KeyboardEvent("keyup", {key: k}));
@@ -2014,7 +2025,11 @@ describe("keyboard and sequence regressions (GLM-week audit)", () => {
 		(channel as unknown as {guild: unknown}).guild = {
 			id: "1553128655016763450",
 			members: [
-				{id: "1553128655016763451", user: {username: "Tzurot"}, compare: (n: string) => (n ? 1 : 0)},
+				{
+					id: "1553128655016763451",
+					user: {username: "Tzurot"},
+					compare: (n: string) => (n ? 1 : 0),
+				},
 			],
 			roles: [],
 			channels: [],
@@ -2139,7 +2154,9 @@ describe("keyboard and sequence regressions (GLM-week audit)", () => {
 		try {
 			command.render(html, channel as never);
 			const shown = () =>
-				[...html.querySelectorAll(".commandinput")].map((c) => !c.classList.contains("commandHidden"));
+				[...html.querySelectorAll(".commandinput")].map(
+					(c) => !c.classList.contains("commandHidden"),
+				);
 			const a = html.querySelector(".commandinput input") as HTMLInputElement;
 			const seen: boolean[][] = [];
 			for (const ch of ["h", "he", "hel"]) {

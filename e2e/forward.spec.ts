@@ -21,10 +21,9 @@ test("a forwarded message renders its card from the snapshot", async ({page, moc
 	await expect(card).toHaveCount(1);
 	await expect(card.locator(".forwardHeader")).toContainText("Forwarded");
 	await expect(card.locator(".forwardHeader")).toContainText("#general");
-	await expect(
-		card.locator(".forwardBody"),
-		"the snapshot body renders verbatim",
-	).toContainText("Forwarded from earlier: the original answer, kept verbatim.");
+	await expect(card.locator(".forwardBody"), "the snapshot body renders verbatim").toContainText(
+		"Forwarded from earlier: the original answer, kept verbatim.",
+	);
 
 	// The card's look, Deck-local baseline (DOM asserts lead; this pins the chrome).
 	await pinShot(card, "forward-card.png");
@@ -57,7 +56,8 @@ test("right-click -> Forward sends through the picker with the source reference"
 
 	const sends = await expectRequests(
 		mockInstance,
-		(req) => req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
+		(req) =>
+			req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
 		1,
 	);
 	expect(sends[0].body).toEqual({

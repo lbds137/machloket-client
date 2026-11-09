@@ -69,7 +69,9 @@ describe("the open inbox's preview", () => {
 		await internals.renderInboxMenu("unread", menu);
 		expect(menu.textContent).toContain("hello");
 
-		await lu.handleEvent(event("MESSAGE_UPDATE", {id: "m1", channel_id: "c1", content: "edited"}) as never);
+		await lu.handleEvent(
+			event("MESSAGE_UPDATE", {id: "m1", channel_id: "c1", content: "edited"}) as never,
+		);
 		await vi.waitFor(() => expect(menu.textContent).toContain("edited"));
 	});
 

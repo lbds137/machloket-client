@@ -324,9 +324,7 @@ describe("FancySelect phone sheet", () => {
 
 		open();
 
-		expect(document.querySelector<HTMLElement>(".selectSheetTitle")!.textContent).toBe(
-			"Pick some",
-		);
+		expect(document.querySelector<HTMLElement>(".selectSheetTitle")!.textContent).toBe("Pick some");
 	});
 });
 

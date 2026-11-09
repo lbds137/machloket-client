@@ -96,12 +96,18 @@ describe("Sticker.stickerPicker", () => {
 			s10: freqEntry(200),
 			s12: freqEntry(100),
 		});
-		const g1 = makeGuild(
-			user,
-			"g1",
-			"Guild One",
-			["s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10"],
-		);
+		const g1 = makeGuild(user, "g1", "Guild One", [
+			"s1",
+			"s2",
+			"s3",
+			"s4",
+			"s5",
+			"s6",
+			"s7",
+			"s8",
+			"s9",
+			"s10",
+		]);
 		const g2 = makeGuild(user, "g2", "Guild Two", ["s11", "s12"]);
 		user.guilds = [g1, g2];
 		user.lookingguild = g1;
@@ -116,9 +122,7 @@ describe("Sticker.stickerPicker", () => {
 		expect(railItems[1]!.classList.contains("emojiSelect")).toBe(true);
 		expect(railItems[2]!.classList.contains("emojiSelect")).toBe(true);
 
-		expect(picker.querySelector(".emojiTitle")?.textContent).toBe(
-			I18n.sticker.frequentlyUsed(),
-		);
+		expect(picker.querySelector(".emojiTitle")?.textContent).toBe(I18n.sticker.frequentlyUsed());
 
 		const imgs = Array.from(
 			picker.querySelectorAll<HTMLImageElement>(".stickerBody .stickerSelect img.sticker"),
@@ -143,9 +147,7 @@ describe("Sticker.stickerPicker", () => {
 		expect(picker.querySelectorAll(".stickerBody .stickerSelect")).toHaveLength(10);
 
 		railItems[0]!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
-		expect(picker.querySelector(".emojiTitle")?.textContent).toBe(
-			I18n.sticker.frequentlyUsed(),
-		);
+		expect(picker.querySelector(".emojiTitle")?.textContent).toBe(I18n.sticker.frequentlyUsed());
 	});
 
 	it("omits Frequently Used section when all frecency ids are unresolvable and opens on the first guild", () => {

@@ -7,7 +7,7 @@ const {Channel} = await import("./channel");
 const {InfiniteScroller} = await import("./infiniteScroller");
 
 /** Settles within `ms`, or reports that it hung. */
-const within = <T,>(p: Promise<T>, ms = 1500) =>
+const within = <T>(p: Promise<T>, ms = 1500) =>
 	Promise.race([
 		p.then(
 			() => "settled",
@@ -55,7 +55,8 @@ describe("a failed history fetch", () => {
 		["a network error", () => Promise.reject(new TypeError("Failed to fetch"))],
 		[
 			"a 429 error body",
-			() => Promise.resolve(Response.json({message: "rate limited", retry_after: 1}, {status: 429})),
+			() =>
+				Promise.resolve(Response.json({message: "rate limited", retry_after: 1}, {status: 429})),
 		],
 	] as const) {
 		it(`(${label}) settles, and the next scroll-up fetches again`, async () => {
@@ -85,8 +86,18 @@ describe("a failed history fetch", () => {
 		const second = ask("20"); // arrives while the first page is in flight
 		fail();
 
-		expect(await first.then(() => "top", () => "retry later")).toBe("retry later");
-		expect(await second.then(() => "top", () => "retry later")).toBe("retry later");
+		expect(
+			await first.then(
+				() => "top",
+				() => "retry later",
+			),
+		).toBe("retry later");
+		expect(
+			await second.then(
+				() => "top",
+				() => "retry later",
+			),
+		).toBe("retry later");
 	});
 
 	it("going forward settles too", async () => {
@@ -102,7 +113,9 @@ describe("a history page whose messages can't be built", () => {
 	it("going back settles, and the next scroll-up asks again", async () => {
 		const channel = channelWith([]);
 		vi.spyOn(console, "error").mockImplementation(() => {});
-		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json([{id: "7"}]));
+		const fetchMock = vi
+			.spyOn(globalThis, "fetch")
+			.mockImplementation(async () => Response.json([{id: "7"}]));
 
 		expect(await within(channel.grabBefore("10"))).toBe("settled");
 		expect(channel.beforeProm).toBeUndefined();
@@ -115,7 +128,9 @@ describe("a history page whose messages can't be built", () => {
 	it("going forward settles, and the next scroll-down asks again", async () => {
 		const channel = channelWith([]);
 		vi.spyOn(console, "error").mockImplementation(() => {});
-		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => Response.json([{id: "7"}]));
+		const fetchMock = vi
+			.spyOn(globalThis, "fetch")
+			.mockImplementation(async () => Response.json([{id: "7"}]));
 
 		expect(await within(channel.grabAfter("10"))).toBe("settled");
 		expect(channel.afterProm).toBeUndefined();
@@ -201,7 +216,9 @@ describe("a rate-limited history fetch", () => {
 		const limiting = Object.assign(channelWith(["9", "8"]), {id: "202"});
 		const third = Object.assign(channelWith(["9", "8"]), {id: "203"});
 		let fail!: () => void;
-		const held = new Promise<Response>((_, rej) => (fail = () => rej(new TypeError("Failed to fetch"))));
+		const held = new Promise<Response>(
+			(_, rej) => (fail = () => rej(new TypeError("Failed to fetch"))),
+		);
 		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
 			const url = String(input instanceof Request ? input.url : input);
 			if (url.includes("/channels/201/")) return held;
@@ -359,9 +376,10 @@ describe("a history page that throws part-way through building", () => {
 		await channel.grabBefore("10");
 		// Nothing from a failed page is recorded — not even the id the throw came after.
 		expect(channel.idToPrev.has("10")).toBe(false);
-		const outcome = await channel.infinite
-			.getIDFromOffset("9", 1)
-			.then((v) => (v === undefined ? "top" : "id " + v), () => "retry later");
+		const outcome = await channel.infinite.getIDFromOffset("9", 1).then(
+			(v) => (v === undefined ? "top" : "id " + v),
+			() => "retry later",
+		);
 		expect(outcome).toBe("retry later");
 	});
 });

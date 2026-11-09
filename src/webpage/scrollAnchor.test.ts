@@ -123,7 +123,10 @@ const topOf = (msgs: Map<string, InstanceType<typeof Message>>, id: string) =>
 	msgs.get(id)!.div!.getBoundingClientRect().top;
 
 /** Scroll so the collapsed group's bar sits fully above the scroller's top edge. */
-function placeGroupAboveFold(root: HTMLDivElement, msgs: Map<string, InstanceType<typeof Message>>) {
+function placeGroupAboveFold(
+	root: HTMLDivElement,
+	msgs: Map<string, InstanceType<typeof Message>>,
+) {
 	const bar = msgs.get("20")!.div!;
 	root.scrollTop +=
 		bar.getBoundingClientRect().top - root.getBoundingClientRect().top + bar.offsetHeight + 10;
@@ -226,7 +229,10 @@ it("history loading above a collapsed blocked group while scrolling up holds the
 	await settle();
 	const thirty = msgs.get("30")!.div!;
 	root.scrollTop =
-		thirty.getBoundingClientRect().top - root.getBoundingClientRect().top + thirty.offsetHeight / 2 - VIEW / 2;
+		thirty.getBoundingClientRect().top -
+		root.getBoundingClientRect().top +
+		thirty.offsetHeight / 2 -
+		VIEW / 2;
 	await settle();
 	root.scrollTop -= 400;
 	// The user's scroll moved the window; the position it lands at is what must hold while

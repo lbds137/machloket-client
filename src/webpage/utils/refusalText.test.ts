@@ -57,7 +57,9 @@ describe("the server's reason", () => {
 	});
 
 	it("is found on a tree's root", () => {
-		expect(serverReason({code: 50035, message: "Invalid Form Body", errors: node("root")})).toBe("root");
+		expect(serverReason({code: 50035, message: "Invalid Form Body", errors: node("root")})).toBe(
+			"root",
+		);
 	});
 
 	it("falls back to the message when a body nests past the walk", () => {
@@ -98,7 +100,9 @@ describe("rejectedProperty", () => {
 
 	it("takes only a string from a malformed body", () => {
 		for (const bad of [1, {}, null, ""]) {
-			expect(rejectedProperty([ajv("additionalProperties", {additionalProperty: bad})])).toBeUndefined();
+			expect(
+				rejectedProperty([ajv("additionalProperties", {additionalProperty: bad})]),
+			).toBeUndefined();
 		}
 		for (const list of ["x", {}, [null], ["x"], [{params: null}]]) {
 			expect(rejectedProperty(list)).toBeUndefined();

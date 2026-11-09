@@ -1,5 +1,11 @@
 import {expect} from "@playwright/test";
-import {MOCK_REQUIRED_MODAL, loginAndOpenChannel, openModalViaButton, pinShot, test} from "./fixtures";
+import {
+	MOCK_REQUIRED_MODAL,
+	loginAndOpenChannel,
+	openModalViaButton,
+	pinShot,
+	test,
+} from "./fixtures";
 
 // The validation half of the phone-form work: a bot's form checks its fields CLIENT-side
 // at real CSS before anything is sent (modal.ts submit(): every field's problem() lands
@@ -40,7 +46,9 @@ test("an empty submit is blocked with per-field errors and nothing sent", async 
 	// The required field's label carries the required marker; the optional one's does not.
 	const requiredLabel = page.locator('.interactionModalField:has([data-custom-id="must"]) > label');
 	await expect(requiredLabel).toHaveClass(/interactionModalRequired/);
-	const optionalLabel = page.locator('.interactionModalField:has([data-custom-id="window"]) > label');
+	const optionalLabel = page.locator(
+		'.interactionModalField:has([data-custom-id="window"]) > label',
+	);
 	await expect(optionalLabel).not.toHaveClass(/interactionModalRequired/);
 
 	// The error state's look, Deck-local baseline (DOM asserts lead; this pins the chrome).

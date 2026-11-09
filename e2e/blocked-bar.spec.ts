@@ -43,9 +43,12 @@ test("expanding the bar shows the run and holds the view at the tap point, then 
 	await bar.scrollIntoViewIfNeeded();
 	// The hold below is only meaningful from mid-channel: at the bottom, snapBottom would
 	// re-anchor and the in-view checks would pass for the wrong reason.
-	const atBottom = await page.locator("#scrollWrap .scroller").first().evaluate((el) => {
-		return el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
-	});
+	const atBottom = await page
+		.locator("#scrollWrap .scroller")
+		.first()
+		.evaluate((el) => {
+			return el.scrollTop + el.clientHeight >= el.scrollHeight - 4;
+		});
 	expect(atBottom, "the bar's tap starts mid-channel").toBe(false);
 
 	await bar.tap();

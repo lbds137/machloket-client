@@ -103,9 +103,9 @@ class I18n {
 		}
 	}
 	/** Intl's plural category for `numb` in the active language (CLDR rules, so e.g. Czech's
- * "few" is only 2-4 while Polish's reaches 22). The PluralRules object is cached per
- * language. Only consulted for blocks with three or more alternatives, and only for the
- * languages in CATEGORY_PLURAL_LANGS, whose blocks are written one|few|many. */
+	 * "few" is only 2-4 while Polish's reaches 22). The PluralRules object is cached per
+	 * language. Only consulted for blocks with three or more alternatives, and only for the
+	 * languages in CATEGORY_PLURAL_LANGS, whose blocks are written one|few|many. */
 	private static pluralRulesByLang = new Map<string, Intl.PluralRules>();
 	private static pluralClass(numb: number): string {
 		let rules = I18n.pluralRulesByLang.get(I18n.lang);

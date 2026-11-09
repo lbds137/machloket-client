@@ -88,9 +88,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		const filler: number[] = new Array(1_000_000).fill(97); // 'a'
 		const payload = [0, ...filler, 0];
 		const packed = await deflate(payload);
-		const blob = rawTag(3, [
-			{id: "TIT2", flag2: 0b10000000, body: [...plain4(4), ...packed]},
-		]);
+		const blob = rawTag(3, [{id: "TIT2", flag2: 0b10000000, body: [...plain4(4), ...packed]}]);
 		const title = await titleOf(blob);
 		// The real assertion is the short fallback: the payload is all 'a's, so any
 		// "not Zipped" check would be vacuous here.
@@ -126,10 +124,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 	it("a corrupt compressed stream loses its frame, not the whole tag", async () => {
 		const survivor = await compressedFrame("Survivor");
 		const title = await titleOf(
-			rawTag(3, [
-				{id: "TIT2", flag2: 0b10000000, body: [...plain4(64), 1, 2, 3, 4, 5]},
-				survivor,
-			]),
+			rawTag(3, [{id: "TIT2", flag2: 0b10000000, body: [...plain4(64), 1, 2, 3, 4, 5]}, survivor]),
 		);
 		expect(title).toBe("Survivor");
 	});
@@ -140,9 +135,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		const payload = [0, ...charCodes("Zipped"), 0];
 		const packed = await deflate(payload);
 		const title = await titleOf(
-			rawTag(3, [
-				{id: "TIT2", flag2: 0b10100000, body: [...plain4(payload.length), 7, ...packed]},
-			]),
+			rawTag(3, [{id: "TIT2", flag2: 0b10100000, body: [...plain4(payload.length), 7, ...packed]}]),
 		);
 		expect(title).toBe("Zipped");
 	});
@@ -200,10 +193,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 		const bomb = async () => ({
 			id: "TIT2",
 			flag2: 0b10000000,
-			body: [
-				...plain4(6 * 1024 * 1024),
-				...(await deflate(new Array(6_500_000).fill(97))),
-			],
+			body: [...plain4(6 * 1024 * 1024), ...(await deflate(new Array(6_500_000).fill(97)))],
 		});
 		const inflate = vi.spyOn(globalThis, "DecompressionStream");
 		const title = await titleOf(rawTag(3, [await bomb(), await bomb()]));
@@ -213,9 +203,7 @@ describe("AUDIT (backlog #11): compressed ID3 frames", () => {
 
 	it("a plain frame claiming more than the tag holds stops the parse without losing earlier frames", async () => {
 		const overlong = {id: "TXXX", flag2: 0, body: [1, 2, 3], sizeOverride: 0xffffffff};
-		const title = await titleOf(
-			rawTag(3, [await compressedFrame("Zipped"), overlong]),
-		);
+		const title = await titleOf(rawTag(3, [await compressedFrame("Zipped"), overlong]));
 		expect(title).toBe("Zipped");
 	});
 

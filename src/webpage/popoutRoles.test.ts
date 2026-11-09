@@ -33,7 +33,11 @@ async function openPopout(
 ) {
 	const {Localuser} = await import("./localuser");
 	const localuser = Object.assign(Object.create(Localuser.prototype), {
-		info: {api: "http://popout.test/api/v9", cdn: "http://popout.test", wellknown: "http://popout.test"},
+		info: {
+			api: "http://popout.test/api/v9",
+			cdn: "http://popout.test",
+			wellknown: "http://popout.test",
+		},
 		headers: {},
 		user: {id: "me-1"},
 		userMap: new Map(),
@@ -115,9 +119,7 @@ it("the + chip offers manageable roles and picking one adds it", async () => {
 	const pagans = role("r2", "Pagans", true);
 	const addRole = vi.fn().mockResolvedValue(true);
 	const popout = await openPopout([], true, {addRole});
-	await vi.waitFor(() =>
-		expect(popout.querySelector(".addrole")).not.toBeNull(),
-	);
+	await vi.waitFor(() => expect(popout.querySelector(".addrole")).not.toBeNull());
 	const find = vi.spyOn(Search.prototype, "find").mockResolvedValue(pagans);
 	popout.querySelector<HTMLButtonElement>(".addrole")!.click();
 	await vi.waitFor(() => expect(addRole).toHaveBeenCalledWith(pagans));
@@ -156,9 +158,7 @@ it("a member bio renders its role mention against the popout's guild", async () 
 
 it("removing a role, the DELETE answering 204: its chip leaves the box", async () => {
 	const knights = role("r1", "Knights", true);
-	const fetch = vi
-		.spyOn(globalThis, "fetch")
-		.mockResolvedValue(new Response(null, {status: 204}));
+	const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, {status: 204}));
 	const popout = await openPopout([knights], true);
 	await vi.waitFor(() => expect(roleChips(popout)).toHaveLength(1));
 	popout.querySelector<HTMLButtonElement>(".removerole")!.click();
@@ -173,9 +173,7 @@ it("removing a role, the DELETE answering 204: its chip leaves the box", async (
 
 it("adding a role, the PUT answering 204: its chip appears before the +", async () => {
 	const pagans = role("r2", "Pagans", true);
-	const fetch = vi
-		.spyOn(globalThis, "fetch")
-		.mockResolvedValue(new Response(null, {status: 204}));
+	const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, {status: 204}));
 	const popout = await openPopout([], true);
 	const add = await vi.waitFor(() => {
 		const btn = popout.querySelector<HTMLButtonElement>(".addrole");
@@ -205,17 +203,13 @@ it("a refused DELETE keeps the chip; a refused PUT adds none", async () => {
 	await vi.waitFor(() => expect(roleChips(popout)).toHaveLength(1));
 
 	popout.querySelector<HTMLButtonElement>(".removerole")!.click();
-	await vi.waitFor(() =>
-		expect(document.querySelector(".dialogModal")).not.toBeNull(),
-	);
+	await vi.waitFor(() => expect(document.querySelector(".dialogModal")).not.toBeNull());
 	expect(roleChips(popout)).toHaveLength(1);
 	document.querySelectorAll(".background").forEach((e) => e.remove());
 
 	vi.spyOn(Search.prototype, "find").mockResolvedValue(pagans);
 	popout.querySelector<HTMLButtonElement>(".addrole")!.click();
-	await vi.waitFor(() =>
-		expect(document.querySelector(".dialogModal")).not.toBeNull(),
-	);
+	await vi.waitFor(() => expect(document.querySelector(".dialogModal")).not.toBeNull());
 	expect(fetch).toHaveBeenCalledTimes(2);
 	expect(roleChips(popout)).toHaveLength(1);
 });

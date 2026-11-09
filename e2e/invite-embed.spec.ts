@@ -62,7 +62,11 @@ test("an invite to another instance contacts it only after a tap", async ({page}
 			return route.fulfill({
 				json: {
 					api: {baseUrl: OTHER_ORIGIN, apiVersions: {default: "9"}},
-					gateway: {baseUrl: `wss://${OTHER_HOST}`, encoding: ["json"], compression: ["zlib-stream"]},
+					gateway: {
+						baseUrl: `wss://${OTHER_HOST}`,
+						encoding: ["json"],
+						compression: ["zlib-stream"],
+					},
 					cdn: {baseUrl: OTHER_ORIGIN},
 				},
 			});

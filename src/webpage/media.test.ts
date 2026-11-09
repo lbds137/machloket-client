@@ -5,8 +5,7 @@ import {afterEach, expect, it, vi} from "vitest";
 await import("./localuser");
 const {makePlayBox, MediaPlayer} = await import("./media");
 
-const WAV =
-	"data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
+const WAV = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=";
 
 afterEach(() => {
 	vi.restoreAllMocks();
@@ -25,7 +24,12 @@ function playerOf() {
 }
 
 const charCodes = (s: string) => [...s].map((c) => c.charCodeAt(0));
-const synchsafe = (n: number) => [((n >> 21) & 0x7f) | 0, ((n >> 14) & 0x7f) | 0, ((n >> 7) & 0x7f) | 0, n & 0x7f];
+const synchsafe = (n: number) => [
+	((n >> 21) & 0x7f) | 0,
+	((n >> 14) & 0x7f) | 0,
+	((n >> 7) & 0x7f) | 0,
+	n & 0x7f,
+];
 
 /** A minimal ID3v2.4 tag (version 4.0, no flags, synchsafe sizes, no padding): enough for
  * IdentifyFile, which returns the parsed metadata even without a decodable audio body. */
@@ -49,7 +53,9 @@ async function identify(blob: Blob) {
 
 it("a v2.4 multi-value text frame shows all its values", async () => {
 	// Encoding 3 (UTF-8), then two NUL-separated values: "A", "B".
-	const med = await identify(id3v24([{id: "TPE1", payload: [3, ...charCodes("A"), 0, ...charCodes("B")]}]));
+	const med = await identify(
+		id3v24([{id: "TPE1", payload: [3, ...charCodes("A"), 0, ...charCodes("B")]}]),
+	);
 
 	expect(med?.artist).toBe("A / B");
 });

@@ -9,7 +9,10 @@ const {Dialog, FormError} = await import("./settings");
 const URL_ = "http://form.test/thing";
 
 function json(body: unknown, status = 200) {
-	return new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json"}});
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: {"Content-Type": "application/json"},
+	});
 }
 
 /** A form posting to URL_ whose onSubmit records what it got. */
@@ -52,7 +55,10 @@ describe("form submit", () => {
 	});
 
 	it("a body that isn't JSON (a proxy's 502 page) fails cleanly and the form can be sent again", async () => {
-		const sent = captureRequests(URL_, () => new Response("<html>bad gateway</html>", {status: 502}));
+		const sent = captureRequests(
+			URL_,
+			() => new Response("<html>bad gateway</html>", {status: 502}),
+		);
 		const {form, calls} = postingForm();
 
 		await form.submit();
@@ -141,7 +147,14 @@ describe("form submit", () => {
 
 	it("a field error the server names is placed on that field, and the form hears of it", async () => {
 		captureRequests(URL_, () =>
-			json({code: 50035, message: "Invalid Form Body", errors: {name: {_errors: [{message: "Too short"}]}}}, 400),
+			json(
+				{
+					code: 50035,
+					message: "Invalid Form Body",
+					errors: {name: {_errors: [{message: "Too short"}]}},
+				},
+				400,
+			),
 		);
 		const dialog = new Dialog("");
 		const form = dialog.options.addForm("", () => {}, {fetchURL: URL_, method: "POST"});
@@ -267,7 +280,13 @@ describe("a form the server rate-limits", () => {
 
 	// RED: at HEAD the 429 is final: onSubmit never runs and the form posted once.
 	it("a 429 waits its window, posts again once, and the success lands", async () => {
-		const sent = captureRequests(URL_, inTurn(() => limited(), () => json({token: "t"})));
+		const sent = captureRequests(
+			URL_,
+			inTurn(
+				() => limited(),
+				() => json({token: "t"}),
+			),
+		);
 		const {form, calls} = postingForm();
 
 		await form.submit();
@@ -296,17 +315,24 @@ describe("a form the server rate-limits", () => {
 		captureRequests(api + "/auth/login", () =>
 			json({
 				ticket: "tk",
-				webauthn: JSON.stringify({publicKey: {challenge: "abc=", allowCredentials: [{id: "id=", type: "public-key"}]}}),
+				webauthn: JSON.stringify({
+					publicKey: {challenge: "abc=", allowCredentials: [{id: "id=", type: "public-key"}]},
+				}),
 			}),
 		);
 		const probes = captureRequests(
 			api + "/auth/mfa/webauthn",
-			inTurn(() => limited(), () => json({token: "t"})),
+			inTurn(
+				() => limited(),
+				() => json({token: "t"}),
+			),
 		);
 		// A signed assertion, without a key to touch.
 		// (Not vi.stubGlobal: its unstub would take the suite's fetch stub with it.)
 		const realKey = globalThis.PublicKeyCredential;
-		Object.assign(globalThis, {PublicKeyCredential: {parseRequestOptionsFromJSON: (options: unknown) => options}});
+		Object.assign(globalThis, {
+			PublicKeyCredential: {parseRequestOptionsFromJSON: (options: unknown) => options},
+		});
 		const buffer = () => new Uint8Array([1, 2]).buffer;
 		const getKey = vi.spyOn(navigator.credentials, "get").mockResolvedValue({
 			rawId: buffer(),

@@ -1,11 +1,5 @@
 import {expect, type Page} from "@playwright/test";
-import {
-	DESKTOP,
-	joinOtherServer,
-	loginAndOpenChannel,
-	OTHER_GUILD_ID,
-	test,
-} from "./fixtures";
+import {DESKTOP, joinOtherServer, loginAndOpenChannel, OTHER_GUILD_ID, test} from "./fixtures";
 
 // The in-app joins (the pillar "+" dialog, an invite embed's Accept) open the guild like the
 // invite page's fresh boot does: the sidebar switches AND a channel of the new guild opens.

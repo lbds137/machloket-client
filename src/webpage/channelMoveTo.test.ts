@@ -121,7 +121,9 @@ describe("the channel menu's Move to… row", () => {
 		const c = wire(g, chan("c1", 0, cat1, g));
 		// The success redraw swaps #channels from the model, like snapshotLayout's restore.
 		g.localuser.lookingguild = g;
-		g.buildChannelList = vi.fn(() => Object.assign(document.createElement("div"), {className: "rebuilt"}));
+		g.buildChannelList = vi.fn(() =>
+			Object.assign(document.createElement("div"), {className: "rebuilt"}),
+		);
 		const holder = document.createElement("div");
 		holder.id = "channels";
 		document.body.append(holder);

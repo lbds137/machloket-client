@@ -25,7 +25,9 @@ describe("another user's avatar change", () => {
 		pfp.classList.add("userid:u1");
 		document.body.append(pfp);
 		try {
-			user.userupdate({id: "u1", username: "alice", avatar: "new"} as Parameters<typeof user.userupdate>[0]);
+			user.userupdate({id: "u1", username: "alice", avatar: "new"} as Parameters<
+				typeof user.userupdate
+			>[0]);
 
 			expect(pfp.srcs).toBe("https://cdn.test/avatars/u1/new.png");
 		} finally {

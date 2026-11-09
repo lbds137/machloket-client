@@ -24,7 +24,9 @@ test("a sent message empties the composer and takes the send button with it", as
 	await expect(composer).toHaveClass(/noConent/);
 });
 
-test("the same text typed again right after a tap-send still shows the send button", async ({page}) => {
+test("the same text typed again right after a tap-send still shows the send button", async ({
+	page,
+}) => {
 	await loginAndOpenChannel(page);
 	const composer = page.locator(".outerTypeBox");
 	const typebox = page.locator("#typebox");
@@ -41,7 +43,9 @@ test("the same text typed again right after a tap-send still shows the send butt
 	await expect(composer).not.toHaveClass(/noConent/);
 });
 
-test("a too-long message's refusal is spelled out in a notice above the composer", async ({page}) => {
+test("a too-long message's refusal is spelled out in a notice above the composer", async ({
+	page,
+}) => {
 	await loginAndOpenChannel(page);
 	await page.route("**/api/v9/channels/*/messages", async (route) => {
 		if (route.request().method() !== "POST") return route.fallback();

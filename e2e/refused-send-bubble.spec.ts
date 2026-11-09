@@ -116,7 +116,9 @@ test("a send the gateway already delivered gets no failed bubble when its reques
 			nonce,
 		},
 	});
-	await expect(page.locator(".messagediv:not(.loadingMessage)", {hasText: "first message"})).toHaveCount(1);
+	await expect(
+		page.locator(".messagediv:not(.loadingMessage)", {hasText: "first message"}),
+	).toHaveCount(1);
 	// The failure must be known to the page before the drain: requestfailed fires from
 	// the browser's network stack, the same signal the XHR's error event is
 	// generated from; the drain's frames then wait out the rejection's continuation

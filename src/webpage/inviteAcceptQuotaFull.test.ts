@@ -87,7 +87,9 @@ it("a full localStorage doesn't stop the landing: the account is already stored,
 	await vi.waitFor(() => expect(document.getElementById("invitename")?.textContent).toBe("Guild"));
 
 	document.getElementById("AcceptInvite")!.click();
-	await vi.waitFor(() => expect(document.querySelector(".accountSwitcher .switchtable")).not.toBeNull());
+	await vi.waitFor(() =>
+		expect(document.querySelector(".accountSwitcher .switchtable")).not.toBeNull(),
+	);
 	(document.querySelector(".accountSwitcher .switchtable") as HTMLElement).click();
 	await vi.waitFor(() => expect(posts).toHaveLength(1));
 	// unhandledrejection fires a task after the rejection: wait past it before reading.

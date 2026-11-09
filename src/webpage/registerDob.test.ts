@@ -60,11 +60,14 @@ it("an instance whose config rules the DOB out hides the field (it stays re-show
 	makeRegister(false, "", () => {});
 	await pickInstance("http://nodob.test");
 
-	await vi.waitUntil(() => {
-		const input = dobInput();
-		// Hidden, not removed: switching instances must be able to bring it back.
-		return input !== undefined && !input.checkVisibility();
-	}, {timeout: 2000});
+	await vi.waitUntil(
+		() => {
+			const input = dobInput();
+			// Hidden, not removed: switching instances must be able to bring it back.
+			return input !== undefined && !input.checkVisibility();
+		},
+		{timeout: 2000},
+	);
 });
 
 it("an instance whose config rules the DOB out drops it from the register payload", async () => {
@@ -78,10 +81,13 @@ it("an instance whose config rules the DOB out drops it from the register payloa
 	makeRegister(false, "", () => {});
 	await pickInstance("http://nodob2.test");
 	// The hide must win the race with the submit: it gates what the payload carries.
-	await vi.waitUntil(() => {
-		const input = dobInput();
-		return input !== undefined && !input.checkVisibility();
-	}, {timeout: 2000});
+	await vi.waitUntil(
+		() => {
+			const input = dobInput();
+			return input !== undefined && !input.checkVisibility();
+		},
+		{timeout: 2000},
+	);
 
 	await fillAndSubmit();
 	await vi.waitUntil(() => register.length > 0, {timeout: 2000});
@@ -139,9 +145,7 @@ it("the server's date_of_birth field error shows on the field", async () => {
 
 	await fillAndSubmit();
 	await vi.waitUntil(() => newest<HTMLElement>(".suberror") !== undefined, {timeout: 2000});
-	expect(newest<HTMLElement>(".suberror")!.textContent).toBe(
-		"You must be at least 13 years old",
-	);
+	expect(newest<HTMLElement>(".suberror")!.textContent).toBe("You must be at least 13 years old");
 });
 
 it("an instance without the config endpoint keeps today's shown field in the payload", async () => {
@@ -174,10 +178,13 @@ it("switching from a no-DOB instance to a DOB one re-gates the field", async () 
 	});
 	makeRegister(false, "", () => {});
 	await pickInstance("http://switchnodob.test");
-	await vi.waitUntil(() => {
-		const input = dobInput();
-		return input !== undefined && !input.checkVisibility();
-	}, {timeout: 2000});
+	await vi.waitUntil(
+		() => {
+			const input = dobInput();
+			return input !== undefined && !input.checkVisibility();
+		},
+		{timeout: 2000},
+	);
 
 	await pickInstance("http://switchdob.test");
 	await vi.waitUntil(() => dobInput()?.checkVisibility() === true, {timeout: 2000});

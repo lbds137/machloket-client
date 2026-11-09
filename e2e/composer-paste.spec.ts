@@ -76,7 +76,9 @@ test("a message copied in the page pastes into the composer with its mention and
 
 	// The browser's own clipboard text has labels where the syntax was: that is the premise.
 	const readClipboard = () => page.evaluate(() => navigator.clipboard.readText());
-	await expect.poll(readClipboard, "the clipboard holds what the page showed").toContain("@HelperBot");
+	await expect
+		.poll(readClipboard, "the clipboard holds what the page showed")
+		.toContain("@HelperBot");
 	expect(await readClipboard()).not.toContain(`<@${MOCK_BOT_USER_ID}>`);
 
 	const typebox = page.locator("#typebox");

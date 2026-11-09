@@ -27,9 +27,9 @@ test("a server opened before its member arrives opens its channel once the membe
 	mockInstance.releaseMembers();
 
 	await expect(page.locator("#channelname")).toHaveText("#elsewhere");
-	await expect(
-		page.locator("#channels button.channelbutton", {hasText: "elsewhere"}),
-	).toHaveCount(1);
+	await expect(page.locator("#channels button.channelbutton", {hasText: "elsewhere"})).toHaveCount(
+		1,
+	);
 });
 
 test("a server left before its member arrives doesn't pull the user back when it does", async ({

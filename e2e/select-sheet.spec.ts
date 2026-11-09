@@ -61,10 +61,7 @@ async function openSheet(page: import("@playwright/test").Page): Promise<void> {
 	await expect(page.locator(SHEET)).toBeVisible();
 }
 
-test("tapping the select box opens the sheet without focusing it", async ({
-	page,
-	mockInstance,
-}) => {
+test("tapping the select box opens the sheet without focusing it", async ({page, mockInstance}) => {
 	await openChannelWithSelect(page);
 	await openSheet(page);
 
@@ -77,7 +74,10 @@ test("tapping the select box opens the sheet without focusing it", async ({
 	// chrome/look). Determinism comes from the config's toHaveScreenshot defaults
 	// (animations fast-forwarded, caret hidden). The sheet alone: the backdrop shows the
 	// chat through it, and a list still settling moved those pixels. Its dim is asserted.
-	await expect(page.locator(".selectSheetBackdrop")).toHaveCSS("background-color", "color(srgb 0 0 0 / 0.75)");
+	await expect(page.locator(".selectSheetBackdrop")).toHaveCSS(
+		"background-color",
+		"color(srgb 0 0 0 / 0.75)",
+	);
 	await pinShot(page.locator(SHEET), "sheet-open.png");
 
 	// The mock saw no interaction before any sheet action.

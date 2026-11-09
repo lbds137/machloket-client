@@ -178,9 +178,7 @@ it("a refused welcome-screen GET in guild settings says why and keeps the onboar
 		.find((b) => b.textContent === I18n.onboarding.name())!
 		.click();
 
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 	expect(g.welcomeScreen).toBeUndefined();
 	expect(removeAll).not.toHaveBeenCalled();
 	expect(shown).not.toHaveBeenCalled();
@@ -205,9 +203,7 @@ it("both connection legs refused say why once", async () => {
 	captureRequests(API + "/connections", refused);
 	await openConnections();
 
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 	expect(document.body.textContent!.split(I18n.requestFailed("boom")).length - 1).toBe(1);
 	expect(shown).not.toHaveBeenCalled();
 });
@@ -217,9 +213,7 @@ it("a connections 200 of the wrong shape says the server's reason", async () => 
 	captureRequests(API + "/users/@me/connections", () => Response.json({message: "capped"}));
 	await openConnections();
 
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("capped")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("capped")));
 });
 
 it("a connections list with a null entry still lists the instance's types", async () => {
@@ -314,9 +308,7 @@ it("a later good connections answer clears the note", async () => {
 	stubUserSettings();
 	captureRequests(API + "/users/@me/connections", refused);
 	const u = await openConnections();
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 
 	let reread = false;
 	captureRequests(API + "/users/@me/connections", () => {
@@ -341,9 +333,7 @@ it("an older connections read arriving late doesn't draw its rows twice", async 
 	let reads = 0;
 	captureRequests(API + "/users/@me/connections", () => {
 		++reads;
-		return reads === 1
-			? new Promise<Response>((r) => (answerFirst = r))
-			: Response.json([]);
+		return reads === 1 ? new Promise<Response>((r) => (answerFirst = r)) : Response.json([]);
 	});
 	const u = await openConnections();
 	await vi.waitFor(() => expect(reads).toBe(1));
@@ -434,9 +424,7 @@ it("a refused instance-policy GET says why", async () => {
 		.find((b) => b.textContent === I18n.instanceInfo.name())!
 		.click();
 
-	await vi.waitFor(() =>
-		expect(document.body.textContent).toContain(I18n.requestFailed("boom")),
-	);
+	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 	expect(shown).not.toHaveBeenCalled();
 });
 
@@ -761,9 +749,9 @@ async function createAppTeamOptions() {
 	});
 	create.click();
 	return vi.waitFor(() => {
-		const options = [
-			...document.querySelectorAll(".settingsHTMLArea select option"),
-		].map((o) => o.textContent);
+		const options = [...document.querySelectorAll(".settingsHTMLArea select option")].map(
+			(o) => o.textContent,
+		);
 		expect(options.length).toBeGreaterThan(0);
 		return options;
 	});

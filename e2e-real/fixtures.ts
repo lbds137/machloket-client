@@ -511,7 +511,9 @@ export async function answerInteraction(interaction: BotInteraction, body: unkno
 		},
 	);
 	if (!res.ok) {
-		throw new Error(`callback ${JSON.stringify(body)}: ${res.status} ${(await res.text()).slice(0, 300)}`);
+		throw new Error(
+			`callback ${JSON.stringify(body)}: ${res.status} ${(await res.text()).slice(0, 300)}`,
+		);
 	}
 }
 

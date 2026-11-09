@@ -22,5 +22,11 @@
 		"types": ["node"],
 		"useDefineForClassFields": true
 	},
-	"include": ["e2e/**/*.ts", "e2e-real/**/*.ts", "playwright.config.ts", "playwright.real.config.ts", "src/**/*.ts"]
+	"include": [
+		"e2e/**/*.ts",
+		"e2e-real/**/*.ts",
+		"playwright.config.ts",
+		"playwright.real.config.ts",
+		"src/**/*.ts"
+	]
 }

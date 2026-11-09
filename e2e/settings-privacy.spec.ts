@@ -22,10 +22,7 @@ async function openPrivacyCard(page: Page) {
 	return card;
 }
 
-test("the nav shows each section header with its leaves in order", async ({
-	page,
-	mockInstance,
-}) => {
+test("the nav shows each section header with its leaves in order", async ({page, mockInstance}) => {
 	void mockInstance;
 	await openSettings(page);
 

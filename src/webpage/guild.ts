@@ -503,9 +503,12 @@ class Guild extends SnowFlake {
 							return false;
 						})
 						.map(async (_) => {
-							const res = await fetch(`${this.info.api}/guilds/${this.id}/roles/${_.id}/member-ids`, {
-								headers: this.headers,
-							}).catch(() => undefined);
+							const res = await fetch(
+								`${this.info.api}/guilds/${this.id}/roles/${_.id}/member-ids`,
+								{
+									headers: this.headers,
+								},
+							).catch(() => undefined);
 							const list = res?.ok
 								? ((await res
 										.clone()
@@ -945,7 +948,8 @@ class Guild extends SnowFlake {
 				const reason = opt.addTextInput(I18n.member["reason:"](), () => {});
 				opt.addTextInput(I18n.guild.idSel(), async (id) => {
 					const headers = structuredClone(this.headers);
-					if (reason.value) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason.value);
+					if (reason.value)
+						(headers as any)["x-audit-log-reason"] = encodeURIComponent(reason.value);
 					const ret = await fetch(`${this.info.api}/guilds/${this.id}/bans/${id}`, {
 						method: "PUT",
 						headers,
@@ -1288,10 +1292,13 @@ class Guild extends SnowFlake {
 							const options = diaolog.options.addOptions("", {ltr: true});
 							options.addButtonInput("", I18n.yes(), async () => {
 								diaolog.hide();
-								const res = await fetch(`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`, {
-									method: "DELETE",
-									headers: this.headers,
-								}).catch(() => undefined);
+								const res = await fetch(
+									`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`,
+									{
+										method: "DELETE",
+										headers: this.headers,
+									},
+								).catch(() => undefined);
 								if (!res?.ok) {
 									await showRefusal(res);
 								}
@@ -1880,10 +1887,16 @@ class Guild extends SnowFlake {
 			...properties
 		} = json as extendedProperties & Record<string, unknown>;
 		for (const [key, value] of Object.entries(properties)) {
-			if (assignableKey(this.properties, key)) (this.properties as Record<string, unknown>)[key] = value;
+			if (assignableKey(this.properties, key))
+				(this.properties as Record<string, unknown>)[key] = value;
 		}
 		// Spacebar sends an unset channel as an absent key, not null.
-		for (const key of ["afk_channel_id", "system_channel_id", "rules_channel_id", "public_updates_channel_id"]) {
+		for (const key of [
+			"afk_channel_id",
+			"system_channel_id",
+			"rules_channel_id",
+			"public_updates_channel_id",
+		]) {
 			if (!(key in json)) (this.properties as Record<string, unknown>)[key] = null;
 		}
 		if (iconChanged && this.HTMLicon) {
@@ -1933,9 +1946,8 @@ class Guild extends SnowFlake {
 		// looks at them. The fetch failure settles resolved with the member unset (the pick
 		// then parks in noChannel, as before this field existed) — a rejection here would throw
 		// out of its callers.
-		this.memberReady = (member instanceof User
-			? Member.resolveMember(member, this)
-			: Member.new(member, this)
+		this.memberReady = (
+			member instanceof User ? Member.resolveMember(member, this) : Member.new(member, this)
 		)
 			.then((_) => {
 				if (!_) {
@@ -2906,8 +2918,10 @@ class Guild extends SnowFlake {
 		if (verdict !== null) return verdict;
 		// "0" — any numeric string worth 0n, the server's rule too — is Discord's admins-only;
 		// null, absent or empty means everyone. Unparseable fails closed instead of crashing the list.
-		if (raw.default_member_permissions && !/^\d+$/.test(raw.default_member_permissions)) return false;
-		if (raw.default_member_permissions && BigInt(raw.default_member_permissions) === 0n) return false;
+		if (raw.default_member_permissions && !/^\d+$/.test(raw.default_member_permissions))
+			return false;
+		if (raw.default_member_permissions && BigInt(raw.default_member_permissions) === 0n)
+			return false;
 		const mask = BigInt(raw.default_member_permissions || "0");
 		return (memberBits & mask) === mask;
 	}

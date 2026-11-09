@@ -34,17 +34,27 @@ describe("commandAllowedFor pure table (2026-10-16 ruling)", () => {
 		expect(commandAllowedFor({roles: {r: false}}, undefined, new Set(["r"]))).toBe(false);
 	});
 	it("user:false + roles[mod]:true -> true (allow-wins WITHIN the guild tier — the flagship mods-only config)", () => {
-		expect(commandAllowedFor({user: false, roles: {mod: true}}, undefined, new Set(["mod"]))).toBe(true);
-		expect(commandAllowedFor({user: false, roles: {mod: true}}, undefined, new Set(["other"]))).toBe(false);
+		expect(commandAllowedFor({user: false, roles: {mod: true}}, undefined, new Set(["mod"]))).toBe(
+			true,
+		);
+		expect(
+			commandAllowedFor({user: false, roles: {mod: true}}, undefined, new Set(["other"])),
+		).toBe(false);
 	});
 	it("user:true + roles[x]:false -> true", () => {
-		expect(commandAllowedFor({user: true, roles: {x: false}}, undefined, new Set(["x"]))).toBe(true);
+		expect(commandAllowedFor({user: true, roles: {x: false}}, undefined, new Set(["x"]))).toBe(
+			true,
+		);
 	});
 	it("roles[a]:false + roles[b]:true -> true regardless of iteration order", () => {
-		expect(commandAllowedFor({roles: {a: false, b: true}}, undefined, new Set(["a", "b"]))).toBe(true);
+		expect(commandAllowedFor({roles: {a: false, b: true}}, undefined, new Set(["a", "b"]))).toBe(
+			true,
+		);
 	});
 	it("channels[c]:false + roles[mod]:true -> false (channel tier outranks guild tier)", () => {
-		expect(commandAllowedFor({channels: {c: false}, roles: {mod: true}}, "c", new Set(["mod"]))).toBe(false);
+		expect(
+			commandAllowedFor({channels: {c: false}, roles: {mod: true}}, "c", new Set(["mod"])),
+		).toBe(false);
 	});
 	it("{} -> null", () => {
 		expect(commandAllowedFor({}, "c", new Set(["r"]))).toBeNull();

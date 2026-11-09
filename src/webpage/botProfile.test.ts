@@ -125,8 +125,9 @@ it("the catalog card says the match is by name", async () => {
 	}) as InstanceType<typeof User>;
 	const body = document.createElement("div");
 
-	await (bot as unknown as {appendExplorerBotInfo(b: HTMLElement): Promise<void>})
-		.appendExplorerBotInfo(body);
+	await (
+		bot as unknown as {appendExplorerBotInfo(b: HTMLElement): Promise<void>}
+	).appendExplorerBotInfo(body);
 
 	const title = body.querySelector("h4")!;
 	expect(title.textContent).toBe("A catalog bot with this name");

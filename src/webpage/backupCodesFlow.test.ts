@@ -558,7 +558,9 @@ describe("view backup codes from the security grid", () => {
 					{
 						code: 50035,
 						message: "Invalid Form Body",
-						errors: {nonce: {_errors: [{code: "INVALID_NONCE", message: "Invalid or expired nonce"}]}},
+						errors: {
+							nonce: {_errors: [{code: "INVALID_NONCE", message: "Invalid or expired nonce"}]},
+						},
 					},
 					{status: 400},
 				);

@@ -396,9 +396,7 @@ class Embed {
 				const res = await fetch(info.api + "/invites/" + json1.code).catch(() => undefined);
 				// Whatever stops the preview (a refusal, no answer, a page that isn't the invite's
 				// JSON) gives way to the plain link, as a refused invite always has.
-				const loaded = res?.ok
-					? ((await res.json().catch(() => null)) as invitejson | null)
-					: null;
+				const loaded = res?.ok ? ((await res.json().catch(() => null)) as invitejson | null) : null;
 				if (!loaded?.guild || !loaded.channel) {
 					div.classList.remove("embed", "inviteEmbed", "flexttb");
 					div.append(this.generateLink());
@@ -461,35 +459,32 @@ class Embed {
 			button.onclick = (_) => {
 				if (this.localuser.info.api.startsWith(info.api)) {
 					button.disabled = true;
-					acceptInvite(
-						this.localuser.info.api,
-						json.code,
-						this.localuser.headers.Authorization,
-					).then(
-						(result) => {
-							// The accept and the already-member refusal both land in the guild; a real refusal alerts.
-							if (result.ok) {
-								this.localuser.openJoinedGuild(guild.id);
-							} else {
+					acceptInvite(this.localuser.info.api, json.code, this.localuser.headers.Authorization)
+						.then(
+							(result) => {
+								// The accept and the already-member refusal both land in the guild; a real refusal alerts.
+								if (result.ok) {
+									this.localuser.openJoinedGuild(guild.id);
+								} else {
+									button.disabled = false;
+									alert(result.message);
+								}
+							},
+							(err) => {
 								button.disabled = false;
-								alert(result.message);
-							}
-						},
-						(err) => {
+								console.error(err);
+								alert(I18n.requestFailed("offline"));
+							},
+						)
+						// A throw while landing is not the request's failure: the join went through,
+						// so the "offline" alert above stays the request's alone. The button comes back
+						// (a retry lands as already-member), the error is logged, not left unhandled,
+						// and the user is told the join worked and how to get there.
+						.catch((err: unknown) => {
 							button.disabled = false;
 							console.error(err);
-							alert(I18n.requestFailed("offline"));
-						},
-					)
-					// A throw while landing is not the request's failure: the join went through,
-					// so the "offline" alert above stays the request's alone. The button comes back
-					// (a retry lands as already-member), the error is logged, not left unhandled,
-					// and the user is told the join worked and how to get there.
-					.catch((err: unknown) => {
-						button.disabled = false;
-						console.error(err);
-						alert(I18n.invite.joinedNotOpened());
-					});
+							alert(I18n.invite.joinedNotOpened());
+						});
 				} else {
 					if (this.json.invite) {
 						const params = new URLSearchParams("");
@@ -527,7 +522,9 @@ class Embed {
 	}
 	private isOwnInstance(url: string) {
 		const own = this.localuser?.info?.wellknown;
-		return URL.canParse(url) && !!own && URL.canParse(own) && new URL(url).origin === new URL(own).origin;
+		return (
+			URL.canParse(url) && !!own && URL.canParse(own) && new URL(url).origin === new URL(own).origin
+		);
 	}
 	generateArticle() {
 		const colordiv = document.createElement("div");

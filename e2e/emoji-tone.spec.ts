@@ -21,7 +21,9 @@ test("header tone selector applies tone modifier to flagged cells and leaves unf
 
 	await picker.locator(".emojirow .emojiSelect", {hasText: "👋"}).click();
 	const flaggedCell = picker.locator(".emojiBody .emojiSelect:has(.emojiToneBadge)").first();
-	const unflaggedCell = picker.locator(".emojiBody .emojiSelect:not(:has(.emojiToneBadge))").first();
+	const unflaggedCell = picker
+		.locator(".emojiBody .emojiSelect:not(:has(.emojiToneBadge))")
+		.first();
 	await expect(flaggedCell).toHaveText("👋");
 	const unflaggedText = (await unflaggedCell.textContent()) ?? "";
 	expect(unflaggedText.length).toBeGreaterThan(0);

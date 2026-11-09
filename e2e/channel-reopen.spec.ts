@@ -90,7 +90,9 @@ test.describe("on desktop", () => {
 
 			await loginAndOpenChannel(page);
 			await expect(page.locator("#loadingdiv")).toHaveClass(/loading/);
-			await page.locator("#channels button.channelbutton", {hasText: MOCK_FORUM_CHANNEL.name}).click();
+			await page
+				.locator("#channels button.channelbutton", {hasText: MOCK_FORUM_CHANNEL.name})
+				.click();
 
 			await expect(page.locator(".forumSearch")).toBeVisible();
 			await expect(page.locator("#loadingdiv")).not.toHaveClass(/loading/);

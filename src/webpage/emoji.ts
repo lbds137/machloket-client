@@ -464,10 +464,7 @@ class Emoji {
 					if (!raw) continue;
 					const canTone = Boolean(raw.skin_tone_support) && !isDualToneEmoji(raw.emoji);
 					if (!canTone) return result;
-					return new Emoji(
-						{name: raw.name, emoji: applySkinTone(raw.emoji, tone)},
-						localuser,
-					);
+					return new Emoji({name: raw.name, emoji: applySkinTone(raw.emoji, tone)}, localuser);
 				}
 				return result;
 			};
@@ -667,12 +664,7 @@ class Emoji {
 							e.preventDefault();
 							e.stopPropagation();
 							openTonePopup(e, raw.emoji, defaultTone, (tone) => {
-								pick(
-									new Emoji(
-										{name: raw.name, emoji: applySkinTone(raw.emoji, tone)},
-										localuser,
-									),
-								);
+								pick(new Emoji({name: raw.name, emoji: applySkinTone(raw.emoji, tone)}, localuser));
 							});
 						});
 						emoji.append(badge);

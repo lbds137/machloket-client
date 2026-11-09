@@ -101,7 +101,7 @@ describe("component spoilers", () => {
 		plain.remove();
 	});
 
-	it("spoilered container has tabindex=\"0\", role=\"button\", and spoiler aria-label", () => {
+	it('spoilered container has tabindex="0", role="button", and spoiler aria-label', () => {
 		const spoiled = renderComponent({
 			type: MessageComponentType.Container,
 			spoiler: true,
