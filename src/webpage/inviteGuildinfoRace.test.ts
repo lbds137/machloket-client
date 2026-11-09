@@ -90,7 +90,9 @@ async function acceptAsAnn() {
 	sessionStorage.removeItem("currentuser");
 	document.getElementById("AcceptInvite")!.click();
 	// The account switcher opens: pick the account (its row resolves the switcher).
-	await vi.waitFor(() => expect(document.querySelector(".accountSwitcher .switchtable")).not.toBeNull());
+	await vi.waitFor(() =>
+		expect(document.querySelector(".accountSwitcher .switchtable")).not.toBeNull(),
+	);
 	(document.querySelector(".accountSwitcher .switchtable") as HTMLElement).click();
 }
 

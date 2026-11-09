@@ -28,7 +28,9 @@ describe("unmuting a channel", () => {
 		channel.unmuteChannel();
 
 		expect(sent).toHaveLength(1);
-		expect(sent[0]).toMatchObject({channel_overrides: {c1: {message_notifications: 1, muted: false}}});
+		expect(sent[0]).toMatchObject({
+			channel_overrides: {c1: {message_notifications: 1, muted: false}},
+		});
 	});
 });
 

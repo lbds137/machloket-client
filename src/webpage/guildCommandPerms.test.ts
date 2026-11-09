@@ -35,15 +35,15 @@ const command = (
 	...(permissions === undefined ? {} : {permissions}),
 });
 
-const indexBody = (
-	commands: ReturnType<typeof command>[],
-	applications: {id: string; name: string; owner_id?: string}[] = [{id: "300", name: "Echo"}],
-) =>
+const indexBody =
+	(
+		commands: ReturnType<typeof command>[],
+		applications: {id: string; name: string; owner_id?: string}[] = [{id: "300", name: "Echo"}],
+	) =>
 	() =>
-		new Response(
-			JSON.stringify({applications, application_commands: commands}),
-			{headers: JSON_HEADERS},
-		);
+		new Response(JSON.stringify({applications, application_commands: commands}), {
+			headers: JSON_HEADERS,
+		});
 
 const USE_APPLICATION_COMMANDS = 1n << 31n;
 
@@ -143,9 +143,7 @@ describe("per-command permission overrides (2026-10-16 ruling)", () => {
 	it("a command with permissions {user:false, roles:{[modRoleId]:true}} is listed for a member holding modRoleId and absent for one who does not", async () => {
 		captureRequests(
 			INDEX,
-			indexBody([
-				command("1", "modonly", null, {user: false, roles: {[modRoleId]: true}}),
-			]),
+			indexBody([command("1", "modonly", null, {user: false, roles: {[modRoleId]: true}})]),
 		);
 		const modGuild = guildFor(memberWith([{permissions: {allow: 0n}}], [modRoleId]));
 		expect(names(await modGuild.getCommands())).toEqual(["modonly"]);

@@ -75,14 +75,16 @@ describe("guild templates", () => {
 	it("the template list renders newest first", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);
-		captureRequests(`${API}/guilds/g1/templates`, () =>
-			new Response(
-				JSON.stringify([
-					{code: "old", name: "Old"},
-					{code: "new", name: "New"},
-				]),
-				{status: 200, headers: JSON_HEADERS},
-			),
+		captureRequests(
+			`${API}/guilds/g1/templates`,
+			() =>
+				new Response(
+					JSON.stringify([
+						{code: "old", name: "Old"},
+						{code: "new", name: "New"},
+					]),
+					{status: 200, headers: JSON_HEADERS},
+				),
 		);
 
 		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
@@ -94,11 +96,13 @@ describe("guild templates", () => {
 	it("a refusal lists nothing instead of throwing", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);
-		captureRequests(`${API}/guilds/g1/templates`, () =>
-			new Response(JSON.stringify({message: "Missing permissions"}), {
-				status: 403,
-				headers: JSON_HEADERS,
-			}),
+		captureRequests(
+			`${API}/guilds/g1/templates`,
+			() =>
+				new Response(JSON.stringify({message: "Missing permissions"}), {
+					status: 403,
+					headers: JSON_HEADERS,
+				}),
 		);
 
 		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
@@ -120,9 +124,7 @@ describe("guild templates", () => {
 	it("a list 200 carrying an error message says that message", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);
-		captureRequests(`${API}/guilds/g1/templates`, () =>
-			Response.json({message: "capped"}),
-		);
+		captureRequests(`${API}/guilds/g1/templates`, () => Response.json({message: "capped"}));
 
 		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
 		expect(button.addText).toHaveBeenLastCalledWith(I18n.requestFailed("capped"));
@@ -132,9 +134,7 @@ describe("guild templates", () => {
 	it("a non-JSON refusal lists nothing instead of throwing", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);
-		captureRequests(`${API}/guilds/g1/templates`, () =>
-			new Response("not json", {status: 403}),
-		);
+		captureRequests(`${API}/guilds/g1/templates`, () => new Response("not json", {status: 403}));
 
 		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
 		expect(button.addHTMLArea).not.toHaveBeenCalled();
@@ -143,9 +143,7 @@ describe("guild templates", () => {
 	it("a list GET that never arrived says the network failed instead of throwing", async () => {
 		const button = templateButton();
 		const guild = guildWith(button);
-		captureRequests(`${API}/guilds/g1/templates`, () =>
-			Promise.reject(new TypeError("offline")),
-		);
+		captureRequests(`${API}/guilds/g1/templates`, () => Promise.reject(new TypeError("offline")));
 
 		await expect(guild.loadTemplates(button)).resolves.toBeUndefined();
 		// Not "HTTP undefined": there was no answer to read a status from.

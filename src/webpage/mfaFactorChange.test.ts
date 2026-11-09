@@ -126,12 +126,10 @@ it("guild delete prompts for TOTP on 60003, retries with X-Discord-MFA-Authoriza
 	await I18n.done;
 	spyFetchHeaders();
 	const {promptForms} = capturePrompts();
-	const {bodies: sent, headers} = captureWithHeaders(
-		API + "/guilds/g1/delete",
-		({headers}) =>
-			headers.get("x-discord-mfa-authorization")
-				? new Response(null, {status: 204})
-				: Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+	const {bodies: sent, headers} = captureWithHeaders(API + "/guilds/g1/delete", ({headers}) =>
+		headers.get("x-discord-mfa-authorization")
+			? new Response(null, {status: 204})
+			: Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
 	);
 	const totpSent = captureRequests(API + "/users/@me/mfa/totp", () =>
 		Response.json({token: "mfa-tok-guild"}),
@@ -154,10 +152,7 @@ it("guild delete prompts for TOTP on 60003, retries with X-Discord-MFA-Authoriza
 
 	expect(sent).toEqual([{code: "111111"}, {code: "111111"}]);
 	expect(totpSent).toEqual([{code: "123456"}]);
-	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([
-		null,
-		"mfa-tok-guild",
-	]);
+	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([null, "mfa-tok-guild"]);
 	expect(hide).toHaveBeenCalledOnce();
 });
 
@@ -205,10 +200,7 @@ it("TOTP enable prompts on 60003, retries with X-Discord-MFA-Authorization, and 
 
 	expect(sent).toHaveLength(2);
 	expect(totpSent).toEqual([{code: "123456"}]);
-	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([
-		null,
-		"mfa-tok-totp",
-	]);
+	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([null, "mfa-tok-totp"]);
 	expect((sub as unknown as {owner: {subOptions: unknown}}).owner.subOptions).toBeUndefined();
 });
 
@@ -510,10 +502,7 @@ it("credential DELETE through the settings UI retries with X-Discord-MFA-Authori
 		expect(deleteElmSpy).toHaveBeenCalledOnce();
 	});
 	expect(totpSent).toEqual([{code: "123456"}]);
-	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([
-		null,
-		"mfa-tok-del",
-	]);
+	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([null, "mfa-tok-del"]);
 	expect(
 		[...document.querySelectorAll<HTMLButtonElement>("button")].find(
 			(b) => b.textContent === I18n.delete(),
@@ -720,9 +709,9 @@ it("key-only: cancelling the key sends no retry and leaves Delete working", asyn
 	del.click();
 	await vi.waitFor(() => expect(get).toHaveBeenCalledOnce());
 	await vi.waitFor(() =>
-		expect(
-			[...document.querySelectorAll(".background")].at(-1)?.textContent,
-		).toContain("Two factor required"),
+		expect([...document.querySelectorAll(".background")].at(-1)?.textContent).toContain(
+			"Two factor required",
+		),
 	);
 	expect(headers).toHaveLength(1);
 	expect(promptForms).toHaveLength(0);
@@ -900,9 +889,9 @@ it("first key enrollment with backup_codes lists the key and shows the screen; k
 	await sub1.submit();
 
 	await vi.waitFor(() =>
-		expect([...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent)).toEqual([
-			"cccc3333",
-		]),
+		expect(
+			[...document.querySelectorAll(".backupCodeGrid code")].map((c) => c.textContent),
+		).toEqual(["cccc3333"]),
 	);
 	expect(
 		[...document.querySelectorAll<HTMLButtonElement>("button")].some(

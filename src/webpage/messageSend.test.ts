@@ -148,7 +148,8 @@ describe("a message the server refuses", () => {
 		void channel.sendMessage("", {nonce: "n1", poll});
 		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
 
-		const fake = (channel as unknown as {makeFakeMessage: ReturnType<typeof vi.fn>}).makeFakeMessage;
+		const fake = (channel as unknown as {makeFakeMessage: ReturnType<typeof vi.fn>})
+			.makeFakeMessage;
 		expect(fake.mock.calls[0][0]).toBe("Lunch?");
 		expect(JSON.parse(send.mock.calls[0][0] as string)).toMatchObject({content: "", poll});
 	});
@@ -499,7 +500,9 @@ describe("a message over the instance's limit", () => {
 		expect(await send(channel, "x".repeat(6))).toEqual(["NotOk"]);
 
 		expect(sent).toEqual([]);
-		expect((channel as unknown as {makeFakeMessage: unknown}).makeFakeMessage).not.toHaveBeenCalled();
+		expect(
+			(channel as unknown as {makeFakeMessage: unknown}).makeFakeMessage,
+		).not.toHaveBeenCalled();
 		expect(notice()).toBe(I18n.channel.tooLong("6", "5"));
 	});
 
@@ -548,14 +551,17 @@ describe("a message over the instance's limit", () => {
 				if (res === "NotOk") throw new Error("no composer");
 			},
 		],
-	])("goes to the server when the composer %s, so the failed bubble keeps it", async (_name, onRes) => {
-		const {channel, sent} = onScreen(5);
+	])(
+		"goes to the server when the composer %s, so the failed bubble keeps it",
+		async (_name, onRes) => {
+			const {channel, sent} = onScreen(5);
 
-		void channel.sendMessage("x".repeat(6), {nonce: "n" + Math.random()}, onRes);
-		await vi.waitFor(() => expect(sent.length).toBe(1));
+			void channel.sendMessage("x".repeat(6), {nonce: "n" + Math.random()}, onRes);
+			await vi.waitFor(() => expect(sent.length).toBe(1));
 
-		expect(notice()).toBeNull();
-	});
+			expect(notice()).toBeNull();
+		},
+	);
 
 	it("goes to the server when the caller gave no way to take it back", async () => {
 		const {channel, sent} = onScreen(5);

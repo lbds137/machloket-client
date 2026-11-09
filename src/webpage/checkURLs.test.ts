@@ -28,7 +28,9 @@ function clickDialogButton(label: string) {
 	if (!button) {
 		throw new Error(
 			`dialog button "${label}" not found; buttons in DOM: ` +
-				[...document.querySelectorAll("button")].map((b) => JSON.stringify(b.textContent)).join(", "),
+				[...document.querySelectorAll("button")]
+					.map((b) => JSON.stringify(b.textContent))
+					.join(", "),
 		);
 	}
 	button.click();
@@ -101,18 +103,14 @@ describe("checkURLs", () => {
 
 			let yes: HTMLButtonElement | undefined;
 			await vi.waitFor(() => {
-				yes = [...document.querySelectorAll("button")].find(
-					(b) => b.textContent === I18n.yes(),
-				);
+				yes = [...document.querySelectorAll("button")].find((b) => b.textContent === I18n.yes());
 				if (!yes) throw new Error("rewrite dialog button not in the DOM yet");
 			});
 
 			// The app stylesheet's .background sits at 102 (style.css) — below the raised
 			// login layer — so the rewrite dialog must carry the raised level itself.
 			const layer = yes!.closest(".background") as HTMLDivElement;
-			expect(Number(layer.style.zIndex)).toBeGreaterThanOrEqual(
-				Number(loginLayer.style.zIndex),
-			);
+			expect(Number(layer.style.zIndex)).toBeGreaterThanOrEqual(Number(loginLayer.style.zIndex));
 			// Equal z-index paints later-on-top: the rewrite dialog must follow the login layer.
 			expect(
 				loginLayer.compareDocumentPosition(layer) & Node.DOCUMENT_POSITION_FOLLOWING,

@@ -35,16 +35,13 @@ const URLS = {
  * exact inverse of this stub and leaves the harness setup's own fetch answering
  * (stubGlobal'd in src/webpage/test/setup.ts) untouched — one mechanism, no ordering. */
 function stubPings(ping: () => Response | "hang") {
-	vi.stubGlobal(
-		"fetch",
-		(_url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-			const asked = ping();
-			if (asked !== "hang") return Promise.resolve(asked);
-			return new Promise<Response>((_, rej) => {
-				init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")));
-			});
-		},
-	);
+	vi.stubGlobal("fetch", (_url: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+		const asked = ping();
+		if (asked !== "hang") return Promise.resolve(asked);
+		return new Promise<Response>((_, rej) => {
+			init?.signal?.addEventListener("abort", () => rej(new DOMException("aborted", "AbortError")));
+		});
+	});
 }
 
 async function clickDialogButton(label: string) {

@@ -1,0 +1,6 @@
+# Locale files keep translatewiki's 4-space layout so upstream locale syncs stay line-diffable;
+# en.json is edited here and follows the repo format.
+translations/*.json
+!translations/en.json
+# Machine-local dispatch specs (git-excluded through .git/info/exclude, which Prettier doesn't read).
+.claude/

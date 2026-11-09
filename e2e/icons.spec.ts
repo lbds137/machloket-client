@@ -55,9 +55,7 @@ test("the header's icons render and look right", async ({page, mockInstance}) =>
 	await expect(header).toBeVisible();
 	// The five header icons: category toggle, pins, search, inbox, members.
 	for (const id of ["pinnedM", "searchX", "inboxM"]) {
-		const mask = await page
-			.locator("#" + id)
-			.evaluate((el) => getComputedStyle(el).maskImage);
+		const mask = await page.locator("#" + id).evaluate((el) => getComputedStyle(el).maskImage);
 		expect(mask, "#" + id + " must resolve a mask").not.toBe("none");
 	}
 
@@ -98,10 +96,7 @@ test("the context menu's icons render and the menu looks right", async ({page, m
 	await pinShot(menu, "context-menu.png");
 });
 
-test("the queued menu rows carry icons and every new mask serves", async ({
-	page,
-	mockInstance,
-}) => {
+test("the queued menu rows carry icons and every new mask serves", async ({page, mockInstance}) => {
 	void mockInstance; // mount the mock's routes; the handle stays unread
 	await loginAndOpenChannel(page);
 

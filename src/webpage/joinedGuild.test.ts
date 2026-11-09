@@ -191,9 +191,7 @@ async function guildCreate(existing: {id: string}) {
 		},
 	} as never);
 
-	await vi.waitFor(() =>
-		expect((user.guildOrder[1] as {id?: string} | undefined)?.id).toBe("g9"),
-	);
+	await vi.waitFor(() => expect((user.guildOrder[1] as {id?: string} | undefined)?.id).toBe("g9"));
 	return {user, icon};
 }
 

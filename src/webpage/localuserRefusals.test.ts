@@ -107,9 +107,7 @@ it("saveGuildOrder ignores a success that a newer save superseded", async () => 
 	let staleAnswer!: (res: Response) => void;
 	let call = 0;
 	captureRequests(API + "/users/@me/settings", () =>
-		++call === 1
-			? new Promise<Response>((res) => (staleAnswer = res))
-			: Response.json({}),
+		++call === 1 ? new Promise<Response>((res) => (staleAnswer = res)) : Response.json({}),
 	);
 
 	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
@@ -138,9 +136,7 @@ it("saveGuildOrder ignores a refusal that a newer save superseded", async () => 
 	let firstAnswer!: (res: Response) => void;
 	let call = 0;
 	captureRequests(API + "/users/@me/settings", () =>
-		++call === 1
-			? new Promise<Response>((res) => (firstAnswer = res))
-			: Response.json({}),
+		++call === 1 ? new Promise<Response>((res) => (firstAnswer = res)) : Response.json({}),
 	);
 
 	const folder = (name: string) => ({id: 1, name, color: 0, guilds: [{id: "g1"}]});
@@ -351,9 +347,7 @@ it("status picker shows a refusal dialog when the current status PATCH is refuse
 	let firstAnswer!: (res: Response) => void;
 	let call = 0;
 	captureRequests(API + "/users/@me/settings", () =>
-		++call === 1
-			? new Promise<Response>((res) => (firstAnswer = res))
-			: Response.json({}),
+		++call === 1 ? new Promise<Response>((res) => (firstAnswer = res)) : Response.json({}),
 	);
 	pick(3);
 	await vi.waitFor(() => expect(firstAnswer).toBeDefined());

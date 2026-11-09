@@ -105,7 +105,8 @@ test.describe("poll modal validation (SEND_POLLS granted)", () => {
 		await expect(dialog).toBeHidden();
 		const sent = await expectRequests(
 			mockInstance,
-			(req) => req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
+			(req) =>
+				req.method === "POST" && req.pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
 			1,
 		);
 		expect(sent[0].body).toMatchObject({

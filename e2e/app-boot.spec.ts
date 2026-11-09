@@ -89,9 +89,7 @@ test("picking the mock instance and logging in renders the fixture guild, channe
 	await expect(page.getByText("Welcome to the mock guild!", {exact: true})).toBeVisible();
 	await expect(page.getByText("Choose a notification role:", {exact: true})).toBeVisible();
 	await expect(
-		page.locator(
-			'#scrollWrap .messagediv:has-text("Choose a notification role:") .fancySelect',
-		),
+		page.locator('#scrollWrap .messagediv:has-text("Choose a notification role:") .fancySelect'),
 	).toBeVisible();
 });
 
@@ -218,7 +216,9 @@ test("a deep link to a hidden channel keeps the fallback focused", async ({page,
 	await typebox.fill("hello past a hidden link");
 	await page.locator("#mobileSend").tap();
 	const sends = () =>
-		mockInstance.capturedRequests.filter((req) => req.method === "POST" && /\/messages$/.test(req.pathname));
+		mockInstance.capturedRequests.filter(
+			(req) => req.method === "POST" && /\/messages$/.test(req.pathname),
+		);
 	await expect.poll(() => sends().length, "the send must reach the mock").toBe(1);
 	expect(sends()[0].pathname).toBe(`/api/v9/channels/${MOCK_CHANNEL.id}/messages`);
 });

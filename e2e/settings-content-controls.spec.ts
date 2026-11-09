@@ -1,5 +1,12 @@
 import {expect, type Page} from "@playwright/test";
-import {MOCK_CHANNEL_ID, MOCK_GUILD_ID, MOCK_NSFW_CHANNEL_ID, MOCK_SPOILER_MESSAGE, loginAndOpenChannel, test} from "./fixtures";
+import {
+	MOCK_CHANNEL_ID,
+	MOCK_GUILD_ID,
+	MOCK_NSFW_CHANNEL_ID,
+	MOCK_SPOILER_MESSAGE,
+	loginAndOpenChannel,
+	test,
+} from "./fixtures";
 
 test.use({viewport: {width: 1280, height: 800}});
 // The spoiler message rides THIS spec's own mount (mockInstanceOptions), not the
@@ -37,10 +44,7 @@ async function openPrivacyCard(page: Page) {
 
 async function setActionAndBoot(page: Page, channelId: string, row: string, label: string) {
 	const card = await openPrivacyCard(page);
-	await card
-		.locator(".optionElement", {hasText: row})
-		.locator("select")
-		.selectOption({label});
+	await card.locator(".optionElement", {hasText: row}).locator("select").selectOption({label});
 	await page.goto(`/channels/${MOCK_GUILD_ID}/${channelId}`);
 	await expect(page.locator("#loading")).toHaveClass(/doneloading/, {timeout: 15_000});
 }

@@ -108,12 +108,14 @@ describe("youtubeEmbedSrc", () => {
 });
 
 describe("postLoginRedirect: ?goback= stays on this origin", () => {
-	it.each(["//evil.example/phish", "/\\evil.example", "https://evil.example/", "javascript:alert(1)"])(
-		"refuses %s",
-		(redir) => {
-			expect(postLoginRedirect(redir)).toBe("/channels/@me");
-		},
-	);
+	it.each([
+		"//evil.example/phish",
+		"/\\evil.example",
+		"https://evil.example/",
+		"javascript:alert(1)",
+	])("refuses %s", (redir) => {
+		expect(postLoginRedirect(redir)).toBe("/channels/@me");
+	});
 	it("defaults when there is no goback", () => {
 		expect(postLoginRedirect(null)).toBe("/channels/@me");
 	});
@@ -165,9 +167,17 @@ describe("attachmentUrl", () => {
 describe("server-sent user fields", () => {
 	it("a __proto__ key can't re-point the user's prototype, and getter-only keys don't throw", async () => {
 		const {User} = await import("./user");
-		const user = Object.assign(Object.create(User.prototype), {id: "u1", username: "a", avatar: null, owner: {}, nameChange: () => {}});
+		const user = Object.assign(Object.create(User.prototype), {
+			id: "u1",
+			username: "a",
+			avatar: null,
+			owner: {},
+			nameChange: () => {},
+		});
 
-		user.userupdate(JSON.parse('{"id":"u1","username":"b","__proto__":{"evil":true},"localuser":{}}'));
+		user.userupdate(
+			JSON.parse('{"id":"u1","username":"b","__proto__":{"evil":true},"localuser":{}}'),
+		);
 
 		expect(Object.getPrototypeOf(user)).toBe(User.prototype);
 		expect(user.evil).toBeUndefined();
@@ -196,7 +206,11 @@ describe("report postback", () => {
 describe("server-sent member and guild fields", () => {
 	it("a member update's __proto__ key can't re-point the member's prototype", async () => {
 		const {Member} = await import("./member");
-		const member = Object.assign(Object.create(Member.prototype), {id: "u1", nick: "a", nameChange: () => {}});
+		const member = Object.assign(Object.create(Member.prototype), {
+			id: "u1",
+			nick: "a",
+			nameChange: () => {},
+		});
 
 		member.update(JSON.parse('{"nick":"a","__proto__":{"evil":true},"localuser":{}}'));
 
@@ -214,7 +228,9 @@ describe("server-sent member and guild fields", () => {
 			roleids: new Map(),
 		});
 
-		guild.update(JSON.parse('{"id":"g1","name":"b","icon":"i","features":[],"__proto__":{"evil":true}}'));
+		guild.update(
+			JSON.parse('{"id":"g1","name":"b","icon":"i","features":[],"__proto__":{"evil":true}}'),
+		);
 
 		expect(Object.getPrototypeOf(guild.properties)).toBe(Object.prototype);
 		expect(guild.properties.name).toBe("b");
@@ -225,7 +241,9 @@ describe("a link that jumps to a channel in-app", () => {
 	const goToBottom = vi.fn();
 	const channel = {name: "general", goToBottom, focus: vi.fn()};
 	const localuser = {
-		guildids: new Map([["111", {getChannel: (id: string) => (id === "222" ? channel : undefined)}]]),
+		guildids: new Map([
+			["111", {getChannel: (id: string) => (id === "222" ? channel : undefined)}],
+		]),
 		info: {wellknown: "https://instance.example"},
 	} as unknown as Parameters<typeof MarkDown.safeLink>[2];
 	const label = (url: string) => MarkDown.safeLink(document.createElement("a"), url, localuser);
@@ -285,7 +303,12 @@ describe("pasting into the composer", () => {
 	function composer() {
 		const box = mount(document.createElement("div"));
 		box.contentEditable = "true";
-		const session = {user: {}, info: {}, channelids: new Map(), getUser: async () => ({name: "alice", bind: () => {}})};
+		const session = {
+			user: {},
+			info: {},
+			channelids: new Map(),
+			getUser: async () => ({name: "alice", bind: () => {}}),
+		};
 		const md = new MarkDown("", session as never, {keep: true});
 		md.giveBox(box);
 		box.focus();
@@ -299,7 +322,9 @@ describe("pasting into the composer", () => {
 	function paste(box: HTMLElement, data: Record<string, string>) {
 		const dt = new DataTransfer();
 		for (const [type, value] of Object.entries(data)) dt.setData(type, value);
-		box.dispatchEvent(new ClipboardEvent("paste", {clipboardData: dt, bubbles: true, cancelable: true}));
+		box.dispatchEvent(
+			new ClipboardEvent("paste", {clipboardData: dt, bubbles: true, cancelable: true}),
+		);
 	}
 	/** A rendered message: "ping ", a mention chip, a custom emoji and an attachment image. */
 	function message() {
@@ -321,14 +346,17 @@ describe("pasting into the composer", () => {
 		range.selectNodeContents(node);
 		getSelection()!.removeAllRanges();
 		getSelection()!.addRange(range);
-		document.dispatchEvent(new ClipboardEvent(event, {clipboardData: new DataTransfer(), bubbles: true}));
+		document.dispatchEvent(
+			new ClipboardEvent(event, {clipboardData: new DataTransfer(), bubbles: true}),
+		);
 	}
 
 	it("takes what the page showed, not a hidden mention it carried", () => {
 		const {box, md} = composer();
 		paste(box, {
 			"text/plain": "hi there",
-			"text/html": '<p>hi <span real="@everyone">there</span><span style="display:none">@here</span></p>',
+			"text/html":
+				'<p>hi <span real="@everyone">there</span><span style="display:none">@here</span></p>',
 		});
 		expect(md.txt).toBe("hi there");
 	});
@@ -366,7 +394,9 @@ describe("pasting into the composer", () => {
 	it("forgets the last copy when a later copy has no page selection (an input's text)", () => {
 		copy(message());
 		getSelection()!.removeAllRanges();
-		document.dispatchEvent(new ClipboardEvent("copy", {clipboardData: new DataTransfer(), bubbles: true}));
+		document.dispatchEvent(
+			new ClipboardEvent("copy", {clipboardData: new DataTransfer(), bubbles: true}),
+		);
 		expect(MarkDown.lastCopy).toBeUndefined();
 		const {box, md} = composer();
 		paste(box, {"text/plain": "ping @alice <:wave:456>@everyone"});
@@ -396,7 +426,9 @@ describe("pasting into the composer", () => {
 
 describe("a bare link in a message", () => {
 	const links = (txt: string) =>
-		Array.from(new MarkDown(txt, undefined).makeHTML().querySelectorAll("a")).map((a) => a.textContent);
+		Array.from(new MarkDown(txt, undefined).makeHTML().querySelectorAll("a")).map(
+			(a) => a.textContent,
+		);
 
 	const text = (txt: string) => new MarkDown(txt, undefined).makeHTML().textContent;
 
@@ -422,18 +454,37 @@ describe("a rich embed's images", () => {
 		type Args = ConstructorParameters<typeof Embed>;
 		const refreshIfNeeded = vi.fn(async (url: string) => url);
 		const owner = {channel: {guild: {localuser: {refreshIfNeeded}}}};
-		const html = new Embed({type: "rich", ...json} as unknown as Args[0], owner as unknown as Args[1]).generateHTML();
+		const html = new Embed(
+			{type: "rich", ...json} as unknown as Args[0],
+			owner as unknown as Args[1],
+		).generateHTML();
 		await new Promise((res) => setTimeout(res, 0));
-		return {html, refreshIfNeeded, srcs: Array.from(html.querySelectorAll("img")).map((img) => img.src)};
+		return {
+			html,
+			refreshIfNeeded,
+			srcs: Array.from(html.querySelectorAll("img")).map((img) => img.src),
+		};
 	}
 
 	it("load through the instance's media proxy when the server gives one, once each", async () => {
 		const {html, refreshIfNeeded, srcs} = await render({
-			author: {name: "bot", icon_url: "https://bot.example/a.png", proxy_icon_url: "https://cdn.test/external/a"},
+			author: {
+				name: "bot",
+				icon_url: "https://bot.example/a.png",
+				proxy_icon_url: "https://cdn.test/external/a",
+			},
 			image: {url: "https://bot.example/i.png", proxy_url: "https://cdn.test/external/i"},
-			footer: {text: "f", icon_url: "https://bot.example/f.png", proxy_icon_url: "https://cdn.test/external/f"},
+			footer: {
+				text: "f",
+				icon_url: "https://bot.example/f.png",
+				proxy_icon_url: "https://cdn.test/external/f",
+			},
 		});
-		expect(srcs).toEqual(["https://cdn.test/external/a", "https://cdn.test/external/i", "https://cdn.test/external/f"]);
+		expect(srcs).toEqual([
+			"https://cdn.test/external/a",
+			"https://cdn.test/external/i",
+			"https://cdn.test/external/f",
+		]);
 		expect(refreshIfNeeded).toHaveBeenCalledTimes(3);
 		expect(html.outerHTML).not.toContain("bot.example");
 	});
@@ -457,7 +508,11 @@ describe("a rich embed's images", () => {
 			image: {url: "https://bot.example/i.png", proxy_url: ""},
 			footer: {text: "f", icon_url: "https://bot.example/f.png", proxy_icon_url: ""},
 		});
-		expect(srcs).toEqual(["https://bot.example/a.png", "https://bot.example/i.png", "https://bot.example/f.png"]);
+		expect(srcs).toEqual([
+			"https://bot.example/a.png",
+			"https://bot.example/i.png",
+			"https://bot.example/f.png",
+		]);
 	});
 });
 
@@ -467,7 +522,10 @@ describe("an invite embed", () => {
 		type Args = ConstructorParameters<typeof Embed>;
 		const fetchSpy = vi.fn(async () => new Response("{}", {status: 404}));
 		vi.stubGlobal("fetch", fetchSpy);
-		const localuser = {info: {wellknown: "https://home.example", api: "https://home.example/api/v9"}, guildids: new Map()};
+		const localuser = {
+			info: {wellknown: "https://home.example", api: "https://home.example/api/v9"},
+			guildids: new Map(),
+		};
 		const embed = new Embed(
 			{type: "link", url: `${instanceUrl}/invite/abc`} as unknown as Args[0],
 			{channel: {guild: {localuser}}} as unknown as Args[1],

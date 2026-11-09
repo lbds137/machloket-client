@@ -52,7 +52,10 @@ test("a refused login shows the field refusal and stays on the form", async ({
 });
 
 // A reason on no field of this form, nested deep: still the reason, not "Invalid Form Body".
-test("a nested field refusal the form has no field for says its reason", async ({page, mockInstance}) => {
+test("a nested field refusal the form has no field for says its reason", async ({
+	page,
+	mockInstance,
+}) => {
 	mockInstance.onLogin = (route) =>
 		route.fulfill({
 			status: 400,
@@ -115,7 +118,9 @@ test("Spacebar's own field refusal shows under the form and keeps it up", async 
 	const emailField = loginForm.locator(".optionElement", {
 		has: page.getByText("Email:", {exact: true}),
 	});
-	await expect(emailField.locator(".suberror", {hasText: "Invalid login or password."})).toBeVisible();
+	await expect(
+		emailField.locator(".suberror", {hasText: "Invalid login or password."}),
+	).toBeVisible();
 	await expect(loginForm.getByRole("button", {name: "Login", exact: true})).toBeVisible();
 	expect(
 		mockInstance.capturedRequests.filter((req) => req.pathname === "/instances.json"),

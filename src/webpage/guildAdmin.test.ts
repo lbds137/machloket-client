@@ -50,7 +50,10 @@ describe("a channel's permission list", () => {
 describe("a moderation reason", () => {
 	it("in Hebrew still lets the kick through (the header is URI-encoded)", async () => {
 		const API = "http://mod.test/api/v9";
-		const sent = captureRequests(API + "/guilds/g1/members/u1", () => new Response(null, {status: 204}));
+		const sent = captureRequests(
+			API + "/guilds/g1/members/u1",
+			() => new Response(null, {status: 204}),
+		);
 		const headersSeen: Headers[] = [];
 		const realFetch = globalThis.fetch;
 		vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {

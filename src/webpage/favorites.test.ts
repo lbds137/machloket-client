@@ -94,7 +94,9 @@ describe("favorites startSync", () => {
 			}),
 		);
 		await favorites.startSync();
-		expect(favorites.emojiReactFreq()).toEqual([["probeemoji", expect.objectContaining({score: 100})]]);
+		expect(favorites.emojiReactFreq()).toEqual([
+			["probeemoji", expect.objectContaining({score: 100})],
+		]);
 	});
 });
 
@@ -118,7 +120,11 @@ describe("favorites merge with the server", () => {
 describe("favorites on reload", () => {
 	it("keeps the saved favorite emojis and stickers (the next sync would read them as removed)", () => {
 		const favorites = favoritesWithStore() as unknown as {
-			owner: {perminfo: {favoriteStore: {current: {favorite_emojis: string[]; favorite_stickers: string[]}}}};
+			owner: {
+				perminfo: {
+					favoriteStore: {current: {favorite_emojis: string[]; favorite_stickers: string[]}};
+				};
+			};
 			loadFromLocal: () => void;
 			favorite_emojis: string[];
 			favorite_stickers: string[];

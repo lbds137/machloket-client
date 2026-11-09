@@ -322,9 +322,7 @@ it("a connected-account type matching only an inherited key draws no profile row
 	// The rows draw once the connections fetch resolves; wait for the first row
 	// instead of trusting ticks to cover that chain, then pin "exactly one" —
 	// the trailing ticks still catch a hostile row drawing late.
-	await vi.waitFor(() =>
-		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
-	);
+	await vi.waitFor(() => expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0));
 	for (let tick = 0; tick < 5; tick++) await new Promise((done) => setTimeout(done, 0));
 	const rows = profile.querySelectorAll(".conProfDiv");
 	expect(rows).toHaveLength(1);
@@ -456,9 +454,7 @@ it("a null mutual-friends entry is skipped so the valid friend and connection ro
 	);
 	clickTab(profile, I18n.profile.userInfo());
 	// The connections draw after their own fetch: wait for a row, not for ticks.
-	await vi.waitFor(() =>
-		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
-	);
+	await vi.waitFor(() => expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0));
 	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
 	expect({widgets, rows}).toEqual({widgets: ["bob"], rows: ["octocat"]});
 	expect(unhandled).not.toHaveBeenCalled();
@@ -493,9 +489,7 @@ it("a mutual friend whose widget can't be built is skipped; the valid friend and
 		(b) => b.textContent,
 	);
 	clickTab(profile, I18n.profile.userInfo());
-	await vi.waitFor(() =>
-		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
-	);
+	await vi.waitFor(() => expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0));
 	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
 	expect({widgets, rows}).toEqual({widgets: ["bob"], rows: ["octocat"]});
 	expect(unhandled).not.toHaveBeenCalled();
@@ -601,9 +595,7 @@ it("a null mutual-guilds entry is skipped so the known guild and connection row 
 	const guilds = [...profile.querySelectorAll(".mutGuildBox")].map((g) => g.textContent);
 	clickTab(profile, I18n.profile.userInfo());
 	// The connections draw after their own fetch: wait for a row, not for ticks.
-	await vi.waitFor(() =>
-		expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0),
-	);
+	await vi.waitFor(() => expect(profile.querySelectorAll(".conProfDiv").length).toBeGreaterThan(0));
 	const rows = [...profile.querySelectorAll(".conProfDiv span")].map((s) => s.textContent);
 	expect({guilds, rows}).toEqual({guilds: ["Wonderland"], rows: ["octocat"]});
 	expect(unhandled).not.toHaveBeenCalled();

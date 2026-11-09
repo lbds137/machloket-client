@@ -10,13 +10,27 @@ const before = location.href;
 
 afterEach(() => {
 	history.replaceState(history.state, "", before);
-	for (const id of ["channelTopic", "loadingdiv", "scrollWrap", "channels", "servertd", "serverName"]) {
+	for (const id of [
+		"channelTopic",
+		"loadingdiv",
+		"scrollWrap",
+		"channels",
+		"servertd",
+		"serverName",
+	]) {
 		document.getElementById(id)?.remove();
 	}
 });
 
 async function openDiscovery(page: {guilds: unknown[]; total: number}) {
-	for (const id of ["channelTopic", "loadingdiv", "scrollWrap", "channels", "servertd", "serverName"]) {
+	for (const id of [
+		"channelTopic",
+		"loadingdiv",
+		"scrollWrap",
+		"channels",
+		"servertd",
+		"serverName",
+	]) {
 		const element = document.createElement("div");
 		element.id = id;
 		document.body.append(element);
@@ -29,24 +43,40 @@ async function openDiscovery(page: {guilds: unknown[]; total: number}) {
 	}) as InstanceType<typeof Discovery>;
 	await discovery.makeMenu();
 	const scrollWrap = document.getElementById("scrollWrap")!;
-	await expect.poll(() => scrollWrap.querySelectorAll(".discovery-guild").length).toBe(page.guilds.length);
+	await expect
+		.poll(() => scrollWrap.querySelectorAll(".discovery-guild").length)
+		.toBe(page.guilds.length);
 	return [...scrollWrap.querySelectorAll("button")].map((b) => b.textContent);
 }
 
 it("discovery offers no Next on the last page", async () => {
-	const buttons = await openDiscovery({guilds: [{id: "g1", name: "One", description: ""}], total: 1});
+	const buttons = await openDiscovery({
+		guilds: [{id: "g1", name: "One", description: ""}],
+		total: 1,
+	});
 	expect(buttons).not.toContain(I18n.search.next());
 });
 
 it("discovery offers Next while more servers follow (the control)", async () => {
-	const guilds = Array.from({length: 50}, (_, i) => ({id: "g" + i, name: "S" + i, description: ""}));
+	const guilds = Array.from({length: 50}, (_, i) => ({
+		id: "g" + i,
+		name: "S" + i,
+		description: "",
+	}));
 	const buttons = await openDiscovery({guilds, total: 51});
 	expect(buttons).toContain(I18n.search.next());
 });
 
 /** Opens discovery over a list endpoint answering with `respond`; returns the scroll area and the requests seen. */
 async function mountDiscovery(respond: () => Response | Promise<Response>) {
-	for (const id of ["channelTopic", "loadingdiv", "scrollWrap", "channels", "servertd", "serverName"]) {
+	for (const id of [
+		"channelTopic",
+		"loadingdiv",
+		"scrollWrap",
+		"channels",
+		"servertd",
+		"serverName",
+	]) {
 		const element = document.createElement("div");
 		element.id = id;
 		document.body.append(element);
@@ -67,7 +97,9 @@ const limited = () => Response.json({message: "rate limited", retry_after: 0.01}
 it("discovery: a 429 waits its window, asks again once, and the list renders", async () => {
 	let calls = 0;
 	const page = {guilds: [{id: "g1", name: "One", description: ""}], total: 1};
-	const {scrollWrap, asked} = await mountDiscovery(() => (calls++ === 0 ? limited() : Response.json(page)));
+	const {scrollWrap, asked} = await mountDiscovery(() =>
+		calls++ === 0 ? limited() : Response.json(page),
+	);
 
 	await expect.poll(() => scrollWrap.querySelectorAll(".discovery-guild").length).toBe(1);
 
@@ -99,12 +131,17 @@ it("discovery: a list that stays refused shows an error instead of a broken page
 	}
 });
 
-const buttonLabels = (wrap: HTMLElement) => [...wrap.querySelectorAll("button")].map((b) => b.textContent);
+const buttonLabels = (wrap: HTMLElement) =>
+	[...wrap.querySelectorAll("button")].map((b) => b.textContent);
 const buttonLabelled = (wrap: HTMLElement, label: string) =>
 	[...wrap.querySelectorAll("button")].find((b) => b.textContent === label)!;
 const refused = () => new Response("oops", {status: 500});
 const pageOf = (prefix: string, count: number, total: number) => ({
-	guilds: Array.from({length: count}, (_, i) => ({id: prefix + i, name: prefix + i, description: ""})),
+	guilds: Array.from({length: count}, (_, i) => ({
+		id: prefix + i,
+		name: prefix + i,
+		description: "",
+	})),
 	total,
 });
 
@@ -112,7 +149,9 @@ const pageOf = (prefix: string, count: number, total: number) => ({
 it("discovery: a refused first page offers Try again, and a good answer then renders the list", async () => {
 	let calls = 0;
 	const page = {guilds: [{id: "g1", name: "One", description: ""}], total: 1};
-	const {scrollWrap, asked} = await mountDiscovery(() => (calls++ === 0 ? refused() : Response.json(page)));
+	const {scrollWrap, asked} = await mountDiscovery(() =>
+		calls++ === 0 ? refused() : Response.json(page),
+	);
 
 	await expect.poll(() => buttonLabels(scrollWrap)).toContain(I18n.tryAgain());
 	expect(scrollWrap.textContent).toContain(I18n.requestFailed("500"));
@@ -205,7 +244,9 @@ async function openOnPage1(answer: (call: number) => Response) {
 }
 
 const listUrls = (spy: {mock: {calls: unknown[][]}}) =>
-	spy.mock.calls.map(([input]) => String(input)).filter((url) => url.includes("/discoverable-guilds"));
+	spy.mock.calls
+		.map(([input]) => String(input))
+		.filter((url) => url.includes("/discoverable-guilds"));
 
 // RED: the error state's Back is never clicked; a Back aimed at offset + limit, or no handler
 // at all, passes every other test here.

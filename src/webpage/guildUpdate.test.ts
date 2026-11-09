@@ -10,7 +10,12 @@ const ROLE_ID = "1553128655016763451";
 
 /** A Guild with only what update() reads and writes, built from READY-shaped properties. */
 function guildFixture(lookingguild: boolean) {
-	const owner: {headers: object; info: object; guildhtml: Map<string, HTMLElement>; lookingguild?: unknown} = {
+	const owner: {
+		headers: object;
+		info: object;
+		guildhtml: Map<string, HTMLElement>;
+		lookingguild?: unknown;
+	} = {
 		headers: {Authorization: "token"},
 		info: {cdn: "http://cdn.test"},
 		guildhtml: new Map(),
@@ -18,7 +23,13 @@ function guildFixture(lookingguild: boolean) {
 	const guild = Object.assign(Object.create(Guild.prototype), {
 		id: GUILD_ID,
 		owner,
-		properties: {name: "Old name", owner_id: "100", icon: "abc", features: [], system_channel_id: "1"},
+		properties: {
+			name: "Old name",
+			owner_id: "100",
+			icon: "abc",
+			features: [],
+			system_channel_id: "1",
+		},
 		roleids: new Map([[ROLE_ID, {id: ROLE_ID}]]),
 	}) as InstanceType<typeof Guild>;
 	if (lookingguild) owner.lookingguild = guild;
@@ -135,7 +146,9 @@ describe("searching members", () => {
 		const [answer] = searchMap.values();
 		answer({chunk_index: 0, chunk_count: 1, nonce: "n", members: [], presences: []});
 
-		expect(await Promise.race([search, new Promise((res) => setTimeout(() => res("hung"), 500))])).toEqual([]);
+		expect(
+			await Promise.race([search, new Promise((res) => setTimeout(() => res("hung"), 500))]),
+		).toEqual([]);
 	});
 
 	it("while disconnected, a search answers with no members", async () => {
@@ -144,6 +157,11 @@ describe("searching members", () => {
 			owner: {ws: undefined, searchMap: new Map()},
 		}) as InstanceType<typeof Guild>;
 
-		expect(await Promise.race([guild.searchMembers(10, "x"), new Promise((res) => setTimeout(() => res("hung"), 500))])).toEqual([]);
+		expect(
+			await Promise.race([
+				guild.searchMembers(10, "x"),
+				new Promise((res) => setTimeout(() => res("hung"), 500)),
+			]),
+		).toEqual([]);
 	});
 });

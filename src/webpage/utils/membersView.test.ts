@@ -4,7 +4,8 @@ import {beforeEach, describe, expect, it, vi} from "vitest";
 // order (index.ts imports localuser first).
 await import("../localuser");
 const {installDrawerSwipe, drawerSwipeJustEnded} = await import("./drawerSwipe");
-const {installMembersView, consumeMembersPop, closeMembersOnNavigation} = await import("./membersView");
+const {installMembersView, consumeMembersPop, closeMembersOnNavigation} =
+	await import("./membersView");
 
 // The entry's popstate wiring, once for the whole file: the members guard runs before channel
 // navigation would, and a UI close's swallowed pop actually clears its flag. What navigation
@@ -156,8 +157,9 @@ describe("closing the members view", () => {
 		await pop;
 
 		expect(membersShown()).toBe(false);
-		expect((history.state as {machloketMembersView?: boolean} | null)?.machloketMembersView)
-			.not.toBe(true);
+		expect(
+			(history.state as {machloketMembersView?: boolean} | null)?.machloketMembersView,
+		).not.toBe(true);
 	});
 
 	it("the header's pins and inbox close it first, so they act on the chat", async () => {
@@ -333,8 +335,9 @@ describe("what a tap on the title is not", () => {
 		(page.querySelector("#channelTopic") as HTMLElement)!.click();
 
 		expect(membersShown()).toBe(false);
-		expect((history.state as {machloketMembersView?: boolean} | null)?.machloketMembersView)
-			.not.toBe(true);
+		expect(
+			(history.state as {machloketMembersView?: boolean} | null)?.machloketMembersView,
+		).not.toBe(true);
 	});
 
 	it("an empty member panel (a DM's cleared list) still opens — the tap must not dead-lock", () => {

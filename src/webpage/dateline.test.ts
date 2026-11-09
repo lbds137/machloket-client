@@ -16,11 +16,7 @@ function renderableChannel() {
 	return channel;
 }
 
-function messageAt(
-	channel: unknown,
-	id: string,
-	when: Date,
-): InstanceType<typeof Message> {
+function messageAt(channel: unknown, id: string, when: Date): InstanceType<typeof Message> {
 	return Object.assign(Object.create(Message.prototype), {
 		id,
 		flags: 0,
@@ -70,7 +66,10 @@ describe("message datelines", () => {
 	it("draws a gray day divider only when the calendar day changes", () => {
 		const channel = renderableChannel();
 		const when = new Date(2026, 9, 8, 11, 0);
-		const div = render(messageAt(channel, "501", when), messageAt(channel, "500", new Date(2026, 9, 7, 10, 0)));
+		const div = render(
+			messageAt(channel, "501", when),
+			messageAt(channel, "500", new Date(2026, 9, 7, 10, 0)),
+		);
 		expect(markerTexts(div, ".dateline:not(.unreadDateline)")).toEqual([formatted(when)]);
 		expect(div.querySelectorAll(".unreadDateline")).toHaveLength(0);
 	});
@@ -97,7 +96,10 @@ describe("message datelines", () => {
 		// Thursdays, so the divider silently never rendered.
 		const channel = renderableChannel();
 		const when = new Date(2026, 9, 8, 11, 0);
-		const div = render(messageAt(channel, "501", when), messageAt(channel, "500", new Date(2026, 9, 1, 10, 0)));
+		const div = render(
+			messageAt(channel, "501", when),
+			messageAt(channel, "500", new Date(2026, 9, 1, 10, 0)),
+		);
 		expect(markerTexts(div, ".dateline")).toEqual([formatted(when)]);
 	});
 

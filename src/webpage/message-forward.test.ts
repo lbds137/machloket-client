@@ -397,11 +397,12 @@ describe("received forwarded messages (message_snapshots)", () => {
 			channel,
 		);
 		let captured: {files: unknown[]; index: number} | undefined;
-		const show = vi
-			.spyOn(ImagesDisplay.prototype, "show")
-			.mockImplementation(function (this: {files: unknown[]; index: number}) {
-				captured = this;
-			});
+		const show = vi.spyOn(ImagesDisplay.prototype, "show").mockImplementation(function (this: {
+			files: unknown[];
+			index: number;
+		}) {
+			captured = this;
+		});
 		(div.querySelector(".forwardBlock img") as HTMLImageElement).click();
 		expect(show).toHaveBeenCalled();
 		expect(captured!.files).toHaveLength(1);

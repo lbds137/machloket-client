@@ -210,8 +210,9 @@ describe("closing the search view", () => {
 		await pop;
 		await afterCloseWindow();
 		expect(searchShown()).toBe(false);
-		expect((history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView)
-			.not.toBe(true);
+		expect((history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView).not.toBe(
+			true,
+		);
 	});
 
 	it("Android back closes an open search view", async () => {
@@ -307,8 +308,9 @@ describe("tapping a search result", () => {
 		// One marker, one close: the entry below (the test base, a channel state in the
 		// app) is current again — not another marker (round-1 blocker: the second marker
 		// reached goToState on back and died there).
-		expect((history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView)
-			.not.toBe(true);
+		expect((history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView).not.toBe(
+			true,
+		);
 	});
 
 	it("two adjacent markers anyway (the backstop's worst case) are skipped in one back press", async () => {
@@ -337,8 +339,9 @@ describe("tapping a search result", () => {
 		expect(searchShown()).toBe(true);
 		// The queued traversal lands on the base entry; the close's suppressPop eats it.
 		await settle();
-		expect((history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView)
-			.toBeUndefined();
+		expect(
+			(history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView,
+		).toBeUndefined();
 
 		// The view is open with NO marker anywhere: Android back must close it (the guard's
 		// open-but-not-ours branch) and navigation must stand down. The class drops 300ms

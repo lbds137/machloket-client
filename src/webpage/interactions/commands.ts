@@ -106,9 +106,7 @@ function optionRow(option: Option): HTMLElement {
 	desc.textContent = option.localizedDescription;
 	const mark = document.createElement("span");
 	mark.classList.add("commandOptionMark");
-	mark.textContent = option.required
-		? I18n.commands.optionRequired()
-		: I18n.commands.optional();
+	mark.textContent = option.required ? I18n.commands.optionRequired() : I18n.commands.optional();
 	row.append(name, desc, mark);
 	return row;
 }
@@ -294,9 +292,9 @@ export class Command extends SnowFlake {
 					| {
 							option: Option;
 							state: string;
-					}
+					  }
 					| string
-			)[]
+			  )[]
 			| undefined,
 	): Option | undefined {
 		const branchEntry = states?.find(
@@ -332,10 +330,12 @@ export class Command extends SnowFlake {
 		];
 		const box = this.boxes.get(channel) ?? Divhtml;
 		const entry = (option: Option) =>
-			states.find((_) => _ instanceof Object && _.option === option) as {
-				option: Option;
-				state: string;
-			} | undefined;
+			states.find((_) => _ instanceof Object && _.option === option) as
+				| {
+						option: Option;
+						state: string;
+				  }
+				| undefined;
 		// Offerable: unfilled, and without a chip already in view — a shown field (like the
 		// current required one) is not re-offered, a hidden one is (it awaits its pick).
 		const offerable = (option: Option) =>
@@ -373,8 +373,7 @@ export class Command extends SnowFlake {
 		const bare = text.replace(/:$/, "");
 		if (bare) {
 			const exact = pool.find(
-				(opt) =>
-					offerable(opt) && (opt.name === bare || opt.localizedName === bare),
+				(opt) => offerable(opt) && (opt.name === bare || opt.localizedName === bare),
 			);
 			if (exact) {
 				insert(exact);
@@ -421,8 +420,7 @@ export class Command extends SnowFlake {
 			};
 			if (lu.keyup !== lu.optionPreviewEnterGuard) {
 				const delegate = lu.keyup.bind(lu);
-				lu.optionPreviewEnterGuard = (event) =>
-					event.key === "Enter" ? false : delegate(event);
+				lu.optionPreviewEnterGuard = (event) => (event.key === "Enter" ? false : delegate(event));
 				lu.keyup = lu.optionPreviewEnterGuard;
 			}
 		}
@@ -529,12 +527,8 @@ export class Command extends SnowFlake {
 		if (!(branch instanceof SubCommandOption) || !box) return;
 		const chip = box.querySelector(".commandinput");
 		if (!(chip instanceof HTMLElement)) return;
-		const [groupName, subName] = picked.includes("/")
-			? picked.split("/")
-			: [undefined, picked];
-		const pickedBranch = branch
-			.branches()
-			.find((b) => b.name === (groupName ?? picked));
+		const [groupName, subName] = picked.includes("/") ? picked.split("/") : [undefined, picked];
+		const pickedBranch = branch.branches().find((b) => b.name === (groupName ?? picked));
 		const display = groupName
 			? pickedBranch instanceof SubCommandGroupOption
 				? (
@@ -588,15 +582,13 @@ export class Command extends SnowFlake {
 			this.localuser.registerCommandNonce(
 				nonce,
 				channel,
-				this.name +
-					(branchLabel?.state ? " " + branchLabel.state.replace("/", " ") : ""),
+				this.name + (branchLabel?.state ? " " + branchLabel.state.replace("/", " ") : ""),
 				this.applicationId,
 			);
 			const opts = states.filter((_) => typeof _ !== "string");
 			// A subcommand/group command nests: the picked branch carries the leaf entries.
-			const branch = opts.find(
-				(_) => _.option instanceof SubCommandOption,
-			) as {option: SubCommandOption; state: string} | undefined;
+			const branch = opts.find((_) => _.option instanceof SubCommandOption) as
+				{option: SubCommandOption; state: string} | undefined;
 			const leavesAll = branch ? branch.option.leavesOf(branch.state) : [];
 			for (const thing of [...this.options, ...leavesAll]) {
 				const state = opts.find((_) => _.option === thing)?.state ?? "";
@@ -613,16 +605,12 @@ export class Command extends SnowFlake {
 			const leafEntries = opts
 				.filter(
 					(_) =>
-						_ !== branch &&
-						!(_.option instanceof SubCommandOption) &&
-						_.option.filled(_.state),
+						_ !== branch && !(_.option instanceof SubCommandOption) && _.option.filled(_.state),
 				)
 				.map(({option, state}) => {
 					return option.toJson(state);
 				});
-			const options = branch
-				? [branch.option.wireEntry(branch.state, leafEntries)]
-				: leafEntries;
+			const options = branch ? [branch.option.wireEntry(branch.state, leafEntries)] : leafEntries;
 
 			const res = await fetchRetryOnce(this.info.api + "/interactions", {
 				method: "POST",
@@ -728,7 +716,11 @@ export class Command extends SnowFlake {
 			inFlight.delete(key);
 		}
 	}
-	private async sendContext(target_id: string, channel: Channel, anchor?: HTMLElement): Promise<boolean> {
+	private async sendContext(
+		target_id: string,
+		channel: Channel,
+		anchor?: HTMLElement,
+	): Promise<boolean> {
 		const nonce = Math.floor(Math.random() * 10 ** 9) + "";
 		this.localuser.registerCommandNonce(nonce, channel, this.name, this.applicationId);
 		try {
@@ -1130,9 +1122,7 @@ class EntityOption extends Option {
 	/** Every pickable entity in this channel's context: chip display, snowflake value, and a
 	 * match score for a query (the entity's own compare/similar when it has one — the same
 	 * ranking the composer's @/# popups use, matching nick, username and id). */
-	collect(
-		channel: Channel,
-	): {display: string; value: string; score: (query: string) => number}[] {
+	collect(channel: Channel): {display: string; value: string; score: (query: string) => number}[] {
 		const out: {display: string; value: string; score: (query: string) => number}[] = [];
 		const displayRank = (display: string) => (query: string) => {
 			if (display.includes(query)) return query.length / display.length;
@@ -1389,9 +1379,7 @@ class SubCommandOption extends Option {
 	allLeaves(): Option[] {
 		return this.branches().flatMap((branch) =>
 			branch instanceof SubCommandGroupOption
-				? branch.children.flatMap((sub) =>
-						sub instanceof SubCommandOption ? sub.children : [],
-					)
+				? branch.children.flatMap((sub) => (sub instanceof SubCommandOption ? sub.children : []))
 				: branch.children,
 		);
 	}
@@ -1451,9 +1439,11 @@ class SubCommandOption extends Option {
 		// A leaf the picker re-offers keeps what was typed in it — a channel round-trip (or
 		// re-picking the same branch) must not wipe filled values.
 		const prior = (leaf: Option) =>
-			states?.find((s) => s instanceof Object && s.option === leaf) as {
-				state: string;
-			} | undefined;
+			states?.find((s) => s instanceof Object && s.option === leaf) as
+				| {
+						state: string;
+				  }
+				| undefined;
 		if (states) {
 			const stale = new Set(this.allLeaves());
 			const kept = states.filter((s) => typeof s === "string" || !stale.has(s.option));
@@ -1527,20 +1517,14 @@ class SubCommandOption extends Option {
 							"",
 							undefined,
 							() => {
-								if (
-									group === undefined &&
-									branch instanceof SubCommandGroupOption
-								) {
+								if (group === undefined && branch instanceof SubCommandGroupOption) {
 									group = branch;
 									input.value = "";
 									offer();
 								} else {
 									// Groups persist their pick as "group/sub" so the wire names
 									// the group the user actually chose, not the first one.
-									const picked =
-										group === undefined
-											? branch.name
-											: group.name + "/" + branch.name;
+									const picked = group === undefined ? branch.name : group.name + "/" + branch.name;
 									input.value = branch.localizedName;
 									this.owner.stateChange(this, channel, picked);
 									this.renderLeaves(div, picked, channel);

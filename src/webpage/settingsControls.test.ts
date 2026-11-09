@@ -94,7 +94,9 @@ describe("member search box", () => {
 		});
 		await after(50);
 		const input = document.querySelector<HTMLInputElement>(".amsBox input")!;
-		expect(document.querySelector(".amsBox .reses")!.textContent).toContain(I18n.requestFailed("offline"));
+		expect(document.querySelector(".amsBox .reses")!.textContent).toContain(
+			I18n.requestFailed("offline"),
+		);
 		// The blur handler belongs to the box, set when it is built, not to a search that succeeded.
 		expect(input.onblur).not.toBeNull();
 		// And the handler must actually close the box, not merely exist.
@@ -213,8 +215,9 @@ describe("security-key second factor", () => {
 			rawId: buf,
 			response: {authenticatorData: buf, clientDataJSON: buf, signature: buf},
 		} as never);
-		captureRequests("http://key.test/api/auth/mfa/webauthn", () =>
-			new Response("<html>proxy error</html>", {status: 200}),
+		captureRequests(
+			"http://key.test/api/auth/mfa/webauthn",
+			() => new Response("<html>proxy error</html>", {status: 200}),
 		);
 
 		await expect(form.submit()).resolves.toBeUndefined();

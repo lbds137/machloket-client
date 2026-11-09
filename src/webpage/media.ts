@@ -529,8 +529,7 @@ class MediaPlayer {
 							// abandoned mid-read — a chat-posted file must not allocate GBs.
 							// (v2.4's flag bit and Data Length Indicator differ — see the
 							// tracker's v2.4-flags row.)
-							const extra =
-								(flags[1] & 0b01000000 ? 1 : 0) + (flags[1] & 0b00100000 ? 1 : 0);
+							const extra = (flags[1] & 0b01000000 ? 1 : 0) + (flags[1] & 0b00100000 ? 1 : 0);
 							if (size < 4 + extra) {
 								// Malformed: the frame cannot hold its own declared size.
 								break;
@@ -538,14 +537,8 @@ class MediaPlayer {
 							const sizeArr2 = await prog.get8BitArray(4);
 							const declared =
 								version === 4
-									? (sizeArr2[0] << 21) +
-										(sizeArr2[1] << 14) +
-										(sizeArr2[2] << 7) +
-										sizeArr2[3]
-									: sizeArr2[0] * 2 ** 24 +
-										(sizeArr2[1] << 16) +
-										(sizeArr2[2] << 8) +
-										sizeArr2[3];
+									? (sizeArr2[0] << 21) + (sizeArr2[1] << 14) + (sizeArr2[2] << 7) + sizeArr2[3]
+									: sizeArr2[0] * 2 ** 24 + (sizeArr2[1] << 16) + (sizeArr2[2] << 8) + sizeArr2[3];
 							if (extra) {
 								await prog.get8BitArray(extra);
 							}
@@ -583,9 +576,7 @@ class MediaPlayer {
 									},
 								});
 								try {
-									const reader = source
-										.pipeThrough(new DecompressionStream("deflate"))
-										.getReader();
+									const reader = source.pipeThrough(new DecompressionStream("deflate")).getReader();
 									const chunks: Uint8Array[] = [];
 									let total = 0;
 									for (;;) {

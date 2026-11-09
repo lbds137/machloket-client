@@ -142,7 +142,10 @@ describe("muting a guild", () => {
 	});
 
 	it("the pillar icon stays dimmed past setTimeout's ceiling on a long mute", () => {
-		const guild = muteGuild({selected_time_window: 1 << 30, end_time: Date.now() + 40 * 24 * 3600 * 1000});
+		const guild = muteGuild({
+			selected_time_window: 1 << 30,
+			end_time: Date.now() + 40 * 24 * 3600 * 1000,
+		});
 		guild.unreads();
 		expect(guild.html!.classList.contains("muted")).toBe(true);
 

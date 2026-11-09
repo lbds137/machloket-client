@@ -130,9 +130,7 @@ export async function makeLogin(
 		if (picker.validationState !== "ok") {
 			throw new FormError(
 				email,
-				picker.validationState === "invalid"
-					? I18n.login.invalid()
-					: I18n.login.checking(),
+				picker.validationState === "invalid" ? I18n.login.invalid() : I18n.login.checking(),
 			);
 		}
 		if (loginInstance) submittedInstances.set(sent, loginInstance);

@@ -2,28 +2,28 @@ version: 2
 updates:
   # These PRs merge on green checks with no review, so each entry waits out the days in
   # which a hijacked release is usually caught. Security updates ignore the cooldown.
-  - package-ecosystem: 'npm'
-    directory: '/'
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '09:00'
-      timezone: 'America/New_York'
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
     open-pull-requests-limit: 5
     cooldown:
       default-days: 7
     commit-message:
-      prefix: 'chore(deps)'
-      include: 'scope'
+      prefix: "chore(deps)"
+      include: "scope"
   # GitHub Actions pins (claude-code-action, checkout, ...): weekly bumps keep
   # the workflows on the latest action versions.
-  - package-ecosystem: 'github-actions'
-    directory: '/'
+  - package-ecosystem: "github-actions"
+    directory: "/"
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '09:00'
-      timezone: 'America/New_York'
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
     open-pull-requests-limit: 5
     cooldown:
       default-days: 3
@@ -32,7 +32,7 @@ updates:
     groups:
       github-actions:
         patterns:
-          - '*'
+          - "*"
     commit-message:
-      prefix: 'chore(ci)'
-      include: 'scope'
+      prefix: "chore(ci)"
+      include: "scope"

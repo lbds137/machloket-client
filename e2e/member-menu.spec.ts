@@ -124,9 +124,7 @@ test("the member menu orders moderation, then roles, then copy-id, with dividers
 		return color;
 	});
 	const colorOf = (name: string) =>
-		menu
-			.getByRole("button", {name, exact: true})
-			.evaluate((el) => getComputedStyle(el).color);
+		menu.getByRole("button", {name, exact: true}).evaluate((el) => getComputedStyle(el).color);
 	const plain = await colorOf(copyId);
 	expect(plain, "a non-moderation row is not red").not.toBe(expectedRed);
 	expect(await colorOf(addRole), "Add roles is not red").toBe(plain);

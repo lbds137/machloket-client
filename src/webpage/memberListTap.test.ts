@@ -61,7 +61,9 @@ const touchAt = (type: string, target: HTMLElement, live: boolean) => {
 async function press(ms: number) {
 	const {row} = await renderRow();
 	await new Promise((resolve) => setTimeout(resolve));
-	const menu = vi.spyOn(Contextmenu.prototype, "makemenu").mockReturnValue(document.createElement("div"));
+	const menu = vi
+		.spyOn(Contextmenu.prototype, "makemenu")
+		.mockReturnValue(document.createElement("div"));
 	vi.useFakeTimers();
 	try {
 		row.dispatchEvent(touchAt("touchstart", row, true));

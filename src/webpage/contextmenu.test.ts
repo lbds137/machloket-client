@@ -74,7 +74,14 @@ describe("a second finger", () => {
 	it("opens the menu once, not again when the first finger's hold runs out", async () => {
 		const {el, opened} = bound();
 		fire(el, "touchstart", [at(el, 100, 100)], [at(el, 100, 100)]);
-		const second = new Touch({identifier: 2, target: el, pageX: 150, pageY: 150, clientX: 150, clientY: 150});
+		const second = new Touch({
+			identifier: 2,
+			target: el,
+			pageX: 150,
+			pageY: 150,
+			clientX: 150,
+			clientY: 150,
+		});
 		fire(el, "touchstart", [at(el, 100, 100), second], [second]);
 		await LONG_PRESS();
 
@@ -140,12 +147,26 @@ describe("a second finger", () => {
 		//   seat at B's landing (x=160):               140 - 160 = -20
 		fire(el, "touchstart", [at(el, 200, 100)], [at(el, 200, 100)]);
 		fire(el, "touchmove", [at(el, 190, 100)], [at(el, 190, 100)]);
-		const b = new Touch({identifier: 2, target: el, pageX: 160, pageY: 140, clientX: 160, clientY: 140});
+		const b = new Touch({
+			identifier: 2,
+			target: el,
+			pageX: 160,
+			pageY: 140,
+			clientX: 160,
+			clientY: 140,
+		});
 		fire(el, "touchstart", [at(el, 190, 100), b], [b]);
 		// The system cancels the touch: multitouch clears, and a drag can measure again.
 		fire(el, "touchcancel", [], [b]);
 		// B is the only finger left and drifts to (140,140); its lift ends the drag.
-		const b2 = new Touch({identifier: 2, target: el, pageX: 140, pageY: 140, clientX: 140, clientY: 140});
+		const b2 = new Touch({
+			identifier: 2,
+			target: el,
+			pageX: 140,
+			pageY: 140,
+			clientX: 140,
+			clientY: 140,
+		});
 		fire(el, "touchmove", [b2], [b2]);
 		fire(el, "touchend", [], [b2]);
 

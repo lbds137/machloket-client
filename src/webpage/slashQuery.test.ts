@@ -23,7 +23,10 @@ describe("slash-command query", () => {
 		expect(slashCommandQuery(draft)).toBe(query);
 	});
 
-	it.each(["ban", "/ ", "/ban ", "/ban,", "/ban user!", "x/ban"])("%j is not a command query", (draft) => {
-		expect(slashCommandQuery(draft)).toBeUndefined();
-	});
+	it.each(["ban", "/ ", "/ban ", "/ban,", "/ban user!", "x/ban"])(
+		"%j is not a command query",
+		(draft) => {
+			expect(slashCommandQuery(draft)).toBeUndefined();
+		},
+	);
 });

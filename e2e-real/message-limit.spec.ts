@@ -67,7 +67,8 @@ test.describe("a forum post over the limit", () => {
 		const {me, board, threads} = await forum();
 		const posts: string[] = [];
 		page.on("request", (r) => {
-			if (r.method() === "POST" && r.url().endsWith(`/channels/${board.id}/threads`)) posts.push(r.url());
+			if (r.method() === "POST" && r.url().endsWith(`/channels/${board.id}/threads`))
+				posts.push(r.url());
 		});
 		const limitRead = page.waitForResponse(
 			(r) => r.url().endsWith("/policies/instance/config") && r.frame().url().includes("/channels"),
@@ -103,8 +104,12 @@ test.describe("a forum post over the limit", () => {
 		const response = await refused;
 		expect(response.status()).toBe(400);
 		// A thread's starter is nested under `message`, and the tree follows the path.
-		const body = (await response.json()) as {errors: {message: {content: {_errors: {message: string}[]}}}};
-		expect(body.errors.message.content._errors[0].message).toBe(`Must be ${LIMIT} or fewer in length.`);
+		const body = (await response.json()) as {
+			errors: {message: {content: {_errors: {message: string}[]}}};
+		};
+		expect(body.errors.message.content._errors[0].message).toBe(
+			`Must be ${LIMIT} or fewer in length.`,
+		);
 		await expect(page.getByText(`Must be ${LIMIT} or fewer in length.`)).toBeVisible();
 		await expect(area).toHaveText(tooLong);
 		expect(await threads()).toEqual([]);
@@ -125,7 +130,10 @@ test("over the limit: a send and an edit never leave the client, say why, and th
 }) => {
 	const writes: string[] = [];
 	page.on("request", (request) => {
-		if (["POST", "PATCH"].includes(request.method()) && /\/channels\/\d+\/messages/.test(request.url())) {
+		if (
+			["POST", "PATCH"].includes(request.method()) &&
+			/\/channels\/\d+\/messages/.test(request.url())
+		) {
 			writes.push(request.method());
 		}
 	});

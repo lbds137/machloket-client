@@ -205,7 +205,11 @@ describe("parsing hostile or nested input", () => {
 
 	it("shows a quote or heading line whose content fails to render as its text, not nothing", () => {
 		const original = MarkDown.prototype.markdown;
-		const spy = vi.spyOn(MarkDown.prototype, "markdown").mockImplementation(function (this: InstanceType<typeof MarkDown>, txt, opts) {
+		const spy = vi.spyOn(MarkDown.prototype, "markdown").mockImplementation(function (
+			this: InstanceType<typeof MarkDown>,
+			txt,
+			opts,
+		) {
 			if (txt === "boom") throw new Error("render failed");
 			return original.call(this, txt, opts);
 		});
@@ -328,7 +332,9 @@ describe("a quote or heading right after a code block", () => {
 		}
 	});
 	it("still breaks when text came between the block and the line", () => {
-		expect(new MarkDown("```a```x`\n> q", undefined).makeHTML().querySelectorAll("br")).toHaveLength(1);
+		expect(
+			new MarkDown("```a```x`\n> q", undefined).makeHTML().querySelectorAll("br"),
+		).toHaveLength(1);
 	});
 });
 
@@ -520,7 +526,9 @@ describe("MarkDown with a Guild owner (member bios)", () => {
 			roleids: new Map(),
 			resolveMember: () => Promise.resolve({name: "AliceInWonderland"}),
 		} as unknown as Guild;
-		const mention = new MarkDown("hi <@1553128655016763450>", owned).makeHTML().querySelector(".mentionMD")!;
+		const mention = new MarkDown("hi <@1553128655016763450>", owned)
+			.makeHTML()
+			.querySelector(".mentionMD")!;
 		await vi.waitFor(() => expect(mention.textContent).toBe("@AliceInWonderland"));
 	});
 });

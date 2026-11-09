@@ -62,16 +62,25 @@ describe("application-command index fetch", () => {
 	});
 
 	it('the "@me" guild fetches the user command index, not a guild route', async () => {
-		const sent = captureRequests(API_ROOT + "/users/@me/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "ProbeBot"}],
-					application_commands: [
-						{id: "900", type: 1, application_id: "300", name: "row9", description: "", dm_permission: true},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		const sent = captureRequests(
+			API_ROOT + "/users/@me/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "ProbeBot"}],
+						application_commands: [
+							{
+								id: "900",
+								type: 1,
+								application_id: "300",
+								name: "row9",
+								description: "",
+								dm_permission: true,
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		const direct = guildWithId("@me");
 
@@ -84,10 +93,12 @@ describe("application-command index fetch", () => {
 	});
 
 	it("a DM context scopes the index to the focused channel's bots", async () => {
-		captureRequests(API_ROOT + "/users/@me/application-command-index", () =>
-			new Response(JSON.stringify({applications: [], application_commands: []}), {
-				headers: {"Content-Type": "application/json"},
-			}),
+		captureRequests(
+			API_ROOT + "/users/@me/application-command-index",
+			() =>
+				new Response(JSON.stringify({applications: [], application_commands: []}), {
+					headers: {"Content-Type": "application/json"},
+				}),
 		);
 		// captureRequests keys on origin+pathname (queries stripped), so the query is asserted
 		// through a delegating fetch wrapper instead.
@@ -109,18 +120,42 @@ describe("application-command index fetch", () => {
 	});
 
 	it("a command registered both globally and per-guild appears once", async () => {
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
-						{id: "2", type: 1, application_id: "300", name: "random", description: "", guild_id: "1554722916606791818", dm_permission: true},
-						{id: "3", type: 1, application_id: "300", name: "help", description: "", dm_permission: true},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+							},
+							{
+								id: "2",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								guild_id: "1554722916606791818",
+								dm_permission: true,
+							},
+							{
+								id: "3",
+								type: 1,
+								application_id: "300",
+								name: "help",
+								description: "",
+								dm_permission: true,
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		const guild = guildWithId("1554722916606791818");
 
@@ -131,17 +166,33 @@ describe("application-command index fetch", () => {
 	});
 
 	it("context-menu commands are stored but never offered in the slash popup", async () => {
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
-						{id: "2", type: 3, application_id: "300", name: "Inspect Message", description: "", dm_permission: true},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+							},
+							{
+								id: "2",
+								type: 3,
+								application_id: "300",
+								name: "Inspect Message",
+								description: "",
+								dm_permission: true,
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		const guild = guildWithId("1554722916606791818");
 
@@ -153,17 +204,33 @@ describe("application-command index fetch", () => {
 	});
 
 	it("a context-menu command sharing a slash command's name doesn't swallow it", async () => {
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "2", type: 2, application_id: "300", name: "profile", description: "", dm_permission: true},
-						{id: "1", type: 1, application_id: "300", name: "profile", description: "", dm_permission: true},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "2",
+								type: 2,
+								application_id: "300",
+								name: "profile",
+								description: "",
+								dm_permission: true,
+							},
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "profile",
+								description: "",
+								dm_permission: true,
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		const guild = guildWithId("1554722916606791818");
 
@@ -182,7 +249,14 @@ describe("application-command index fetch", () => {
 						JSON.stringify({
 							applications: [],
 							application_commands: [
-								{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
+								{
+									id: "1",
+									type: 1,
+									application_id: "300",
+									name: "random",
+									description: "",
+									dm_permission: true,
+								},
 							],
 						}),
 						{headers: {"Content-Type": "application/json"}},
@@ -246,20 +320,45 @@ describe("application-command index fetch", () => {
 
 	it("a command whose default permissions the member lacks isn't offered", async () => {
 		const {Member} = await import("./member");
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
-						// MANAGE_MESSAGES (bit 13) required:
-						{id: "2", type: 1, application_id: "300", name: "purge", description: "", dm_permission: true, default_member_permissions: "8192"},
-						// ADMINISTRATOR (bit 3) required:
-						{id: "3", type: 1, application_id: "300", name: "wipe", description: "", dm_permission: true, default_member_permissions: "8"},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+							},
+							// MANAGE_MESSAGES (bit 13) required:
+							{
+								id: "2",
+								type: 1,
+								application_id: "300",
+								name: "purge",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: "8192",
+							},
+							// ADMINISTRATOR (bit 3) required:
+							{
+								id: "3",
+								type: 1,
+								application_id: "300",
+								name: "wipe",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: "8",
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		// The member holds MANAGE_MESSAGES and USE_APPLICATION_COMMANDS — no ADMINISTRATOR bit.
 		const member = Object.create(Member.prototype);
@@ -280,18 +379,35 @@ describe("application-command index fetch", () => {
 
 	it("an administrator is offered everything the index carries", async () => {
 		const {Member} = await import("./member");
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
-						// Not the admin bit: only the administrator shortcut can pass this.
-						{id: "2", type: 1, application_id: "300", name: "wipe", description: "", dm_permission: true, default_member_permissions: "8192"},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+							},
+							// Not the admin bit: only the administrator shortcut can pass this.
+							{
+								id: "2",
+								type: 1,
+								application_id: "300",
+								name: "wipe",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: "8192",
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		const member = Object.create(Member.prototype);
 		Object.defineProperty(member, "roles", {value: [{permissions: {allow: 8n}}]});
@@ -311,17 +427,34 @@ describe("application-command index fetch", () => {
 
 	it("the guild owner is offered everything without needing an admin-role bit", async () => {
 		const {Member} = await import("./member");
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
-						{id: "2", type: 1, application_id: "300", name: "purge", description: "", dm_permission: true, default_member_permissions: "8192"},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+							},
+							{
+								id: "2",
+								type: 1,
+								application_id: "300",
+								name: "purge",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: "8192",
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		// A fresh guild's owner: no roles beyond @everyone, no admin bit anywhere —
 		// isAdmin() still calls them admin.
@@ -345,22 +478,55 @@ describe("application-command index fetch", () => {
 
 	it('a command with default_member_permissions "0" (admins only) isn\'t offered to a plain member', async () => {
 		const {Member} = await import("./member");
-		captureRequests(API_ROOT + "/guilds/1554722916606791818/application-command-index", () =>
-			new Response(
-				JSON.stringify({
-					applications: [{id: "300", name: "Echo"}],
-					application_commands: [
-						{id: "1", type: 1, application_id: "300", name: "random", description: "", dm_permission: true},
-						// Discord: "0" disables the command for everyone but owners and admins —
-						// so does anything the server reads as 0n, "00" included.
-						{id: "2", type: 1, application_id: "300", name: "adminonly", description: "", dm_permission: true, default_member_permissions: "0"},
-						{id: "3", type: 1, application_id: "300", name: "zerozero", description: "", dm_permission: true, default_member_permissions: "00"},
-						// null means everyone.
-						{id: "4", type: 1, application_id: "300", name: "nullperms", description: "", dm_permission: true, default_member_permissions: null},
-					],
-				}),
-				{headers: {"Content-Type": "application/json"}},
-			),
+		captureRequests(
+			API_ROOT + "/guilds/1554722916606791818/application-command-index",
+			() =>
+				new Response(
+					JSON.stringify({
+						applications: [{id: "300", name: "Echo"}],
+						application_commands: [
+							{
+								id: "1",
+								type: 1,
+								application_id: "300",
+								name: "random",
+								description: "",
+								dm_permission: true,
+							},
+							// Discord: "0" disables the command for everyone but owners and admins —
+							// so does anything the server reads as 0n, "00" included.
+							{
+								id: "2",
+								type: 1,
+								application_id: "300",
+								name: "adminonly",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: "0",
+							},
+							{
+								id: "3",
+								type: 1,
+								application_id: "300",
+								name: "zerozero",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: "00",
+							},
+							// null means everyone.
+							{
+								id: "4",
+								type: 1,
+								application_id: "300",
+								name: "nullperms",
+								description: "",
+								dm_permission: true,
+								default_member_permissions: null,
+							},
+						],
+					}),
+					{headers: {"Content-Type": "application/json"}},
+				),
 		);
 		// A plain member: @everyone's usual bits (VIEW_CHANNEL | SEND_MESSAGES |
 		// USE_APPLICATION_COMMANDS), no admin.
@@ -452,9 +618,9 @@ describe("command picker rows", () => {
 				await localuser.findCommands("", box, {} as never);
 
 				expect(box.querySelector(".commandArchivedHint")).toBeNull();
-				expect(
-					[...box.querySelectorAll(".commandRowName")].map((s) => s.textContent),
-				).toEqual(["/random"]);
+				expect([...box.querySelectorAll(".commandRowName")].map((s) => s.textContent)).toEqual([
+					"/random",
+				]);
 			} finally {
 				box.remove();
 			}
@@ -497,7 +663,9 @@ describe("command picker rows", () => {
 			const rows = [...box.children];
 			expect(rows).toHaveLength(2);
 			const byName = (name: string) =>
-				rows.find((r) => r.querySelector(".commandRowName")?.textContent === "/" + name) as HTMLElement;
+				rows.find(
+					(r) => r.querySelector(".commandRowName")?.textContent === "/" + name,
+				) as HTMLElement;
 
 			// An app with an icon: the CDN avatar precedes the name.
 			const random = byName("random");
@@ -563,31 +731,29 @@ describe("command picker rows", () => {
 			await localuser.findCommands("", box, {} as never);
 
 			// The rail: Frequently Used first, then the apps alphabetical.
-			const rail = [...box.querySelectorAll(".searchRailButton")].map(
-				(b) => b.getAttribute("aria-label"),
+			const rail = [...box.querySelectorAll(".searchRailButton")].map((b) =>
+				b.getAttribute("aria-label"),
 			);
 			expect(rail).toEqual(["Frequently Used", "Echo", "Helper"]);
 
 			// The body: recents (most recent first) above one section per app.
-			const sections = [...box.querySelectorAll(".searchSectionTitle")].map(
-				(t) => t.textContent,
-			);
+			const sections = [...box.querySelectorAll(".searchSectionTitle")].map((t) => t.textContent);
 			expect(sections).toEqual(["Frequently Used", "Echo", "Helper"]);
 			const recentsNames = [
 				...box.querySelectorAll(".searchSection")[0].querySelectorAll(".commandRowName"),
 			].map((s) => s.textContent);
 			expect(recentsNames).toEqual(["/roll", "/random"]);
 			// Every row names its bot at the far edge.
-			const rollRow = [...box.querySelectorAll(".commandRow")].find((r) =>
-				r.querySelector(".commandRowName")?.textContent === "/roll",
+			const rollRow = [...box.querySelectorAll(".commandRow")].find(
+				(r) => r.querySelector(".commandRowName")?.textContent === "/roll",
 			) as HTMLElement;
 			expect(rollRow.querySelector(".commandRowApp")?.textContent).toBe("Helper");
 
 			// A rail tab filters the body to that app, titled by the app.
 			(box.querySelectorAll(".searchRailButton")[1] as HTMLElement).click();
-			expect(
-				[...box.querySelectorAll(".commandRowName")].map((s) => s.textContent),
-			).toEqual(["/random"]);
+			expect([...box.querySelectorAll(".commandRowName")].map((s) => s.textContent)).toEqual([
+				"/random",
+			]);
 			expect(box.querySelector(".searchPanelTitle")?.textContent).toContain("Echo");
 
 			// ArrowLeft/Right walk the rail; Enter runs the selected row.
@@ -661,30 +827,25 @@ describe("command picker rows", () => {
 		const box = document.createElement("div");
 		document.body.append(box);
 		// Recency keys carry the app id (invocationKey): roll belongs to Helper (400).
-		localStorage.setItem(
-			"commandRecency",
-			JSON.stringify({"400/roll": Date.now()}),
-		);
+		localStorage.setItem("commandRecency", JSON.stringify({"400/roll": Date.now()}));
 		try {
 			await localuser.findCommands("", box, {} as never);
 
 			// Discord's list: one row per runnable path, alphabetical by the full text.
 			const sectionOf = (title: string) => {
 				const sections = [...box.querySelectorAll(".searchSection")];
-				return sections.find((s) =>
-					s.querySelector(".searchSectionTitle")?.textContent === title,
+				return sections.find(
+					(s) => s.querySelector(".searchSectionTitle")?.textContent === title,
 				) as HTMLElement;
 			};
 			const rowsOf = (title: string) =>
-				[...sectionOf(title).querySelectorAll(".commandRowName")].map(
-					(s) => s.textContent,
-				);
+				[...sectionOf(title).querySelectorAll(".commandRowName")].map((s) => s.textContent);
 			expect(rowsOf("Echo")).toEqual(["/character browse", "/character view"]);
 			expect(rowsOf("Helper")).toEqual(["/roll"]);
 
 			// Base bold, sub path dimmer, and the SUB's own description.
-			const browseRow = [...box.querySelectorAll(".commandRow")].find((r) =>
-				r.querySelector(".commandRowName")?.textContent === "/character browse",
+			const browseRow = [...box.querySelectorAll(".commandRow")].find(
+				(r) => r.querySelector(".commandRowName")?.textContent === "/character browse",
 			) as HTMLElement;
 			expect(browseRow.querySelector(".commandRowBase")?.textContent).toBe("/character");
 			expect(browseRow.querySelector(".commandRowSubs")?.textContent).toBe(" browse");

@@ -53,7 +53,9 @@ async function awayAndBack(page: Page) {
 /** Sends the composer and answers with the file names in the request, in order. */
 async function sendAndReadFiles(page: Page) {
 	const request = page.waitForRequest(
-		(r) => r.method() === "POST" && new URL(r.url()).pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
+		(r) =>
+			r.method() === "POST" &&
+			new URL(r.url()).pathname === `/api/v9/channels/${MOCK_CHANNEL_ID}/messages`,
 	);
 	await page.locator("#typebox").click();
 	await page.keyboard.press("Enter");

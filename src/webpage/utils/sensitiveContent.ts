@@ -1,4 +1,9 @@
-import {ContentActionValues, type ContentAction, getPreferences, updatePreferences} from "./storage/userPreferences";
+import {
+	ContentActionValues,
+	type ContentAction,
+	getPreferences,
+	updatePreferences,
+} from "./storage/userPreferences";
 
 export type SensitiveContentAction = ContentAction;
 export type SensitiveContentSource = "spoilers" | "nsfw";

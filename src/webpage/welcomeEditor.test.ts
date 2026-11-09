@@ -107,7 +107,9 @@ const rowSlotImg = () => document.querySelector<HTMLImageElement>(".emojiForm im
 
 /** A custom picker return for the tests: a minimal owner satisfies Emoji.getHTML's CDN read. */
 function customEmoji(id: string, name: string) {
-	return new Emoji({id, name, animated: false}, {info: {cdn: ""}} as unknown as InstanceType<typeof Guild>);
+	return new Emoji({id, name, animated: false}, {info: {cdn: ""}} as unknown as InstanceType<
+		typeof Guild
+	>);
 }
 
 it("an added channel's picked custom emoji rides with its name", async () => {
@@ -230,7 +232,9 @@ it("a pick by an immediate-save input raises no unsaved-changes bar", async () =
 	await vi.waitFor(() => expect(rowSlotImg()).not.toBeNull());
 
 	picked = customEmoji("888", "wave");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
 
 	// The input PATCHes immediately; a bar promising unsaved changes would be a lie, and
@@ -247,7 +251,9 @@ it("a refused emoji replace restores the visible slot and holds the old emoji", 
 
 	picked = customEmoji("888", "wave");
 	failing = true;
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 
 	// The model reverts (pinned below through the next PATCH) and the slot must follow it:
@@ -263,9 +269,9 @@ it("a refused emoji replace restores the visible slot and holds the old emoji", 
 	expect(secondForm, "the unicode row renders its emoji slot").not.toBeUndefined();
 	secondForm!.parentElement!.querySelector("button")!.click();
 	await vi.waitFor(() => {
-		const patch = patchBodies(bodies).filter((b) => "welcome_channels" in (b as object)).at(-1) as
-			| {welcome_channels: welcomeEntry[]}
-			| undefined;
+		const patch = patchBodies(bodies)
+			.filter((b) => "welcome_channels" in (b as object))
+			.at(-1) as {welcome_channels: welcomeEntry[]} | undefined;
 		expect(patch?.welcome_channels.find((c) => c.channel_id === "c2")).toBeDefined();
 	});
 
@@ -291,11 +297,15 @@ it("a failed pick does not clobber a pick that landed after it", async () => {
 	// Pick A enters flight while failing; pick B lands before A's refusal arrives.
 	failing = true;
 	picked = customEmoji("888", "wave");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
 	failing = false;
 	picked = customEmoji("777", "party");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
 
 	// A's late refusal must NOT write the pre-A emoji back over B's landed pick.
@@ -321,7 +331,9 @@ it("a pick on the same row after a refusal leaves exactly one emoji in the slot"
 
 	picked = customEmoji("888", "wave");
 	failing = true;
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(document.body.textContent).toContain(I18n.requestFailed("boom")));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/111"));
 
@@ -329,11 +341,15 @@ it("a pick on the same row after a refusal leaves exactly one emoji in the slot"
 	// a new one beside the restored element.
 	failing = false;
 	picked = customEmoji("777", "party");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
 
 	const form = rowSlotImg()!.closest(".emojiForm")!;
-	expect(form.querySelectorAll(".smallemoji"), "one emoji element after the re-edit").toHaveLength(1);
+	expect(form.querySelectorAll(".smallemoji"), "one emoji element after the re-edit").toHaveLength(
+		1,
+	);
 });
 
 it("two overlapping refused picks revert to the last server-confirmed emoji", async () => {
@@ -350,10 +366,14 @@ it("two overlapping refused picks revert to the last server-confirmed emoji", as
 	// so the client must fall back to the fetched emoji — not to either pick.
 	failing = true;
 	picked = customEmoji("888", "wave");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(patchBodies(bodies).length).toBeGreaterThan(0));
 	picked = customEmoji("777", "party");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/777"));
 
 	await new Promise((r) => setTimeout(r, 250));
@@ -388,7 +408,9 @@ it("a refused welcome Save puts a row's edited description back so the next emoj
 
 	status = 204;
 	picked = customEmoji("888", "wave");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
@@ -423,7 +445,9 @@ it("an accepted welcome Save keeps a row's edited description on the next emoji 
 	await vi.waitFor(() => expect(patchBodies(bodies)).toHaveLength(1));
 
 	picked = customEmoji("888", "wave");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(patchBodies(bodies)).toHaveLength(2));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};
@@ -465,7 +489,9 @@ it("a channel added through Add channel, then its row edited and Save refused, r
 
 	status = 204;
 	picked = customEmoji("888", "wave");
-	rowSlotImg()!.closest(".emojiForm")!.dispatchEvent(new MouseEvent("click", {bubbles: true}));
+	rowSlotImg()!
+		.closest(".emojiForm")!
+		.dispatchEvent(new MouseEvent("click", {bubbles: true}));
 	await vi.waitFor(() => expect(rowSlotImg()?.src).toContain("/emojis/888"));
 
 	const patch = patchBodies(bodies).at(-1) as {welcome_channels: welcomeEntry[]};

@@ -85,14 +85,18 @@ test.describe("an 18+ voice channel's chat button", () => {
 	const GATED_VOICE = {...MOCK_VOICE_CHANNEL, name: "late-call", nsfw: true};
 	test.use({mockInstanceOptions: {extraChannels: [GATED_VOICE]}});
 
-	test("shows the age gate, not the messages, until it's answered", async ({page, mockInstance}) => {
+	test("shows the age gate, not the messages, until it's answered", async ({
+		page,
+		mockInstance,
+	}) => {
 		await loginAndOpenChannel(page);
 		voiceOn(mockInstance);
 		await expect(page.locator("#scrollWrap .messagediv").first()).toBeVisible();
 		await page.locator("#channels button.channelbutton", {hasText: GATED_VOICE.name}).click();
 		const fetched: string[] = [];
 		page.on("request", (request) => {
-			if (request.url().includes(`/channels/${GATED_VOICE.id}/messages?`)) fetched.push(request.url());
+			if (request.url().includes(`/channels/${GATED_VOICE.id}/messages?`))
+				fetched.push(request.url());
 		});
 
 		await page.locator("#voiceArea .callVoiceIcon:has(.svg-frmessage)").click();

@@ -29,7 +29,13 @@ describe("an attachment's images", () => {
 	const hex = (ms: number) => Math.round(ms).toString(16);
 	function attachments(owner: object) {
 		const json = (id: string, filename: string, content_type: string) =>
-			({id, filename, content_type, size: 1, url: `http://cdn.test/attachments/1/${id}/${filename}?ex=${hex(Date.now() + 3600e3)}`}) as never;
+			({
+				id,
+				filename,
+				content_type,
+				size: 1,
+				url: `http://cdn.test/attachments/1/${id}/${filename}?ex=${hex(Date.now() + 3600e3)}`,
+			}) as never;
 		const list = [
 			new File(json("1", "clip.mp4", "video/mp4"), owner as never),
 			new File(json("2", "a.png", "image/png"), owner as never),
@@ -39,12 +45,17 @@ describe("an attachment's images", () => {
 		Object.assign(owner, {attachments: list});
 		return list;
 	}
-	const owner = () => ({info: {cdn: "http://cdn.test"}, localuser: {refreshURL: async (u: string) => u}});
+	const owner = () => ({
+		info: {cdn: "http://cdn.test"},
+		localuser: {refreshURL: async (u: string) => u},
+	});
 
 	it("open a viewer that steps through the images only", async () => {
 		const {ImagesDisplay} = await import("./disimg");
 		let shown: {files: unknown[]; index: number} | undefined;
-		const show = vi.spyOn(ImagesDisplay.prototype, "show").mockImplementation(function (this: never) {
+		const show = vi.spyOn(ImagesDisplay.prototype, "show").mockImplementation(function (
+			this: never,
+		) {
 			shown = this;
 		});
 		try {
@@ -74,7 +85,9 @@ it("the account's own link refresh uses the same expiry margin", async () => {
 	const at = (ms: number) => `http://cdn.test/attachments/1/2/a.png?ex=${hex(ms)}`;
 	const fresh = at(Date.now() + 3600e3);
 	expect(await Localuser.prototype.refreshIfNeeded.call(self, fresh)).toBe(fresh);
-	expect(await Localuser.prototype.refreshIfNeeded.call(self, at(Date.now() - 2000))).toContain("&fresh");
+	expect(await Localuser.prototype.refreshIfNeeded.call(self, at(Date.now() - 2000))).toContain(
+		"&fresh",
+	);
 });
 
 it("leaves a non-web attachment url off the file card's link", async () => {
@@ -202,7 +215,7 @@ describe("a spoiler-tagged attachment follows the sensitive-content setting", ()
 		expect(html.querySelector(".fSpoilBlocked")).toBeNull();
 	});
 
-	it("gives the .fSpoil overlay tabIndex 0 and role=\"button\"", () => {
+	it('gives the .fSpoil overlay tabIndex 0 and role="button"', () => {
 		const spoil = spoilerFile().getHTML().querySelector(".fSpoil") as HTMLElement;
 		expect(spoil.tabIndex).toBe(0);
 		expect(spoil.getAttribute("role")).toBe("button");

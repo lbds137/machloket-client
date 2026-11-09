@@ -14,10 +14,7 @@ import {
 // guild from the instance's answer, and Accept joins through the account switcher into
 // the guild's channel view. Notification tap-through (1d) and PWA install stay physical.
 
-test("the invite page previews the guild, and accept lands in it", async ({
-	page,
-	mockInstance,
-}) => {
+test("the invite page previews the guild, and accept lands in it", async ({page, mockInstance}) => {
 	// A logged-in account first: the page's joinable list comes from stored accounts
 	// whose instance matches ?instance=.
 	await loginAndOpenChannel(page);

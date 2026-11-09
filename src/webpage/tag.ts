@@ -30,7 +30,12 @@ export class Tag extends SnowFlake {
 			// Tag JSON carries no animated flag; the guild's own emoji list does, so a guild
 			// emoji animates and an unknown id falls back to static (all the client can do).
 			const animated = this.owner.guild.emojis.find((e) => e.id === this.emoji_id)?.animated;
-			tagDiv.append(new Emoji({id: this.emoji_id, name: this.emoji_name ?? "", animated}, this.owner.guild).getHTML(false, false));
+			tagDiv.append(
+				new Emoji(
+					{id: this.emoji_id, name: this.emoji_name ?? "", animated},
+					this.owner.guild,
+				).getHTML(false, false),
+			);
 		} else if (this.emoji_name) {
 			tagDiv.append(this.emoji_name);
 		}

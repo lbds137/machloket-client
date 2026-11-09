@@ -107,10 +107,7 @@ describe("showBackupCodes screen", () => {
 	});
 
 	it("view: true shows viewExplain and not explain", () => {
-		showBackupCodes(
-			{backup_codes: [{code: "a1b2c3d4", consumed: false}]},
-			{view: true},
-		);
+		showBackupCodes({backup_codes: [{code: "a1b2c3d4", consumed: false}]}, {view: true});
 		expect(document.body.textContent).toContain(I18n.backupCodes.viewExplain());
 		expect(document.body.textContent).not.toContain(I18n.backupCodes.explain());
 	});
@@ -603,13 +600,16 @@ describe("showBackupCodes screen", () => {
 					throw new Error("boom");
 				},
 			],
-		])("a regenerate %s on the grid shows regenLost after .backupCodeGrid is gone", async (_, regenerate) => {
-			showBackupCodes({backup_codes: [{code: "old11111", consumed: false}]}, {regenerate});
-			expect(document.body.textContent).not.toContain(I18n.backupCodes.regenLost());
-			regenButton()!.click();
-			await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
-			expect(document.body.textContent).toContain(I18n.backupCodes.regenLost());
-		});
+		])(
+			"a regenerate %s on the grid shows regenLost after .backupCodeGrid is gone",
+			async (_, regenerate) => {
+				showBackupCodes({backup_codes: [{code: "old11111", consumed: false}]}, {regenerate});
+				expect(document.body.textContent).not.toContain(I18n.backupCodes.regenLost());
+				regenButton()!.click();
+				await vi.waitFor(() => expect(document.querySelector(".backupCodeGrid")).toBeNull());
+				expect(document.body.textContent).toContain(I18n.backupCodes.regenLost());
+			},
+		);
 
 		it("REGEN_UNCHANGED and a successful new batch show no regenLost", async () => {
 			let step = 0;

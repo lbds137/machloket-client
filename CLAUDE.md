@@ -14,14 +14,14 @@ Machloket (מחלוקת, "discord") is a Discord-like web client for [Spacebar](
 
 Node 24 (LTS), npm (the repo ships `package-lock.json`; don't switch it to pnpm).
 
-| What                               | Command                                                     |
-| ---------------------------------- | ----------------------------------------------------------- |
-| Install                            | `npm ci`                                                    |
-| Type check                         | `npm run check`                                             |
-| Tests (headless Chromium)          | `npm test`                                                  |
-| e2e type check                     | `npm run check:e2e`                                         |
-| e2e (builds, then Playwright)      | `npm run test:e2e`                                          |
-| Production build → `dist/webpage/` | `npm run build`                                             |
+| What                               | Command                                                         |
+| ---------------------------------- | --------------------------------------------------------------- |
+| Install                            | `npm ci`                                                        |
+| Type check                         | `npm run check`                                                 |
+| Tests (headless Chromium)          | `npm test`                                                      |
+| e2e type check                     | `npm run check:e2e`                                             |
+| e2e (builds, then Playwright)      | `npm run test:e2e`                                              |
+| Production build → `dist/webpage/` | `npm run build`                                                 |
 | Dev server                         | `npx vite --port 8080` (add `--host 0.0.0.0` for other devices) |
 
 - **The gate before every commit:** `npm run check && npm test && npm run build`. Every unit also runs the e2e tier (`npm run check:e2e && npm run test:e2e`) — it builds first, so it never green-lights code the tests did not see; CI's gate job runs the tier on every PR too. Its harness (e2e/fixtures.ts + e2e/mock/) fails any spec whose page makes an off-origin request or a same-origin request the mock doesn't answer; `PW_REUSE_SERVER=1` opts into reusing a running preview server. `E2E_SHOTS=1` opts into the documentation-capture spec (`e2e/ux-shots.spec.ts`, shot PNGs into git-ignored `docs/local/`) when running Playwright directly; the tier always skips it. The screenshot pins run through `pinShot` (e2e/fixtures.ts) and only fire locally — the committed baselines are Deck-local (font rendering), so `CI=1` (or the CI runner) skips them with a report annotation while the DOM asserts still run.

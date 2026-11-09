@@ -46,9 +46,7 @@ it("member menu keeps Discord's section order: moderation block, then roles, the
 		row.removeRole,
 		row.copyId,
 	];
-	expect(order, "moderation, then roles, then copy-id").toEqual(
-		[...order].sort((a, b) => a - b),
-	);
+	expect(order, "moderation, then roles, then copy-id").toEqual([...order].sort((a, b) => a - b));
 	// Section dividers: a separator part (no text) closes the moderation block and
 	// opens the copy-id row.
 	expect("text" in menu().buttons[row.ban + 1], "divider after the moderation block").toBe(false);

@@ -52,12 +52,18 @@ describe("attachment URL refresh", () => {
 	});
 
 	it("a failed refresh hands back the original URLs instead of leaving them pending", async () => {
-		captureRequests(API_ROOT + "/attachments/refresh-urls", () => new Response("bad gateway", {status: 502}));
+		captureRequests(
+			API_ROOT + "/attachments/refresh-urls",
+			() => new Response("bad gateway", {status: 502}),
+		);
 		const user = lookupUser();
 		Object.defineProperty(user, "headers", {value: {}});
 
 		const refreshed = await Promise.race([
-			Promise.all([user.refreshURL("https://cdn.test/a.png"), user.refreshURL("https://cdn.test/b.png")]),
+			Promise.all([
+				user.refreshURL("https://cdn.test/a.png"),
+				user.refreshURL("https://cdn.test/b.png"),
+			]),
 			new Promise<"timeout">((res) => setTimeout(() => res("timeout"), 2000)),
 		]);
 

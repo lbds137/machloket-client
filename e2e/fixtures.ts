@@ -23,15 +23,18 @@ import {
 
 /** The app's English strings (translations/en.json), for assertions on rendered labels. Read
  * from disk: Playwright's ESM loader refuses a bare JSON import. */
-export const EN = JSON.parse(readFileSync(new URL("../translations/en.json", import.meta.url), "utf8")) as Record<
-	string,
-	Record<string, string>
->;
+export const EN = JSON.parse(
+	readFileSync(new URL("../translations/en.json", import.meta.url), "utf8"),
+) as Record<string, Record<string, string>>;
 
 const PREVIEW = "localhost:4173";
 const OFF_PREVIEW = /^https?:\/\/(?!localhost:4173(?=\/|$))/;
 
-export const test = base.extend<{mockInstance: MockInstanceHandle; mockInstanceOptions: MockInstanceOptions; network: void}>({
+export const test = base.extend<{
+	mockInstance: MockInstanceHandle;
+	mockInstanceOptions: MockInstanceOptions;
+	network: void;
+}>({
 	mockInstanceOptions: [{}, {option: true}],
 	network: [
 		async ({context}, use) => {

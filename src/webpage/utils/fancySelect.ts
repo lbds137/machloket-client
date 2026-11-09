@@ -167,7 +167,9 @@ export class FancySelect {
 				this.options
 					.filter((_) => _.default)
 					.map((_) => _.label)
-					.join(", ") || this.placeholder || "";
+					.join(", ") ||
+				this.placeholder ||
+				"";
 			const close = document.createElement("button");
 			close.classList.add("selectSheetClose");
 			close.textContent = "×";

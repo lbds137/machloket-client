@@ -619,7 +619,11 @@ export const MOCK_REQUIRED_MODAL: Omit<ModalCreateEvent, "nonce"> = {
 	title: "Validated",
 	application: {id: MOCK_BOT_USER_ID, name: "HelperBot"},
 	components: [
-		{type: 18, label: "Required", component: {type: 4, custom_id: "must", style: 1, required: true}},
+		{
+			type: 18,
+			label: "Required",
+			component: {type: 4, custom_id: "must", style: 1, required: true},
+		},
 		{
 			type: 18,
 			label: "Length window",
@@ -676,7 +680,9 @@ const EMBED_ASSETS = new Map([
 	],
 	[
 		new URL(MOCK_EMBED_POSTER_URL).pathname,
-		svg('<rect width="96" height="96" fill="#8a5a2b"/><polygon points="38,30 70,48 38,66" fill="#f0e6d2"/>'),
+		svg(
+			'<rect width="96" height="96" fill="#8a5a2b"/><polygon points="38,30 70,48 38,66" fill="#f0e6d2"/>',
+		),
 	],
 ]);
 
@@ -704,7 +710,12 @@ export const MOCK_VIDEO_EMBED: embedjson = {
 	title: "e2e fixture clip",
 	// 16:9 under a 4:3 poster, and wider than a phone: the player must follow the video and still fit.
 	video: {url: "https://www.youtube.com/embed/e2eFixtured01", width: 1280, height: 720},
-	thumbnail: {url: MOCK_EMBED_POSTER_URL, proxy_url: MOCK_EMBED_POSTER_URL, width: 480, height: 360},
+	thumbnail: {
+		url: MOCK_EMBED_POSTER_URL,
+		proxy_url: MOCK_EMBED_POSTER_URL,
+		width: 480,
+		height: 360,
+	},
 };
 
 // The /invite/:code page (src/webpage/invite.ts) reads guild.name/icon/banner/
@@ -1614,10 +1625,7 @@ export async function mountMockInstance(
 
 			// 10c. A guild mute / unmute (Guild.sendMuteConfig); a spec pins the body from
 			// capturedRequests, the app reads nothing off the answer.
-			if (
-				method === "PATCH" &&
-				pathname === `/api/v9/users/@me/guilds/${MOCK_GUILD_ID}/settings`
-			) {
+			if (method === "PATCH" && pathname === `/api/v9/users/@me/guilds/${MOCK_GUILD_ID}/settings`) {
 				return fulfillJson({});
 			}
 
@@ -1704,8 +1712,7 @@ export async function mountMockInstance(
 				const history = messagesByChannel.get(channelId);
 				const index = history?.findIndex((m) => m.id === messageId) ?? -1;
 				const stored = (index >= 0 ? history?.[index] : undefined) as
-					| (messagejson & {message_reference?: {type?: number}})
-					| undefined;
+					(messagejson & {message_reference?: {type?: number}}) | undefined;
 				if (stored?.poll) {
 					return fulfillJson({code: 520003, message: "Cannot edit a poll message"}, 400);
 				}
@@ -1744,7 +1751,11 @@ export async function mountMockInstance(
 				const index = history?.findIndex((m) => m.id === messageId) ?? -1;
 				if (index < 0) return fulfillJson({code: 10008, message: "Unknown Message"}, 404);
 				history?.splice(index, 1);
-				handle.sendGatewayEvent({op: 0, t: "MESSAGE_DELETE", d: {id: messageId, channel_id: channelId}});
+				handle.sendGatewayEvent({
+					op: 0,
+					t: "MESSAGE_DELETE",
+					d: {id: messageId, channel_id: channelId},
+				});
 				return route.fulfill({status: 204, body: ""});
 			}
 

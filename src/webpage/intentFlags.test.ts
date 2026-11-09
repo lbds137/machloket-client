@@ -7,13 +7,15 @@ await import("./localuser");
 const {Localuser} = await import("./localuser");
 const {Dialog} = await import("./settings");
 const {I18n} = await import("./i18n");
-const {INTENT_LIMITED_BITS, INTENT_FULL_BITS, foldIntentFlags, intentShown} = await import(
-	"./intentFlags"
-);
+const {INTENT_LIMITED_BITS, INTENT_FULL_BITS, foldIntentFlags, intentShown} =
+	await import("./intentFlags");
 await I18n.done;
 
 function json(body: unknown, status = 200) {
-	return new Response(JSON.stringify(body), {status, headers: {"Content-Type": "application/json"}});
+	return new Response(JSON.stringify(body), {
+		status,
+		headers: {"Content-Type": "application/json"},
+	});
 }
 
 const OTHER_FLAGS =
@@ -150,9 +152,7 @@ describe("the application edit form's flags wiring", () => {
 	/** Waits for the form's fetch chain: `atLeast` bodies captured on the form's URL. */
 	const settle = (sent: unknown[], atLeast = 1) =>
 		vi.waitFor(() =>
-			expect(sent.filter((b) => b && typeof b === "object").length).toBeGreaterThanOrEqual(
-				atLeast,
-			),
+			expect(sent.filter((b) => b && typeof b === "object").length).toBeGreaterThanOrEqual(atLeast),
 		);
 
 	it("inits the toggles from either bit and PATCHes flags with the limited bits folded", async () => {
@@ -172,9 +172,7 @@ describe("the application edit form's flags wiring", () => {
 		await form.submit();
 		await settle(sent);
 
-		const patch = sent.find(
-			(body) => body && typeof body === "object",
-		) as Record<string, number>;
+		const patch = sent.find((body) => body && typeof body === "object") as Record<string, number>;
 		expect(patch).toBeDefined();
 		// Only changed toggles fold: members flipped on adds its limited bit, content flipped
 		// off clears its. Presence is untouched — on via its full bit alone — so it stays
@@ -203,9 +201,7 @@ describe("the application edit form's flags wiring", () => {
 		await form.submit();
 		await settle(sent);
 
-		const patch = sent.find(
-			(body) => body && typeof body === "object",
-		) as Record<string, unknown>;
+		const patch = sent.find((body) => body && typeof body === "object") as Record<string, unknown>;
 		expect(patch).toBeDefined();
 		expect("flags" in patch).toBe(false);
 	});
@@ -311,8 +307,7 @@ describe("the application edit form's flags wiring", () => {
 		validForm.generateHTML();
 		for (const field of ["intent_presence", "intent_members", "intent_content"]) {
 			expect(
-				(validForm.names.get(field) as {input: WeakRef<HTMLInputElement>}).input.deref()!
-					.disabled,
+				(validForm.names.get(field) as {input: WeakRef<HTMLInputElement>}).input.deref()!.disabled,
 			).toBe(false);
 		}
 	});
@@ -345,20 +340,17 @@ describe("the application edit form's flags wiring", () => {
 			await form.submit();
 			await settle(sent);
 
-			const patch = sent.find(
-				(body) => body && typeof body === "object",
-			) as Record<string, unknown>;
+			const patch = sent.find((body) => body && typeof body === "object") as Record<
+				string,
+				unknown
+			>;
 			expect(patch).toBeDefined();
 			expect("flags" in patch).toBe(false);
 		},
 	);
 
 	it("a failed save keeps the baseline so a retry still PATCHes the changed toggle", async () => {
-		const {sent, form} = await openAppForm(
-			READ,
-			undefined,
-			(n) => (n === 2 ? 500 : 200),
-		);
+		const {sent, form} = await openAppForm(READ, undefined, (n) => (n === 2 ? 500 : 200));
 		(form.names.get("intent_members") as {value: boolean}).value = true;
 		await form.submit();
 		await settle(sent);
@@ -400,7 +392,9 @@ describe("the application edit form's flags wiring", () => {
 		// change and re-sets the bit. With the baseline stuck at open (true), the on reads as
 		// untouched and the save silently keeps the intent off — the checkbox lies.
 		const answer2 = READ & ~INTENT_LIMITED_BITS.messageContent;
-		const {sent, form} = await openAppForm(READ, (n) => (n === 1 ? READ : n === 2 ? answer2 : READ));
+		const {sent, form} = await openAppForm(READ, (n) =>
+			n === 1 ? READ : n === 2 ? answer2 : READ,
+		);
 		(form.names.get("intent_content") as {value: boolean}).value = false;
 		await form.submit();
 		await settle(sent);
@@ -458,9 +452,7 @@ describe("the application edit form's flags wiring", () => {
 		await form.submit();
 		await settle(sent);
 
-		const patch = sent.find(
-			(body) => body && typeof body === "object",
-		) as Record<string, unknown>;
+		const patch = sent.find((body) => body && typeof body === "object") as Record<string, unknown>;
 		expect(patch).toBeDefined();
 		expect("flags" in patch).toBe(false);
 		expect(Object.keys(patch).filter((key) => key.startsWith("intent_"))).toEqual([]);

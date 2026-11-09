@@ -82,7 +82,9 @@ it("a throw while landing after a successful accept is logged, not left unhandle
 	await vi.waitFor(() => expect(document.getElementById("invitename")?.textContent).toBe("Guild"));
 
 	document.getElementById("AcceptInvite")!.click();
-	await vi.waitFor(() => expect(document.querySelector(".accountSwitcher .switchtable")).not.toBeNull());
+	await vi.waitFor(() =>
+		expect(document.querySelector(".accountSwitcher .switchtable")).not.toBeNull(),
+	);
 	(document.querySelector(".accountSwitcher .switchtable") as HTMLElement).click();
 	await vi.waitFor(() => expect(posts).toHaveLength(1));
 	await vi.waitFor(() => expect(go).toHaveBeenCalledWith("/channels/700"));

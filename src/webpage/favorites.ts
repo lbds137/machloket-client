@@ -402,8 +402,7 @@ export class Favorites {
 		for (const key of keys) {
 			const comp = this.emojiFrecency[key];
 			const react = this.emojiReactionFrecency[key];
-			const weight =
-				decayedWeight(comp?.recentUses, now) + decayedWeight(react?.recentUses, now);
+			const weight = decayedWeight(comp?.recentUses, now) + decayedWeight(react?.recentUses, now);
 			const totalUses = (comp?.totalUses ?? 0) + (react?.totalUses ?? 0);
 			const score = (comp?.score ?? 0) + (react?.score ?? 0);
 			// Newest-first, capped at 20: the synthetic entry must keep the same

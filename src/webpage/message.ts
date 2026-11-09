@@ -325,9 +325,7 @@ class Message extends SnowFlake {
 					css: "svg-forward",
 				},
 				visible: function () {
-					return (
-						!this.ephemeral && !this.loading && (this.type === 0 || this.type === 19)
-					);
+					return !this.ephemeral && !this.loading && (this.type === 0 || this.type === 19);
 				},
 			},
 		);
@@ -633,9 +631,7 @@ class Message extends SnowFlake {
 		const div = document.createElement("div");
 		div.classList.add("flexttb", "friendGroupSelect");
 
-		const allCandidates = this.localuser?.channelids
-			? [...this.localuser.channelids.values()]
-			: [];
+		const allCandidates = this.localuser?.channelids ? [...this.localuser.channelids.values()] : [];
 		const allowedCandidates = allCandidates.filter(canSendToChannel);
 
 		const candidateItems = allowedCandidates.map((channel) => ({
@@ -690,7 +686,6 @@ class Message extends SnowFlake {
 
 		dio.show();
 	}
-
 
 	giveData(messagejson: messagejson) {
 		const func = this.channel.infinite.snapBottom();
@@ -2506,4 +2501,3 @@ async function sendForward(
 
 Message.setup();
 export {Message, sendForward, canSendToChannel, getChannelDisplayName, isDmChannel, formatTime};
-

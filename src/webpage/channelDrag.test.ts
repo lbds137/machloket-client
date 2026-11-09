@@ -51,11 +51,7 @@ function guild(lu = localuser()) {
 function chan(
 	g: InstanceType<typeof Guild>,
 	id: string,
-	{
-		type = 0,
-		position = 0,
-		parent = undefined as InstanceType<typeof Channel> | undefined,
-	} = {},
+	{type = 0, position = 0, parent = undefined as InstanceType<typeof Channel> | undefined} = {},
 ) {
 	const c = Object.assign(Object.create(Channel.prototype), {
 		id,
@@ -221,9 +217,8 @@ it("a channel dropped onto a category header lands inside it, wrappers or not", 
 });
 
 it("a refused PATCH after a sibling drop restores the order and keeps the search panel", async () => {
-	captureRequests(
-		CHANNELS,
-		() => Response.json({code: 50013, message: "Missing Permissions"}, {status: 403}),
+	captureRequests(CHANNELS, () =>
+		Response.json({code: 50013, message: "Missing Permissions"}, {status: 403}),
 	);
 	const g = guild();
 	g.localuser.searching = true;
@@ -267,8 +262,7 @@ function deferred() {
 }
 
 const ok = () => new Response(null, {status: 204});
-const refused = () =>
-	Response.json({code: 50013, message: "Missing Permissions"}, {status: 403});
+const refused = () => Response.json({code: 50013, message: "Missing Permissions"}, {status: 403});
 const gets = (bodies: unknown[]) => bodies.filter((b) => b === undefined).length;
 
 function reorderFixture(
@@ -305,9 +299,7 @@ it("re-reads the guild's channels once after a superseded refusal and an accepte
 		{id: "b", position: 1},
 		{id: "c", position: 2},
 	];
-	const {g, a, b, c, patches, bodies, update} = reorderFixture(() =>
-		Response.json(serverChannels),
-	);
+	const {g, a, b, c, patches, bodies, update} = reorderFixture(() => Response.json(serverChannels));
 
 	const restoreA = g.snapshotLayout();
 	g.headchannels = [b, a, c];

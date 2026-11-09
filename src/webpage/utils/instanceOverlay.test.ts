@@ -32,9 +32,7 @@ describe("a deployment's own instances overlay the public list", () => {
 	});
 
 	it("a trailing slash doesn't make the same instance a second entry", () => {
-		const merged = mergeInstanceLists(publicList, [
-			{name: "Mine", url: "https://spacebar.chat/"},
-		]);
+		const merged = mergeInstanceLists(publicList, [{name: "Mine", url: "https://spacebar.chat/"}]);
 
 		expect(merged.filter((i) => i.url.includes("spacebar.chat"))).toHaveLength(1);
 	});

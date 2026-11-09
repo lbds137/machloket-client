@@ -27,12 +27,34 @@ function id3(major: 3 | 4, frames: [string, number[]][]) {
 	const plain = (n: number) => [(n >>> 24) & 0xff, (n >> 16) & 0xff, (n >> 8) & 0xff, n & 0xff];
 	const body: number[] = [];
 	for (const [id, data] of frames) {
-		body.push(...[...id].map((c) => c.charCodeAt(0)), ...(major === 4 ? synchsafe : plain)(data.length), 0, 0, ...data);
+		body.push(
+			...[...id].map((c) => c.charCodeAt(0)),
+			...(major === 4 ? synchsafe : plain)(data.length),
+			0,
+			0,
+			...data,
+		);
 	}
 	body.push(...new Array(16).fill(0));
-	return new Uint8Array([0x49, 0x44, 0x33, major, 0, 0, ...synchsafe(body.length), ...body, ...new Array(64).fill(0xff)]);
+	return new Uint8Array([
+		0x49,
+		0x44,
+		0x33,
+		major,
+		0,
+		0,
+		...synchsafe(body.length),
+		...body,
+		...new Array(64).fill(0xff),
+	]);
 }
-const utf16le = (s: string) => [0xff, 0xfe, ...[...s].flatMap((c) => [c.charCodeAt(0) & 0xff, c.charCodeAt(0) >> 8]), 0, 0];
+const utf16le = (s: string) => [
+	0xff,
+	0xfe,
+	...[...s].flatMap((c) => [c.charCodeAt(0) & 0xff, c.charCodeAt(0) >> 8]),
+	0,
+	0,
+];
 const utf8 = (s: string) => [...new TextEncoder().encode(s)];
 
 describe("reading an audio file's tags", () => {
@@ -61,7 +83,9 @@ describe("reading an audio file's tags", () => {
 	});
 
 	it("reads ID3v2.3 Latin-1 text", async () => {
-		const media = await identify(id3(3, [["TIT2", [0, ...[..."café"].map((c) => c.charCodeAt(0)), 0]]]));
+		const media = await identify(
+			id3(3, [["TIT2", [0, ...[..."café"].map((c) => c.charCodeAt(0)), 0]]]),
+		);
 		expect(media.title).toBe("café");
 	});
 

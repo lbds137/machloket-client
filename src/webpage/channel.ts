@@ -333,10 +333,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				visible: function () {
-					return (
-						this.hasPermission("MANAGE_CHANNELS") ||
-						this.owner_id === this.localuser.user.id
-					);
+					return this.hasPermission("MANAGE_CHANNELS") || this.owner_id === this.localuser.user.id;
 				},
 				icon: {
 					css: "svg-settings",
@@ -759,9 +756,7 @@ class Channel extends SnowFlake {
 					{
 						defaultIndex: options.indexOf(
 							{0: "text", 2: "voice", 5: "announcement", 4: "category"}[this.type] as
-								| "text"
-								| "voice"
-								| "announcement",
+								"text" | "voice" | "announcement",
 						),
 					},
 					options,
@@ -2315,7 +2310,8 @@ class Channel extends SnowFlake {
 			return true;
 		}
 		const typebox = document.getElementById("typebox") as CustomHTMLDivElement;
-		if (typebox.textContent || document.getElementById("pasteimage")?.childElementCount) return false;
+		if (typebox.textContent || document.getElementById("pasteimage")?.childElementCount)
+			return false;
 		typebox.textContent = content;
 		typebox.markdown.txt = content;
 		typebox.markdown.boxupdate(Infinity);
@@ -2641,10 +2637,9 @@ class Channel extends SnowFlake {
 		]);
 		let response: Response;
 		try {
-			response = await fetch(
-				this.info.api + "/channels/" + this.id + "/threads/search?" + search,
-				{headers: this.headers},
-			);
+			response = await fetch(this.info.api + "/channels/" + this.id + "/threads/search?" + search, {
+				headers: this.headers,
+			});
 		} catch (e) {
 			// No answer at all (offline, dead socket): nothing learned either, so the
 			// posts already loaded are the list for now - like any refusal below.
@@ -2670,7 +2665,12 @@ class Channel extends SnowFlake {
 			console.error("Forum post search: the answer is not JSON");
 			return;
 		}
-		if (!res || !Array.isArray(res.threads) || !Array.isArray(res.messages) || !Array.isArray(res.members)) {
+		if (
+			!res ||
+			!Array.isArray(res.threads) ||
+			!Array.isArray(res.messages) ||
+			!Array.isArray(res.members)
+		) {
 			// A well-formed body of the wrong shape: nothing learned, not a crash.
 			console.error("Forum post search: the answer has an unexpected shape");
 			return;
@@ -3805,10 +3805,9 @@ class Channel extends SnowFlake {
 				Channel.historyCooldownUntil = Date.now() + wait;
 				armed = true;
 				await new Promise((r) => setTimeout(r, wait));
-				res = await fetch(
-					this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
-					{headers: this.headers},
-				);
+				res = await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query, {
+					headers: this.headers,
+				});
 				// The retry's answer owns the window now: a second 429 re-arms it from its own
 				// wait, anything else releases the other ticks (a network error does in the catch).
 				if (res.status === 429) {
@@ -4414,9 +4413,7 @@ class Channel extends SnowFlake {
 		(document.getElementById("upload") as HTMLElement).style.visibility = canMessage
 			? "visible"
 			: "hidden";
-		(document.getElementById("gifTB") as HTMLElement).style.display = canMessage
-			? "block"
-			: "none";
+		(document.getElementById("gifTB") as HTMLElement).style.display = canMessage ? "block" : "none";
 		(document.getElementById("stickerTB") as HTMLElement).style.display = canMessage
 			? "block"
 			: "none";
@@ -4957,12 +4954,14 @@ class Channel extends SnowFlake {
 		} else if (Notification.permission !== "denied") {
 			// Bursts share one prompt; a dismissed one doesn't re-ask for THIS message
 			// (or replay the sound) — a later message may ask afresh.
-			void this.askPermission().then((permission) => {
-				if (permission !== "granted") return;
-				// The prompt can outlive the gate state (muted mid-prompt): re-check.
-				if (!this.notiGates(message)) return;
-				return NotificationHandler.sendMessageNotification(message);
-			}).catch((e) => console.error("Couldn't show the notification:", e));
+			void this.askPermission()
+				.then((permission) => {
+					if (permission !== "granted") return;
+					// The prompt can outlive the gate state (muted mid-prompt): re-check.
+					if (!this.notiGates(message)) return;
+					return NotificationHandler.sendMessageNotification(message);
+				})
+				.catch((e) => console.error("Couldn't show the notification:", e));
 		}
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";

@@ -82,7 +82,11 @@ it("a status picked in the dialog is remembered and announced on this connection
 	await I18n.done;
 	captureRequests(API + "/users/@me/settings", () => Response.json({}));
 	const user = gatewayUser();
-	Object.assign(user, {info: {api: API}, headers: {}, user: {setstatus: () => {}, status: "online"}});
+	Object.assign(user, {
+		info: {api: API},
+		headers: {},
+		user: {setstatus: () => {}, status: "online"},
+	});
 	user.initwebsocket();
 	const ws = FakeWebSocket.sockets.at(-1)!;
 	ws.emit("open", {});

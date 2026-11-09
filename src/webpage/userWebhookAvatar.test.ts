@@ -56,7 +56,8 @@ describe("webhook authors with one name and different avatars", () => {
 	it("still share one user when name and avatar match", () => {
 		const owner = {userMap: new Map(), guilds: []} as unknown as Owner;
 		const webhook = {id: "w1", name: "Rick"} as UserJson["webhook"];
-		const json = () => ({id: "w1", username: "Rick", avatar: "hash1", webhook}) as unknown as UserJson;
+		const json = () =>
+			({id: "w1", username: "Rick", avatar: "hash1", webhook}) as unknown as UserJson;
 
 		expect(new User(json(), owner)).toBe(new User(json(), owner));
 	});

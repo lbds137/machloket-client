@@ -51,10 +51,7 @@ test.use({...DESKTOP});
 test.describe("a text message", () => {
 	const welcome = "Welcome to the mock guild!";
 
-	test("an edit emptied out offers to delete, and saves nothing", async ({
-		page,
-		mockInstance,
-	}) => {
+	test("an edit emptied out offers to delete, and saves nothing", async ({page, mockInstance}) => {
 		await loginAndOpenChannel(page);
 		const box = await openEdit(page, welcome);
 		await box.fill("");
@@ -164,10 +161,7 @@ test.describe("a text message", () => {
 test.describe("a message with attachments", () => {
 	test.use({mockInstanceOptions: {messages: [MOCK_SPOILER_MESSAGE]}});
 
-	test("an edit emptied out still saves", async ({
-		page,
-		mockInstance,
-	}) => {
+	test("an edit emptied out still saves", async ({page, mockInstance}) => {
 		await loginAndOpenChannel(page);
 		const box = await openEdit(page, MOCK_SPOILER_MESSAGE.content);
 		await box.fill("");

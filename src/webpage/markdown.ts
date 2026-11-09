@@ -25,7 +25,8 @@ const ALLOWED_PROTOCOLS = new Set(["https:", "http:"]);
 const GRAPHEME_SEG = new Intl.Segmenter("en-US", {granularity: "grapheme"});
 // One emoji grapheme: a pictograph (with any skin tone, VS16 or ZWJ sequence after it), a flag
 // or a keycap. Digits, letters and punctuation aren't.
-const EMOJI_GRAPHEME = /^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}{2}$|[\d#*]\uFE0F?\u20E3$)/u;
+const EMOJI_GRAPHEME =
+	/^(?:\p{Extended_Pictographic}|\p{Regional_Indicator}{2}$|[\d#*]\uFE0F?\u20E3$)/u;
 const CUSTOM_OR_SHORTCODE = /(<a?:[A-Za-z\d_]*:\d*>|:[A-Za-z\d_]+:)/u;
 /** Discord shows a message of emoji alone at jumbo size up to this many emoji. */
 const JUMBO_LIMIT = 30;
@@ -672,7 +673,11 @@ class MarkDown {
 					j--;
 				}
 				// Only web links: "httpx://", "http+foo:" and "http:foo" parse as URLs but aren't ones.
-				if (/^https?:\/\//.test(build) && URL.canParse(build) && ALLOWED_PROTOCOLS.has(new URL(build).protocol)) {
+				if (
+					/^https?:\/\//.test(build) &&
+					URL.canParse(build) &&
+					ALLOWED_PROTOCOLS.has(new URL(build).protocol)
+				) {
 					build = normalizeInviteLink(build);
 					appendcurrent();
 					const a = document.createElement("a");
@@ -1278,7 +1283,23 @@ class MarkDown {
 		// Select-all over a long channel: not worth cloning; the paste keeps its plain text.
 		if (selection.toString().length > 20000) return;
 		type Copied = {shown: string; bare: string; raw: string};
-		const blocks = ["DIV", "P", "LI", "UL", "OL", "PRE", "BLOCKQUOTE", "H1", "H2", "H3", "H4", "H5", "H6", "TR", "HR"];
+		const blocks = [
+			"DIV",
+			"P",
+			"LI",
+			"UL",
+			"OL",
+			"PRE",
+			"BLOCKQUOTE",
+			"H1",
+			"H2",
+			"H3",
+			"H4",
+			"H5",
+			"H6",
+			"TR",
+			"HR",
+		];
 		const walk = (node: Node): Copied => {
 			if (node instanceof Text) return {shown: node.data, bare: node.data, raw: node.data};
 			if (!(node instanceof Element)) return {shown: "", bare: "", raw: ""};
@@ -1288,7 +1309,11 @@ class MarkDown {
 				return {shown: label, bare: label, raw: node.getAttribute("real") ?? ""};
 			}
 			if (node instanceof HTMLImageElement) {
-				return {shown: node.alt, bare: "", raw: node.classList.contains("md-emoji") ? node.alt : ""};
+				return {
+					shown: node.alt,
+					bare: "",
+					raw: node.classList.contains("md-emoji") ? node.alt : "",
+				};
 			}
 			const out: Copied = {shown: "", bare: "", raw: ""};
 			let afterBlock = false;
@@ -1319,7 +1344,11 @@ class MarkDown {
 	static pastedText(plain: string) {
 		const key = (a: string) => a.replace(/\s/g, "");
 		const copied = this.lastCopy;
-		if (copied && key(plain) && (key(copied.shown) === key(plain) || key(copied.bare) === key(plain))) {
+		if (
+			copied &&
+			key(plain) &&
+			(key(copied.shown) === key(plain) || key(copied.bare) === key(plain))
+		) {
 			return copied.raw;
 		}
 		return plain;

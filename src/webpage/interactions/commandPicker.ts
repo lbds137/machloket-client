@@ -31,16 +31,12 @@ export function invocationKey(command: Command, inv: CommandInvocation): string 
 export function similarLabel(label: string, search: string): number {
 	if (!search.length) return 0.1;
 	if (label.includes(search)) return search.length / label.length;
-	if (label.toLowerCase().includes(search.toLowerCase()))
-		return search.length / label.length / 1.4;
+	if (label.toLowerCase().includes(search.toLowerCase())) return search.length / label.length / 1.4;
 	return tokenMatchRatio(label, search);
 }
 
 /** The app's icon, or its initial when the index carried none. */
-export function appIconElm(
-	localuser: Localuser,
-	app: applicationJson | undefined,
-): HTMLElement {
+export function appIconElm(localuser: Localuser, app: applicationJson | undefined): HTMLElement {
 	if (app?.icon) {
 		const img = document.createElement("img");
 		img.src =
@@ -108,17 +104,13 @@ export function renderCommandPanel(
 			group = {app, name: app?.name || "?", invocations: []};
 			byId.set(command.applicationId, group);
 		}
-		group.invocations.push(
-			...command.invocations.map((inv) => ({command, inv})),
-		);
+		group.invocations.push(...command.invocations.map((inv) => ({command, inv})));
 	}
 	const groups = [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
 	for (const group of groups) {
 		// Alphabetical by the full "/name sub" text — a base's subs stay adjacent because
 		// the shared prefix sorts together, as Discord's list does.
-		group.invocations.sort((a, b) =>
-			invocationLabel(a.inv).localeCompare(invocationLabel(b.inv)),
-		);
+		group.invocations.sort((a, b) => invocationLabel(a.inv).localeCompare(invocationLabel(b.inv)));
 	}
 
 	const panel = document.createElement("div");

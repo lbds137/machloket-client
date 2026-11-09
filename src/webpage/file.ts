@@ -208,7 +208,10 @@ class File {
 		if (!this.owner) return;
 		const urlObj = new URL(url);
 		if (urlObj.host === new URL(this.owner.info.cdn).host) {
-			if (Number.parseInt(urlObj.searchParams.get("ex") || "", 16) > Date.now() + CDN_LINK_MARGIN_MS) {
+			if (
+				Number.parseInt(urlObj.searchParams.get("ex") || "", 16) >
+				Date.now() + CDN_LINK_MARGIN_MS
+			) {
 				return;
 			}
 			const newUrl = this.owner.localuser.refreshURL(url);

@@ -87,9 +87,7 @@ describe("resolveTypedMentions", () => {
 			{id: "103", names: ["Alpha One"]},
 			{id: "104", names: ["Alpha One"]},
 		];
-		expect(resolveTypedMentions("hey @Alpha One there", candidates)).toBe(
-			"hey @Alpha One there",
-		);
+		expect(resolveTypedMentions("hey @Alpha One there", candidates)).toBe("hey @Alpha One there");
 	});
 
 	it("keeps @name literal inside an inline single-backtick code span", () => {

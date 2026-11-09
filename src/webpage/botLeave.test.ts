@@ -131,9 +131,7 @@ it("a guilds-list 200 whose body isn't an array says so instead of dying silentl
 
 it("a guilds-list 200 carrying an error message says that message", async () => {
 	const shown = vi.spyOn(Dialog.prototype, "show");
-	captureRequests(API + "/users/@me/guilds/", () =>
-		Response.json({message: "rate limited"}),
-	);
+	captureRequests(API + "/users/@me/guilds/", () => Response.json({message: "rate limited"}));
 	vi.spyOn(User.prototype, "buildprofile").mockResolvedValue(document.createElement("div"));
 	vi.spyOn(User.prototype, "clone").mockReturnValue({
 		pronouns: "",

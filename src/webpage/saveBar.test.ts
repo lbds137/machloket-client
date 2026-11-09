@@ -8,10 +8,13 @@ const {Options} = await import("./settings");
 describe("settings save bar", () => {
 	it("comes back for the next edit after switching tabs dismissed it", () => {
 		// The settings window's tab buttons remove the bar the owner shows (Buttons.changed).
-		const owner = {bar: undefined as HTMLElement | undefined, changed(div: HTMLElement) {
-			this.bar = div;
-			document.body.append(div);
-		}};
+		const owner = {
+			bar: undefined as HTMLElement | undefined,
+			changed(div: HTMLElement) {
+				this.bar = div;
+				document.body.append(div);
+			},
+		};
 		const options = Object.assign(Object.create(Options.prototype), {
 			owner,
 			noSubmit: false,

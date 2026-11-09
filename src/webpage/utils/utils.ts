@@ -582,7 +582,9 @@ export async function pingResponse(api: URL | string): Promise<Response | null> 
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), pingTimeoutMs);
 	try {
-		return await fetch(base + (base.endsWith("/") ? "" : "/") + "ping", {signal: controller.signal});
+		return await fetch(base + (base.endsWith("/") ? "" : "/") + "ping", {
+			signal: controller.signal,
+		});
 	} catch {
 		return null;
 	} finally {
@@ -876,7 +878,7 @@ export function createImg(
  * a reachable instance. It leaves the UI alone: checks can finish out of order, so only the
  * caller knows whether this result is still the one to show.
  */
-	async function checkInstance(instance: string): Promise<InstanceInfo | undefined> {
+async function checkInstance(instance: string): Promise<InstanceInfo | undefined> {
 	try {
 		await instancefetch;
 		const instanceinfo = (await getapiurls(instance)) as InstanceInfo | null;
@@ -948,7 +950,8 @@ export class SW {
 		if (!("serviceWorker" in navigator)) return;
 		// The default mode never starts the worker, so no port will come: don't wait for one.
 		// (A port from a worker started before a switch to that mode still delivers.)
-		if (!this.port && getLocalSettings().serviceWorkerMode == ServiceWorkerMode.Unregistered) return;
+		if (!this.port && getLocalSettings().serviceWorkerMode == ServiceWorkerMode.Unregistered)
+			return;
 		while (!this.port) {
 			await new Promise((res) => setTimeout(res, 100));
 		}

@@ -57,8 +57,7 @@ if (window.location.pathname.startsWith("/invite"))
 				// nothing to accept with, so the button stays hidden and the page says what failed.
 				await I18n.done;
 				document.getElementById("invitename")!.textContent = I18n.invite.heading();
-				document.getElementById("invitedescription")!.textContent =
-					instanceUnreachableText(well);
+				document.getElementById("invitedescription")!.textContent = instanceUnreachableText(well);
 				return;
 			}
 		} else {
@@ -159,32 +158,33 @@ if (window.location.pathname.startsWith("/invite"))
 						]),
 				},
 			).show();
-			acceptInvite(urls!.api, code, user.token).then(
-				async (result) => {
-					// The in-app accept shows the server's message in its form; this page has no form.
-					if (!result.ok) return alert(result.message);
-					users.currentuser = user.uid;
-					sessionStorage.setItem("currentuser", user.uid);
-					// Only the default account for new tabs is lost if this write fails (a full
-					// localStorage): the account itself is already stored, and the app boots this tab's
-					// pick from sessionStorage, so the landing goes ahead. Throwing here would send the
-					// user round "accept again", which hits the same full storage.
-					try {
-						localStorage.setItem("userinfos", JSON.stringify(users));
-					} catch (err) {
+			acceptInvite(urls!.api, code, user.token)
+				.then(
+					async (result) => {
+						// The in-app accept shows the server's message in its form; this page has no form.
+						if (!result.ok) return alert(result.message);
+						users.currentuser = user.uid;
+						sessionStorage.setItem("currentuser", user.uid);
+						// Only the default account for new tabs is lost if this write fails (a full
+						// localStorage): the account itself is already stored, and the app boots this tab's
+						// pick from sessionStorage, so the landing goes ahead. Throwing here would send the
+						// user round "accept again", which hits the same full storage.
+						try {
+							localStorage.setItem("userinfos", JSON.stringify(users));
+						} catch (err) {
+							console.error(err);
+						}
+						// The details may still be loading (or have failed): wait a while for them rather than
+						// read an unset guild or stall. With no guild to name, the home page is where the join lands.
+						const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
+						pageNav.go("/channels/" + (guildinfo?.id ?? "@me"));
+					},
+					// Only the request's own failure (no network): a throw in the landing above isn't one.
+					(err) => {
 						console.error(err);
-					}
-					// The details may still be loading (or have failed): wait a while for them rather than
-					// read an unset guild or stall. With no guild to name, the home page is where the join lands.
-					const guildinfo = await guildWithin(guildLoaded, GUILD_WAIT_MS);
-					pageNav.go("/channels/" + (guildinfo?.id ?? "@me"));
-				},
-				// Only the request's own failure (no network): a throw in the landing above isn't one.
-				(err) => {
-					console.error(err);
-					alert(I18n.requestFailed("offline"));
-				},
-			)
+						alert(I18n.requestFailed("offline"));
+					},
+				)
 				// A throw in the landing (the navigation) comes after the join
 				// went through: logged here, not left unhandled, and the user is told the join worked.
 				// Accepting again lands as already-member.
