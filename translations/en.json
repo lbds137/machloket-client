@@ -508,6 +508,7 @@
 	},
 	"incorrectURLS": "## This instance has likely sent the incorrect links.\n### If you're the instance owner please see [here](https://docs.spacebar.chat/setup/server/) under *Connecting from remote machines* to correct the issue.\n Would you like Machloket to automatically try to fix this error to let you connect to the instance?",
 	"instInfo": "Instance information",
+	"instanceUnreachable": "Couldn't reach the instance at $1. Check the link.",
 	"instanceInfo": {
 		"contact": "Email instance admins",
 		"frontPage": "[Front page]($1)",

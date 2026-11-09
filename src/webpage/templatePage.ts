@@ -11,11 +11,16 @@ if (window.location.pathname.startsWith("/template"))
 		// Without ?instance=, the default instance (as the oauth2 page does).
 		const well =
 			new URLSearchParams(window.location.search).get("instance") || getDefaultInstanceUrl();
-		if (!well) {
-			await I18n.done;
-			document.getElementById("usetemplate")!.textContent = I18n.htmlPages.noAccount();
-			return;
-		}
+		// template.html ships the button hidden and unlabelled (it holds its space): it shows once
+		// the language is loaded and the label known.
+		const useButton = document.getElementById("usetemplate")!;
+		const labelButton = (canUse: boolean) => {
+			useButton.textContent = canUse ? I18n.useTemplateButton() : I18n.htmlPages.noAccount();
+			useButton.style.visibility = "";
+		};
+		// No instance to look the template up on or sign in to: nothing the button could do, so it
+		// stays hidden.
+		if (!well) return;
 		const joinable: Specialuser[] = [];
 
 		for (const key in users.users) {
@@ -42,15 +47,18 @@ if (window.location.pathname.startsWith("/template"))
 					}
 				}
 			} else {
-				throw new Error("Someone needs to handle the case where the servers don't exist");
+				// The template's instance can't be found (unreachable, or not an instance): there is
+				// nothing to use it with, so the button stays hidden and the page says what failed.
+				await I18n.done;
+				document.getElementById("templatedescription")!.textContent =
+					I18n.instanceUnreachable(well);
+				return;
 			}
 		} else {
 			urls = joinable[0].serverurls;
 		}
 		await I18n.done;
-		if (!joinable.length) {
-			document.getElementById("usetemplate")!.textContent = I18n.htmlPages.noAccount();
-		}
+		labelButton(joinable.length > 0);
 
 		const code = window.location.pathname.split("/")[2];
 
@@ -132,6 +140,5 @@ if (window.location.pathname.startsWith("/template"))
 			document.body.append(table);
 		}
 
-		document.getElementById("usetemplate")!.addEventListener("click", showAccounts);
-		document.getElementById("usetemplate")!.textContent = I18n.useTemplateButton();
+		useButton.addEventListener("click", showAccounts);
 	})();

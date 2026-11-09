@@ -25,10 +25,13 @@
 		<div>
 			<div id="invitebody">
 				<img id="inviteimg" class="pfp" />
-				<h1 id="invitename">Bot Name</h1>
-				<p id="invitedescription">Add Bot</p>
-				<div id="permissions"><h1>This will allow the bot to:</h1></div>
-				<button id="AcceptInvite">Add to server</button>
+				<!-- Filled by auth.ts: text here would show untranslated until it runs (and signed
+				     out, the bot's details never load), and the button's label depends on whether an
+				     account can add the bot. -->
+				<h1 id="invitename"></h1>
+				<p id="invitedescription"></p>
+				<div id="permissions"><h1></h1></div>
+				<button id="AcceptInvite" style="visibility: hidden"></button>
 			</div>
 		</div>
 		<script type="module" src="/index.js"></script>

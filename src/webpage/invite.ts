@@ -52,16 +52,23 @@ if (window.location.pathname.startsWith("/invite"))
 					}
 				}
 			} else {
-				throw new Error("Someone needs to handle the case where the servers don't exist");
+				// The invite's instance can't be found (unreachable, or not an instance): there is
+				// nothing to accept with, so the button stays hidden and the page says what failed.
+				await I18n.done;
+				document.getElementById("invitedescription")!.textContent = I18n.instanceUnreachable(well);
+				return;
 			}
 		} else {
 			urls = joinable[0].serverurls;
 		}
 		await I18n.done;
-		document.getElementById("AcceptInvite")!.textContent = I18n.invite.acceptInvite();
-		if (!joinable.length) {
-			document.getElementById("AcceptInvite")!.textContent = I18n.htmlPages.noAccount();
-		}
+		// invite.html ships the button hidden and unlabelled (it holds its space): only now is the
+		// language loaded and the label known.
+		const acceptButton = document.getElementById("AcceptInvite")!;
+		acceptButton.textContent = joinable.length
+			? I18n.invite.acceptInvite()
+			: I18n.htmlPages.noAccount();
+		acceptButton.style.visibility = "";
 
 		const code = window.location.pathname.split("/")[2];
 		// Resolves to the invite's guild once the details have shown; the accept waits on it.

@@ -37,7 +37,12 @@ if (window.location.pathname.startsWith("/oauth2")) {
 				}
 			}
 		} else {
-			throw new Error("Someone needs to handle the case where the servers don't exist");
+			// The bot's instance can't be found (unreachable, or not an instance): there is nothing
+			// to add the bot with, so the page says what failed, and with no urls the rest below
+			// does nothing (the button stays hidden).
+			await I18n.done;
+			const desc = document.getElementById("invitedescription");
+			if (desc) desc.textContent = I18n.instanceUnreachable(well);
 		}
 	} else {
 		urls = joinable[0].serverurls;
@@ -138,7 +143,7 @@ if (window.location.pathname.startsWith("/oauth2")) {
 		document.body.append(table);
 	}
 	const user = joinable[0];
-	if (user) {
+	if (user && urls) {
 		fetchBotInvite(urls.api, user.token, window.location.search).then((json) => {
 			const title = document.getElementById("invitename");
 			// No invite to show (an unknown bot, an expired login…): say why in its place.
@@ -179,10 +184,12 @@ if (window.location.pathname.startsWith("/oauth2")) {
 		});
 	}
 	const AcceptInvite = document.getElementById("AcceptInvite");
-	if (AcceptInvite) {
+	if (AcceptInvite && urls) {
 		AcceptInvite.addEventListener("click", showAccounts);
 		AcceptInvite.textContent = joinable.length
 			? I18n.htmlPages.addBot()
 			: I18n.invite.botNoAccount();
+		// authorize.html ships it hidden and unlabelled: it shows once labelled.
+		AcceptInvite.style.visibility = "";
 	}
 }
