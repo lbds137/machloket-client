@@ -4,9 +4,24 @@ import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js
 await I18n.done;
 /** The instance to recover on: the one last picked on the login page, else the list's default
  * (a reset link opened on a fresh browser has no picked instance). */
-async function recoveryInstance(): Promise<{api: string} | null> {
-	const picked = JSON.parse(localStorage.getItem("instanceinfo") ?? "null");
-	if (picked?.api) return picked;
+export async function recoveryInstance(): Promise<{api: string} | null> {
+	const raw = localStorage.getItem("instanceinfo");
+	if (raw) {
+		try {
+			const picked: unknown = JSON.parse(raw);
+			if (
+				picked &&
+				typeof picked === "object" &&
+				typeof (picked as {api?: unknown}).api === "string" &&
+				(picked as {api: string}).api
+			) {
+				return picked as {api: string};
+			}
+			console.warn("instanceinfo store is unusable, using default instance");
+		} catch (error) {
+			console.warn("instanceinfo store is malformed, using default instance", error);
+		}
+	}
 	await instancefetch;
 	const url = getDefaultInstanceUrl();
 	return url ? await getapiurls(url) : null;

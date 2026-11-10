@@ -4,6 +4,7 @@ import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
 import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 import {formErrors} from "./utils/refusalText.js";
+import {carryAccountsAcrossNavigation} from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
 function generateRecArea(recover = document.getElementById("recover")) {
 	if (!recover) return;
@@ -103,6 +104,7 @@ export async function makeLogin(
 					dialog.hide();
 					return;
 				}
+				carryAccountsAcrossNavigation();
 				window.location.href = postLoginRedirect(
 					new URLSearchParams(window.location.search).get("goback"),
 				);

@@ -1074,6 +1074,7 @@
 	"failedToLoadGifs": "Failed to load GIFs.",
 	"tenorMigrationInfo": "Tenor migration info",
 	"settingNotSaved": "Couldn't save this setting: this browser's storage for Machloket is full. It applies until you reload.",
+	"accountNotSaved": "Signed in for this session only: this browser's storage for Machloket is full, so you'll need to sign in again after a reload.",
 	"settings": {
 		"clear": "Clear",
 		"feedback": "Give feedback about this design",

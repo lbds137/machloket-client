@@ -6,6 +6,7 @@ import {isLoopback, trimTrailingSlashes} from "./netUtils";
 import {getLocalSettings, ServiceWorkerMode, setLocalSettings} from "./storage/localSettings";
 import {getPreferences} from "./storage/userPreferences";
 import {getDeveloperSettings} from "./storage/devSettings";
+import {readItem, saveAccounts, writeAccounts} from "./storage/settingOverlay";
 import {isStoreRefusal, trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
 
@@ -60,15 +61,27 @@ export function getBulkUsers() {
 	}
 	return json;
 }
-export function getBulkInfo() {
-	return JSON.parse(localStorage.getItem("userinfos") as string);
+function defaultUserInfos() {
+	return {
+		currentuser: null as string | null,
+		users: {} as Record<string, any>,
+		preferences: {
+			notifications: false,
+			notisound: "three",
+		},
+	};
 }
-/** userinfos when it holds a usable `users` map; null when it is missing, unparseable or
- * shapeless (another tab or an extension changed the store), which is the store's state. */
-function readStoredAccounts(): {users: Record<string, unknown>} | null {
+function parseStoredAccounts(raw: string | null): {
+	currentuser?: string | null;
+	users: Record<string, any>;
+	instances?: Record<string, any>;
+	preferences?: {notifications: boolean; notisound: string};
+	accent_color?: string;
+} | null {
+	if (!raw) return null;
 	let info: unknown;
 	try {
-		info = getBulkInfo();
+		info = JSON.parse(raw);
 	} catch (error) {
 		if (!(error instanceof SyntaxError)) throw error;
 		return null;
@@ -76,7 +89,18 @@ function readStoredAccounts(): {users: Record<string, unknown>} | null {
 	if (!info || typeof info !== "object") return null;
 	const users = (info as {users?: unknown}).users;
 	if (!users || typeof users !== "object" || Array.isArray(users)) return null;
-	return info as {users: Record<string, unknown>};
+	return info as {users: Record<string, any>};
+}
+/** userinfos when it holds a usable `users` map; null when it is missing, unparseable or
+ * shapeless (another tab or an extension changed the store), which is the store's state. */
+export function readStoredAccounts() {
+	return parseStoredAccounts(readItem("userinfos"));
+}
+export function getBulkInfo(): any {
+	const info = readStoredAccounts();
+	if (info) return info;
+	console.warn("userinfos store is unreadable, reading as signed out");
+	return defaultUserInfos();
 }
 /** JSON for a store write. A value JSON can't hold (a BigInt, a cycle) can't be stored either,
  * so its failure reads as the store's refusal (a DataCloneError), not as a bug in the caller. */
@@ -210,7 +234,11 @@ export class Specialuser {
 		return true;
 	}
 	remove() {
-		const info = getBulkInfo();
+		if (sessionStorage.getItem("currentuser") === this.uid) {
+			sessionStorage.removeItem("currentuser");
+		}
+		const info = readStoredAccounts();
+		if (!info) return;
 		delete info.users[this.uid];
 		if (info.currentuser === this.uid) {
 			// `users` is keyed by uid, not an array.
@@ -221,10 +249,7 @@ export class Specialuser {
 				info.currentuser = null;
 			}
 		}
-		if (sessionStorage.getItem("currentuser") === this.uid) {
-			sessionStorage.removeItem("currentuser");
-		}
-		localStorage.setItem("userinfos", JSON.stringify(info));
+		saveAccounts(serialiseForStore(info));
 	}
 	set pfpsrc(e) {
 		this.json.pfpsrc = e;
@@ -309,7 +334,7 @@ export class Specialuser {
 		// Another tab cleared or corrupted site data mid-session: the store's state, not a bug.
 		if (!info) throw new DOMException("userinfos is missing or unusable", "NotFoundError");
 		info.users[this.uid] = this.toJSON();
-		localStorage.setItem("userinfos", serialiseForStore(info));
+		writeAccounts(serialiseForStore(info));
 	}
 	/** updateLocal for the saves that run while the app boots (name, avatar, id, status, token,
 	 * localuserStore): a refused write (a full store) is logged, and the value still holds in
@@ -329,10 +354,13 @@ export class Specialuser {
 	}
 	/** The localuserStore is what grows (perminfo kept in memory once the store refused it rides
 	 * in every later save), so on a near-full store the rest of the account can still fit. It
-	 * re-reads userinfos, so other accounts and the store as last saved (by any tab) stay. */
+	 * re-reads userinfos, so other accounts and the store as last saved (by any tab) stay.
+	 * It reads and writes localStorage itself, past the session overlay: the refused save just
+	 * before it left the whole account there, newer than this partial copy, so the overlay
+	 * (and any pending handoff) must stay as it is. */
 	private saveFieldsQuietly() {
 		try {
-			const info = readStoredAccounts();
+			const info = parseStoredAccounts(localStorage.getItem("userinfos"));
 			const saved = info?.users[this.uid] as {localuserStore?: unknown} | undefined;
 			if (!info || !saved) return;
 			info.users[this.uid] = {...this.toJSON(), localuserStore: saved.localuserStore};
@@ -384,14 +412,28 @@ export function trimswitcher() {
 	}
 	localStorage.setItem("userinfos", JSON.stringify(json));
 }
+function keepUnreadableAccounts(raw: string): void {
+	trySetItem("userinfos.unreadable", raw);
+}
 export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	const suser = new Specialuser(user);
-	const info = getBulkInfo();
+	let info = readStoredAccounts();
+	if (!info) {
+		const raw = readItem("userinfos");
+		if (raw !== null) keepUnreadableAccounts(raw);
+		info = defaultUserInfos();
+	}
 	info.users[suser.uid] = suser;
 	info.currentuser = suser.uid;
 	sessionStorage.setItem("currentuser", suser.uid);
-	localStorage.setItem("userinfos", JSON.stringify(info));
+	saveAccounts(JSON.stringify(info), {signIn: true});
 	return suser;
+}
+/** The account the app boots: this tab's pick while that account exists, else the stored
+ * default. A session-only sign-in leaves its pick behind after the reload drops the account. */
+export function bootAccountId(info: {currentuser?: string | null; users: Record<string, unknown>}) {
+	const pick = sessionStorage.getItem("currentuser");
+	return pick && Object.hasOwn(info.users, pick) ? pick : info.currentuser;
 }
 class Directory {
 	static home = this.createHome();
