@@ -12,6 +12,7 @@ const {
 	carryAccountsAcrossNavigation,
 	consumeAccountHandoff,
 	loadAccountHandoff,
+	notifyAccountKeptForSession,
 	readItem,
 	resetSettingOverlayForTests,
 	saveAccounts,
@@ -149,7 +150,7 @@ it("carryAccountsAcrossNavigation writes the overlay to sessionStorage only when
 	expect(sessionStorage.getItem(HANDOFF_KEY)).not.toBeNull();
 });
 
-it("handoff lifecycle loads the account at module load and consumes it with one Dialog", async () => {
+it("handoff lifecycle loads the account at module load, consumes it once, and the boot's Dialog shows once", async () => {
 	const u = new Specialuser(account("handoff@example.test"));
 	const payload = JSON.stringify({
 		currentuser: u.uid,
@@ -161,13 +162,19 @@ it("handoff lifecycle loads the account at module load and consumes it with one 
 	loadAccountHandoff();
 	expect(getBulkUsers().users[u.uid]).toBeDefined();
 
-	consumeAccountHandoff();
+	expect(consumeAccountHandoff()).toBe(true);
 	expect(sessionStorage.getItem(HANDOFF_KEY)).toBeNull();
+	expect(getBulkUsers().users[u.uid]).toBeDefined();
+	await flushAsyncDialog();
+	expect(dialogTexts()).toEqual([]);
+
+	notifyAccountKeptForSession();
 	await vi.waitFor(() => {
 		expect(dialogTexts()).toEqual([ACCOUNT_NOT_SAVED_COPY]);
 	});
 
-	consumeAccountHandoff();
+	expect(consumeAccountHandoff()).toBe(false);
+	notifyAccountKeptForSession();
 	await flushAsyncDialog();
 	expect(dialogTexts()).toEqual([ACCOUNT_NOT_SAVED_COPY]);
 });
@@ -269,6 +276,28 @@ it("adduser on an unreadable store keeps the raw value under userinfos.unreadabl
 
 	expect(localStorage.getItem("userinfos.unreadable")).toBe("{corrupt-accounts");
 	expect(Object.keys(getBulkUsers().users)).toEqual([u.uid]);
+});
+
+it("adduser on an unreadable, near-full store saves the account before the raw copy", () => {
+	localStorage.setItem("userinfos", "{corrupt-accounts");
+	vi.spyOn(console, "error").mockImplementation(() => {});
+	// Room for one more write: whichever lands first fills the store.
+	let room = 1;
+	const realSetItem = Storage.prototype.setItem;
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+		this: Storage,
+		key: string,
+		value: string,
+	) {
+		if (this === localStorage && room-- <= 0) throw quota();
+		return realSetItem.call(this, key, value);
+	});
+
+	const u = adduser(account("first@example.test"));
+
+	const raw = localStorage.getItem("userinfos");
+	expect(raw, "the account list was not saved").not.toBe("{corrupt-accounts");
+	expect(Object.keys((JSON.parse(raw!) as {users: object}).users)).toEqual([u.uid]);
 });
 
 it("InstancePicker still calls onchange with the urls when the instanceinfo write is refused", async () => {

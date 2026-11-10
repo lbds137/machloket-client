@@ -146,17 +146,25 @@ export function carryAccountsAcrossNavigation(): void {
 	}
 }
 
-export function consumeAccountHandoff(): void {
-	let hadHandoff = false;
+/** Removes the navigation handoff (its accounts stay in the overlay for this page) and says
+ * whether there was one. The app's boot calls it before anything that can throw, so a reload
+ * signs a session-only account out even after a failed boot. */
+export function consumeAccountHandoff(): boolean {
 	try {
 		if (sessionStorage.getItem(ACCOUNT_HANDOFF_KEY) !== null) {
 			sessionStorage.removeItem(ACCOUNT_HANDOFF_KEY);
-			hadHandoff = true;
+			return true;
 		}
 	} catch (error) {
 		console.error(error);
 	}
-	if (hadHandoff) notifyOnce("account");
+	return false;
+}
+
+/** The "signed in for this session only" Dialog, once per session: for the boot, once the
+ * account a handoff carried has started. */
+export function notifyAccountKeptForSession(): void {
+	notifyOnce("account");
 }
 
 export function resetSettingOverlayForTests(): void {

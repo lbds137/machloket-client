@@ -28,7 +28,10 @@ import {NotificationHandler} from "./notificationHandler.js";
 import {installNotifyBanner} from "./notifyBanner.js";
 import {pickFiles} from "./utils/filePicker.js";
 import {restoreFailedSend} from "./composerRestore.js";
-import {consumeAccountHandoff} from "./utils/storage/settingOverlay.js";
+import {
+	consumeAccountHandoff,
+	notifyAccountKeptForSession,
+} from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
 
 if (window.location.pathname === "/app") {
@@ -92,13 +95,17 @@ if (window.location.pathname.startsWith("/channels")) {
 	}
 	const loaddesc = document.getElementById("load-desc") as HTMLSpanElement;
 	try {
+		// Used up before anything below can throw: a reload after a failed boot must sign a
+		// session-only account out, as its Dialog says. The overlay already holds the accounts.
+		const handedOff = consumeAccountHandoff();
 		const current = bootAccountId(Localuser.users);
 		if (!current || !Localuser.users.users[current]) {
+			// A sign-in here that the full store refuses shows the Dialog itself (adduser).
 			thisUser = new Localuser(await new Promise<Specialuser>((res) => makeLogin(true, "", res)));
 		} else {
 			thisUser = new Localuser(Localuser.users.users[current]);
+			if (handedOff) notifyAccountKeptForSession();
 		}
-		consumeAccountHandoff();
 
 		regSwap(thisUser);
 		thisUser.initwebsocket().then(async () => {

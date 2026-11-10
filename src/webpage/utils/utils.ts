@@ -126,6 +126,8 @@ function serialisedLength(value: unknown): number {
 }
 // Runs at module load on every page. It writes only when a default was missing, and a refused
 // write (a full store) is logged, not thrown: a throw here stops the app booting.
+// The deliberate exception to saveAccounts as the one userinfos writer: it fills in defaults on
+// the stored list itself, and a refusal must not put a defaults-only list in the overlay.
 export function setDefaults() {
 	getPreferences().then((perfs) =>
 		document.documentElement.style.setProperty("--accent-color", perfs.accentColor),
@@ -381,52 +383,22 @@ export class Specialuser {
 		}
 	}
 }
-export function trimswitcher() {
-	const json = getBulkInfo();
-	const map = new Map();
-	for (const thing in json.users) {
-		const user = json.users[thing];
-		let wellknown = user.serverurls.wellknown;
-		if (wellknown.at(-1) !== "/") {
-			wellknown += "/";
-		}
-		wellknown = (user.id || user.email) + "@" + wellknown;
-		if (map.has(wellknown)) {
-			const otheruser = map.get(wellknown);
-			if (otheruser[1].serverurls.wellknown.at(-1) === "/") {
-				delete json.users[otheruser[0]];
-				map.set(wellknown, [thing, user]);
-			} else {
-				delete json.users[thing];
-			}
-		} else {
-			map.set(wellknown, [thing, user]);
-		}
-	}
-	for (const thing in json.users) {
-		if (thing.at(-1) === "/") {
-			const user = json.users[thing];
-			delete json.users[thing];
-			json.users[thing.slice(0, -1)] = user;
-		}
-	}
-	localStorage.setItem("userinfos", JSON.stringify(json));
-}
 function keepUnreadableAccounts(raw: string): void {
 	trySetItem("userinfos.unreadable", raw);
 }
 export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	const suser = new Specialuser(user);
 	let info = readStoredAccounts();
-	if (!info) {
-		const raw = readItem("userinfos");
-		if (raw !== null) keepUnreadableAccounts(raw);
-		info = defaultUserInfos();
-	}
+	const unreadable = info ? null : readItem("userinfos");
+	info ??= defaultUserInfos();
 	info.users[suser.uid] = suser;
 	info.currentuser = suser.uid;
 	sessionStorage.setItem("currentuser", suser.uid);
 	saveAccounts(JSON.stringify(info), {signIn: true});
+	// After the account: on a near-full store the copy must not take the account's room. Kept
+	// even when the account was refused: the raw value then still sits in userinfos, and the
+	// next write that lands (a token refresh) would replace it with no copy.
+	if (unreadable !== null) keepUnreadableAccounts(unreadable);
 	return suser;
 }
 /** The account the app boots: this tab's pick while that account exists, else the stored
