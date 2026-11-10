@@ -33,6 +33,7 @@ import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {tooLongReason} from "./utils/messageLimit.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {assignableKey} from "./utils/assignableKey.js";
 
 export interface ForwardSnapshot {
 	content?: MarkDown;
@@ -767,6 +768,7 @@ class Message extends SnowFlake {
 				}
 				continue;
 			} else if (thing === "mention_roles") continue;
+			if (!assignableKey(this, thing)) continue;
 			(this as any)[thing] = (messagejson as any)[thing];
 		}
 		this.stickers ||= [];
@@ -1186,7 +1188,7 @@ class Message extends SnowFlake {
 			premessage = this.channel.messages.get(this.channel.idToPrev.get(this.id) as string);
 		}
 		if (
-			this.mentionsuser(this.guild.member) ||
+			this.mentionsuser(this.guild.member ?? this.localuser.user) ||
 			this.ephemeral ||
 			this.interaction?.user.id === this.localuser.user.id
 		) {

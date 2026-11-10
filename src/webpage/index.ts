@@ -33,6 +33,7 @@ import {
 	notifyAccountKeptForSession,
 } from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
+import {isValidTemplateCode} from "./utils/templateCode.js";
 
 if (window.location.pathname === "/app") {
 	window.location.pathname = "/channels/@me";
@@ -41,7 +42,9 @@ export interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;
 }
 if (window.location.pathname.startsWith("/channels")) {
-	let templateID = new URLSearchParams(window.location.search).get("templateID");
+	// The query string is anyone's to write: a value that isn't a template code goes no further.
+	const typedTemplateID = new URLSearchParams(window.location.search).get("templateID");
+	let templateID = isValidTemplateCode(typedTemplateID) ? typedTemplateID : null;
 	await I18n.done;
 	Localuser.loadFont();
 

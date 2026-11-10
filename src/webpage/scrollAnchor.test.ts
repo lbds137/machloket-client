@@ -36,6 +36,7 @@ function messageAt(
 	author: {id: string; username: string; relationshipType?: number},
 ): InstanceType<typeof Message> {
 	return Object.assign(Object.create(Message.prototype), {
+		mentions: new Set<string>(),
 		id,
 		type: 0,
 		flags: 0,

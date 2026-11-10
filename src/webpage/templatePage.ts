@@ -5,6 +5,7 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {refusalText} from "./utils/refusalText.js";
 import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
+import {isValidTemplateCode} from "./utils/templateCode.js";
 if (window.location.pathname.startsWith("/template"))
 	(async () => {
 		const users = getBulkUsers();
@@ -19,12 +20,19 @@ if (window.location.pathname.startsWith("/template"))
 			useButton.textContent = canUse ? I18n.useTemplateButton() : I18n.htmlPages.noAccount();
 			useButton.style.visibility = "";
 		};
-		/** No instance to look the template up on or use it with: the button stays hidden. */
+		/** No instance to look the template up on or use it with, or no template to look up: the
+		 * button stays hidden. */
 		const showNoInstance = async (message: () => string) => {
 			await I18n.done;
 			document.getElementById("templatename")!.textContent = I18n.templateHeading();
 			document.getElementById("templatedescription")!.textContent = message();
 		};
+		// The path is anyone's to write, and the code goes into the request's path: one that
+		// isn't a template code is never asked for.
+		const code = window.location.pathname.split("/")[2];
+		if (!isValidTemplateCode(code)) {
+			return await showNoInstance(() => I18n.guild.invalidTemplate());
+		}
 		// No ?instance= and none listed to default to (an empty instance list): nothing was
 		// unreachable, the client has no instance at all.
 		if (!well) return await showNoInstance(() => I18n.noInstanceConfigured());
@@ -62,8 +70,6 @@ if (window.location.pathname.startsWith("/template"))
 		}
 		await I18n.done;
 		labelButton(joinable.length > 0);
-
-		const code = window.location.pathname.split("/")[2];
 
 		fetch(`${urls!.api}/guilds/templates/${code}`, {
 			method: "GET",

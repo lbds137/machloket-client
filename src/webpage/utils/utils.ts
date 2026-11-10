@@ -807,13 +807,15 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 	function appendApi(str: string) {
 		return str.includes("api") ? str : str.endsWith("/") ? str + "api" : str + "/api";
 	}
-	if (!URL.canParse(str)) {
+	// `localhost:3001` parses as a URL (scheme `localhost:`), so a parse alone doesn't say the
+	// address names a web scheme.
+	if (!URL.canParse(str) || !/^https?:\/\//i.test(str)) {
 		await instancesIndexed;
 		const val = stringURLMap.get(str.toLowerCase());
 		if (val) {
 			str = val;
-		} else if (!str.match(/^https?:\/\//gm)) {
-			str = "https://" + str;
+		} else if (!/^https?:\/\//i.test(str)) {
+			str = (isLoopback("http://" + str) ? "http://" : "https://") + str;
 		}
 	}
 	str = trimTrailingSlashes(str);

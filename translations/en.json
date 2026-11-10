@@ -419,6 +419,7 @@
 		"howJoin": "How can people join your server?",
 		"icon:": "Icon:",
 		"iconAlt": "Server: $1",
+		"invalidTemplate": "That doesn't look like a template code",
 		"invites": "Invites",
 		"joinConfirm": "Join $1?",
 		"leave": "Leave server",

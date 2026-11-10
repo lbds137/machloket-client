@@ -5,6 +5,14 @@ const HALF_LIFE_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
 const MAX_AGE_DAYS = 90;
 
+/** Keys that, assigned or deleted on a plain object, reach its prototype instead of one entry. */
+const UNSAFE_JSON_KEYS = new Set(["__proto__", "prototype", "constructor"]);
+
+/** The keys of a map from the server (or from storage) that name an entry, never the prototype. */
+function safeKeys(obj: object): Set<string> {
+	return new Set(Object.keys(obj).filter((key) => !UNSAFE_JSON_KEYS.has(key)));
+}
+
 function decayedWeight(recentUses: readonly string[] | undefined, now: number): number {
 	let weight = 0;
 	if (!Array.isArray(recentUses)) return 0;
@@ -242,15 +250,17 @@ export class Favorites {
 		old: {[key: string]: freq},
 		net: {[key: string]: freq},
 	) {
-		const oldKeys = new Set(Object.keys(old));
-		const newKeys = new Set(Object.keys(newf));
+		const oldKeys = safeKeys(old);
+		const newKeys = safeKeys(newf);
 		const removedKeys = oldKeys.difference(newKeys);
 		const addedKeys = newKeys.difference(oldKeys);
 		for (const key of removedKeys) {
 			delete net[key];
 		}
+		// Own entries only: `net[key]` is truthy for inherited names (toString), whose built-in
+		// function the merge would then write onto.
 		for (const key of addedKeys) {
-			if (net[key]) {
+			if (Object.hasOwn(net, key)) {
 				const newEmj = newf[key];
 				const netEmj = net[key];
 				netEmj.totalUses += newEmj.totalUses;
@@ -267,7 +277,7 @@ export class Favorites {
 		for (const key of sharedKeys) {
 			const oldEmj = old[key];
 			const newEmj = newf[key];
-			if (net[key]) {
+			if (Object.hasOwn(net, key)) {
 				const netEmj = net[key];
 				netEmj.totalUses += newEmj.totalUses - oldEmj.totalUses;
 				netEmj.score += newEmj.score - oldEmj.score;
@@ -284,8 +294,8 @@ export class Favorites {
 	saveDifs(diffs: Partial<favandfreq>, save = true) {
 		const old = this.getOld();
 		if (diffs.favoriteGifs?.gifs) {
-			const oldKeys = new Set(Object.keys(old.favoriteGifs.gifs));
-			const newKeys = new Set(Object.keys(this.gifs));
+			const oldKeys = safeKeys(old.favoriteGifs.gifs);
+			const newKeys = safeKeys(this.gifs);
 			const removedKeys = oldKeys.difference(newKeys);
 			const addedKeys = newKeys.difference(oldKeys);
 			for (const key of removedKeys) {

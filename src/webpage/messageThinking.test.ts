@@ -9,6 +9,7 @@ function loadingMessage(flags: number, content: string) {
 	// generateMessage reads this.localuser.user.id; the fixture's localuser stub has no user.
 	(channel.localuser as {user: unknown}).user = {id: "me"};
 	const message = Object.assign(Object.create(Message.prototype), {
+		mentions: new Set<string>(),
 		id: "500",
 		flags,
 		author: {id: "300", username: "TzurotBot"},

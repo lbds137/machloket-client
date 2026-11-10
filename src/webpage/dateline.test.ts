@@ -18,6 +18,7 @@ function renderableChannel() {
 
 function messageAt(channel: unknown, id: string, when: Date): InstanceType<typeof Message> {
 	return Object.assign(Object.create(Message.prototype), {
+		mentions: new Set<string>(),
 		id,
 		flags: 0,
 		author: {id: "author-" + id, username: "user" + id},
