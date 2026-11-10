@@ -13,6 +13,7 @@ import {Localuser} from "./localuser.js";
 import {MarkDown} from "./markdown.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {errorPaths, nodeMessages, serverReason} from "./utils/refusalText.js";
+import {trySetItem} from "./utils/storage/trySetItem.js";
 import packageJson from "./../../package.json";
 
 let initialBootHash = typeof window !== "undefined" ? window.location.hash : "";
@@ -1650,7 +1651,7 @@ class InstancePicker implements OptionsElement<InstanceInfo | null> {
 		this.validationState = "ok";
 		this.verify.textContent = I18n.login.allGood();
 		if (this.button) this.button.disabled = false;
-		localStorage.setItem("instanceinfo", JSON.stringify(urls));
+		trySetItem("instanceinfo", JSON.stringify(urls));
 		this.onchange(urls);
 		setTimeout(() => {
 			if (isLatest()) this.verify.textContent = "";

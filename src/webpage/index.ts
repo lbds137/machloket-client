@@ -1,6 +1,6 @@
 import {Localuser} from "./localuser.js";
 import {Contextmenu} from "./contextmenu.js";
-import {getViewportHeight, mobile, Specialuser} from "./utils/utils.js";
+import {bootAccountId, getViewportHeight, mobile, Specialuser} from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
 import {consumeMembersPop, installMembersView} from "./utils/membersView.js";
 import {consumeSearchPop, installSearchView} from "./utils/searchView.js";
@@ -28,6 +28,7 @@ import {NotificationHandler} from "./notificationHandler.js";
 import {installNotifyBanner} from "./notifyBanner.js";
 import {pickFiles} from "./utils/filePicker.js";
 import {restoreFailedSend} from "./composerRestore.js";
+import {consumeAccountHandoff} from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
 
 if (window.location.pathname === "/app") {
@@ -91,12 +92,13 @@ if (window.location.pathname.startsWith("/channels")) {
 	}
 	const loaddesc = document.getElementById("load-desc") as HTMLSpanElement;
 	try {
-		const current = sessionStorage.getItem("currentuser") || Localuser.users.currentuser;
-		if (!Localuser.users.users[current]) {
+		const current = bootAccountId(Localuser.users);
+		if (!current || !Localuser.users.users[current]) {
 			thisUser = new Localuser(await new Promise<Specialuser>((res) => makeLogin(true, "", res)));
 		} else {
 			thisUser = new Localuser(Localuser.users.users[current]);
 		}
+		consumeAccountHandoff();
 
 		regSwap(thisUser);
 		thisUser.initwebsocket().then(async () => {

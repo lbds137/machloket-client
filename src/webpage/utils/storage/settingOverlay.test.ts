@@ -17,6 +17,7 @@ const {Channel} = await import("../../channel.js");
 const {bumpCommandRecency} = await import("../../commandRecency.js");
 const {showChangelogPopup} = await import("../../changelog.js");
 const {readItem, resetSettingOverlayForTests, saveSetting} = await import("./settingOverlay.js");
+const {Dialog} = await import("../../settings.js");
 const {I18n} = await import("../../i18n.js");
 
 const EXPECTED_COPY =
@@ -202,7 +203,7 @@ it("a Dialog that fails to load is logged with no unhandled rejection, and a lat
 	// The notify chain rejects the way a chunk that can't load would (offline, or a deploy
 	// swapped the chunks under a running page).
 	const loadFailure = new Error("chunk failed to load");
-	const realDone = I18n.done;
+	const doneDescriptor = Object.getOwnPropertyDescriptor(I18n, "done")!;
 	Object.defineProperty(I18n, "done", {configurable: true, get: () => Promise.reject(loadFailure)});
 	try {
 		setSkinTone(3);
@@ -214,12 +215,7 @@ it("a Dialog that fails to load is logged with no unhandled rejection, and a lat
 		// unhandledrejection fires a task after the rejection: wait past it before reading.
 		await flushAsyncDialog();
 	} finally {
-		Object.defineProperty(I18n, "done", {
-			configurable: true,
-			enumerable: true,
-			value: realDone,
-			writable: true,
-		});
+		Object.defineProperty(I18n, "done", doneDescriptor);
 	}
 	expect(unhandled).not.toHaveBeenCalled();
 	expect(errorSpy).toHaveBeenCalledWith(loadFailure);
@@ -229,4 +225,27 @@ it("a Dialog that fails to load is logged with no unhandled rejection, and a lat
 	await vi.waitFor(() => {
 		expect(dialogTexts()).toEqual([EXPECTED_COPY]);
 	});
+});
+
+it("a Dialog whose show() throws is logged and a later refusal does not retry", async () => {
+	await I18n.done;
+	const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+		throw quota();
+	});
+	const showFailure = new Error("dialog show failed");
+	const showSpy = vi.spyOn(Dialog.prototype, "show").mockImplementationOnce(() => {
+		throw showFailure;
+	});
+
+	setSkinTone(3);
+	await vi.waitFor(() => {
+		expect(errorSpy).toHaveBeenCalledWith(showFailure);
+	});
+	expect(dialogTexts()).toEqual([]);
+
+	setSkinTone(4);
+	await flushAsyncDialog();
+	expect(dialogTexts()).toEqual([]);
+	expect(showSpy).toHaveBeenCalledTimes(1);
 });

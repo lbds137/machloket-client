@@ -50,7 +50,8 @@ it("a ping the server refused isn't kept as the instance's details", async () =>
 it("details kept from an earlier refused ping are asked for again", async () => {
 	localStorage.setItem(
 		"userinfos",
-		JSON.stringify({instances: {[WELLKNOWN]: {message: "You are being rate limited."}}}),
+		// setDefaults gives every stored userinfos a `users` map; one without it reads as unusable.
+		JSON.stringify({users: {}, instances: {[WELLKNOWN]: {message: "You are being rate limited."}}}),
 	);
 	captureRequests(API + "/ping", () => Response.json({instance: {name: "Home"}}));
 	const user = localuser();

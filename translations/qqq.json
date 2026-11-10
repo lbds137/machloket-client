@@ -21,6 +21,7 @@
 												"badWS": "what WS mean?"
 								}
 				},
+				"accountNotSaved": "Shown in a dialog (at most once per session) when the user signs in and the browser's local storage is full, so the account is kept only until the page reloads.",
 				"botGuilds": "This means \"the guilds that the bot is in\" (i.e., is a member of).",
 				"channelping": {
 								"unknown": "Shown for a <#id> channel mention when the channel is not known to the client"

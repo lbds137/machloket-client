@@ -21,13 +21,14 @@ import {
 	getViewportHeight,
 	installPGet,
 	SW,
-	getBulkInfo,
+	readStoredAccounts,
 	setTheme,
 	Specialuser,
 	debounce,
 	mobile,
 	pingResponse,
 } from "./utils/utils.js";
+import {saveAccounts} from "./utils/storage/settingOverlay.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {CDN_LINK_MARGIN_MS, cssUrl} from "./utils/netUtils.js";
 import {
@@ -246,7 +247,7 @@ class Localuser {
 		thisUser = new Localuser(specialUser);
 		Localuser.users.currentuser = specialUser.uid;
 		sessionStorage.setItem("currentuser", specialUser.uid);
-		localStorage.setItem("userinfos", JSON.stringify(Localuser.users));
+		saveAccounts(JSON.stringify(Localuser.users));
 
 		thisUser.initwebsocket().then(async () => {
 			const loaddesc = document.getElementById("load-desc") as HTMLElement;
@@ -4882,17 +4883,19 @@ class Localuser {
 			};
 
 			devSettings.addButtonInput("", I18n.devSettings.clearWellKnowns(), async () => {
-				const currentUserInfos = JSON.parse(localStorage.getItem("userinfos")!);
-				await Promise.all(
-					Object.keys(currentUserInfos.users).map(async (user) => {
-						const key =
-							currentUserInfos.users[user].serverurls.value ??
-							currentUserInfos.users[user].serverurls.wellknown ??
-							currentUserInfos.users[user].serverurls.api;
-						currentUserInfos.users[user].serverurls = await getapiurls(key);
-						localStorage.setItem("userinfos", JSON.stringify(currentUserInfos));
-					}),
-				);
+				const currentUserInfos = readStoredAccounts();
+				if (currentUserInfos) {
+					await Promise.all(
+						Object.keys(currentUserInfos.users).map(async (user) => {
+							const key =
+								currentUserInfos.users[user].serverurls.value ??
+								currentUserInfos.users[user].serverurls.wellknown ??
+								currentUserInfos.users[user].serverurls.api;
+							currentUserInfos.users[user].serverurls = await getapiurls(key);
+							saveAccounts(JSON.stringify(currentUserInfos));
+						}),
+					);
+				}
 
 				localStorage.removeItem("instanceinfo");
 				await SW.postMessage({
@@ -7121,22 +7124,26 @@ class Localuser {
 		}
 	}
 	async pingEndpoint() {
-		const userInfo = getBulkInfo();
-		if (!userInfo.instances) userInfo.instances = {};
+		// An unreadable store isn't overwritten with just the cache: the ping is still used.
+		const userInfo = readStoredAccounts();
+		const instances = (userInfo?.instances ?? {}) as Record<string, any>;
 		const wellknown = this.info.wellknown;
 		// Only a real ping is kept (an error body kept here once was never asked for again).
 		const isPing = (json: unknown) =>
 			typeof (json as {instance?: {name?: unknown}} | null)?.instance?.name === "string";
-		if (!isPing(userInfo.instances[wellknown])) {
+		if (!isPing(instances[wellknown])) {
 			const pingRes = await pingResponse(this.info.api);
 			const pingJSON: unknown = pingRes?.ok ? await pingRes.json().catch(() => null) : null;
 			if (isPing(pingJSON)) {
-				userInfo.instances[wellknown] = pingJSON;
-				localStorage.setItem("userinfos", JSON.stringify(userInfo));
+				instances[wellknown] = pingJSON;
+				if (userInfo) {
+					userInfo.instances = instances;
+					saveAccounts(JSON.stringify(userInfo));
+				}
 			}
 		}
-		if (isPing(userInfo.instances[wellknown])) {
-			this.instancePing = userInfo.instances[wellknown].instance;
+		if (isPing(instances[wellknown])) {
+			this.instancePing = instances[wellknown].instance;
 		}
 
 		this.pageTitle(I18n.loading());
