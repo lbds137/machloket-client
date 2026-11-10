@@ -235,6 +235,66 @@ describe("server-sent member and guild fields", () => {
 		expect(Object.getPrototypeOf(guild.properties)).toBe(Object.prototype);
 		expect(guild.properties.name).toBe("b");
 	});
+
+	const roleJson = '{"id":"r1","name":"b","color":0,"permissions":"0","__proto__":{"evil":true}}';
+
+	it("a role's __proto__ key can't re-point the role's prototype when it's built", async () => {
+		const {Role} = await import("./role");
+		const owner = {headers: {}, info: {}, localuser: {}} as never;
+		let role: InstanceType<typeof Role> | undefined;
+
+		// Built over a re-pointed prototype it'd have no roleLoad to call.
+		expect(() => {
+			role = new Role(JSON.parse(roleJson), owner);
+		}).not.toThrow();
+
+		expect(Object.getPrototypeOf(role)).toBe(Role.prototype);
+		expect((role as unknown as {evil?: boolean}).evil).toBeUndefined();
+		expect(role!.name).toBe("b");
+	});
+
+	it("a role update's __proto__ key can't re-point the role's prototype", async () => {
+		const {Role} = await import("./role");
+		const role = Object.assign(Object.create(Role.prototype), {
+			id: "r1",
+			name: "a",
+			color: 0,
+			permissions: {allow: 0n},
+			owner: {localuser: {}},
+		}) as InstanceType<typeof Role>;
+
+		expect(() => role.newJson(JSON.parse(roleJson))).not.toThrow();
+
+		expect(Object.getPrototypeOf(role)).toBe(Role.prototype);
+		expect((role as unknown as {evil?: boolean}).evil).toBeUndefined();
+		expect(role.name).toBe("b");
+	});
+
+	it("a message's __proto__ key can't re-point the message's prototype", async () => {
+		const {Message} = await import("./message");
+		const message = Object.assign(Object.create(Message.prototype), {
+			id: "m1",
+			headers: {},
+			owner: {
+				id: "c1",
+				info: {},
+				localuser: {},
+				infinite: {snapBottom: () => () => {}},
+				guild: {id: "@me", roleids: new Map()},
+			},
+		}) as InstanceType<typeof Message>;
+
+		// Over a re-pointed prototype the message has no `guild` getter left to read.
+		expect(() =>
+			message.giveData(
+				JSON.parse('{"author":{},"mention_everyone":true,"__proto__":{"evil":true}}'),
+			),
+		).not.toThrow();
+
+		expect(Object.getPrototypeOf(message)).toBe(Message.prototype);
+		expect((message as unknown as {evil?: boolean}).evil).toBeUndefined();
+		expect(message.mention_everyone).toBe(true);
+	});
 });
 
 describe("a link that jumps to a channel in-app", () => {

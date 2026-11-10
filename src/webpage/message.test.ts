@@ -10,6 +10,7 @@ function message(fields: Record<string, unknown>) {
 	const {channel} = messageIn("@me");
 	(channel.localuser as {user: unknown}).user = {id: "me"};
 	return Object.assign(Object.create(Message.prototype), {
+		mentions: new Set<string>(),
 		id: "500",
 		flags: 0,
 		author: {id: "300", username: "Someone"},
@@ -179,5 +180,41 @@ describe("single-choice polls", () => {
 		expect(checks(div)).toEqual([true, true]);
 		expect(document.body.textContent).not.toContain("Missing Permissions");
 		div.remove();
+	});
+});
+
+describe("a message in a DM", () => {
+	/** A DM message (the fixture's guild is @me, which has no `member`) saying nothing in
+	 * particular, mentioning `mentions`. */
+	function dmMessage(mentions: string[]) {
+		return message({
+			content: {
+				makeHTML: () => document.createElement("div"),
+				rawString: "",
+				textContent: "",
+				onUpdate: () => {},
+			},
+			mentions: new Set(mentions),
+			mention_roles: new Set(),
+			mention_everyone: false,
+		});
+	}
+
+	it("that mentions the local user is highlighted as a mention", () => {
+		const div = document.createElement("div");
+		const m = dmMessage(["me"]);
+		expect(m.guild.member).toBeUndefined();
+
+		m.generateMessage(undefined, false, div);
+
+		expect(div.classList.contains("mentioned")).toBe(true);
+	});
+
+	it("that mentions someone else isn't highlighted (negative control)", () => {
+		const div = document.createElement("div");
+
+		dmMessage(["someone-else"]).generateMessage(undefined, false, div);
+
+		expect(div.classList.contains("mentioned")).toBe(false);
 	});
 });

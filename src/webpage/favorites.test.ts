@@ -531,3 +531,57 @@ describe("emojiRecentsMerged and picker recents rail", () => {
 		expect(picker.querySelector(".emojiTitle")?.textContent).toBe(I18n.recentEmoji());
 	});
 });
+
+describe("favorites merge with a server's __proto__ key", () => {
+	const unsafeFreq = '{"__proto__":{"totalUses":1,"recentUses":[],"frecency":-1,"score":1}}';
+	// A merge that went wrong would have written these onto Object.prototype.
+	const strays = ["totalUses", "recentUses", "score"];
+	afterEach(() => {
+		for (const key of strays) delete (Object.prototype as Record<string, unknown>)[key];
+	});
+
+	it("a use count keyed __proto__ doesn't reach Object.prototype", () => {
+		const favorites = favoritesWithStore();
+		const net: Record<string, unknown> = {};
+		const fresh: Record<string, unknown> = {};
+
+		favorites.mixNewOldNetwork(JSON.parse(unsafeFreq), {}, net as never);
+
+		expect(fresh.totalUses).toBeUndefined();
+	});
+
+	it("a use count keyed by an inherited name (toString) is merged as an entry, not onto the built-in", () => {
+		const favorites = favoritesWithStore();
+		const net: Record<string, unknown> = {};
+		const builtin = Object.prototype.toString as unknown as Record<string, unknown>;
+		try {
+			favorites.mixNewOldNetwork(
+				JSON.parse('{"toString":{"totalUses":1,"recentUses":[],"frecency":-1,"score":1}}'),
+				{},
+				net as never,
+			);
+
+			expect(builtin.totalUses).toBeUndefined();
+			expect(Object.hasOwn(net, "toString")).toBe(true);
+		} finally {
+			for (const key of strays) delete builtin[key];
+		}
+	});
+
+	it("a gif keyed __proto__ in the saved copy doesn't re-point the synced gifs' prototype", () => {
+		const favorites = favoritesWithStore() as unknown as {
+			gifs: Record<string, unknown>;
+			saveDifs: (diffs: object, save?: boolean) => void;
+		};
+		// As loadFromLocal reads them back out of storage.
+		favorites.gifs = JSON.parse(
+			'{"a":{"src":"s","width":1,"height":1,"order":0},"__proto__":{"evil":true}}',
+		);
+
+		favorites.saveDifs({favoriteGifs: {gifs: {}, hideTooltip: false}}, false);
+
+		expect(Object.getPrototypeOf(favorites.gifs)).toBe(Object.prototype);
+		expect(favorites.gifs.evil).toBeUndefined();
+		expect(favorites.gifs.a).toBeDefined();
+	});
+});

@@ -9,6 +9,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {Channel} from "./channel.js";
 import {I18n} from "./i18n.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {assignableKey} from "./utils/assignableKey.js";
 
 class Role extends SnowFlake {
 	permissions: Permissions;
@@ -36,6 +37,7 @@ class Role extends SnowFlake {
 			if (thing === "id") {
 				continue;
 			}
+			if (!assignableKey(this, thing)) continue;
 			(this as any)[thing] = (json as any)[thing];
 		}
 		this.permissions = new Permissions(json.permissions);
@@ -93,6 +95,7 @@ class Role extends SnowFlake {
 			if (thing === "id" || thing === "permissions") {
 				continue;
 			}
+			if (!assignableKey(this, thing)) continue;
 			(this as any)[thing] = (json as any)[thing];
 		}
 		this.roleLoad();

@@ -30,6 +30,7 @@ import {
 } from "./utils/utils.js";
 import {saveAccounts} from "./utils/storage/settingOverlay.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {isValidTemplateCode} from "./utils/templateCode.js";
 import {CDN_LINK_MARGIN_MS, cssUrl} from "./utils/netUtils.js";
 import {
 	channeljson,
@@ -2776,6 +2777,9 @@ class Localuser {
 					}
 				} else {
 					code = template.value;
+				}
+				if (!isValidTemplateCode(code)) {
+					throw new FormError(template, I18n.guild.invalidTemplate());
 				}
 				form.fetchURL = this.info.api + "/guilds/templates/" + code;
 			});

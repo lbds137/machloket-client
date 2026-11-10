@@ -1,5 +1,5 @@
-import {afterEach, expect, it, onTestFinished} from "vitest";
-import {addInstance, captureRequests} from "./test/setup";
+import {afterEach, expect, it, onTestFinished, vi} from "vitest";
+import {addInstance, captureRequests, drain} from "./test/setup";
 // @ts-expect-error Vite's ?raw import; its vite/client types aren't loaded here
 import pageHtml from "./template.html?raw";
 
@@ -226,5 +226,38 @@ it("with no ?instance= and no listed instance to default to, the page says so an
 	// Nothing was unreachable: the client has no instance at all (a deploy problem).
 	await expect.poll(() => description.textContent).toBe(I18n.noInstanceConfigured());
 	expect(document.getElementById("templatename")!.textContent).toBe(I18n.templateHeading());
+	expect(getComputedStyle(document.getElementById("usetemplate")!).visibility).toBe("hidden");
+});
+
+it("a template link whose path code climbs out of /guilds/templates/ sends no request there", async () => {
+	const saved = localStorage.getItem("userinfos");
+	onTestFinished(() => {
+		vi.restoreAllMocks();
+		if (saved) localStorage.setItem("userinfos", saved);
+		else localStorage.removeItem("userinfos");
+	});
+	document.body.append(document.importNode(servedCard(), true));
+	await instancefetch;
+	localStorage.removeItem("userinfos");
+	setDefaults();
+	addInstance(new URL(getDefaultInstanceUrl()!).origin);
+	// Calls through to the test network's fetch: nothing here reaches a real server.
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
+	// The path as a browser keeps it: %2F stays in the segment, so it's one "code".
+	history.replaceState(history.state, "", "/template/..%2F..%2Fusers%2F%40me");
+	await import(/* @vite-ignore */ "./templatePage.ts?run=" + ++runs);
+
+	const title = document.getElementById("templatename")!;
+	await expect.poll(() => title.textContent, {timeout: 5000}).toBe(I18n.templateHeading());
+	await drain();
+
+	const asked = fetchSpy.mock.calls.map(([input]) =>
+		String(input instanceof Request ? input.url : input),
+	);
+	expect(asked.filter((url) => url.includes("/guilds/templates/"))).toEqual([]);
+	// The page's failed state: the generic heading, the reason, and nothing to use.
+	expect(document.getElementById("templatedescription")!.textContent).toBe(
+		I18n.guild.invalidTemplate(),
+	);
 	expect(getComputedStyle(document.getElementById("usetemplate")!).visibility).toBe("hidden");
 });

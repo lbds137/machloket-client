@@ -97,6 +97,7 @@ describe("render strings routed through I18n", () => {
 	it("routes a reply to a blocked user through I18n.friends.bu", async () => {
 		vi.spyOn(I18n.friends, "bu").mockReturnValue("Usuario bloqueado");
 		const msg = Object.assign(Object.create(Message.prototype), {
+			mentions: new Set<string>(),
 			id: "500",
 			type: 99,
 			flags: 0,
