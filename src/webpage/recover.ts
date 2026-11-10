@@ -28,7 +28,9 @@ export async function recoveryInstance(): Promise<{api: string} | null> {
 }
 let info: {api: string};
 
-function makeMenu2(email: string | void) {
+/** The new-password step: after the forgot step (`email` given, the link is pasted in) or from
+ * the link itself (`linkToken`, already taken out of the address bar). */
+function makeMenu2(email: string | void, linkToken?: string) {
 	const d2 = new Dialog("");
 	d2.options.addTitle(I18n.login.recovery());
 	const headers = {
@@ -54,9 +56,13 @@ function makeMenu2(email: string | void) {
 	const p2 = opt.addTextInput(I18n.login.enterPAgain(), "password2", {password: true});
 	opt.addPreprocessor((e) => {
 		const obj = e as unknown as {password: string; password2?: string; token?: string};
-		const token = obj.token || window.location.href;
-		if (URL.canParse(token)) {
-			obj.token = new URLSearchParams(token.split("#")[1]).get("token") as string;
+		if (obj.token) {
+			// A pasted recovery link: its token is in the fragment.
+			if (URL.canParse(obj.token)) {
+				obj.token = new URLSearchParams(obj.token.split("#")[1]).get("token") as string;
+			}
+		} else {
+			obj.token = linkToken;
 		}
 
 		if (obj.password !== obj.password2) {
@@ -88,19 +94,25 @@ function makeMenu1() {
 	const email = opt.addTextInput(I18n.htmlPages.emailField(), "login");
 	d.show(false);
 }
+/** Opens the /reset page's flow on `found`: the new-password step for a link that carries its
+ * token, else the forgot-password step. */
+export function openRecovery(found: {api: string}) {
+	info = found;
+	const linkToken = new URLSearchParams(window.location.hash.slice(1)).get("token");
+	if (linkToken) {
+		// The token works like a password until it's used: keep it out of history, bookmarks
+		// and anything that shows the address bar. The step below keeps it in memory.
+		history.replaceState(history.state, "", window.location.pathname + window.location.search);
+		makeMenu2(undefined, linkToken);
+	} else {
+		makeMenu1();
+	}
+}
 if (window.location.pathname.startsWith("/reset")) {
 	const found = await recoveryInstance();
 	if (!found) {
 		new Dialog(I18n.requestFailed("no instance")).show(false);
 	} else {
-		info = found;
-		if (
-			window.location.href.split("#").length == 2 &&
-			new URLSearchParams(window.location.href.split("#")[1]).has("token")
-		) {
-			makeMenu2();
-		} else {
-			makeMenu1();
-		}
+		openRecovery(found);
 	}
 }
