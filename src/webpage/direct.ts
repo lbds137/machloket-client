@@ -563,6 +563,11 @@ class Group extends Channel {
 		this.owner_id = json.owner_id;
 		this.icon = json.icon;
 		this.makeIcon();
+		// Ownership moves with this same event (an owner's leave crowns the lowest remaining
+		// recipient), so the owner-only UI redraws like addRec/removeRec do.
+		if (this.localuser.channelfocus === this) {
+			this.localuser.memberListQue();
+		}
 	}
 	defaultName() {
 		return this.users.map((_) => _.name).join(", ");

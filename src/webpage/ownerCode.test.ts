@@ -451,3 +451,41 @@ it("a malformed webauthn challenge refuses with a message instead of dead-ending
 	expect(document.body.textContent).toContain("bad challenge");
 	expect(onDelete).not.toHaveBeenCalled();
 });
+
+// The server answers this 403 BEFORE any MFA challenge: no second-factor step may precede
+// the refusal, and the server's own message is what reaches the user.
+it("a bot-owns-guilds 403 shows the server's message and opens no MFA prompt", async () => {
+	const {bodies: sent, headers} = captureWithHeaders(API + "/applications/a1/delete", () =>
+		Response.json(
+			{message: "The application's bot owns guilds and cannot be deleted"},
+			{status: 403},
+		),
+	);
+	const totpSent = captureRequests(API + "/users/@me/mfa/totp", () =>
+		Response.json({token: "unexpected"}),
+	);
+	const webauthnSent = captureRequests(API + "/users/@me/mfa/webauthn", () =>
+		Response.json({token: "unexpected"}),
+	);
+	const {user, buttons, subForms, promptForms} = await manageApp({
+		id: "a1",
+		name: "App",
+		bot: {id: "1553128617381273639", username: "bot", discriminator: "0", avatar: null},
+	});
+	const onDelete = vi.fn();
+	await user.manageApplication("a1", new Dialog("").options, onDelete);
+
+	buttons.get(I18n.applications.delete())!();
+	const sub = subForms.at(-1)!;
+	await sub.submit();
+
+	expect(sent).toEqual([{}]);
+	expect(headers.map((h) => h.get("x-discord-mfa-authorization"))).toEqual([null]);
+	expect(promptForms).toHaveLength(0);
+	expect(totpSent).toEqual([]);
+	expect(webauthnSent).toEqual([]);
+	expect(document.body.textContent).toContain(
+		"The application's bot owns guilds and cannot be deleted",
+	);
+	expect(onDelete).not.toHaveBeenCalled();
+});

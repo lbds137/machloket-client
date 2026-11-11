@@ -349,7 +349,8 @@ interface templateSkim {
 	name: string;
 	description: string;
 	usage_count: null | number;
-	creator_id: string;
+	/** Null once the template's creator is deleted server-side. */
+	creator_id: null | string;
 	created_at: string;
 	updated_at: string;
 	source_guild_id: string;
@@ -378,7 +379,8 @@ interface addInfoBan {
 	id: string;
 	user_id: string;
 	guild_id: string;
-	executor_id: string;
+	/** Null once the moderator who banned is deleted server-side. */
+	executor_id: null | string;
 	reason?: string | undefined;
 }
 type mainuserjson = userjson & {
@@ -491,7 +493,8 @@ export interface polljson {
 type emojipjson = emojijson & {
 	available: boolean;
 	guild_id: string;
-	user_id: string;
+	/** Null once the emoji's uploader is deleted server-side. */
+	user_id: null | string;
 	managed: boolean;
 	require_colons: boolean;
 	roles: string[];
