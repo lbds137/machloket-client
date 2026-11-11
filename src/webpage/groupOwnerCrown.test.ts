@@ -36,30 +36,49 @@ afterEach(() => {
 	document.body.replaceChildren();
 });
 
+/** Alice owns the group, Bob and Meidnight follow, and the member list has rendered once. */
+function crownScene() {
+	const alice = listUser(ALICE, "Alice");
+	const bob = listUser(BOB, "Bob");
+	const me = listUser(ME, "Meidnight");
+	const lu = Object.assign(Object.create(Localuser.prototype), {
+		channelfocus: undefined as unknown,
+		// Class fields, so Object.create alone doesn't make them.
+		roleListMap: new WeakMap(),
+		channelids: new Map(),
+	}) as InstanceType<typeof Localuser>;
+	const group = Object.assign(Object.create(Group.prototype), {
+		id: "dm1",
+		// `guild` and `localuser` are getters on the prototype: they read through `owner`.
+		owner: {id: "@me", localuser: lu},
+		users: [alice, bob],
+		owner_id: ALICE,
+		// updateChannel's icon/event path and Channel's focused branch touch these; no crown
+		// test inspects them (same stubs as the groupDM harness below).
+		nameSpan: new WeakRef(document.createElement("span")),
+		all: new WeakRef(document.createElement("div")),
+		permission_overwrites: new Map(),
+		makeIcon: () => document.createElement("div"),
+		renderIcon: () => {},
+		fireEvents: () => {},
+		slowmode: vi.fn(),
+		refreshComposerLock: vi.fn(),
+	}) as InstanceType<typeof Group>;
+	lu.channelfocus = group;
+	const side = document.createElement("div");
+	side.id = "sideDiv";
+	document.body.append(side);
+	const elms = new Map([["online" as const, [alice, bob, me] as never]]);
+	return {alice, bob, group, lu, side, elms};
+}
+
 describe("a group DM's owner crown", () => {
 	it("follows the new owner on reused rows when the update moves ownership", () => {
-		const alice = listUser(ALICE, "Alice");
-		const bob = listUser(BOB, "Bob");
-		const me = listUser(ME, "Meidnight");
-		const group = Object.assign(Object.create(Group.prototype), {
-			id: "dm1",
-			// `guild` and `localuser` are getters on the prototype: they read through `owner`.
-			owner: {id: "@me"},
-			users: [alice, bob],
-			owner_id: ALICE,
-		}) as InstanceType<typeof Group>;
-		const lu = Object.assign(Object.create(Localuser.prototype), {
-			channelfocus: group,
-			// Class fields, so Object.create alone doesn't make them.
-			roleListMap: new WeakMap(),
-		}) as InstanceType<typeof Localuser>;
-		const side = document.createElement("div");
-		side.id = "sideDiv";
-		document.body.append(side);
-		const elms = new Map([["online" as const, [alice, bob, me] as never]]);
+		const {alice, bob, group, lu, side, elms} = crownScene();
 
 		lu.generateListHTML(elms, group);
-		expect(rowOf(side, alice)?.querySelector(".svg-crown")).not.toBeNull();
+		const aliceRow = rowOf(side, alice);
+		expect(aliceRow?.querySelector(".svg-crown")).not.toBeNull();
 		expect(rowOf(side, bob)?.querySelector(".svg-crown")).toBeNull();
 
 		// The owner leaves; the server crowns the lowest remaining recipient (Bob), and the
@@ -67,8 +86,25 @@ describe("a group DM's owner crown", () => {
 		group.owner_id = BOB;
 		lu.generateListHTML(elms, group);
 
+		// The second render reused the first render's rows — the premise this test covers.
+		expect(rowOf(side, alice)).toBe(aliceRow);
 		expect(rowOf(side, bob)?.querySelector(".svg-crown")).not.toBeNull();
 		expect(rowOf(side, alice)?.querySelector(".svg-crown")).toBeNull();
+	});
+
+	it("a partial update without owner_id does not reset ownership or strip the crown", () => {
+		const {alice, bob, group, lu, side, elms} = crownScene();
+
+		lu.generateListHTML(elms, group);
+
+		// owner_id is optional in channeljson: an event that omits it carries no ownership
+		// change, and nothing else in the client may read this reset as one.
+		group.updateChannel({id: "dm1", type: 3} as unknown as channeljson);
+
+		expect(group.owner_id).toBe(ALICE);
+		lu.generateListHTML(elms, group);
+		expect(rowOf(side, alice)?.querySelector(".svg-crown")).not.toBeNull();
+		expect(rowOf(side, bob)?.querySelector(".svg-crown")).toBeNull();
 	});
 });
 

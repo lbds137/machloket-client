@@ -4000,7 +4000,11 @@ class Channel extends SnowFlake {
 		if (json.flags !== undefined) this.flags = json.flags;
 		this.name = json.name;
 		this.position = json.position;
-		this.owner_id = json.owner_id;
+		// owner_id is optional in channeljson: an event that omits it carries no ownership
+		// change, and the group-DM crown and owner-only menu read this field.
+		if (json.owner_id !== undefined) {
+			this.owner_id = json.owner_id;
+		}
 		this.icon = json.icon;
 		this.defaultAutoArchiveDuration = json.default_auto_archive_duration;
 		this.renderIcon();

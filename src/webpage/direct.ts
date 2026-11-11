@@ -560,7 +560,10 @@ class Group extends Channel {
 		this.name = json.name || this.defaultName();
 		const span = this.nameSpan.deref();
 		if (span) span.textContent = this.name;
-		this.owner_id = json.owner_id;
+		// Same guard as Channel.updateChannel: an omitted owner_id is no ownership change.
+		if (json.owner_id !== undefined) {
+			this.owner_id = json.owner_id;
+		}
 		this.icon = json.icon;
 		this.makeIcon();
 		// Ownership moves with this same event (an owner's leave crowns the lowest remaining
