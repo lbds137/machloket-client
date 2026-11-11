@@ -1964,11 +1964,7 @@ class Localuser {
 				memberdiv.append(pfp, username);
 				if (channel instanceof Group) {
 					Group.groupMenu.bindContextmenu(memberdiv, channel, user);
-					if (channel.owner_id === user.id) {
-						const crown = document.createElement("span");
-						crown.classList.add("svg-crown");
-						memberdiv.append(crown);
-					}
+					this.syncOwnerCrown(channel, user, memberdiv);
 				}
 				member.bind(username);
 				user.bind(memberdiv, member instanceof Member ? member.guild : undefined, false);
@@ -1981,6 +1977,11 @@ class Localuser {
 			for (const member of list) {
 				const user = member instanceof Member ? member.user : member;
 				let elm = userToHTMLMap.get(user);
+				// A reused row keeps the crown its first render gave it, but group-DM ownership
+				// moves without the row being rebuilt (CHANNEL_UPDATE, owner leave).
+				if (elm && channel instanceof Group) {
+					this.syncOwnerCrown(channel, user, elm);
+				}
 				if (!elm) {
 					elm = makeMemberDiv(user, member);
 					if (!lastElm) {
@@ -2004,6 +2005,21 @@ class Localuser {
 
 				lastElm = elm;
 			}
+		}
+	}
+	/** The owner crown tracks `owner_id` exactly as the channel carries it: group-DM ownership
+	 * moves to the lowest remaining recipient when the owner leaves, and the row that gains or
+	 * loses it is reused, not rebuilt. */
+	syncOwnerCrown(channel: Group, user: User, row: HTMLElement): void {
+		const crowned = row.querySelector(".svg-crown");
+		if (channel.owner_id === user.id) {
+			if (!crowned) {
+				const crown = document.createElement("span");
+				crown.classList.add("svg-crown");
+				row.append(crown);
+			}
+		} else if (crowned) {
+			crowned.remove();
 		}
 	}
 	emojiPicker(x: number, y: number, guildEmojis = true) {

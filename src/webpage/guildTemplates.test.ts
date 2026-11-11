@@ -190,4 +190,39 @@ describe("guild templates", () => {
 		expect(form.addText).toHaveBeenCalledTimes(2); // the created-by label and the use count
 		expect(form.addHTMLArea).toHaveBeenCalledWith(widget);
 	});
+
+	// A deleted creator arrives with creator_id null: no lookup at all, and the edit form
+	// keeps everything but the created-by row.
+	it("a null creator_id drops the created-by row without any profile lookup", async () => {
+		const unhandled = vi.fn();
+		window.addEventListener("unhandledrejection", unhandled);
+		try {
+			const button = templateButtonWithForms();
+			const guild = guildWith(button);
+			captureRequests(
+				`${API}/guilds/g1/templates`,
+				() =>
+					new Response(
+						JSON.stringify([{code: "abc", name: "Abc", creator_id: null, usage_count: 3}]),
+						{status: 200, headers: JSON_HEADERS},
+					),
+			);
+			const lookups = captureRequests(`${API}/users/null/profile`, () =>
+				Response.json({message: "boom"}, {status: 500}),
+			);
+
+			await openFirstEdit(guild, button);
+
+			expect(lookups).toEqual([]);
+			const {form} = button;
+			expect(form.addText).toHaveBeenCalledTimes(1); // the use count; no created-by row
+			expect(form.addTextInput).toHaveBeenCalledTimes(1);
+			expect(form.addMDInput).toHaveBeenCalledTimes(1);
+			expect(form.addPreprocessor).toHaveBeenCalledTimes(1);
+			expect(form.addHTMLArea).not.toHaveBeenCalled();
+			expect(unhandled).not.toHaveBeenCalled();
+		} finally {
+			window.removeEventListener("unhandledrejection", unhandled);
+		}
+	});
 });
