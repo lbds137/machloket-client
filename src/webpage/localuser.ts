@@ -468,6 +468,10 @@ class Localuser {
 		});
 		// Not behind the slower fetches below: this warns of an account takeover.
 		if (!this.swapped) void this.recoveryBanner.refresh();
+		// A fresh session: the old one's call can't be reached from the new factory. Ended
+		// while the guilds are still here: its status handler finds the call's channel among
+		// them to clear the voice panel.
+		this.voiceFactory?.teardown();
 		this.guilds = [];
 		this.guildids = new Map();
 		this.user = new User(ready.d.user, this);
@@ -476,8 +480,6 @@ class Localuser {
 
 		this.mdBox();
 
-		// A fresh session: the old one's call can't be reached from the new factory.
-		this.voiceFactory?.teardown();
 		this.voiceFactory = new VoiceFactory(
 			{id: this.user.id},
 			(g) => {
