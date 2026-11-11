@@ -16,7 +16,8 @@ const WEBHOOK_ID = "900000000000000001";
  * the message keeps its dangling webhook_id and the stand-in webhook embed — the last name
  * and avatar survive, the ids behind them do not. The embed carries no id and no
  * guild_id/channel_id, user_id is present but null, and source_guild_id is absent for
- * non-follower webhooks. */
+ * non-follower webhooks. source_channel_id stays deliberately populated here, pinning the
+ * tolerated string arm of the type (the variant below covers it null). */
 function deletedWebhookMessage(): messagejson {
 	return {
 		id: "900000000000000002",
