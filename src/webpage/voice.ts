@@ -77,6 +77,8 @@ class VoiceFactory {
 	teardown() {
 		this.curChan = null;
 		this.curGuild = null;
+		// leave() does its whole cleanup before any await (it has none), so the socket, peer
+		// connection and mic are closed by the time this returns; keep it that way.
 		void this.currentVoice?.leave();
 		this.currentVoice = undefined;
 	}
