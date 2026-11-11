@@ -699,16 +699,19 @@ type webhookType = {
 	url: string;
 };
 type webhookInfo = {
-	id: string;
+	/** A deleted webhook's message keeps a stand-in embed that drops id and
+	 * guild_id/channel_id, nulls user_id once the creator is gone, and omits source_guild_id
+	 * for non-follower webhooks; source_* tolerate null for the same change. */
+	id?: string;
 	type: 1;
 	name: string;
 	avatar: null | string;
-	guild_id: string;
-	channel_id: string;
+	guild_id?: string;
+	channel_id?: string;
 	application_id: null | string;
-	user_id: string;
-	source_guild_id: string;
-	source_channel_id: string;
+	user_id?: null | string;
+	source_guild_id?: null | string;
+	source_channel_id?: null | string;
 };
 export enum MessageComponentType {
 	ActionRow = 1,
@@ -877,6 +880,9 @@ type messagejson = {
 	pinned: boolean;
 	flags?: number;
 	type: number;
+	/** Dangles once the webhook is gone: the message keeps the id and the stand-in
+	 * `webhook` embed. */
+	webhook_id?: string;
 	webhook?: webhookInfo;
 	sticker_items?: stickerJson[];
 	message_reference?: {
