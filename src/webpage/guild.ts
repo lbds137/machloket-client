@@ -795,6 +795,7 @@ class Guild extends SnowFlake {
 				headers: this.headers,
 				traditionalSubmit: true,
 				fetchURL: this.info.api + "/guilds/" + this.id,
+				api: this.info.api,
 				method: "PATCH",
 			});
 			form.addTextInput(I18n.guild["name:"](), "name", {
@@ -1102,6 +1103,7 @@ class Guild extends SnowFlake {
 					},
 					{
 						fetchURL: `${this.info.api}/guilds/${this.id}/emojis`,
+						api: this.info.api,
 						method: "POST",
 						headers: this.headers,
 					},
@@ -1266,6 +1268,7 @@ class Guild extends SnowFlake {
 					div.onclick = () => {
 						const form = emoji.addSubForm(emoji.name, () => {}, {
 							fetchURL: this.info.api + "/guilds/" + this.id + "/stickers/" + sticker.id,
+							api: this.info.api,
 							method: "PATCH",
 							headers: this.headers,
 							traditionalSubmit: true,
@@ -1525,6 +1528,7 @@ class Guild extends SnowFlake {
 				const form = widgetMenu.addForm("", () => {}, {
 					traditionalSubmit: true,
 					fetchURL: this.info.api + "/guilds/" + this.id + "/widget",
+					api: this.info.api,
 					headers: this.headers,
 					method: "PATCH",
 				});
@@ -1574,6 +1578,7 @@ class Guild extends SnowFlake {
 					},
 					{
 						fetchURL: this.info.api + "/guilds/" + this.id + "/templates/" + temp.code,
+						api: this.info.api,
 						method: "PATCH",
 						headers: this.headers,
 					},
@@ -1625,6 +1630,7 @@ class Guild extends SnowFlake {
 				},
 				{
 					fetchURL: this.info.api + "/guilds/" + this.id + "/templates",
+					api: this.info.api,
 					method: "POST",
 					headers: this.headers,
 				},
@@ -1661,6 +1667,7 @@ class Guild extends SnowFlake {
 	addCommunity(settings: Settings, textChannels: Channel[]) {
 		const com = settings.addButton(I18n.guild.community()).addForm("", () => {}, {
 			fetchURL: this.info.api + "/guilds/" + this.id,
+			api: this.info.api,
 			method: "PATCH",
 			headers: this.headers,
 			traditionalSubmit: true,
@@ -2024,6 +2031,7 @@ class Guild extends SnowFlake {
 			},
 			{
 				fetchURL: `${this.info.api}/users/@me/guilds/${this.id}/settings/`,
+				api: this.info.api,
 				method: "PATCH",
 				headers: this.headers,
 			},
@@ -2387,6 +2395,7 @@ class Guild extends SnowFlake {
 		const form = full.options.addForm("", () => full.hide(), {
 			submitText: "",
 			fetchURL: this.info.api + "/guilds/" + this.id + "/delete",
+			api: this.info.api,
 			method: "POST",
 			headers: this.headers,
 			mfaRetry: this.localuser.mfaRetry(),

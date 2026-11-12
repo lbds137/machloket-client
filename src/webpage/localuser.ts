@@ -338,6 +338,7 @@ class Localuser {
 					},
 					{
 						fetchURL: this.info.api + "/users/@me/settings",
+						api: this.info.api,
 						method: "PATCH",
 						headers: this.headers,
 					},
@@ -2828,6 +2829,7 @@ class Localuser {
 					throw new FormError(template, I18n.guild.invalidTemplate());
 				}
 				form.fetchURL = this.info.api + "/guilds/templates/" + code;
+				form.api = this.info.api;
 			});
 		}
 		full.show();
@@ -3835,6 +3837,7 @@ class Localuser {
 							},
 							{
 								fetchURL: this.info.api + "/users/@me/mfa/totp/disable",
+								api: this.info.api,
 								headers: this.headers,
 							},
 						);
@@ -3860,6 +3863,7 @@ class Localuser {
 							},
 							{
 								fetchURL: this.info.api + "/users/@me/mfa/totp/enable/",
+								api: this.info.api,
 								headers: this.headers,
 								mfaRetry: this.mfaRetry(),
 							},
@@ -3980,6 +3984,7 @@ class Localuser {
 						},
 						{
 							fetchURL: this.info.api + "/auth/verify/view-backup-codes-challenge",
+							api: this.info.api,
 							headers: this.headers,
 						},
 					);
@@ -4086,6 +4091,7 @@ class Localuser {
 							},
 							{
 								fetchURL: this.info.api + "/users/@me/mfa/webauthn/credentials",
+								api: this.info.api,
 								method: "POST",
 								headers: this.headers,
 								tfaCheck: false,
@@ -4129,6 +4135,7 @@ class Localuser {
 						},
 						{
 							fetchURL: this.info.api + "/users/@me/",
+							api: this.info.api,
 							headers: this.headers,
 							method: "PATCH",
 						},
@@ -4143,6 +4150,7 @@ class Localuser {
 						},
 						{
 							fetchURL: this.info.api + "/users/@me/",
+							api: this.info.api,
 							headers: this.headers,
 							method: "PATCH",
 						},
@@ -4163,6 +4171,7 @@ class Localuser {
 						},
 						{
 							fetchURL: this.info.api + "/users/@me/",
+							api: this.info.api,
 							headers: this.headers,
 							method: "PATCH",
 						},
@@ -4183,6 +4192,7 @@ class Localuser {
 						},
 						{
 							fetchURL: this.info.api + "/users/@me/",
+							api: this.info.api,
 							headers: this.headers,
 							method: "PATCH",
 						},
@@ -4609,6 +4619,7 @@ class Localuser {
 					headers: this.headers,
 					method: "POST",
 					fetchURL: this.info.api + "/users/@me/delete/",
+					api: this.info.api,
 					traditionalSubmit: false,
 					submitText: I18n.localuser.deleteAccountButton(),
 				},
@@ -4772,6 +4783,7 @@ class Localuser {
 							},
 							{
 								fetchURL: this.info.api + "/applications",
+								api: this.info.api,
 								headers: this.headers,
 								method: "POST",
 							},
@@ -5346,6 +5358,7 @@ class Localuser {
 			},
 			{
 				fetchURL: this.info.api + "/applications/" + appId,
+				api: this.info.api,
 				method: "PATCH",
 				headers: this.headers,
 				traditionalSubmit: true,
@@ -5468,6 +5481,7 @@ class Localuser {
 				},
 				{
 					fetchURL: this.info.api + "/applications/" + appId + "/delete",
+					api: this.info.api,
 					method: "POST",
 					headers: this.headers,
 					submitText: I18n.delete(),
@@ -5513,6 +5527,7 @@ class Localuser {
 		const form = container.addSubForm(I18n.localuser.editingBot(bot.username), () => {}, {
 			method: "PATCH",
 			fetchURL: this.info.api + "/applications/" + appId + "/bot",
+			api: this.info.api,
 			headers: this.headers,
 			traditionalSubmit: true,
 		});
@@ -5538,6 +5553,7 @@ class Localuser {
 				},
 				{
 					fetchURL: this.info.api + "/applications/" + appId + "/bot/reset",
+					api: this.info.api,
 					submitText: I18n.localuser.resetToken(),
 					method: "POST",
 					headers: this.headers,

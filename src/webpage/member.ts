@@ -156,6 +156,7 @@ class Member extends SnowFlake {
 			},
 			{
 				fetchURL: this.info.api + `/guilds/${this.guild.id}/members/${this.id}`,
+				api: this.info.api,
 				method: "PATCH",
 				headers: this.headers,
 			},

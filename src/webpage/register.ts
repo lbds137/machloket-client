@@ -23,6 +23,7 @@ export async function makeRegister(
 		(info) => {
 			registerInstance = info;
 			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/register";
+			form.api = trimTrailingSlashes(info.api);
 			tosLogic(md, info);
 			fetch(trimTrailingSlashes(info.api) + "/policies/instance/config")
 				.then((r) => r.json())

@@ -649,6 +649,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
+			api: "http://tfa.test/api",
 			method: "POST",
 		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -669,6 +670,7 @@ describe("login 2FA and backup code entry", () => {
 		);
 		const form2 = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
+			api: "http://tfa.test/api",
 			method: "POST",
 		});
 		form2.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -693,6 +695,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
+			api: "http://tfa.test/api",
 			method: "POST",
 		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -711,6 +714,7 @@ describe("login 2FA and backup code entry", () => {
 		document.body.replaceChildren();
 		const form2 = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
+			api: "http://tfa.test/api",
 			method: "POST",
 		});
 		form2.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -752,6 +756,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: KEY_LOGIN_URL,
+			api: KEY_API,
 			method: "POST",
 		});
 
@@ -790,6 +795,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: KEY_LOGIN_URL,
+			api: KEY_API,
 			method: "POST",
 		});
 
@@ -830,6 +836,7 @@ describe("login 2FA and backup code entry", () => {
 				const loggedIn = vi.fn();
 				const form = new Dialog("").options.addForm("", loggedIn, {
 					fetchURL: KEY_LOGIN_URL,
+					api: KEY_API,
 					method: "POST",
 				});
 
@@ -872,6 +879,7 @@ describe("login 2FA and backup code entry", () => {
 			const loggedIn = vi.fn();
 			const form1 = new Dialog("").options.addForm("", loggedIn, {
 				fetchURL: KEY_LOGIN_URL,
+				api: KEY_API,
 				method: "POST",
 			});
 			await form1.submit();
@@ -895,6 +903,7 @@ describe("login 2FA and backup code entry", () => {
 			);
 			const form2 = new Dialog("").options.addForm("", loggedIn, {
 				fetchURL: KEY_LOGIN_URL,
+				api: KEY_API,
 				method: "POST",
 			});
 			await form2.submit();
@@ -925,6 +934,7 @@ describe("login 2FA and backup code entry", () => {
 			const loggedIn = vi.fn();
 			const form = new Dialog("").options.addForm("", loggedIn, {
 				fetchURL: KEY_LOGIN_URL,
+				api: KEY_API,
 				method: "POST",
 			});
 			return {
@@ -992,7 +1002,7 @@ describe("login 2FA and backup code entry", () => {
 		} as never);
 		try {
 			await new Dialog("").options
-				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, method: "POST"})
+				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, api: KEY_API, method: "POST"})
 				.submit();
 			expect(document.body.textContent).toContain(
 				"Invalid security key " + I18n.backupCodes.retryLoginCode(),
@@ -1010,7 +1020,7 @@ describe("login 2FA and backup code entry", () => {
 		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
 		try {
 			await new Dialog("").options
-				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, method: "POST"})
+				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, api: KEY_API, method: "POST"})
 				.submit();
 			expect(document.body.textContent).toContain(I18n.backupCodes.keyUnavailable());
 		} finally {
@@ -1025,7 +1035,7 @@ describe("login 2FA and backup code entry", () => {
 		const errors = vi.spyOn(console, "error").mockImplementation(() => {});
 		try {
 			void new Dialog("").options
-				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, method: "POST"})
+				.addForm("", vi.fn(), {fetchURL: KEY_LOGIN_URL, api: KEY_API, method: "POST"})
 				.submit();
 			await vi.waitFor(() =>
 				expect(document.body.textContent).toContain(I18n.backupCodes.keyPromptTotpHint()),
@@ -1063,6 +1073,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: KEY_LOGIN_URL,
+			api: KEY_API,
 			method: "POST",
 		});
 
@@ -1114,6 +1125,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: KEY_LOGIN_URL,
+			api: KEY_API,
 			method: "POST",
 		});
 

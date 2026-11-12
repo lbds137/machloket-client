@@ -1820,6 +1820,7 @@ class Options implements OptionsElement<void> {
 			ltr = false,
 			submitText = I18n.submit(),
 			fetchURL = "",
+			api = "",
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
@@ -1831,6 +1832,7 @@ class Options implements OptionsElement<void> {
 			ltr,
 			submitText,
 			fetchURL,
+			api,
 			headers,
 			method,
 			traditionalSubmit,
@@ -2009,6 +2011,7 @@ class Options implements OptionsElement<void> {
 			ltr = false,
 			submitText = I18n.submit(),
 			fetchURL = "",
+			api = "",
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
@@ -2020,6 +2023,7 @@ class Options implements OptionsElement<void> {
 			ltr,
 			submitText,
 			fetchURL,
+			api,
 			headers,
 			method,
 			traditionalSubmit,
@@ -2314,6 +2318,7 @@ function promptLoginCode(
 			},
 			{
 				fetchURL: api + "/auth/mfa/totp",
+				api: api,
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -2599,6 +2604,7 @@ async function handleMfa(
 			},
 			{
 				fetchURL: api + "/users/@me/mfa/totp",
+				api: api,
 				method: "POST",
 				headers,
 			},
@@ -2659,6 +2665,9 @@ class Form implements OptionsElement<object> {
 	readonly hiddenInputs: WeakSet<OptionsElement<any>> = new WeakSet();
 	readonly submitText: string;
 	fetchURL: string;
+	/** The instance api base the MFA/2FA endpoints ride; mutable, the login/register pages
+	 * re-point it alongside fetchURL on instance change. */
+	api: string;
 	readonly headers = {};
 	readonly method: string;
 	value!: object;
@@ -2674,6 +2683,7 @@ class Form implements OptionsElement<object> {
 			ltr = false,
 			submitText = I18n.submit(),
 			fetchURL = "",
+			api = "",
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
@@ -2691,6 +2701,7 @@ class Form implements OptionsElement<object> {
 		this.options = new Options(name, this, {ltr, vsmaller});
 		this.owner = owner;
 		this.fetchURL = fetchURL;
+		this.api = api;
 		this.headers = headers;
 		this.ltr = ltr;
 		this.onSubmit = onSubmit;
@@ -2724,6 +2735,7 @@ class Form implements OptionsElement<object> {
 			ltr = false,
 			submitText = I18n.submit(),
 			fetchURL = "",
+			api = "",
 			headers = {},
 			method = "POST",
 			traditionalSubmit = false,
@@ -2737,6 +2749,7 @@ class Form implements OptionsElement<object> {
 			ltr,
 			submitText,
 			fetchURL,
+			api,
 			headers,
 			method,
 			traditionalSubmit,
@@ -3052,9 +3065,9 @@ class Form implements OptionsElement<object> {
 				// Captcha and 2FA retries go to the URL this submit started with, even if the
 				// form is pointed elsewhere meanwhile (login pages re-point it on instance change).
 				const fetchURL = this.fetchURL;
-				// The MFA verify endpoints ride the same versioned base this form posts to
-				// (/api/v9, not the bare /api prefix — the app's own calls all use info.api).
-				const mfaApi = fetchURL.match(/^(https?:\/\/[^\/]+\/api(?:\/v\d+)?)\//)?.[1];
+				// The MFA verify endpoints ride the form's explicit api base, matching the
+				// base the app's own calls use (info.api), not one guessed from fetchURL.
+				const mfaApi = this.api;
 				let mfaAttempted = false;
 				let mfaAuthHeader: Record<string, string> | undefined;
 				const onSubmit = async (json: any) => {
@@ -3098,9 +3111,8 @@ class Form implements OptionsElement<object> {
 					const captcha = await handleCaptcha(json, build, this.captcha);
 					if (captcha === "dismissed") return;
 					if (captcha === "solved") return await doFetch();
-					const match = fetchURL.match(/https?:\/\/[^\/]*\/api/gm);
-					if (match && this.tfaCheck) {
-						const tried = await handle2fa(json, match[0], (m) => this.showPrimError(m));
+					if (mfaApi && this.tfaCheck) {
+						const tried = await handle2fa(json, mfaApi, (m) => this.showPrimError(m));
 						if (tried) {
 							return await onSubmit(tried);
 						}

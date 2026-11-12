@@ -363,6 +363,7 @@ class Message extends SnowFlake {
 					{
 						fetchURL:
 							this.info.api + "/channels/" + this.channel.id + "/messages/" + this.id + "/threads",
+						api: this.info.api,
 						headers: this.headers,
 					},
 				);

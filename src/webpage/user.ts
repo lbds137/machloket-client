@@ -773,6 +773,7 @@ class User extends SnowFlake {
 			},
 			{
 				fetchURL: this.info.api + `/users/@me/relationships/${this.id}`,
+				api: this.info.api,
 				method: "PATCH",
 				headers: this.headers,
 			},

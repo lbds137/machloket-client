@@ -77,6 +77,7 @@ describe("form submit", () => {
 		const calls: unknown[] = [];
 		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
 			fetchURL: loginURL,
+			api: "http://form.test/api",
 			method: "POST",
 		});
 
@@ -270,6 +271,166 @@ describe("form submit", () => {
 	});
 });
 
+// A stock Spacebar instance's api base carries no /api segment at all (v1 well-known
+// discovery yields e.g. https://api.x/v9): the MFA/2FA endpoints ride the form's explicit
+// `api` base, not one reverse-engineered out of fetchURL.
+describe("a form on a stock instance api base (no /api)", () => {
+	const challenge = JSON.stringify({
+		publicKey: {challenge: "abc=", allowCredentials: [{id: "id=", type: "public-key"}]},
+	});
+	/** Answers each call with the next of `answers`. */
+	function inTurn(...answers: (() => Response)[]) {
+		return () => answers.shift()!();
+	}
+	// A signed assertion, without a key to touch.
+	// (Not vi.stubGlobal: its unstub would take the suite's fetch stub with it.)
+	function stubKey() {
+		const realKey = globalThis.PublicKeyCredential;
+		Object.assign(globalThis, {
+			PublicKeyCredential: {parseRequestOptionsFromJSON: (options: unknown) => options},
+		});
+		const buffer = () => new Uint8Array([1, 2]).buffer;
+		const getKey = vi.spyOn(navigator.credentials, "get").mockResolvedValue({
+			rawId: buffer(),
+			response: {authenticatorData: buffer(), clientDataJSON: buffer(), signature: buffer()},
+		} as never);
+		return () => {
+			Object.assign(globalThis, {PublicKeyCredential: realKey});
+			getKey.mockRestore();
+		};
+	}
+
+	it("a 60003 answer prompts for the second factor and the retried login succeeds", async () => {
+		const api = "https://api.x/v9";
+		const loginURL = api + "/auth/login";
+		const sent = captureRequests(
+			loginURL,
+			inTurn(
+				() => json({code: 60003, message: "Two factor required"}, 400),
+				() => json({token: "t"}),
+			),
+		);
+		// handleMfa posts step1 {} then step2 {ticket, code} to the same probe URL.
+		const probes = captureRequests(
+			api + "/users/@me/mfa/webauthn",
+			inTurn(
+				() => json({ticket: "mt", challenge}),
+				() => json({token: "mtoken"}),
+			),
+		);
+		const restoreKey = stubKey();
+		const calls: unknown[] = [];
+		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
+			fetchURL: loginURL,
+			api,
+			method: "POST",
+			mfaRetry: {factor: "webauthn"},
+		});
+
+		try {
+			await form.submit();
+
+			await vi.waitFor(() => expect(calls).toEqual([{token: "t"}]));
+			expect(probes).toHaveLength(2);
+			expect(sent).toHaveLength(2);
+			expect(unhandled).toEqual([]);
+		} finally {
+			restoreKey();
+		}
+	});
+
+	it("a ticket+webauthn answer completes the login through the versioned base", async () => {
+		const api = "https://api.x/v9";
+		const loginURL = api + "/auth/login";
+		const sent = captureRequests(loginURL, () => json({ticket: "t", webauthn: challenge}));
+		const probes = captureRequests(api + "/auth/mfa/webauthn", () => json({token: "t"}));
+		const restoreKey = stubKey();
+		const calls: unknown[] = [];
+		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
+			fetchURL: loginURL,
+			api,
+			method: "POST",
+		});
+
+		try {
+			await form.submit();
+
+			await vi.waitFor(() => expect(calls).toEqual([{token: "t"}]));
+			expect(probes).toHaveLength(1);
+			expect(sent).toHaveLength(1);
+			expect(unhandled).toEqual([]);
+		} finally {
+			restoreKey();
+		}
+	});
+
+	it("on our own /api/v9 base the verify posts keep the version segment", async () => {
+		const api = "https://x.test/api/v9";
+		const loginURL = api + "/auth/login";
+		captureRequests(loginURL, () => json({ticket: "t", webauthn: challenge}));
+		// ONLY the versioned probe answers: an unversioned post would get the harness's 404.
+		const probes = captureRequests(api + "/auth/mfa/webauthn", () => json({token: "t"}));
+		const restoreKey = stubKey();
+		const calls: unknown[] = [];
+		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
+			fetchURL: loginURL,
+			api,
+			method: "POST",
+		});
+
+		try {
+			await form.submit();
+
+			await vi.waitFor(() => expect(calls).toEqual([{token: "t"}]));
+			expect(probes).toHaveLength(1);
+			expect(unhandled).toEqual([]);
+		} finally {
+			restoreKey();
+		}
+	});
+
+	// The verify rides the base the submit STARTED with — the handler snapshots fetchURL and
+	// api before the first send — so re-pointing the form while the login is still in flight
+	// (the login page's picker stays editable) can't send instance A's ticket and signed
+	// assertion to instance B.
+	it("a 2FA verify rides the base the submit started with, not a mid-submit re-point", async () => {
+		const apiA = "https://a.test/v9";
+		const apiB = "https://b.test/v9";
+		let answerLogin!: () => void;
+		const loginAnswer = new Promise<Response>(
+			(res) => (answerLogin = () => res(json({ticket: "t", webauthn: challenge}))),
+		);
+		const sent = captureRequests(apiA + "/auth/login", () => loginAnswer);
+		// ONLY A's verify answers: a verify POSTed to B gets the harness's 404.
+		const probes = captureRequests(apiA + "/auth/mfa/webauthn", () => json({token: "t"}));
+		const restoreKey = stubKey();
+		const calls: unknown[] = [];
+		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
+			fetchURL: apiA + "/auth/login",
+			api: apiA,
+			method: "POST",
+		});
+
+		try {
+			const submitting = form.submit();
+			// The login POST is out but unanswered when the form is re-pointed to B.
+			await settle();
+			form.fetchURL = apiB + "/auth/login";
+			form.api = apiB;
+			answerLogin();
+			await submitting;
+			await settle();
+
+			expect(calls).toEqual([{token: "t"}]);
+			expect(probes).toHaveLength(1);
+			expect(sent).toHaveLength(1);
+			expect(unhandled).toEqual([]);
+		} finally {
+			restoreKey();
+		}
+	});
+});
+
 describe("a form the server rate-limits", () => {
 	const limited = (message?: string) =>
 		json({...(message ? {message} : {}), retry_after: 0.01}, 429);
@@ -341,6 +502,7 @@ describe("a form the server rate-limits", () => {
 		const calls: unknown[] = [];
 		const form = new Dialog("").options.addForm("", (res: object) => void calls.push(res), {
 			fetchURL: api + "/auth/login",
+			api,
 			method: "POST",
 		});
 

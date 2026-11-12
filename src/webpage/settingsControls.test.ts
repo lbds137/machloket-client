@@ -34,7 +34,11 @@ it("dismissing the 2FA code prompt ends the login attempt instead of leaving it 
 	const URL_ = "http://tfa.test/api/v9/auth/login";
 	captureRequests(URL_, () => Response.json({token: null, mfa: true, totp: true, ticket: "t1"}));
 	const loggedIn = vi.fn();
-	const form = new Dialog("").options.addForm("", loggedIn, {fetchURL: URL_, method: "POST"});
+	const form = new Dialog("").options.addForm("", loggedIn, {
+		fetchURL: URL_,
+		api: "http://tfa.test/api",
+		method: "POST",
+	});
 	form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
 
 	const submit = form.submit();
@@ -175,7 +179,11 @@ describe("security-key second factor", () => {
 		);
 		vi.spyOn(PublicKeyCredential, "parseRequestOptionsFromJSON").mockReturnValue({} as never);
 		const loggedIn = vi.fn();
-		const form = new Dialog("").options.addForm("", loggedIn, {fetchURL: URL_, method: "POST"});
+		const form = new Dialog("").options.addForm("", loggedIn, {
+			fetchURL: URL_,
+			api: "http://key.test/api",
+			method: "POST",
+		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
 		return {form, loggedIn};
 	}

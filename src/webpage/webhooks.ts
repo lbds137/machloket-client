@@ -195,6 +195,7 @@ async function webhookMenu(
 					traditionalSubmit: true,
 					method: "PATCH",
 					fetchURL: guild.info.api + "/webhooks/" + hook.id,
+					api: guild.info.api,
 					headers: guild.headers,
 				},
 			);

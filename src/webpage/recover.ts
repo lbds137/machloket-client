@@ -45,6 +45,7 @@ function makeMenu2(email: string | void, linkToken?: string) {
 		},
 		{
 			fetchURL: info.api + "/auth/reset",
+			api: info.api,
 			method: "POST",
 			headers,
 		},
@@ -85,6 +86,7 @@ function makeMenu1() {
 		},
 		{
 			fetchURL: info.api + "/auth/forgot",
+			api: info.api,
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
