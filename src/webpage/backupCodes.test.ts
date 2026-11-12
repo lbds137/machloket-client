@@ -639,8 +639,9 @@ describe("showBackupCodes screen", () => {
 });
 
 describe("login 2FA and backup code entry", () => {
-	const TOTP_LOGIN_URL = "http://tfa.test/api/v9/auth/login";
-	const TOTP_VERIFY_URL = "http://tfa.test/api/auth/mfa/totp";
+	const TOTP_API = "http://tfa.test/api/v9";
+	const TOTP_LOGIN_URL = TOTP_API + "/auth/login";
+	const TOTP_VERIFY_URL = TOTP_API + "/auth/mfa/totp";
 
 	it("TOTP ticket shows loginHint with 2FA code: title when backup is true, and no hint when backup is absent", async () => {
 		captureRequests(TOTP_LOGIN_URL, () =>
@@ -649,7 +650,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
-			api: "http://tfa.test/api",
+			api: TOTP_API,
 			method: "POST",
 		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -670,7 +671,7 @@ describe("login 2FA and backup code entry", () => {
 		);
 		const form2 = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
-			api: "http://tfa.test/api",
+			api: TOTP_API,
 			method: "POST",
 		});
 		form2.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -695,7 +696,7 @@ describe("login 2FA and backup code entry", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
-			api: "http://tfa.test/api",
+			api: TOTP_API,
 			method: "POST",
 		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -714,7 +715,7 @@ describe("login 2FA and backup code entry", () => {
 		document.body.replaceChildren();
 		const form2 = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: TOTP_LOGIN_URL,
-			api: "http://tfa.test/api",
+			api: TOTP_API,
 			method: "POST",
 		});
 		form2.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -733,8 +734,8 @@ describe("login 2FA and backup code entry", () => {
 		]);
 	});
 
-	const KEY_API = "http://key.test/api";
-	const KEY_LOGIN_URL = KEY_API + "/v9/auth/login";
+	const KEY_API = "http://key.test/api/v9";
+	const KEY_LOGIN_URL = KEY_API + "/auth/login";
 	const KEY_WEBAUTHN_URL = KEY_API + "/auth/mfa/webauthn";
 	const KEY_TOTP_URL = KEY_API + "/auth/mfa/totp";
 	const challenge = JSON.stringify({

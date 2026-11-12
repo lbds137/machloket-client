@@ -36,7 +36,7 @@ it("dismissing the 2FA code prompt ends the login attempt instead of leaving it 
 	const loggedIn = vi.fn();
 	const form = new Dialog("").options.addForm("", loggedIn, {
 		fetchURL: URL_,
-		api: "http://tfa.test/api",
+		api: "http://tfa.test/api/v9",
 		method: "POST",
 	});
 	form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -181,7 +181,7 @@ describe("security-key second factor", () => {
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: URL_,
-			api: "http://key.test/api",
+			api: "http://key.test/api/v9",
 			method: "POST",
 		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -205,7 +205,7 @@ describe("security-key second factor", () => {
 			rawId: buf,
 			response: {authenticatorData: buf, clientDataJSON: buf, signature: buf},
 		} as never);
-		const keySent = captureRequests("http://key.test/api/auth/mfa/webauthn", () =>
+		const keySent = captureRequests("http://key.test/api/v9/auth/mfa/webauthn", () =>
 			Response.json({message: "Invalid security key", code: 60008}, {status: 400}),
 		);
 
@@ -224,7 +224,7 @@ describe("security-key second factor", () => {
 			response: {authenticatorData: buf, clientDataJSON: buf, signature: buf},
 		} as never);
 		captureRequests(
-			"http://key.test/api/auth/mfa/webauthn",
+			"http://key.test/api/v9/auth/mfa/webauthn",
 			() => new Response("<html>proxy error</html>", {status: 200}),
 		);
 
