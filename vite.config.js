@@ -197,6 +197,45 @@ const buildPlugin = () => ({
 	configureServer(server) {
 		generateLangs();
 		server.middlewares.use(clientRouteFallback);
+		// Test-only control over what /getupdates answers: the vitest dev server has no
+		// dist/getupdates file (a production build writes it), so without an override the SPA
+		// fallback serves index.html there and the service worker can't be exercised against
+		// real update payloads. Never runs outside vitest: the preview server (e2e) and the
+		// build register nothing, and prod serves the real file.
+		if (process.env.VITEST) {
+			let swUpdatesOverride;
+			server.middlewares.use((req, res, next) => {
+				const url = new URL(req.url || "/", "http://localhost");
+				if (url.pathname === "/__test/sw-updates") {
+					const body = url.searchParams.get("body");
+					swUpdatesOverride =
+						body === null
+							? undefined
+							: {
+									body,
+									contentType: url.searchParams.get("type") || "text/plain",
+									status: Number.parseInt(url.searchParams.get("status") || "200", 10),
+									fail: url.searchParams.has("fail"),
+								};
+					res.setHeader("Content-Type", "application/json");
+					res.end(JSON.stringify({ok: true, set: swUpdatesOverride ?? null}));
+					return;
+				}
+				if (url.pathname === "/getupdates" && swUpdatesOverride) {
+					// A set `fail` kills the connection instead of answering: the worker's fetch
+					// throws, exercising its failed-check path.
+					if (swUpdatesOverride.fail) {
+						res.socket?.destroy();
+						return;
+					}
+					res.statusCode = swUpdatesOverride.status;
+					res.setHeader("Content-Type", swUpdatesOverride.contentType);
+					res.end(swUpdatesOverride.body);
+					return;
+				}
+				next();
+			});
+		}
 		// Read per request, so an edited overlay shows up on the next page load.
 		server.middlewares.use((req, res, next) => {
 			if ((req.url || "").split("?")[0] !== "/instances.json") return next();
@@ -233,6 +272,22 @@ const clientRouteFallback = (req, res, next) => {
 
 	next();
 };
+
+// Vite 8 replaces `define` values only in bundled environments: a dev/vitest client module is
+// served raw, so the worker's revision line (service.ts) would read an undefined identifier
+// and kill the worker at evaluation. Replace it there too — but not in modules that embed
+// service.ts as text (the ?raw imports the hardcodedText test scans), where a splice would
+// corrupt the string literal.
+const buildRevisionPlugin = () => ({
+	name: "build-revision",
+	transform(code, id) {
+		const [file, query] = id.split("?");
+		// A leading raw/url/inline load query means the module is embedded as text (possibly
+		// with more params after it), and a spliced revision would corrupt that string.
+		if (!file.endsWith("service.ts") || /^(raw|url|inline)(&|$)/.test(query || "")) return;
+		return code.replaceAll("__BUILD_REVISION__", JSON.stringify(getBuildVersion()));
+	},
+});
 
 // The dev server brands itself Machlakot (brand.ts), so an install from it can't pass for the
 // production app: the brand URLs are answered from public/brand/dev/, and names are swapped in
@@ -273,6 +328,12 @@ const devBrandPlugin = () => ({
 export default defineConfig({
 	root: resolve(__dirname, "src/webpage"),
 	envPrefix: ["VITE_"],
+
+	// The service worker logs its build revision (service.ts): with the worker served under a
+	// stable name, this one differing line is what makes the browser ever reinstall it.
+	define: {
+		__BUILD_REVISION__: JSON.stringify(getBuildVersion()),
+	},
 
 	build: {
 		sourcemap: "hidden",
@@ -325,7 +386,7 @@ export default defineConfig({
 
 	appType: "spa",
 
-	plugins: [buildPlugin(), devBrandPlugin()],
+	plugins: [buildPlugin(), devBrandPlugin(), buildRevisionPlugin()],
 
 	// Tests run in headless Chromium: the app's modules import each other in cycles that only
 	// evaluate correctly under native browser ESM.
