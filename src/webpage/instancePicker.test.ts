@@ -5,7 +5,7 @@ import type {InstanceInfo, Specialuser} from "./utils/utils";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first), so load that before settings.
 await import("./localuser");
-const {Dialog} = await import("./settings");
+const {Dialog, Form, Options} = await import("./settings");
 const {getDefaultInstanceUrl, getInstances, instancefetch} = await import("./utils/utils");
 const {makeLogin} = await import("./login");
 const {makeRegister} = await import("./register");
@@ -195,6 +195,19 @@ describe("InstancePicker", () => {
 });
 
 describe("login", () => {
+	it("re-points the login form's api base beside fetchURL when the picker applies an instance", async () => {
+		// The 2FA/MFA prompts ride the form's api base: a fetchURL re-point without it
+		// silently skips them (settings.ts submits with mfaApi = this.api, "" unless set).
+		addInstance("http://wired.test", 0);
+		const addForm = vi.spyOn(Options.prototype, "addForm");
+		makeLogin(false, "", () => {});
+		await pickInstance("http://wired.test");
+
+		const form = addForm.mock.results.map((r) => r.value as InstanceType<typeof Form>)[0];
+		expect(form.fetchURL).toBe("http://wired.test/api/v9/auth/login");
+		expect(form.api).toBe("http://wired.test/api/v9");
+	});
+
 	it("saves the session against the instance it posted to, whatever localStorage says", async () => {
 		// Row 9 of the client survey: a token from one instance was saved with another's URLs,
 		// read back from localStorage (which a stale check, or another tab, can rewrite).
