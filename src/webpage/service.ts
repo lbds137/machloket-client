@@ -28,7 +28,9 @@ async function downloadAllFiles() {
 						return;
 					}
 					const res = await fetch(lpath);
-					putInCache(new URL(lpath, self.location.origin), res);
+					// Awaited so the marker write cannot outrun the cache writes, and ok-guarded:
+					// a 404/500 for a listed file must not be cached as that file's shell.
+					if (res.ok) await putInCache(new URL(lpath, self.location.origin), res);
 				} else {
 					await cachePath(path + "/" + name, thing);
 				}
@@ -150,7 +152,10 @@ async function checkCache() {
 		return false;
 	}
 	checkedrecently = true;
-	setTimeout(
+	if (guardTimer !== undefined) {
+		clearTimeout(guardTimer);
+	}
+	guardTimer = setTimeout(
 		(_: any) => {
 			checkedrecently = false;
 		},
@@ -183,7 +188,14 @@ async function checkCache() {
 			try {
 				await downloadAllFiles();
 			} catch (e) {
+				// A failed download writes no marker and broadcasts nothing: the marker is the
+				// "an update is ready" signal, and clients acting on it would find a cache the
+				// failed pass already emptied. checkedrecently deliberately stays set — a reset
+				// would re-run delete+download on every request of a burst against a permanently
+				// broken server; the retry happens at the next 30-minute window or a manual
+				// CheckUpdate (which resets the guard itself).
 				console.error("could not pre-warm the cache", e);
+				return false;
 			}
 			await putInCache("/getupdates", data);
 			lastcache = text;
@@ -199,10 +211,17 @@ async function checkCache() {
 		// A transient failure must not block update checks for the next 30 minutes.
 		console.error("update check failed", e);
 		checkedrecently = false;
+		if (guardTimer !== undefined) {
+			clearTimeout(guardTimer);
+		}
 		return false;
 	}
 }
 var checkedrecently = false;
+// Handle for the 30-minute guard reset scheduled in checkCache: a new check cancels the
+// previous timer, and so does a failed check — a stale timer must not reopen the guard
+// early after a later successful one scheduled its own reset.
+var guardTimer: ReturnType<typeof setTimeout> | undefined;
 // Set when /getupdates stopped answering with a real payload (e.g. everything comes back as
 // the SPA's index.html): the cache may then hold shells nobody intended, so getfile serves
 // network instead of trusting it. Session-scoped; the next worker start probes again.
@@ -323,7 +342,11 @@ async function getfile(req: Request): Promise<Response> {
 		return responseFromNetwork;
 	} catch (e) {
 		console.error(e);
-		// An empty 200 would be an empty module served offline; name the failure instead.
+		// The cache is tried first even here, as a last resort — updatesUnavailable only
+		// stops the normal cache-first path above. Only when that fails too: a 503 naming
+		// the failure (an empty 200 would be an empty module served offline).
+		const cached = await caches.match(cacheKey).catch(() => undefined);
+		if (cached) return cached;
 		return new Response("service worker: origin fetch failed", {status: 503});
 	}
 }

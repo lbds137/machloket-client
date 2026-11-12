@@ -98,10 +98,24 @@ it("leaving the default mode, the caching worker takes over from the notificatio
 // controlled iframe, with /getupdates answered by the vitest-only middleware
 // (/__test/sw-updates, vite.config.js).
 
-async function setUpdates(body: string, type = "text/plain", status = 200) {
-	const res = await fetch(
-		`/__test/sw-updates?${new URLSearchParams({body, type, status: String(status)})}`,
-	);
+/** `files` overrides what /files.json answers (a JSON manifest body, so a test's download
+ * succeeds); `filesFail` destroys /files.json connections instead. Set alongside `body`:
+ * the setter replaces the whole override, so a call without them clears them again — and
+ * afterEach's unset call clears everything. */
+async function setUpdates(
+	body: string,
+	type = "text/plain",
+	status = 200,
+	opts: {files?: string; filesFail?: boolean} = {},
+) {
+	const params = new URLSearchParams({body, type, status: String(status)});
+	if (opts.files !== undefined) {
+		params.set("files", opts.files);
+	}
+	if (opts.filesFail) {
+		params.set("filesFail", "1");
+	}
+	const res = await fetch(`/__test/sw-updates?${params}`);
 	expect(res.ok).toBe(true);
 }
 
@@ -168,7 +182,10 @@ async function controlledFrame() {
 it("collapses a burst of requests into one update check: one updates:true, one marker write", async () => {
 	const {controller, frame} = await cachingWorker({failingUpdates: true});
 	const {messages} = connectPort(controller);
-	await setUpdates("u-sw1-rev-a");
+	// The files override makes the update's download succeed (/robots.txt is served 200 by
+	// the vitest server): since the no-marker-on-failed-download fix, a download whose
+	// /files.json fails never reaches the marker write, and `until` below could not settle.
+	await setUpdates("u-sw1-rev-a", "text/plain", 200, {files: JSON.stringify({"robots.txt": "x"})});
 	await seedMarker("junk-marker");
 	try {
 		// Five same-origin fetches at once: each reaches getfile, whose checkCache call is
@@ -270,6 +287,48 @@ it("with updates unavailable, the cached app shell is bypassed for network", asy
 		expect(res.headers.get("x-usw1")).toBeNull();
 	} finally {
 		controller.postMessage({data: "false", code: "setMode"});
+		frame.remove();
+	}
+}, 20000);
+
+// Pins the no-marker-on-failed-download fix (U-sw1 round 1, M2): a download whose
+// /files.json fails must neither write the marker nor broadcast the update — the marker is
+// the "an update is ready" signal, and clients acting on it would find a half-empty cache.
+it("a failed /files.json download writes no marker and broadcasts nothing", async () => {
+	await setUpdates("round1-rev", "text/plain", 200, {filesFail: true});
+	const {controller, frame} = await cachingWorker();
+	const {port, messages} = connectPort(controller);
+	await seedMarker("junk-marker");
+	try {
+		port.postMessage({code: "CheckUpdate"});
+		await new Promise((res) => setTimeout(res, 1500));
+		expect(messages.some((m) => m.code === "updates" && m.updates === true)).toBe(false);
+		// The failed pass empties the cache by design (deleteoldcache runs before the
+		// download), so the seed itself does not survive; the observable is that the new
+		// revision was never written as the marker.
+		expect(await markerText()).not.toBe("round1-rev");
+	} finally {
+		frame.remove();
+	}
+}, 20000);
+
+// Pins the marker-last fix (U-sw1 round 1, M1): at the moment the updates broadcast arrives,
+// the downloaded files must already be in the cache. Racy red before the fix (the download's
+// puts are unawaited, so the broadcast can beat them); deterministic green after it.
+it("the updates broadcast does not precede the download's cache writes", async () => {
+	await setUpdates("round1-rev-b", "text/plain", 200, {files: JSON.stringify({"robots.txt": "x"})});
+	const {controller, frame} = await cachingWorker();
+	const {port, messages} = connectPort(controller);
+	await seedMarker("junk-marker");
+	try {
+		port.postMessage({code: "CheckUpdate"});
+		await until(
+			"the updates:true broadcast",
+			() => messages.some((m) => m.code === "updates" && m.updates === true),
+			3000,
+		);
+		expect(await (await caches.open("cache")).match("/robots.txt")).not.toBeNull();
+	} finally {
 		frame.remove();
 	}
 }, 20000);
