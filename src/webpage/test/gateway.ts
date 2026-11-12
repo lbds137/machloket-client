@@ -52,6 +52,14 @@ export function gatewayUser() {
 		lastFrameAt: 0,
 		heartbeatTimer: undefined,
 		watchdogTimer: undefined,
+		// A class field gatewayUser's Object.create build skips; socket teardown reads it.
+		deflateWriters: new WeakMap(),
+		// Same: the member-request maps a socket teardown abandons.
+		fetchingmembers: new Map(),
+		memberLookupDrops: new Map(),
+		noncemap: new Map(),
+		noncebuild: new Map(),
+		waitingmembers: new Map(),
 		lastSequence: 0,
 		connectionSucceed: 0,
 		errorBackoff: 0,

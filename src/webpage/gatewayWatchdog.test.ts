@@ -16,6 +16,22 @@ describe("gateway heartbeat and watchdog", () => {
 		vi.useRealTimers();
 	});
 
+	/** A user mid-session with the maps the close path's member-request abandonment reads. */
+	function sessionUser() {
+		const user = gatewayUser();
+		user.session_id = "sess-1";
+		user.resume_gateway_url = "wss://resume.test";
+		Object.assign(user, {
+			loaduser: () => {},
+			fetchingmembers: new Map(),
+			memberLookupDrops: new Map(),
+			noncemap: new Map(),
+			noncebuild: new Map(),
+			waitingmembers: new Map(),
+		});
+		return user;
+	}
+
 	/** Opens a socket and hands it HELLO with a 5s heartbeat interval (few timer fires per
 	 * advance keeps the fake-clock run fast and deterministic). The listener's send rides a
 	 * microtask chain, so the flush matters. */
@@ -104,5 +120,34 @@ describe("gateway heartbeat and watchdog", () => {
 		// after that lands at 123.75s.
 		await vi.advanceTimersByTimeAsync(130_000);
 		expect(ws.closed).toBe(4000);
+	});
+
+	it("a watchdog kill reconnects immediately; the browser's late close event is ignored", async () => {
+		const user = sessionUser();
+		user.initwebsocket(true);
+		const A = FakeWebSocket.sockets[0];
+		A.emit("open", {});
+		A.emit("message", {data: JSON.stringify({op: 10, d: {heartbeat_interval: 5000}})});
+		await vi.advanceTimersByTimeAsync(0);
+
+		// Past the 30s silence floor the next watchdog tick lands at 35s.
+		await vi.advanceTimersByTimeAsync(40_000);
+		// The reconnect already ran — no close event needed.
+		expect(FakeWebSocket.sockets).toHaveLength(2);
+		const B = FakeWebSocket.sockets[1];
+		expect(user.ws).toBe(B);
+		B.emit("open", {});
+		await vi.advanceTimersByTimeAsync(0);
+		// The session survived the kill: B resumes it.
+		expect(B.sent.find((m) => m.op === 6)).toMatchObject({d: {session_id: "sess-1"}});
+
+		// The browser's close handshake for the watchdog-killed socket arrives late.
+		A.emit("close", {code: 4000});
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(FakeWebSocket.sockets).toHaveLength(2);
+		expect(user.ws).toBe(B);
+		expect(user.errorBackoff).toBe(1);
+		expect(user.heartbeatTimer).toBeUndefined();
 	});
 });
