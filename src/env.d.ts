@@ -6,3 +6,7 @@ interface ImportMetaEnv {
 interface ImportMeta {
 	readonly env: ImportMetaEnv;
 }
+
+/** The build revision, injected by vite.config.js (`define`); service.ts logs it so a new
+ * build's service.js differs byte-wise and the browser reinstalls the worker. */
+declare const __BUILD_REVISION__: string;

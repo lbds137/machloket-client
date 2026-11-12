@@ -5,6 +5,10 @@ import type {messageFrom, messageTo} from "./utils/serviceType";
 // and caches alone. Without a fetch listener the browser doesn't route requests through it.
 const notificationsOnly = new URL(self.location.href).searchParams.has("notifications");
 
+// The worker sits at a stable URL, so its bytes are its identity: this line is what makes a
+// new build's service.js differ (and the browser ever reinstall it). Not read by any logic.
+console.log("[SW] build", __BUILD_REVISION__);
+
 async function deleteoldcache() {
 	await caches.delete("cache");
 }
@@ -34,7 +38,7 @@ async function downloadAllFiles() {
 
 	const json = await getAllFiles();
 
-	cachePath("", json);
+	await cachePath("", json);
 }
 let swStorage = {} as Record<string, number>;
 async function swStorageGet() {
@@ -123,14 +127,15 @@ if (!notificationsOnly) {
 }
 async function tryToClose() {
 	const portArr = [...ports];
-	if (portArr.length) {
-		for (let i = 1; i < portArr.length; i++) {
-			portArr[i].postMessage({code: "closing"});
-		}
-		portArr[0].postMessage({code: "close"});
-	} else {
-		throw new Error("No Machloket clients connected?");
+	// An update can land with no client connected (activate-time check): closing nobody is
+	// fine — throwing would be an unhandled rejection.
+	if (!portArr.length) {
+		return;
 	}
+	for (let i = 1; i < portArr.length; i++) {
+		portArr[i].postMessage({code: "closing"});
+	}
+	portArr[0].postMessage({code: "close"});
 }
 function sendAll(message: messageFrom) {
 	for (const port of ports) {
@@ -138,40 +143,70 @@ function sendAll(message: messageFrom) {
 	}
 }
 async function checkCache() {
+	// Set before any await: getfile calls checkCache unawaited, so without an entry guard
+	// every request of a burst fired its own /getupdates fetch. Reset 30 minutes later, or
+	// right away if this check fails.
 	if (checkedrecently) {
 		return false;
 	}
-	const cache = await caches.open("cache");
-	const promise = await cache.match("/getupdates");
-	if (promise) {
-		lastcache = await promise.text();
-	}
-	return fetch("/getupdates", {cache: "no-store"}).then(async (data) => {
-		setTimeout(
-			(_: any) => {
-				checkedrecently = false;
-			},
-			1000 * 60 * 30,
-		);
+	checkedrecently = true;
+	setTimeout(
+		(_: any) => {
+			checkedrecently = false;
+		},
+		1000 * 60 * 30,
+	);
+	try {
+		const cache = await caches.open("cache");
+		const promise = await cache.match("/getupdates");
+		if (promise) {
+			lastcache = await promise.text();
+		}
+		const data = await fetch("/getupdates", {cache: "no-store"});
 		if (!data.ok) return false;
 		const text = await data.clone().text();
+		// The SPA fallback answering /getupdates with index.html is not an update: treating it
+		// as one would pin that HTML as the app shell in every cache. Mark updates
+		// unavailable for this session so getfile stops trusting the cache instead.
+		if (
+			data.headers.get("content-type")?.includes("text/html") ||
+			text.trimStart().startsWith("<")
+		) {
+			updatesUnavailable = true;
+			return false;
+		}
 		if (lastcache !== text) {
-			deleteoldcache();
-			putInCache("/getupdates", data);
-			await downloadAllFiles();
+			// Order matters: the marker ("/getupdates" in the cache) is the "an update is
+			// ready" signal for clients, so it is stored only once the new build is actually
+			// cached — otherwise a crash between them loses the marker (and the update).
+			await deleteoldcache();
+			try {
+				await downloadAllFiles();
+			} catch (e) {
+				console.error("could not pre-warm the cache", e);
+			}
+			await putInCache("/getupdates", data);
+			lastcache = text;
 			tryToClose();
-			checkedrecently = true;
 			sendAll({
 				code: "updates",
 				updates: true,
 			});
 			return true;
 		}
-		checkedrecently = true;
 		return false;
-	});
+	} catch (e) {
+		// A transient failure must not block update checks for the next 30 minutes.
+		console.error("update check failed", e);
+		checkedrecently = false;
+		return false;
+	}
 }
 var checkedrecently = false;
+// Set when /getupdates stopped answering with a real payload (e.g. everything comes back as
+// the SPA's index.html): the cache may then hold shells nobody intended, so getfile serves
+// network instead of trusting it. Session-scoped; the next worker start probes again.
+let updatesUnavailable = false;
 
 function samedomain(url: string | URL) {
 	return new URL(url).origin === self.origin;
@@ -207,19 +242,62 @@ function cacheLookupKey(req: Request): string {
 	return path;
 }
 let fails = 0;
+// After enough failed origin fetches the client counts as offline; 30 s later the flag clears
+// lazily, so the next request probes the network again instead of staying offline forever.
+const OFFLINE_PROBE_MS = 30_000;
+let offlineSince = 0;
+function isOffline() {
+	if (offline && Date.now() - offlineSince > OFFLINE_PROBE_MS) {
+		offline = false;
+		offlineSince = 0;
+	}
+	return offline;
+}
+function markOffline() {
+	offline = true;
+	offlineSince = Date.now();
+}
+function registerFailure() {
+	fails++;
+	if (fails > 5) {
+		markOffline();
+	}
+}
+function registerSuccess() {
+	fails = 0;
+	offline = false;
+	offlineSince = 0;
+}
 async function getfile(req: Request): Promise<Response> {
 	checkCache();
-	if (!samedomain(req.url) || enabled === "false" || (enabled === "offlineOnly" && !offline)) {
-		const response = await fetch(req.clone());
+	if (!samedomain(req.url) || enabled === "false" || (enabled === "offlineOnly" && !isOffline())) {
+		let response: Response;
+		try {
+			response = await fetch(req.clone());
+		} catch (e) {
+			// Only origin failures count toward offline: a flaky third-party host must not
+			// flip the worker into cache-serving for the origin it knows nothing about.
+			if (samedomain(req.url)) {
+				registerFailure();
+			}
+			// An "online" offlineOnly client dying without its cached shell serves nobody:
+			// last resort is the very cache the flag says not to trust.
+			if (samedomain(req.url) && enabled === "offlineOnly") {
+				const cached = await caches.match(cacheLookupKey(req));
+				if (cached) {
+					return cached;
+				}
+			}
+			throw e;
+		}
 		if (samedomain(req.url)) {
+			if (response.ok) {
+				registerSuccess();
+			} else {
+				registerFailure();
+			}
 			if (enabled === "offlineOnly" && response.ok) {
 				putInCache(toPath(req.url), response.clone());
-			}
-			if (!response.ok) {
-				fails++;
-				if (fails > 5) {
-					offline = true;
-				}
 			}
 		}
 		return response;
@@ -231,9 +309,11 @@ async function getfile(req: Request): Promise<Response> {
 		return response;
 	}
 	const cacheKey = cacheLookupKey(req);
-	const responseFromCache = await caches.match(cacheKey);
-	if (responseFromCache) {
-		return responseFromCache;
+	if (!updatesUnavailable) {
+		const responseFromCache = await caches.match(cacheKey);
+		if (responseFromCache) {
+			return responseFromCache;
+		}
 	}
 	try {
 		const responseFromNetwork = await fetch(req.url);
@@ -243,7 +323,8 @@ async function getfile(req: Request): Promise<Response> {
 		return responseFromNetwork;
 	} catch (e) {
 		console.error(e);
-		return new Response(null);
+		// An empty 200 would be an empty module served offline; name the failure instead.
+		return new Response("service worker: origin fetch failed", {status: 503});
 	}
 }
 const promURLMap = new Map<string, (url: string) => void>();
@@ -269,20 +350,27 @@ async function onFetch(e: Event) {
 				Number.parseInt(url.searchParams.get("ex") || "", 16) < Date.now() - 5000;
 			event.respondWith(
 				new Promise(async (res) => {
-					const cached = await getFromCache(url);
-					if (cached) {
-						res(cached);
-						return;
+					try {
+						const cached = await getFromCache(url);
+						if (cached) {
+							res(cached);
+							return;
+						}
+						if (expired) {
+							req = await Promise.race<Request>([
+								new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
+								new Promise((res) => setTimeout(() => res(req), 5000)),
+							]);
+						}
+						const f = await fetch(req);
+						res(f);
+						putInCache(url, f.clone());
+					} catch (e) {
+						// An unsettled respondWith promise leaves the page's fetch hanging forever
+						// (offline CDN images): settle it as a network error instead.
+						console.error(e);
+						res(Response.error());
 					}
-					if (expired) {
-						req = await Promise.race<Request>([
-							new Promise(async (res) => res(new Request(await refreshUrl(url, port), req))),
-							new Promise((res) => setTimeout(() => res(req), 5000)),
-						]);
-					}
-					const f = await fetch(req);
-					res(f);
-					putInCache(url, f.clone());
 				}),
 			);
 			return;
