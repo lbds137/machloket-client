@@ -620,6 +620,8 @@ class Localuser {
 	swapped = false;
 	resume_gateway_url?: string;
 	session_id?: string;
+	/** Each socket's deflate-stream writer, so a dead socket's stream is closed and dropped. */
+	private deflateWriters = new WeakMap<WebSocket, WritableStreamDefaultWriter>();
 	async initwebsocket(resume = false): Promise<void> {
 		let returny: () => void;
 		if (!this.resume_gateway_url || !this.session_id) {
@@ -646,6 +648,7 @@ class Localuser {
 		if (DecompressionStream) {
 			ds = new DecompressionStream("deflate");
 			w = ds.writable.getWriter();
+			this.deflateWriters.set(ws, w);
 
 			arr = new Uint8Array();
 		}
@@ -702,9 +705,9 @@ class Localuser {
 						try {
 							const temp = JSON.parse(build);
 							build = "";
-							await this.handleEvent(temp);
+							await this.handleEvent(temp, ws);
 
-							if (temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
+							if (ws === this.ws && temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
 								returny();
 							}
 						} catch (e) {
@@ -713,7 +716,10 @@ class Localuser {
 							}
 						}
 					}
-				})();
+				})().catch(() => {
+					// Tearing the writer down on a dead socket errors the stream's readable
+					// end (truncated input); there is nothing left to drain.
+				});
 			}
 		});
 
@@ -751,8 +757,8 @@ class Localuser {
 						temp = JSON.parse(event.data);
 					}
 
-					await this.handleEvent(temp as readyjson);
-					if (temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
+					await this.handleEvent(temp as readyjson, ws);
+					if (ws === this.ws && temp.op === 0 && (temp.t === "READY" || temp.t === "RESUMED")) {
 						returny();
 					}
 				} catch (e) {
@@ -764,103 +770,117 @@ class Localuser {
 		});
 
 		ws.addEventListener("close", async (event) => {
-			this.ws = undefined;
-			this.stopHeartbeat();
-			console.log("WebSocket closed with code " + event.code);
-			this.abandonMemberRequests();
-			// An account switched away from: the screen belongs to the new account now.
-			if (this.swapped) return;
-			// 1000 comes from the server only (this client closes with 40xx): it follows op 7.
-			if (
-				(event.code >= 1000 && event.code < 1016 && this.errorBackoff === 0) ||
-				(wsCodesRetry.has(event.code) && this.errorBackoff === 0)
-			) {
-				this.errorBackoff++;
-				// Without a session the retry identifies, and READY replaces every guild, so
-				// the app is built (again, if one existed), as the backoff path below does. On the
-				// first connect this is the only build: the startup chain waits on the dropped
-				// socket forever.
-				const identifies = !this.resume_gateway_url || !this.session_id;
-				this.initwebsocket(true).then(async () => {
-					this.loaduser();
-					if (identifies) await this.init();
-				});
-				return;
-			}
-			this.unload();
-			(document.getElementById("loading") as HTMLElement).classList.remove("doneloading");
-			(document.getElementById("loading") as HTMLElement).classList.add("loading");
-			const loaddesc = document.getElementById("load-desc") as HTMLElement;
-			if (
-				(event.code >= 1000 && event.code < 1016) ||
-				wsCodesRetry.has(event.code) ||
-				event.code == 4041
-			) {
-				if (this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + 20000) {
-					this.errorBackoff = 0;
-				} else {
-					// Capped: a long outage must stretch the delay, never quietly stop
-					// retrying while the app is in use.
-					this.errorBackoff = Math.min(this.errorBackoff + 1, 20);
-				}
-				this.connectionSucceed = 0;
-
-				loaddesc.innerHTML = "";
-				loaddesc.append(
-					new MarkDown(
-						I18n.errorReconnect(Math.round(0.2 + this.errorBackoff * 2.8) + ""),
-					).makeHTML(),
-				);
-				switch (
-					this.errorBackoff //try to recover from bad domain
-				) {
-					case 3:
-						const newurls = await getapiurls(this.info.wellknown);
-						if (newurls) {
-							this.info = newurls;
-							this.serverurls = newurls;
-							this.userinfo.json.serverurls = this.info;
-							break;
-						}
-						break;
-
-					case 4: {
-						const newurls = await getapiurls(new URL(this.info.wellknown).origin);
-						if (newurls) {
-							this.info = newurls;
-							this.serverurls = newurls;
-							this.userinfo.json.serverurls = this.info;
-							break;
-						}
-						break;
-					}
-					case 5: {
-						const breakappart = new URL(this.info.wellknown).host.split(".");
-						const url = "https://" + breakappart.at(-2) + "." + breakappart.at(-1);
-						const newurls = await getapiurls(url);
-						if (newurls) {
-							this.info = newurls;
-							this.serverurls = newurls;
-							this.userinfo.json.serverurls = this.info;
-						}
-						break;
-					}
-				}
-				setTimeout(
-					() => {
-						if (this.swapped) return;
-						loaddesc.textContent = I18n.retrying();
-						this.initwebsocket().then(async () => {
-							this.loaduser();
-							await this.init();
-							loaddesc.textContent = I18n.loaded();
-						});
-					},
-					Math.round((0.2 + this.errorBackoff * 2.8) * 1000),
-				);
-			} else loaddesc.textContent = I18n.unableToConnect();
+			if (this.ws !== ws) return; // a stale socket's close must not touch the live one
+			await this.socketClosed(ws, event.code);
 		});
 		await promise;
+	}
+	/** Everything a closing socket tears down and reconnects from. The close listener reaches
+	 * it only for the live socket (the identity guard above); the watchdog calls it directly
+	 * so the reconnect doesn't wait for the browser's close handshake on a half-open socket. */
+	async socketClosed(ws: WebSocket, code: number) {
+		this.ws = undefined;
+		this.stopHeartbeat();
+		console.log("WebSocket closed with code " + code);
+		this.abandonMemberRequests();
+		// Closing a deflate stream whose input was truncated (a socket that died mid-frame
+		// among them) throws; the writer is dropped either way.
+		try {
+			this.deflateWriters
+				.get(ws)
+				?.close()
+				.catch(() => {});
+		} catch {
+			// already gone
+		}
+		this.deflateWriters.delete(ws);
+		// An account switched away from: the screen belongs to the new account now.
+		if (this.swapped) return;
+		// 1000 comes from the server only (this client closes with 40xx): it follows op 7.
+		if (
+			(code >= 1000 && code < 1016 && this.errorBackoff === 0) ||
+			(wsCodesRetry.has(code) && this.errorBackoff === 0)
+		) {
+			this.errorBackoff++;
+			// Without a session the retry identifies, and READY replaces every guild, so
+			// the app is built (again, if one existed), as the backoff path below does. On the
+			// first connect this is the only build: the startup chain waits on the dropped
+			// socket forever.
+			const identifies = !this.resume_gateway_url || !this.session_id;
+			this.initwebsocket(true).then(async () => {
+				this.loaduser();
+				if (identifies) await this.init();
+			});
+			return;
+		}
+		this.unload();
+		(document.getElementById("loading") as HTMLElement).classList.remove("doneloading");
+		(document.getElementById("loading") as HTMLElement).classList.add("loading");
+		const loaddesc = document.getElementById("load-desc") as HTMLElement;
+		if ((code >= 1000 && code < 1016) || wsCodesRetry.has(code) || code == 4041) {
+			if (this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + 20000) {
+				this.errorBackoff = 0;
+			} else {
+				// Capped: a long outage must stretch the delay, never quietly stop
+				// retrying while the app is in use.
+				this.errorBackoff = Math.min(this.errorBackoff + 1, 20);
+			}
+			this.connectionSucceed = 0;
+
+			loaddesc.innerHTML = "";
+			loaddesc.append(
+				new MarkDown(
+					I18n.errorReconnect(Math.round(0.2 + this.errorBackoff * 2.8) + ""),
+				).makeHTML(),
+			);
+			switch (
+				this.errorBackoff //try to recover from bad domain
+			) {
+				case 3:
+					const newurls = await getapiurls(this.info.wellknown);
+					if (newurls) {
+						this.info = newurls;
+						this.serverurls = newurls;
+						this.userinfo.json.serverurls = this.info;
+						break;
+					}
+					break;
+
+				case 4: {
+					const newurls = await getapiurls(new URL(this.info.wellknown).origin);
+					if (newurls) {
+						this.info = newurls;
+						this.serverurls = newurls;
+						this.userinfo.json.serverurls = this.info;
+						break;
+					}
+					break;
+				}
+				case 5: {
+					const breakappart = new URL(this.info.wellknown).host.split(".");
+					const url = "https://" + breakappart.at(-2) + "." + breakappart.at(-1);
+					const newurls = await getapiurls(url);
+					if (newurls) {
+						this.info = newurls;
+						this.serverurls = newurls;
+						this.userinfo.json.serverurls = this.info;
+					}
+					break;
+				}
+			}
+			setTimeout(
+				() => {
+					if (this.swapped) return;
+					loaddesc.textContent = I18n.retrying();
+					this.initwebsocket().then(async () => {
+						this.loaduser();
+						await this.init();
+						loaddesc.textContent = I18n.loaded();
+					});
+				},
+				Math.round((0.2 + this.errorBackoff * 2.8) * 1000),
+			);
+		} else loaddesc.textContent = I18n.unableToConnect();
 	}
 	interNonceMap = new Map<string, Message>();
 	/**
@@ -942,12 +962,14 @@ class Localuser {
 		return promise;
 	}
 	conectionChange = () => {};
-	async handleEvent(temp: wsjson) {
+	async handleEvent(temp: wsjson, ws?: WebSocket) {
+		// A frame from a socket the session already replaced must not act on the live one.
+		const stale = ws !== undefined && this.ws !== ws;
 		// Discord-shaped frames (op 11 among them) can carry `d: null`.
 		if (temp.d?._trace) this.handleTrace(temp.d._trace);
 		if (getDeveloperSettings().gatewayLogging) console.debug(temp);
 		if (temp.s) this.lastSequence = temp.s;
-		if (temp.op === 9 && this.ws) {
+		if (temp.op === 9 && !stale && this.ws) {
 			// The session can't be resumed: the reconnect identifies afresh.
 			this.resume_gateway_url = undefined;
 			this.session_id = undefined;
@@ -1095,6 +1117,7 @@ class Localuser {
 					break;
 				}
 				case "READY":
+					if (stale) break;
 					await this.gottenReady(temp as readyjson);
 					break;
 				case "RESUMED":
@@ -1449,7 +1472,7 @@ class Localuser {
 			this.refreshInboxBadge();
 			this.refreshInboxMenu();
 		} else if (temp.op === 10) {
-			if (!this.ws) return;
+			if (!this.ws || stale) return;
 			// An absent interval would arm ~4ms spam timers and NaN the watchdog's math —
 			// fall back to Discord's typical 41.25s.
 			const interval = temp.d?.heartbeat_interval || 41250;
@@ -1477,8 +1500,10 @@ class Localuser {
 			// two heartbeat intervals (30s floor) with no frame means the server is gone.
 			this.watchdogTimer = setInterval(
 				() => {
-					if (Date.now() - this.lastFrameAt > Math.max(interval * 2, 30_000)) {
-						this.ws?.close(4000);
+					const ws = this.ws;
+					if (ws && Date.now() - this.lastFrameAt > Math.max(interval * 2, 30_000)) {
+						ws.close(4000);
+						this.socketClosed(ws, 4000); // reconnect NOW; the guard ignores the browser's late event
 					}
 				},
 				Math.max(interval, 5_000),
@@ -1486,11 +1511,11 @@ class Localuser {
 		} else if (temp.op === 11) {
 			// An ACK only marks the connection good. Sending a beat from here would start a
 			// second chain beside the interval — one more per interval, since every beat is ACKed.
-			if (this.connectionSucceed === 0) this.connectionSucceed = Date.now();
+			if (!stale && this.connectionSucceed === 0) this.connectionSucceed = Date.now();
 		} else if (temp.op === 7) {
 			// RECONNECT: the server is going away. Closing with a retry code resumes on a new
 			// socket; a server that closes first (with 1000) takes the same path.
-			this.ws?.close(4000);
+			if (!stale) this.ws?.close(4000);
 		} else {
 			console.log("Unhandled case " + temp.d, temp);
 		}
