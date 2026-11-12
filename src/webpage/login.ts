@@ -72,6 +72,7 @@ export async function makeLogin(
 			return;
 		}
 		form.fetchURL = trimTrailingSlashes(info.api) + "/auth/login";
+		form.api = trimTrailingSlashes(info.api);
 		recover(info, rec);
 	};
 	opt.addTitle(I18n.login.login());

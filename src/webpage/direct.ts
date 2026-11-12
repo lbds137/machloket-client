@@ -191,6 +191,7 @@ class Direct extends Guild {
 					{
 						method: "POST",
 						fetchURL: this.info.api + "/users/@me/relationships",
+						api: this.info.api,
 						headers: this.headers,
 					},
 				);
@@ -526,6 +527,7 @@ class Group extends Channel {
 		const dio = new Dialog(I18n.group.edit());
 		const form = dio.options.addForm("", () => {}, {
 			fetchURL: this.info.api + "/channels/" + this.id,
+			api: this.info.api,
 			headers: this.headers,
 			method: "PATCH",
 		});

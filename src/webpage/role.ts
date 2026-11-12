@@ -381,6 +381,7 @@ class RoleList extends Buttons {
 				},
 				{
 					fetchURL: this.info.api + "/guilds/" + this.guild.id + "/roles/" + this.curid,
+					api: this.info.api,
 					method: "PATCH",
 					headers: this.headers,
 					traditionalSubmit: true,

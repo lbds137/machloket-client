@@ -26,7 +26,11 @@ describe("AUDIT A-F3: webauthn 2xx with a JSON body that is not an object", () =
 		);
 		vi.spyOn(PublicKeyCredential, "parseRequestOptionsFromJSON").mockReturnValue({} as never);
 		const loggedIn = vi.fn();
-		const form = new Dialog("").options.addForm("", loggedIn, {fetchURL: URL_, method: "POST"});
+		const form = new Dialog("").options.addForm("", loggedIn, {
+			fetchURL: URL_,
+			api: "http://key.test/api",
+			method: "POST",
+		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
 		return {form, loggedIn};
 	}

@@ -615,6 +615,7 @@ class Channel extends SnowFlake {
 			const gensettings = settings.addButton(I18n.channel.settings());
 			const form = gensettings.addForm("", () => {}, {
 				fetchURL: this.info.api + "/channels/" + this.id,
+				api: this.info.api,
 				method: "PATCH",
 				headers: this.headers,
 				traditionalSubmit: true,
@@ -690,6 +691,7 @@ class Channel extends SnowFlake {
 							},
 							{
 								fetchURL: this.info.api + "/channels/" + this.id + "/tags/" + tag.id,
+								api: this.info.api,
 								method: "PUT",
 								headers: this.headers,
 							},
@@ -735,6 +737,7 @@ class Channel extends SnowFlake {
 						},
 						{
 							fetchURL: this.info.api + "/channels/" + this.id + "/tags",
+							api: this.info.api,
 							method: "POST",
 							headers: this.headers,
 						},
@@ -3474,6 +3477,7 @@ class Channel extends SnowFlake {
 			},
 			{
 				fetchURL: `${this.info.api}/users/@me/guilds/${this.guild.id}/settings/`,
+				api: this.info.api,
 				method: "PATCH",
 				headers: this.headers,
 			},
