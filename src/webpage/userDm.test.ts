@@ -74,23 +74,33 @@ describe("a popout's message that's refused", () => {
 		vi.unstubAllGlobals();
 	});
 
-	/** Counts what reaches the server: text that wasn't put back goes there for a failed bubble. */
+	/** Counts what reaches the server: text that wasn't put back goes there for a failed bubble.
+	 * Send answers 200 so the driven chain, which these tests await, settles. */
 	function countSends() {
 		const send = vi.fn();
 		vi.stubGlobal(
 			"XMLHttpRequest",
 			class {
 				upload = {};
+				status = 200;
+				onload: (() => void) | null = null;
 				open() {}
 				setRequestHeader() {}
-				send = send;
+				send(...args: unknown[]) {
+					send(...args);
+					this.onload?.();
+				}
 			},
 		);
 		return send;
 	}
 
-	/** A user with an open DM on an instance limiting messages to 5, its composer holding `typed`. */
-	function openDm(typed = "") {
+	/**
+	 * A user with an open DM on an instance limiting messages to 5, its composer holding `typed`.
+	 * With `gated`, goToChannel blocks until `release` resolves it.
+	 */
+	function openDm(typed = "", gated = false) {
+		const {promise: gate, resolve: release} = Promise.withResolvers<void>();
 		const typebox = Object.assign(document.createElement("div"), {
 			id: "typebox",
 			textContent: typed,
@@ -113,9 +123,13 @@ describe("a popout's message that's refused", () => {
 			value: {channelfocus: dm, messageLimit: 5},
 			configurable: true,
 		});
-		const user = userWithNoDm(vi.fn(async () => {}));
+		const user = userWithNoDm(
+			vi.fn(async () => {
+				if (gated) await gate;
+			}),
+		);
 		user.localuser.guildids.get("@me")!.channels.push(dm as never);
-		return {user, typebox, pasted, dm};
+		return {user, typebox, pasted, dm, release};
 	}
 
 	it("comes back in the DM's composer: the popout it was typed in has closed", async () => {
@@ -129,30 +143,34 @@ describe("a popout's message that's refused", () => {
 	});
 
 	it("leaves what's already in that composer alone", async () => {
-		const {user, typebox} = openDm("mine");
+		const {user, typebox, release} = openDm("mine", true);
 		const send = countSends();
 
-		void user.opendm("x".repeat(6));
+		const running = user.opendm("x".repeat(6));
+		release();
+		await running;
 
 		// Not put back, so it goes the way that keeps it: to the server, for a failed bubble.
-		await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+		expect(send).toHaveBeenCalledOnce();
 		expect(typebox.textContent).toBe("mine");
 	});
 
 	it("doesn't join a file waiting in that composer, which would send with it", async () => {
-		const {user, typebox, pasted} = openDm();
+		const {user, typebox, pasted, release} = openDm("", true);
 		pasted.append(document.createElement("img"));
 		const send = countSends();
 
-		void user.opendm("x".repeat(6));
+		const running = user.opendm("x".repeat(6));
+		release();
+		await running;
 
-		await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+		expect(send).toHaveBeenCalledOnce();
 		expect(typebox.textContent).toBe("");
 	});
 
 	describe("with another channel open", () => {
-		function openElsewhere() {
-			const opened = openDm();
+		function openElsewhere(gated = false) {
+			const opened = openDm("", gated);
 			Object.defineProperty(opened.dm, "localuser", {
 				value: {channelfocus: {id: "other"}, messageLimit: 5},
 			});
@@ -171,24 +189,28 @@ describe("a popout's message that's refused", () => {
 		});
 
 		it("doesn't overwrite the DM's draft", async () => {
-			const {user, dm} = openElsewhere();
+			const {user, dm, release} = openElsewhere(true);
 			dm.textSave = "mine";
 			const send = countSends();
 
-			void user.opendm("x".repeat(6));
+			const running = user.opendm("x".repeat(6));
+			release();
+			await running;
 
-			await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+			expect(send).toHaveBeenCalledOnce();
 			expect(dm.textSave).toBe("mine");
 		});
 
 		it("doesn't join files saved with the DM, which would send with it", async () => {
-			const {user, dm} = openElsewhere();
+			const {user, dm, release} = openElsewhere(true);
 			dm.files = [new Blob(["x"])];
 			const send = countSends();
 
-			void user.opendm("x".repeat(6));
+			const running = user.opendm("x".repeat(6));
+			release();
+			await running;
 
-			await vi.waitFor(() => expect(send).toHaveBeenCalledOnce());
+			expect(send).toHaveBeenCalledOnce();
 			expect(dm.textSave).toBe("");
 		});
 	});
