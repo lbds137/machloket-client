@@ -3065,6 +3065,12 @@ class Form implements OptionsElement<object> {
 				// Captcha and 2FA retries go to the URL this submit started with, even if the
 				// form is pointed elsewhere meanwhile (login pages re-point it on instance change).
 				const fetchURL = this.fetchURL;
+				if (!this.api) {
+					console.warn(
+						"Form: fetchURL is set without api — second-factor (2FA/MFA) prompts are" +
+							" skipped for this form; pass the instance api base",
+					);
+				}
 				// The MFA verify endpoints ride the form's explicit api base, matching the
 				// base the app's own calls use (info.api), not one guessed from fetchURL.
 				const mfaApi = this.api;
