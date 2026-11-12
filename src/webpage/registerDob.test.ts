@@ -5,6 +5,7 @@ import {addInstance, captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {I18n} = await import("./i18n");
+const {Form, Options} = await import("./settings");
 const {makeRegister} = await import("./register");
 await I18n.done;
 
@@ -49,7 +50,21 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+	vi.restoreAllMocks();
 	document.body.replaceChildren();
+});
+
+it("re-points the register form's api base beside fetchURL when the picker applies an instance", async () => {
+	// The 2FA/MFA prompts ride the form's api base: a fetchURL re-point without it
+	// silently skips them (settings.ts submits with mfaApi = this.api, "" unless set).
+	addInstance("http://wired.test", 0);
+	const addForm = vi.spyOn(Options.prototype, "addForm");
+	makeRegister(false, "", () => {});
+	await pickInstance("http://wired.test");
+
+	const form = addForm.mock.results.map((r) => r.value as InstanceType<typeof Form>)[0];
+	expect(form.fetchURL).toBe("http://wired.test/api/v9/auth/register");
+	expect(form.api).toBe("http://wired.test/api/v9");
 });
 
 it("an instance whose config rules the DOB out hides the field (it stays re-showable)", async () => {

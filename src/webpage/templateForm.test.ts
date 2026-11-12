@@ -65,15 +65,18 @@ describe("create server from template", () => {
 
 		expect(preprocess()).toBeUndefined();
 		expect(form.fetchURL).toBe(API + "/guilds/templates/abc_123-X");
+		expect(form.api).toBe(API);
 	});
 
 	it("builds the request URL from a pasted link, a Discord one with its prefix (positive control)", () => {
 		const own = templateForm("https://example.org/template/abc123");
 		expect(own.preprocess()).toBeUndefined();
 		expect(own.form.fetchURL).toBe(API + "/guilds/templates/abc123");
+		expect(own.form.api).toBe(API);
 
 		const discord = templateForm("https://discord.new/abc123");
 		expect(discord.preprocess()).toBeUndefined();
 		expect(discord.form.fetchURL).toBe(API + "/guilds/templates/discord:abc123");
+		expect(discord.form.api).toBe(API);
 	});
 });
