@@ -122,6 +122,22 @@ describe("form submit", () => {
 		expect(document.body.textContent).toContain("Invalid two-factor code");
 	});
 
+	it("a fetchURL without an api base warns: 2FA/MFA prompts are skipped for that form", async () => {
+		captureRequests(URL_, () => new Response(null, {status: 204}));
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const {form} = postingForm();
+
+		try {
+			await form.submit();
+			await settle();
+
+			expect(warn).toHaveBeenCalledOnce();
+			expect(String(warn.mock.calls[0][0])).toContain("fetchURL is set without api");
+		} finally {
+			warn.mockRestore();
+		}
+	});
+
 	it("a form's own error handler gets the answer and can put it on a field", async () => {
 		captureRequests(URL_, () => json({code: 60008, message: "Invalid two-factor code"}, 400));
 		const dialog = new Dialog("");
