@@ -28,7 +28,7 @@ describe("AUDIT A-F3: webauthn 2xx with a JSON body that is not an object", () =
 		const loggedIn = vi.fn();
 		const form = new Dialog("").options.addForm("", loggedIn, {
 			fetchURL: URL_,
-			api: "http://key.test/api",
+			api: "http://key.test/api/v9",
 			method: "POST",
 		});
 		form.addTextInput("Login", "login", {initText: "nyx@example.invalid"});
@@ -46,7 +46,7 @@ describe("AUDIT A-F3: webauthn 2xx with a JSON body that is not an object", () =
 			rawId: buf,
 			response: {authenticatorData: buf, clientDataJSON: buf, signature: buf},
 		} as never);
-		captureRequests("http://key.test/api/auth/mfa/webauthn", () =>
+		captureRequests("http://key.test/api/v9/auth/mfa/webauthn", () =>
 			Response.json(body, {status: 200}),
 		);
 
