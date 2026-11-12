@@ -216,10 +216,27 @@ const buildPlugin = () => ({
 									contentType: url.searchParams.get("type") || "text/plain",
 									status: Number.parseInt(url.searchParams.get("status") || "200", 10),
 									fail: url.searchParams.has("fail"),
+									files: url.searchParams.has("files") ? url.searchParams.get("files") : undefined,
+									filesFail: url.searchParams.has("filesFail"),
 								};
 					res.setHeader("Content-Type", "application/json");
 					res.end(JSON.stringify({ok: true, set: swUpdatesOverride ?? null}));
 					return;
+				}
+				if (url.pathname === "/files.json" && swUpdatesOverride) {
+					// A set `files` answers the worker's file manifest with that body (so a test's
+					// download succeeds); `filesFail` destroys the connection like `fail` above,
+					// exercising the failed-download path. Neither set: default passthrough.
+					if (swUpdatesOverride.filesFail) {
+						res.socket?.destroy();
+						return;
+					}
+					if (swUpdatesOverride.files !== undefined) {
+						res.statusCode = 200;
+						res.setHeader("Content-Type", "application/json");
+						res.end(swUpdatesOverride.files);
+						return;
+					}
 				}
 				if (url.pathname === "/getupdates" && swUpdatesOverride) {
 					// A set `fail` kills the connection instead of answering: the worker's fetch
@@ -284,7 +301,13 @@ const buildRevisionPlugin = () => ({
 		const [file, query] = id.split("?");
 		// A leading raw/url/inline load query means the module is embedded as text (possibly
 		// with more params after it), and a spliced revision would corrupt that string.
-		if (!file.endsWith("service.ts") || /^(raw|url|inline)(&|$)/.test(query || "")) return;
+		// Exact resolved-path match: a suffix check would also catch a sibling like
+		// anotherService.ts (or any deeper path ending the same way).
+		if (
+			resolve(file) !== resolve(__dirname, "src/webpage/service.ts") ||
+			/^(raw|url|inline)(&|$)/.test(query || "")
+		)
+			return;
 		return code.replaceAll("__BUILD_REVISION__", JSON.stringify(getBuildVersion()));
 	},
 });
