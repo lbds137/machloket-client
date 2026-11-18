@@ -1,0 +1,8 @@
+# npm/build/test artifacts an agent worktree regenerates (safe-worktree-clean check 5).
+# Machine-local state (docs/local/) and the generated translation files
+# (src/webpage/translations/*.json) stay out on purpose: they hold per-tree data.
+node_modules/
+dist/
+src/webpage/.vitest/
+test-results/
+playwright-report/
