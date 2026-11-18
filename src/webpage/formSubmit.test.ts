@@ -5,6 +5,7 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first) — same bootstrap as the other suites.
 await import("./localuser");
 const {Dialog, FormError} = await import("./settings");
+const {I18n} = await import("./i18n");
 
 const URL_ = "http://form.test/thing";
 
@@ -135,6 +136,53 @@ describe("form submit", () => {
 			expect(String(warn.mock.calls[0][0])).toContain("fetchURL is set without api");
 		} finally {
 			warn.mockRestore();
+		}
+	});
+
+	it("a no-URL form's non-FormError throw is logged and reported, not dropped", async () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+		const boom = new Error("boom");
+		const form = new Dialog("").options.addForm(
+			"",
+			() => {
+				throw boom;
+			},
+			{},
+		);
+
+		try {
+			await form.submit();
+			await settle();
+
+			expect(unhandled).toEqual([]);
+			expect(consoleError).toHaveBeenCalledOnce();
+			expect(consoleError.mock.calls[0][0]).toBe(boom);
+			expect(document.body.textContent).toContain(I18n.requestFailed("boom"));
+		} finally {
+			consoleError.mockRestore();
+		}
+	});
+
+	it("a no-URL form's non-Error throw takes the same path (String(e) arm)", async () => {
+		const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+		const form = new Dialog("").options.addForm(
+			"",
+			() => {
+				throw "just a string"; // eslint-disable-line no-throw-literal
+			},
+			{},
+		);
+
+		try {
+			await form.submit();
+			await settle();
+
+			expect(unhandled).toEqual([]);
+			expect(consoleError).toHaveBeenCalledOnce();
+			expect(consoleError.mock.calls[0][0]).toBe("just a string");
+			expect(document.body.textContent).toContain(I18n.requestFailed("just a string"));
+		} finally {
+			consoleError.mockRestore();
 		}
 	});
 
