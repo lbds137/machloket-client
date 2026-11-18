@@ -52,5 +52,8 @@ it("an invite whose lookup gets no answer says so, and keeps its Accept", async 
 		.toBe(I18n.requestFailed("offline"));
 	// Nothing says the invite is dead, and no name came back: a generic heading.
 	expect(document.getElementById("invitename")?.textContent).toBe(I18n.invite.heading());
-	expect(document.getElementById("AcceptInvite")).not.toBeNull();
+	// The button ships hidden and unlabelled: its presence alone proves nothing.
+	const accept = document.getElementById("AcceptInvite")!;
+	expect(accept.textContent).toBe(I18n.invite.acceptInvite());
+	expect(getComputedStyle(accept).visibility).toBe("visible");
 });

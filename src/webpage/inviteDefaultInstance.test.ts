@@ -34,12 +34,11 @@ localStorage.setItem(
 await import("./localuser");
 const {I18n} = await import("./i18n");
 const {captureRequests} = await import("./test/setup");
-const {instancefetch, getInstances, getDefaultInstanceUrl} = await import("./utils/utils");
+const {instancefetch, getDefaultInstanceUrl} = await import("./utils/utils");
+const {unlistAllInstances} = await import("./test/instances");
 mountServedPage(pageHtml);
 await instancefetch;
-for (const instance of getInstances()) {
-	if (instance.name !== "Other instance") instance.display = false;
-}
+unlistAllInstances("Other instance");
 const theDefault = getDefaultInstanceUrl();
 captureRequests(
 	`${API}/invites/${CODE}`,

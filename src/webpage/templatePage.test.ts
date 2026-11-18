@@ -12,8 +12,8 @@ function servedCard(): HTMLElement {
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("./localuser");
-const {setDefaults, instancefetch, getDefaultInstanceUrl, getInstances} =
-	await import("./utils/utils");
+const {setDefaults, instancefetch, getDefaultInstanceUrl} = await import("./utils/utils");
+const {unlistAllInstances} = await import("./test/instances");
 const {I18n} = await import("./i18n");
 await I18n.done;
 
@@ -213,10 +213,9 @@ it("with no ?instance= and no listed instance to default to, the page says so an
 	document.body.append(document.importNode(servedCard(), true));
 	await instancefetch;
 	// Every listed instance unlisted for this test: getDefaultInstanceUrl has none to give.
-	const listed = getInstances().filter((instance) => instance.display !== false);
-	for (const instance of listed) instance.display = false;
+	const unlisted = unlistAllInstances();
 	onTestFinished(() => {
-		for (const instance of listed) instance.display = true;
+		for (const instance of unlisted) instance.display = true;
 	});
 	expect(getDefaultInstanceUrl()).toBeUndefined();
 	history.replaceState(history.state, "", "/template/abc");

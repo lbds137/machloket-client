@@ -11,10 +11,11 @@ localStorage.setItem("userinfos", JSON.stringify({users: {}, currentuser: null})
 
 await import("./localuser");
 const {I18n} = await import("./i18n");
-const {instancefetch, getInstances, getDefaultInstanceUrl} = await import("./utils/utils");
+const {instancefetch, getDefaultInstanceUrl} = await import("./utils/utils");
+const {unlistAllInstances} = await import("./test/instances");
 mountServedPage(pageHtml);
 await instancefetch;
-for (const instance of getInstances()) instance.display = false;
+unlistAllInstances();
 const noDefault = getDefaultInstanceUrl();
 const rejections: unknown[] = [];
 window.addEventListener("unhandledrejection", (e) => {
