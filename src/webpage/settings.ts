@@ -3172,6 +3172,11 @@ class Form implements OptionsElement<object> {
 				} catch (e) {
 					if (e instanceof FormError) {
 						this.handleError(e);
+					} else {
+						// Same as the URL path's failures: log it and say something — a silent
+						// catch here looks exactly like a dead Submit button.
+						console.error(e);
+						this.showPrimError(I18n.requestFailed(e instanceof Error ? e.message : String(e)));
 					}
 					return;
 				}
