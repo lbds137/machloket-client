@@ -122,6 +122,38 @@ describe("gateway heartbeat and watchdog", () => {
 		expect(ws.closed).toBe(4000);
 	});
 
+	it("a hostile HELLO cannot arm a sub-second heartbeat loop", async () => {
+		const timers = vi.spyOn(globalThis, "setInterval");
+		try {
+			for (const hostile of [1, "abc", 2 ** 31]) {
+				FakeWebSocket.sockets = [];
+				const user = gatewayUser();
+				user.initwebsocket();
+				const ws = FakeWebSocket.sockets[0];
+				ws.emit("open", {});
+				// heartbeat_interval is server data (CodeQL #17, sweep class H): the armed
+				// delay must be a real number within [1s, 2^31-1] — never tiny, NaN, or
+				// overflow (Chromium fires the last two ~immediately). The tiny case also
+				// pins the beat itself: exactly one op-40 at 1000ms, none sooner.
+				ws.emit("message", {data: JSON.stringify({op: 10, d: {heartbeat_interval: hostile}})});
+				const armed = timers.mock.calls.length;
+				await vi.advanceTimersByTimeAsync(0);
+				expect(ws.sent.filter((m) => m.op === 1)).toHaveLength(1);
+				const beatDelay = (timers.mock.calls[armed] as [unknown, number])[1];
+				expect(beatDelay).toBeGreaterThanOrEqual(1000);
+				expect(beatDelay).toBeLessThanOrEqual(2 ** 31 - 1);
+				if (hostile === 1) {
+					await vi.advanceTimersByTimeAsync(999);
+					expect(ws.sent.filter((m) => m.op === 40)).toHaveLength(0);
+					await vi.advanceTimersByTimeAsync(1);
+					expect(ws.sent.filter((m) => m.op === 40)).toHaveLength(1);
+				}
+			}
+		} finally {
+			timers.mockRestore();
+		}
+	});
+
 	it("a watchdog kill reconnects immediately; the browser's late close event is ignored", async () => {
 		const user = sessionUser();
 		user.initwebsocket(true);

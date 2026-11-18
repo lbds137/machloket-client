@@ -1475,8 +1475,16 @@ class Localuser {
 		} else if (temp.op === 10) {
 			if (!this.ws || stale) return;
 			// An absent interval would arm ~4ms spam timers and NaN the watchdog's math —
-			// fall back to Discord's typical 41.25s.
-			const interval = temp.d?.heartbeat_interval || 41250;
+			// fall back to Discord's typical 41.25s. The interval is server data: floor a
+			// hostile tiny value at 1s, and don't let the rest dodge the floor — NaN and
+			// Infinity take the fallback, finite overflow clamps to setTimeout's 32-bit
+			// bound (the same clamp markdown.ts and guild.ts use; Chromium fires
+			// out-of-range delays ~immediately). CodeQL #17 / sweep class H.
+			const raw = Number(temp.d?.heartbeat_interval);
+			const interval = Math.min(
+				Math.max(Number.isFinite(raw) && raw > 0 ? raw : 41250, 1000),
+				2 ** 31 - 1,
+			);
 			// Heartbeats keep their OWN schedule. The old chain sent the next beat only from
 			// inside an ACK handler — no ACK, no further beats, and a half-open socket (a
 			// bounced server whose close never reached the client) read as healthy forever.
