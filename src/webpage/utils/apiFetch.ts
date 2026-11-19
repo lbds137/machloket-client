@@ -41,20 +41,49 @@ export function resetUnauthorizedNavForTests(): void {
 	unauthorizedNavPending = false;
 }
 
-/** Marks the account behind the 401 invalid and schedules one navigation to /login. Only acts
- * on a post-auth endpoint whose request carried a token AND whose invalidation matched an
- * account (a token-less 401 — a CDN PUT, a 2FA attempt — never logs anyone out); returns
- * whether it acted. */
+/** Whether the token behind a 401'd request is really dead: the instance's auth middleware
+ * rejects any request carrying a bad token before routing, so a GET to /users/@me under the
+ * same /api/vN base answers 401 for a dead token and anything else for a live one. Endpoints
+ * can answer their own bare 401s for reasons that are not a dead session — a wrong password
+ * on the delete/disable forms, a rejected TOTP verify — and those must never log a valid
+ * account out. Raw fetch (no apiFetch recursion), briefly timed. */
+async function tokenIsDead(requestUrl: string, token: string): Promise<boolean> {
+	const parsed = new URL(requestUrl, window.location.href);
+	const base = /\/api\/v\d+(?=\/)/.exec(parsed.pathname)?.[0];
+	if (!base) return true; // Not a recognizable API path: fall back to acting on the 401.
+	try {
+		const probe = await fetch(parsed.origin + base + "/users/@me", {
+			headers: {Authorization: token},
+			signal: AbortSignal.timeout(10_000),
+		});
+		return probe.status === 401;
+	} catch {
+		return false; // The probe could not answer; a bare 401 alone is not proof.
+	}
+}
+
+/** Marks the account behind a VERIFIED dead token invalid and schedules one navigation to
+ * /login. Only engages on a post-auth endpoint whose request carried a token (a token-less
+ * 401 — a CDN PUT, a 2FA attempt — never logs anyone out), and invalidates only after the
+ * probe confirms the token is dead. One probe is in flight at a time; the latch releases
+ * when the token proves alive so a later real death can still route. Returns whether the
+ * path was engaged (not whether it will invalidate — the probe decides that). */
 export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit): boolean {
 	if (isPreAuthEndpoint(input)) return false;
 	const token = requestAuthToken(input, init);
 	if (token === null) return false;
-	if (!invalidateAccount(token)) return false;
 	if (unauthorizedNavPending) return true;
 	unauthorizedNavPending = true;
-	queueMicrotask(() => {
-		carryAccountsAcrossNavigation();
-		pageNav.go("/login");
+	const url = input instanceof Request ? input.url : String(input);
+	void tokenIsDead(url, token).then((dead) => {
+		if (!dead || !invalidateAccount(token)) {
+			unauthorizedNavPending = false;
+			return;
+		}
+		queueMicrotask(() => {
+			carryAccountsAcrossNavigation();
+			pageNav.go("/login");
+		});
 	});
 	return true;
 }
@@ -75,7 +104,13 @@ export async function apiFetch(
 		return res;
 	}
 	const timeoutSignal = AbortSignal.timeout(timeoutMs);
-	const signal = initSignal ? AbortSignal.any([initSignal, timeoutSignal]) : timeoutSignal;
+	// AbortSignal.any is missing before Safari 17.4 / Firefox 124 / Chrome 116; without it the
+	// caller's signal alone is used (the race below still turns a timeout into the refusal).
+	const signal = initSignal
+		? AbortSignal.any
+			? AbortSignal.any([initSignal, timeoutSignal])
+			: initSignal
+		: timeoutSignal;
 
 	let onAbort: (() => void) | undefined;
 	const abortPromise = new Promise<never>((_, reject) => {

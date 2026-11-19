@@ -451,7 +451,12 @@ export function invalidateAccount(token: string): boolean {
 				suser.loggedin = false;
 			} catch {
 				(raw as {loggedin?: boolean}).loggedin = false;
-				saveAccounts(serialiseForStore(info));
+				try {
+					saveAccounts(serialiseForStore(info));
+				} catch (e) {
+					// E5: a refused save warns — it never throws out of the 401 path.
+					console.warn("machloket: account invalidation could not persist:", e);
+				}
 			}
 		}
 	}
