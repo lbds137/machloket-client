@@ -48,20 +48,22 @@ export function resetUnauthorizedNavForTests(): void {
  * can answer their own bare 401s for reasons that are not a dead session — a wrong password
  * on the delete/disable forms, a rejected TOTP verify — and those must never log a valid
  * account out. When the URL has no recognizable /vN base, the probe cannot verify the token
- * and fails closed (leaves the session alone). Raw fetch (no apiFetch recursion), briefly timed. */
+ * and fails closed (leaves the session alone); the cost is that a truly dead token on such
+ * an instance never auto-routes to /login — recovery is switching accounts or logging in
+ * again. Raw fetch (no apiFetch recursion), briefly timed. */
 async function tokenIsDead(requestUrl: string, token: string): Promise<boolean> {
-	const parsed = new URL(requestUrl, window.location.href);
-	const base = /^(.*\/v\d+)(?=\/)/.exec(parsed.pathname)?.[0];
-	// No recognizable API base: the probe cannot verify the token, so leave the session alone.
-	if (!base) return false;
 	try {
+		const parsed = new URL(requestUrl, window.location.href);
+		const base = /^(.*?\/v\d+)(?=\/)/.exec(parsed.pathname)?.[0];
+		// No recognizable API base: the probe cannot verify the token, so leave the session alone.
+		if (!base) return false;
 		const probe = await fetch(parsed.origin + base + "/users/@me", {
 			headers: {Authorization: token},
 			signal: AbortSignal.timeout(10_000),
 		});
 		return probe.status === 401;
 	} catch {
-		return false; // The probe could not answer; a bare 401 alone is not proof.
+		return false; // The probe could not answer (or the URL never parsed); a bare 401 alone is not proof.
 	}
 }
 

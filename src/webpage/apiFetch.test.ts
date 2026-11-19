@@ -446,7 +446,7 @@ describe("apiFetch wrapper", () => {
 		expect(nav).not.toHaveBeenCalled();
 	});
 
-	it("a rejecting probe releases the latch so a later 401 with a dead token still navigates", async () => {
+	it("a failed probe (network error) releases the latch so a later 401 with a dead token still navigates", async () => {
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
 		const user = adduser({
 			serverurls: {
@@ -536,20 +536,108 @@ describe("apiFetch wrapper", () => {
 			configurable: true,
 			writable: true,
 		});
-		try {
-			vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
-			const controller = new AbortController();
+		vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
+		const controller = new AbortController();
 
-			const err = await apiFetch(API + "/users/@me", {
-				signal: controller.signal,
-				timeoutMs: 25,
-			}).catch((e: unknown) => e);
-			expect(err).toBeInstanceOf(DOMException);
-			expect(err).toMatchObject({name: "TimeoutError", message: "offline"});
-		} finally {
-			if (realAbortSignalAny) Object.defineProperty(AbortSignal, "any", realAbortSignalAny);
-		}
+		const err = await apiFetch(API + "/users/@me", {
+			signal: controller.signal,
+			timeoutMs: 25,
+		}).catch((e: unknown) => e);
+		expect(err).toBeInstanceOf(DOMException);
+		expect(err).toMatchObject({name: "TimeoutError", message: "offline"});
 	}, 2_000);
+
+	it("an invalidation throw releases the latch with a warn and a later 401 still routes", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "invalidation-throw@example.test",
+			token: "fake-invalidation-throw-token",
+			loggedin: true,
+		});
+		const realTryUpdate = Specialuser.prototype.tryUpdateLocal;
+		let invalidations = 0;
+		const spy = vi.spyOn(Specialuser.prototype, "tryUpdateLocal").mockImplementation(function (
+			this: InstanceType<typeof Specialuser>,
+		) {
+			if (invalidations++ === 0) throw new DOMException("not found", "NotFoundError");
+			return realTryUpdate.call(this);
+		});
+		let probes = 0;
+		captureRequests(API + "/users/@me/delete", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			return Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+		});
+
+		try {
+			await fetchRetryOnce(API + "/users/@me/delete", {
+				method: "POST",
+				headers: {Authorization: user.token},
+				body: JSON.stringify({password: "nope"}),
+			});
+			await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+			expect(nav).not.toHaveBeenCalled();
+
+			await fetchRetryOnce(API + "/users/@me/delete", {
+				method: "POST",
+				headers: {Authorization: user.token},
+				body: JSON.stringify({password: "nope"}),
+			});
+			await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+			expect(nav).toHaveBeenCalledWith("/login");
+			expect(user.loggedin).toBe(false);
+			expect(probes).toBe(2);
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
+	it("the probe uses the FIRST /vN base, not a later /vN segment in the path", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "first-base@example.test",
+			token: "fake-first-base-token",
+			loggedin: true,
+		});
+		let wrongBaseProbes = 0;
+		let rightBaseProbes = 0;
+		captureRequests(API + "/legacy/v2/rooms", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/legacy/v2/users/@me", () => {
+			wrongBaseProbes++;
+			return Response.json({id: "u-alive"});
+		});
+		captureRequests(API + "/users/@me", () => {
+			rightBaseProbes++;
+			return Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+		});
+
+		await fetchRetryOnce(API + "/legacy/v2/rooms", {
+			headers: {Authorization: user.token},
+		});
+
+		await vi.waitFor(() => expect(wrongBaseProbes + rightBaseProbes).toBe(1));
+		expect(wrongBaseProbes).toBe(0);
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(user.loggedin).toBe(false);
+	});
 });
 
 describe("refusal unification (C14)", () => {
