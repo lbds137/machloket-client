@@ -39,7 +39,8 @@ import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
-import {refusalText, serverReason, showRefusal} from "./utils/showRefusal.js";
+import {serverReason} from "./utils/refusalText.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");

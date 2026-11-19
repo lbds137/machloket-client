@@ -48,7 +48,8 @@ import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
 import {tooLongReason} from "./utils/messageLimit.js";
 import {draftIsFree} from "./composerRestore.js";
 import {apiFetch, configureApiXhr, handleUnauthorized} from "./utils/apiFetch.js";
-import {refusalText, serverReason, showRefusal} from "./utils/showRefusal.js";
+import {serverReason} from "./utils/refusalText.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
