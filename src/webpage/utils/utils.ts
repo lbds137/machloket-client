@@ -424,7 +424,10 @@ function isValidAccount(user: unknown): boolean {
 export function invalidateAccount(token: string): boolean {
 	let matched = 0;
 	const handled = new Set<string>();
-	const toSave = new Map<string, Specialuser>();
+	// Several live instances can share one uid (getBulkUsers constructs a fresh
+	// Specialuser per call), so the flip and any rollback must reach every matching
+	// instance while the save goes through the last-constructed one.
+	const toSave = new Map<string, Specialuser[]>();
 	for (const ref of liveSpecialUsers) {
 		const u = ref.deref();
 		if (!u) {
@@ -435,16 +438,23 @@ export function invalidateAccount(token: string): boolean {
 			matched++;
 			handled.add(u.uid);
 			if (u.json.loggedin !== false) {
-				toSave.set(u.uid, u);
+				const group = toSave.get(u.uid);
+				if (group) group.push(u);
+				else toSave.set(u.uid, [u]);
 			}
 		}
 	}
-	for (const u of toSave.values()) {
-		u.json.loggedin = false;
+	for (const instances of toSave.values()) {
+		const prevs = instances.map((u) => u.json.loggedin);
+		for (const u of instances) {
+			u.json.loggedin = false; // raw write: the setter would save mid-loop
+		}
 		try {
-			u.tryUpdateLocal();
+			instances[instances.length - 1].tryUpdateLocal();
 		} catch (e) {
-			u.json.loggedin = true;
+			instances.forEach((u, i) => {
+				u.json.loggedin = prevs[i]; // raw write (see above)
+			});
 			throw e;
 		}
 	}

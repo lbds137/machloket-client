@@ -659,6 +659,7 @@ describe("apiFetch wrapper", () => {
 			});
 		const savedAccount = addAccount("multi-saved@example.test");
 		const rolledBack = addAccount("multi-rollback@example.test");
+		const untouched = addAccount("multi-untouched@example.test");
 		const realTryUpdate = Specialuser.prototype.tryUpdateLocal;
 		let saves = 0;
 		const spy = vi.spyOn(Specialuser.prototype, "tryUpdateLocal").mockImplementation(function (
@@ -693,9 +694,52 @@ describe("apiFetch wrapper", () => {
 			expect(JSON.parse(localStorage.getItem("userinfos")!).users[rolledBack.uid].loggedin).toBe(
 				true,
 			);
+			// The third account: never reached — neither flipped nor saved.
+			expect(untouched.loggedin).toBe(true);
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[untouched.uid].loggedin).toBe(
+				true,
+			);
+			expect(spy).toHaveBeenCalledTimes(2);
 		} finally {
 			spy.mockRestore();
 		}
+	});
+
+	it("two live instances of one account all read logged out after invalidation", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const addTwin = () =>
+			new Specialuser({
+				serverurls: {
+					api: API,
+					cdn: "http://apifetch.test",
+					gateway: "ws://apifetch.test",
+					wellknown: "http://apifetch.test",
+				},
+				email: "twin@example.test",
+				token: "fake-twin-token",
+				loggedin: true,
+			});
+		const boot = addTwin();
+		const refreshed = addTwin();
+		captureRequests(API + "/users/@me/delete", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+
+		await fetchRetryOnce(API + "/users/@me/delete", {
+			method: "POST",
+			headers: {Authorization: boot.token},
+			body: JSON.stringify({password: "nope"}),
+		});
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		// Every live instance of the uid flipped — getBulkUsers constructs a fresh
+		// Specialuser per call, so the boot instance and the refreshed one coexist.
+		expect(boot.loggedin).toBe(false);
+		expect(refreshed.loggedin).toBe(false);
+		expect(JSON.parse(localStorage.getItem("userinfos")!).users[boot.uid].loggedin).toBe(false);
 	});
 
 	it("the probe uses the FIRST /vN base, not a later /vN segment in the path", async () => {
@@ -811,6 +855,26 @@ describe("refusal unification (C14)", () => {
 		);
 	});
 
+	it("opendm's ok-but-unusable leg still renders the server's message", async () => {
+		captureRequests(API + "/users/@me/channels", () =>
+			Response.json({message: "channel cap reached"}, {status: 200}),
+		);
+		const user = Object.assign(Object.create(User.prototype), {
+			id: "u2",
+			owner: {
+				info: {api: API},
+				headers: {Authorization: "fake-token"},
+				guildids: new Map([["@me", {channels: []}]]),
+			},
+		}) as InstanceType<typeof User>;
+
+		await user.opendm();
+
+		// A 200 with no usable id still reads as a refusal — and the body survives the
+		// ok-leg parse (the clone) so the server's message renders, not "HTTP 200".
+		expect(document.body.textContent).toContain(I18n.requestFailed("channel cap reached"));
+	});
+
 	it("Direct.makeGroup surfaces the server reason string", async () => {
 		captureRequests(API + "/users/@me/channels", () =>
 			Response.json({code: 50013, message: "Group DM creation refused"}, {status: 403}),
@@ -829,6 +893,26 @@ describe("refusal unification (C14)", () => {
 		await direct.makeGroup();
 
 		expect(document.body.textContent).toContain(I18n.requestFailed("Group DM creation refused"));
+	});
+
+	it("makeGroup's ok-but-unusable leg still renders the server's message", async () => {
+		captureRequests(API + "/users/@me/channels", () =>
+			Response.json({message: "invite cap reached"}, {status: 200}),
+		);
+		vi.spyOn(User, "makeSelector").mockResolvedValue(
+			new Set([{id: "u2"} as InstanceType<typeof User>]),
+		);
+		const direct = Object.assign(Object.create(Direct.prototype), {
+			headers: {Authorization: "fake-token"},
+			owner: {
+				info: {api: API},
+				inrelation: new Set(),
+			},
+		}) as InstanceType<typeof Direct>;
+
+		await direct.makeGroup();
+
+		expect(document.body.textContent).toContain(I18n.requestFailed("invite cap reached"));
 	});
 
 	it("makeMenu surfaces the server reason string", async () => {
