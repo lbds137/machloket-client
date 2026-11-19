@@ -123,6 +123,9 @@ export async function apiFetch(
 	} else {
 		// AbortSignal.any is missing before Safari 17.4 / Firefox 124 / Chrome 116: forward both
 		// the caller's signal (carrying its reason) and the timeout signal onto a local controller.
+		// The forwarded listeners come off when fetch settles, so past the headers only the
+		// AbortSignal.any path still forwards aborts into a slow body read — no caller passes
+		// `signal` today; revisit when one lands (tracker: the signal-passing-caller rider).
 		const controller = new AbortController();
 		const onCallerAbort = () => controller.abort(initSignal.reason);
 		const onTimeoutAbort = () => controller.abort();
