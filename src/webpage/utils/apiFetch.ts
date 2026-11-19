@@ -35,22 +35,25 @@ function requestAuthToken(input: RequestInfo | URL, init?: RequestInit): string 
 
 let unauthorizedNavPending = false;
 
-/** Test-only reset: the nav latch holds for the page's lifetime in production (the /login
- * navigation reloads the module); tests reset it between cases. Only test code calls this. */
+/** Test-only reset: the latch is shared across all tokens (one in-flight probe for the whole
+ * page, released when the token proves alive or invalidation fails, and held once a confirmed
+ * dead token schedules the /login navigation); tests reset it between cases. */
 export function resetUnauthorizedNavForTests(): void {
 	unauthorizedNavPending = false;
 }
 
 /** Whether the token behind a 401'd request is really dead: the instance's auth middleware
  * rejects any request carrying a bad token before routing, so a GET to /users/@me under the
- * same /api/vN base answers 401 for a dead token and anything else for a live one. Endpoints
+ * same /vN base answers 401 for a dead token and anything else for a live one. Endpoints
  * can answer their own bare 401s for reasons that are not a dead session — a wrong password
  * on the delete/disable forms, a rejected TOTP verify — and those must never log a valid
- * account out. Raw fetch (no apiFetch recursion), briefly timed. */
+ * account out. When the URL has no recognizable /vN base, the probe cannot verify the token
+ * and fails closed (leaves the session alone). Raw fetch (no apiFetch recursion), briefly timed. */
 async function tokenIsDead(requestUrl: string, token: string): Promise<boolean> {
 	const parsed = new URL(requestUrl, window.location.href);
-	const base = /\/api\/v\d+(?=\/)/.exec(parsed.pathname)?.[0];
-	if (!base) return true; // Not a recognizable API path: fall back to acting on the 401.
+	const base = /^(.*\/v\d+)(?=\/)/.exec(parsed.pathname)?.[0];
+	// No recognizable API base: the probe cannot verify the token, so leave the session alone.
+	if (!base) return false;
 	try {
 		const probe = await fetch(parsed.origin + base + "/users/@me", {
 			headers: {Authorization: token},
@@ -76,14 +79,19 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 	unauthorizedNavPending = true;
 	const url = input instanceof Request ? input.url : String(input);
 	void tokenIsDead(url, token).then((dead) => {
-		if (!dead || !invalidateAccount(token)) {
+		try {
+			if (!dead || !invalidateAccount(token)) {
+				unauthorizedNavPending = false;
+				return;
+			}
+			queueMicrotask(() => {
+				carryAccountsAcrossNavigation();
+				pageNav.go("/login");
+			});
+		} catch (error) {
 			unauthorizedNavPending = false;
-			return;
+			console.warn("machloket: 401 handling failed:", error);
 		}
-		queueMicrotask(() => {
-			carryAccountsAcrossNavigation();
-			pageNav.go("/login");
-		});
 	});
 	return true;
 }
@@ -121,12 +129,15 @@ export async function apiFetch(
 					: (signal.reason ?? new DOMException("aborted", "AbortError")),
 			);
 		};
-		if (signal.aborted) {
+		if (signal.aborted || timeoutSignal.aborted) {
 			fail();
 			return;
 		}
 		onAbort = fail;
 		signal.addEventListener("abort", onAbort, {once: true});
+		if (signal !== timeoutSignal) {
+			timeoutSignal.addEventListener("abort", onAbort, {once: true});
+		}
 	});
 
 	let res: Response;
@@ -141,7 +152,12 @@ export async function apiFetch(
 		}
 		throw error;
 	} finally {
-		if (onAbort) signal.removeEventListener("abort", onAbort);
+		if (onAbort) {
+			signal.removeEventListener("abort", onAbort);
+			if (signal !== timeoutSignal) {
+				timeoutSignal.removeEventListener("abort", onAbort);
+			}
+		}
 	}
 
 	if (res.status === 401) {

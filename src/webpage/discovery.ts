@@ -6,7 +6,7 @@ import {ReportMenu} from "./reporting/report.js";
 import {Dialog} from "./settings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
-import {serverReason} from "./utils/showRefusal.js";
+import {serverReason} from "./utils/refusalText.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {createImg} from "./utils/utils.js";
 

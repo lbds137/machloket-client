@@ -14,7 +14,7 @@ const {Dialog} = await import("./settings");
 const {I18n} = await import("./i18n");
 const {pageNav, acceptInvite} = await import("./invite");
 const {fetchRetryOnce} = await import("./utils/rateLimit");
-const {configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTests} =
+const {apiFetch, configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTests} =
 	await import("./utils/apiFetch");
 const {showNewInvite} = await import("./utils/inviteLink");
 const {adduser, Specialuser} = await import("./utils/utils");
@@ -58,10 +58,12 @@ afterEach(() => {
 	document
 		.querySelectorAll("dialog, .PopUp, .background, .commandError")
 		.forEach((e) => e.remove());
+	if (realAbortSignalAny) Object.defineProperty(AbortSignal, "any", realAbortSignalAny);
 });
 
 /** The real XHR, captured before any test stubs it, so stubbing tests can hand it back. */
 const realXHR = globalThis.XMLHttpRequest;
+const realAbortSignalAny = Object.getOwnPropertyDescriptor(AbortSignal, "any");
 
 describe("apiFetch wrapper", () => {
 	it("401 marks the account invalid and routes once despite several parallel 401s", async () => {
@@ -410,10 +412,148 @@ describe("apiFetch wrapper", () => {
 		configureApiXhr(untimed, () => {}, 0);
 		expect(untimed.timeout).toBe(0);
 	});
+
+	it("a 401 on a post-auth URL without a /vN segment fails closed without probing or logging out", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: "http://apifetch.test",
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "novn@example.test",
+			token: "fake-novn-token",
+			loggedin: true,
+		});
+		let probes = 0;
+		captureRequests("http://apifetch.test/users/@me", () => {
+			probes++;
+			return Response.json({id: "u-alive"});
+		});
+		captureRequests("http://apifetch.test/users/@me/delete", () =>
+			Response.json({message: "Wrong password"}, {status: 401}),
+		);
+
+		await fetchRetryOnce("http://apifetch.test/users/@me/delete", {
+			method: "POST",
+			headers: {Authorization: user.token},
+			body: JSON.stringify({password: "nope"}),
+		});
+
+		expect(probes).toBe(0);
+		expect(user.loggedin).toBe(true);
+		expect(nav).not.toHaveBeenCalled();
+	});
+
+	it("a rejecting probe releases the latch so a later 401 with a dead token still navigates", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "probe-reject@example.test",
+			token: "fake-probe-reject-token",
+			loggedin: true,
+		});
+		let probes = 0;
+		captureRequests(API + "/users/@me/settings", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () => {
+			if (probes++ === 0) throw new TypeError("Failed to fetch");
+			return Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+		});
+
+		await fetchRetryOnce(API + "/users/@me/settings", {
+			headers: {Authorization: user.token},
+		});
+		await vi.waitFor(() => expect(probes).toBe(1));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(nav).not.toHaveBeenCalled();
+		expect(user.loggedin).toBe(true);
+
+		await fetchRetryOnce(API + "/users/@me/settings", {
+			headers: {Authorization: user.token},
+		});
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(user.loggedin).toBe(false);
+	});
+
+	it("alive-then-dies: a 200 probe releases the latch so a later 401 with a dead probe invalidates and navigates once", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "alive-then-dies@example.test",
+			token: "fake-alive-then-dies-token",
+			loggedin: true,
+		});
+		let tokenDead = false;
+		let probes = 0;
+		captureRequests(API + "/users/@me/delete", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			return tokenDead
+				? Response.json({message: "401: Unauthorized", code: 0}, {status: 401})
+				: Response.json({id: "u-alive"});
+		});
+
+		await fetchRetryOnce(API + "/users/@me/delete", {
+			method: "POST",
+			headers: {Authorization: user.token},
+			body: JSON.stringify({password: "nope"}),
+		});
+		await vi.waitFor(() => expect(probes).toBe(1));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(nav).not.toHaveBeenCalled();
+		expect(user.loggedin).toBe(true);
+
+		tokenDead = true;
+		await fetchRetryOnce(API + "/users/@me/delete", {
+			method: "POST",
+			headers: {Authorization: user.token},
+			body: JSON.stringify({password: "nope"}),
+		});
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(user.loggedin).toBe(false);
+	});
+
+	it("AbortSignal.any fallback still rejects with the offline DOMException when a caller signal is present and fetch hangs", async () => {
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		try {
+			vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
+			const controller = new AbortController();
+
+			const err = await apiFetch(API + "/users/@me", {
+				signal: controller.signal,
+				timeoutMs: 25,
+			}).catch((e: unknown) => e);
+			expect(err).toBeInstanceOf(DOMException);
+			expect(err).toMatchObject({name: "TimeoutError", message: "offline"});
+		} finally {
+			if (realAbortSignalAny) Object.defineProperty(AbortSignal, "any", realAbortSignalAny);
+		}
+	}, 2_000);
 });
 
 describe("refusal unification (C14)", () => {
-	it("user.ts:375 (changeRelationship) surfaces the server reason string", async () => {
+	it("changeRelationship surfaces the server reason string", async () => {
 		captureRequests(API + "/users/@me/relationships/u2", () =>
 			Response.json({code: 50013, message: "Relationship change refused"}, {status: 403}),
 		);
@@ -432,7 +572,7 @@ describe("refusal unification (C14)", () => {
 		expect(document.body.textContent).toContain(I18n.requestFailed("Relationship change refused"));
 	});
 
-	it("channel.ts:5003 (updateRolePermissions) surfaces the server reason string", async () => {
+	it("updateRolePermissions surfaces the server reason string", async () => {
 		captureRequests(API + "/channels/c1/permissions/r1", () =>
 			Response.json({code: 50013, message: "Channel overwrite refused"}, {status: 403}),
 		);
@@ -448,7 +588,7 @@ describe("refusal unification (C14)", () => {
 		expect(document.body.textContent).toContain(I18n.requestFailed("Channel overwrite refused"));
 	});
 
-	it("discovery.ts:150 (makeMenu) surfaces the server reason string", async () => {
+	it("makeMenu surfaces the server reason string", async () => {
 		for (const id of [
 			"channelTopic",
 			"loadingdiv",
@@ -497,7 +637,7 @@ describe("refusal unification (C14)", () => {
 			.toContain(I18n.requestFailed("Discovery disabled on instance"));
 	});
 
-	it("inviteLink.ts:30 (showNewInvite) surfaces the server reason string", async () => {
+	it("showNewInvite surfaces the server reason string", async () => {
 		let calls = 0;
 		captureRequests(API + "/channels/c1/invites", () =>
 			calls++ === 0
@@ -532,7 +672,7 @@ describe("refusal unification (C14)", () => {
 		expect(inviteSpan.textContent).toContain("Invites disabled for channel");
 	});
 
-	it("report.ts:226 (ReportMenu.send) surfaces the server reason string", async () => {
+	it("ReportMenu.send surfaces the server reason string", async () => {
 		const postback = API + "/reporting/guild";
 		captureRequests(postback, () =>
 			Response.json({code: 40001, message: "Report submission refused"}, {status: 403}),
@@ -609,7 +749,7 @@ describe("refusal unification (C14)", () => {
 		);
 	});
 
-	it("commands.ts:645 (Command.submit) and channel.ts:76 (sendErrorText) surface the server reason string", async () => {
+	it("Command.submit / sendErrorText surface the server reason string", async () => {
 		let calls = 0;
 		captureRequests(API + "/interactions", () =>
 			calls++ === 0

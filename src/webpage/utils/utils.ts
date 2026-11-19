@@ -443,8 +443,8 @@ export function invalidateAccount(token: string): boolean {
 		for (const [uid, raw] of Object.entries(info.users)) {
 			if (!raw || typeof raw !== "object") continue;
 			if ((raw as {token?: unknown}).token !== token) continue;
-			matched++;
 			if (handled.has(uid)) continue;
+			matched++;
 			if ((raw as {loggedin?: unknown}).loggedin === false) continue;
 			try {
 				const suser = raw instanceof Specialuser ? raw : new Specialuser(raw);
