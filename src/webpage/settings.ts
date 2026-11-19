@@ -3093,12 +3093,22 @@ class Form implements OptionsElement<object> {
 					// A second tap waits for the answer; the captcha and 2FA prompts after it don't
 					// hold the guard, so closing one leaves the form sendable.
 					this.inFlight.add(fetchURL);
+					// A payload carrying a file/image data URL (avatar, banner, icon) is an upload:
+					// untimed like the attachment PUTs — the 30 s budget would refuse a large
+					// image on a slow uplink as "offline".
+					const carriesUpload = Object.values(build).some(
+						(v) => typeof v === "string" && v.startsWith("data:"),
+					);
 					try {
-						const res = await fetchRetryOnce(fetchURL, {
-							method: this.method,
-							body: JSON.stringify(build),
-							headers: {...this.headers, ...mfaAuthHeader},
-						});
+						const res = await fetchRetryOnce(
+							fetchURL,
+							{
+								method: this.method,
+								body: JSON.stringify(build),
+								headers: {...this.headers, ...mfaAuthHeader},
+							},
+							carriesUpload ? {timeoutMs: 0} : undefined,
+						);
 						status = res.status;
 						const text = await res.text();
 						// An empty success (204) is still a success.

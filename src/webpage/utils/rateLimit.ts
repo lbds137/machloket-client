@@ -1,7 +1,5 @@
 import {apiFetch, type ApiRequestInit} from "./apiFetch.js";
 
-export {API_TIMEOUT_MS, apiFetch, authNav, pageNav} from "./apiFetch.js";
-
 /** A 429's wait in ms, or null for any other status. Spacebar's body carries retry_after in
  * SECONDS (a number, or a numeric string); a missing or unreadable body waits 5 s. Capped for sanity. */
 export function retryAfterMs(status: number, bodyText: string | null, cap = 30_000): number | null {

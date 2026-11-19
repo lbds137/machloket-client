@@ -47,7 +47,7 @@ import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
 import {tooLongReason} from "./utils/messageLimit.js";
 import {draftIsFree} from "./composerRestore.js";
-import {API_TIMEOUT_MS, apiFetch, configureApiXhr, handleUnauthorized} from "./utils/apiFetch.js";
+import {apiFetch, configureApiXhr, handleUnauthorized} from "./utils/apiFetch.js";
 import {refusalText, serverReason, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
 
@@ -4365,6 +4365,9 @@ class Channel extends SnowFlake {
 						method: "PUT",
 					},
 					// Uploads are untimed: a 30 s cap would kill large files on slow uplinks.
+					// redirect: "error" (from apiFetch) applies to this external URL too: the
+					// Spacebar CDN serves uploads directly. An instance fronting its CDN with a
+					// redirect would refuse every attachment — revisit if a real instance needs it.
 					{timeoutMs: 0},
 				);
 				if (!res.ok) throw new Error("attachment upload failed: " + res.status);
@@ -4651,7 +4654,8 @@ class Channel extends SnowFlake {
 
 		const resend = () => {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
-			res.timeout = API_TIMEOUT_MS;
+			// The timeout the send was configured with stands: the attachment path is untimed
+			// (configureApiXhr), and re-capping it here would hang the bubble with no handler.
 			res.setRequestHeader("Authorization", this.headers.Authorization);
 			if (ctype) {
 				res.setRequestHeader("Content-type", ctype);
@@ -4752,7 +4756,6 @@ class Channel extends SnowFlake {
 			configureApiXhr(res, fail);
 			prom = new Promise<void>(promiseHandler);
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
-			res.timeout = API_TIMEOUT_MS;
 			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
 			res.setRequestHeader("Authorization", this.headers.Authorization);
 			funcs = await this.makeFakeMessage(

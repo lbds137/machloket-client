@@ -246,6 +246,30 @@ describe("apiFetch wrapper", () => {
 		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
 	});
 
+	it("a form whose payload carries an upload (a data: URL) submits untimed; other forms keep the budget", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json({}));
+		const submitForm = (values: Record<string, unknown>) => {
+			// A values-function stands in for the FileInput: both land the same data: string in
+			// the built payload (the reader.result branch in settings.ts).
+			const form = new Dialog("").options.addForm("", () => {}, {
+				fetchURL: API + "/users/@me/settings",
+				api: API,
+				method: "PATCH",
+				headers: {Authorization: "fake-token"},
+			});
+			for (const [key, value] of Object.entries(values)) form.setValue(key, value);
+			return form.submit();
+		};
+
+		await submitForm({avatar: () => "data:image/png;base64,AAAA"});
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+		expect(fetchSpy.mock.calls[0][1]?.signal).toBeUndefined();
+
+		await submitForm({bio: () => "plain text"});
+		expect(fetchSpy.mock.calls[1][1]?.signal).toBeInstanceOf(AbortSignal);
+		document.querySelectorAll("dialog, .PopUp, .background").forEach((e) => e.remove());
+	});
+
 	it("the pre-auth exemption covers instance discovery, instance policies, and 2FA subpaths", () => {
 		expect(isPreAuthEndpoint(API + "/.well-known/spacebar/client")).toBe(true);
 		expect(isPreAuthEndpoint(API + "/policies/instance/domains")).toBe(true);

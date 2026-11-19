@@ -2,9 +2,6 @@ import {pageNav} from "./netUtils.js";
 import {carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
 import {invalidateAccount} from "./utils.js";
 
-export {pageNav};
-export const authNav = pageNav;
-
 /** Default budget (30 s) for authorized API calls. `timeoutMs: 0` opts out (large uploads). */
 export const API_TIMEOUT_MS = 30_000;
 
@@ -118,16 +115,17 @@ export async function apiFetch(
 	return res;
 }
 
-/** Wires the 30 s timeout and failure handler onto an authorized XHR send. `timeoutMs: 0`
- * opts out (the attachment upload path). */
+/** Wires the failure handler and (unless `timeoutMs: 0` opts out — the attachment upload
+ * path) the 30 s timeout onto an authorized XHR send. `ontimeout` is wired either way: if a
+ * stale path ever sets a timeout on an untimed request, the send must fail, not hang. */
 export function configureApiXhr(
 	xhr: XMLHttpRequest,
 	onFail: () => void,
 	timeoutMs = API_TIMEOUT_MS,
 ): void {
 	xhr.onerror = onFail;
+	xhr.ontimeout = onFail;
 	if (timeoutMs > 0) {
 		xhr.timeout = timeoutMs;
-		xhr.ontimeout = onFail;
 	}
 }
