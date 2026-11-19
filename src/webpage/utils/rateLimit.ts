@@ -1,3 +1,7 @@
+import {apiFetch, type ApiRequestInit} from "./apiFetch.js";
+
+export {API_TIMEOUT_MS, apiFetch, authNav, pageNav} from "./apiFetch.js";
+
 /** A 429's wait in ms, or null for any other status. Spacebar's body carries retry_after in
  * SECONDS (a number, or a numeric string); a missing or unreadable body waits 5 s. Capped for sanity. */
 export function retryAfterMs(status: number, bodyText: string | null, cap = 30_000): number | null {
@@ -26,15 +30,16 @@ export function retryAfterMsFromBody(body: unknown, cap = 30_000): number {
  * the 429 arrives and again when the window ends, a false returns the 429 as it is. */
 export async function fetchRetryOnce(
 	input: string,
-	init?: RequestInit,
-	options?: {shouldRetry?: () => boolean},
+	init?: ApiRequestInit,
+	options?: {shouldRetry?: () => boolean; timeoutMs?: number},
 ): Promise<Response> {
-	const res = await fetch(input, init);
+	const fetchOpts = options?.timeoutMs !== undefined ? {timeoutMs: options.timeoutMs} : undefined;
+	const res = await apiFetch(input, init, fetchOpts);
 	if (res.status !== 429) return res;
 	const stale = () => options?.shouldRetry?.() === false;
 	if (stale()) return res;
 	const wait = retryAfterMs(429, await res.text().catch(() => null))!;
 	await new Promise((r) => setTimeout(r, wait));
 	if (stale()) return res;
-	return fetch(input, init);
+	return apiFetch(input, init, fetchOpts);
 }

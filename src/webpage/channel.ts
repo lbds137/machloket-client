@@ -47,7 +47,8 @@ import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
 import {tooLongReason} from "./utils/messageLimit.js";
 import {draftIsFree} from "./composerRestore.js";
-import {formErrors, refusalText, showRefusal} from "./utils/showRefusal.js";
+import {API_TIMEOUT_MS, apiFetch, configureApiXhr, handleUnauthorized} from "./utils/apiFetch.js";
+import {refusalText, serverReason, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
@@ -74,13 +75,7 @@ export async function createMachloketNonce(): Promise<string> {
  * server's message, or a generic line when the body has none.
  */
 function sendErrorText(body: {code?: number; message?: unknown; errors?: unknown} | null): string {
-	if (body?.code === 50035) {
-		const found = formErrors(body.errors);
-		if (found.length) return found.join(" ");
-	}
-	return typeof body?.message === "string" && body.message
-		? body.message
-		: I18n.channel.sendFailed();
+	return serverReason(body) || I18n.channel.sendFailed();
 }
 
 /** Releases everyone waiting on a history page that won't come. */
@@ -4363,10 +4358,15 @@ class Channel extends SnowFlake {
 		// still in flight loses the upload (the server pairs by id at submit time, once).
 		await Promise.all(
 			urls.attachments.map(async ({upload_url}, index) => {
-				const res = await fetchRetryOnce(upload_url, {
-					body: files[index],
-					method: "PUT",
-				});
+				const res = await fetchRetryOnce(
+					upload_url,
+					{
+						body: files[index],
+						method: "PUT",
+					},
+					// Uploads are untimed: a 30 s cap would kill large files on slow uplinks.
+					{timeoutMs: 0},
+				);
 				if (!res.ok) throw new Error("attachment upload failed: " + res.status);
 				return res;
 			}),
@@ -4651,6 +4651,7 @@ class Channel extends SnowFlake {
 
 		const resend = () => {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
+			res.timeout = API_TIMEOUT_MS;
 			res.setRequestHeader("Authorization", this.headers.Authorization);
 			if (ctype) {
 				res.setRequestHeader("Content-type", ctype);
@@ -4665,6 +4666,11 @@ class Channel extends SnowFlake {
 		const promiseHandler = (resolve: () => void) => {
 			res.responseType = "json";
 			res.onload = () => {
+				if (res.status === 401) {
+					handleUnauthorized(this.info.api + "/channels/" + this.id + "/messages", {
+						headers: this.headers,
+					});
+				}
 				if (res.status === 429 && !rateLimitRetried) {
 					const limit = res.response as {code?: number; retry_after?: unknown} | null;
 					// Slowmode (20016) has its own countdown and no retry; any other 429 waits out
@@ -4743,9 +4749,10 @@ class Channel extends SnowFlake {
 			res = new XMLHttpRequest();
 			res.responseType = "json";
 			res.upload.onprogress = progress;
-			res.onerror = fail;
+			configureApiXhr(res, fail);
 			prom = new Promise<void>(promiseHandler);
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
+			res.timeout = API_TIMEOUT_MS;
 			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
 			res.setRequestHeader("Authorization", this.headers.Authorization);
 			funcs = await this.makeFakeMessage(
@@ -4792,7 +4799,8 @@ class Channel extends SnowFlake {
 			res = new XMLHttpRequest();
 			res.responseType = "json";
 			res.upload.onprogress = progress;
-			res.onerror = fail;
+			// Attachment uploads are untimed (a 30 s cap would kill large files on slow uplinks).
+			configureApiXhr(res, fail, 0);
 			prom = new Promise<void>(promiseHandler);
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages", true);
 
@@ -4996,7 +5004,7 @@ class Channel extends SnowFlake {
 	async updateRolePermissions(id: string, perms: Permissions): Promise<boolean> {
 		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
 		const {allow, deny} = perms;
-		const res = await fetch(this.info.api + "/channels/" + this.id + "/permissions/" + id, {
+		const res = await apiFetch(this.info.api + "/channels/" + this.id + "/permissions/" + id, {
 			method: "PUT",
 			headers: this.headers,
 			body: JSON.stringify({
@@ -5008,7 +5016,7 @@ class Channel extends SnowFlake {
 		}).catch(() => undefined);
 		// Refused, e.g. bits one doesn't hold (403 50013): the overwrite stays as it was.
 		if (!res?.ok) {
-			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			await showRefusal(res);
 			return false;
 		}
 		const permission = this.permission_overwrites.get(id);

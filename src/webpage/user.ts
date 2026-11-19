@@ -36,6 +36,7 @@ import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {BOT_HIDE_TAG, getBotConfigs, setBotConfigs} from "./utils/storage/botConfigs.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {apiFetch} from "./utils/apiFetch.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 
 type customBadgeDefinition = {
@@ -370,12 +371,12 @@ class User extends SnowFlake {
 		const url = `${this.info.api}/users/@me/relationships/${this.id}`;
 		const res = await (
 			type !== 0
-				? fetch(url, {method: "PUT", headers: this.owner.headers, body: JSON.stringify({type})})
-				: fetch(url, {method: "DELETE", headers: this.owner.headers})
+				? apiFetch(url, {method: "PUT", headers: this.owner.headers, body: JSON.stringify({type})})
+				: apiFetch(url, {method: "DELETE", headers: this.owner.headers})
 		).catch(() => undefined);
 		if (!res?.ok) {
 			refused.abort();
-			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			await showRefusal(res);
 			return;
 		}
 		await relChange;

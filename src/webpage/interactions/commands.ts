@@ -7,7 +7,7 @@ import {SnowFlake} from "../snowflake.js";
 import {wireGuildId} from "./compontents.js";
 import {removeAni} from "../utils/utils.js";
 import {fetchRetryOnce} from "../utils/rateLimit.js";
-import {rejectedProperty} from "../utils/refusalText.js";
+import {rejectedProperty, serverReason} from "../utils/refusalText.js";
 
 /** One pickable row of the command list: the command itself, or one branch of a subcommand
  * command — Discord lists every runnable path ("/name sub", "/name group sub"), never a
@@ -648,10 +648,11 @@ export class Command extends SnowFlake {
 						message?: string;
 						_ajvErrors?: unknown;
 					};
-					if (body.message) message = `${res.status}: ${body.message}`;
 					// The enforcement validator names the offending field; showing it turns
 					// a bare "Invalid Form Body" into something actionable.
 					const extra = rejectedProperty(body._ajvErrors);
+					const reason = (extra ? body.message : undefined) ?? serverReason(body);
+					if (reason) message = `${res.status}: ${reason}`;
 					if (extra) message += ` (${extra})`;
 				} catch {
 					// A non-JSON body (a bare proxy error page) keeps the bare status.
@@ -745,8 +746,9 @@ export class Command extends SnowFlake {
 			if (!res.ok) {
 				let message = `${res.status}`;
 				try {
-					const body = (await res.json()) as {message?: string};
-					if (body.message) message = `${res.status}: ${body.message}`;
+					const body = await res.json();
+					const reason = serverReason(body);
+					if (reason) message = `${res.status}: ${reason}`;
 				} catch {
 					// A non-JSON body keeps the bare status.
 				}

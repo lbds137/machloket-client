@@ -38,7 +38,8 @@ it("a refused friend request says so and stops waiting for a change that won't c
 
 	expect(await settled(userOf(owner).changeRelationship(1))).toBe("settled");
 	expect(owner.relChangeUpdateMap.has("u2")).toBe(false);
-	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 404"));
+	// C14: the refusal now surfaces the server's reason string, not the bare status.
+	expect(document.body.textContent).toContain(I18n.requestFailed("Unknown User"));
 });
 
 it("an unreachable instance does the same for an unblock", async () => {

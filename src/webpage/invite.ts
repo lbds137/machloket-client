@@ -5,17 +5,12 @@ import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
 import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
+import {pageNav} from "./utils/netUtils.js";
 import {saveAccounts} from "./utils/storage/settingOverlay.js";
 // Re-exported: the accept lives in utils (no page side effects), and this page's tests import it here.
-export {acceptInvite};
+export {acceptInvite, pageNav};
 /** How long an accept waits for the invite's details before it lands on the home page. */
 export const GUILD_WAIT_MS = 3000;
-/** The page's navigation, behind an object so a test can observe where an accept lands. */
-export const pageNav = {
-	go(href: string) {
-		window.location.href = href;
-	},
-};
 /** The invite's guild once its details load: undefined if they fail or take longer than `ms`. */
 function guildWithin(loaded: Promise<any>, ms: number): Promise<any> {
 	let timer: ReturnType<typeof setTimeout> | undefined;

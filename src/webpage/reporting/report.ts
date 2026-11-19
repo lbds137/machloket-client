@@ -6,8 +6,9 @@ import {Member} from "../member.js";
 import {Message} from "../message.js";
 import {User} from "../user.js";
 import {removeAni} from "../utils/utils.js";
+import {apiFetch} from "../utils/apiFetch.js";
 import {externalUrl} from "../utils/netUtils.js";
-import {showRefusal} from "../utils/showRefusal.js";
+import {refusalText, showRefusal} from "../utils/showRefusal.js";
 import {
 	buttonTypes,
 	report,
@@ -97,7 +98,7 @@ export class ReportMenu {
 		background.focus();
 	}
 	static async makeReport(type: reportTypes, localuser: Localuser, infoMap: InfoMap = {}) {
-		const res = await fetch(localuser.info.api + "/reporting/menu/" + type, {
+		const res = await apiFetch(localuser.info.api + "/reporting/menu/" + type, {
 			headers: localuser.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
@@ -208,7 +209,7 @@ export class ReportMenu {
 				this.errorNode();
 				return;
 		}
-		const res = await fetch(this.postbackUrl, {
+		const res = await apiFetch(this.postbackUrl, {
 			method: "POST",
 			headers: this.localuser.headers,
 			body: JSON.stringify(realBody),
@@ -221,8 +222,7 @@ export class ReportMenu {
 			}
 		} else {
 			// A refusal's body may not be JSON (a proxy's error page); a lost request has none.
-			const json = await res?.json().catch(() => null);
-			this.errorNode(typeof json?.message === "string" ? json.message : undefined);
+			this.errorNode(await refusalText(res));
 		}
 	}
 	errorNode(message?: string) {
