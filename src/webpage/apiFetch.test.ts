@@ -587,6 +587,30 @@ describe("apiFetch wrapper", () => {
 		await expect(fallbackPending).rejects.toBe(fallbackReason);
 	});
 
+	it("a caller signal aborted before the call rejects immediately on the fallback path", async () => {
+		vi.spyOn(globalThis, "fetch").mockImplementation(
+			(_url, init) =>
+				new Promise<Response>((_, reject) => {
+					if (init?.signal?.aborted) {
+						reject(init.signal.reason);
+						return;
+					}
+					init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+						once: true,
+					});
+				}),
+		);
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		const reason = new Error("aborted before the call");
+		const controller = new AbortController();
+		controller.abort(reason);
+		await expect(apiFetch(API + "/users/@me", {signal: controller.signal})).rejects.toBe(reason);
+	});
+
 	it("an invalidation throw releases the latch with a warn and a later 401 still routes", async () => {
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
