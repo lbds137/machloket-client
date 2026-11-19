@@ -803,6 +803,156 @@ describe("apiFetch wrapper", () => {
 		expect(nav).toHaveBeenCalledWith("/login");
 		expect(user.loggedin).toBe(false);
 	});
+
+	it("makeGuild 401 with a dead-token probe invalidates the stored account and routes to /login", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "makeguild-dead@example.test",
+			token: "fake-makeguild-dead-token",
+			loggedin: true,
+		});
+		let probes = 0;
+		captureRequests(API + "/guilds", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			return Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+		});
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API},
+			headers: {Authorization: user.token},
+		}) as InstanceType<typeof Localuser>;
+
+		expect(await localuser.makeGuild({name: "Server", icon: null})).toBe(false);
+
+		await vi.waitFor(() => {
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(user.loggedin).toBe(false);
+		expect(probes).toBe(1);
+	});
+
+	it("makeGuild 401 with a 200 probe keeps the account logged in and shows the refusal dialog", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "makeguild-alive@example.test",
+			token: "fake-makeguild-alive-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/guilds", () =>
+			Response.json({message: "Server creation refused", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () => Response.json({id: "u-alive"}));
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API},
+			headers: {Authorization: user.token},
+		}) as InstanceType<typeof Localuser>;
+
+		expect(await localuser.makeGuild({name: "Server", icon: null})).toBe(false);
+		await new Promise((r) => setTimeout(r, 0));
+
+		expect(nav).not.toHaveBeenCalled();
+		expect(user.loggedin).toBe(true);
+		expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(true);
+		expect(document.body.textContent).toContain(I18n.requestFailed("Server creation refused"));
+	});
+
+	it("makeGuild POST /guilds sends the name and icon payload untimed", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const sent = captureRequests(API + "/guilds", () =>
+			Response.json({id: "g1", name: "My Guild"}),
+		);
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API},
+			headers: {Authorization: "fake-token"},
+		}) as InstanceType<typeof Localuser>;
+
+		expect(
+			await localuser.makeGuild({
+				name: "My Guild",
+				icon: "data:image/png;base64,AAAA",
+			}),
+		).toBe(true);
+
+		expect(sent).toEqual([{name: "My Guild", icon: "data:image/png;base64,AAAA"}]);
+		expect(fetchSpy).toHaveBeenCalledWith(
+			API + "/guilds",
+			expect.objectContaining({
+				method: "POST",
+				headers: {Authorization: "fake-token"},
+				body: JSON.stringify({name: "My Guild", icon: "data:image/png;base64,AAAA"}),
+			}),
+		);
+		expect(fetchSpy.mock.calls[0][1]?.signal).toBeUndefined();
+	});
+
+	it("webauthn credentials list GET renders the keys it fetched", async () => {
+		captureRequests(API + "/users/@me/connections", () => Response.json([]));
+		captureRequests(API + "/connections", () => Response.json({github: {enabled: true}}));
+		captureRequests(API + "/teams", () => Response.json([]));
+		captureRequests(API + "/applications", () => Response.json([]));
+		captureRequests(API + "/policies/instance/", () => Response.json({instanceName: "T"}));
+		captureRequests(API + "/auth/sessions", () => Response.json({user_sessions: []}));
+		captureRequests(API + "/users/@me/mfa/webauthn/credentials", () =>
+			Response.json([
+				{id: "k1", name: "YubiKey"},
+				{id: "k2", name: "Phone Passkey"},
+			]),
+		);
+		const localuser = Object.assign(Object.create(Localuser.prototype), {
+			info: {api: API, cdn: "", wellknown: "http://apifetch.test"},
+			headers: {Authorization: "fake-token"},
+			user: {
+				id: "me",
+				pronouns: "",
+				bio: {rawString: ""},
+				getpfpsrc: () => "",
+				clone: () => ({
+					pronouns: "",
+					bio: "",
+					buildprofile: async () => document.createElement("div"),
+				}),
+			},
+			rights: {allow: 0, hasPermission: () => false},
+			inrelation: new Set(),
+			channelids: new Map(),
+			userinfo: {localuserStore: {guilds: {}, channels: {}, user: {}}},
+			userMap: new Map(),
+			guilds: [],
+			trace: [],
+		}) as unknown as InstanceType<typeof Localuser>;
+
+		await localuser.showusersettings();
+		[...document.querySelectorAll<HTMLButtonElement>(".SettingsButton")]
+			.find((b) => b.textContent === I18n.localuser.accountSettings())!
+			.click();
+		[...document.querySelectorAll<HTMLButtonElement>("button")]
+			.find((b) => b.textContent === I18n.webauth.manage())!
+			.click();
+
+		await vi.waitFor(() => {
+			const labels = [...document.querySelectorAll<HTMLButtonElement>("button")].map(
+				(b) => b.textContent,
+			);
+			expect(labels).toContain("YubiKey");
+			expect(labels).toContain("Phone Passkey");
+		});
+	});
 });
 
 describe("refusal unification (C14)", () => {
