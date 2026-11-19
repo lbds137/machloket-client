@@ -27,5 +27,5 @@ it("a refused group DM says so instead of opening a channel that doesn't exist",
 	await dms.makeGroup();
 
 	expect(goTo).not.toHaveBeenCalled();
-	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 400"));
+	expect(document.body.textContent).toContain(I18n.requestFailed("Too many recipients"));
 });

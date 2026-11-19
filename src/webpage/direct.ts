@@ -12,7 +12,8 @@ import {Dialog, Float, FormError} from "./settings.js";
 import {Discovery} from "./discovery.js";
 import {createImg, mobile} from "./utils/utils.js";
 import {CDNParams} from "./utils/cdnParams.js";
-import {showRefusal} from "./utils/showRefusal.js";
+import {apiFetch} from "./utils/apiFetch.js";
+import {refusalText, showRefusal} from "./utils/showRefusal.js";
 
 class Direct extends Guild {
 	channels: Group[];
@@ -110,16 +111,21 @@ class Direct extends Guild {
 		);
 		dio.hide();
 		if (invited && invited.size !== 0) {
-			const res = await fetch(this.localuser.info.api + "/users/@me/channels", {
+			const res = await apiFetch(this.localuser.info.api + "/users/@me/channels", {
 				method: "POST",
 				headers: this.headers,
 				body: JSON.stringify({
 					recipients: [...invited].map((_) => _.id),
 				}),
 			}).catch(() => undefined);
-			const json = res?.ok ? ((await res.json().catch(() => null)) as {id?: string} | null) : null;
+			const json = res?.ok
+				? ((await res
+						.clone()
+						.json()
+						.catch(() => null)) as {id?: string} | null)
+				: null;
 			if (!json?.id) {
-				new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+				new Dialog(await refusalText(res)).show();
 				return;
 			}
 			this.localuser.goToChannel(json.id);

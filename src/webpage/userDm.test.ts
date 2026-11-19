@@ -36,7 +36,9 @@ it("a refused DM says so instead of waiting forever for a channel that doesn't e
 	await user.opendm("hi");
 
 	expect(goTo).not.toHaveBeenCalled();
-	expect(document.body.textContent).toContain(I18n.requestFailed("HTTP 403"));
+	expect(document.body.textContent).toContain(
+		I18n.requestFailed("Cannot send messages to this user"),
+	);
 });
 
 it("an unreachable instance says so too", async () => {
