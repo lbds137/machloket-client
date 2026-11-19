@@ -3095,7 +3095,8 @@ class Form implements OptionsElement<object> {
 					this.inFlight.add(fetchURL);
 					// A payload carrying a file/image data URL (avatar, banner, icon) is an upload:
 					// untimed like the attachment PUTs — the 30 s budget would refuse a large
-					// image on a slow uplink as "offline".
+					// image on a slow uplink as "offline". The check sees top-level string fields
+					// only (the current forms are flat); extend it if a form ever nests one.
 					const carriesUpload = Object.values(build).some(
 						(v) => typeof v === "string" && v.startsWith("data:"),
 					);

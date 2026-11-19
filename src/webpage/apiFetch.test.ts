@@ -60,6 +60,9 @@ afterEach(() => {
 		.forEach((e) => e.remove());
 });
 
+/** The real XHR, captured before any test stubs it, so stubbing tests can hand it back. */
+const realXHR = globalThis.XMLHttpRequest;
+
 describe("apiFetch wrapper", () => {
 	it("401 marks the account invalid and routes once despite several parallel 401s", async () => {
 		const user = adduser({
@@ -79,6 +82,7 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/users/@me/settings", unauthorized);
 		captureRequests(API + "/invites/abc", unauthorized);
 		captureRequests(API + "/channels/c1/invites", unauthorized);
+		captureRequests(API + "/users/@me", unauthorized);
 
 		await Promise.all([
 			fetchRetryOnce(API + "/users/@me/settings", {
@@ -96,14 +100,16 @@ describe("apiFetch wrapper", () => {
 			),
 		]);
 
+		// The 401 path is probe-verified now: the invalidation and navigation land a few
+		// microtasks after the refused response, so wait for the navigation, then assert state.
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
 		expect(user.loggedin).toBe(false);
 		expect(
 			(JSON.parse(readItem("userinfos")!) as {users: Record<string, {loggedin?: boolean}>}).users[
 				user.uid
 			].loggedin,
 		).toBe(false);
-		expect(nav).toHaveBeenCalledTimes(1);
-		expect(nav).toHaveBeenCalledWith("/login");
 	});
 
 	it("401 invalidation respects save-refusal semantics and exempts pre-auth endpoints", async () => {
@@ -140,6 +146,9 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/users/@me/settings", () =>
 			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
 		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
 			method: "PATCH",
@@ -147,9 +156,11 @@ describe("apiFetch wrapper", () => {
 			body: JSON.stringify({status: "dnd"}),
 		});
 
+		// Probe-verified: wait for the navigation before reading the invalidation's side effects.
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+
 		expect(user.loggedin).toBe(false);
 		expect(warn).toHaveBeenCalledTimes(1);
-		expect(nav).toHaveBeenCalledTimes(1);
 	});
 
 	it("timeout triggers the offline refusal path without waiting 30 s (fetch and XHR)", async () => {
@@ -233,6 +244,8 @@ describe("apiFetch wrapper", () => {
 		void sendChannel.sendMessage("hello", {nonce: "n-timeout"});
 		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
 		expect(configuredTimeout).toBe(30_000);
+		// Hand the real XHR back: the stub must not leak into the tests after this one.
+		vi.stubGlobal("XMLHttpRequest", realXHR);
 	});
 
 	it("sends fetches with redirect: 'error'", async () => {
@@ -303,20 +316,61 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/users/@me/settings", () =>
 			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
 		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
 			method: "PATCH",
 			headers: {Authorization: "fake-token-b"},
 			body: JSON.stringify({status: "idle"}),
 		});
+		// Probe-verified: wait for the navigation before reading the invalidation's side effects.
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 		expect(a.loggedin).toBe(true);
 		expect(b.loggedin).toBe(false);
-		expect(nav).toHaveBeenCalledTimes(1);
 
 		// The same endpoint 401s a request with no Authorization header: nothing happens.
 		await fetchRetryOnce(API + "/users/@me/settings");
 		expect(a.loggedin).toBe(true);
 		expect(nav).toHaveBeenCalledTimes(1);
+	});
+
+	it("a wrong-password 401 on an authorized form endpoint does not log the account out", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const serverurls = {
+			api: API,
+			cdn: "http://apifetch.test",
+			gateway: "ws://apifetch.test",
+			wellknown: "http://apifetch.test",
+		};
+		const user = adduser({
+			serverurls,
+			email: "wrongpw@example.test",
+			token: "fake-wrongpw-token",
+			loggedin: true,
+		});
+		// The delete endpoint (like /disable and the TOTP verify) answers its own bare 401 for
+		// a wrong password while the token is still valid: the auth-middleware probe
+		// (GET /users/@me) must confirm the token is dead before the account is invalidated.
+		captureRequests(API + "/users/@me/delete", () =>
+			Response.json({message: "Wrong password"}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () => Response.json({id: "u-alive"}));
+
+		await fetchRetryOnce(API + "/users/@me/delete", {
+			method: "POST",
+			headers: {Authorization: user.token},
+			body: JSON.stringify({password: "nope"}),
+		});
+
+		await vi.waitFor(() => expect(nav).not.toHaveBeenCalled());
+		expect(user.loggedin).toBe(true);
+		expect(
+			(JSON.parse(readItem("userinfos")!) as {users: Record<string, {loggedin?: boolean}>}).users[
+				user.uid
+			].loggedin,
+		).toBe(true);
 	});
 
 	it("401s in separate macrotasks still navigate once", async () => {
@@ -345,7 +399,7 @@ describe("apiFetch wrapper", () => {
 			headers: {Authorization: user.token},
 		});
 
-		expect(nav).toHaveBeenCalledTimes(1);
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 	});
 
 	it("configureApiXhr opts the attachment upload out of the timeout", () => {
@@ -636,5 +690,7 @@ describe("refusal unification (C14)", () => {
 		await sendChannel.sendMessage("hello", {nonce: "n-c14"}, () => true);
 
 		expect(realbox.querySelector(".sendError")?.textContent).toBe("Send message refused");
+		// Hand the real XHR back: the stub must not leak into the tests after this one.
+		vi.stubGlobal("XMLHttpRequest", realXHR);
 	});
 });

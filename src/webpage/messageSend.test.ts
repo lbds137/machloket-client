@@ -325,8 +325,9 @@ describe("a send the server rate-limits", () => {
 		expect(bubble.void).not.toHaveBeenCalled();
 	});
 
-	// RED: at HEAD the retry re-caps the attachment XHR at 30 s (resend's timeout line) with
-	// no ontimeout wired, so a resent upload that hits the cap hangs the bubble forever.
+	// RED: verified against this PR's pre-fix tree — resend re-capped the attachment XHR at
+	// 30 s (its timeout line) with no ontimeout wired, so a resent upload that hit the cap
+	// hung the bubble forever.
 	it("an attachment retry stays untimed, and a timeout on it fails the bubble instead of hanging", async () => {
 		const sentConfig: {timeout: number; timed: boolean}[] = [];
 		class FakeXHR {
@@ -398,8 +399,8 @@ describe("a send the server rate-limits", () => {
 		return {XHR: FakeXHR, sends: () => sends};
 	}
 
-	// RED: at HEAD there is no resend at all: the 429 voids the bubble and `failed` never fires
-	// (verified red against HEAD before the fix landed).
+	// RED: verified against this PR's pre-fix tree — without the fix there is no resend at
+	// all: the 429 voids the bubble and `failed` never fires.
 	// It also pins the try/catch around the timer's resend: without it the throw escapes the
 	// timer and the bubble sits in flight forever.
 	it("a retry whose send throws fails the bubble, and never voids it", async () => {
@@ -416,9 +417,8 @@ describe("a send the server rate-limits", () => {
 		expect(answers).toEqual([]);
 	});
 
-	// RED: at HEAD there is no resend at all, so the retry's own network failure never happens
-	// (verified red against HEAD before the fix landed).
-	// and `failed` is never called.
+	// RED: verified against this PR's pre-fix tree — without the fix there is no resend, so
+	// the retry's own network failure never happens, and `failed` is never called.
 	it("a retry that fails at the network fails the bubble, and never voids it", async () => {
 		const {XHR, sends} = fakeXHRRetryFailing("errors");
 		vi.stubGlobal("XMLHttpRequest", XHR);

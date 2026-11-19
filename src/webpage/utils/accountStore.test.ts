@@ -347,3 +347,16 @@ it("boot keeps this tab's pick while that account exists", () => {
 
 	expect(bootAccountId(stored)).toBe("a@example.testhttp://acct.test");
 });
+
+it("boot skips a pick that was invalidated (logged out) and boots the next valid account", () => {
+	sessionStorage.setItem("currentuser", "a@example.testhttp://acct.test");
+	const stored = {
+		currentuser: "b@example.testhttp://acct.test",
+		users: {
+			"a@example.testhttp://acct.test": {loggedin: false},
+			"b@example.testhttp://acct.test": {},
+		},
+	};
+
+	expect(bootAccountId(stored)).toBe("b@example.testhttp://acct.test");
+});
