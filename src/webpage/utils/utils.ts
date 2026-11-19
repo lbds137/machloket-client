@@ -172,11 +172,11 @@ export function setDefaults() {
 	if (next !== stored) trySetItem("userinfos", next);
 }
 setDefaults();
+const liveSpecialUsers = new Set<WeakRef<Specialuser>>();
 export class Specialuser {
 	serverurls: InstanceUrls;
 	email: string;
 	token: string;
-	loggedin;
 	json;
 	constructor(json: any) {
 		if (json instanceof Specialuser) {
@@ -192,12 +192,20 @@ export class Specialuser {
 		this.serverurls.wellknown = new URL(json.serverurls.wellknown).toString().replace(/\/$/, "");
 		this.email = json.email;
 		this.token = json.token;
-		this.loggedin = json.loggedin;
 		this.json = json;
+		this.json.loggedin ??= true;
 		this.json.localuserStore ??= {};
+		liveSpecialUsers.add(new WeakRef(this));
 		if (!this.serverurls || !this.email || !this.token) {
 			console.error("There are fundamentally missing pieces of info missing from this user");
 		}
+	}
+	set loggedin(e: boolean | undefined) {
+		this.json.loggedin = e;
+		this.tryUpdateLocal();
+	}
+	get loggedin(): boolean | undefined {
+		return this.json.loggedin;
 	}
 	async logout() {
 		for (let i = 0; i < 3; i++) {
@@ -401,11 +409,70 @@ export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	if (unreadable !== null) keepUnreadableAccounts(unreadable);
 	return suser;
 }
+function isValidAccount(user: unknown): boolean {
+	return Boolean(
+		user && typeof user === "object" && (user as {loggedin?: unknown}).loggedin !== false,
+	);
+}
+/** Marks the account whose token matches the 401'd request invalid, persisting through
+ * tryUpdateLocal so E5 save-refusal semantics apply. Returns whether anything matched. */
+export function invalidateAccount(token: string): boolean {
+	let matched = 0;
+	const handled = new Set<string>();
+	const toSave = new Map<string, Specialuser>();
+	for (const ref of liveSpecialUsers) {
+		const u = ref.deref();
+		if (!u) {
+			liveSpecialUsers.delete(ref);
+			continue;
+		}
+		if (u.token === token || u.json?.token === token) {
+			matched++;
+			handled.add(u.uid);
+			if (u.json.loggedin !== false) {
+				u.json.loggedin = false;
+				toSave.set(u.uid, u);
+			}
+		}
+	}
+	for (const u of toSave.values()) {
+		u.tryUpdateLocal();
+	}
+	const info = readStoredAccounts();
+	if (info) {
+		for (const [uid, raw] of Object.entries(info.users)) {
+			if (!raw || typeof raw !== "object") continue;
+			if ((raw as {token?: unknown}).token !== token) continue;
+			matched++;
+			if (handled.has(uid)) continue;
+			if ((raw as {loggedin?: unknown}).loggedin === false) continue;
+			try {
+				const suser = raw instanceof Specialuser ? raw : new Specialuser(raw);
+				suser.loggedin = false;
+			} catch {
+				(raw as {loggedin?: boolean}).loggedin = false;
+				saveAccounts(serialiseForStore(info));
+			}
+		}
+	}
+	return matched > 0;
+}
 /** The account the app boots: this tab's pick while that account exists, else the stored
  * default. A session-only sign-in leaves its pick behind after the reload drops the account. */
 export function bootAccountId(info: {currentuser?: string | null; users: Record<string, unknown>}) {
 	const pick = sessionStorage.getItem("currentuser");
-	return pick && Object.hasOwn(info.users, pick) ? pick : info.currentuser;
+	if (pick && Object.hasOwn(info.users, pick) && isValidAccount(info.users[pick])) return pick;
+	if (
+		info.currentuser &&
+		Object.hasOwn(info.users, info.currentuser) &&
+		isValidAccount(info.users[info.currentuser])
+	) {
+		return info.currentuser;
+	}
+	for (const [uid, user] of Object.entries(info.users)) {
+		if (isValidAccount(user)) return uid;
+	}
+	return info.currentuser && !Object.hasOwn(info.users, info.currentuser) ? info.currentuser : null;
 }
 class Directory {
 	static home = this.createHome();

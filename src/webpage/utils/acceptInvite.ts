@@ -1,4 +1,5 @@
 import {fetchRetryOnce} from "./rateLimit.js";
+import {serverReason} from "./refusalText.js";
 
 /** Joins the guild behind `code`; `ok` says whether the flow may navigate, and an existing
  * member counts. `alreadyMember` marks that case, for a caller that opens the guild instead of
@@ -24,6 +25,7 @@ export async function acceptInvite(
 		return {ok: true, guildId: json?.guild?.id ?? json?.guild_id};
 	}
 	const json = (await res.json().catch(() => undefined)) as {message?: string} | undefined;
-	if (/already a member/i.test(json?.message ?? "")) return {ok: true, alreadyMember: true};
-	return {ok: false, message: json?.message ?? `${res.status}`};
+	const reason = serverReason(json);
+	if (/already a member/i.test(reason ?? "")) return {ok: true, alreadyMember: true};
+	return {ok: false, message: reason ?? `${res.status}`};
 }

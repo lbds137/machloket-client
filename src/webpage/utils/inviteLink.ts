@@ -1,4 +1,6 @@
 import {I18n} from "../i18n.js";
+import {apiFetch} from "./apiFetch.js";
+import {refusalText, serverReason} from "./refusalText.js";
 
 /** Asks `url` (a channel's /invites) for a new invite and shows its link in `link`, or, when
  * there's none, why: the server's message, the HTTP status, or "offline". */
@@ -9,7 +11,7 @@ export async function showNewInvite(
 	wellknown: string,
 	link: HTMLElement,
 ) {
-	const res = await fetch(url, {
+	const res = await apiFetch(url, {
 		method: "POST",
 		headers,
 		body: JSON.stringify({
@@ -23,14 +25,13 @@ export async function showNewInvite(
 		}),
 	}).catch(() => undefined);
 	if (!res) {
-		link.textContent = I18n.requestFailed("offline");
+		link.textContent = await refusalText(undefined);
 		return;
 	}
 	const json = (await res.json().catch(() => null)) as {code?: unknown; message?: unknown} | null;
 	// A refusal (no invite permission) has no code: say why, not ".../i/undefined".
 	if (typeof json?.code !== "string") {
-		link.textContent =
-			typeof json?.message === "string" ? json.message : I18n.requestFailed("HTTP " + res.status);
+		link.textContent = serverReason(json) ?? I18n.requestFailed("HTTP " + res.status);
 		return;
 	}
 	const params = new URLSearchParams([["instance", wellknown]]);

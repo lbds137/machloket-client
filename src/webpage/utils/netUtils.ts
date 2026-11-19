@@ -56,3 +56,11 @@ export function postLoginRedirect(redir: string | null): string {
 	}
 	return "/channels/@me";
 }
+
+/** The page's navigation, behind an object so a test can observe where an accept or 401 lands. */
+export const pageNav = {
+	go(href: string) {
+		if ((import.meta.env as {VITEST?: unknown})?.VITEST) return;
+		window.location.href = href;
+	},
+};

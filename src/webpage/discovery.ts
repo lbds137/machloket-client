@@ -6,6 +6,7 @@ import {ReportMenu} from "./reporting/report.js";
 import {Dialog} from "./settings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {serverReason} from "./utils/showRefusal.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {createImg} from "./utils/utils.js";
 
@@ -151,8 +152,8 @@ export class Discovery {
 				);
 				if (!res.ok) {
 					// Fire-and-forget from the page buttons: say why here, nothing above catches.
-					const refusal = (await res.json().catch(() => ({}))) as {message?: unknown} | null;
-					showFailure(typeof refusal?.message === "string" ? refusal.message : `${res.status}`);
+					const refusal = await res.json().catch(() => null);
+					showFailure(serverReason(refusal) ?? `${res.status}`);
 					return;
 				}
 
@@ -312,8 +313,8 @@ export class Discovery {
 				headers: this.headers,
 			});
 			if (!res.ok) {
-				const body = (await res.json().catch(() => ({}))) as {message?: unknown};
-				message = typeof body.message === "string" ? body.message : `${res.status}`;
+				const body = await res.json().catch(() => null);
+				message = serverReason(body) ?? `${res.status}`;
 			}
 		} catch (e) {
 			message = e instanceof Error ? e.message : String(e);
