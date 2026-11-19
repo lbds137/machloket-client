@@ -472,7 +472,9 @@ export function bootAccountId(info: {currentuser?: string | null; users: Record<
 	for (const [uid, user] of Object.entries(info.users)) {
 		if (isValidAccount(user)) return uid;
 	}
-	return info.currentuser && !Object.hasOwn(info.users, info.currentuser) ? info.currentuser : null;
+	// Nothing bootable. Callers route both "no pick" and "a pick that is not a stored
+	// account" to the login page off null (index.ts), so a raw id says nothing null doesn't.
+	return null;
 }
 class Directory {
 	static home = this.createHome();

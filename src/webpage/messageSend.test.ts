@@ -325,6 +325,51 @@ describe("a send the server rate-limits", () => {
 		expect(bubble.void).not.toHaveBeenCalled();
 	});
 
+	// RED: at HEAD the retry re-caps the attachment XHR at 30 s (resend's timeout line) with
+	// no ontimeout wired, so a resent upload that hits the cap hangs the bubble forever.
+	it("an attachment retry stays untimed, and a timeout on it fails the bubble instead of hanging", async () => {
+		const sentConfig: {timeout: number; timed: boolean}[] = [];
+		class FakeXHR {
+			status = 0;
+			response: unknown = null;
+			responseType = "";
+			timeout = 0;
+			upload = {onprogress: null};
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			ontimeout: (() => void) | null = null;
+			open() {}
+			setRequestHeader() {}
+			send() {
+				sentConfig.push({timeout: this.timeout, timed: typeof this.ontimeout === "function"});
+				if (sentConfig.length === 1) {
+					this.status = 429;
+					this.response = {retry_after: 0.01};
+					queueMicrotask(() => this.onload?.());
+					return;
+				}
+				// The resent upload hits a (should-be-none) timeout: fail the bubble, never hang.
+				queueMicrotask(() => this.ontimeout?.());
+			}
+		}
+		vi.stubGlobal("XMLHttpRequest", FakeXHR);
+		const {channel, bubble} = focusedChannel();
+		const answers: string[] = [];
+
+		void channel.sendMessage(
+			"hi",
+			{nonce: "n1", attachments: [new Blob(["x"], {type: "text/plain"})]},
+			(r) => void answers.push(r),
+		);
+		await vi.waitFor(() => expect(sentConfig).toHaveLength(2));
+
+		// Both sends are untimed, and both carry the timeout handler.
+		expect(sentConfig[0]).toEqual({timeout: 0, timed: true});
+		expect(sentConfig[1]).toEqual({timeout: 0, timed: true});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+		expect(bubble.void).not.toHaveBeenCalled();
+	});
+
 	/** An XMLHttpRequest whose first send answers a 429 and whose second send fails as `how`. */
 	function fakeXHRRetryFailing(how: "throws" | "errors") {
 		let sends = 0;
