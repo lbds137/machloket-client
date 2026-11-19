@@ -112,6 +112,7 @@ import {
 } from "./utils/pollValidation.js";
 import {fetchMessageLimit} from "./utils/messageLimit.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
+import {apiFetch} from "./utils/apiFetch.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -556,7 +557,7 @@ class Localuser {
 		this.pingEndpoint();
 		try {
 			const integrationsUrl = new URL("/_spacebar/api/v1/integrations/gif", this.info.api).href;
-			const res = await fetch(integrationsUrl);
+			const res = await apiFetch(integrationsUrl);
 			if (res.ok) {
 				const data = (await res.json()) as {providers: Record<string, {available: boolean}>};
 				this.gifProviders = Object.keys(data.providers || {}).filter(
@@ -2748,7 +2749,9 @@ class Localuser {
 				if (result.guildId) {
 					this.openJoinedGuild(result.guildId);
 				} else if (result.alreadyMember) {
-					const json = (await fetch(`${this.info.api}/invites/${parsed}`, {headers: this.headers})
+					const json = (await apiFetch(`${this.info.api}/invites/${parsed}`, {
+						headers: this.headers,
+					})
 						.then((res) => res.json())
 						.catch(() => undefined)) as {guild_id?: string; guild?: {id?: string}} | undefined;
 					const guildId = json?.guild?.id ?? json?.guild_id;
@@ -2852,10 +2855,11 @@ class Localuser {
 		fields: {name: string; icon: string | null},
 		beforeRefusal: () => void = () => {},
 	): Promise<boolean> {
-		const res = await fetch(this.info.api + "/guilds", {
+		const res = await apiFetch(this.info.api + "/guilds", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify(fields),
+			timeoutMs: 0,
 		}).catch(() => undefined);
 		if (!res?.ok) {
 			beforeRefusal();
@@ -3354,7 +3358,7 @@ class Localuser {
 		return saveProfile(this.info.api + "/users/@me/profile", this.headers, json);
 	}
 	async getConnections(onRefused?: (res: Response | undefined) => void) {
-		const res = await fetch(this.info.api + "/connections", {
+		const res = await apiFetch(this.info.api + "/connections", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
@@ -3909,7 +3913,7 @@ class Localuser {
 									this.info.api,
 									this.headers,
 									(mfaHeaders) =>
-										fetch(this.info.api + "/users/@me/mfa/codes-verification", {
+										apiFetch(this.info.api + "/users/@me/mfa/codes-verification", {
 											headers: {...this.headers, ...mfaHeaders},
 											method: "POST",
 											body: JSON.stringify({key: pw.value, ...body}),
@@ -4024,7 +4028,7 @@ class Localuser {
 									this.info.api,
 									this.headers,
 									(mfaHeaders) =>
-										fetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
+										apiFetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
 											headers: {...this.headers, ...mfaHeaders},
 											method: "DELETE",
 										}).catch(() => undefined),
@@ -4074,7 +4078,7 @@ class Localuser {
 									this.info.api,
 									this.headers,
 									(mfaHeaders) =>
-										fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+										apiFetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
 											headers: {...this.headers, ...mfaHeaders},
 											method: "POST",
 											body: JSON.stringify({
@@ -4113,7 +4117,7 @@ class Localuser {
 							initText: I18n.webauth.defaultKeyName(),
 						});
 					});
-					fetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
+					apiFetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
 						headers: this.headers,
 					})
 						.catch(() => undefined)
@@ -4340,7 +4344,7 @@ class Localuser {
 				const seq = ++remakeSeq;
 				connectionContainer.innerHTML = "";
 				actConDivCont.innerHTML = "";
-				const cons = fetch(this.info.api + "/users/@me/connections", {
+				const cons = apiFetch(this.info.api + "/users/@me/connections", {
 					headers: this.headers,
 				}).catch(() => undefined);
 
@@ -4393,7 +4397,7 @@ class Localuser {
 
 							if (connection.enabled) {
 								container.addEventListener("click", async () => {
-									const connectionRes = await fetch(
+									const connectionRes = await apiFetch(
 										this.info.api + "/connections/" + key + "/authorize",
 										{
 											headers: this.headers,
@@ -4453,7 +4457,7 @@ class Localuser {
 							input.checked = !!con.visibility;
 							input.onchange = async () => {
 								const visibility = input.checked;
-								const res = await fetch(
+								const res = await apiFetch(
 									this.info.api + "/users/@me/connections/" + con.type + "/" + con.id,
 									{
 										method: "PATCH",
@@ -4483,7 +4487,7 @@ class Localuser {
 								d.options.addText(I18n.connections.sureDesc());
 								const row = d.options.addOptions("", {ltr: true});
 								row.addButtonInput("", I18n.yes(), async () => {
-									const res = await fetch(
+									const res = await apiFetch(
 										this.info.api + "/users/@me/connections/" + con.type + "/" + con.id,
 										{
 											method: "DELETE",
@@ -4587,7 +4591,7 @@ class Localuser {
 								sub.addButtonInput("", I18n.deviceManage.logout(), async () => {
 									if (loggingOut) return;
 									loggingOut = true;
-									const res = await fetch(this.info.api + "/auth/sessions/logout", {
+									const res = await apiFetch(this.info.api + "/auth/sessions/logout", {
 										method: "POST",
 										headers: this.headers,
 										body: JSON.stringify({
@@ -4770,7 +4774,7 @@ class Localuser {
 		{
 			const devPortal = settings.addButton(I18n.localuser.devPortal());
 
-			fetch(this.info.api + "/teams", {
+			apiFetch(this.info.api + "/teams", {
 				headers: this.headers,
 			})
 				.catch(() => undefined)
@@ -4813,7 +4817,7 @@ class Localuser {
 
 					const appListContainer = document.createElement("div");
 					appListContainer.id = "app-list-container";
-					fetch(this.info.api + "/applications", {
+					apiFetch(this.info.api + "/applications", {
 						headers: this.headers,
 					})
 						.catch(() => undefined)
@@ -5118,7 +5122,7 @@ class Localuser {
 					const yesno = options.addOptions("", {ltr: true});
 					yesno.addButtonInput("", I18n.yes(), async () => {
 						menu.hide();
-						const res = await fetch(this.info.api + "/stop", {
+						const res = await apiFetch(this.info.api + "/stop", {
 							headers: this.headers,
 							method: "POST",
 						}).catch(() => undefined);
@@ -5191,7 +5195,7 @@ class Localuser {
 						const params = new URLSearchParams();
 						params.set("count", count.value);
 						params.set("length", length.value);
-						const res = await fetch(
+						const res = await apiFetch(
 							this.info.api + "/auth/generate-registration-tokens?" + params.toString(),
 							{
 								headers: this.headers,
@@ -5252,7 +5256,7 @@ class Localuser {
 
 		{
 			const instanceInfo = settings.addButton(I18n.instanceInfo.name());
-			fetch(this.info.api + "/policies/instance/")
+			apiFetch(this.info.api + "/policies/instance/")
 				.catch(() => undefined)
 				.then(async (_) => {
 					if (!_?.ok) {
@@ -5306,7 +5310,7 @@ class Localuser {
 	readonly botTokens: Map<string, string> = new Map();
 	/** Creates the application's bot and keeps its token; a refusal says so. True when created. */
 	async addBot(appId: string) {
-		const res = await fetch(this.info.api + "/applications/" + appId + "/bot", {
+		const res = await apiFetch(this.info.api + "/applications/" + appId + "/bot", {
 			method: "POST",
 			headers: this.headers,
 		}).catch(() => undefined);
@@ -5329,7 +5333,7 @@ class Localuser {
 				this.botTokens.set(item, this.perminfo.applications[item]);
 			}
 		}
-		const res = await fetch(this.info.api + "/applications/" + appId, {
+		const res = await apiFetch(this.info.api + "/applications/" + appId, {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
@@ -5512,7 +5516,7 @@ class Localuser {
 		};
 	}
 	async manageBot(appId = "", container: Form) {
-		const res = await fetch(this.info.api + "/applications/" + appId, {
+		const res = await apiFetch(this.info.api + "/applications/" + appId, {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
@@ -5704,7 +5708,7 @@ class Localuser {
 		};
 		const fetchTrending = async (provider: string) => {
 			try {
-				const res = await fetch(
+				const res = await apiFetch(
 					this.info.api +
 						"/gifs/trending?" +
 						new URLSearchParams([
@@ -5816,7 +5820,7 @@ class Localuser {
 			const sValue = search.value;
 			let gifReturns: fullgif[];
 			try {
-				const res = await fetch(
+				const res = await apiFetch(
 					this.info.api +
 						"/gifs/search?" +
 						new URLSearchParams([
@@ -6996,7 +7000,7 @@ class Localuser {
 		if (!guild || (borked && guild.member_count > 250)) {
 			const unlock = await this.memberLock.acquireLock();
 			try {
-				const req = await fetch(this.info.api + "/guilds/" + guildid + "/members/" + id, {
+				const req = await apiFetch(this.info.api + "/guilds/" + guildid + "/members/" + id, {
 					headers: this.headers,
 				});
 				if (req.status !== 200) {
@@ -7229,7 +7233,7 @@ class Localuser {
 	}
 	/** The account's sessions, the most recently seen first, or the line saying why there's no list. */
 	async fetchSessions(): Promise<expSessionJson[] | string> {
-		const res = await fetch(this.info.api + "/auth/sessions?extended=true", {
+		const res = await apiFetch(this.info.api + "/auth/sessions?extended=true", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const answer = res?.ok
@@ -7248,7 +7252,7 @@ class Localuser {
 		const dialog = new Dialog("");
 		dialog.options.addTitle(I18n.instanceStats.name(this.instancePing.name));
 		dialog.show();
-		const res = await fetch(this.info.api + "/policies/stats", {
+		const res = await apiFetch(this.info.api + "/policies/stats", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const answer = res?.ok
@@ -7298,7 +7302,7 @@ class Localuser {
 				delete this.refreshTimeOut;
 				let refreshed: string[] = [];
 				try {
-					const res = await fetch(this.info.api + "/attachments/refresh-urls", {
+					const res = await apiFetch(this.info.api + "/attachments/refresh-urls", {
 						method: "POST",
 						body: JSON.stringify({attachment_urls: refreshes.map((_) => _[0])}),
 						headers: this.headers,
