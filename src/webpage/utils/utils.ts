@@ -455,6 +455,9 @@ export function invalidateAccount(token: string): boolean {
 			instances.forEach((u, i) => {
 				u.json.loggedin = prevs[i]; // raw write (see above)
 			});
+			// A non-refusal throw ends the pass on purpose — later groups and the
+			// stored-accounts pass stay untouched, and the released 401 latch lets the
+			// next attempt redo the whole invalidation.
 			throw e;
 		}
 	}
