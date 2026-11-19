@@ -38,6 +38,7 @@ import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {apiFetch} from "./utils/apiFetch.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {serverReason} from "./utils/refusalText.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
@@ -2792,13 +2793,13 @@ class Guild extends SnowFlake {
 		}
 		// Only the permissions: re-sending the rest would send the icon's hash where the server
 		// takes an upload.
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/roles/" + role.id, {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/roles/" + role.id, {
 			method: "PATCH",
 			headers: this.headers,
 			body: JSON.stringify({permissions: allow.toString()}),
 		}).catch(() => undefined);
 		if (!res?.ok) {
-			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			new Dialog(await refusalText(res)).show();
 			return false;
 		}
 		role.permissions.allow = allow;

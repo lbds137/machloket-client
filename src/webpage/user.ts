@@ -338,14 +338,19 @@ class User extends SnowFlake {
 			}
 		}
 
-		const res = await fetch(this.info.api + "/users/@me/channels", {
+		const res = await apiFetch(this.info.api + "/users/@me/channels", {
 			method: "POST",
 			body: JSON.stringify({recipients: [this.id]}),
 			headers: this.localuser.headers,
 		}).catch(() => undefined);
-		const json = res?.ok ? ((await res.json().catch(() => null)) as {id?: string} | null) : null;
+		const json = res?.ok
+			? ((await res
+					.clone()
+					.json()
+					.catch(() => null)) as {id?: string} | null)
+			: null;
 		if (!json?.id) {
-			new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+			new Dialog(await refusalText(res)).show();
 			return;
 		}
 		// Resolves once CHANNEL_CREATE has added the DM, so it can be looked up here.

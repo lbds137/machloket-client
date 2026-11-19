@@ -5,7 +5,9 @@ import {captureRequests} from "./test/setup";
 // order (index.ts imports localuser first).
 const {Localuser} = await import("./localuser");
 const {Channel} = await import("./channel");
+const {Guild} = await import("./guild");
 const {User} = await import("./user");
+const {Direct} = await import("./direct");
 const {Discovery} = await import("./discovery");
 const {ReportMenu} = await import("./reporting/report");
 const {Command} = await import("./interactions/commands");
@@ -536,7 +538,14 @@ describe("apiFetch wrapper", () => {
 			configurable: true,
 			writable: true,
 		});
-		vi.spyOn(globalThis, "fetch").mockImplementation(() => new Promise<Response>(() => {}));
+		vi.spyOn(globalThis, "fetch").mockImplementation(
+			(_url, init) =>
+				new Promise<Response>((_, reject) => {
+					init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+						once: true,
+					});
+				}),
+		);
 		const controller = new AbortController();
 
 		const err = await apiFetch(API + "/users/@me", {
@@ -546,6 +555,37 @@ describe("apiFetch wrapper", () => {
 		expect(err).toBeInstanceOf(DOMException);
 		expect(err).toMatchObject({name: "TimeoutError", message: "offline"});
 	}, 2_000);
+
+	it("caller abort rejects with the caller's custom reason", async () => {
+		vi.spyOn(globalThis, "fetch").mockImplementation(
+			(_url, init) =>
+				new Promise<Response>((_, reject) => {
+					if (init?.signal?.aborted) {
+						reject(init.signal.reason);
+						return;
+					}
+					init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+						once: true,
+					});
+				}),
+		);
+		const reason = new Error("caller cancelled");
+		const controller = new AbortController();
+		const pending = apiFetch(API + "/users/@me", {signal: controller.signal});
+		controller.abort(reason);
+		await expect(pending).rejects.toBe(reason);
+
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		const fallbackReason = new Error("fallback caller cancelled");
+		const fallbackController = new AbortController();
+		const fallbackPending = apiFetch(API + "/users/@me", {signal: fallbackController.signal});
+		fallbackController.abort(fallbackReason);
+		await expect(fallbackPending).rejects.toBe(fallbackReason);
+	});
 
 	it("an invalidation throw releases the latch with a warn and a later 401 still routes", async () => {
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
@@ -586,6 +626,7 @@ describe("apiFetch wrapper", () => {
 			});
 			await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
 			expect(nav).not.toHaveBeenCalled();
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(true);
 
 			await fetchRetryOnce(API + "/users/@me/delete", {
 				method: "POST",
@@ -594,8 +635,64 @@ describe("apiFetch wrapper", () => {
 			});
 			await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 			expect(nav).toHaveBeenCalledWith("/login");
-			expect(user.loggedin).toBe(false);
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(false);
 			expect(probes).toBe(2);
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
+	it("a multi-account invalidation rolls back only the accounts whose save failed", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const addAccount = (email: string) =>
+			adduser({
+				serverurls: {
+					api: API,
+					cdn: "http://apifetch.test",
+					gateway: "ws://apifetch.test",
+					wellknown: "http://apifetch.test",
+				},
+				email,
+				token: "fake-shared-token",
+				loggedin: true,
+			});
+		const savedAccount = addAccount("multi-saved@example.test");
+		const rolledBack = addAccount("multi-rollback@example.test");
+		const realTryUpdate = Specialuser.prototype.tryUpdateLocal;
+		let saves = 0;
+		const spy = vi.spyOn(Specialuser.prototype, "tryUpdateLocal").mockImplementation(function (
+			this: InstanceType<typeof Specialuser>,
+		) {
+			if (saves++ === 1) throw new DOMException("not found", "NotFoundError");
+			return realTryUpdate.call(this);
+		});
+		captureRequests(API + "/users/@me/delete", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+
+		try {
+			await fetchRetryOnce(API + "/users/@me/delete", {
+				method: "POST",
+				headers: {Authorization: savedAccount.token},
+				body: JSON.stringify({password: "nope"}),
+			});
+			await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
+			expect(nav).not.toHaveBeenCalled();
+			// The first account saved: memory and storage flipped together.
+			expect(savedAccount.loggedin).toBe(false);
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[savedAccount.uid].loggedin).toBe(
+				false,
+			);
+			// The second account's save threw: rolled back in memory, storage never changed —
+			// so a later 401 redoes the whole attempt instead of routing over a stale record.
+			expect(rolledBack.loggedin).toBe(true);
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[rolledBack.uid].loggedin).toBe(
+				true,
+			);
 		} finally {
 			spy.mockRestore();
 		}
@@ -674,6 +771,64 @@ describe("refusal unification (C14)", () => {
 		await channel.updateRolePermissions("r1", new Permissions("8", "4"));
 
 		expect(document.body.textContent).toContain(I18n.requestFailed("Channel overwrite refused"));
+	});
+
+	it("Guild.updateRolePermissions surfaces the server reason string", async () => {
+		captureRequests(API + "/guilds/g1/roles/r1", () =>
+			Response.json({code: 50013, message: "Guild role permission refused"}, {status: 403}),
+		);
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "g1",
+			headers: {Authorization: "fake-token"},
+			roleids: new Map([["r1", {id: "r1", permissions: new Permissions("1", "2")}]]),
+			owner: {info: {api: API}},
+		}) as InstanceType<typeof Guild>;
+
+		expect(await guild.updateRolePermissions("r1", new Permissions("8", "4"))).toBe(false);
+
+		expect(document.body.textContent).toContain(
+			I18n.requestFailed("Guild role permission refused"),
+		);
+	});
+
+	it("User.opendm surfaces the server reason string", async () => {
+		captureRequests(API + "/users/@me/channels", () =>
+			Response.json({code: 50007, message: "Cannot send messages to this user"}, {status: 403}),
+		);
+		const user = Object.assign(Object.create(User.prototype), {
+			id: "u2",
+			owner: {
+				info: {api: API},
+				headers: {Authorization: "fake-token"},
+				guildids: new Map([["@me", {channels: []}]]),
+			},
+		}) as InstanceType<typeof User>;
+
+		await user.opendm();
+
+		expect(document.body.textContent).toContain(
+			I18n.requestFailed("Cannot send messages to this user"),
+		);
+	});
+
+	it("Direct.makeGroup surfaces the server reason string", async () => {
+		captureRequests(API + "/users/@me/channels", () =>
+			Response.json({code: 50013, message: "Group DM creation refused"}, {status: 403}),
+		);
+		vi.spyOn(User, "makeSelector").mockResolvedValue(
+			new Set([{id: "u2"} as InstanceType<typeof User>]),
+		);
+		const direct = Object.assign(Object.create(Direct.prototype), {
+			headers: {Authorization: "fake-token"},
+			owner: {
+				info: {api: API},
+				inrelation: new Set(),
+			},
+		}) as InstanceType<typeof Direct>;
+
+		await direct.makeGroup();
+
+		expect(document.body.textContent).toContain(I18n.requestFailed("Group DM creation refused"));
 	});
 
 	it("makeMenu surfaces the server reason string", async () => {

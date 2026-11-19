@@ -173,6 +173,9 @@ export function setDefaults() {
 }
 setDefaults();
 const liveSpecialUsers = new Set<WeakRef<Specialuser>>();
+const liveSpecialUserRegistry = new FinalizationRegistry<WeakRef<Specialuser>>((ref) => {
+	liveSpecialUsers.delete(ref);
+});
 export class Specialuser {
 	serverurls: InstanceUrls;
 	email: string;
@@ -195,7 +198,9 @@ export class Specialuser {
 		this.json = json;
 		this.json.loggedin ??= true;
 		this.json.localuserStore ??= {};
-		liveSpecialUsers.add(new WeakRef(this));
+		const ref = new WeakRef(this);
+		liveSpecialUsers.add(ref);
+		liveSpecialUserRegistry.register(this, ref);
 		if (!this.serverurls || !this.email || !this.token) {
 			console.error("There are fundamentally missing pieces of info missing from this user");
 		}
@@ -430,13 +435,18 @@ export function invalidateAccount(token: string): boolean {
 			matched++;
 			handled.add(u.uid);
 			if (u.json.loggedin !== false) {
-				u.json.loggedin = false;
 				toSave.set(u.uid, u);
 			}
 		}
 	}
 	for (const u of toSave.values()) {
-		u.tryUpdateLocal();
+		u.json.loggedin = false;
+		try {
+			u.tryUpdateLocal();
+		} catch (e) {
+			u.json.loggedin = true;
+			throw e;
+		}
 	}
 	const info = readStoredAccounts();
 	if (info) {

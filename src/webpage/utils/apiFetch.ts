@@ -114,52 +114,41 @@ export async function apiFetch(
 		return res;
 	}
 	const timeoutSignal = AbortSignal.timeout(timeoutMs);
-	// AbortSignal.any is missing before Safari 17.4 / Firefox 124 / Chrome 116; without it the
-	// caller's signal alone is used (the race below still turns a timeout into the refusal).
-	const signal = initSignal
-		? AbortSignal.any
-			? AbortSignal.any([initSignal, timeoutSignal])
-			: initSignal
-		: timeoutSignal;
-
-	let onAbort: (() => void) | undefined;
-	const abortPromise = new Promise<never>((_, reject) => {
-		const fail = () => {
-			reject(
-				timeoutSignal.aborted
-					? new DOMException("offline", "TimeoutError")
-					: (signal.reason ?? new DOMException("aborted", "AbortError")),
-			);
-		};
-		if (signal.aborted || timeoutSignal.aborted) {
-			fail();
-			return;
+	let signal: AbortSignal;
+	let cleanupFallback: (() => void) | undefined;
+	if (!initSignal) {
+		signal = timeoutSignal;
+	} else if (AbortSignal.any) {
+		signal = AbortSignal.any([initSignal, timeoutSignal]);
+	} else {
+		// AbortSignal.any is missing before Safari 17.4 / Firefox 124 / Chrome 116: forward both
+		// the caller's signal (carrying its reason) and the timeout signal onto a local controller.
+		const controller = new AbortController();
+		const onCallerAbort = () => controller.abort(initSignal.reason);
+		const onTimeoutAbort = () => controller.abort();
+		if (initSignal.aborted) {
+			onCallerAbort();
+		} else {
+			initSignal.addEventListener("abort", onCallerAbort, {once: true});
+			timeoutSignal.addEventListener("abort", onTimeoutAbort, {once: true});
+			cleanupFallback = () => {
+				initSignal.removeEventListener("abort", onCallerAbort);
+				timeoutSignal.removeEventListener("abort", onTimeoutAbort);
+			};
 		}
-		onAbort = fail;
-		signal.addEventListener("abort", onAbort, {once: true});
-		if (signal !== timeoutSignal) {
-			timeoutSignal.addEventListener("abort", onAbort, {once: true});
-		}
-	});
+		signal = controller.signal;
+	}
 
 	let res: Response;
 	try {
-		res = await Promise.race([
-			fetch(input, {...restInit, redirect: "error", signal}),
-			abortPromise,
-		]);
+		res = await fetch(input, {...restInit, redirect: "error", signal});
 	} catch (error) {
 		if (timeoutSignal.aborted) {
 			throw new DOMException("offline", "TimeoutError");
 		}
 		throw error;
 	} finally {
-		if (onAbort) {
-			signal.removeEventListener("abort", onAbort);
-			if (signal !== timeoutSignal) {
-				timeoutSignal.removeEventListener("abort", onAbort);
-			}
-		}
+		cleanupFallback?.();
 	}
 
 	if (res.status === 401) {
