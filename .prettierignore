@@ -2,5 +2,9 @@
 # en.json is edited here and follows the repo format.
 translations/*.json
 !translations/en.json
-# Machine-local dispatch specs (git-excluded through .git/info/exclude, which Prettier doesn't read).
+# .claude/ holds the tracked settings.json (already prettier-shaped) plus machine-local
+# dispatch specs (git-excluded through .git/info/exclude, which Prettier doesn't read).
 .claude/
+# backlog.md owns its task-file layout (the CLI is the writer of record); Prettier would
+# fight every CLI write.
+backlog/

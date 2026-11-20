@@ -1,0 +1,36 @@
+project_name: "Machloket"
+default_status: "To Do"
+statuses: ["To Do", "In Progress", "Done"]
+labels:
+  - u-api
+  - gateway
+  - render
+  - store
+  - settings
+  - voice-media
+  - sw
+  - e2e
+  - i18n
+  - parity
+  - a11y
+  - branding
+  - tooling
+  - test-robustness
+  - deferred
+  - server-bounded
+  - owner-input
+  - walk-gated
+  - probe-first
+  - cleanup
+date_format: yyyy-mm-dd
+max_column_width: 20
+default_editor: "vim"
+auto_open_browser: false
+default_port: 6420
+remote_operations: false
+auto_commit: false
+filesystem_only: true
+bypass_git_hooks: false
+check_active_branches: false
+active_branch_days: 30
+task_prefix: "task"
