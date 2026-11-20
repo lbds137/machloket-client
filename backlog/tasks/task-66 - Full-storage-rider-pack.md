@@ -22,6 +22,6 @@ ordinal: 890
 - proxySave rollback leaves a hole on refused array push.
 - The e2e isNetwork exemption covers any load error.
 - i18n module-load write on a full store (dead in practice).
-- READY auth_token rotation accepts any truthy value (typeof string check, localuser.ts:492-497).
+- READY auth_token rotation accepts any truthy value (typeof string check, localuser.ts:500-503 as of the migration).
 - Near-full store: a kept small perminfo value rides in every later account save, so a READY auth_token refresh is never persisted -> next reload starts from a stale token (retry once without the session-only small values, or give the token its own minimal write). Trigger: any stale-token report.
 <!-- SECTION:DESCRIPTION:END -->
