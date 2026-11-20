@@ -4,10 +4,12 @@ title: 'U-up4: attribution + credit surfaces'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - branding
 dependencies: []
-ordinal: 320
+priority: high
+ordinal: 60
 ---
 
 ## Description

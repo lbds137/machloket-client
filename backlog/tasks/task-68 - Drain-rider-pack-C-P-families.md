@@ -4,9 +4,11 @@ title: Drain rider pack (C/P families)
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:21:00Z'
+updated_date: '2026-11-20T02:38:00Z'
 labels:
   - deferred
 dependencies: []
+priority: medium
 ordinal: 910
 ---
 

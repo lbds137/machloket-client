@@ -4,10 +4,12 @@ title: 'U-api rider pack: 401 routing, refusal renderer, probes, timeout clear'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - u-api
   - deferred
 dependencies: []
+priority: medium
 ordinal: 110
 ---
 

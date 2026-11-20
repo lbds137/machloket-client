@@ -4,11 +4,12 @@ title: safeLink internal rewrite origin check (verify)
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-19T22:37:00Z'
+updated_date: '2026-11-20T02:38:00Z'
 labels:
   - probe-first
   - deferred
 dependencies: []
+priority: medium
 ordinal: 690
 ---
 

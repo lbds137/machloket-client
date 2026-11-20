@@ -4,9 +4,11 @@ title: 'U-api batch 2f (C8): unify the 429 cooldown maps'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - u-api
 dependencies: []
+priority: medium
 ordinal: 140
 ---
 

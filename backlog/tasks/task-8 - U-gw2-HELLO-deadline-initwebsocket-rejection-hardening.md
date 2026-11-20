@@ -4,11 +4,12 @@ title: 'U-gw2: HELLO deadline + initwebsocket rejection hardening'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-19T23:08:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - gateway
 dependencies: []
-ordinal: 200
+priority: medium
+ordinal: 80
 ---
 
 ## Description
