@@ -4,11 +4,13 @@ title: 'U-up3: self-hosted invite links + drop third-party trust'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - branding
   - parity
 dependencies: []
-ordinal: 310
+priority: high
+ordinal: 50
 ---
 
 ## Description

@@ -4,9 +4,11 @@ title: History-slice rider pack
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:38:00Z'
 labels:
   - deferred
 dependencies: []
+priority: low
 ordinal: 670
 ---
 

@@ -4,10 +4,12 @@ title: i18n rider pack
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:42:00Z'
 labels:
   - i18n
   - deferred
 dependencies: []
+priority: low
 ordinal: 750
 ---
 
@@ -23,3 +25,9 @@ ordinal: 750
 (g) toLocaleDateString("tok") gives ICU garbage when the browser has no tok entry — consider an en fallback for tok.
 (h) Untested render edges: unknown-channel mention in keep mode, NaN <t:R>, future month edge, keep-mode <t:R> real attr.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner ruling 2026-11-19 (ask tool) on (c): draft the Hebrew (he) locale, but not now - split out as its own task.
+<!-- SECTION:NOTES:END -->

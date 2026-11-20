@@ -4,8 +4,10 @@ title: 'U-types: jsontypes vs openapi drift audit'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels: []
 dependencies: []
+priority: medium
 ordinal: 160
 ---
 

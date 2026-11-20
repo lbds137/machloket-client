@@ -4,10 +4,12 @@ title: 'U-fs5: session-only account survival across in-app navigations'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - store
 dependencies: []
-ordinal: 150
+priority: high
+ordinal: 40
 ---
 
 ## Description

@@ -4,10 +4,12 @@ title: Embed media proxy re-probe (server half)
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:38:00Z'
 labels:
   - probe-first
   - server-bounded
 dependencies: []
+priority: low
 ordinal: 700
 ---
 

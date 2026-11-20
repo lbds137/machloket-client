@@ -4,10 +4,12 @@ title: SW deferral pack (EU family)
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:42:00Z'
 labels:
   - sw
   - deferred
 dependencies: []
+priority: medium
 ordinal: 630
 ---
 
@@ -24,3 +26,9 @@ Needs the SW harness (service.ts is not importable in a page test) — before an
 - Decide whether daily phone use runs the dev server or a production build (worker/install/offline behave only on a build).
 - npm audit: 2 build-time highs (nanoid, postcss) — trigger: next dependency bump, or at once if the dev server is exposed beyond the LAN.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Owner ruling 2026-11-19 (ask tool): daily phone use runs a PRODUCTION build, not the dev server. The dev-server-vs-build bullet is settled; SW fixes in this pack are judged on a build.
+<!-- SECTION:NOTES:END -->

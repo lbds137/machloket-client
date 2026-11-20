@@ -4,10 +4,12 @@ title: Console residue sweep
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:39:00Z'
 labels:
   - deferred
   - cleanup
 dependencies: []
+priority: low
 ordinal: 760
 ---
 

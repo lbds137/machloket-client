@@ -4,9 +4,11 @@ title: 'U-perm: overwrite type + res.ok in permission paths'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels: []
 dependencies: []
-ordinal: 250
+priority: high
+ordinal: 30
 ---
 
 ## Description

@@ -4,9 +4,11 @@ title: Landing-era LOW pack (the long tail)
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:21:00Z'
+updated_date: '2026-11-20T02:42:00Z'
 labels:
   - deferred
 dependencies: []
+priority: low
 ordinal: 880
 ---
 
@@ -33,3 +35,9 @@ Pre-existing riders from the #89-#135 era, all with recorded triggers:
 - Recovery-banner bar height with the keyboard open — owner look, ride the walk.
 - Wave-2 test riders: no guild-channel POST wire-shape fixture (only the two DM fixtures); no second-HELLO interval-stacking test in gatewayWatchdog.test.ts.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Needs Lila (action): two looks on the walk - Form copy/spinner during the <=30s 429 wait, and the recovery-banner height with the keyboard open.
+<!-- SECTION:NOTES:END -->

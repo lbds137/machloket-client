@@ -4,10 +4,12 @@ title: 'U-up2: voice batch (CodeQL #41 + timer sweep)'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
+updated_date: '2026-11-20T02:37:00Z'
 labels:
   - voice-media
 dependencies: []
-ordinal: 300
+priority: high
+ordinal: 10
 ---
 
 ## Description
