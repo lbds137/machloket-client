@@ -41,6 +41,25 @@ describe("custom emoji whose image is gone", () => {
 		}
 	});
 
+	it("the fallback is atomic in the composer: not editable, so typed text can't land inside it", () => {
+		const emoji = Object.assign(Object.create(Emoji.prototype), {
+			id: "123456789012345678",
+			name: "<:blob:123456789012345678>",
+			animated: false,
+			owner: {info: {cdn: CDN}, localuser: {}},
+		}) as InstanceType<typeof Emoji>;
+		const parent = mount(emoji.getHTML());
+		try {
+			parent.querySelector("img")?.dispatchEvent(new Event("error"));
+
+			const fallback = parent.querySelector<HTMLElement>("span.md-emoji-fallback");
+			expect(fallback).not.toBeNull();
+			expect(fallback?.contentEditable).toBe("false");
+		} finally {
+			parent.remove();
+		}
+	});
+
 	it("a hostile name renders as text, never as markup", () => {
 		const emoji = Object.assign(Object.create(Emoji.prototype), {
 			id: "123456789012345678",
