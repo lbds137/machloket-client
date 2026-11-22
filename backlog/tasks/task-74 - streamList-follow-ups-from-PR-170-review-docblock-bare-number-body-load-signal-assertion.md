@@ -3,10 +3,10 @@ id: TASK-74
 title: >-
   streamList follow-ups from PR #170 review: docblock, bare-number body,
   load-signal assertion
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-22T17:41:00Z'
-updated_date: '2026-11-22T18:38:00Z'
+updated_date: '2026-11-22T19:26:00Z'
 labels:
   - u-api
 dependencies: []
@@ -23,5 +23,5 @@ From PR #170 claude-review (TASK-73, merged f7b182d1). (1) identifyType's docblo
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Gemini cross-family review 11-22 (mc-gemrev-1122, gemini-4-argon-high; code-traced by driver, not runtime-confirmed) adds: (4) DEFECT: ObjectProgressive.getNextPair awaits this.ondone() (the parent array's check() reading the next , or ]) before getWhole resolves, so a complete item is withheld until the delimiter after its } arrives and is LOST if the stream dies or stalls at that boundary. Red: cutMidList('[' + JSON.stringify(invite('first'))) with no trailing comma must still show 'first'. (5) a bodyless 2xx (204, or 200 with null body) hits !f.body in ProgressiveArray and shows refusalText 'HTTP 204'; an empty/whitespace 200 body throws 'ran out of file to read' and shows offline: both should read listUnreadable (red: add them to the unreadable table in src/webpage/streamedLists.test.ts). Reviewed 0d63c6db and 43411287 too: no other findings.
+Shipped in PR #171 (3 commits: a9a37c3b A items 1,2,3,5; 89163024 B item 4 lazy delimiter; 8ce679e3 review nit). Gemini PASS (1 nit fixed); claude-review PASS with 2 Lows -> TASK-75.
 <!-- SECTION:NOTES:END -->
