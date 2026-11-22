@@ -8,6 +8,7 @@ import {ImagesDisplay} from "./disimg.js";
 import {File} from "./file.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
+import {apiFetch} from "./utils/apiFetch.js";
 
 /** The hosts that serve YouTube's embeddable player. */
 const YOUTUBE_PLAYER_HOSTS = new Set([
@@ -393,7 +394,7 @@ class Embed {
 					return;
 				}
 				info = tempinfo;
-				const res = await fetch(info.api + "/invites/" + json1.code).catch(() => undefined);
+				const res = await apiFetch(info.api + "/invites/" + json1.code).catch(() => undefined);
 				// Whatever stops the preview (a refusal, no answer, a page that isn't the invite's
 				// JSON) gives way to the plain link, as a refused invite always has.
 				const loaded = res?.ok ? ((await res.json().catch(() => null)) as invitejson | null) : null;

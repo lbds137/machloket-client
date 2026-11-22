@@ -5,6 +5,7 @@ import {MarkDown} from "./markdown.js";
 import {Dialog, FormError} from "./settings.js";
 import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 import {carryAccountsAcrossNavigation} from "./utils/storage/settingOverlay.js";
+import {apiFetch} from "./utils/apiFetch.js";
 export async function makeRegister(
 	trasparentBg = false,
 	instance = "",
@@ -25,7 +26,7 @@ export async function makeRegister(
 			form.fetchURL = trimTrailingSlashes(info.api) + "/auth/register";
 			form.api = trimTrailingSlashes(info.api);
 			tosLogic(md, info);
-			fetch(trimTrailingSlashes(info.api) + "/policies/instance/config")
+			apiFetch(trimTrailingSlashes(info.api) + "/policies/instance/config")
 				.then((r) => r.json())
 				.then(
 					(data: {register_dateOfBirth_required?: unknown}) =>

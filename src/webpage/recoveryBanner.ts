@@ -1,4 +1,5 @@
 import {I18n} from "./i18n.js";
+import {apiFetch} from "./utils/apiFetch.js";
 
 export interface MfaRecoveryUpdate {
 	status: string;
@@ -39,7 +40,7 @@ export class RecoveryBanner {
 		const gen = ++this.generation;
 		let res: Response;
 		try {
-			res = await fetch(this.url, {headers: this.headers()});
+			res = await apiFetch(this.url, {headers: this.headers()});
 		} catch (e) {
 			if (gen !== this.generation) return;
 			console.warn("Couldn't read MFA recovery status:", e);
@@ -264,7 +265,7 @@ export class RecoveryBanner {
 		const stops = this.stops;
 		let res: Response | undefined;
 		try {
-			res = await fetch(this.url, {method: "DELETE", headers: this.headers()});
+			res = await apiFetch(this.url, {method: "DELETE", headers: this.headers()});
 		} catch {
 			res = undefined;
 		}

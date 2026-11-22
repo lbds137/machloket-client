@@ -435,7 +435,7 @@ class Group extends Channel {
 				return I18n.member.kick(user.name, this.name);
 			},
 			async function (user) {
-				const res = await fetch(this.info.api + `/channels/${this.id}/recipients/${user.id}`, {
+				const res = await apiFetch(this.info.api + `/channels/${this.id}/recipients/${user.id}`, {
 					method: "DELETE",
 					headers: this.headers,
 				}).catch(() => undefined);
@@ -523,7 +523,7 @@ class Group extends Channel {
 		if (!users) return;
 		const [user] = [...users];
 		if (!user) return;
-		const res = await fetch(this.info.api + "/channels/" + this.id + "/recipients/" + user.id, {
+		const res = await apiFetch(this.info.api + "/channels/" + this.id + "/recipients/" + user.id, {
 			headers: this.headers,
 			method: "PUT",
 		}).catch(() => undefined);

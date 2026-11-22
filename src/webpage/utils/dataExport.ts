@@ -1,5 +1,6 @@
 import {I18n} from "../i18n.js";
 import {refusalText} from "./refusalText.js";
+import {apiFetch} from "./apiFetch.js";
 
 export function fallbackExportFilename(userId: string, now: Date = new Date()): string {
 	const year = String(now.getFullYear());
@@ -29,7 +30,8 @@ export async function exportUserData(
 	userId: string,
 ): Promise<string | null> {
 	const url = api.replace(/\/+$/, "") + "/users/@me/export";
-	const res = await fetch(url, {headers}).catch(() => undefined);
+	// Untimed: the budget would cut a large export whose blob is read after the headers arrive.
+	const res = await apiFetch(url, {headers, timeoutMs: 0}).catch(() => undefined);
 	if (!res?.ok) {
 		return I18n.localuser.exportFailed(await refusalText(res));
 	}

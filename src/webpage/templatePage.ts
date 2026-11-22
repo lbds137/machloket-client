@@ -6,6 +6,7 @@ import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {refusalText} from "./utils/refusalText.js";
 import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
 import {isValidTemplateCode} from "./utils/templateCode.js";
+import {apiFetch} from "./utils/apiFetch.js";
 if (window.location.pathname.startsWith("/template"))
 	(async () => {
 		const users = getBulkUsers();
@@ -71,7 +72,7 @@ if (window.location.pathname.startsWith("/template"))
 		await I18n.done;
 		labelButton(joinable.length > 0);
 
-		fetch(`${urls!.api}/guilds/templates/${code}`, {
+		apiFetch(`${urls!.api}/guilds/templates/${code}`, {
 			method: "GET",
 			// Signed out, the instance may refuse (Spacebar wants a token here): the page then names
 			// no template (a generic heading), and the button still leads to sign-in.
