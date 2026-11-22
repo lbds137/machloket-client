@@ -4,7 +4,7 @@ title: Voice live-test pack
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-20T02:38:00Z'
+updated_date: '2026-11-22T08:07:00Z'
 labels:
   - voice-media
   - probe-first
@@ -19,6 +19,7 @@ ordinal: 620
 <!-- SECTION:DESCRIPTION:BEGIN -->
 Needs a live voice session (the family's trigger):
 - startWS continuation after the url/ws-open awaits is not tied to its join: a leave then rejoin before it resumes lets the stale continuation proceed — join generation counter checked after each await.
+- startVideo (`src/webpage/voice.ts:1042-1045`) guards its 100 ms `while (!this.cam)` wait only on `!this.open`: a leave and rejoin within 100 ms lets the stale loop attach to the new call's `cam` — same join-generation-counter class (from PR #167 review).
 - V-3 AudioContext leak; V-4 uncertain.
 - L11 Go Live/streams for DM call: keys never resolve (streamCreate handles only guild:), live/steamTokens never cleaned, streamCreate throws a bare "oops" unhandled; check whether the server even sends STREAM_CREATE for DMs.
 - L15 audio node graph: giveMicTrack never disconnects the old MediaStreamSource; makeMicOuts creates a new streamDest without disconnecting the old (verify device switches don't cut audio).
