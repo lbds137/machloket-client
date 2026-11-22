@@ -206,12 +206,26 @@ async function identifyType(prog: ProgressiveArray) {
 			throw new SyntaxError("bad JSON");
 	}
 }
+/**
+ * A list being decoded. One reader at a time: await each `more()` / `getNext()` before the next
+ * call, and read an item through to its end before asking for the one after it. The delimiter owed
+ * after a handed-over item is read lazily, only when the caller asks for the next item or whether
+ * there is one, so a finished item is never held back by the bytes that follow it.
+ */
 export class ArrayProgressive<T, X extends Array<T>> {
-	ondone = async () => {};
 	prog: ProgressiveArray;
 	done = false;
+	/** Resolves (never rejects) once this list reads its closing `]`. */
+	readonly finished: Promise<void>;
+	private resolveFinished!: () => void;
+	/** The delimiter owed after the last item handed over. `child` is that item when it is a
+	 * container that is not yet done. */
+	private owed?: {child?: ArrayProgressive<any, any> | ObjectProgressive<any>};
+	/** The last settle of the owed delimiter; a failed one stays failed. */
+	private settled: Promise<void> = Promise.resolve();
 	private constructor(prog: ProgressiveArray) {
 		this.prog = prog;
+		this.finished = new Promise<void>((resolve) => (this.resolveFinished = resolve));
 	}
 	static async make(prog: ProgressiveArray) {
 		const o = new ArrayProgressive(prog);
@@ -222,46 +236,48 @@ export class ArrayProgressive<T, X extends Array<T>> {
 		const lastChar = await getNextNonWhiteSpace(this.prog);
 		if (lastChar === "]") {
 			this.done = true;
-			await this.ondone();
+			this.resolveFinished();
 			return;
 		} else {
 			this.prog.putBackChar(lastChar);
 		}
 	}
-	awaiting = new Promise<void>((_) => _());
-
-	async doChecks(): Promise<() => void> {
-		let res1: () => void;
-		let cur = new Promise<void>((res) => {
-			res1 = res;
-		});
-		[cur, this.awaiting] = [this.awaiting, cur];
-		await cur;
-
-		return () => res1();
+	/** Reads the delimiter owed after the last item handed over, if there is one. */
+	private settle(): Promise<void> {
+		const owed = this.owed;
+		if (owed) {
+			delete this.owed;
+			this.settled = (async () => {
+				if (owed.child) await owed.child.finished;
+				const lastChar = await getNextNonWhiteSpace(this.prog);
+				if (lastChar === "]") {
+					this.done = true;
+					this.resolveFinished();
+				} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
+			})();
+		}
+		return this.settled;
+	}
+	/**
+	 * Whether another item follows. This reads the delimiter owed after the last item handed over,
+	 * so a nested container item must be read to its end first, or this waits for it.
+	 */
+	async more(): Promise<boolean> {
+		await this.settle();
+		return !this.done;
 	}
 	async getNext(): Promise<Progressive<T>> {
-		const checks = await this.doChecks();
+		await this.settle();
 		if (this.done) throw new Error("no more array");
 		const ret = (await identifyType(this.prog)) as Progressive<T>;
-		const check = async () => {
-			const lastChar = await getNextNonWhiteSpace(this.prog);
-			if (lastChar === "]") {
-				this.done = true;
-				await this.ondone();
-			} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
-			checks();
-		};
-		if ((ret instanceof ArrayProgressive || ret instanceof ObjectProgressive) && !ret.done) {
-			ret.ondone = check;
-		} else {
-			await check();
-		}
-
+		this.owed =
+			(ret instanceof ArrayProgressive || ret instanceof ObjectProgressive) && !ret.done
+				? {child: ret}
+				: {};
 		return ret;
 	}
 	async *[Symbol.asyncIterator]() {
-		while (!this.done) {
+		while (await this.more()) {
 			yield await this.getNext();
 		}
 	}
@@ -270,7 +286,7 @@ export class ArrayProgressive<T, X extends Array<T>> {
 	 */
 	async getWhole(): Promise<X> {
 		const arr: T[] = [];
-		while (!this.done) {
+		while (await this.more()) {
 			let t = await this.getNext();
 			if (t instanceof ArrayProgressive) {
 				t = await t.getWhole();
@@ -284,12 +300,21 @@ export class ArrayProgressive<T, X extends Array<T>> {
 		return arr as X;
 	}
 }
+/** The same as ArrayProgressive, for an object's pairs; the reading contract is the same. */
 export class ObjectProgressive<X extends Object> {
-	ondone = async () => {};
 	prog: ProgressiveArray;
 	done = false;
+	/** Resolves (never rejects) once this object reads its closing `}`. */
+	readonly finished: Promise<void>;
+	private resolveFinished!: () => void;
+	/** The delimiter owed after the last pair handed over. `child` is that pair's value when it is
+	 * a container that is not yet done. */
+	private owed?: {child?: ArrayProgressive<any, any> | ObjectProgressive<any>};
+	/** The last settle of the owed delimiter; a failed one stays failed. */
+	private settled: Promise<void> = Promise.resolve();
 	private constructor(prog: ProgressiveArray) {
 		this.prog = prog;
+		this.finished = new Promise<void>((resolve) => (this.resolveFinished = resolve));
 	}
 	static async make(prog: ProgressiveArray) {
 		const o = new ObjectProgressive(prog);
@@ -300,25 +325,38 @@ export class ObjectProgressive<X extends Object> {
 		const lastChar = await getNextNonWhiteSpace(this.prog);
 		if (lastChar === "}") {
 			this.done = true;
-			await this.ondone();
+			this.resolveFinished();
 			return;
 		} else {
 			this.prog.putBackChar(lastChar);
 		}
 	}
-	awaiting = new Promise<void>((_) => _());
-
-	async doChecks(): Promise<() => void> {
-		let res1: () => void;
-		let cur = new Promise<void>((res) => {
-			res1 = res;
-		});
-		[cur, this.awaiting] = [this.awaiting, cur];
-		await cur;
-		return () => res1();
+	/** Reads the delimiter owed after the last pair handed over, if there is one. */
+	private settle(): Promise<void> {
+		const owed = this.owed;
+		if (owed) {
+			delete this.owed;
+			this.settled = (async () => {
+				if (owed.child) await owed.child.finished;
+				const lastChar = await getNextNonWhiteSpace(this.prog);
+				if (lastChar === "}") {
+					this.done = true;
+					this.resolveFinished();
+				} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
+			})();
+		}
+		return this.settled;
+	}
+	/**
+	 * Whether another pair follows. This reads the delimiter owed after the last pair handed over,
+	 * so a nested container value must be read to its end first, or this waits for it.
+	 */
+	async more(): Promise<boolean> {
+		await this.settle();
+		return !this.done;
 	}
 	async getNextPair(): Promise<{[K in keyof X]: {key: K; value: Progressive<X[K]>}}[keyof X]> {
-		const checks = await this.doChecks();
+		await this.settle();
 		if (this.done) throw new Error("no more object");
 		const key = (await identifyType(this.prog)) as unknown;
 		if (typeof key !== "string") {
@@ -327,19 +365,10 @@ export class ObjectProgressive<X extends Object> {
 		const nextChar = await getNextNonWhiteSpace(this.prog);
 		if (nextChar !== ":") throw new SyntaxError("Bad JSON");
 		const value = (await identifyType(this.prog)) as unknown;
-		const check = async () => {
-			const lastChar = await getNextNonWhiteSpace(this.prog);
-			if (lastChar === "}") {
-				this.done = true;
-				await this.ondone();
-			} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
-			checks();
-		};
-		if ((value instanceof ArrayProgressive || value instanceof ObjectProgressive) && !value.done) {
-			value.ondone = check;
-		} else {
-			await check();
-		}
+		this.owed =
+			(value instanceof ArrayProgressive || value instanceof ObjectProgressive) && !value.done
+				? {child: value}
+				: {};
 		return {key, value} as any;
 	}
 	/**
@@ -347,7 +376,7 @@ export class ObjectProgressive<X extends Object> {
 	 */
 	async getWhole(): Promise<X> {
 		const obj: Partial<X> = {};
-		while (!this.done) {
+		while (await this.more()) {
 			let {key, value} = await this.getNextPair();
 			if (value instanceof ArrayProgressive) {
 				value = await value.getWhole();
@@ -370,7 +399,7 @@ type Progressive<T> =
 				? ObjectProgressive<T>
 				: T;
 /*
- * this will progressively load a JSON object, you must read everything you get to get the next thing in line.
+ * this will progressively load a JSON object, you must read each item through to its end before asking for the next one.
  */
 export async function ProgessiveDecodeJSON<X, I extends RequestInit = RequestInit>(
 	url: string,
