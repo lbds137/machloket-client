@@ -96,7 +96,6 @@ export async function streamList<T extends object>(
 			}
 			onItem(item);
 		}
-		return null;
 	} finally {
 		// Done, stopped or thrown out of, the response is finished with.
 		arr.prog.close();
