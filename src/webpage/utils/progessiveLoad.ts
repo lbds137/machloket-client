@@ -5,9 +5,13 @@ export class ProgressiveArray {
 	index = 0;
 	sizeLeft = 0;
 	ready: Promise<void>;
-	constructor(url: string, req: RequestInit = {}) {
+	constructor(
+		url: string,
+		req: RequestInit = {},
+		fetcher: (input: string, init: RequestInit) => Promise<Response> = fetch,
+	) {
 		this.controller = new AbortController();
-		this.ready = fetch(url, {
+		this.ready = fetcher(url, {
 			...req,
 			signal: this.controller.signal,
 		}).then(async (f) => {
@@ -310,8 +314,9 @@ type Progressive<T> =
 export async function ProgessiveDecodeJSON<X>(
 	url: string,
 	req: RequestInit = {},
+	fetcher: (input: string, init: RequestInit) => Promise<Response> = fetch,
 ): Promise<Progressive<X>> {
-	const prog = new ProgressiveArray(url, req);
+	const prog = new ProgressiveArray(url, req, fetcher);
 	await prog.ready;
 	return identifyType(prog) as Promise<Progressive<X>>;
 }

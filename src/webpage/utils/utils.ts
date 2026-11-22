@@ -9,6 +9,7 @@ import {getDeveloperSettings} from "./storage/devSettings";
 import {readItem, saveAccounts, writeAccounts} from "./storage/settingOverlay";
 import {isStoreRefusal, trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
+import {apiFetch} from "./apiFetch.js";
 
 fix();
 const apiDoms = new Set<string>();
@@ -789,16 +790,12 @@ export const pingTimeoutMs = 10_000;
  * failure both read as absent. (Exported for the pingGuard tests.) */
 export async function pingResponse(api: URL | string): Promise<Response | null> {
 	const base = api.toString();
-	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), pingTimeoutMs);
 	try {
-		return await fetch(base + (base.endsWith("/") ? "" : "/") + "ping", {
-			signal: controller.signal,
+		return await apiFetch(base + (base.endsWith("/") ? "" : "/") + "ping", {
+			timeoutMs: pingTimeoutMs,
 		});
 	} catch {
 		return null;
-	} finally {
-		clearTimeout(timer);
 	}
 }
 

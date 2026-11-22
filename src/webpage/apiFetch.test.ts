@@ -19,7 +19,7 @@ const {fetchRetryOnce} = await import("./utils/rateLimit");
 const {apiFetch, configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTests} =
 	await import("./utils/apiFetch");
 const {showNewInvite} = await import("./utils/inviteLink");
-const {adduser, Specialuser} = await import("./utils/utils");
+const {adduser, Specialuser, pingResponse} = await import("./utils/utils");
 const {readItem, resetSettingOverlayForTests} = await import("./utils/storage/settingOverlay");
 await I18n.done;
 
@@ -609,6 +609,219 @@ describe("apiFetch wrapper", () => {
 		const controller = new AbortController();
 		controller.abort(reason);
 		await expect(apiFetch(API + "/users/@me", {signal: controller.signal})).rejects.toBe(reason);
+	});
+
+	it("AbortSignal.any fallback: a caller abort after the headers still cancels a slow body read", async () => {
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) =>
+			Promise.resolve(
+				new Response(
+					new ReadableStream<Uint8Array>({
+						start(streamController) {
+							init?.signal?.addEventListener(
+								"abort",
+								() => streamController.error(init.signal?.reason),
+								{once: true},
+							);
+						},
+					}),
+					{status: 200},
+				),
+			),
+		);
+		const callerController = new AbortController();
+		const res = await apiFetch(API + "/guilds/g1/bans", {signal: callerController.signal});
+		const outcome = Promise.race([
+			res
+				.body!.getReader()
+				.read()
+				.then(
+					() => "resolved",
+					() => "rejected",
+				),
+			new Promise<string>((resolve) => setTimeout(() => resolve("pending"), 500)),
+		]);
+		callerController.abort();
+		expect(await outcome).toBe("rejected");
+	});
+
+	it("AbortSignal.any fallback: a timeout during the body read rejects it with the TimeoutError reason", async () => {
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) =>
+			Promise.resolve(
+				new Response(
+					new ReadableStream<Uint8Array>({
+						start(streamController) {
+							init?.signal?.addEventListener(
+								"abort",
+								() => streamController.error(init.signal?.reason),
+								{once: true},
+							);
+						},
+					}),
+					{status: 200},
+				),
+			),
+		);
+		const res = await apiFetch(API + "/guilds/g1/bans", {
+			signal: new AbortController().signal,
+			timeoutMs: 50,
+		});
+		const error = await res
+			.body!.getReader()
+			.read()
+			.then(
+				() => null,
+				(e: unknown) => e,
+			);
+		expect((error as DOMException | null)?.name).toBe("TimeoutError");
+	});
+
+	it("guild unban 401 with a dead-token probe invalidates the stored account and routes to /login", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "unban-dead@example.test",
+			token: "fake-unban-dead-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/guilds/g1/bans/u1", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "g1",
+			owner: {info: {api: API}},
+			headers: {Authorization: user.token},
+		}) as InstanceType<typeof Guild>;
+
+		expect(await guild.unban("u1")).toBe(false);
+
+		await vi.waitFor(() => {
+			expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("guild unban 401 with a 200 probe keeps the account logged in and shows the refusal", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "unban-alive@example.test",
+			token: "fake-unban-alive-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/guilds/g1/bans/u1", () =>
+			Response.json({message: "Unban refused", code: 0}, {status: 401}),
+		);
+		let probes = 0;
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			return Response.json({id: "u-alive"});
+		});
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "g1",
+			owner: {info: {api: API}},
+			headers: {Authorization: user.token},
+		}) as InstanceType<typeof Guild>;
+
+		expect(await guild.unban("u1")).toBe(false);
+		// The 401 must reach the probe (apiFetch engaged), and the probe's "alive" must settle.
+		await vi.waitFor(() => expect(probes).toBe(1));
+		await new Promise((r) => setTimeout(r, 0));
+
+		expect(nav).not.toHaveBeenCalled();
+		expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(true);
+		expect(document.body.textContent).toContain(I18n.requestFailed("Unban refused"));
+	});
+
+	it("ProgessiveDecodeJSON through apiFetch sends redirect: 'error' and decodes the served array", async () => {
+		const {ProgessiveDecodeJSON} = await import("./utils/progessiveLoad");
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValue(new Response(JSON.stringify([{code: "a"}, {code: "b"}]), {status: 200}));
+
+		const prog = await ProgessiveDecodeJSON<{code: string}[]>(
+			API + "/guilds/g1/invites",
+			{headers: {Authorization: "fake-progressive-token"}},
+			apiFetch,
+		);
+		const whole = await (prog as unknown as {getWhole: () => Promise<unknown>}).getWhole();
+
+		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
+		expect(whole).toEqual([{code: "a"}, {code: "b"}]);
+	});
+
+	it("ProgressiveArray close() on the AbortSignal.any fallback aborts a slow body read", async () => {
+		const {ProgressiveArray} = await import("./utils/progessiveLoad");
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) =>
+			Promise.resolve(
+				new Response(
+					new ReadableStream<Uint8Array>({
+						start(streamController) {
+							streamController.enqueue(new TextEncoder().encode('[{"code":"a"}'));
+							init?.signal?.addEventListener(
+								"abort",
+								() => streamController.error(init.signal?.reason),
+								{once: true},
+							);
+						},
+					}),
+					{status: 200},
+				),
+			),
+		);
+		const prog = new ProgressiveArray(
+			API + "/guilds/g1/bans",
+			{headers: {Authorization: "fake-close-token"}},
+			apiFetch,
+		);
+		await prog.ready;
+		const outcome = Promise.race([
+			prog.read!.read().then(
+				() => "resolved",
+				() => "rejected",
+			),
+			new Promise<string>((resolve) => setTimeout(() => resolve("pending"), 500)),
+		]);
+		prog.close();
+		expect(await outcome).toBe("rejected");
+	});
+
+	it("pingResponse sends redirect: 'error' and reads a redirect-refused ping as absent", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockRejectedValue(new TypeError("redirect refused"));
+
+		expect(await pingResponse(API)).toBeNull();
+		expect(fetchSpy.mock.calls[0][0]).toBe(API + "/ping");
+		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
 	});
 
 	it("an invalidation throw releases the latch with a warn and a later 401 still routes", async () => {

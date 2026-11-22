@@ -4,6 +4,7 @@ import {Hover} from "./hover.js";
 import {I18n} from "./i18n.js";
 import {emojijson, emojiSource} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
+import {apiFetch} from "./utils/apiFetch.js";
 import {BinRead} from "./utils/binaryUtils.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {showRefusal} from "./utils/showRefusal.js";
@@ -77,7 +78,7 @@ class Emoji {
 
 		if (map.has(id)) return map.get(id);
 
-		const res = await fetch(localuser.info.api + `/emojis/${id}/source`, {
+		const res = await apiFetch(localuser.info.api + `/emojis/${id}/source`, {
 			headers: localuser.headers,
 		}).catch(() => undefined);
 		// Hidden or gone is an answer worth keeping; a passing failure (offline, 429, 5xx) is
@@ -190,7 +191,7 @@ class Emoji {
 						button.classList.add("emojiJoin");
 						guildText.append(button);
 						button.onclick = async () => {
-							const joinRes = await fetch(
+							const joinRes = await apiFetch(
 								localuser.info.api + "/guilds/" + lookup.guild?.id + "/members/@me",
 								{
 									method: "PUT",
