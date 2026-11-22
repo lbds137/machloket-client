@@ -82,9 +82,12 @@ export async function streamList<T extends object>(
 	if (!(list instanceof ArrayProgressive)) return stopped(new SyntaxError("not a list"));
 	const arr: ArrayProgressive<unknown, unknown[]> = list;
 	try {
-		while (!arr.done) {
+		for (;;) {
 			let item: T;
 			try {
+				// The delimiter after the previous item is read here, not when that item was handed over,
+				// so a finished item was already passed on before the stream's next bytes.
+				if (!(await arr.more())) return null;
 				const next = await arr.getNext();
 				if (!(next instanceof ObjectProgressive)) return stopped(new SyntaxError("not an object"));
 				item = (await next.getWhole()) as T;

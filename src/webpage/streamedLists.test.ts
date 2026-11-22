@@ -92,6 +92,14 @@ it("an invite list cut mid-body keeps the invites that arrived and says the netw
 	expect(root.querySelector(".inviteCard .inviteCode")?.textContent).toBe("first");
 });
 
+it("an invite cut right after its closing brace still shows that invite and says the network failed", async () => {
+	captureRequests(INVITES, cutMidList("[" + JSON.stringify(invite("first"))));
+	const root = await inviteList();
+
+	await vi.waitFor(() => expect(root.textContent).toContain(I18n.requestFailed("offline")));
+	expect(root.querySelector(".inviteCard .inviteCode")?.textContent).toBe("first");
+});
+
 it("a whole invite list shows no failure line (the control)", async () => {
 	captureRequests(INVITES, () => Response.json([invite("a"), invite("b")]));
 	const root = await inviteList();
@@ -362,4 +370,84 @@ it("a throw from the item callback reaches the caller instead of reading as offl
 	).rejects.toBe(bug);
 	const load = fetchSpy.mock.calls.find((call) => String(call[0]) === INVITES);
 	expect(load?.[1]?.signal?.aborted).toBe(true); // the load is closed on the way out
+});
+
+it("a finished item is handed over before the delimiter after it is read", async () => {
+	const {fetcher, send} = handFed();
+	const pending = ProgessiveDecodeJSON<{a: number}[]>(API + "/x", {}, fetcher, {
+		idleTimeoutMs: 5_000,
+	});
+	send('[{"a":1}');
+	const list = (await pending) as unknown as Whole;
+
+	const item = (await list.getNext()) as Whole;
+	const outcome = await Promise.race([
+		item.getWhole().then(
+			(whole) => whole,
+			(e: unknown) => e,
+		),
+		sleep(200).then(() => "pending"),
+	]);
+
+	expect(outcome).toEqual({a: 1});
+});
+
+it("the delimiter after a handed-over item is read only when the reader asks for the next one", async () => {
+	const {fetcher, send, close} = handFed();
+	const pending = ProgessiveDecodeJSON<{a: number}[]>(API + "/x", {}, fetcher, {idleTimeoutMs: 50});
+	send('[{"a":1}');
+	const list = (await pending) as unknown as Whole;
+
+	const first = (await list.getNext()) as Whole;
+	expect(await first.getWhole()).toEqual({a: 1});
+	await sleep(120); // the reader is busy; nothing is awaited from the server
+	send(',{"a":2}]');
+	close();
+
+	expect(await list.getWhole()).toEqual([{a: 2}]);
+});
+
+it("a delimiter that is malformed stays failed: every later read rejects too", async () => {
+	const {fetcher, send, close} = handFed();
+	const pending = ProgessiveDecodeJSON<number[]>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+	send("[1;");
+	close();
+	const list = (await pending) as unknown as Whole & {more(): Promise<boolean>};
+
+	expect(await list.getNext()).toBe(1);
+	const outcome = () =>
+		Promise.race([
+			list.more().then(
+				() => "resolved",
+				(e: unknown) => e,
+			),
+			sleep(200).then(() => "pending"),
+		]);
+
+	expect(await outcome()).toBeInstanceOf(SyntaxError);
+	expect(await outcome()).toBeInstanceOf(SyntaxError);
+});
+
+it("an item whose body never closes reaches the callback's throw without a stray rejection", async () => {
+	const rejections = trapRejections();
+	vi.spyOn(globalThis, "fetch").mockImplementation(async (_input, init) => {
+		const signal = init?.signal;
+		return new Response(
+			new ReadableStream<Uint8Array>({
+				start(controller) {
+					controller.enqueue(new TextEncoder().encode("[" + JSON.stringify(invite("a"))));
+					signal?.addEventListener("abort", () => controller.error(signal.reason), {once: true});
+				},
+			}),
+			{status: 200},
+		);
+	});
+	const bug = new Error("card builder bug");
+
+	await expect(
+		streamList(INVITES, {}, () => {
+			throw bug;
+		}),
+	).rejects.toBe(bug);
+	expect(await rejections.stop()).toEqual([]);
 });
