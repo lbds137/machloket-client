@@ -388,7 +388,8 @@ class Voice {
 		this.onMemberChange(userid, false);
 	}
 
-	async packet(message: MessageEvent) {
+	async packet(message: MessageEvent, socket?: WebSocket) {
+		if (socket && this.ws !== socket) return;
 		const data = message.data;
 		if (typeof data === "string") {
 			const json: webRTCSocket = JSON.parse(data);
@@ -417,6 +418,7 @@ class Voice {
 					break;
 				case 12:
 					await this.figureRecivers();
+					if (socket && this.ws !== socket) return;
 					if (
 						(!this.users.has(json.d.audio_ssrc) && json.d.audio_ssrc !== 0) ||
 						(!this.vidusers.has(json.d.video_ssrc) && json.d.video_ssrc !== 0)
@@ -495,7 +497,7 @@ class Voice {
 		const group = parsed.atr.get("group");
 		if (!group) throw new Error("group isn't in sdp");
 		const [_, ...bundles] = (group.entries().next().value as [string, string])[0].split(" ");
-		bundles[bundles.length - 1] = bundles[bundles.length - 1].replace("\r", "");
+		bundles[bundles.length - 1] = bundles[bundles.length - 1].replaceAll("\r", "");
 
 		if (!this.offer) throw new Error("Offer is missing :P");
 		let cline = sdp.split("\n").find((line) => line.startsWith("c="));
@@ -609,35 +611,42 @@ a=rtcp-mux\r`;
 	counter?: string;
 	forceNext: boolean = false;
 	async updateRemote() {
+		const pc = this.pc;
 		const counter = this.counter;
-		if (!counter || !this.pc) return;
+		if (!counter || !pc) return;
 		const remote: {sdp: string; type: RTCSdpType} = {
 			sdp: await this.cleanServerSDP(counter),
 			type: "answer",
 		};
-		await this.pc.setRemoteDescription(remote);
+		if (this.pc !== pc) return;
+		await pc.setRemoteDescription(remote);
 	}
 	negotationneeded() {
 		if (this.pc) {
 			const pc = this.pc;
 			let setting = false;
 			const setLocal = async (forced: boolean = this.forceNext) => {
-				if (setting) return;
+				if (setting || this.pc !== pc) return;
 				const val = (Math.random() * 1000) ^ 0;
 
 				setting = true;
-				const offer = await pc.createOffer();
-				if (offer.sdp === pc.localDescription?.sdp || forced) {
-					logState("update", "will Sent offer " + val);
-					await pc.setLocalDescription();
-					logState("update", "Sent offer " + val);
+				try {
+					const offer = await pc.createOffer();
+					if (this.pc !== pc) return;
+					if (offer.sdp === pc.localDescription?.sdp || forced) {
+						logState("update", "will Sent offer " + val);
+						await pc.setLocalDescription();
+						logState("update", "Sent offer " + val);
+					}
+				} finally {
+					setting = false;
 				}
-				setting = false;
-				this.forceNext = false;
+				if (this.pc === pc) this.forceNext = false;
 			};
 			const sendOffer = async (forced = this.forceNext) => {
+				if (this.pc !== pc) return;
 				if (!setting) {
-					setLocal(forced);
+					void setLocal(forced).catch((e) => console.error("setLocal failed", e));
 					console.log("set local");
 				}
 
@@ -648,6 +657,7 @@ a=rtcp-mux\r`;
 					.then((_) => _.forEach((_) => _.type === "local-candidate" || console.error(_)));
 				for (const sender of senders) {
 					const d = await sender.getStats();
+					if (this.pc !== pc) return;
 					let found = false;
 					d.forEach((thing) => {
 						if (thing.ssrc) {
@@ -671,11 +681,13 @@ a=rtcp-mux\r`;
 						}
 					}
 				}
+				if (this.pc !== pc) return;
 				if (!made12) {
 					this.makeOp12();
 				}
 			};
 			const detectDone = () => {
+				if (this.pc !== pc) return;
 				if (
 					pc.signalingState === "stable" &&
 					pc.iceConnectionState === "connected" &&
@@ -689,16 +701,21 @@ a=rtcp-mux\r`;
 				console.log("log state: " + thing + (message ? ":" + message : ""));
 			}
 			pc.addEventListener("negotiationneeded", async () => {
+				if (this.pc !== pc) return;
 				logState("negotiationneeded");
 				await sendOffer(true);
 			});
 			pc.onicecandidate = () => {};
 
 			pc.addEventListener("signalingstatechange", async () => {
+				if (this.pc !== pc) return;
 				logState("signalingstatechange", pc.signalingState);
 				detectDone();
-				while (!this.counter) await new Promise((res) => setTimeout(res, 100));
-				if (this.pc && this.counter) {
+				while (!this.counter) {
+					if (this.pc !== pc) return;
+					await new Promise((res) => setTimeout(res, 100));
+				}
+				if (this.pc === pc && this.counter) {
 					if (pc.signalingState === "have-local-offer") {
 						const val = (Math.random() * 1000) ^ 0;
 						logState("update", "start sent remote " + val);
@@ -708,6 +725,7 @@ a=rtcp-mux\r`;
 				}
 			});
 			pc.addEventListener("connectionstatechange", async () => {
+				if (this.pc !== pc) return;
 				logState("connectionstatechange", pc.connectionState);
 				detectDone();
 				if (pc.connectionState === "connecting") {
@@ -717,16 +735,18 @@ a=rtcp-mux\r`;
 				}
 			});
 			pc.addEventListener("icegatheringstatechange", async () => {
+				if (this.pc !== pc) return;
 				logState("icegatheringstatechange", pc.iceGatheringState);
 				detectDone();
 				if (pc.iceGatheringState === "complete") {
 					if (setting) return;
-					if (this.pc && this.counter) {
+					if (this.pc === pc && this.counter) {
 						setLocal();
 					}
 				}
 			});
 			pc.addEventListener("iceconnectionstatechange", async () => {
+				if (this.pc !== pc) return;
 				logState("iceconnectionstatechange", pc.iceConnectionState);
 
 				detectDone();
@@ -1163,17 +1183,21 @@ a=rtcp-mux\r`;
 
 		this.pc = pc;
 		await this.makeOp12(this.mic?.sender);
+		if (this.pc !== pc) return;
 		this.negotationneeded();
 		await new Promise((res) => setTimeout(res, 100));
+		if (this.pc !== pc) return;
 		let sdp = this.offer;
 		if (!sdp) {
 			const offer = await this.makeOffer();
+			if (this.pc !== pc) return;
 			this.status = "startingRTC";
 			sdp = offer.sdp;
 			this.offer = sdp;
 		}
 
 		await pc.setLocalDescription();
+		if (this.pc !== pc) return;
 		if (!sdp) {
 			this.status = "noSDP";
 			this.ws?.close();
@@ -1406,15 +1430,15 @@ a=rtcp-mux\r`;
 		};
 		this.status = "wsOpen";
 		ws.addEventListener("message", (m) => {
-			this.packet(m);
+			this.packet(m, ws);
 		});
 		await new Promise<void>((res) => {
 			ws.addEventListener("open", () => {
 				res();
 			});
 		});
-		if (!this.ws) {
-			this.leave();
+		if (this.ws !== ws) {
+			ws.close();
 			return;
 		}
 		this.status = "wsAuth";
