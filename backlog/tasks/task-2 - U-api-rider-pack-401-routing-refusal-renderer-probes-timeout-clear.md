@@ -4,7 +4,7 @@ title: 'U-api rider pack: 401 routing, refusal renderer, probes, timeout clear'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-20T02:37:00Z'
+updated_date: '2026-11-22T21:38:00Z'
 labels:
   - u-api
   - deferred
@@ -28,3 +28,11 @@ Review riders from the #160-#163 rounds, none blocking. Fold into the 2c-2f unit
 (h) Comment riders: latch shared-across-tokens comment; resetUnauthorizedNavForTests comment drift.
 (i) CHECK then disposition: the invalidateAccount stale-instance write rider — verify batch 2a's flip-all/save-through-last rework closed it.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+(j) 2e council review (PR #173): handleUnauthorized's navigation microtask (carryAccountsAcrossNavigation + pageNav.go in queueMicrotask, src/webpage/utils/apiFetch.ts) runs outside the try/catch, so a throw there leaves unauthorizedNavPending stuck true; put the whole probe->invalidate->navigate flow under one boundary and decide the state when invalidation succeeded but navigation threw.
+(k) Specialuser.logout (src/webpage/utils/utils.ts) treats a 401 as a failure: a dead token retries 3 times, then shows the logout-error dialog before continue removes the account. A 401 from /auth/logout means the token is already dead; treat it as done (local removal) and skip the dialog. User-visible: confirm the copy/flow before changing.
+(l) Same review, on (h): per-token probe dedup + re-check the active account before routing (a 401 for token B is dropped while token A's probe is in flight).
+<!-- SECTION:NOTES:END -->
