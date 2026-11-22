@@ -33,6 +33,7 @@ import {drawerOwnsTouch} from "./utils/drawerSwipe.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {tooLongReason} from "./utils/messageLimit.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {apiFetch} from "./utils/apiFetch.js";
 import {assignableKey} from "./utils/assignableKey.js";
 
 export interface ForwardSnapshot {
@@ -159,7 +160,7 @@ export async function fetchReactionUsers(
 	if (segment === undefined) return [];
 	const url = `${message.info.api}/channels/${message.channel.id}/messages/${message.id}/reactions/${segment}?limit=${limit}&type=0`;
 	const init = {headers: message.headers};
-	const f = await (retry ? fetchRetryOnce(url, init) : fetch(url, init));
+	const f = await (retry ? fetchRetryOnce(url, init) : apiFetch(url, init));
 	const body: unknown = await f.json().catch(() => []);
 	return Array.isArray(body) ? (body as userjson[]) : [];
 }
@@ -1053,7 +1054,7 @@ class Message extends SnowFlake {
 		else await showRefusal(res ?? undefined);
 	}
 	async delete() {
-		const res = await fetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {
+		const res = await apiFetch(`${this.info.api}/channels/${this.channel.id}/messages/${this.id}`, {
 			headers: this.headers,
 			method: "DELETE",
 		}).catch(() => undefined);
@@ -1895,7 +1896,7 @@ class Message extends SnowFlake {
 					const seq = ++voteSeq;
 					const sent = new Map([...r.values()].map((answer) => [answer.id, answer.me_voted]));
 					voted = [...r.values()].some((answer) => answer.me_voted);
-					const res = await fetch(
+					const res = await apiFetch(
 						`${this.info.api}/channels/${this.channel.id}/polls/${this.id}/answers/@me`,
 						{
 							method: "PUT",
@@ -2239,7 +2240,7 @@ class Message extends SnowFlake {
 		options.addButtonInput("", I18n.yes(), async () => {
 			if (ending) return;
 			ending = true;
-			const res = await fetch(
+			const res = await apiFetch(
 				`${this.info.api}/channels/${this.channel.id}/polls/${this.id}/expire`,
 				{
 					headers: this.headers,
@@ -2497,7 +2498,7 @@ async function sendForward(
 	if (res?.ok) {
 		dio?.hide();
 	} else {
-		new Dialog(I18n.requestFailed(res ? "HTTP " + res.status : "offline")).show();
+		await showRefusal(res);
 	}
 	return res;
 }
