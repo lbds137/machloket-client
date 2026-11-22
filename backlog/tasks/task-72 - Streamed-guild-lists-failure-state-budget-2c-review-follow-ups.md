@@ -1,10 +1,10 @@
 ---
 id: TASK-72
 title: 'Streamed guild lists: failure state + budget (2c review follow-ups)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-22T15:27:00Z'
-updated_date: '2026-11-22T16:42:00Z'
+updated_date: '2026-11-22T16:53:00Z'
 labels:
   - u-api
 dependencies: []
@@ -22,4 +22,6 @@ From PR #168 claude-review (merged 0d63c6db). (a) makeInviteMenu and the ban men
 
 <!-- SECTION:NOTES:BEGIN -->
 Decision (b): per-wait idle budget (30 s on the headers and each body chunk; reader time between reads not counted) via ProgressiveArray's opt-in idleTimeoutMs, lists pass timeoutMs: 0 to apiFetch. A larger fixed budget only moves the mid-list cut. In PR #169; follow-up TASK-73.
+
+Merged: PR #169 -> 43411287 (gate 2169 + e2e 173; claude-review PASS, 5 Low -> TASK-73, #5 ruled out).
 <!-- SECTION:NOTES:END -->
