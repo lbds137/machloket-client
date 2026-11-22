@@ -174,6 +174,27 @@ it("a body that is not JSON closes its load instead of leaving the response open
 	expect(signals[0]?.aborted).toBe(true);
 });
 
+it.each(["1-2\n", "1e\n", "-\n", "01\n"])(
+	"a malformed number %j is a SyntaxError, not a silent NaN",
+	async (body) => {
+		const {fetcher, send, close} = handFed();
+		const decoded = ProgessiveDecodeJSON<number>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+		send(body);
+		close();
+
+		await expect(decoded).rejects.toBeInstanceOf(SyntaxError);
+	},
+);
+
+it("a body that is a bare number decodes it, with no trailing whitespace needed", async () => {
+	const {fetcher, send, close} = handFed();
+	const decoded = ProgessiveDecodeJSON<number>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+	send("5");
+	close();
+
+	expect(await decoded).toBe(5);
+});
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 type Whole = {getWhole(): Promise<unknown>; getNext(): Promise<unknown>};
 
@@ -288,22 +309,29 @@ function trapRejections() {
 	};
 }
 
-// 200s the server answered with something other than a JSON array of objects. "5\n" ends in
-// whitespace so the number's end is read without running out of body.
-const unreadable: [string, string][] = [
-	["null", "null"],
-	["a lone number", "5\n"],
-	["an error object", '{"message": "x"}'],
-	["an empty object", "{}"],
-	["an array of scalars", "[1, 2]"],
-	["an HTML page", "<!doctype html><html></html>"],
+// Responses the server answered with something other than a JSON array of objects. A lone number
+// ends in whitespace ("5\n") or with nothing after it ("5"): the decoder reads it either way, and
+// the list still says it is unreadable. A 204, a body-less 200 and an empty or whitespace-only body
+// have nothing to decode at all.
+const unreadable: [string, () => Response][] = [
+	["null", () => new Response("null", {status: 200})],
+	["a lone number", () => new Response("5\n", {status: 200})],
+	["a bare number", () => new Response("5", {status: 200})],
+	["an error object", () => new Response('{"message": "x"}', {status: 200})],
+	["an empty object", () => new Response("{}", {status: 200})],
+	["an array of scalars", () => new Response("[1, 2]", {status: 200})],
+	["an HTML page", () => new Response("<!doctype html><html></html>", {status: 200})],
+	["a 204", () => new Response(null, {status: 204})],
+	["a 200 with no body", () => new Response(null, {status: 200})],
+	["an empty body", () => new Response("", {status: 200})],
+	["a whitespace body", () => new Response(" \n", {status: 200})],
 ];
 
 it.each(unreadable)(
-	"an invite list whose body is %s says the list is unreadable, not offline",
-	async (_, body) => {
+	"an invite list answered with %s says the list is unreadable, not offline",
+	async (_, respond) => {
 		const rejections = trapRejections();
-		captureRequests(INVITES, () => new Response(body, {status: 200}));
+		captureRequests(INVITES, respond);
 		const root = await inviteList();
 
 		await vi.waitFor(() => expect(root.textContent).toContain(I18n.listUnreadable()));
@@ -325,12 +353,13 @@ it("a ban list whose body is not an array says the list is unreadable, not offli
 it("a throw from the item callback reaches the caller instead of reading as offline", async () => {
 	captureRequests(INVITES, () => Response.json([invite("a")]));
 	const bug = new Error("card builder bug");
-	const abort = vi.spyOn(AbortController.prototype, "abort");
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
 
 	await expect(
 		streamList(INVITES, {}, () => {
 			throw bug;
 		}),
 	).rejects.toBe(bug);
-	expect(abort).toHaveBeenCalled(); // the load is closed on the way out
+	const load = fetchSpy.mock.calls.find((call) => String(call[0]) === INVITES);
+	expect(load?.[1]?.signal?.aborted).toBe(true); // the load is closed on the way out
 });
