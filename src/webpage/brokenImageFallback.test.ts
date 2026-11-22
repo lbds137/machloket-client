@@ -8,6 +8,8 @@ const {Sticker} = await import("./sticker");
 const {User} = await import("./user");
 const {Role} = await import("./role");
 const {Guild} = await import("./guild");
+const {Discovery} = await import("./discovery");
+const {appIconElm} = await import("./interactions/commandPicker");
 
 const CDN = "https://cdn.test";
 
@@ -103,6 +105,81 @@ describe("custom emoji on the real network", () => {
 		}
 	});
 });
+
+describe("discovery images whose file is gone", () => {
+	const discovery = () =>
+		Object.assign(Object.create(Discovery.prototype), {
+			owner: {info: {cdn: CDN}},
+		}) as InstanceType<typeof Discovery>;
+
+	it("an icon falls back to the embed avatar once; its error class clears on the fallback's load", () => {
+		const img = discovery().getIconURL({
+			id: "555",
+			icon: "abc",
+			banner: null,
+		} as unknown as Parameters<InstanceType<typeof Discovery>["getIconURL"]>[0]);
+		// Mocked so no network request runs; the test drives the events itself.
+		const setSrcs = vi.spyOn(img, "setSrcs").mockImplementation(() => {});
+		const parent = mount(img);
+		try {
+			img.dispatchEvent(new Event("error"));
+			expect(setSrcs).toHaveBeenCalledTimes(1);
+			expect(setSrcs).toHaveBeenLastCalledWith(`${CDN}/embed/avatars/3.png`);
+			expect(img.classList.contains("error")).toBe(true);
+
+			img.dispatchEvent(new Event("load"));
+			expect(img.classList.contains("error")).toBe(false);
+
+			img.dispatchEvent(new Event("error"));
+			expect(setSrcs).toHaveBeenCalledTimes(1);
+		} finally {
+			setSrcs.mockRestore();
+			parent.remove();
+		}
+	});
+
+	it("a banner is removed when its file is gone", () => {
+		const banner = discovery().getBannerURL({
+			id: "556",
+			banner: "bbb",
+		} as unknown as Parameters<InstanceType<typeof Discovery>["getBannerURL"]>[0]);
+		expect(banner).toBeTruthy();
+		const parent = mount(banner as HTMLElement);
+		try {
+			(banner as HTMLElement).dispatchEvent(new Event("error"));
+			expect((banner as HTMLElement).isConnected).toBe(false);
+			expect(parent.querySelector("img")).toBeNull();
+		} finally {
+			parent.remove();
+		}
+	});
+});
+
+describe("app icon whose file is gone", () => {
+	it("becomes the app's first letter, uppercased", () => {
+		const localuser = {info: {cdn: CDN}} as unknown as Parameters<typeof appIconElm>[0];
+		const app = {id: "777", icon: "ico", name: "tzurot"} as unknown as Parameters<
+			typeof appIconElm
+		>[1];
+		const img = appIconElm(localuser, app);
+		const parent = mount(img);
+		try {
+			img.dispatchEvent(new Event("error"));
+
+			const letter = parent.querySelector<HTMLElement>("span.commandAppIconFallback");
+			expect(letter).not.toBeNull();
+			expect(letter?.textContent).toBe("T");
+			expect(img.isConnected).toBe(false);
+		} finally {
+			parent.remove();
+		}
+	});
+});
+
+// Not covered here, each reachable only through a large internal flow: the webhook settings avatar
+// (makeHook is a closure inside webhookMenu), the invite-page banner and icon (a top-level page
+// script, nothing exported), the embed banner (inside Embed's async render path), and the emoji and
+// sticker picker guild headers (built inside the picker functions).
 
 describe("sticker whose image is gone", () => {
 	it("shows its name as a bordered text box, with no image", () => {
