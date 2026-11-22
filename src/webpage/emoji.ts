@@ -118,6 +118,9 @@ class Emoji {
 				text.classList.add("md-emoji-fallback");
 				text.textContent = `:${this.humanName}:`;
 				text.setAttribute("real", this.name);
+				// Atomic in the composer: text typed next to it must not land inside it (gatherBoxText
+				// reads only `real`), as with the other `real` elements (markdown.ts).
+				text.contentEditable = "false";
 				new Hover(this.humanName).addEvent(text);
 				return text;
 			});
