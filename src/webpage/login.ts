@@ -6,6 +6,7 @@ import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 import {formErrors} from "./utils/refusalText.js";
 import {carryAccountsAcrossNavigation} from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
+import {apiFetch} from "./utils/apiFetch.js";
 function generateRecArea(recover = document.getElementById("recover")) {
 	if (!recover) return;
 	recover.innerHTML = "";
@@ -31,7 +32,7 @@ async function recover(e: InstanceInfo, recover = document.getElementById("recov
 					throw Error("can't recover");
 				}
 				recMap.set(e.api, prom);
-				const json = (await (await fetch(e.api + "/policies/instance/config")).json()) as {
+				const json = (await (await apiFetch(e.api + "/policies/instance/config")).json()) as {
 					can_recover_account: boolean;
 				};
 				if (!json || !json.can_recover_account) throw Error("can't recover account");

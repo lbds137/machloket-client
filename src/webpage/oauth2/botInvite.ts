@@ -1,4 +1,5 @@
 import {refusalText} from "../utils/refusalText.js";
+import {apiFetch} from "../utils/apiFetch.js";
 
 export type botjsonfetch = {
 	guilds: {
@@ -50,7 +51,7 @@ export async function fetchBotInvite(
 	token: string,
 	search: string,
 ): Promise<botjsonfetch | string> {
-	const res = await fetch(api + "/oauth2/authorize/" + search, {
+	const res = await apiFetch(api + "/oauth2/authorize/" + search, {
 		headers: {Authorization: token},
 	}).catch(() => undefined);
 	const answer = res?.ok
@@ -73,7 +74,7 @@ export async function authorizeBot(
 	permissions: string | null,
 ): Promise<true | string> {
 	const params = new URLSearchParams([["client_id", clientId]]);
-	const res = await fetch(api + "/oauth2/authorize?" + params, {
+	const res = await apiFetch(api + "/oauth2/authorize?" + params, {
 		method: "POST",
 		body: JSON.stringify({authorize: true, guild_id: guildId, permissions}),
 		headers: {"Content-type": "application/json; charset=UTF-8", Authorization: token},

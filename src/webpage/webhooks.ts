@@ -7,6 +7,7 @@ import {SnowFlake} from "./snowflake.js";
 import {User} from "./user.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
+import {apiFetch} from "./utils/apiFetch.js";
 
 function getWebhookApiRoot(api: string) {
 	const trimmed = api.replace(/\/+$/, "");
@@ -95,7 +96,7 @@ async function webhookMenu(
 			if (sending) return;
 			sending = true;
 			options.submit();
-			const res = await fetch(`${guild.info.api}/channels/${channel}/webhooks/`, {
+			const res = await apiFetch(`${guild.info.api}/channels/${channel}/webhooks/`, {
 				method: "POST",
 				headers: guild.headers,
 				body: JSON.stringify({name}),
@@ -120,7 +121,7 @@ async function webhookMenu(
 		if (channelId || moveChannels.length) {
 			webhooks.addButtonInput("", I18n.webhooks.newWebHook(), newWebhook);
 		}
-		const res = await fetch(hookURL, {headers: guild.headers}).catch(() => undefined);
+		const res = await apiFetch(hookURL, {headers: guild.headers}).catch(() => undefined);
 		const hooks = res?.ok
 			? ((await res
 					.clone()
@@ -232,7 +233,7 @@ async function webhookMenu(
 				opt.addTitle(I18n.webhooks.areYouSureDelete(hook.name));
 				const opt2 = opt.addOptions("", {ltr: true});
 				opt2.addButtonInput("", I18n.yes(), async () => {
-					const res = await fetch(guild.info.api + "/webhooks/" + hook.id, {
+					const res = await apiFetch(guild.info.api + "/webhooks/" + hook.id, {
 						method: "DELETE",
 						headers: guild.headers,
 					}).catch(() => undefined);

@@ -1,5 +1,6 @@
 import {favandfreq, freq} from "./jsontypes.js";
 import {Localuser} from "./localuser.js";
+import {apiFetch} from "./utils/apiFetch.js";
 
 const HALF_LIFE_DAYS = 7;
 const MS_PER_DAY = 86_400_000;
@@ -200,7 +201,7 @@ export class Favorites {
 				favorite_emojis: {emojis: this.favorite_emojis},
 			},
 		};
-		const res = await fetch(this.info.api + "/users/@me/settings-proto/2/json", {
+		const res = await apiFetch(this.info.api + "/users/@me/settings-proto/2/json", {
 			method: "PATCH",
 			headers: this.headers,
 			body: JSON.stringify(body),
@@ -214,7 +215,7 @@ export class Favorites {
 	}
 	/** Merges the server's favourites in. False when the server didn't answer with them. */
 	async startSync(save = true): Promise<boolean> {
-		const sat = await fetch(this.info.api + "/users/@me/settings-proto/2/json", {
+		const sat = await apiFetch(this.info.api + "/users/@me/settings-proto/2/json", {
 			headers: this.headers,
 		});
 		if (!sat.ok) return false;

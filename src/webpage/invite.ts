@@ -7,6 +7,7 @@ import {acceptInvite} from "./utils/acceptInvite.js";
 import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
 import {pageNav} from "./utils/netUtils.js";
 import {saveAccounts} from "./utils/storage/settingOverlay.js";
+import {apiFetch} from "./utils/apiFetch.js";
 // Re-exported: the accept lives in utils (no page side effects), and this page's tests import it here.
 export {acceptInvite, pageNav};
 /** How long an accept waits for the invite's details before it lands on the home page. */
@@ -86,7 +87,7 @@ if (window.location.pathname.startsWith("/invite"))
 
 		const code = window.location.pathname.split("/")[2];
 		// Resolves to the invite's guild once the details have shown; the accept waits on it.
-		const guildLoaded = fetch(`${urls!.api}/invites/${code}`, {
+		const guildLoaded = apiFetch(`${urls!.api}/invites/${code}`, {
 			method: "GET",
 		})
 			.catch(() => undefined)

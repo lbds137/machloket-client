@@ -10,6 +10,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
+import {apiFetch} from "./utils/apiFetch.js";
 class Bot {
 	readonly owner: Localuser;
 	readonly token: string;
@@ -162,7 +163,7 @@ class Bot {
 			guildsettings.addTitle(I18n.botGuilds());
 			// A failed list is noted in its own panel because the user opened settings, not
 			// this list.
-			fetch(this.info.api + "/users/@me/guilds/", {
+			apiFetch(this.info.api + "/users/@me/guilds/", {
 				headers: this.headers,
 			})
 				.catch(() => undefined)
@@ -233,7 +234,7 @@ class Bot {
 							guildsetting.addButtonInput("", I18n.leaveGuild(), async () => {
 								if (leaving || !confirm(I18n.confirmGuildLeave(guild.name))) return;
 								leaving = true;
-								const res = await fetch(this.info.api + "/users/@me/guilds/" + guild.id, {
+								const res = await apiFetch(this.info.api + "/users/@me/guilds/" + guild.id, {
 									method: "DELETE",
 									headers: this.headers,
 								}).catch(() => undefined);

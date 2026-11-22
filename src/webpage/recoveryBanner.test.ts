@@ -329,7 +329,8 @@ it("13. A 401 keeps the bar as it is and doesn't retry", async () => {
 	expect(banner.hidden).toBe(false);
 	expect(warn).toHaveBeenCalledTimes(1);
 	await vi.advanceTimersByTimeAsync(120_000);
-	expect(fetchSpy).toHaveBeenCalledTimes(1);
+	// Only the recovery call counts: apiFetch's dead-token probe (GET /users/@me) is not a retry.
+	expect(fetchSpy.mock.calls.filter(([url]) => url === URL_RECOVERY)).toHaveLength(1);
 });
 
 it("14. stop() during a pending retry cancels it", async () => {
@@ -361,10 +362,13 @@ it("15. Cancel on 204: DELETE to the exact URL with the headers, the button is d
 	cancel.click();
 
 	expect(cancel.disabled).toBe(true);
-	expect(fetchSpy).toHaveBeenCalledWith(URL_RECOVERY, {
-		method: "DELETE",
-		headers: {Authorization: "tok-15"},
-	});
+	expect(fetchSpy).toHaveBeenCalledWith(
+		URL_RECOVERY,
+		expect.objectContaining({
+			method: "DELETE",
+			headers: {Authorization: "tok-15"},
+		}),
+	);
 
 	resolveDelete(new Response(null, {status: 204}));
 	await vi.waitFor(() => expect(banner.hidden).toBe(true));
@@ -471,10 +475,13 @@ it("20. A second instance's apply takes the button over: clicking sends only tha
 
 	await vi.waitFor(() => expect(banner.hidden).toBe(true));
 	expect(fetchSpy).toHaveBeenCalledTimes(1);
-	expect(fetchSpy).toHaveBeenCalledWith(URL_RECOVERY, {
-		method: "DELETE",
-		headers: {Authorization: "tok-second"},
-	});
+	expect(fetchSpy).toHaveBeenCalledWith(
+		URL_RECOVERY,
+		expect.objectContaining({
+			method: "DELETE",
+			headers: {Authorization: "tok-second"},
+		}),
+	);
 });
 
 it("21. --notice-height equals the bar's offsetHeight px while shown and is removed once hidden", () => {

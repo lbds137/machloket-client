@@ -746,7 +746,7 @@ class User extends SnowFlake {
 				};
 				const opt = options.addOptions("", {ltr: true});
 				opt.addButtonInput("", I18n.yes(), async () => {
-					const res = await fetch(this.info.api + "/users/" + this.id + "/delete", {
+					const res = await apiFetch(this.info.api + "/users/" + this.id + "/delete", {
 						headers: this.localuser.headers,
 						method: "POST",
 						body: JSON.stringify(params),
@@ -871,9 +871,12 @@ class User extends SnowFlake {
 	/** Whether the profile's badge definitions were loaded. */
 	private async loadProfileBadges(): Promise<boolean> {
 		try {
-			const res = await fetch(`${this.info.api}/users/${this.id.replace("#clone", "")}/profile`, {
-				headers: this.localuser.headers,
-			});
+			const res = await apiFetch(
+				`${this.info.api}/users/${this.id.replace("#clone", "")}/profile`,
+				{
+					headers: this.localuser.headers,
+				},
+			);
 			const badges: unknown = res.ok ? (await res.json())?.badges : undefined;
 			if (!Array.isArray(badges)) throw new Error("no badges in the profile: HTTP " + res.status);
 			for (const badge of badges) {
@@ -1149,7 +1152,7 @@ class User extends SnowFlake {
 			);
 		let user: User | undefined;
 		if ((user = localuser.userMap.get(id))) return user;
-		const res = await fetch(localuser.info.api.toString() + "/users/" + id + "/profile", {
+		const res = await apiFetch(localuser.info.api.toString() + "/users/" + id + "/profile", {
 			headers: localuser.headers,
 		});
 		const json = await res.json().catch(() => null);
@@ -1248,7 +1251,7 @@ class User extends SnowFlake {
 	/** The profile with its mutual guilds and friends, or the line saying why there is none: a
 	 * refused or hidden profile, no answer, or an answer without the mutual-guilds list. */
 	async highInfo(): Promise<highMemberJSON | string> {
-		const res = await fetch(
+		const res = await apiFetch(
 			this.info.api +
 				"/users/" +
 				this.id +
@@ -1645,7 +1648,7 @@ class User extends SnowFlake {
 	note?: string;
 	async saveNotes(note: string) {
 		this.note = note;
-		await fetch(`${this.info.api}/users/@me/notes/${this.id}`, {
+		await apiFetch(`${this.info.api}/users/@me/notes/${this.id}`, {
 			method: "PUT",
 			headers: this.headers,
 			body: JSON.stringify({note}),
@@ -1657,7 +1660,7 @@ class User extends SnowFlake {
 				this.note =
 					(
 						await (
-							await fetch(`${this.info.api}/users/@me/notes/${this.id}`, {
+							await apiFetch(`${this.info.api}/users/@me/notes/${this.id}`, {
 								method: "GET",
 								headers: this.headers,
 							})

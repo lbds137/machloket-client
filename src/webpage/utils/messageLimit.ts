@@ -1,10 +1,11 @@
 import {I18n} from "../i18n.js";
+import {apiFetch} from "./apiFetch.js";
 
 /** The instance's limit on a message's length. Unknown (an instance without the route, offline, an
  * odd answer) is undefined: nothing is checked here and the server's refusal says why, which beats
  * holding on to an old limit that may refuse what the server would now take. */
 export async function fetchMessageLimit(api: string): Promise<number | undefined> {
-	const res = await fetch(api + "/policies/instance/config").catch(() => undefined);
+	const res = await apiFetch(api + "/policies/instance/config").catch(() => undefined);
 	if (!res?.ok) return undefined;
 	const json = (await res.json().catch(() => null)) as {
 		limits_message_maxCharacters?: unknown;

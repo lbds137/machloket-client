@@ -1,6 +1,5 @@
 import {pageNav} from "./netUtils.js";
 import {carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
-import {invalidateAccount} from "./utils.js";
 
 /** Default budget (30 s) for authorized API calls. `timeoutMs: 0` opts out (large uploads). */
 export const API_TIMEOUT_MS = 30_000;
@@ -8,10 +7,13 @@ export const API_TIMEOUT_MS = 30_000;
 export type ApiRequestInit = RequestInit & {timeoutMs?: number};
 
 const PRE_AUTH_PATH =
-	/(?:^|\/)(?:ping|instances\.json|\.well-known|policies\/instance|auth\/(?:login|register|forgot|reset|mfa))(?:\/|$)/;
+	/(?:^|\/)(?:ping|instances\.json|\.well-known|policies\/instance|auth\/(?:login|register|forgot|reset|mfa|logout))(?:\/|$)/;
 
 /** Whether `input` is a pre-auth endpoint (/ping, instance discovery, instance policies,
- * login/register/reset/2FA) exempt from 401 session invalidation and routing. */
+ * login/register/reset/2FA, and this token's own /auth/logout) exempt from 401 session
+ * invalidation and routing. Logout's 401 means the token is already dead; the logout flow
+ * (Specialuser.logout) owns that outcome — its retries end in a dialog whose continue removes
+ * the account — and a probe-driven /login navigation here would race it. */
 export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 	const raw = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
 	if (!URL.canParse(raw, window.location.href)) return false;
@@ -80,9 +82,12 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 	if (unauthorizedNavPending) return true;
 	unauthorizedNavPending = true;
 	const url = input instanceof Request ? input.url : String(input);
-	void tokenIsDead(url, token).then((dead) => {
+	void tokenIsDead(url, token).then(async (dead) => {
 		try {
-			if (!dead || !invalidateAccount(token)) {
+			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
+			// graph, and a static import made any module that imports apiFetch before
+			// localuser hit "Cannot access 'Guild' before initialization" (direct.ts).
+			if (!dead || !(await import("./utils.js")).invalidateAccount(token)) {
 				unauthorizedNavPending = false;
 				return;
 			}

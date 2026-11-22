@@ -9,7 +9,7 @@ import {getDeveloperSettings} from "./storage/devSettings";
 import {readItem, saveAccounts, writeAccounts} from "./storage/settingOverlay";
 import {isStoreRefusal, trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
-import {apiFetch} from "./apiFetch.js";
+import {API_TIMEOUT_MS, apiFetch} from "./apiFetch.js";
 
 fix();
 const apiDoms = new Set<string>();
@@ -217,7 +217,7 @@ export class Specialuser {
 		for (let i = 0; i < 3; i++) {
 			try {
 				const ok = (
-					await fetch(this.serverurls.api + "/auth/logout", {
+					await apiFetch(this.serverurls.api + "/auth/logout", {
 						method: "POST",
 						headers: {Authorization: this.token},
 					})
@@ -755,13 +755,26 @@ export async function getInstanceInfo(str: string): Promise<InstanceInfo | null>
 //endregion
 
 //region Well-Known v2
+/** Instance discovery's GET: answers within the API budget or throws. Redirects are followed
+ * (raw fetch, not apiFetch): a well-known may redirect (spacebar.chat's adds a trailing slash),
+ * and no token rides along. The timer covers the body read too. */
+async function discoveryJson(url: string): Promise<any> {
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+	try {
+		return await (await fetch(url, {signal: controller.signal})).json();
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
 export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
 	if (!URL.canParse(str)) {
 		console.log("getApiUrlsV2:", str, "is not a parseable url");
 		return null;
 	}
 	try {
-		const info = await fetch(str + "/.well-known/spacebar/client").then((r) => r.json());
+		const info = await discoveryJson(str + "/.well-known/spacebar/client");
 		let urls: InstanceUrls = {
 			admin: info.admin?.baseUrl,
 			api: info.api.baseUrl + "/api/v9", //We don't support anything other than v9
@@ -915,7 +928,7 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 	str = trimTrailingSlashes(str);
 	let api: string;
 	try {
-		const info = await fetch(`${str}/.well-known/spacebar`).then((x) => x.json());
+		const info = await discoveryJson(`${str}/.well-known/spacebar`);
 		api = trimTrailingSlashes(info.api);
 	} catch {
 		api = str;
@@ -936,9 +949,9 @@ export async function getApiUrlsV1(str: string): Promise<InstanceUrls | null> {
 	}
 
 	try {
-		const info = await fetch(
+		const info = await discoveryJson(
 			`${api}${url.pathname.includes("api") ? "" : "api"}/policies/instance/domains`,
-		).then((x) => x.json());
+		);
 		const apiurl = new URL(info.apiEndpoint);
 		urls = {
 			api: apiurl.origin + appendApi(apiurl.pathname),

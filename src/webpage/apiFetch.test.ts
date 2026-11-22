@@ -16,10 +16,13 @@ const {Dialog} = await import("./settings");
 const {I18n} = await import("./i18n");
 const {pageNav, acceptInvite} = await import("./invite");
 const {fetchRetryOnce} = await import("./utils/rateLimit");
-const {apiFetch, configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTests} =
+const {API_TIMEOUT_MS, apiFetch, configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTests} =
 	await import("./utils/apiFetch");
 const {showNewInvite} = await import("./utils/inviteLink");
-const {adduser, Specialuser, pingResponse} = await import("./utils/utils");
+const {adduser, Specialuser, pingResponse, getApiUrlsV2} = await import("./utils/utils");
+const {saveProfile} = await import("./utils/profileSave");
+const {exportUserData} = await import("./utils/dataExport");
+const {authorizeBot} = await import("./oauth2/botInvite");
 const {readItem, resetSettingOverlayForTests} = await import("./utils/storage/settingOverlay");
 const {Member} = await import("./member");
 const {Message, sendForward, fetchReactionUsers} = await import("./message.js");
@@ -1761,5 +1764,158 @@ describe("U-api 2d: channel, member and message wiring", () => {
 
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
 		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
+	});
+});
+
+// U-api 2e (TASK-4): the tail moves onto apiFetch. RED rows fail at base; PIN rows pin behaviour
+// that must hold both before and after the swap.
+describe("U-api 2e: the tail on apiFetch", () => {
+	const userinfoOf = (uid: string) => JSON.parse(localStorage.getItem("userinfos")!).users[uid];
+	const unauthorized = () => Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+	const serverurls = {
+		api: API,
+		cdn: "http://apifetch.test",
+		gateway: "ws://apifetch.test",
+		wellknown: "http://apifetch.test",
+	};
+
+	it("RED A: /auth/logout is pre-auth (its 401 means the token is already dead); /auth/sessions/logout is not", () => {
+		expect(isPreAuthEndpoint(API + "/auth/logout")).toBe(true);
+		expect(isPreAuthEndpoint(API + "/auth/sessions/logout")).toBe(false);
+	});
+
+	it("RED B: instance discovery answers within the API budget when its well-known never settles", async () => {
+		vi.useFakeTimers();
+		try {
+			// A hung GET rejects only when its caller's signal aborts (the pingGuard idiom), so
+			// a pre-fix call simply never settles.
+			vi.spyOn(globalThis, "fetch").mockImplementation(
+				(_url: RequestInfo | URL, init?: RequestInit) =>
+					new Promise<Response>((_, rej) => {
+						init?.signal?.addEventListener("abort", () =>
+							rej(new DOMException("aborted", "AbortError")),
+						);
+					}),
+			);
+			let outcome: {verdict: string; urls?: unknown} = {verdict: "unsettled"};
+			void getApiUrlsV2("https://discovery-hang.test").then(
+				(urls) => (outcome = {verdict: "settled", urls}),
+				() => (outcome = {verdict: "error"}),
+			);
+			await vi.advanceTimersByTimeAsync(API_TIMEOUT_MS + 5_000);
+			expect(outcome.verdict).toBe("settled");
+			expect(outcome.urls).toBeNull();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("RED C: a notes save 401 with a dead token probes it and routes to /login", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls,
+			email: "notes-dead@example.test",
+			token: "fake-notes-dead-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/users/@me/notes/u2", unauthorized);
+		captureRequests(API + "/users/@me", unauthorized);
+		// User's info and headers are prototype getters, so Object.assign would throw: define own props.
+		const other = Object.create(User.prototype, {
+			id: {value: "u2"},
+			info: {value: {api: API}},
+			headers: {value: {Authorization: user.token}},
+		}) as InstanceType<typeof User>;
+
+		await other.saveNotes("hello");
+
+		await vi.waitFor(() => {
+			expect(userinfoOf(user.uid).loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("RED D: the bot-authorize 401 with a dead token probes it and routes to /login (standalone page)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls,
+			email: "bot-dead@example.test",
+			token: "fake-bot-dead-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/oauth2/authorize", unauthorized);
+		captureRequests(API + "/users/@me", unauthorized);
+
+		await authorizeBot(API, user.token, "bot1", "g1", null);
+
+		await vi.waitFor(() => {
+			expect(userinfoOf(user.uid).loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("PIN: a logout 401 with a dead token sends no probe and routes nowhere (the logout flow owns it)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls,
+			email: "logout-dead@example.test",
+			token: "fake-logout-dead-token",
+			loggedin: true,
+		});
+		let logoutCalls = 0;
+		let probes = 0;
+		captureRequests(API + "/auth/logout", () => {
+			logoutCalls++;
+			return logoutCalls === 1 ? unauthorized() : new Response(null, {status: 204});
+		});
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			return unauthorized();
+		});
+
+		expect(await user.logout()).toBe(true);
+		await new Promise((r) => setTimeout(r, 0));
+
+		expect(logoutCalls).toBe(2);
+		expect(probes).toBe(0);
+		expect(nav).not.toHaveBeenCalled();
+	});
+
+	it("PIN: instance discovery's well-known GET is not redirect-refused (a trailing-slash redirect is followed)", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json({}));
+
+		expect(await getApiUrlsV2("https://discovery-pin.test")).toBeNull();
+
+		expect(fetchSpy.mock.calls[0][1]?.redirect).not.toBe("error");
+	});
+
+	it("PIN: saveProfile sends redirect: 'error' and no timeout signal (an image body is not cut at 30 s)", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValueOnce(new Response(null, {status: 204}));
+
+		expect(await saveProfile(API + "/users/@me", {Authorization: "fake-save-token"}, {})).toBe(
+			true,
+		);
+
+		const init = fetchSpy.mock.calls[0][1] as RequestInit;
+		expect(init.redirect).toBe("error");
+		expect(init.signal).toBeUndefined();
+	});
+
+	it("PIN: exportUserData sends redirect: 'error' and no timeout signal", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValueOnce(new Response("boom", {status: 500}));
+
+		expect(await exportUserData(API, {Authorization: "fake-export-token"}, "u1")).toEqual(
+			expect.any(String),
+		);
+
+		const init = fetchSpy.mock.calls[0][1] as RequestInit;
+		expect(init.redirect).toBe("error");
+		expect(init.signal).toBeUndefined();
 	});
 });
