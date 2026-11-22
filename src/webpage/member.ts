@@ -9,6 +9,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {showRefusal} from "./utils/showRefusal.js";
+import {apiFetch} from "./utils/apiFetch.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
 
 class Member extends SnowFlake {
@@ -477,7 +478,7 @@ class Member extends SnowFlake {
 	 */
 	async highInfo() {
 		return (await (
-			await fetch(
+			await apiFetch(
 				this.info.api +
 					"/users/" +
 					this.id +
@@ -609,7 +610,7 @@ class Member extends SnowFlake {
 	}
 	async removeTimeout(): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
-		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
 			body: JSON.stringify({
@@ -625,7 +626,7 @@ class Member extends SnowFlake {
 	async timeoutAPI(reason: string, length: number): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
 		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
-		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
 			body: JSON.stringify({
@@ -641,7 +642,7 @@ class Member extends SnowFlake {
 	async kickAPI(reason: string): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
 		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
-		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
+		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "DELETE",
 			headers,
 		}).catch(() => undefined);
@@ -661,7 +662,7 @@ class Member extends SnowFlake {
 		menu.show();
 	}
 	async addRole(role: Role): Promise<boolean> {
-		const res = await fetch(
+		const res = await apiFetch(
 			`${this.info.api}/guilds/${this.guild.id}/members/${this.id}/roles/${role.id}`,
 			{
 				method: "PUT",
@@ -675,7 +676,7 @@ class Member extends SnowFlake {
 		return true;
 	}
 	async removeRole(role: Role): Promise<boolean> {
-		const res = await fetch(
+		const res = await apiFetch(
 			`${this.info.api}/guilds/${this.guild.id}/members/${this.id}/roles/${role.id}`,
 			{
 				method: "DELETE",
@@ -691,7 +692,7 @@ class Member extends SnowFlake {
 	async banAPI(reason: string): Promise<boolean> {
 		const headers = structuredClone(this.guild.headers);
 		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
-		const res = await fetch(`${this.info.api}/guilds/${this.guild.id}/bans/${this.id}`, {
+		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/bans/${this.id}`, {
 			method: "PUT",
 			headers,
 		}).catch(() => undefined);

@@ -227,7 +227,7 @@ class Channel extends SnowFlake {
 		this.contextmenu.addButton(
 			() => I18n.threads.leave(),
 			async function () {
-				const res = await fetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
+				const res = await apiFetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
 					method: "DELETE",
 					headers: this.headers,
 				}).catch(() => undefined);
@@ -244,7 +244,7 @@ class Channel extends SnowFlake {
 		this.contextmenu.addButton(
 			() => I18n.threads.join(),
 			async function () {
-				const res = await fetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
+				const res = await apiFetch(this.info.api + "/channels/" + this.id + "/thread-members/@me", {
 					method: "POST",
 					headers: this.headers,
 				}).catch(() => undefined);
@@ -699,10 +699,13 @@ class Channel extends SnowFlake {
 							initState: tag.moderated,
 						});
 						f.addButtonInput("", I18n.forum.settings.delTag(), async () => {
-							const res = await fetch(this.info.api + "/channels/" + this.id + "/tags/" + tag.id, {
-								method: "DELETE",
-								headers: this.headers,
-							}).catch(() => undefined);
+							const res = await apiFetch(
+								this.info.api + "/channels/" + this.id + "/tags/" + tag.id,
+								{
+									method: "DELETE",
+									headers: this.headers,
+								},
+							).catch(() => undefined);
 							if (res?.ok) {
 								d.hide();
 								html.remove();
@@ -1644,7 +1647,7 @@ class Channel extends SnowFlake {
 		return div;
 	}
 	async createChannel(name: string, type: number): Promise<boolean> {
-		const res = await fetch(this.info.api + "/guilds/" + this.guild.id + "/channels", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.guild.id + "/channels", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify({
@@ -1670,7 +1673,7 @@ class Channel extends SnowFlake {
 		return true;
 	}
 	async deleteChannel(): Promise<boolean> {
-		const res = await fetch(this.info.api + "/channels/" + this.id, {
+		const res = await apiFetch(this.info.api + "/channels/" + this.id, {
 			method: "DELETE",
 			headers: this.headers,
 		}).catch(() => undefined);
@@ -1725,7 +1728,7 @@ class Channel extends SnowFlake {
 		if (message) {
 			return message;
 		} else {
-			const gety = await fetch(
+			const gety = await apiFetch(
 				this.info.api + "/channels/" + this.id + "/messages?limit=1&around=" + id,
 				{headers: this.headers},
 			).catch(() => undefined);
@@ -2527,7 +2530,7 @@ class Channel extends SnowFlake {
 		for (const child of this.children) {
 			if (child.isThread()) continue;
 			promises.push(
-				fetch(this.info.api + "/channels/" + child.id, {
+				apiFetch(this.info.api + "/channels/" + child.id, {
 					method: "PATCH",
 					headers: this.headers,
 					body: JSON.stringify({permission_overwrites: overwrites}),
@@ -2548,7 +2551,7 @@ class Channel extends SnowFlake {
 		let accepted = tagList;
 		const patchList = async (sent: string[]) => {
 			const seq = ++patchSeq;
-			const res = await fetch(this.info.api + "/channels/" + this.id, {
+			const res = await apiFetch(this.info.api + "/channels/" + this.id, {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify({
@@ -2597,7 +2600,7 @@ class Channel extends SnowFlake {
 		const ids = this.children.map(({id}) => id);
 		// One batch at a time: a big forum otherwise fires all its batches at once.
 		for (let start = 0; start < ids.length; start += Channel.postDataBatch) {
-			const res = await fetch(this.info.api + "/channels/" + this.id + "/post-data", {
+			const res = await apiFetch(this.info.api + "/channels/" + this.id + "/post-data", {
 				method: "POST",
 				headers: this.headers,
 				body: JSON.stringify({thread_ids: ids.slice(start, start + Channel.postDataBatch)}),
@@ -2641,9 +2644,12 @@ class Channel extends SnowFlake {
 		]);
 		let response: Response;
 		try {
-			response = await fetch(this.info.api + "/channels/" + this.id + "/threads/search?" + search, {
-				headers: this.headers,
-			});
+			response = await apiFetch(
+				this.info.api + "/channels/" + this.id + "/threads/search?" + search,
+				{
+					headers: this.headers,
+				},
+			);
 		} catch (e) {
 			// No answer at all (offline, dead socket): nothing learned either, so the
 			// posts already loaded are the list for now - like any refusal below.
@@ -3051,7 +3057,7 @@ class Channel extends SnowFlake {
 				post.disabled = true;
 				let created: string | undefined;
 				try {
-					const res = await fetch(this.info.api + "/channels/" + this.id + "/threads", {
+					const res = await apiFetch(this.info.api + "/channels/" + this.id + "/threads", {
 						method: "POST",
 						headers: this.headers,
 						body: JSON.stringify({
@@ -3527,7 +3533,7 @@ class Channel extends SnowFlake {
 		if (this.lastreadmessageid && this.messages.has(this.lastreadmessageid)) {
 			return;
 		}
-		const j = await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100", {
+		const j = await apiFetch(this.info.api + "/channels/" + this.id + "/messages?limit=100", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (j?.status === 429) {
@@ -3801,7 +3807,7 @@ class Channel extends SnowFlake {
 		// Whether this call has put a window up; only a window it armed is its to release.
 		let armed = false;
 		try {
-			let res = await fetch(
+			let res = await apiFetch(
 				this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
 				{headers: this.headers},
 			);
@@ -3810,9 +3816,12 @@ class Channel extends SnowFlake {
 				Channel.historyCooldownUntil = Date.now() + wait;
 				armed = true;
 				await new Promise((r) => setTimeout(r, wait));
-				res = await fetch(this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query, {
-					headers: this.headers,
-				});
+				res = await apiFetch(
+					this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
+					{
+						headers: this.headers,
+					},
+				);
 				// The retry's answer owns the window now: a second 429 re-arms it from its own
 				// wait, anything else releases the other ticks (a network error does in the catch).
 				if (res.status === 429) {
@@ -4507,9 +4516,12 @@ class Channel extends SnowFlake {
 				["author_id", this.localuser.user.id],
 				["limit", "1"],
 			]);
-			const res = await fetch(this.info.api + "/channels/" + this.id + "/messages/search/?" + q, {
-				headers: this.headers,
-			}).catch(() => undefined);
+			const res = await apiFetch(
+				this.info.api + "/channels/" + this.id + "/messages/search/?" + q,
+				{
+					headers: this.headers,
+				},
+			).catch(() => undefined);
 			// Search answers Discord's shape: each hit is a list (the message, with context). The
 			// lookup only feeds this countdown (the send itself already said why it failed), so
 			// no answer, or an unusable one, leaves the composer without one.
@@ -4991,7 +5003,7 @@ class Channel extends SnowFlake {
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
 	async addRoleToPerms(role: Role | User) {
-		await fetch(this.info.api + "/channels/" + this.id + "/permissions/" + role.id, {
+		await apiFetch(this.info.api + "/channels/" + this.id + "/permissions/" + role.id, {
 			method: "PUT",
 			headers: this.headers,
 			body: JSON.stringify({

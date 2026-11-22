@@ -21,6 +21,9 @@ const {apiFetch, configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTest
 const {showNewInvite} = await import("./utils/inviteLink");
 const {adduser, Specialuser, pingResponse} = await import("./utils/utils");
 const {readItem, resetSettingOverlayForTests} = await import("./utils/storage/settingOverlay");
+const {Member} = await import("./member");
+const {Message, sendForward, fetchReactionUsers} = await import("./message.js");
+const {API: FIXTURE_API, messageIn} = await import("./test/interactionFixture");
 await I18n.done;
 
 const API = "http://apifetch.test/api/v9";
@@ -1571,5 +1574,192 @@ describe("refusal unification (C14)", () => {
 		expect(realbox.querySelector(".sendError")?.textContent).toBe("Send message refused");
 		// Hand the real XHR back: the stub must not leak into the tests after this one.
 		vi.stubGlobal("XMLHttpRequest", realXHR);
+	});
+
+	it("sendForward surfaces the server reason string for a refused forward (R1)", async () => {
+		const {message} = messageIn("guild-1");
+		captureRequests(FIXTURE_API + "/channels/t1/messages", () =>
+			Response.json({code: 50013, message: "Forward refused"}, {status: 403}),
+		);
+
+		await sendForward(message, {id: "t1"});
+
+		expect(document.body.textContent).toContain(I18n.requestFailed("Forward refused"));
+	});
+});
+
+describe("U-api 2d: channel, member and message wiring", () => {
+	const userinfoOf = (uid: string) => JSON.parse(localStorage.getItem("userinfos")!).users[uid];
+
+	it("channel putmessages 401 with a dead-token probe invalidates the account and routes to /login (R2)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "putmessages-dead@example.test",
+			token: "fake-putmessages-dead-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/channels/c1/messages", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		const channel = Object.assign(Object.create(Channel.prototype), {
+			id: "c1",
+			owner: {info: {api: API}},
+			headers: {Authorization: user.token},
+		}) as InstanceType<typeof Channel>;
+
+		await channel.putmessages();
+
+		await vi.waitFor(() => {
+			expect(userinfoOf(user.uid).loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("member kickAPI 401 with a dead-token probe invalidates the account and routes to /login (R3)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "kick-dead@example.test",
+			token: "fake-kick-dead-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/guilds/g1/members/u1", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		const member = Object.assign(Object.create(Member.prototype), {
+			id: "u1",
+			owner: {id: "g1", info: {api: API}, headers: {Authorization: user.token}},
+		}) as unknown as {kickAPI: (reason: string) => Promise<boolean>};
+
+		expect(await member.kickAPI("")).toBe(false);
+
+		await vi.waitFor(() => {
+			expect(userinfoOf(user.uid).loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("member kickAPI 401 with a 200 probe keeps the account logged in and shows the refusal (P1)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "kick-alive@example.test",
+			token: "fake-kick-alive-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/guilds/g1/members/u1", () =>
+			Response.json({message: "Kick refused", code: 0}, {status: 401}),
+		);
+		let probes = 0;
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			return Response.json({id: "u-alive"});
+		});
+		const member = Object.assign(Object.create(Member.prototype), {
+			id: "u1",
+			owner: {id: "g1", info: {api: API}, headers: {Authorization: user.token}},
+		}) as unknown as {kickAPI: (reason: string) => Promise<boolean>};
+
+		expect(await member.kickAPI("")).toBe(false);
+		await vi.waitFor(() => expect(probes).toBe(1));
+		await new Promise((r) => setTimeout(r, 0));
+
+		expect(nav).not.toHaveBeenCalled();
+		expect(userinfoOf(user.uid).loggedin).toBe(true);
+		expect(document.body.textContent).toContain(I18n.requestFailed("Kick refused"));
+	});
+
+	it("message delete 401 with a dead-token probe invalidates the account and routes to /login (R4)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "delete-dead@example.test",
+			token: "fake-delete-dead-token",
+			loggedin: true,
+		});
+		captureRequests(API + "/channels/c1/messages/m1", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		const message = Object.assign(Object.create(Message.prototype), {
+			id: "m1",
+			owner: {id: "c1", info: {api: API}, headers: {Authorization: user.token}},
+			headers: {Authorization: user.token},
+		}) as InstanceType<typeof Message>;
+
+		await message.delete();
+
+		await vi.waitFor(() => {
+			expect(userinfoOf(user.uid).loggedin).toBe(false);
+			expect(nav).toHaveBeenCalledTimes(1);
+		});
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("channel history page 429 retry sends both requests with redirect: 'error' (R5)", async () => {
+		const fetchSpy = vi
+			.spyOn(globalThis, "fetch")
+			.mockResolvedValueOnce(Response.json({retry_after: 0}, {status: 429}))
+			.mockResolvedValueOnce(Response.json([], {status: 200}));
+		const channel = Object.assign(Object.create(Channel.prototype), {
+			id: "c1",
+			owner: {info: {api: API}},
+			headers: {Authorization: "fake-history-token"},
+		}) as InstanceType<typeof Channel>;
+
+		const page = await (
+			channel as unknown as {fetchHistoryPage: (query: string) => Promise<unknown>}
+		).fetchHistoryPage("before=1");
+		Channel.historyCooldownUntil = 0;
+
+		expect(page).toEqual([]);
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
+		expect(fetchSpy.mock.calls[1][1]).toMatchObject({redirect: "error"});
+	});
+
+	it("the reaction hover preview (retry: false) sends redirect: 'error' like the popup's retry path", async () => {
+		const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(Response.json([]));
+		const message = Object.assign(Object.create(Message.prototype), {
+			id: "m1",
+			owner: {id: "c1", info: {api: API}},
+			headers: {Authorization: "fake-reaction-token"},
+		}) as InstanceType<typeof Message>;
+
+		expect(await fetchReactionUsers(message, {name: "🔥"}, 3, {retry: false})).toEqual([]);
+
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
 	});
 });
