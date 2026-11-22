@@ -7,6 +7,7 @@ import {Localuser} from "./localuser.js";
 import {SnowFlake} from "./snowflake.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {createImg} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 
 class Sticker extends SnowFlake {
 	name: string;
@@ -41,6 +42,13 @@ class Sticker extends SnowFlake {
 		const hover = new Hover(this.name);
 		hover.addEvent(img);
 		img.alt = this.description;
+		onImgBroken(img, () => {
+			const text = document.createElement("span");
+			text.classList.add("stickerFallback");
+			text.textContent = this.name;
+			new Hover(this.name).addEvent(text);
+			return text;
+		});
 		return img;
 	}
 	static searchStickers(search: string, localuser: Localuser, results = 50): [Sticker, number][] {
@@ -255,6 +263,14 @@ class Sticker extends SnowFlake {
 			}
 			select.classList.add("emojiSelect");
 
+			const initials = (): HTMLSpanElement => {
+				const div = document.createElement("span");
+				div.textContent = guild.properties.name
+					.replace(/'s /g, " ")
+					.replace(/\w+/g, (word) => word[0])
+					.replace(/\s/g, "");
+				return div;
+			};
 			if (guild.properties.icon) {
 				const img = document.createElement("img");
 				img.classList.add("servericon", "emoji-server");
@@ -269,13 +285,9 @@ class Sticker extends SnowFlake {
 					new CDNParams({expectedSize: 48});
 				img.alt = I18n.guild.iconAlt(guild.properties.name);
 				select.appendChild(img);
+				onImgBroken(img, initials);
 			} else {
-				const div = document.createElement("span");
-				div.textContent = guild.properties.name
-					.replace(/'s /g, " ")
-					.replace(/\w+/g, (word) => word[0])
-					.replace(/\s/g, "");
-				select.append(div);
+				select.append(initials());
 			}
 
 			selection.append(select);

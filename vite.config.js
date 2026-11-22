@@ -252,6 +252,34 @@ const buildPlugin = () => ({
 				}
 				next();
 			});
+			// Reserved missing-emoji id: a real 404 from the CDN (empty body) for
+			// brokenImageFallback.test.ts, which renders this id to pin the failed-network path.
+			server.middlewares.use((req, res, next) => {
+				const pathname = new URL(req.url || "/", "http://localhost").pathname;
+				if (pathname === "/emojis/404404404404404404.png") {
+					res.statusCode = 404;
+					res.end();
+					return;
+				}
+				next();
+			});
+			// Test-only CDN stub, mirroring the e2e mock (e2e/mock/index.ts answers /emojis/* with a
+			// 1x1 PNG): emoji fixtures load as they would against a real CDN, instead of the SPA's
+			// index.html, which would make every emoji image fail and fall back.
+			const TEST_PIXEL_PNG = Buffer.from(
+				"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+				"base64",
+			);
+			server.middlewares.use((req, res, next) => {
+				const pathname = new URL(req.url || "/", "http://localhost").pathname;
+				if (pathname.startsWith("/emojis/") && /\.(png|gif|webp)$/.test(pathname)) {
+					res.statusCode = 200;
+					res.setHeader("Content-Type", "image/png");
+					res.end(TEST_PIXEL_PNG);
+					return;
+				}
+				next();
+			});
 		}
 		// Read per request, so an edited overlay shows up on the next page load.
 		server.middlewares.use((req, res, next) => {

@@ -2,6 +2,7 @@ import {Message} from "./message.js";
 import {MarkDown} from "./markdown.js";
 import {embedjson, invitejson} from "./jsontypes.js";
 import {createImg, getapiurls, getBulkUsers, getInstances, Specialuser} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 import {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {ImagesDisplay} from "./disimg.js";
@@ -420,6 +421,7 @@ class Embed {
 					new CDNParams({expectedSize: 256});
 				banner.classList.add("banner");
 				div.append(banner);
+				onImgBroken(banner, () => banner.remove());
 			}
 			const guild: invitejson["guild"] & {info?: {cdn: string}} = json.guild;
 			guild.info = info;

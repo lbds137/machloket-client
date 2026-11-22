@@ -10,6 +10,7 @@ import {CDNParams} from "./utils/cdnParams.js";
 import {showRefusal} from "./utils/showRefusal.js";
 import {applySkinTone, getSkinTone, isDualToneEmoji, setSkinTone} from "./utils/skinTone.js";
 import {removeAni} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 
 //I need to recompile the emoji format for translation
 class Emoji {
@@ -112,6 +113,14 @@ class Emoji {
 
 			const hover = new Hover(this.humanName);
 			hover.addEvent(emojiElem);
+			onImgBroken(emojiElem, () => {
+				const text = document.createElement("span");
+				text.classList.add("md-emoji-fallback");
+				text.textContent = `:${this.humanName}:`;
+				text.setAttribute("real", this.name);
+				new Hover(this.humanName).addEvent(text);
+				return text;
+			});
 			if (click)
 				emojiElem.onclick = async (e) => {
 					e.preventDefault();
@@ -523,6 +532,14 @@ class Emoji {
 					const select = document.createElement("div");
 					select.classList.add("emojiSelect");
 
+					const initials = (): HTMLSpanElement => {
+						const div = document.createElement("span");
+						div.textContent = guild.properties.name
+							.replace(/'s /g, " ")
+							.replace(/\w+/g, (word) => word[0])
+							.replace(/\s/g, "");
+						return div;
+					};
 					if (guild.properties.icon) {
 						const img = document.createElement("img");
 						img.classList.add("pfp", "servericon", "emoji-server");
@@ -537,13 +554,9 @@ class Emoji {
 							new CDNParams({expectedSize: 48});
 						img.alt = I18n.guild.iconAlt(guild.properties.name);
 						select.appendChild(img);
+						onImgBroken(img, initials);
 					} else {
-						const div = document.createElement("span");
-						div.textContent = guild.properties.name
-							.replace(/'s /g, " ")
-							.replace(/\w+/g, (word) => word[0])
-							.replace(/\s/g, "");
-						select.append(div);
+						select.append(initials());
 					}
 
 					selection.append(select);

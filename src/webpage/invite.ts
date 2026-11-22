@@ -1,6 +1,7 @@
 import {I18n} from "./i18n.js";
 import {AccountSwitcher} from "./utils/switcher.js";
 import {createImg, getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
 import {sameApi, sameInstance} from "./utils/instanceMatch.js";
 import {acceptInvite} from "./utils/acceptInvite.js";
@@ -125,13 +126,9 @@ if (window.location.pathname.startsWith("/invite"))
 				if (guildjson.banner) {
 					const img = createImg(`${urls!.cdn}/banners/${guildjson.id}/${guildjson.banner}.png`);
 					document.getElementById("inviteBanner")!.append(img);
+					onImgBroken(img, () => img.remove());
 				}
-				if (guildjson.icon) {
-					const img = document.createElement("img");
-					img.src = `${urls!.cdn}/icons/${guildjson.id}/${guildjson.icon}.png`;
-					img.classList.add("inviteGuild");
-					document.getElementById("inviteimg")!.append(img);
-				} else {
+				const initials = (): HTMLDivElement => {
 					const txt = guildjson.name
 						.replace(/'s /g, " ")
 						.replace(/\w+/g, (word: any[]) => word[0])
@@ -139,7 +136,16 @@ if (window.location.pathname.startsWith("/invite"))
 					const div = document.createElement("div");
 					div.textContent = txt;
 					div.classList.add("inviteGuild");
-					document.getElementById("inviteimg")!.append(div);
+					return div;
+				};
+				if (guildjson.icon) {
+					const img = document.createElement("img");
+					img.src = `${urls!.cdn}/icons/${guildjson.id}/${guildjson.icon}.png`;
+					img.classList.add("inviteGuild");
+					document.getElementById("inviteimg")!.append(img);
+					onImgBroken(img, initials);
+				} else {
+					document.getElementById("inviteimg")!.append(initials());
 				}
 				return guildjson;
 			});

@@ -45,6 +45,15 @@ class Role extends SnowFlake {
 		this.owner = owner;
 		this.roleLoad();
 	}
+	private unicodeIcon(): HTMLElement | undefined {
+		if (!this.unicode_emoji) return undefined;
+		const hover = new Hover(this.name);
+		const span = document.createElement("span");
+		span.textContent = this.unicode_emoji;
+		span.classList.add("roleIcon");
+		hover.addEvent(span);
+		return span;
+	}
 	getIcon(): HTMLElement | void {
 		const hover = new Hover(this.name);
 		if (this.icon) {
@@ -59,15 +68,10 @@ class Role extends SnowFlake {
 			);
 			img.classList.add("roleIcon");
 			hover.addEvent(img);
+			onImgBroken(img, () => this.unicodeIcon() ?? img.remove());
 			return img;
 		}
-		if (this.unicode_emoji) {
-			const span = document.createElement("span");
-			span.textContent = this.unicode_emoji;
-			span.classList.add("roleIcon");
-			hover.addEvent(span);
-			return span;
-		}
+		return this.unicodeIcon();
 	}
 	getColorStyle(short = false) {
 		const grad = this.localuser.perminfo?.user?.gradientColors as boolean;
@@ -156,6 +160,7 @@ class Role extends SnowFlake {
 export {Role};
 import {Options} from "./settings.js";
 import {createImg} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 import {Hover} from "./hover.js";
 import {Emoji} from "./emoji.js";
 import {User} from "./user.js";

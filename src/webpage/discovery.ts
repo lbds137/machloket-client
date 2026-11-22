@@ -9,6 +9,7 @@ import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {serverReason} from "./utils/refusalText.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {createImg} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 
 export class Discovery {
 	owner: Direct;
@@ -255,18 +256,29 @@ export class Discovery {
 		render();
 	}
 	getIconURL(guild: guildjson["properties"]) {
-		return createImg(
+		const img = createImg(
 			this.info.cdn +
 				(guild.icon
 					? "/icons/" + guild.id + "/" + guild.icon + ".png" + new CDNParams({expectedSize: 48})
 					: "/embed/avatars/3.png"),
 		);
+		if (guild.icon) {
+			const fallbackSrc = this.info.cdn + "/embed/avatars/3.png";
+			onImgBroken(img, () => {
+				if (img.src === new URL(fallbackSrc, location.href).href) return;
+				// Same as the avatar fallback: a loaded fallback is not a broken image.
+				img.addEventListener("load", () => img.classList.remove("error"), {once: true});
+				img.setSrcs(fallbackSrc);
+			});
+		}
+		return img;
 	}
 	getBannerURL(guild: guildjson["properties"]) {
-		return (
+		const banner =
 			guild.banner &&
-			createImg(this.info.cdn + "/banners/" + guild.id + "/" + guild.banner + ".png?size=256")
-		);
+			createImg(this.info.cdn + "/banners/" + guild.id + "/" + guild.banner + ".png?size=256");
+		if (banner) onImgBroken(banner, () => banner.remove());
+		return banner;
 	}
 	async confirmJoin(guild: guildjson["properties"]) {
 		return new Promise<boolean>((res) => {

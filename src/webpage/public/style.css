@@ -5159,6 +5159,11 @@ img.bigembedimg {
 	font-family: var(--emoji-font, "Segoe UI Emoji", system-ui) !important;
 }
 
+.md-emoji-fallback {
+	font: inherit;
+	color: inherit;
+}
+
 .customBadge .md-emoji,
 .messageCustomBadge .md-emoji {
 	display: flex;
@@ -6646,6 +6651,19 @@ fieldset input[type="radio"] {
 .sticker {
 	height: 2in;
 	max-width: 4in;
+}
+
+.stickerFallback {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 80px;
+	min-height: 80px;
+	padding: 8px;
+	border: 1px dashed var(--secondary-text);
+	border-radius: 8px;
+	color: var(--secondary-text);
+	overflow-wrap: anywhere;
 }
 
 .vsmaller {
