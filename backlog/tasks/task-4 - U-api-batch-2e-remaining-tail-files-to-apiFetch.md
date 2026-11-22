@@ -1,10 +1,10 @@
 ---
 id: TASK-4
 title: 'U-api batch 2e: remaining tail files to apiFetch'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-22T21:39:00Z'
+updated_date: '2026-11-22T21:49:00Z'
 labels:
   - u-api
 dependencies: []
@@ -26,4 +26,6 @@ Final file slice per the batch-2 plan (whatever the base grep still lists as raw
 11-22: spec at docs/local/u-api-b2e-spec.md (base ee842e80). Decisions: discovery keeps redirects (spacebar.chat .well-known 301s) via a timeout-only helper; instances.json raw (module-scope import cycle); /auth/logout exempted from 401 routing; profileSave/dataExport timeoutMs 0.
 
 11-22: PR #173 (9d7350c7) open; gate + e2e green; council (OpenAI) review dispositioned in the PR body; follow-ups (j)-(l) in TASK-2.
+
+Merged: PR #173 -> 6d786d09 (claude-review PASS, all findings low; filed as TASK-2 (k)-(p)).
 <!-- SECTION:NOTES:END -->
