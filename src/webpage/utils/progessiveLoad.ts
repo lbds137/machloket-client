@@ -1,27 +1,67 @@
-export class ProgressiveArray {
+/** A streamed load the server answered without a usable body: `response` is that answer (a
+ * refusal's status and reason), unread. Under an idle budget its body is already in memory
+ * (empty if it stalled), so reading it cannot hang. */
+export class ProgressiveLoadError extends Error {
+	constructor(readonly response: Response) {
+		super("request not ok: HTTP " + response.status);
+	}
+}
+
+export type ProgressiveOptions = {
+	/** Aborts the load (with a TimeoutError) when the server sends nothing for this long. The
+	 * clock runs only while the headers or a body chunk is awaited, never while the reader works
+	 * between reads, so a long body that keeps arriving is never cut. Unset: no budget here. */
+	idleTimeoutMs?: number;
+};
+
+export class ProgressiveArray<I extends RequestInit = RequestInit> {
 	read?: ReadableStreamDefaultReader<Uint8Array>;
 	controller: AbortController;
 	cbuff?: Uint8Array<ArrayBufferLike> = new Uint8Array(0);
 	index = 0;
 	sizeLeft = 0;
 	ready: Promise<void>;
+	private idleTimeoutMs?: number;
 	constructor(
 		url: string,
-		req: RequestInit = {},
-		fetcher: (input: string, init: RequestInit) => Promise<Response> = fetch,
+		req: I = {} as I,
+		fetcher: (input: string, init: I) => Promise<Response> = (input, init) => fetch(input, init),
+		{idleTimeoutMs}: ProgressiveOptions = {},
 	) {
+		this.idleTimeoutMs = idleTimeoutMs;
 		this.controller = new AbortController();
-		this.ready = fetcher(url, {
-			...req,
-			signal: this.controller.signal,
-		}).then(async (f) => {
+		this.ready = this.idle(
+			fetcher(url, {
+				...req,
+				signal: this.controller.signal,
+			}),
+		).then(async (f) => {
 			if (!f.ok || !f.body) {
-				throw new Error("request not ok");
+				// Under a budget, the refusal's body is read here and handed over whole, so a
+				// reader of the error never waits on a body that stalls. A refusal is one short
+				// JSON line, so the budget covers its whole body rather than each chunk. Unbudgeted
+				// loads (media) pass the answer on unread, as they always did.
+				if (!this.idleTimeoutMs) throw new ProgressiveLoadError(f);
+				const body = (await this.idle(f.text()).catch(() => "")) || null;
+				throw new ProgressiveLoadError(new Response(body, {status: f.status}));
 			}
 			const read = f.body.getReader();
-			this.cbuff = (await read.read()).value;
+			this.cbuff = (await this.idle(read.read())).value;
 			this.read = read;
 		});
+	}
+	/** Awaits `pending` from the server under the idle budget, when there is one. */
+	private async idle<T>(pending: Promise<T>): Promise<T> {
+		if (!this.idleTimeoutMs) return pending;
+		const timer = setTimeout(
+			() => this.controller.abort(new DOMException("offline", "TimeoutError")),
+			this.idleTimeoutMs,
+		);
+		try {
+			return await pending;
+		} finally {
+			clearTimeout(timer);
+		}
 	}
 	async next() {
 		return (await this.get8BitArray(1))[0];
@@ -40,7 +80,7 @@ export class ProgressiveArray {
 			}
 
 			if (size !== 0) {
-				this.cbuff = (await this.read.read()).value;
+				this.cbuff = (await this.idle(this.read.read())).value;
 				this.index = 0;
 			}
 		}
@@ -311,14 +351,21 @@ type Progressive<T> =
 /*
  * this will progressively load a JSON object, you must read everything you get to get the next thing in line.
  */
-export async function ProgessiveDecodeJSON<X>(
+export async function ProgessiveDecodeJSON<X, I extends RequestInit = RequestInit>(
 	url: string,
-	req: RequestInit = {},
-	fetcher: (input: string, init: RequestInit) => Promise<Response> = fetch,
+	req: I = {} as I,
+	fetcher: (input: string, init: I) => Promise<Response> = (input, init) => fetch(input, init),
+	options: ProgressiveOptions = {},
 ): Promise<Progressive<X>> {
-	const prog = new ProgressiveArray(url, req, fetcher);
-	await prog.ready;
-	return identifyType(prog) as Promise<Progressive<X>>;
+	const prog = new ProgressiveArray(url, req, fetcher, options);
+	try {
+		await prog.ready;
+		return (await identifyType(prog)) as Progressive<X>;
+	} catch (error) {
+		// No decoder reached the caller, so nothing else can close the response.
+		prog.close();
+		throw error;
+	}
 }
 /*
 const test = [1, 2, 3, 4, 5, 6];

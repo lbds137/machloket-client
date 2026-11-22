@@ -556,6 +556,31 @@ describe("apiFetch wrapper", () => {
 		expect(err).toMatchObject({name: "TimeoutError", message: "offline"});
 	}, 2_000);
 
+	it("AbortSignal.any fallback: a timeout removes its listener from the caller's signal", async () => {
+		Object.defineProperty(AbortSignal, "any", {
+			value: undefined,
+			configurable: true,
+			writable: true,
+		});
+		vi.spyOn(globalThis, "fetch").mockImplementation(
+			(_url, init) =>
+				new Promise<Response>((_, reject) => {
+					init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), {
+						once: true,
+					});
+				}),
+		);
+		const callerSignal = new AbortController().signal;
+		const added = vi.spyOn(callerSignal, "addEventListener");
+		const removed = vi.spyOn(callerSignal, "removeEventListener");
+
+		await apiFetch(API + "/users/@me", {signal: callerSignal, timeoutMs: 25}).catch(() => {});
+
+		// A long-lived caller signal (a page's) must not keep one listener per timed-out request.
+		expect(added).toHaveBeenCalledTimes(1);
+		expect(removed).toHaveBeenCalledWith("abort", added.mock.calls[0][1]);
+	}, 2_000);
+
 	it("caller abort rejects with the caller's custom reason", async () => {
 		vi.spyOn(globalThis, "fetch").mockImplementation(
 			(_url, init) =>

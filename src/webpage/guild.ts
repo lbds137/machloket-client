@@ -29,7 +29,7 @@ import {Emoji} from "./emoji.js";
 import {webhookMenu} from "./webhooks.js";
 import {createImg} from "./utils/utils.js";
 import {Sticker} from "./sticker.js";
-import {ProgessiveDecodeJSON} from "./utils/progessiveLoad.js";
+import {ProgessiveDecodeJSON, ProgressiveLoadError} from "./utils/progessiveLoad.js";
 import {MarkDown} from "./markdown.js";
 import {Command} from "./interactions/commands.js";
 import {commandAllowedFor} from "./commandPermissions.js";
@@ -38,21 +38,64 @@ import {ReportMenu} from "./reporting/report.js";
 import {getDeveloperSettings} from "./utils/storage/devSettings.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {assignableKey} from "./utils/assignableKey.js";
-import {apiFetch} from "./utils/apiFetch.js";
+import {API_TIMEOUT_MS, apiFetch} from "./utils/apiFetch.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {serverReason} from "./utils/refusalText.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
+/** Streams an API list endpoint's JSON array of objects, handing each over as it arrives.
+ * Resolves null once the whole list arrived, else the line saying why it stopped: the server's
+ * refusal, or "offline" for a load that died or stalled. The budget is per wait (the headers,
+ * each body chunk), not per list, so a long list on a slow link still arrives whole. */
+async function streamList<T>(
+	url: string,
+	headers: RequestInit["headers"],
+	onItem: (item: T) => void,
+): Promise<string | null> {
+	const list = ProgessiveDecodeJSON<T[], RequestInit & {timeoutMs?: number}>(
+		url,
+		{headers, timeoutMs: 0},
+		apiFetch,
+		{idleTimeoutMs: API_TIMEOUT_MS},
+	) as unknown as Promise<{
+		done: boolean;
+		getNext(): Promise<{getWhole(): Promise<T>}>;
+		prog: {close(): void};
+	}>;
+	try {
+		const arr = await list;
+		while (!arr.done) onItem(await (await arr.getNext()).getWhole());
+		return null;
+	} catch (error) {
+		console.warn("machloket: list load stopped:", error);
+		return refusalText(error instanceof ProgressiveLoadError ? error.response : undefined);
+	} finally {
+		// Done or stopped, the response is finished with (a load that never produced a list
+		// closed itself in ProgessiveDecodeJSON).
+		void list.then(
+			(arr) => arr.prog.close(),
+			() => {},
+		);
+	}
+}
+/** The line a streamed list shows under itself when it stopped short (see streamList). */
+function listFailureLine() {
+	const line = document.createElement("p");
+	line.setAttribute("role", "alert");
+	line.hidden = true;
+	return {
+		line,
+		show(text: string | null) {
+			if (!text) return;
+			line.textContent = text;
+			line.hidden = false;
+		},
+	};
+}
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	invDiv.classList.add("inviteGrid");
-	const bansp = ProgessiveDecodeJSON<invitejson[]>(
-		url,
-		{
-			headers: guild.headers,
-		},
-		apiFetch,
-	);
+	const failure = listFailureLine();
 	const createInviteHTML = (invite: invitejson) => {
 		const div = document.createElement("div");
 		div.classList.add("inviteCard");
@@ -138,12 +181,11 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 	showAllBtn.classList.add("sessionShowAll");
 
 	async function loadArr() {
-		while (!(await bansp).done) {
-			const inv = await (await (await bansp).getNext()).getWhole();
-			invsArr.push(inv);
-		}
+		const stopped = await streamList<invitejson>(url, guild.headers, (inv) => invsArr.push(inv));
+		// A list cut short still shows the invites that arrived, above the line saying why.
 		invsArr.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
 		renderInvites(false);
+		failure.show(stopped);
 	}
 
 	function renderInvites(all: boolean) {
@@ -158,10 +200,138 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 		showAllBtn.style.display = !all && invsArr.length > 10 ? "" : "none";
 	}
 
-	loadArr();
+	void loadArr();
 	inviteMenu.addHTMLArea(invDiv);
+	inviteMenu.addHTMLArea(failure.line);
 	showAllBtn.onclick = () => renderInvites(true);
 	inviteMenu.addHTMLArea(showAllBtn);
+}
+/** The guild's ban list (streamed, 50 a page) for the Bans settings pane. */
+export function makeBanList(banMenu: Options, guild: Guild): HTMLElement {
+	const banDiv = document.createElement("div");
+	const failure = listFailureLine();
+	const createBanHTML = (ban: banObj) => {
+		const div = document.createElement("div");
+		div.classList.add("flexltr", "bandiv");
+		let src: string;
+		if (ban.user.avatar !== null) {
+			src =
+				`${guild.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png` +
+				new CDNParams({expectedSize: 96});
+		} else {
+			const int = Number((BigInt(ban.user.id) >> 22n) % 6n);
+			src = `${guild.info.cdn}/embed/avatars/${int}.png`;
+		}
+		const img = createImg(src);
+		img.classList.add("pfp");
+		const divUserRes = document.createElement("div");
+		divUserRes.classList.add("flexttb");
+
+		const username = document.createElement("span");
+		username.textContent = ban.user.username;
+
+		divUserRes.append(username);
+		if (ban.reason) {
+			const reason = document.createElement("span");
+			reason.innerText = ban.reason;
+			divUserRes.append(I18n.guild.banReason(ban.reason));
+		}
+		div.append(img, divUserRes);
+		div.onclick = async (_) => {
+			const opt = banMenu.addSubOptions(ban.user.username);
+
+			opt.addHTMLArea(img.cloneNode(true) as HTMLElement);
+			opt.addText(ban.user.username);
+			if (ban.reason) opt.addText(I18n.guild.banReason(ban.reason));
+			//FIXME the API sends back the wrong response, so I don't have this info
+			/*
+			const moreInfo = (await (
+				await fetch(guild.info.api + "/guilds/" + guild.id + "/bans/" + ban.user.id, {
+					headers: guild.headers,
+				})
+			).json()) as addInfoBan;
+			const userWhoBanned = await User.resolve(moreInfo.executor_id, guild.localuser);
+			opt.addHTMLArea(userWhoBanned.createWidget(guild));
+			//*/
+			opt.addButtonInput("", I18n.user.unban(ban.user.username), async () => {
+				if (!(await guild.unban(ban.user.id))) return;
+				bansArr = bansArr.filter((_) => _ !== ban);
+				loadPage(currentPage);
+				banMenu.returnFromSub();
+			});
+		};
+		return div;
+	};
+	let bansArr: banObj[] = [];
+	let onpage = 0;
+	async function loadArr() {
+		let bansArr2: banObj[] = [];
+		let waiting = false;
+		async function addHTML() {
+			if (waiting) return;
+			waiting = true;
+			await new Promise((res) => setTimeout(res, 0));
+			waiting = false;
+			banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
+			bansArr2 = [];
+		}
+		const stopped = await streamList<banObj>(
+			guild.info.api + "/guilds/" + guild.id + "/bans",
+			guild.headers,
+			(ban) => {
+				bansArr.push(ban);
+				if (onpage < 50) {
+					bansArr2.push(ban);
+					void addHTML();
+					onpage++;
+				} else {
+					next.disabled = false;
+				}
+			},
+		);
+		// A list cut short keeps the bans that arrived; the line under them says why.
+		failure.show(stopped);
+	}
+	let currentPage = 0;
+	function loadPage(page = 0) {
+		banDiv.innerHTML = "";
+		for (onpage = 0; onpage < 50; onpage++) {
+			const ban = bansArr[onpage + page * 50];
+			if (!ban) break;
+			banDiv.append(createBanHTML(ban));
+		}
+		if (onpage === 50 && bansArr[onpage + page * 50]) {
+			next.disabled = false;
+		} else {
+			next.disabled = true;
+		}
+	}
+
+	const pageNav = document.createElement("div");
+	const back = document.createElement("button");
+	back.textContent = I18n.search.back();
+	back.disabled = !currentPage;
+	back.onclick = () => {
+		back.disabled = !(currentPage - 1);
+		next.disabled = false;
+		loadPage(--currentPage);
+	};
+
+	const next = document.createElement("button");
+	next.textContent = I18n.search.next();
+	next.disabled = true;
+	pageNav.append(back, next);
+	banMenu.addHTMLArea(pageNav);
+	next.onclick = () => {
+		loadPage(++currentPage);
+		back.disabled = false;
+	};
+
+	void loadArr();
+	loadPage(currentPage);
+	const list = document.createElement("div");
+	list.append(banDiv, failure.line);
+	return list;
 }
 /** One scope's command index: the fetch (shared while in flight) and, once it succeeded, its
  * commands for synchronous readers. */
@@ -971,132 +1141,7 @@ class Guild extends SnowFlake {
 					opt.submit();
 				});
 			});
-			const makeBanMenu = () => {
-				const banDiv = document.createElement("div");
-				const bansp = ProgessiveDecodeJSON<banObj[]>(
-					this.info.api + "/guilds/" + this.id + "/bans",
-					{
-						headers: this.headers,
-					},
-					apiFetch,
-				);
-				const createBanHTML = (ban: banObj) => {
-					const div = document.createElement("div");
-					div.classList.add("flexltr", "bandiv");
-					let src: string;
-					if (ban.user.avatar !== null) {
-						src =
-							`${this.info.cdn}/avatars/${ban.user.id}/${ban.user.avatar}.png` +
-							new CDNParams({expectedSize: 96});
-					} else {
-						const int = Number((BigInt(ban.user.id) >> 22n) % 6n);
-						src = `${this.info.cdn}/embed/avatars/${int}.png`;
-					}
-					const img = createImg(src);
-					img.classList.add("pfp");
-					const divUserRes = document.createElement("div");
-					divUserRes.classList.add("flexttb");
-
-					const username = document.createElement("span");
-					username.textContent = ban.user.username;
-
-					divUserRes.append(username);
-					if (ban.reason) {
-						const reason = document.createElement("span");
-						reason.innerText = ban.reason;
-						divUserRes.append(I18n.guild.banReason(ban.reason));
-					}
-					div.append(img, divUserRes);
-					div.onclick = async (_) => {
-						const opt = banMenu.addSubOptions(ban.user.username);
-
-						opt.addHTMLArea(img.cloneNode(true) as HTMLElement);
-						opt.addText(ban.user.username);
-						if (ban.reason) opt.addText(I18n.guild.banReason(ban.reason));
-						//FIXME the API sends back the wrong response, so I don't have this info
-						/*
-					const moreInfo = (await (
-						await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + ban.user.id, {
-							headers: this.headers,
-						})
-					).json()) as addInfoBan;
-					const userWhoBanned = await User.resolve(moreInfo.executor_id, this.localuser);
-					opt.addHTMLArea(userWhoBanned.createWidget(this));
-					//*/
-						opt.addButtonInput("", I18n.user.unban(ban.user.username), async () => {
-							if (!(await this.unban(ban.user.id))) return;
-							bansArr = bansArr.filter((_) => _ !== ban);
-							loadPage(currentPage);
-							banMenu.returnFromSub();
-						});
-					};
-					return div;
-				};
-				let bansArr: banObj[] = [];
-				let onpage = 0;
-				async function loadArr() {
-					let bansArr2: banObj[] = [];
-					let waiting = false;
-					async function addHTML() {
-						if (waiting) return;
-						waiting = true;
-						await new Promise((res) => setTimeout(res, 0));
-						waiting = false;
-						banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
-						bansArr2 = [];
-					}
-					while (!(await bansp).done) {
-						const ban = await (await (await bansp).getNext()).getWhole();
-						bansArr.push(ban);
-						if (onpage < 50) {
-							bansArr2.push(ban);
-							addHTML();
-							onpage++;
-						} else {
-							next.disabled = false;
-						}
-					}
-				}
-				let currentPage = 0;
-				function loadPage(page = 0) {
-					banDiv.innerHTML = "";
-					for (onpage = 0; onpage < 50; onpage++) {
-						const ban = bansArr[onpage + page * 50];
-						if (!ban) break;
-						banDiv.append(createBanHTML(ban));
-					}
-					if (onpage === 50 && bansArr[onpage + page * 50]) {
-						next.disabled = false;
-					} else {
-						next.disabled = true;
-					}
-				}
-
-				const pageNav = document.createElement("div");
-				const back = document.createElement("button");
-				back.textContent = I18n.search.back();
-				back.disabled = !currentPage;
-				back.onclick = () => {
-					back.disabled = !(currentPage - 1);
-					next.disabled = false;
-					loadPage(--currentPage);
-				};
-
-				const next = document.createElement("button");
-				next.textContent = I18n.search.next();
-				next.disabled = true;
-				pageNav.append(back, next);
-				banMenu.addHTMLArea(pageNav);
-				next.onclick = () => {
-					loadPage(++currentPage);
-					back.disabled = false;
-				};
-
-				loadArr();
-				loadPage(currentPage);
-				return banDiv;
-			};
-			banMenu.addHTMLArea(makeBanMenu);
+			banMenu.addHTMLArea(() => makeBanList(banMenu, this));
 		}
 		settings.addSection(sectionLabel("settingsCategories.guild.expressions", "Expressions"));
 		if (this.member.hasPermission("MANAGE_GUILD_EXPRESSIONS")) {
