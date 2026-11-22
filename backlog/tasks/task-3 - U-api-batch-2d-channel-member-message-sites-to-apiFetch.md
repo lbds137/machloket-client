@@ -1,10 +1,10 @@
 ---
 id: TASK-3
 title: 'U-api batch 2d: channel/member/message sites to apiFetch'
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-20T02:37:00Z'
+updated_date: '2026-11-22T19:53:00Z'
 labels:
   - u-api
 dependencies: []
