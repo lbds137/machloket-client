@@ -126,3 +126,106 @@ it("with no camera, our own video entry is dropped by its SSRC", async () => {
 
 	expect([...voice.vidusers]).toEqual([[8888, "u2"]]);
 });
+
+it("cleanServerSDP strips every carriage return from the last BUNDLE token", async () => {
+	const {voice} = setup();
+	voice.urlobj.url = "voice.test";
+	voice.offer = "offer";
+	vi.spyOn(voice, "getCamInfo").mockResolvedValue({video_ssrc: 0, rtx_ssrc: 0});
+	voice.pc = {
+		localDescription: {sdp: "v=0\r\na=group:BUNDLE 0 1\r\r\n"},
+	} as unknown as RTCPeerConnection;
+	const serverSdp = [
+		"v=0",
+		"m=audio 50044 UDP/TLS/RTP/SAVPF 111",
+		"c=IN IP4 10.0.0.1",
+		"a=rtcp:50044 IN IP4 10.0.0.1",
+		"a=ice-ufrag:abcd",
+		"a=ice-pwd:fixturepwdnotasecret00",
+		"a=fingerprint:sha-256 AA",
+		"a=candidate:1 1 udp 1 10.0.0.1 50044 typ host",
+	].join("\r\n");
+
+	const out = await voice.cleanServerSDP(serverSdp);
+	const bundleLine = out.split("\n").find((line) => line.startsWith("a=group:BUNDLE"));
+
+	expect(bundleLine).toBe("a=group:BUNDLE 0 1\r");
+});
+
+it("a late op 6 on a closed socket after leave doesn't re-arm the heartbeat", async () => {
+	vi.useFakeTimers();
+	const {factory, voice} = setup();
+	voice.urlobj.url = "voice.test";
+	factory.joinVoice("A", "g");
+	void voice.startWS("s1", "g");
+	const first = FakeWebSocket.sockets[0];
+
+	await voice.leave();
+	first.emit("message", {data: JSON.stringify({op: 6, d: {t: 1}})});
+
+	expect(vi.getTimerCount()).toBe(0);
+});
+
+it("a late op 6 on an old socket after rejoin doesn't send a heartbeat on the new socket", async () => {
+	vi.useFakeTimers();
+	const {factory, voice} = setup();
+	voice.urlobj.url = "voice.test";
+	factory.joinVoice("A", "g");
+	void voice.startWS("s1", "g");
+	const first = FakeWebSocket.sockets[0];
+
+	await voice.leave();
+	factory.joinVoice("A", "g");
+	void voice.startWS("s2", "g");
+	const second = FakeWebSocket.sockets[1];
+	second.readyState = FakeWebSocket.OPEN;
+	const send = vi.spyOn(second, "send");
+
+	first.emit("message", {data: JSON.stringify({op: 6, d: {t: 1}})});
+	vi.advanceTimersByTime(voice.timeout + 1000);
+
+	expect(send).not.toHaveBeenCalled();
+});
+
+it("an old socket opening after a leave and rejoin doesn't send op 0 or overwrite status", async () => {
+	const {factory, voice} = setup();
+	voice.urlobj.url = "voice.test";
+	factory.joinVoice("A", "g");
+	const firstStart = voice.startWS("s1", "g");
+	const first = FakeWebSocket.sockets[0];
+
+	await voice.leave();
+	factory.joinVoice("A", "g");
+	void voice.startWS("s2", "g");
+	const second = FakeWebSocket.sockets[1];
+
+	first.closed = undefined;
+	first.emit("open", {});
+	await firstStart;
+
+	expect(first.closed).toBeDefined();
+	expect(first.sent).toEqual([]);
+	expect(voice.ws).toBe(second);
+	expect(voice.open).toBe(true);
+	expect(voice.status).toBe("wsOpen");
+});
+
+it("a signalingstatechange waiting for the server answer stops polling once the call is left", async () => {
+	vi.useFakeTimers();
+	const {voice} = setup();
+	const pc = Object.assign(new EventTarget(), {
+		signalingState: "have-local-offer",
+		iceConnectionState: "new",
+		connectionState: "new",
+		close: vi.fn(),
+	});
+	voice.open = true;
+	voice.pc = pc as unknown as RTCPeerConnection;
+	voice.negotationneeded();
+
+	pc.dispatchEvent(new Event("signalingstatechange"));
+	await voice.leave();
+	await vi.advanceTimersByTimeAsync(500);
+
+	expect(vi.getTimerCount()).toBe(0);
+});
