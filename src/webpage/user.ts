@@ -901,6 +901,13 @@ class User extends SnowFlake {
 		pfp.loading = "lazy";
 		pfp.classList.add("pfp");
 		if (!this.webhook) pfp.classList.add("userid:" + this.id);
+		// Every new source (member avatar, userupdate) gets its own fallback; a failing default stops here.
+		pfp.addEventListener("error", () => {
+			const fallbackAbs = new URL(this.defaultAvatarSrc(), location.href).href;
+			if (pfp.src === fallbackAbs) return;
+			pfp.addEventListener("load", () => pfp.classList.remove("error"), {once: true});
+			pfp.setSrcs(this.defaultAvatarSrc());
+		});
 		if (guild) {
 			(async () => {
 				if (guild instanceof Guild) {
@@ -1223,9 +1230,13 @@ class User extends SnowFlake {
 				new CDNParams({expectedSize: 96})
 			);
 		} else {
-			const int = Number((BigInt(this.id.replace("#clone", "")) >> 22n) % 6n);
-			return `${this.info.cdn}/embed/avatars/${int}.png`;
+			return this.defaultAvatarSrc();
 		}
+	}
+	/** The default avatar this user shows when it has no avatar of its own (or its own is gone). */
+	defaultAvatarSrc(): string {
+		const int = Number((BigInt(this.id.replace("#clone", "")) >> 22n) % 6n);
+		return `${this.info.cdn}/embed/avatars/${int}.png`;
 	}
 	async getBadges() {
 		let badgeids = badgeIdsFromFlags(this.public_flags);

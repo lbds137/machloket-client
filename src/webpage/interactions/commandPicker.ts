@@ -4,6 +4,7 @@ import {I18n} from "../i18n.js";
 import type {applicationJson} from "../jsontypes.js";
 import type {Localuser} from "../localuser.js";
 import {CDNParams} from "../utils/cdnParams.js";
+import {onImgBroken} from "../utils/imgFallback.js";
 import {tokenMatchRatio} from "./labelMatch.js";
 
 /** Discord's command-picker browse view (an empty "/" query): a rail of tabs — Frequently
@@ -37,6 +38,12 @@ export function similarLabel(label: string, search: string): number {
 
 /** The app's icon, or its initial when the index carried none. */
 export function appIconElm(localuser: Localuser, app: applicationJson | undefined): HTMLElement {
+	const letter = (): HTMLSpanElement => {
+		const span = document.createElement("span");
+		span.classList.add("commandAppIconFallback");
+		span.textContent = (app?.name || "?").slice(0, 1).toUpperCase();
+		return span;
+	};
 	if (app?.icon) {
 		const img = document.createElement("img");
 		img.src =
@@ -49,12 +56,10 @@ export function appIconElm(localuser: Localuser, app: applicationJson | undefine
 			new CDNParams({expectedSize: 32});
 		img.alt = "";
 		img.loading = "lazy";
+		onImgBroken(img, letter);
 		return img;
 	}
-	const letter = document.createElement("span");
-	letter.classList.add("commandAppIconFallback");
-	letter.textContent = (app?.name || "?").slice(0, 1).toUpperCase();
-	return letter;
+	return letter();
 }
 
 /** One app's slice of the picker: its index row and its pickable invocations. */

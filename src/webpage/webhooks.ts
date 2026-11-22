@@ -8,6 +8,7 @@ import {User} from "./user.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {apiFetch} from "./utils/apiFetch.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 
 function getWebhookApiRoot(api: string) {
 	const trimmed = api.replace(/\/+$/, "");
@@ -144,12 +145,16 @@ async function webhookMenu(
 		const div = document.createElement("div");
 		div.classList.add("flexltr", "webhookArea");
 		const pfp = document.createElement("img");
+		const int = Number((BigInt(hook.id) >> 22n) % 6n);
+		const defaultAvatar = `${guild.info.cdn}/embed/avatars/${int}.png`;
 		if (hook.avatar) {
 			pfp.src =
 				`${guild.info.cdn}/avatars/${hook.id}/${hook.avatar}` + new CDNParams({expectedSize: 96});
+			onImgBroken(pfp, () => {
+				pfp.src = defaultAvatar;
+			});
 		} else {
-			const int = Number((BigInt(hook.id) >> 22n) % 6n);
-			pfp.src = `${guild.info.cdn}/embed/avatars/${int}.png`;
+			pfp.src = defaultAvatar;
 		}
 		pfp.classList.add("webhookpfppreview");
 

@@ -8,6 +8,7 @@ import {Permissions} from "./permissions.js";
 import {I18n} from "./i18n.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {previewURL} from "./utils/previewURL.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {apiFetch} from "./utils/apiFetch.js";
@@ -198,6 +199,7 @@ class Bot {
 								new CDNParams({expectedSize: 256});
 							banner.alt = "";
 							content.appendChild(banner);
+							onImgBroken(banner, () => banner.remove());
 						}
 
 						const nameContainer = document.createElement("div");
@@ -217,6 +219,12 @@ class Bot {
 								: "/embed/avatars/3.png");
 						img.alt = "";
 						nameContainer.appendChild(img);
+						if (guild.icon) {
+							const fallbackSrc = this.info.cdn + "/embed/avatars/3.png";
+							onImgBroken(img, () => {
+								if (img.src !== new URL(fallbackSrc, location.href).href) img.src = fallbackSrc;
+							});
+						}
 
 						const name = document.createElement("h3");
 						name.textContent = guild.name;

@@ -28,6 +28,7 @@ import {I18n} from "./i18n.js";
 import {Emoji} from "./emoji.js";
 import {webhookMenu} from "./webhooks.js";
 import {createImg} from "./utils/utils.js";
+import {onImgBroken} from "./utils/imgFallback.js";
 import {Sticker} from "./sticker.js";
 import {
 	ArrayProgressive,
@@ -2424,24 +2425,9 @@ class Guild extends SnowFlake {
 			side: "right",
 			weak: true,
 		});
-		if (icon !== null) {
-			const img = createImg(
-				guild.info.cdn +
-					"/icons/" +
-					guild.id +
-					"/" +
-					icon +
-					".png" +
-					new CDNParams({expectedSize: 96}),
-			);
-			img.classList.add("pfp", "servericon");
-			divy.appendChild(img);
-			if (guild instanceof Guild && autoLink) {
-				img.onclick = onclick;
-				Guild.contextmenu.bindContextmenu(img, guild, undefined);
-				hover.addEvent(img);
-			}
-		} else {
+		// The initials rendering, shown when there is no icon and when the icon fails to load. It
+		// carries no bindings: each caller binds it by its own rule (bind below).
+		const blank = (): HTMLDivElement => {
 			const div = document.createElement("div");
 			let name: string;
 			if (guild instanceof Guild) {
@@ -2455,12 +2441,40 @@ class Guild extends SnowFlake {
 				.replace(/\s/g, "");
 			div.textContent = build;
 			div.classList.add("blankserver", "servericon");
-			divy.appendChild(div);
-			if (guild instanceof Guild) {
-				div.onclick = onclick;
-				Guild.contextmenu.bindContextmenu(div, guild, undefined);
-				hover.addEvent(div);
+			return div;
+		};
+		const bind = (el: HTMLElement, g: Guild) => {
+			el.onclick = onclick;
+			Guild.contextmenu.bindContextmenu(el, g, undefined);
+			hover.addEvent(el);
+		};
+		if (icon !== null) {
+			const img = createImg(
+				guild.info.cdn +
+					"/icons/" +
+					guild.id +
+					"/" +
+					icon +
+					".png" +
+					new CDNParams({expectedSize: 96}),
+			);
+			img.classList.add("pfp", "servericon");
+			divy.appendChild(img);
+			// A failed icon's fallback follows the icon's own binding rule.
+			onImgBroken(img, () => {
+				const fallback = blank();
+				if (guild instanceof Guild && autoLink) bind(fallback, guild);
+				return fallback;
+			});
+			if (guild instanceof Guild && autoLink) {
+				img.onclick = onclick;
+				Guild.contextmenu.bindContextmenu(img, guild, undefined);
+				hover.addEvent(img);
 			}
+		} else {
+			const div = blank();
+			if (guild instanceof Guild) bind(div, guild);
+			divy.appendChild(div);
 		}
 		return divy;
 	}
