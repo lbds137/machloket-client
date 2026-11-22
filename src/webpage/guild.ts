@@ -29,7 +29,12 @@ import {Emoji} from "./emoji.js";
 import {webhookMenu} from "./webhooks.js";
 import {createImg} from "./utils/utils.js";
 import {Sticker} from "./sticker.js";
-import {ProgessiveDecodeJSON, ProgressiveLoadError} from "./utils/progessiveLoad.js";
+import {
+	ArrayProgressive,
+	ObjectProgressive,
+	ProgessiveDecodeJSON,
+	ProgressiveLoadError,
+} from "./utils/progessiveLoad.js";
 import {MarkDown} from "./markdown.js";
 import {Command} from "./interactions/commands.js";
 import {commandAllowedFor} from "./commandPermissions.js";
@@ -45,37 +50,53 @@ import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 /** Streams an API list endpoint's JSON array of objects, handing each over as it arrives.
  * Resolves null once the whole list arrived, else the line saying why it stopped: the server's
- * refusal, or "offline" for a load that died or stalled. The budget is per wait (the headers,
- * each body chunk), not per list, so a long list on a slow link still arrives whole. */
-async function streamList<T>(
+ * refusal, listUnreadable for a 200 that isn't an array of objects, or "offline" for a load that
+ * died or stalled. The budget is per wait (the headers, each body chunk), not per list, so a long
+ * list on a slow link still arrives whole. Items are checked to be objects, not checked against
+ * T's fields. `onItem` is synchronous; a throw from it is a bug here, not the server's, so it
+ * rejects instead of reading as a stopped load. */
+export async function streamList<T extends object>(
 	url: string,
 	headers: RequestInit["headers"],
 	onItem: (item: T) => void,
 ): Promise<string | null> {
-	const list = ProgessiveDecodeJSON<T[], RequestInit & {timeoutMs?: number}>(
-		url,
-		{headers, timeoutMs: 0},
-		apiFetch,
-		{idleTimeoutMs: API_TIMEOUT_MS},
-	) as unknown as Promise<{
-		done: boolean;
-		getNext(): Promise<{getWhole(): Promise<T>}>;
-		prog: {close(): void};
-	}>;
-	try {
-		const arr = await list;
-		while (!arr.done) onItem(await (await arr.getNext()).getWhole());
-		return null;
-	} catch (error) {
+	const stopped = (error: unknown) => {
 		console.warn("machloket: list load stopped:", error);
+		if (error instanceof SyntaxError) return I18n.listUnreadable();
 		return refusalText(error instanceof ProgressiveLoadError ? error.response : undefined);
-	} finally {
-		// Done or stopped, the response is finished with (a load that never produced a list
-		// closed itself in ProgessiveDecodeJSON).
-		void list.then(
-			(arr) => arr.prog.close(),
-			() => {},
+	};
+	let list: unknown;
+	try {
+		list = await ProgessiveDecodeJSON<T[], RequestInit & {timeoutMs?: number}>(
+			url,
+			{headers, timeoutMs: 0},
+			apiFetch,
+			{idleTimeoutMs: API_TIMEOUT_MS},
 		);
+	} catch (error) {
+		// A load that never produced a decoder closed itself in ProgessiveDecodeJSON.
+		return stopped(error);
+	}
+	// A lone value closed itself too; an object still holds the response.
+	if (list instanceof ObjectProgressive) list.prog.close();
+	if (!(list instanceof ArrayProgressive)) return stopped(new SyntaxError("not a list"));
+	const arr: ArrayProgressive<unknown, unknown[]> = list;
+	try {
+		while (!arr.done) {
+			let item: T;
+			try {
+				const next = await arr.getNext();
+				if (!(next instanceof ObjectProgressive)) return stopped(new SyntaxError("not an object"));
+				item = (await next.getWhole()) as T;
+			} catch (error) {
+				return stopped(error);
+			}
+			onItem(item);
+		}
+		return null;
+	} finally {
+		// Done, stopped or thrown out of, the response is finished with.
+		arr.prog.close();
 	}
 }
 /** The line a streamed list shows under itself when it stopped short (see streamList). */

@@ -42,8 +42,12 @@ export class ProgressiveArray<I extends RequestInit = RequestInit> {
 				// JSON line, so the budget covers its whole body rather than each chunk. Unbudgeted
 				// loads (media) pass the answer on unread, as they always did.
 				if (!this.idleTimeoutMs) throw new ProgressiveLoadError(f);
+				// Its status text and headers go along (a 429's Retry-After). An empty body stays
+				// null: a null-body status (304) refuses any other.
 				const body = (await this.idle(f.text()).catch(() => "")) || null;
-				throw new ProgressiveLoadError(new Response(body, {status: f.status}));
+				throw new ProgressiveLoadError(
+					new Response(body, {status: f.status, statusText: f.statusText, headers: f.headers}),
+				);
 			}
 			const read = f.body.getReader();
 			this.cbuff = (await this.idle(read.read())).value;
@@ -132,6 +136,9 @@ async function getNextNonWhiteSpace(prog: ProgressiveArray) {
 	}
 	return char;
 }
+/** Reads the next JSON value. Every malformed-body error in this decoder is a SyntaxError
+ * (JSON.parse's own included), so a caller can tell a server that sent the wrong thing from a
+ * load that died. */
 async function identifyType(prog: ProgressiveArray) {
 	let char = await getNextNonWhiteSpace(prog);
 	switch (char) {
@@ -182,10 +189,10 @@ async function identifyType(prog: ProgressiveArray) {
 		case "{":
 			return await ObjectProgressive.make(prog);
 		default:
-			throw new Error("bad JSON");
+			throw new SyntaxError("bad JSON");
 	}
 }
-class ArrayProgressive<T, X extends Array<T>> {
+export class ArrayProgressive<T, X extends Array<T>> {
 	ondone = async () => {};
 	prog: ProgressiveArray;
 	done = false;
@@ -228,7 +235,7 @@ class ArrayProgressive<T, X extends Array<T>> {
 			if (lastChar === "]") {
 				this.done = true;
 				await this.ondone();
-			} else if (lastChar !== ",") throw Error("Bad JSON Object:" + lastChar);
+			} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
 			checks();
 		};
 		if ((ret instanceof ArrayProgressive || ret instanceof ObjectProgressive) && !ret.done) {
@@ -263,7 +270,7 @@ class ArrayProgressive<T, X extends Array<T>> {
 		return arr as X;
 	}
 }
-class ObjectProgressive<X extends Object> {
+export class ObjectProgressive<X extends Object> {
 	ondone = async () => {};
 	prog: ProgressiveArray;
 	done = false;
@@ -301,17 +308,17 @@ class ObjectProgressive<X extends Object> {
 		if (this.done) throw new Error("no more object");
 		const key = (await identifyType(this.prog)) as unknown;
 		if (typeof key !== "string") {
-			throw Error("Bad key:" + key);
+			throw new SyntaxError("Bad key:" + key);
 		}
 		const nextChar = await getNextNonWhiteSpace(this.prog);
-		if (nextChar !== ":") throw Error("Bad JSON");
+		if (nextChar !== ":") throw new SyntaxError("Bad JSON");
 		const value = (await identifyType(this.prog)) as unknown;
 		const check = async () => {
 			const lastChar = await getNextNonWhiteSpace(this.prog);
 			if (lastChar === "}") {
 				this.done = true;
 				await this.ondone();
-			} else if (lastChar !== ",") throw Error("Bad JSON Object:" + lastChar);
+			} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
 			checks();
 		};
 		if ((value instanceof ArrayProgressive || value instanceof ObjectProgressive) && !value.done) {
@@ -360,7 +367,12 @@ export async function ProgessiveDecodeJSON<X, I extends RequestInit = RequestIni
 	const prog = new ProgressiveArray(url, req, fetcher, options);
 	try {
 		await prog.ready;
-		return (await identifyType(prog)) as Progressive<X>;
+		const decoded = await identifyType(prog);
+		// A lone value (null, a number, a string) is whole already and keeps no hold on the
+		// response, so the caller has nothing to close it with.
+		if (!(decoded instanceof ArrayProgressive || decoded instanceof ObjectProgressive))
+			prog.close();
+		return decoded as Progressive<X>;
 	} catch (error) {
 		// No decoder reached the caller, so nothing else can close the response.
 		prog.close();
