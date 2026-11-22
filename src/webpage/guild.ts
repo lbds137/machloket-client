@@ -46,9 +46,13 @@ import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: string) {
 	const invDiv = document.createElement("div");
 	invDiv.classList.add("inviteGrid");
-	const bansp = ProgessiveDecodeJSON<invitejson[]>(url, {
-		headers: guild.headers,
-	});
+	const bansp = ProgessiveDecodeJSON<invitejson[]>(
+		url,
+		{
+			headers: guild.headers,
+		},
+		apiFetch,
+	);
 	const createInviteHTML = (invite: invitejson) => {
 		const div = document.createElement("div");
 		div.classList.add("inviteCard");
@@ -112,7 +116,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 			}
 
 			opt.addButtonInput("", I18n.delete(), async () => {
-				const res = await fetch(guild.info.api + "/invites/" + invite.code, {
+				const res = await apiFetch(guild.info.api + "/invites/" + invite.code, {
 					method: "DELETE",
 					headers: guild.headers,
 				}).catch(() => undefined);
@@ -385,7 +389,7 @@ class Guild extends SnowFlake {
 		const menu = new Dialog(I18n.guild.admins());
 		menu.options.addText(I18n.loading());
 		menu.show();
-		const countsRes = await fetch(this.info.api + `/guilds/${this.id}/roles/member-counts/`, {
+		const countsRes = await apiFetch(this.info.api + `/guilds/${this.id}/roles/member-counts/`, {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const counts = countsRes?.ok
@@ -505,7 +509,7 @@ class Guild extends SnowFlake {
 							return false;
 						})
 						.map(async (_) => {
-							const res = await fetch(
+							const res = await apiFetch(
 								`${this.info.api}/guilds/${this.id}/roles/${_.id}/member-ids`,
 								{
 									headers: this.headers,
@@ -685,7 +689,7 @@ class Guild extends SnowFlake {
 		return undefined;
 	}
 	async showWelcome() {
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (!res?.ok) {
@@ -744,7 +748,7 @@ class Guild extends SnowFlake {
 	welcomeScreen?: welcomeScreen;
 	/** Sends `body` to the welcome-screen endpoint, says why when refused, true when saved. */
 	private async saveWelcomeScreen(body: unknown): Promise<boolean> {
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
 			method: "PATCH",
 			headers: this.headers,
 			body: JSON.stringify(body),
@@ -953,7 +957,7 @@ class Guild extends SnowFlake {
 					const headers = structuredClone(this.headers);
 					if (reason.value)
 						(headers as any)["x-audit-log-reason"] = encodeURIComponent(reason.value);
-					const ret = await fetch(`${this.info.api}/guilds/${this.id}/bans/${id}`, {
+					const ret = await apiFetch(`${this.info.api}/guilds/${this.id}/bans/${id}`, {
 						method: "PUT",
 						headers,
 					}).catch(() => undefined);
@@ -974,6 +978,7 @@ class Guild extends SnowFlake {
 					{
 						headers: this.headers,
 					},
+					apiFetch,
 				);
 				const createBanHTML = (ban: banObj) => {
 					const div = document.createElement("div");
@@ -1142,7 +1147,7 @@ class Guild extends SnowFlake {
 						const save = () => {
 							const newName = input.value.trim();
 							if (newName && newName !== emjData.name) {
-								fetch(this.info.api + "/guilds/" + this.id + "/emojis/" + emjData.id, {
+								apiFetch(this.info.api + "/guilds/" + this.id + "/emojis/" + emjData.id, {
 									method: "PATCH",
 									headers: this.headers,
 									body: JSON.stringify({name: newName}),
@@ -1183,10 +1188,13 @@ class Guild extends SnowFlake {
 						const options = diaolog.options.addOptions("", {ltr: true});
 						options.addButtonInput("", I18n.yes(), async () => {
 							diaolog.hide();
-							const res = await fetch(`${this.info.api}/guilds/${this.id}/emojis/${emjData.id}`, {
-								method: "DELETE",
-								headers: this.headers,
-							}).catch(() => undefined);
+							const res = await apiFetch(
+								`${this.info.api}/guilds/${this.id}/emojis/${emjData.id}`,
+								{
+									method: "DELETE",
+									headers: this.headers,
+								},
+							).catch(() => undefined);
 							if (!res?.ok) {
 								await showRefusal(res);
 							}
@@ -1231,12 +1239,13 @@ class Guild extends SnowFlake {
 					} else {
 						throw new FormError(tags, I18n.sticker.errEmjMust());
 					}
-					const res = await fetch(this.info.api + "/guilds/" + this.id + "/stickers", {
+					const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/stickers", {
 						method: "POST",
 						headers: {
 							Authorization: this.headers.Authorization,
 						},
 						body,
+						timeoutMs: 0,
 					}).catch(() => undefined);
 					if (res?.ok) {
 						popup.hide();
@@ -1297,7 +1306,7 @@ class Guild extends SnowFlake {
 							const options = diaolog.options.addOptions("", {ltr: true});
 							options.addButtonInput("", I18n.yes(), async () => {
 								diaolog.hide();
-								const res = await fetch(
+								const res = await apiFetch(
 									`${this.info.api}/guilds/${this.id}/stickers/${sticker.id}`,
 									{
 										method: "DELETE",
@@ -1336,7 +1345,7 @@ class Guild extends SnowFlake {
 			const onboard = settings.addButton(I18n.onboarding.name());
 			let onboardNote: HTMLElement | undefined;
 			const genOnboard = async () => {
-				const res = await fetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
+				const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/welcome-screen", {
 					headers: this.headers,
 				}).catch(() => undefined);
 				if (!res?.ok) {
@@ -1509,7 +1518,7 @@ class Guild extends SnowFlake {
 		if (this.member.hasPermission("MANAGE_GUILD")) {
 			const widgetMenu = settings.addButton(I18n.widget());
 			(async () => {
-				const res = await fetch(this.info.api + "/guilds/" + this.id + "/widget", {
+				const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/widget", {
 					headers: this.headers,
 				}).catch(() => undefined);
 				const cur = res?.ok
@@ -1646,7 +1655,7 @@ class Guild extends SnowFlake {
 				}
 			});
 		});
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/templates", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/templates", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const templates = (
@@ -1788,7 +1797,7 @@ class Guild extends SnowFlake {
 			position--;
 			return {id: _.id, position};
 		});
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/roles", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/roles", {
 			method: "PATCH",
 			body: JSON.stringify(map),
 			headers: this.headers,
@@ -2148,7 +2157,7 @@ class Guild extends SnowFlake {
 		full.show();
 	}
 	async leave(): Promise<Response | undefined> {
-		return fetch(this.info.api + "/users/@me/guilds/" + this.id, {
+		return apiFetch(this.info.api + "/users/@me/guilds/" + this.id, {
 			method: "DELETE",
 			headers: this.headers,
 		}).catch(() => undefined);
@@ -2173,7 +2182,7 @@ class Guild extends SnowFlake {
 	}
 	private async resyncChannels() {
 		const seq = this.layoutSeq;
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/channels", {
 			headers: this.headers,
 		}).catch(() => undefined);
 		const channels: unknown = res?.ok ? await res.json().catch(() => undefined) : undefined;
@@ -2291,7 +2300,7 @@ class Guild extends SnowFlake {
 			}
 		} else {
 			this.reordersInFlight = (this.reordersInFlight ?? 0) + 1;
-			const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
+			const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/channels", {
 				method: "PATCH",
 				headers: this.headers,
 				body: JSON.stringify(build),
@@ -2421,7 +2430,7 @@ class Guild extends SnowFlake {
 	}
 	/** Lifts the ban on `userId`; false (after saying why) when the server refused it. */
 	async unban(userId: string): Promise<boolean> {
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/bans/" + userId, {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/bans/" + userId, {
 			headers: this.headers,
 			method: "DELETE",
 		}).catch(() => undefined);
@@ -2473,7 +2482,7 @@ class Guild extends SnowFlake {
 	}
 	async goToThread(threadId: string) {
 		if (!this.localuser.channelids.has(threadId)) {
-			const res = await fetch(this.info.api + "/channels/" + threadId, {
+			const res = await apiFetch(this.info.api + "/channels/" + threadId, {
 				headers: this.headers,
 			}).catch(() => undefined);
 			const channelJson: channeljson | undefined = res?.ok
@@ -2763,7 +2772,7 @@ class Guild extends SnowFlake {
 		*/
 	}
 	async createChannel(name: string, type: number): Promise<boolean> {
-		const res = await fetch(this.info.api + "/guilds/" + this.id + "/channels", {
+		const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/channels", {
 			method: "POST",
 			headers: this.headers,
 			body: JSON.stringify({name, type}),
@@ -2951,7 +2960,7 @@ class Guild extends SnowFlake {
 					"/users/@me/application-command-index" +
 					(channelId ? `?channel_id=${channelId}` : "")
 				: this.info.api + `/guilds/${this.id}/application-command-index`;
-		const res = await fetch(url, {
+		const res = await apiFetch(url, {
 			headers: this.headers,
 		});
 		// A non-200 answer is an error body with neither field (or a proxy's HTML page): no

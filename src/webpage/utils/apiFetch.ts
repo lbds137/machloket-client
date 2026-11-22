@@ -115,29 +115,29 @@ export async function apiFetch(
 	}
 	const timeoutSignal = AbortSignal.timeout(timeoutMs);
 	let signal: AbortSignal;
-	let cleanupFallback: (() => void) | undefined;
 	if (!initSignal) {
 		signal = timeoutSignal;
 	} else if (AbortSignal.any) {
 		signal = AbortSignal.any([initSignal, timeoutSignal]);
 	} else {
 		// AbortSignal.any is missing before Safari 17.4 / Firefox 124 / Chrome 116: forward both
-		// the caller's signal (carrying its reason) and the timeout signal onto a local controller.
-		// The forwarded listeners come off when fetch settles, so past the headers only the
-		// AbortSignal.any path still forwards aborts into a slow body read — no caller passes
-		// `signal` today; revisit when one lands (tracker: the signal-passing-caller rider).
+		// signals, each with its own reason, onto a local controller. As on the .any path, the
+		// forwarding outlives the headers (a streamed body read still cancels); the listener
+		// pair drops when either signal fires, so within the budget at the latest.
 		const controller = new AbortController();
-		const onCallerAbort = () => controller.abort(initSignal.reason);
-		const onTimeoutAbort = () => controller.abort();
+		const onCallerAbort = () => {
+			timeoutSignal.removeEventListener("abort", onTimeoutAbort);
+			controller.abort(initSignal.reason);
+		};
+		const onTimeoutAbort = () => {
+			initSignal.removeEventListener("abort", onCallerAbort);
+			controller.abort(timeoutSignal.reason);
+		};
 		if (initSignal.aborted) {
 			onCallerAbort();
 		} else {
 			initSignal.addEventListener("abort", onCallerAbort, {once: true});
 			timeoutSignal.addEventListener("abort", onTimeoutAbort, {once: true});
-			cleanupFallback = () => {
-				initSignal.removeEventListener("abort", onCallerAbort);
-				timeoutSignal.removeEventListener("abort", onTimeoutAbort);
-			};
 		}
 		signal = controller.signal;
 	}
@@ -150,8 +150,6 @@ export async function apiFetch(
 			throw new DOMException("offline", "TimeoutError");
 		}
 		throw error;
-	} finally {
-		cleanupFallback?.();
 	}
 
 	if (res.status === 401) {

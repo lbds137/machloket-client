@@ -10,6 +10,7 @@ import {Channel} from "./channel.js";
 import {I18n} from "./i18n.js";
 import {showRefusal} from "./utils/showRefusal.js";
 import {assignableKey} from "./utils/assignableKey.js";
+import {apiFetch} from "./utils/apiFetch.js";
 
 class Role extends SnowFlake {
 	permissions: Permissions;
@@ -502,10 +503,13 @@ class RoleList extends Buttons {
 	/** Deletes a channel permission overwrite; a refusal says so. */
 	async removeOverwrite(id: string) {
 		if (!this.channel) return;
-		const res = await fetch(this.info.api + "/channels/" + this.channel.id + "/permissions/" + id, {
-			method: "DELETE",
-			headers: this.headers,
-		}).catch(() => undefined);
+		const res = await apiFetch(
+			this.info.api + "/channels/" + this.channel.id + "/permissions/" + id,
+			{
+				method: "DELETE",
+				headers: this.headers,
+			},
+		).catch(() => undefined);
 		if (!res?.ok) await showRefusal(res);
 	}
 	private static ChannelRoleMenu() {
@@ -547,10 +551,13 @@ class RoleList extends Buttons {
 		opt.addButtonInput("", I18n.yes(), async () => {
 			opt.removeAll();
 			opt.addText(I18n.role.deleting());
-			const status = await fetch(role.info.api + "/guilds/" + this.guild.id + "/roles/" + role.id, {
-				method: "DELETE",
-				headers: this.guild.headers,
-			}).then(
+			const status = await apiFetch(
+				role.info.api + "/guilds/" + this.guild.id + "/roles/" + role.id,
+				{
+					method: "DELETE",
+					headers: this.guild.headers,
+				},
+			).then(
 				(res) => (res.ok ? undefined : "HTTP " + res.status),
 				() => "offline",
 			);
@@ -711,7 +718,7 @@ class RoleList extends Buttons {
 				bar.onchange = async () => {
 					div.remove();
 					if (bar.value === "") return;
-					const res = await fetch(this.info.api + `/guilds/${this.guild.id}/roles`, {
+					const res = await apiFetch(this.info.api + `/guilds/${this.guild.id}/roles`, {
 						method: "POST",
 						headers: this.headers,
 						body: JSON.stringify({
