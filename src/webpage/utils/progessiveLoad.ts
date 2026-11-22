@@ -7,6 +7,13 @@ export class ProgressiveLoadError extends Error {
 	}
 }
 
+/** The body ended cleanly where more was needed. */
+export class EndOfBody extends Error {
+	constructor() {
+		super("ran out of file to read");
+	}
+}
+
 export type ProgressiveOptions = {
 	/** Aborts the load (with a TimeoutError) when the server sends nothing for this long. The
 	 * clock runs only while the headers or a body chunk is awaited, never while the reader works
@@ -76,7 +83,7 @@ export class ProgressiveArray<I extends RequestInit = RequestInit> {
 		const arr = new Uint8Array(size);
 		let arri = 0;
 		while (size > 0) {
-			if (!this.cbuff) throw Error("ran out of file to read");
+			if (!this.cbuff) throw new EndOfBody();
 			let itter = Math.min(size, this.cbuff.length - this.index);
 			size -= itter;
 			for (let i = 0; i < itter; i++, arri++, this.index++) {
@@ -136,9 +143,9 @@ async function getNextNonWhiteSpace(prog: ProgressiveArray) {
 	}
 	return char;
 }
-/** Reads the next JSON value. Every malformed-body error in this decoder is a SyntaxError
- * (JSON.parse's own included), so a caller can tell a server that sent the wrong thing from a
- * load that died. */
+/** Reads the next JSON value. A malformed token throws a SyntaxError (JSON.parse's own included),
+ * so a caller can tell a server that sent the wrong thing from a load that died; a body that ends
+ * mid-value (EndOfBody) reads as a dead load. */
 async function identifyType(prog: ProgressiveArray) {
 	let char = await getNextNonWhiteSpace(prog);
 	switch (char) {
@@ -157,10 +164,17 @@ async function identifyType(prog: ProgressiveArray) {
 			let build = "";
 			do {
 				build += char;
-				char = await prog.getChar();
+				try {
+					char = await prog.getChar();
+				} catch (error) {
+					// The body ends right after the number: the number is whole, and `build` already
+					// holds its last digit, so there is nothing to put back.
+					if (error instanceof EndOfBody) return JSON.parse(build) as number;
+					throw error;
+				}
 			} while (validNumber.has(char));
 			prog.putBackChar(char);
-			return Number(build);
+			return JSON.parse(build) as number;
 		}
 		case '"':
 			let build = "";
@@ -366,7 +380,21 @@ export async function ProgessiveDecodeJSON<X, I extends RequestInit = RequestIni
 ): Promise<Progressive<X>> {
 	const prog = new ProgressiveArray(url, req, fetcher, options);
 	try {
-		await prog.ready;
+		try {
+			await prog.ready;
+		} catch (error) {
+			// A 2xx with no body (a 204, or a 200 with a null body) is not a refusal: it is an
+			// unreadable answer.
+			if (error instanceof ProgressiveLoadError && error.response.ok)
+				throw new SyntaxError("no body: HTTP " + error.response.status);
+			throw error;
+		}
+		try {
+			prog.putBackChar(await getNextNonWhiteSpace(prog));
+		} catch (error) {
+			if (error instanceof EndOfBody) throw new SyntaxError("empty body");
+			throw error;
+		}
 		const decoded = await identifyType(prog);
 		// A lone value (null, a number, a string) is whole already and keeps no hold on the
 		// response, so the caller has nothing to close it with.
