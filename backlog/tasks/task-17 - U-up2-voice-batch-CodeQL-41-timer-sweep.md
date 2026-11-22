@@ -1,10 +1,10 @@
 ---
 id: TASK-17
 title: 'U-up2: voice batch (CodeQL #41 + timer sweep)'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-20T02:37:00Z'
+updated_date: '2026-11-22T08:40:00Z'
 labels:
   - voice-media
 dependencies: []
