@@ -4,7 +4,7 @@ import {captureRequests} from "./test/setup";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
 await import("./localuser");
-const {makeInviteMenu, makeBanList} = await import("./guild");
+const {makeInviteMenu, makeBanList, streamList} = await import("./guild");
 const {Settings} = await import("./settings");
 const {I18n} = await import("./i18n");
 const {API_TIMEOUT_MS} = await import("./utils/apiFetch");
@@ -140,8 +140,9 @@ it("the streamed lists drop apiFetch's whole-request budget for an idle one", as
 	expect(timeout).not.toHaveBeenCalledWith(API_TIMEOUT_MS);
 });
 
-/** A fetcher whose body the test feeds by hand; an abort errors the body as fetch does. */
-function handFed(status = 200) {
+/** A fetcher whose body the test feeds by hand; an abort errors the body as fetch does. `answer`
+ * sets the response's other fields (status text, headers). */
+function handFed(status = 200, answer: Omit<ResponseInit, "status"> = {}) {
 	let feed!: ReadableStreamDefaultController<Uint8Array>;
 	const signals: AbortSignal[] = [];
 	const fetcher = (_url: string, init: RequestInit) => {
@@ -156,7 +157,7 @@ function handFed(status = 200) {
 						});
 					},
 				}),
-				{status},
+				{...answer, status},
 			),
 		);
 	};
@@ -240,4 +241,96 @@ it("time the reader spends between reads is not counted against the idle budget"
 	close();
 
 	expect(await list.getWhole()).toEqual([2]);
+});
+
+it("a body that is a lone value closes its load (no decoder reaches the caller to close it)", async () => {
+	const {fetcher, send, close, signals} = handFed();
+	const decoded = ProgessiveDecodeJSON<number[]>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+	send("null");
+	close();
+
+	expect(await decoded).toBe(null);
+	expect(signals[0]?.aborted).toBe(true);
+});
+
+it("a budgeted refusal keeps its status text and headers (a 429's Retry-After)", async () => {
+	const {fetcher, send, close} = handFed(429, {
+		statusText: "Too Many Requests",
+		headers: {"Retry-After": "5"},
+	});
+	const list = ProgessiveDecodeJSON<number[]>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+	send('{"message": "slow down"}');
+	close();
+
+	const error = await list.then(
+		() => null,
+		(e: {response: Response}) => e,
+	);
+	expect(error?.response.statusText).toBe("Too Many Requests");
+	expect(error?.response.headers.get("retry-after")).toBe("5");
+	expect(await error?.response.json()).toEqual({message: "slow down"});
+});
+
+/** Collects the unhandled rejections raised until `stop`, keeping them out of the run's report. */
+function trapRejections() {
+	const seen: unknown[] = [];
+	const onRejection = (event: PromiseRejectionEvent) => {
+		seen.push(event.reason);
+		event.preventDefault();
+	};
+	window.addEventListener("unhandledrejection", onRejection);
+	return {
+		async stop() {
+			await sleep(50); // a rejection is reported a task after the promise settles
+			window.removeEventListener("unhandledrejection", onRejection);
+			return seen;
+		},
+	};
+}
+
+// 200s the server answered with something other than a JSON array of objects. "5\n" ends in
+// whitespace so the number's end is read without running out of body.
+const unreadable: [string, string][] = [
+	["null", "null"],
+	["a lone number", "5\n"],
+	["an error object", '{"message": "x"}'],
+	["an empty object", "{}"],
+	["an array of scalars", "[1, 2]"],
+	["an HTML page", "<!doctype html><html></html>"],
+];
+
+it.each(unreadable)(
+	"an invite list whose body is %s says the list is unreadable, not offline",
+	async (_, body) => {
+		const rejections = trapRejections();
+		captureRequests(INVITES, () => new Response(body, {status: 200}));
+		const root = await inviteList();
+
+		await vi.waitFor(() => expect(root.textContent).toContain(I18n.listUnreadable()));
+		expect(root.textContent).not.toContain(I18n.requestFailed("offline"));
+		expect(await rejections.stop()).toEqual([]);
+	},
+);
+
+it("a ban list whose body is not an array says the list is unreadable, not offline", async () => {
+	const rejections = trapRejections();
+	captureRequests(BANS, () => Response.json({message: "x"}));
+	const root = banList();
+
+	await vi.waitFor(() => expect(root.textContent).toContain(I18n.listUnreadable()));
+	expect(root.textContent).not.toContain(I18n.requestFailed("offline"));
+	expect(await rejections.stop()).toEqual([]);
+});
+
+it("a throw from the item callback reaches the caller instead of reading as offline", async () => {
+	captureRequests(INVITES, () => Response.json([invite("a")]));
+	const bug = new Error("card builder bug");
+	const abort = vi.spyOn(AbortController.prototype, "abort");
+
+	await expect(
+		streamList(INVITES, {}, () => {
+			throw bug;
+		}),
+	).rejects.toBe(bug);
+	expect(abort).toHaveBeenCalled(); // the load is closed on the way out
 });

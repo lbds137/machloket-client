@@ -596,6 +596,7 @@
 	"jankInfo": "Client information",
 	"leaveGuild": "Leave server",
 	"leaving": "You're leaving Spacebar",
+	"listUnreadable": "The server sent this list in a form Machloket can't read.",
 	"loaded": "Loaded",
 	"loading": "Loading…",
 	"localuser": {
