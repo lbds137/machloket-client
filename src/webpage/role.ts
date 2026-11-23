@@ -55,8 +55,8 @@ class Role extends SnowFlake {
 		return span;
 	}
 	getIcon(): HTMLElement | void {
-		const hover = new Hover(this.name);
 		if (this.icon) {
+			const hover = new Hover(this.name);
 			const img = createImg(
 				this.info.cdn +
 					"/role-icons/" +

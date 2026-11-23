@@ -222,6 +222,7 @@ class Bot {
 						if (guild.icon) {
 							const fallbackSrc = this.info.cdn + "/embed/avatars/3.png";
 							onImgBroken(img, () => {
+								// Belt-and-braces: onImgBroken is once-only and nothing re-points this img.
 								if (img.src !== new URL(fallbackSrc, location.href).href) img.src = fallbackSrc;
 							});
 						}

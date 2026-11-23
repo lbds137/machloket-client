@@ -325,6 +325,26 @@ describe("guild icon whose image is gone", () => {
 		}
 	});
 
+	it("a Guild with autoLink on: its failed icon's initials are bound, as the icon is", () => {
+		// autoLink reads guild.localuser.guildhtml, so the owner stub carries a map.
+		const guild = Object.assign(Object.create(Guild.prototype), {
+			id: "447",
+			properties: {name: "Bound Guild", icon: "abc"},
+			owner: {info: {cdn: CDN}, guildhtml: new Map()},
+		}) as InstanceType<typeof Guild>;
+		const icon = Guild.generateGuildIcon(guild, true);
+		const parent = mount(icon);
+		try {
+			parent.querySelector("img")?.dispatchEvent(new Event("error"));
+
+			const blank = parent.querySelector<HTMLElement>(".blankserver");
+			expect(blank).not.toBeNull();
+			expect(blank?.onclick).not.toBeNull();
+		} finally {
+			parent.remove();
+		}
+	});
+
 	it("a hostile guild name renders as initials text, never as markup", () => {
 		const icon = Guild.generateGuildIcon(
 			{id: "445", name: "<img src=x onerror=alert(1)>", icon: "abc", info: {cdn: CDN}},
