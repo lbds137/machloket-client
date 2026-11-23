@@ -334,11 +334,14 @@ describe("a send the server rate-limits", () => {
 
 	/** An XMLHttpRequest whose answers the test gives by hand: each send waits in `pending` until
 	 * answered, unless `autoOk` is set, which answers every later send with 200. `sent` holds
-	 * each send's message content, in the order they reached the wire. */
+	 * each send's message content, in the order they reached the wire. `throwOnSend` lists the
+	 * 0-based send indices whose `send()` throws before recording or answering (every call counts,
+	 * the throwing ones included). An attachment send's content is read from its `payload_json`. */
 	function fakeXHRByHand() {
 		const sent: string[] = [];
 		const pending: ((status: number, response: unknown) => void)[] = [];
-		const state = {autoOk: false};
+		const state = {autoOk: false, throwOnSend: [] as number[]};
+		let sendCount = 0;
 		class FakeXHR {
 			status = 0;
 			response: unknown = null;
@@ -348,8 +351,11 @@ describe("a send the server rate-limits", () => {
 			onerror: (() => void) | null = null;
 			open() {}
 			setRequestHeader() {}
-			send(body: string) {
-				sent.push((JSON.parse(body) as {content: string}).content);
+			send(body: string | FormData) {
+				const index = sendCount++;
+				if (state.throwOnSend.includes(index)) throw new Error("send failed");
+				const payload = body instanceof FormData ? (body.get("payload_json") as string) : body;
+				sent.push((JSON.parse(payload) as {content: string}).content);
 				const answer = (status: number, response: unknown) => {
 					this.status = status;
 					this.response = response;
@@ -440,6 +446,91 @@ describe("a send the server rate-limits", () => {
 		expect(sent).toEqual(["A", "A", "A", "A"]);
 		expect(bubble.failed).toHaveBeenCalledTimes(1);
 	});
+
+	it("an attachment send's 429'd resend goes out before a later send already waiting on the window", async () => {
+		const {XHR, sent, pending, state} = fakeXHRByHand();
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel} = focusedChannel();
+		Object.defineProperty(channel, "id", {value: "296"});
+		const url = "http://send.test/api/v9/channels/296/messages";
+		const {armRateLimit} = await import("./utils/rateLimitWindows");
+		const answers: string[] = [];
+
+		void channel.sendMessage(
+			"A",
+			{attachments: [new File(["x"], "a.txt", {type: "text/plain"})]},
+			(r) => void answers.push("A " + r),
+		);
+		await untilSent(sent, 1);
+		// Another request's 429 arms the bucket while A is on the wire; B queues on it.
+		armRateLimit(url, {retry_after: 0.15}, "POST");
+		void channel.sendMessage("B", {}, (r) => void answers.push("B " + r));
+		for (let i = 0; i < 3; i++) await frame(); // B is past its bubble and waiting
+		expect(sent).toEqual(["A"]);
+		state.autoOk = true;
+		pending[0](429, {retry_after: 0.05});
+
+		await vi.waitFor(() => expect(answers).toHaveLength(2), {timeout: 1500});
+		expect(sent).toEqual(["A", "A", "B"]);
+	});
+
+	// A retry's resend that throws (the send itself, not a 429) fails the bubble again, so its retry
+	// button stays usable.
+	it("a retry whose resend throws fails the bubble again, and its retry works", async () => {
+		const {XHR, sent, pending, state} = fakeXHRByHand();
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel, bubble} = focusedChannel();
+		Object.defineProperty(channel, "id", {value: "297"});
+		const answers: string[] = [];
+
+		void channel.sendMessage("A", {}, (r) => {
+			answers.push(r);
+			return false;
+		});
+		await untilSent(sent, 1);
+		pending[0](500, {message: "boom"});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+		state.throwOnSend = [1];
+		state.autoOk = true;
+		(bubble.failed.mock.calls[0][0] as () => void)();
+
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(2));
+		(bubble.failed.mock.calls[1][0] as () => void)();
+
+		await vi.waitFor(() => expect(answers.at(-1)).toBe("Ok"), {timeout: 1500});
+		expect(sent).toEqual(["A", "A"]);
+	});
+
+	// Both sends park on a window armed before either goes out: the line is ticket-sorted, so A
+	// leaves first only if its first wait carries the ticket A took when it started. B takes the
+	// other branch, so a branch that dropped the ticket would hand only A a later one.
+	it.each([
+		["an attachment", "298", true],
+		["a text", "299", false],
+	])(
+		"%s send waiting on a window goes out before a later send waiting on it",
+		async (_, id, withFile) => {
+			const {XHR, sent, state} = fakeXHRByHand();
+			vi.stubGlobal("XMLHttpRequest", XHR);
+			vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+			const {channel} = focusedChannel();
+			Object.defineProperty(channel, "id", {value: id});
+			const {armRateLimit} = await import("./utils/rateLimitWindows");
+			armRateLimit(`http://send.test/api/v9/channels/${id}/messages`, {retry_after: 0.15}, "POST");
+			state.autoOk = true;
+			const answers: string[] = [];
+
+			const file = [new File(["x"], "a.txt", {type: "text/plain"})];
+			const [aFiles, bFiles] = withFile ? [file, []] : [[], file];
+			void channel.sendMessage("A", {attachments: aFiles}, (r) => void answers.push("A " + r));
+			void channel.sendMessage("B", {attachments: bFiles}, (r) => void answers.push("B " + r));
+
+			await vi.waitFor(() => expect(answers).toHaveLength(2), {timeout: 1500});
+			expect(sent).toEqual(["A", "B"]);
+		},
+	);
 
 	// RED: at HEAD an unreadable 429 answers NotOk at once, so no second send ever follows.
 	it("an unreadable body waits out the 5 s default and retries", async () => {
