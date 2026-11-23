@@ -332,6 +332,115 @@ describe("a send the server rate-limits", () => {
 		expect(channel.slowmode).toHaveBeenCalledWith(true);
 	});
 
+	/** An XMLHttpRequest whose answers the test gives by hand: each send waits in `pending` until
+	 * answered, unless `autoOk` is set, which answers every later send with 200. `sent` holds
+	 * each send's message content, in the order they reached the wire. */
+	function fakeXHRByHand() {
+		const sent: string[] = [];
+		const pending: ((status: number, response: unknown) => void)[] = [];
+		const state = {autoOk: false};
+		class FakeXHR {
+			status = 0;
+			response: unknown = null;
+			responseType = "";
+			upload = {onprogress: null};
+			onload: (() => void) | null = null;
+			onerror: (() => void) | null = null;
+			open() {}
+			setRequestHeader() {}
+			send(body: string) {
+				sent.push((JSON.parse(body) as {content: string}).content);
+				const answer = (status: number, response: unknown) => {
+					this.status = status;
+					this.response = response;
+					queueMicrotask(() => this.onload?.());
+				};
+				if (state.autoOk) answer(200, {id: "1"});
+				else pending.push(answer);
+			}
+		}
+		return {XHR: FakeXHR, sent, pending, state};
+	}
+
+	// RED (TASK-93): at HEAD the 429'd send re-enters its bucket's queue at the back, so a later
+	// send already waiting on the window goes out first: the wire reads A, B, A.
+	it("a 429'd send's resend goes out before a later send already waiting on the window", async () => {
+		const {XHR, sent, pending, state} = fakeXHRByHand();
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel} = focusedChannel();
+		Object.defineProperty(channel, "id", {value: "293"});
+		const url = "http://send.test/api/v9/channels/293/messages";
+		const {armRateLimit} = await import("./utils/rateLimitWindows");
+		const answers: string[] = [];
+
+		void channel.sendMessage("A", {}, (r) => void answers.push("A " + r));
+		await untilSent(sent, 1);
+		// Another request's 429 arms the bucket while A is on the wire; B queues on it.
+		armRateLimit(url, {retry_after: 0.15}, "POST");
+		void channel.sendMessage("B", {}, (r) => void answers.push("B " + r));
+		for (let i = 0; i < 3; i++) await frame(); // B is past its bubble and waiting
+		expect(sent).toEqual(["A"]);
+		state.autoOk = true;
+		pending[0](429, {retry_after: 0.05});
+
+		await vi.waitFor(() => expect(answers).toHaveLength(2), {timeout: 1500});
+		expect(sent).toEqual(["A", "A", "B"]);
+	});
+
+	// RED (TASK-93): at HEAD the failed bubble's retry button re-sends at once, inside the window.
+	it("a failed bubble's retry waits out the bucket's window before it sends", async () => {
+		const {XHR, sent, pending, state} = fakeXHRByHand();
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel, bubble} = focusedChannel();
+		Object.defineProperty(channel, "id", {value: "294"});
+		const url = "http://send.test/api/v9/channels/294/messages";
+		const {armRateLimit} = await import("./utils/rateLimitWindows");
+
+		void channel.sendMessage("A", {}, () => false);
+		await untilSent(sent, 1);
+		pending[0](500, {message: "boom"});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+		const retry = bubble.failed.mock.calls[0][0] as () => void;
+		armRateLimit(url, {retry_after: 0.15}, "POST");
+		state.autoOk = true;
+
+		retry();
+		await new Promise((r) => setTimeout(r, 50)); // inside the window
+		expect(sent).toEqual(["A"]);
+		await vi.waitFor(() => expect(sent).toEqual(["A", "A"]), {timeout: 1500});
+	});
+
+	// RED (TASK-93): at HEAD the send's one resend is spent by its first 429, so a retry by hand
+	// that draws a 429 fails the bubble again at once instead of waiting and re-sending.
+	it("a failed bubble's retry gets its own resend after a 429", async () => {
+		const {XHR, sent, pending, state} = fakeXHRByHand();
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel, bubble} = focusedChannel();
+		Object.defineProperty(channel, "id", {value: "295"});
+		const answers: string[] = [];
+
+		void channel.sendMessage("A", {}, (r) => {
+			answers.push(r);
+			return false;
+		});
+		await untilSent(sent, 1);
+		pending[0](429, {retry_after: 0.01});
+		await untilSent(sent, 2);
+		pending[1](429, {retry_after: 0.01});
+		await vi.waitFor(() => expect(bubble.failed).toHaveBeenCalledTimes(1));
+		(bubble.failed.mock.calls[0][0] as () => void)();
+		await untilSent(sent, 3);
+		state.autoOk = true;
+		pending[2](429, {retry_after: 0.01});
+
+		await vi.waitFor(() => expect(answers).toEqual(["NotOk", "Ok"]), {timeout: 1500});
+		expect(sent).toEqual(["A", "A", "A", "A"]);
+		expect(bubble.failed).toHaveBeenCalledTimes(1);
+	});
+
 	// RED: at HEAD an unreadable 429 answers NotOk at once, so no second send ever follows.
 	it("an unreadable body waits out the 5 s default and retries", async () => {
 		const {XHR, sent} = fakeXHRSequence([{status: 429, response: null}, ok]);

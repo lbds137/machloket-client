@@ -42,7 +42,12 @@ import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
-import {armRateLimit, rateLimitRemaining, waitRateLimit} from "./utils/rateLimitWindows.js";
+import {
+	armRateLimit,
+	rateLimitRemaining,
+	rateLimitTicket,
+	waitRateLimit,
+} from "./utils/rateLimitWindows.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
@@ -3797,6 +3802,8 @@ class Channel extends SnowFlake {
 		const msgsUrl = this.info.api + "/channels/" + this.id + "/messages";
 		// Inside the window, ticks fail fast instead of re-issuing the same request on every
 		// scroll tick; the caller that hit the 429 waits the window out and retries once itself.
+		// This reads the window, not the queue (rateLimitHeld), on purpose: history pages carry no
+		// send order, so a tick made while the retry is resuming may go out beside it.
 		if (rateLimitRemaining(msgsUrl, "GET") > 0) return undefined;
 		try {
 			let res = await apiFetch(msgsUrl + "?limit=100&" + query, {headers: this.headers});
@@ -4577,6 +4584,9 @@ class Channel extends SnowFlake {
 		) {
 			return;
 		}
+		// The send's place in its channel's order, taken before any await: a later send can't
+		// overtake it in the rate-limit queue, nor can its own resend after a 429 fall behind one.
+		let ticket = rateLimitTicket();
 		Channel.clearSendError();
 		// Typed-mention resolution is best-effort enrichment: a half-loaded guild or a
 		// test-fixture shell may not carry a real member Set, and a send must never
@@ -4651,11 +4661,21 @@ class Channel extends SnowFlake {
 			}
 			res.send(rbody);
 		};
+		let rateLimitRetried = false;
+		// The failed bubble's retry button: a fresh send at the back of the bucket's line (the
+		// bubble has moved to the bottom), waiting out any window, with its own resend after a 429.
+		const retryByHand = () => {
+			rateLimitRetried = false;
+			ticket = rateLimitTicket();
+			void (async () => {
+				await waitRateLimit(sendUrl, "POST", ticket);
+				resend();
+			})().catch(() => fail());
+		};
 		const fail = () => {
-			funcs?.failed(resend);
+			funcs?.failed(retryByHand);
 		};
 
-		let rateLimitRetried = false;
 		const promiseHandler = (resolve: () => void) => {
 			res.responseType = "json";
 			res.onload = () => {
@@ -4674,9 +4694,10 @@ class Channel extends SnowFlake {
 						if (!rateLimitRetried) {
 							rateLimitRetried = true;
 							// Waits the bucket's window as it stands when it ends: a longer window armed
-							// meanwhile holds the resend too. A throw from resend fails the bubble.
+							// meanwhile holds the resend too. The send's ticket keeps its place ahead of
+							// later sends on the channel. A throw from resend fails the bubble.
 							void (async () => {
-								await waitRateLimit(sendUrl, "POST");
+								await waitRateLimit(sendUrl, "POST", ticket);
 								resend();
 							})().catch(() => fail());
 							return;
@@ -4762,7 +4783,7 @@ class Channel extends SnowFlake {
 			await new Promise((resolve) => requestAnimationFrame(resolve));
 
 			// A send on a rate-limited route waits out the window before it goes (the bubble is up).
-			await waitRateLimit(sendUrl, "POST");
+			await waitRateLimit(sendUrl, "POST", ticket);
 			try {
 				res.send((rbody = JSON.stringify(body)));
 			} catch {
@@ -4818,7 +4839,7 @@ class Channel extends SnowFlake {
 			);
 			await new Promise((resolve) => requestAnimationFrame(resolve));
 			// A send on a rate-limited route waits out the window before it goes (the bubble is up).
-			await waitRateLimit(sendUrl, "POST");
+			await waitRateLimit(sendUrl, "POST", ticket);
 			try {
 				res.send((rbody = formData));
 			} catch {

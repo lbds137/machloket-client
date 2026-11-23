@@ -199,6 +199,23 @@ describe("waitRateLimit", () => {
 		expect(Date.now() - started).toBeGreaterThanOrEqual(200);
 		expect(rateLimitRemaining(url)).toBe(0);
 	});
+
+	// PIN (TASK-92 review c): a global window armed while a bucket's callers wait holds them all
+	// to its end, and they still resume in the order they started waiting.
+	it("a global window armed over a bucket's waiters holds them to its end, still in order", async () => {
+		const url = A + "/channels/1/messages";
+		armRateLimit(url, {retry_after: 0.05});
+		const started = Date.now();
+		const order: string[] = [];
+		const a = waitRateLimit(url).then(() => order.push("a"));
+		const b = waitRateLimit(url).then(() => order.push("b"));
+		armRateLimit(A + "/users/@me", {global: true, retry_after: 0.2});
+
+		await Promise.all([a, b]);
+
+		expect(order).toEqual(["a", "b"]);
+		expect(Date.now() - started).toBeGreaterThanOrEqual(190);
+	});
 });
 
 describe("rateLimitKey review fixes", () => {
