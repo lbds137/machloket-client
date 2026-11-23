@@ -207,7 +207,8 @@ async function pump(id: string, key: {base: string; bucket: string}, queue: Buck
 		for (let remaining = remainingFor(key); remaining > 0; remaining = remainingFor(key)) {
 			await new Promise<void>((resolve) => setTimeout(resolve, remaining));
 		}
-		queue.waiters.shift()!.wake();
+		// Optional: a test reset can empty the line while the pump sleeps; the loop then ends.
+		queue.waiters.shift()?.wake();
 	}
 	queue.pumping = false;
 	// Dropped in a later timer task, not here: the waiters resumed now send during this task's

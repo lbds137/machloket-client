@@ -377,7 +377,7 @@ describe("a send the server rate-limits", () => {
 		const {channel} = focusedChannel();
 		Object.defineProperty(channel, "id", {value: "293"});
 		const url = "http://send.test/api/v9/channels/293/messages";
-		const {armRateLimit} = await import("./utils/rateLimitWindows");
+		const {armRateLimit, rateLimitWaiterCountForTests} = await import("./utils/rateLimitWindows");
 		const answers: string[] = [];
 
 		void channel.sendMessage("A", {}, (r) => void answers.push("A " + r));
@@ -385,7 +385,7 @@ describe("a send the server rate-limits", () => {
 		// Another request's 429 arms the bucket while A is on the wire; B queues on it.
 		armRateLimit(url, {retry_after: 0.15}, "POST");
 		void channel.sendMessage("B", {}, (r) => void answers.push("B " + r));
-		for (let i = 0; i < 3; i++) await frame(); // B is past its bubble and waiting
+		await vi.waitFor(() => expect(rateLimitWaiterCountForTests(url, "POST")).toBe(1)); // B is parked
 		expect(sent).toEqual(["A"]);
 		state.autoOk = true;
 		pending[0](429, {retry_after: 0.05});
@@ -454,7 +454,7 @@ describe("a send the server rate-limits", () => {
 		const {channel} = focusedChannel();
 		Object.defineProperty(channel, "id", {value: "296"});
 		const url = "http://send.test/api/v9/channels/296/messages";
-		const {armRateLimit} = await import("./utils/rateLimitWindows");
+		const {armRateLimit, rateLimitWaiterCountForTests} = await import("./utils/rateLimitWindows");
 		const answers: string[] = [];
 
 		void channel.sendMessage(
@@ -466,7 +466,7 @@ describe("a send the server rate-limits", () => {
 		// Another request's 429 arms the bucket while A is on the wire; B queues on it.
 		armRateLimit(url, {retry_after: 0.15}, "POST");
 		void channel.sendMessage("B", {}, (r) => void answers.push("B " + r));
-		for (let i = 0; i < 3; i++) await frame(); // B is past its bubble and waiting
+		await vi.waitFor(() => expect(rateLimitWaiterCountForTests(url, "POST")).toBe(1)); // B is parked
 		expect(sent).toEqual(["A"]);
 		state.autoOk = true;
 		pending[0](429, {retry_after: 0.05});
