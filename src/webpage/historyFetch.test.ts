@@ -229,9 +229,11 @@ describe("a rate-limited history fetch", () => {
 		// Call 1 is in flight (no window yet) when call 2 gets its 429 and arms one.
 		const first = failing.grabBefore("10");
 		const second = limiting.grabBefore("10");
-		await new Promise((res) => setTimeout(res, 20));
-		expect(rateLimitRemaining("http://history.test/api/v9/channels/202/messages")).toBeGreaterThan(
-			0,
+		// Wait for the arm itself, not a fixed sleep: under load the 429's body read can outlast one.
+		await vi.waitFor(() =>
+			expect(
+				rateLimitRemaining("http://history.test/api/v9/channels/202/messages"),
+			).toBeGreaterThan(0),
 		);
 		// Call 1 now fails on the network: it armed nothing, so it releases nothing.
 		fail();
