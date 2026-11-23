@@ -8,7 +8,8 @@ const {Channel} = await import("./channel");
 const {Localuser} = await import("./localuser");
 const {I18n} = await import("./i18n");
 const {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} = await import("./utils/rateLimit");
-const {armRateLimit, rateLimitRemaining, waitRateLimit} = await import("./utils/rateLimitWindows");
+const {armRateLimit, rateLimitRemaining, rateLimitWaiterCountForTests, waitRateLimit} =
+	await import("./utils/rateLimitWindows");
 const {acceptInvite} = await import("./invite");
 const {Message, fetchReactionUsers} = await import("./message");
 const {Components} = await import("./interactions/compontents");
@@ -1009,7 +1010,7 @@ describe("fetchRetryOnce inside the shared 429 windows", () => {
 		await vi.waitFor(() => expect(answers).toHaveLength(2));
 		answers[1](limited429()); // b's 429 lands first
 		await vi.waitFor(() => expect(rateLimitRemaining(url, "PATCH")).toBeGreaterThan(0));
-		await new Promise((r) => setTimeout(r, 20)); // b has read its 429 and queued its retry
+		await vi.waitFor(() => expect(rateLimitWaiterCountForTests(url, "PATCH")).toBe(1)); // b's retry is parked
 		answers[0](limited429());
 		await Promise.all([a, b]);
 

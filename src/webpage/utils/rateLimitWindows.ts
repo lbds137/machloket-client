@@ -244,8 +244,17 @@ export function rateLimitWindowCountForTests(): number {
 	return globalUntil.size + bucketUntil.size;
 }
 
+/** Test-only: how many callers are parked on the request's bucket line (0 when it has none). */
+export function rateLimitWaiterCountForTests(input: RequestInfo | URL, method?: string): number {
+	const key = rateLimitKey(input, method);
+	if (!key) return 0;
+	return queues.get(JSON.stringify([key.base, key.bucket]))?.waiters.length ?? 0;
+}
+
 /** Test-only reset: forgets every window and every bucket queue. A pump still sleeping finds its
- * line empty when it wakes, so it never releases an earlier test's caller into a later test. */
+ * line empty when it wakes, so it never releases an earlier test's caller into a later test. A
+ * caller still parked from an earlier test is dropped from the line and never settles, so a test
+ * must not leave a call awaiting a window. */
 export function resetRateLimitsForTests(): void {
 	globalUntil.clear();
 	bucketUntil.clear();
