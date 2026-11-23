@@ -3,10 +3,10 @@ id: TASK-92
 title: >-
   waitRateLimit can resume same-window waiters out of order (send-order risk
   after a 429)
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-23T15:44:00Z'
-updated_date: '2026-11-23T17:01:00Z'
+updated_date: '2026-11-23T17:55:00Z'
 labels:
   - u-api
   - test-flake
@@ -27,4 +27,6 @@ Gate run 2026-11-23 (TASK-90 branch, final tree; the same suite was green an hou
 Prep 2026-11-23 (code reading): a second path to the same overtake: waitRateLimit calls Date.now() again at rateLimitWindows.ts:150, apart from rateLimitRemaining's own now, so a ms tick between them gives two waiters different end keys and separate timers. Fix shape: a per-bucket FIFO chain (each waiter awaits the previous waiter of its bucket, then runs its own re-check loop), order kept whatever the timers do. Red: stub Date.now with a 1 ms skew so the first waiter sees remaining>0 on wake.
 
 2026-11-23 unit: per-bucket FIFO chain (queueTails) replaces the shared end-keyed timer; fetchRetryOnce gates on rateLimitHeld (queue or window) and still sends synchronously when unheld. Red-first: two waitRateLimit tests (timer fires 1 ms early; caller arriving after the window ends) + one fetchRetryOnce PATCH-order test, all red on the ordering assertion at HEAD source. The split end-key path (old :150) alone does not reorder (it needs the skew too) and is gone with the shared timer. Council review (gpt-6.2-sol) applied: tests flush the head's first check before moving the clock; key read once per waiter. Its microtask gap (a call made as the last waiter resumes overtakes it) is real (red test, c before b); its always-await fix broke 4 sync-send tests (channelMute, guildMute x2, messageEdit), so the queue entry instead lingers one task after its last waiter (setTimeout 0, identity-checked). Limit: a caller that awaits real I/O between resuming and sending can still be overtaken; a stale call in the linger task gets the synthesized 429. The gate failure that filed this was not reproduced; the forced skew reproduces the same assertion, not proven to be its cause.
+
+Merged in PR #185 (2026-11-23). claude-review lows: (1) fetchHistoryPage (channel.ts:3800) still gates on rateLimitRemaining, not rateLimitHeld (history order doesn't matter; same as before) → TASK-93 notes; (2) a stale caller in the linger task gets a synthesized 429: check what shouldRetry callers show → TASK-93 notes; (3) this status → Done here; (4) no test for a global window armed while one bucket's waiters queue → TASK-93 notes.
 <!-- SECTION:NOTES:END -->

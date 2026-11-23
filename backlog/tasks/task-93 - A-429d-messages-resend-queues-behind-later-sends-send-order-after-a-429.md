@@ -4,7 +4,7 @@ title: A 429'd message's resend queues behind later sends (send order after a 42
 status: To Do
 assignee: []
 created_date: '2026-11-23T17:01:00Z'
-updated_date: '2026-11-23T17:13:00Z'
+updated_date: '2026-11-23T17:55:00Z'
 labels:
   - u-api
 dependencies: []
@@ -22,4 +22,6 @@ Found in TASK-92's council review (2026-11-23), code reading, not runtime-confir
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-23 (TASK-92 review, gpt-6.2-sol): two more send-order edges for this unit. (1) The 429 retry inside fetchRetryOnce queues in 429-arrival order, not original send order. (2) Check-to-send gap: a waiter can pass its last remainingFor check, then an earlier caller's 429 re-arms the window before this waiter's caller sends; the send then goes out inside the new window (it would draw its own 429). A queue-owned dispatch (callback started before the slot is released) would close both; it needs every same-bucket send path migrated together.
+
+From PR #185 review (TASK-92), lows to settle in this unit: (a) fetchHistoryPage (channel.ts:3800) skips the queue (gates on rateLimitRemaining): switch to rateLimitHeld or comment the intended bypass; (b) a stale fetchRetryOnce caller during the queue's linger task gets a synthesized 429 with no window armed: check each shouldRetry caller doesn't show a false 'rate limited' state; (c) add a test: global window armed while one bucket's waiters queue keeps FIFO (remainingFor reads the global end).
 <!-- SECTION:NOTES:END -->
