@@ -21,7 +21,7 @@
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.65.1",
-		"@types/audioworklet": "^0.0.101",
+		"@types/audioworklet": "^0.0.102",
 		"@types/node": "^26.6.6",
 		"@types/node-fetch": "^2.6.13",
 		"@vitest/browser-playwright": "^5.1.0",
