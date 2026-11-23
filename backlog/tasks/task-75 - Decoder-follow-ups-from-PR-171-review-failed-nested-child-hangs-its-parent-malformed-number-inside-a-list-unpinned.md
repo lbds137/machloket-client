@@ -3,9 +3,10 @@ id: TASK-75
 title: >-
   Decoder follow-ups from PR #171 review: failed nested child hangs its parent;
   malformed number inside a list unpinned
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-22T19:26:00Z'
+updated_date: '2026-11-23T06:33:00Z'
 labels:
   - u-api
 dependencies: []
