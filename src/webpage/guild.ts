@@ -291,13 +291,16 @@ export function makeBanList(banMenu: Options, guild: Guild): HTMLElement {
 	async function loadArr() {
 		let bansArr2: banObj[] = [];
 		let waiting = false;
+		function flushRows() {
+			banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
+			bansArr2 = [];
+		}
 		async function addHTML() {
 			if (waiting) return;
 			waiting = true;
 			await new Promise((res) => setTimeout(res, 0));
 			waiting = false;
-			banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
-			bansArr2 = [];
+			flushRows();
 		}
 		const stopped = await streamList<banObj>(
 			guild.info.api + "/guilds/" + guild.id + "/bans",
@@ -313,7 +316,9 @@ export function makeBanList(banMenu: Options, guild: Guild): HTMLElement {
 				}
 			},
 		);
-		// A list cut short keeps the bans that arrived; the line under them says why.
+		// A list cut short keeps the bans that arrived; the line under them says why. The rows still
+		// waiting on addHTML's timer go in first, so the line never shows above an emptier list.
+		flushRows();
 		failure.show(stopped);
 	}
 	let currentPage = 0;

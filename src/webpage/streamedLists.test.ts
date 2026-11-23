@@ -126,12 +126,23 @@ it("a ban list cut mid-body keeps the bans that arrived and says the network fai
 	captureRequests(BANS, cutMidList("[" + JSON.stringify(ban("1", "alice")) + ","));
 	const root = banList();
 
-	// Waits for both: the failure line can appear before the pending ban row is appended
-	// (makeBanList appends rows on a zero-delay timer; TASK-95).
-	await vi.waitFor(() => {
-		expect(root.textContent).toContain(I18n.requestFailed("offline"));
-		expect(root.querySelector(".bandiv")?.textContent).toContain("alice");
-	});
+	await vi.waitFor(() => expect(root.textContent).toContain(I18n.requestFailed("offline")));
+	expect(root.querySelector(".bandiv")?.textContent).toContain("alice");
+});
+
+it("a ban list cut mid-body shows the bans that arrived before the line saying why", async () => {
+	captureRequests(BANS, cutMidList("[" + JSON.stringify(ban("1", "alice")) + ","));
+	const root = banList();
+	const line = root.querySelector<HTMLElement>("[role=alert]")!;
+	// The observer runs in a microtask after the line is unhidden, before any later task (a
+	// deferred row append) could fill the list in.
+	const rowsWhenShown: number[] = [];
+	new MutationObserver(() => {
+		if (!line.hidden) rowsWhenShown.push(root.querySelectorAll(".bandiv").length);
+	}).observe(line, {attributes: true, attributeFilter: ["hidden"]});
+
+	await vi.waitFor(() => expect(rowsWhenShown).not.toHaveLength(0));
+	expect(rowsWhenShown[0]).toBe(1);
 });
 
 it("a whole ban list shows no failure line (the control)", async () => {
