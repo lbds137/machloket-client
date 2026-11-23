@@ -1199,6 +1199,9 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	 * the unsaved-changes bar — it would offer a Save that only re-sends what landed. */
 	immediate: boolean;
 	private emojiEl?: HTMLElement;
+	/** The stable slot the displayed element lives in: a broken emoji image is replaced inside
+	 * it (onImgBroken), so swaps go through the slot, never through a possibly detached element. */
+	private emojiSlot?: HTMLElement;
 	constructor(
 		label: string,
 		onSubmit: (str: Emoji | undefined | null) => void,
@@ -1235,8 +1238,12 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			span.classList.add("emptyEmoji");
 			return span;
 		};
+		const slot = document.createElement("span");
+		slot.classList.add("emojiSlot");
+		this.emojiSlot = slot;
 		const emoji = this.value ? this.value.getHTML() : emptySlot();
 		this.emojiEl = emoji;
+		slot.append(emoji);
 		div.onclick = (e) => {
 			e.preventDefault();
 			e.stopImmediatePropagation();
@@ -1244,27 +1251,25 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 				const emj = await this.localuser.emojiPicker(e.x, e.y, this.guild);
 				if (emj) {
 					this.value = emj;
-					this.emojiEl?.remove();
 					this.emojiEl = emj.getHTML();
-					div.append(this.emojiEl);
+					this.emojiSlot?.replaceChildren(this.emojiEl);
 					this.onchange(emj);
 					if (!this.immediate) this.owner.changed();
 				}
 			})();
 		};
-		div.append(label, emoji);
+		div.append(label, slot);
 		outDiv.append(div);
 		if (this.clear) {
 			const button = document.createElement("button");
 			button.textContent = I18n.settings.clear();
 			button.onclick = () => {
 				this.value = null;
-				this.emojiEl?.remove();
+				const empty = emptySlot();
+				this.emojiEl = empty;
+				this.emojiSlot?.replaceChildren(empty);
 				this.onchange(null);
 				if (!this.immediate) this.owner.changed();
-				this.emojiEl = document.createElement("span");
-				this.emojiEl.classList.add("emptyEmoji");
-				div.append(this.emojiEl);
 			};
 			outDiv.append(button);
 		}
@@ -1280,8 +1285,8 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 	 * handlers (settings.ts pick/clear swap the display themselves). */
 	setEmoji(value: Emoji | undefined | null) {
 		this.value = value;
-		const parent = this.emojiEl?.parentElement;
-		if (!parent) return;
+		const slot = this.emojiSlot;
+		if (!slot) return;
 		let next: HTMLElement;
 		if (value) {
 			next = value.getHTML();
@@ -1289,9 +1294,8 @@ class EmojiInput implements OptionsElement<Emoji | undefined | null> {
 			next = document.createElement("span");
 			next.classList.add("emptyEmoji");
 		}
-		this.emojiEl?.remove();
 		this.emojiEl = next;
-		parent.append(next);
+		slot.replaceChildren(next);
 	}
 	submit() {
 		this.onSubmit(this.value);
