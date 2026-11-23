@@ -97,7 +97,8 @@ describe("a message the server refuses", () => {
 		vi.stubGlobal("XMLHttpRequest", XHR);
 		const {channel, bubble} = sendingChannel();
 		const answers: string[] = [];
-		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+		// Date too: the 429 window is read against the clock, so the fake timers must move it.
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
 		try {
 			void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 			await untilSent(sent, 1);
@@ -238,6 +239,56 @@ describe("a send the server rate-limits", () => {
 		expect(notice()).toBeNull();
 	});
 
+	// RED (A1, pre-fix): the resend's delay is snapshotted at the 429, so a longer window armed
+	// on the same POST bucket afterwards is not waited out; the resend goes at the first end.
+	it("a resend waits out a longer window armed after its 429 (the delay isn't snapshotted)", async () => {
+		mountComposer();
+		const {XHR, sent} = fakeXHRSequence([{status: 429, response: {retry_after: 0.1}}, ok]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel} = focusedChannel();
+		const url = "http://send.test/api/v9/channels/" + channel.id + "/messages";
+		const {armRateLimit, rateLimitRemaining} = await import("./utils/rateLimitWindows");
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {}, (r) => void answers.push(r));
+		await vi.waitFor(() => expect(rateLimitRemaining(url, "POST")).toBeGreaterThan(0), {
+			interval: 5,
+		});
+		armRateLimit(url, {retry_after: 0.4}, "POST");
+		await new Promise((r) => setTimeout(r, 300)); // past the first window's 0.1 s end
+
+		expect(sent).toHaveLength(1);
+		await vi.waitFor(() => expect(sent).toHaveLength(2), {timeout: 1500});
+		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
+	});
+
+	// RED (pre-change): the module is missing at HEAD, so this row fails at its import, not at an
+	// assertion. The send path must arm the window its send URL shares, so the wait is visible.
+	it("a send's 429 arms the window on its send URL", async () => {
+		mountComposer();
+		const {XHR} = fakeXHRSequence([{status: 429, response: {retry_after: 0.5}}, ok]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel} = focusedChannel();
+		const answers: string[] = [];
+		const {rateLimitRemaining} = await import("./utils/rateLimitWindows");
+
+		void channel.sendMessage("hi", {}, (r) => void answers.push(r));
+
+		await vi.waitFor(
+			() =>
+				expect(
+					rateLimitRemaining(
+						"http://send.test/api/v9/channels/" + channel.id + "/messages",
+						"POST",
+					),
+				).toBeGreaterThan(0),
+			{interval: 5},
+		);
+		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
+	});
+
 	// RED: at HEAD the first 429 answers NotOk and shows the notice during what should be the wait.
 	it("still refuses when the retry is rate-limited again, and says so only at the end", async () => {
 		mountComposer();
@@ -288,7 +339,8 @@ describe("a send the server rate-limits", () => {
 		const {channel} = focusedChannel();
 		const answers: string[] = [];
 		// Only the timers: sendMessage awaits requestAnimationFrame, which must stay real.
-		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+		// Date too: the 429 window is read against the clock, so the fake timers must move it.
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
 
 		void channel.sendMessage("hi", {nonce: "n1"}, (r) => void answers.push(r));
 		await untilSent(sent, 1);

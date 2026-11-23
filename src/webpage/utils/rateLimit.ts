@@ -1,43 +1,55 @@
 import {apiFetch, type ApiRequestInit} from "./apiFetch.js";
+import {
+	rateLimitRemaining,
+	rateLimitKey,
+	readBodyBounded,
+	retryAfterMs,
+	waitRateLimit,
+} from "./rateLimitWindows.js";
 
-/** A 429's wait in ms, or null for any other status. Spacebar's body carries retry_after in
- * SECONDS (a number, or a numeric string); a missing or unreadable body waits 5 s. Capped for sanity. */
-export function retryAfterMs(status: number, bodyText: string | null, cap = 30_000): number | null {
-	if (status !== 429) return null;
-	let body: unknown = null;
-	try {
-		body = JSON.parse(bodyText ?? "");
-	} catch {
-		// A non-JSON 429 keeps the default.
-	}
-	return retryAfterMsFromBody(body, cap);
-}
-
-/** The same window read from a body that is already parsed (the XHR path's `response`). */
-export function retryAfterMsFromBody(body: unknown, cap = 30_000): number {
-	let seconds = 5;
-	const raw = (body as {retry_after?: unknown} | null | undefined)?.retry_after;
-	const retry = typeof raw === "string" && raw.trim() !== "" ? Number(raw) : raw;
-	if (typeof retry === "number" && retry >= 0) seconds = retry;
-	return Math.min(seconds * 1000, cap);
-}
+export {retryAfterMs, retryAfterMsFromBody} from "./rateLimitWindows.js";
 
 /** `fetch`, and on a 429 one more try after the window the server named. The second answer is
- * returned whatever it is; the first answer's body is spent on reading the window.
- * `shouldRetry` lets a caller cancel its own retry when the request became stale: asked when
- * the 429 arrives and again when the window ends, a false returns the 429 as it is. */
+ * returned whatever it is. The 429's body is read from a clone, so the returned response still
+ * carries its body. A call made inside a window another request armed waits that window out
+ * first (the registry in rateLimitWindows). `shouldRetry` lets a caller cancel its own send
+ * when the request became stale: asked when the window ends and again when the 429 arrives, a
+ * false returns the 429 as it is (a synthesized 429 when the stale check fails before the send).
+ * A slowmode 429 (code 20016) is returned at once: its countdown is the caller's. */
 export async function fetchRetryOnce(
 	input: string,
 	init?: ApiRequestInit,
 	options?: {shouldRetry?: () => boolean; timeoutMs?: number},
 ): Promise<Response> {
 	const fetchOpts = options?.timeoutMs !== undefined ? {timeoutMs: options.timeoutMs} : undefined;
+	const stale = () => options?.shouldRetry?.() === false;
+	const method = init?.method ?? "GET";
+	if (rateLimitRemaining(input, method) > 0) {
+		await waitRateLimit(input, method);
+		if (stale()) {
+			return new Response(
+				JSON.stringify({message: "You are being rate limited.", retry_after: 0, global: false}),
+				{status: 429, headers: {"Content-Type": "application/json"}},
+			);
+		}
+	}
 	const res = await apiFetch(input, init, fetchOpts);
 	if (res.status !== 429) return res;
-	const stale = () => options?.shouldRetry?.() === false;
+	const text = await readBodyBounded(res);
+	let body: unknown;
+	try {
+		body = JSON.parse(text ?? "");
+	} catch {
+		// An unreadable body waits the default below.
+	}
+	if ((body as {code?: unknown} | null | undefined)?.code === 20016) return res;
 	if (stale()) return res;
-	const wait = retryAfterMs(429, await res.text().catch(() => null))!;
-	await new Promise((r) => setTimeout(r, wait));
+	// apiFetch armed the window from this body; an untracked URL (no API base) waits the body's own window.
+	if (rateLimitKey(input, method)) {
+		await waitRateLimit(input, method);
+	} else {
+		await new Promise((r) => setTimeout(r, retryAfterMs(429, text)!));
+	}
 	if (stale()) return res;
 	return apiFetch(input, init, fetchOpts);
 }

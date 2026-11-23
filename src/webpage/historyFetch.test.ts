@@ -5,6 +5,7 @@ import {afterEach, describe, expect, it, onTestFinished, vi} from "vitest";
 await import("./localuser");
 const {Channel} = await import("./channel");
 const {InfiniteScroller} = await import("./infiniteScroller");
+const {rateLimitRemaining} = await import("./utils/rateLimitWindows");
 
 /** Settles within `ms`, or reports that it hung. */
 const within = <T>(p: Promise<T>, ms = 1500) =>
@@ -47,7 +48,6 @@ function channelWith(ids: string[]) {
 
 afterEach(() => {
 	vi.restoreAllMocks();
-	Channel.historyCooldownUntil = 0;
 });
 
 describe("a failed history fetch", () => {
@@ -214,7 +214,8 @@ describe("a rate-limited history fetch", () => {
 	it("another call's failure doesn't release a window this call didn't arm", async () => {
 		const failing = Object.assign(channelWith(["9", "8"]), {id: "201"});
 		const limiting = Object.assign(channelWith(["9", "8"]), {id: "202"});
-		const third = Object.assign(channelWith(["9", "8"]), {id: "203"});
+		// The same channel as `limiting`: its window is this channel's, so it asks nothing.
+		const third = Object.assign(channelWith(["9", "8"]), {id: "202"});
 		let fail!: () => void;
 		const held = new Promise<Response>(
 			(_, rej) => (fail = () => rej(new TypeError("Failed to fetch"))),
@@ -229,7 +230,9 @@ describe("a rate-limited history fetch", () => {
 		const first = failing.grabBefore("10");
 		const second = limiting.grabBefore("10");
 		await new Promise((res) => setTimeout(res, 20));
-		expect(Channel.historyCooldownUntil).toBeGreaterThan(Date.now());
+		expect(rateLimitRemaining("http://history.test/api/v9/channels/202/messages")).toBeGreaterThan(
+			0,
+		);
 		// Call 1 now fails on the network: it armed nothing, so it releases nothing.
 		fail();
 		expect(await within(first)).toBe("settled");
@@ -239,6 +242,28 @@ describe("a rate-limited history fetch", () => {
 		expect(await within(third.grabBefore("10"))).toBe("settled");
 		expect(fetchMock).not.toHaveBeenCalled();
 		void second;
+	});
+
+	// RED (pre-change): at HEAD the history window is one global cell, so channel 203 fails fast.
+	it("a rate limit on one channel's history doesn't hold another channel's", async () => {
+		// Windows are per route, like the server's counters: one channel's history window never
+		// holds another channel's.
+		const limiting = Object.assign(channelWith(["9", "8"]), {id: "202"});
+		const other = Object.assign(channelWith(["9", "8"]), {id: "203"});
+		const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation((input) => {
+			const url = String(input instanceof Request ? input.url : input);
+			if (url.includes("/channels/202/")) {
+				return Promise.resolve(Response.json({retry_after: 0.1}, {status: 429}));
+			}
+			return Promise.resolve(Response.json([{id: "9"}, {id: "8"}]));
+		});
+		// Channel 202's first page is 429ed, and its own retry is 429ed too: its window stays up.
+		expect(await within(limiting.grabBefore("10"))).toBe("settled");
+		fetchMock.mockClear();
+
+		expect(await within(other.grabBefore("10"))).toBe("settled");
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect(other.idToPrev.get("10")).toBe("9");
 	});
 
 	it("a retry that is rate-limited again re-arms the window from its own retry_after", async () => {
