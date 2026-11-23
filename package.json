@@ -20,7 +20,7 @@
 		"vite": "^8.3.7"
 	},
 	"devDependencies": {
-		"@playwright/test": "^1.65.0",
+		"@playwright/test": "^1.65.1",
 		"@types/audioworklet": "^0.0.101",
 		"@types/node": "^26.6.6",
 		"@types/node-fetch": "^2.6.13",
