@@ -3,7 +3,9 @@ import {
 	armRateLimit,
 	rateLimitKey,
 	rateLimitRemaining,
+	rateLimitWaiterCountForTests,
 	rateLimitWindowCountForTests,
+	resetRateLimitsForTests,
 	waitRateLimit,
 } from "./rateLimitWindows";
 
@@ -215,6 +217,29 @@ describe("waitRateLimit", () => {
 
 		expect(order).toEqual(["a", "b"]);
 		expect(Date.now() - started).toBeGreaterThanOrEqual(190);
+	});
+
+	// TASK-97 review: a reset that empties a sleeping pump's line leaves it to exit quietly when
+	// it wakes, instead of throwing on the missing waiter. (The parked caller is dropped on purpose.)
+	it("a pump whose line a reset emptied wakes without throwing", async () => {
+		const url = A + "/channels/1/messages";
+		armRateLimit(url, {retry_after: 0.05});
+		void waitRateLimit(url);
+		expect(rateLimitWaiterCountForTests(url)).toBe(1);
+		const errors: unknown[] = [];
+		const onReject = (e: PromiseRejectionEvent) => {
+			errors.push(e.reason);
+			e.preventDefault();
+		};
+		window.addEventListener("unhandledrejection", onReject);
+		try {
+			resetRateLimitsForTests();
+			await new Promise((r) => setTimeout(r, 120)); // past the window: the pump has woken
+		} finally {
+			window.removeEventListener("unhandledrejection", onReject);
+		}
+
+		expect(errors).toEqual([]);
 	});
 });
 
