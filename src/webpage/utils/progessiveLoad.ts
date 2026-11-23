@@ -215,9 +215,13 @@ async function identifyType(prog: ProgressiveArray) {
 export class ArrayProgressive<T, X extends Array<T>> {
 	prog: ProgressiveArray;
 	done = false;
-	/** Resolves (never rejects) once this list reads its closing `]`. */
+	/** Resolves once this list reads its closing `]`; rejects with the error when a read of it, or
+	 * of a container inside it, failed first (the stream past that point is unreadable), so a parent
+	 * waiting on it fails instead of hanging. Awaiting it is optional: its rejection is never
+	 * reported as unhandled. It never drives a read: a list its reader abandons stays pending. */
 	readonly finished: Promise<void>;
 	private resolveFinished!: () => void;
+	private rejectFinished!: (error: unknown) => void;
 	/** The delimiter owed after the last item handed over. `child` is that item when it is a
 	 * container that is not yet done. */
 	private owed?: {child?: ArrayProgressive<any, any> | ObjectProgressive<any>};
@@ -225,7 +229,27 @@ export class ArrayProgressive<T, X extends Array<T>> {
 	private settled: Promise<void> = Promise.resolve();
 	private constructor(prog: ProgressiveArray) {
 		this.prog = prog;
-		this.finished = new Promise<void>((resolve) => (this.resolveFinished = resolve));
+		this.finished = new Promise<void>((resolve, reject) => {
+			this.resolveFinished = resolve;
+			this.rejectFinished = reject;
+		});
+		this.finished.catch(() => {});
+	}
+	/** The first failed read of this container or of a container inside it. A failed read may have
+	 * eaten part of a token, so every later read rejects with this instead of reading on. */
+	private failure?: {error: unknown};
+	private fail = (error: unknown) => {
+		this.failure ??= {error};
+		this.rejectFinished(error);
+	};
+	/** Passes `read` through, failing this container when it rejects. */
+	private async failOn<R>(read: Promise<R>): Promise<R> {
+		try {
+			return await read;
+		} catch (error) {
+			this.fail(error);
+			throw error;
+		}
 	}
 	static async make(prog: ProgressiveArray) {
 		const o = new ArrayProgressive(prog);
@@ -244,17 +268,21 @@ export class ArrayProgressive<T, X extends Array<T>> {
 	}
 	/** Reads the delimiter owed after the last item handed over, if there is one. */
 	private settle(): Promise<void> {
+		if (this.failure) return Promise.reject(this.failure.error);
 		const owed = this.owed;
 		if (owed) {
 			delete this.owed;
-			this.settled = (async () => {
-				if (owed.child) await owed.child.finished;
-				const lastChar = await getNextNonWhiteSpace(this.prog);
-				if (lastChar === "]") {
-					this.done = true;
-					this.resolveFinished();
-				} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
-			})();
+			this.settled = this.failOn(
+				(async () => {
+					if (owed.child) await owed.child.finished;
+					const lastChar = await getNextNonWhiteSpace(this.prog);
+					if (lastChar === "]") {
+						this.done = true;
+						this.resolveFinished();
+					} else if (lastChar !== ",")
+						throw new SyntaxError("expected ',' or ']' after a list item, got: " + lastChar);
+				})(),
+			);
 		}
 		return this.settled;
 	}
@@ -269,11 +297,14 @@ export class ArrayProgressive<T, X extends Array<T>> {
 	async getNext(): Promise<Progressive<T>> {
 		await this.settle();
 		if (this.done) throw new Error("no more array");
-		const ret = (await identifyType(this.prog)) as Progressive<T>;
-		this.owed =
-			(ret instanceof ArrayProgressive || ret instanceof ObjectProgressive) && !ret.done
-				? {child: ret}
-				: {};
+		const ret = (await this.failOn(identifyType(this.prog))) as Progressive<T>;
+		this.owed = {};
+		if ((ret instanceof ArrayProgressive || ret instanceof ObjectProgressive) && !ret.done) {
+			this.owed.child = ret;
+			// The child reads this list's stream: once it fails, so has this list, at once, so a
+			// container above that waits on this one fails too even if nobody reads this one again.
+			ret.finished.catch(this.fail);
+		}
 		return ret;
 	}
 	async *[Symbol.asyncIterator]() {
@@ -304,9 +335,10 @@ export class ArrayProgressive<T, X extends Array<T>> {
 export class ObjectProgressive<X extends Object> {
 	prog: ProgressiveArray;
 	done = false;
-	/** Resolves (never rejects) once this object reads its closing `}`. */
+	/** Resolves once this object reads its closing `}`; rejects as ArrayProgressive's does. */
 	readonly finished: Promise<void>;
 	private resolveFinished!: () => void;
+	private rejectFinished!: (error: unknown) => void;
 	/** The delimiter owed after the last pair handed over. `child` is that pair's value when it is
 	 * a container that is not yet done. */
 	private owed?: {child?: ArrayProgressive<any, any> | ObjectProgressive<any>};
@@ -314,7 +346,27 @@ export class ObjectProgressive<X extends Object> {
 	private settled: Promise<void> = Promise.resolve();
 	private constructor(prog: ProgressiveArray) {
 		this.prog = prog;
-		this.finished = new Promise<void>((resolve) => (this.resolveFinished = resolve));
+		this.finished = new Promise<void>((resolve, reject) => {
+			this.resolveFinished = resolve;
+			this.rejectFinished = reject;
+		});
+		this.finished.catch(() => {});
+	}
+	/** The first failed read of this container or of a container inside it. A failed read may have
+	 * eaten part of a token, so every later read rejects with this instead of reading on. */
+	private failure?: {error: unknown};
+	private fail = (error: unknown) => {
+		this.failure ??= {error};
+		this.rejectFinished(error);
+	};
+	/** Passes `read` through, failing this container when it rejects. */
+	private async failOn<R>(read: Promise<R>): Promise<R> {
+		try {
+			return await read;
+		} catch (error) {
+			this.fail(error);
+			throw error;
+		}
 	}
 	static async make(prog: ProgressiveArray) {
 		const o = new ObjectProgressive(prog);
@@ -333,17 +385,21 @@ export class ObjectProgressive<X extends Object> {
 	}
 	/** Reads the delimiter owed after the last pair handed over, if there is one. */
 	private settle(): Promise<void> {
+		if (this.failure) return Promise.reject(this.failure.error);
 		const owed = this.owed;
 		if (owed) {
 			delete this.owed;
-			this.settled = (async () => {
-				if (owed.child) await owed.child.finished;
-				const lastChar = await getNextNonWhiteSpace(this.prog);
-				if (lastChar === "}") {
-					this.done = true;
-					this.resolveFinished();
-				} else if (lastChar !== ",") throw new SyntaxError("Bad JSON Object:" + lastChar);
-			})();
+			this.settled = this.failOn(
+				(async () => {
+					if (owed.child) await owed.child.finished;
+					const lastChar = await getNextNonWhiteSpace(this.prog);
+					if (lastChar === "}") {
+						this.done = true;
+						this.resolveFinished();
+					} else if (lastChar !== ",")
+						throw new SyntaxError("expected ',' or '}' after an object pair, got: " + lastChar);
+				})(),
+			);
 		}
 		return this.settled;
 	}
@@ -358,17 +414,23 @@ export class ObjectProgressive<X extends Object> {
 	async getNextPair(): Promise<{[K in keyof X]: {key: K; value: Progressive<X[K]>}}[keyof X]> {
 		await this.settle();
 		if (this.done) throw new Error("no more object");
-		const key = (await identifyType(this.prog)) as unknown;
-		if (typeof key !== "string") {
-			throw new SyntaxError("Bad key:" + key);
+		const {key, value} = await this.failOn(
+			(async () => {
+				const key = (await identifyType(this.prog)) as unknown;
+				if (typeof key !== "string") {
+					throw new SyntaxError("Bad key:" + key);
+				}
+				const nextChar = await getNextNonWhiteSpace(this.prog);
+				if (nextChar !== ":") throw new SyntaxError("Bad JSON");
+				return {key, value: (await identifyType(this.prog)) as unknown};
+			})(),
+		);
+		this.owed = {};
+		if ((value instanceof ArrayProgressive || value instanceof ObjectProgressive) && !value.done) {
+			this.owed.child = value;
+			// As in ArrayProgressive.getNext: a failed child fails this object at once.
+			value.finished.catch(this.fail);
 		}
-		const nextChar = await getNextNonWhiteSpace(this.prog);
-		if (nextChar !== ":") throw new SyntaxError("Bad JSON");
-		const value = (await identifyType(this.prog)) as unknown;
-		this.owed =
-			(value instanceof ArrayProgressive || value instanceof ObjectProgressive) && !value.done
-				? {child: value}
-				: {};
 		return {key, value} as any;
 	}
 	/**
