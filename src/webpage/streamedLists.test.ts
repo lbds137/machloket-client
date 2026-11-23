@@ -453,44 +453,101 @@ it("an item whose body never closes reaches the callback's throw without a stray
 	expect(await rejections.stop()).toEqual([]);
 });
 
+type Reader = {
+	more(): Promise<boolean>;
+	getNext(): Promise<unknown>;
+	getNextPair(): Promise<{key: string; value: unknown}>;
+};
+/** The next item of a list, or the next pair's value of an object. */
+const readOne = async (container: Reader, kind: "list" | "object") =>
+	kind === "list" ? await container.getNext() : (await container.getNextPair()).value;
+
 // A nested container that fails mid-read (a bad delimiter, a bad item) leaves the stream unreadable,
 // so its parent's next read must reject rather than wait forever for the child to close.
 it.each([
-	["a list in a list, bad delimiter", "[[1;2]]", "list"],
-	["a list in a list, bad item", "[[1,x]]", "list"],
-	["a list in an object, bad delimiter", '{"a":[1;2]}', "object"],
-] as const)("a parent read after its nested child failed rejects (%s)", async (_, body, kind) => {
+	["a list in a list, bad delimiter", "[[1;2]]", "list", "list"],
+	["a list in a list, bad item", "[[1,x]]", "list", "list"],
+	["a list in an object, bad delimiter", '{"a":[1;2]}', "object", "list"],
+	["an object in a list, bad delimiter", '[{"a":1;"b":2}]', "list", "object"],
+	["an object in an object, bad key", '{"x":{"a":1,b:2}}', "object", "object"],
+] as const)(
+	"a parent read after its nested child failed rejects (%s)",
+	async (_, body, kind, childKind) => {
+		const {fetcher, send, close} = handFed();
+		const pending = ProgessiveDecodeJSON<unknown>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+		send(body);
+		close();
+		const parent = (await pending) as unknown as Reader;
+
+		const child = (await readOne(parent, kind)) as Reader;
+		expect(await readOne(child, childKind)).toBe(1);
+		await expect(readOne(child, childKind)).rejects.toBeInstanceOf(SyntaxError);
+		const outcome = await Promise.race([
+			parent.more().then(
+				() => "resolved",
+				(e: unknown) => e,
+			),
+			sleep(200).then(() => "pending"),
+		]);
+
+		expect(outcome).toBeInstanceOf(SyntaxError);
+	},
+);
+
+// Nested containers that close cleanly, empty ones (already done when handed over) among them,
+// leave the parent reading its own delimiters as normal.
+it("nested containers that close cleanly, empty or not, leave the parent reading on", async () => {
 	const {fetcher, send, close} = handFed();
 	const pending = ProgessiveDecodeJSON<unknown>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
-	send(body);
+	send('[[],{},[1],{"a":[]},{"b":{"c":2}},3]');
 	close();
-	type Reader = {more(): Promise<boolean>; getNext(): Promise<unknown>};
-	const parent = (await pending) as unknown as Reader & {
-		getNextPair(): Promise<{value: unknown}>;
-	};
+	const list = (await pending) as unknown as Whole;
 
-	const child = (
-		kind === "list" ? await parent.getNext() : (await parent.getNextPair()).value
-	) as Reader;
-	expect(await child.getNext()).toBe(1);
-	await expect(child.getNext()).rejects.toBeInstanceOf(SyntaxError);
-	const outcome = await Promise.race([
-		parent.more().then(
+	expect(await list.getWhole()).toEqual([[], {}, [1], {a: []}, {b: {c: 2}}, 3]);
+});
+
+// The read itself, not only more(): a container a child failed fails at once, before anyone reads
+// it again, and every later read rejects with the child's original error.
+it.each([
+	["a list", "[[1;2],3]", "list"],
+	["an object", '{"a":[1;2],"b":3}', "object"],
+] as const)(
+	"a container latched by its child's failure rejects every later read (%s)",
+	async (_, body, kind) => {
+		const {fetcher, send, close} = handFed();
+		const pending = ProgessiveDecodeJSON<unknown>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
+		send(body);
+		close();
+		const parent = (await pending) as unknown as Reader;
+
+		const child = (await readOne(parent, kind)) as Reader;
+		expect(await child.getNext()).toBe(1);
+		const failure = await child.getNext().then(
 			() => "resolved",
 			(e: unknown) => e,
-		),
-		sleep(200).then(() => "pending"),
-	]);
+		);
+		expect(failure).toBeInstanceOf(SyntaxError);
+		// No parent read has run since the child failed: this is the eager latch, not a lazy settle.
+		await expect((parent as unknown as {finished: Promise<void>}).finished).rejects.toBe(failure);
+		const outcome = () =>
+			Promise.race([
+				readOne(parent, kind).then(
+					() => "resolved",
+					(e: unknown) => e,
+				),
+				sleep(200).then(() => "pending"),
+			]);
 
-	expect(outcome).toBeInstanceOf(SyntaxError);
-});
+		expect(await outcome()).toBe(failure);
+		expect(await outcome()).toBe(failure);
+	},
+);
 
 it("a failure deep in the tree fails every container above it, even one nobody read again", async () => {
 	const {fetcher, send, close} = handFed();
 	const pending = ProgessiveDecodeJSON<unknown>(API + "/x", {}, fetcher, {idleTimeoutMs: 5_000});
 	send("[[[1;2]]]");
 	close();
-	type Reader = {more(): Promise<boolean>; getNext(): Promise<unknown>};
 	const outer = (await pending) as unknown as Reader;
 
 	const middle = (await outer.getNext()) as Reader;
