@@ -174,7 +174,15 @@ async function until(
 		const elapsed = Date.now() - start;
 		if (elapsed > timeoutMs) {
 			// `elapsed` is read before the probe runs: the reported wait excludes its own time.
-			const detail = diagnose ? `; ${await diagnose()}` : "";
+			// A probe that throws must not replace the timeout it was asked to explain.
+			let detail = "";
+			if (diagnose) {
+				try {
+					detail = `; ${await diagnose()}`;
+				} catch (e) {
+					detail = `; diagnose failed: ${String(e)}`;
+				}
+			}
 			throw new Error(`timed out waiting for ${what} after ${elapsed} ms${detail}`);
 		}
 		await new Promise((res) => setTimeout(res, 50));
@@ -191,18 +199,29 @@ async function portDiagnosis(
 	messages: {code: string}[],
 	controller: ServiceWorker,
 ): Promise<string> {
+	// Only what arrives after the ping counts as its answer; earlier entries are "before".
+	const before = messages.length;
 	const seen = messages.map((m) => m.code).join(",") || "none";
 	const sent = Date.now();
 	port.postMessage({code: "ping"});
 	let pong: number | undefined;
 	while (Date.now() - sent < 2000) {
-		if (messages.some((m) => m.code === "pong")) {
+		if (messages.slice(before).some((m) => m.code === "pong")) {
 			pong = Date.now() - sent;
 			break;
 		}
 		await new Promise((res) => setTimeout(res, 25));
 	}
-	const after = messages.map((m) => m.code).join(",");
+	const after = messages
+		.slice(before)
+		.map((m) => m.code)
+		.join(",");
+	let marker: string;
+	try {
+		marker = JSON.stringify(await markerText());
+	} catch (e) {
+		marker = `read failed: ${String(e)}`;
+	}
 	return [
 		pong === undefined
 			? "ping: no pong within 2000 ms (worker dead or wedged)"
@@ -210,7 +229,7 @@ async function portDiagnosis(
 		`messages before ping: ${seen}`,
 		`messages after: ${after || "none"}`,
 		`controller state: ${controller.state}`,
-		`marker: ${JSON.stringify(await markerText())}`,
+		`marker: ${marker}`,
 	].join("; ");
 }
 
