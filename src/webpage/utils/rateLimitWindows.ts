@@ -84,10 +84,24 @@ const MAJOR_ROOTS = new Set(["channels", "guilds", "webhooks"]);
 const globalUntil = new Map<string, number>();
 /** The end of each route's window, by base and bucket (a JSON pair: no separator can clash). */
 const bucketUntil = new Map<string, number>();
-/** The last waiter queued on each bucket (same key as `bucketUntil`): it settles once that
- * waiter has resumed. Each new waiter waits on it first, so a bucket's callers resume in the
- * order they started waiting, whatever their timers do. */
-const queueTails = new Map<string, Promise<void>>();
+/** A caller parked on a bucket: its place in send order and the resolver that resumes it. */
+type Waiter = {ticket: number; wake: () => void};
+/** A bucket's parked callers, lowest ticket first; `pumping` is true while a pump is waiting the
+ * bucket's windows out for them. */
+type BucketQueue = {waiters: Waiter[]; pumping: boolean};
+/** Each bucket's queue (same key as `bucketUntil`). */
+const queues = new Map<string, BucketQueue>();
+/** The last ticket handed out: tickets only grow, so a lower one was taken earlier. */
+let lastTicket = 0;
+
+/** A place in send order. A caller takes one when its request starts and gives it to every
+ * `waitRateLimit` for that request, so a re-entry after a 429 resumes ahead of the calls that
+ * started later and are parked on the bucket when it opens, whatever order their 429s came back
+ * in. It holds no place before the caller parks: a later call already released, or on the wire,
+ * is not called back. */
+export function rateLimitTicket(): number {
+	return ++lastTicket;
+}
 
 /** Drops every window whose end has passed, so windows for routes nobody asks again don't pile up. */
 function sweepExpired(): void {
@@ -149,41 +163,58 @@ function remainingFor(key: {base: string; bucket: string}): number {
 export function rateLimitHeld(input: RequestInfo | URL, method?: string): boolean {
 	const key = rateLimitKey(input, method);
 	if (!key) return false;
-	return queueTails.has(JSON.stringify([key.base, key.bucket])) || remainingFor(key) > 0;
+	return queues.has(JSON.stringify([key.base, key.bucket])) || remainingFor(key) > 0;
 }
 
-/** Resolves once the request's windows are over and every earlier waiter on the same bucket
- * has resumed: callers of one bucket resume first-in, first-out, even one that arrives after
- * the window ended while earlier waiters are still parked. A window extended while the caller
- * waits makes it wait again. A caller that sends synchronously once this resolves sends in
- * that order too. The bucket's queue outlives its last waiter until a later timer task, so a call made while
- * resumed waiters are still on their way to sending is held behind them (`rateLimitHeld` is true
- * for it, so a stale caller gets the synthesized 429 instead of sending). */
-export async function waitRateLimit(input: RequestInfo | URL, method?: string): Promise<void> {
+/** Resolves once the request's windows are over and every waiter on the same bucket with a
+ * lower ticket has resumed. Callers that take a fresh ticket here resume first-in, first-out,
+ * even one that arrives after the window ended while earlier waiters are still parked; a caller
+ * re-entering with the ticket its request started with (a resend after a 429) resumes ahead of
+ * the calls that started later. A window extended while the caller waits makes it wait again.
+ * A caller that sends synchronously once this resolves sends in that order too. The bucket's
+ * queue outlives its last waiter until a later timer task, so a call made while resumed waiters
+ * are still on their way to sending is held behind them (`rateLimitHeld` is true for it, so a
+ * stale caller gets the synthesized 429 instead of sending). */
+export async function waitRateLimit(
+	input: RequestInfo | URL,
+	method?: string,
+	ticket: number = rateLimitTicket(),
+): Promise<void> {
 	const key = rateLimitKey(input, method);
 	if (!key) return;
 	const id = JSON.stringify([key.base, key.bucket]);
-	const before = queueTails.get(id);
-	if (!before && remainingFor(key) === 0) return;
-	let release!: () => void;
-	const tail = new Promise<void>((resolve) => (release = resolve));
-	queueTails.set(id, tail);
-	try {
-		await before;
+	let queue = queues.get(id);
+	if (!queue && remainingFor(key) === 0) return;
+	if (!queue) {
+		queue = {waiters: [], pumping: false};
+		queues.set(id, queue);
+	}
+	const parked = queue;
+	await new Promise<void>((wake) => {
+		const at = parked.waiters.findIndex((w) => w.ticket > ticket);
+		parked.waiters.splice(at < 0 ? parked.waiters.length : at, 0, {ticket, wake});
+		if (!parked.pumping) void pump(id, key, parked);
+	});
+}
+
+/** Waits the bucket's windows out, then resumes its parked callers lowest ticket first, all in
+ * one task (each in a later microtask, in that order). A caller parked while the pump waits
+ * takes its ticket's place in the line. Once the queue is empty it stays registered until a
+ * later timer task, then goes unless a caller parked meanwhile. */
+async function pump(id: string, key: {base: string; bucket: string}, queue: BucketQueue) {
+	queue.pumping = true;
+	while (queue.waiters.length) {
 		for (let remaining = remainingFor(key); remaining > 0; remaining = remainingFor(key)) {
 			await new Promise<void>((resolve) => setTimeout(resolve, remaining));
 		}
-	} finally {
-		release();
-		// Dropped in a later timer task, not here: the waiters resumed now send during this task's
-		// microtasks, and a call made meanwhile must queue behind them instead of going out unheld.
-		// A waiter with a successor leaves the cleanup to it.
-		if (queueTails.get(id) === tail) {
-			setTimeout(() => {
-				if (queueTails.get(id) === tail) queueTails.delete(id);
-			}, 0);
-		}
+		queue.waiters.shift()!.wake();
 	}
+	queue.pumping = false;
+	// Dropped in a later timer task, not here: the waiters resumed now send during this task's
+	// microtasks, and a call made meanwhile must queue behind them instead of going out unheld.
+	setTimeout(() => {
+		if (queues.get(id) === queue && !queue.pumping && !queue.waiters.length) queues.delete(id);
+	}, 0);
 }
 
 /** The text of a response's body, read from a clone (the response keeps its body) and capped at
@@ -213,9 +244,11 @@ export function rateLimitWindowCountForTests(): number {
 	return globalUntil.size + bucketUntil.size;
 }
 
-/** Test-only reset: forgets every window and every bucket queue. */
+/** Test-only reset: forgets every window and every bucket queue. A pump still sleeping finds its
+ * line empty when it wakes, so it never releases an earlier test's caller into a later test. */
 export function resetRateLimitsForTests(): void {
 	globalUntil.clear();
 	bucketUntil.clear();
-	queueTails.clear();
+	for (const queue of queues.values()) queue.waiters.length = 0;
+	queues.clear();
 }

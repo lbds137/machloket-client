@@ -992,6 +992,30 @@ describe("fetchRetryOnce inside the shared 429 windows", () => {
 		}
 	});
 
+	// RED (TASK-93): at HEAD two 429'd calls re-enter the bucket's queue in the order their 429s
+	// arrived, so a later call answered first retries first: the wire reads a, b, b, a.
+	it("two 429'd calls retry in the order they were made, not the order their 429s arrived", async () => {
+		const url = API + "/rl/order";
+		const answers: ((res: Response) => void)[] = [];
+		const asked = captureRequests(url, () => {
+			if (answers.length >= 2) return Response.json({});
+			return new Promise<Response>((resolve) => answers.push(resolve));
+		});
+		const limited429 = () =>
+			Response.json({message: "rate limited", retry_after: 0.15}, {status: 429});
+
+		const a = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "a"})});
+		const b = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "b"})});
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		answers[1](limited429()); // b's 429 lands first
+		await vi.waitFor(() => expect(rateLimitRemaining(url, "PATCH")).toBeGreaterThan(0));
+		await new Promise((r) => setTimeout(r, 20)); // b has read its 429 and queued its retry
+		answers[0](limited429());
+		await Promise.all([a, b]);
+
+		expect(asked).toEqual([{n: "a"}, {n: "b"}, {n: "a"}, {n: "b"}]);
+	});
+
 	it("once the drained queue is dropped, an unheld call sends synchronously again", async () => {
 		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
 		try {
