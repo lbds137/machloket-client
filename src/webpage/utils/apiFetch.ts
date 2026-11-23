@@ -1,5 +1,6 @@
 import {pageNav} from "./netUtils.js";
 import {carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
+import {armRateLimit, readBodyBounded} from "./rateLimitWindows.js";
 
 /** Default budget (30 s) for authorized API calls. `timeoutMs: 0` opts out (large uploads). */
 export const API_TIMEOUT_MS = 30_000;
@@ -103,6 +104,28 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 	return true;
 }
 
+/** Arms the window a 429 names (rateLimitWindows) from a clone of its body, so the body stays
+ * unread for the caller. The read is capped at 1 s; an unreadable body arms the default wait.
+ * Never throws. */
+async function armRateLimitFrom429(
+	input: RequestInfo | URL,
+	res: Response,
+	method: string | undefined,
+): Promise<void> {
+	try {
+		const text = await readBodyBounded(res);
+		let parsed: unknown;
+		try {
+			parsed = JSON.parse(text ?? "");
+		} catch {
+			// An unreadable body arms the default window.
+		}
+		armRateLimit(input, parsed, method);
+	} catch {
+		// Arming is best-effort: the caller's own handling of the 429 stands.
+	}
+}
+
 /** `fetch` with `redirect: "error"`, a 30 s timeout (`timeoutMs: 0` opts out), and 401
  * invalidation + debounced /login routing for post-auth token-bearing endpoints. */
 export async function apiFetch(
@@ -116,6 +139,7 @@ export async function apiFetch(
 		// Untimed (an upload): the caller's own signal, if any, is fetch's own problem.
 		const res = await fetch(input, {...restInit, redirect: "error", signal: initSignal});
 		if (res.status === 401) handleUnauthorized(input, restInit);
+		if (res.status === 429) await armRateLimitFrom429(input, res, restInit.method);
 		return res;
 	}
 	const timeoutSignal = AbortSignal.timeout(timeoutMs);
@@ -160,6 +184,7 @@ export async function apiFetch(
 	if (res.status === 401) {
 		handleUnauthorized(input, restInit);
 	}
+	if (res.status === 429) await armRateLimitFrom429(input, res, restInit.method);
 	return res;
 }
 

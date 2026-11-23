@@ -7,7 +7,8 @@ await import("./localuser");
 const {Channel} = await import("./channel");
 const {Localuser} = await import("./localuser");
 const {I18n} = await import("./i18n");
-const {retryAfterMs, retryAfterMsFromBody} = await import("./utils/rateLimit");
+const {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} = await import("./utils/rateLimit");
+const {rateLimitRemaining} = await import("./utils/rateLimitWindows");
 const {acceptInvite} = await import("./invite");
 const {Message, fetchReactionUsers} = await import("./message");
 const {Components} = await import("./interactions/compontents");
@@ -79,7 +80,6 @@ function commandFor(localuser: object) {
 
 afterEach(() => {
 	vi.restoreAllMocks();
-	Channel.historyCooldownUntil = 0;
 });
 
 describe("retryAfterMs", () => {
@@ -147,7 +147,7 @@ describe("the first history page of a channel", () => {
 		await channel.putmessages().catch(() => {});
 
 		expect(channel.allthewayup).toBeFalsy();
-		expect(Channel.historyCooldownUntil).toBeGreaterThan(Date.now());
+		expect(rateLimitRemaining(API + "/channels/c1/messages")).toBeGreaterThan(0);
 	});
 
 	it.each([
@@ -901,5 +901,91 @@ describe("a read ack", () => {
 
 		// The server's read state only moves where it's told: m5 again would move it back.
 		expect(acked).toEqual(["m5", "m9"]);
+	});
+});
+
+describe("fetchRetryOnce inside the shared 429 windows", () => {
+	// RED (pre-change): at HEAD a call sends at once even while another call's 429 window is armed.
+	it("a call made inside an armed window sends nothing until the window ends", async () => {
+		const asked = captureRequests(
+			API + "/rl/a",
+			sequence(
+				() => Response.json({message: "rate limited", retry_after: 0.15}, {status: 429}),
+				() => Response.json({}),
+			),
+		);
+
+		const first = fetchRetryOnce(API + "/rl/a");
+		// The window is armed once the 429's body is read (apiFetch), so wait for it to be up.
+		await vi.waitFor(() => expect(rateLimitRemaining(API + "/rl/a")).toBeGreaterThan(0));
+		const second = fetchRetryOnce(API + "/rl/a");
+		await new Promise((r) => setTimeout(r, 50)); // inside the window
+
+		expect(asked).toHaveLength(1);
+		await Promise.all([first, second]);
+	});
+
+	// RED (pre-change): at HEAD the older call reaches the server at once, so its answer is 200.
+	it("a call that went stale while waiting in a window gets the synthesized 429 and never sends", async () => {
+		const asked = captureRequests(
+			API + "/rl/b",
+			sequence(
+				() => Response.json({message: "rate limited", retry_after: 0.15}, {status: 429}),
+				() => Response.json({}),
+			),
+		);
+		const first = fetchRetryOnce(API + "/rl/b");
+		await vi.waitFor(() => expect(rateLimitRemaining(API + "/rl/b")).toBeGreaterThan(0));
+		let olderStale = false;
+		const older = fetchRetryOnce(API + "/rl/b", undefined, {shouldRetry: () => !olderStale});
+		const newer = fetchRetryOnce(API + "/rl/b", undefined, {shouldRetry: () => true});
+		olderStale = true;
+
+		const [olderRes, newerRes] = await Promise.all([older, newer, first]);
+
+		expect(olderRes.status).toBe(429);
+		expect(newerRes.status).toBe(200);
+		// The first call's retry and the newer call reached the server; the older one did not.
+		expect(asked).toHaveLength(3);
+	});
+
+	// RED (pre-change): at HEAD a slowmode 429 is retried after its countdown (2 asks, 200 answer).
+	it("a 429 with code 20016 (slowmode) is returned as is, with no retry and a readable body", async () => {
+		const asked = captureRequests(
+			API + "/rl/c",
+			sequence(
+				() => Response.json({code: 20016, message: "Slowmode", retry_after: 0.05}, {status: 429}),
+				() => Response.json({}),
+			),
+		);
+
+		const res = await fetchRetryOnce(API + "/rl/c");
+
+		expect(res.status).toBe(429);
+		expect(await res.json()).toMatchObject({code: 20016});
+		expect(asked).toHaveLength(1);
+	});
+
+	// RED (pre-change): at HEAD a global 429 holds only its own path, so the other path sends at once.
+	it("a global 429 on one path holds a different path on the same base", async () => {
+		const first = captureRequests(
+			API + "/rl/d1",
+			sequence(
+				() =>
+					Response.json({message: "rate limited", retry_after: 0.15, global: true}, {status: 429}),
+				() => Response.json({}),
+			),
+		);
+		const other = captureRequests(API + "/rl/d2", () => Response.json({}));
+
+		const a = fetchRetryOnce(API + "/rl/d1");
+		await vi.waitFor(() => expect(rateLimitRemaining(API + "/rl/d1")).toBeGreaterThan(0));
+		expect(first).toHaveLength(1);
+		const b = fetchRetryOnce(API + "/rl/d2");
+		await new Promise((r) => setTimeout(r, 50)); // inside the global window
+
+		expect(other).toHaveLength(0);
+		await Promise.all([a, b]);
+		expect(other).toHaveLength(1);
 	});
 });

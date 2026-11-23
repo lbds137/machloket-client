@@ -1,4 +1,8 @@
-import {vi} from "vitest";
+import {beforeEach, vi} from "vitest";
+import {resetRateLimitsForTests} from "../utils/rateLimitWindows.js";
+
+// Every test starts with no 429 window armed (the registry is module-global).
+beforeEach(() => resetRateLimitsForTests());
 
 // The app fetches its instance list and runs instance discovery at module load, so tests
 // answer those requests in memory. Everything else (translations, assets) goes to the

@@ -41,7 +41,8 @@ import {wireGuildId} from "./interactions/compontents.js";
 import {Tag} from "./tag.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {NotificationSoundManager} from "./utils/notificationSound.js";
-import {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} from "./utils/rateLimit.js";
+import {fetchRetryOnce} from "./utils/rateLimit.js";
+import {armRateLimit, rateLimitRemaining, waitRateLimit} from "./utils/rateLimitWindows.js";
 import {hideNotifyBanner} from "./notifyBanner.js";
 import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
 import {getSensitiveContentSync} from "./utils/sensitiveContent.js";
@@ -3537,9 +3538,8 @@ class Channel extends SnowFlake {
 			headers: this.headers,
 		}).catch(() => undefined);
 		if (j?.status === 429) {
-			// A rate limit says nothing about where the channel's history ends: arm the window
-			// the paging loop shares, and leave the channel unloaded.
-			Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(j));
+			// A rate limit says nothing about where the channel's history ends: apiFetch armed the
+			// window (the paging loop and the re-ask read it), and the channel stays unloaded.
 			this.firstPageRefused = true;
 			this.firstPageRateLimited = true;
 			this.firstPageRefusals = (this.firstPageRefusals ?? 0) + 1;
@@ -3790,56 +3790,26 @@ class Channel extends SnowFlake {
 	/** Counts failed history pages, so a scroller lookup that came back unlinked can tell a
 	 * failure (retry later) from the channel's real end. */
 	private historyFailures = 0;
-	/** The rate-limit window shared by every channel's history loop (test-visible: the
-	 * suite resets it). */
-	static historyCooldownUntil = 0;
-	/** A 429's wait: Spacebar's body carries retry_after in SECONDS. Capped for sanity. */
-	private static async rateLimitWait(res: Response, cap = 30_000): Promise<number> {
-		return retryAfterMs(429, await res.text().catch(() => null), cap)!;
-	}
 	/** One page of this channel's history, or undefined when the request failed (network
-	 * error, an error status, a body that isn't a message list). */
+	 * error, an error status, a body that isn't a message list). The window is this channel's
+	 * history bucket (or the instance's global window); other channels' buckets are not held. */
 	private async fetchHistoryPage(query: string): Promise<messagejson[] | undefined> {
-		// A rate-limited window is shared: ticks inside it fail fast instead of re-issuing
-		// the same request on every scroll tick, while the caller that hit the limit waits
-		// (capped) and retries once itself.
-		if (Date.now() < Channel.historyCooldownUntil) return undefined;
-		// Whether this call has put a window up; only a window it armed is its to release.
-		let armed = false;
+		const msgsUrl = this.info.api + "/channels/" + this.id + "/messages";
+		// Inside the window, ticks fail fast instead of re-issuing the same request on every
+		// scroll tick; the caller that hit the 429 waits the window out and retries once itself.
+		if (rateLimitRemaining(msgsUrl, "GET") > 0) return undefined;
 		try {
-			let res = await apiFetch(
-				this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
-				{headers: this.headers},
-			);
+			let res = await apiFetch(msgsUrl + "?limit=100&" + query, {headers: this.headers});
 			if (res.status === 429) {
-				const wait = await Channel.rateLimitWait(res);
-				Channel.historyCooldownUntil = Date.now() + wait;
-				armed = true;
-				await new Promise((r) => setTimeout(r, wait));
-				res = await apiFetch(
-					this.info.api + "/channels/" + this.id + "/messages?limit=100&" + query,
-					{
-						headers: this.headers,
-					},
-				);
-				// The retry's answer owns the window now: a second 429 re-arms it from its own
-				// wait, anything else releases the other ticks (a network error does in the catch).
-				if (res.status === 429) {
-					Channel.historyCooldownUntil = Date.now() + (await Channel.rateLimitWait(res));
-				} else {
-					// Released here: a later failure of this call has no window left to clear.
-					Channel.historyCooldownUntil = 0;
-					armed = false;
-				}
+				// apiFetch armed the window from the 429's body: wait it out, then ask once more.
+				await waitRateLimit(msgsUrl, "GET");
+				res = await apiFetch(msgsUrl + "?limit=100&" + query, {headers: this.headers});
 			}
 			if (!res.ok) return undefined;
 			const json: unknown = await res.json();
 			return Array.isArray(json) ? (json as messagejson[]) : undefined;
 		} catch (e) {
 			console.error(e);
-			// A failure after this call armed a window releases it; a failure that armed
-			// nothing leaves another call's window alone.
-			if (armed) Channel.historyCooldownUntil = 0;
 			return undefined;
 		}
 	}
@@ -3905,7 +3875,10 @@ class Channel extends SnowFlake {
 				// The skeleton stays up. Once the rate limit's window ends, or after a backoff for
 				// any other refusal (1 s, then 2 s), the channel asks again by the same two steps
 				// getHTML takes, if it is still the one on screen.
-				const cooldownRemaining = Math.max(0, Channel.historyCooldownUntil - Date.now());
+				const cooldownRemaining = rateLimitRemaining(
+					this.info.api + "/channels/" + this.id + "/messages",
+					"GET",
+				);
 				const backoff = refusals >= 1 ? 1000 * 2 ** (refusals - 1) : 0;
 				const wait = this.firstPageRateLimited
 					? cooldownRemaining
@@ -4665,6 +4638,9 @@ class Channel extends SnowFlake {
 			funcs?.progress(e.total, e.loaded);
 		};
 
+		// The send's bucket (POST, this channel): a 429 here holds the next send on this channel
+		// for its window; the history reads (GET) are a bucket of their own.
+		const sendUrl = this.info.api + "/channels/" + this.id + "/messages";
 		const resend = () => {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
 			// The timeout the send was configured with stands: the attachment path is untimed
@@ -4688,20 +4664,23 @@ class Channel extends SnowFlake {
 						headers: this.headers,
 					});
 				}
-				if (res.status === 429 && !rateLimitRetried) {
+				if (res.status === 429) {
 					const limit = res.response as {code?: number; retry_after?: unknown} | null;
-					// Slowmode (20016) has its own countdown and no retry; any other 429 waits out
-					// the window and re-sends once, the bubble staying in flight meanwhile.
+					// Slowmode (20016) has its own countdown and no retry; any other 429 arms its
+					// window (every later send on this route waits it out) and re-sends once when
+					// the window ends, the bubble staying in flight meanwhile.
 					if (limit?.code !== 20016) {
-						rateLimitRetried = true;
-						setTimeout(() => {
-							try {
+						armRateLimit(sendUrl, limit, "POST");
+						if (!rateLimitRetried) {
+							rateLimitRetried = true;
+							// Waits the bucket's window as it stands when it ends: a longer window armed
+							// meanwhile holds the resend too. A throw from resend fails the bubble.
+							void (async () => {
+								await waitRateLimit(sendUrl, "POST");
 								resend();
-							} catch {
-								fail();
-							}
-						}, retryAfterMsFromBody(limit));
-						return;
+							})().catch(() => fail());
+							return;
+						}
 					}
 				}
 				if (res.status !== 200) {
@@ -4782,6 +4761,8 @@ class Channel extends SnowFlake {
 			);
 			await new Promise((resolve) => requestAnimationFrame(resolve));
 
+			// A send on a rate-limited route waits out the window before it goes (the bubble is up).
+			await waitRateLimit(sendUrl, "POST");
 			try {
 				res.send((rbody = JSON.stringify(body)));
 			} catch {
@@ -4836,6 +4817,8 @@ class Channel extends SnowFlake {
 				body.nonce,
 			);
 			await new Promise((resolve) => requestAnimationFrame(resolve));
+			// A send on a rate-limited route waits out the window before it goes (the bubble is up).
+			await waitRateLimit(sendUrl, "POST");
 			try {
 				res.send((rbody = formData));
 			} catch {

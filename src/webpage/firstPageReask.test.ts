@@ -4,12 +4,15 @@ import {afterEach, expect, it, vi} from "vitest";
 // order (index.ts imports localuser first).
 await import("./localuser");
 const {Channel} = await import("./channel");
+const {armRateLimit} = await import("./utils/rateLimitWindows");
+
+const FPR_API = "http://fpr.test/api/v9";
+/** The refused channel's history bucket (id 200), which the re-ask reads. */
+const HISTORY = FPR_API + "/channels/200/messages";
 
 afterEach(() => {
 	vi.restoreAllMocks();
 	vi.useRealTimers();
-	// Statics live on the shared Channel class across a worker's test files.
-	Channel.historyCooldownUntil = 0;
 	document.getElementById("scrollWrap")?.remove();
 	document.getElementById("loadingdiv")?.remove();
 	for (const id of [
@@ -40,7 +43,7 @@ function refusedChannel() {
 	const localuser: {channelfocus?: unknown} = {};
 	const channel = Object.assign(Object.create(Channel.prototype), {
 		id: "200",
-		owner: {localuser},
+		owner: {localuser, info: {api: FPR_API}},
 		messages: new Map(),
 		idToPrev: new Map(),
 		idToNext: new Map(),
@@ -56,7 +59,6 @@ function refusedChannel() {
 	});
 	localuser.channelfocus = channel;
 	document.getElementById("loadingdiv")!.classList.add("loading");
-	Channel.historyCooldownUntil = 0;
 	return channel;
 }
 
@@ -153,7 +155,7 @@ it("the refused first page re-asks once the cooldown passes", async () => {
 	vi.useFakeTimers();
 	const channel = refusedChannel();
 	const cooldownMs = 30_000;
-	Channel.historyCooldownUntil = Date.now() + cooldownMs;
+	armRateLimit(HISTORY, {retry_after: cooldownMs / 1000});
 	const putmessages = vi.spyOn(channel, "putmessages").mockResolvedValue(undefined);
 	const buildmessages = vi.spyOn(channel, "buildmessages").mockResolvedValue(undefined);
 
@@ -186,7 +188,7 @@ it("a rate-limited refusal waits only for the server's window, with no backoff o
 	vi.useFakeTimers();
 	const channel = refusedChannel();
 	Object.assign(channel, {firstPageRefusals: 2, firstPageRateLimited: true});
-	Channel.historyCooldownUntil = Date.now() + 100;
+	armRateLimit(HISTORY, {retry_after: 0.1});
 	const putmessages = vi.spyOn(channel, "putmessages").mockResolvedValue(undefined);
 	vi.spyOn(channel, "buildmessages").mockResolvedValue(undefined);
 

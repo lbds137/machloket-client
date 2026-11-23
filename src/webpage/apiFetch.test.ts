@@ -1744,7 +1744,6 @@ describe("U-api 2d: channel, member and message wiring", () => {
 		const page = await (
 			channel as unknown as {fetchHistoryPage: (query: string) => Promise<unknown>}
 		).fetchHistoryPage("before=1");
-		Channel.historyCooldownUntil = 0;
 
 		expect(page).toEqual([]);
 		expect(fetchSpy).toHaveBeenCalledTimes(2);
