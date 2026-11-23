@@ -43,14 +43,19 @@ const ban = (id: string, username: string) => ({
 	reason: null,
 });
 
-/** A 200 whose body sends `first`, then dies (a dropped connection) before the array closes. */
+/** A 200 whose body sends `first`, then dies (a dropped connection) before the array closes. It
+ * fails on the read after `first`, not on a timer, so where the cut lands doesn't depend on how
+ * fast the reader runs. */
 function cutMidList(first: string) {
 	return () =>
 		new Response(
 			new ReadableStream<Uint8Array>({
 				start(controller) {
 					controller.enqueue(new TextEncoder().encode(first));
-					setTimeout(() => controller.error(new TypeError("network error")), 10);
+				},
+				// Called only once `first` has been read (the queue holds one chunk).
+				pull(controller) {
+					controller.error(new TypeError("network error"));
 				},
 			}),
 			{status: 200},
@@ -121,8 +126,12 @@ it("a ban list cut mid-body keeps the bans that arrived and says the network fai
 	captureRequests(BANS, cutMidList("[" + JSON.stringify(ban("1", "alice")) + ","));
 	const root = banList();
 
-	await vi.waitFor(() => expect(root.textContent).toContain(I18n.requestFailed("offline")));
-	expect(root.textContent).toContain("alice");
+	// Waits for both: the failure line can appear before the pending ban row is appended
+	// (makeBanList appends rows on a zero-delay timer; TASK-95).
+	await vi.waitFor(() => {
+		expect(root.textContent).toContain(I18n.requestFailed("offline"));
+		expect(root.querySelector(".bandiv")?.textContent).toContain("alice");
+	});
 });
 
 it("a whole ban list shows no failure line (the control)", async () => {
