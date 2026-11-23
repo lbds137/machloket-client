@@ -207,43 +207,50 @@ async function identifyType(prog: ProgressiveArray) {
 	}
 }
 /**
- * A list being decoded. One reader at a time: await each `more()` / `getNext()` before the next
- * call, and read an item through to its end before asking for the one after it. The delimiter owed
- * after a handed-over item is read lazily, only when the caller asks for the next item or whether
- * there is one, so a finished item is never held back by the bytes that follow it.
+ * What a list and an object being decoded share. One reader at a time: await each `more()` / read
+ * before the next call, and read an entry through to its end before asking for the one after it.
+ * The delimiter owed after a handed-over entry is read lazily, only when the caller asks for the
+ * next entry or whether there is one, so a finished entry is never held back by the bytes that
+ * follow it.
  */
-export class ArrayProgressive<T, X extends Array<T>> {
+abstract class ContainerProgressive {
 	prog: ProgressiveArray;
 	done = false;
-	/** Resolves once this list reads its closing `]`; rejects with the error when a read of it, or
-	 * of a container inside it, failed first (the stream past that point is unreadable), so a parent
-	 * waiting on it fails instead of hanging. Awaiting it is optional: its rejection is never
-	 * reported as unhandled. It never drives a read: a list its reader abandons stays pending. */
+	/** Resolves once this container reads its closing bracket; rejects with the error when a read of
+	 * it, or of a container inside it, failed first (the stream past that point is unreadable), so a
+	 * parent waiting on it fails instead of hanging. Awaiting it is optional: its rejection is never
+	 * reported as unhandled. It never drives a read: a container its reader abandons stays pending. */
 	readonly finished: Promise<void>;
 	private resolveFinished!: () => void;
 	private rejectFinished!: (error: unknown) => void;
-	/** The delimiter owed after the last item handed over. `child` is that item when it is a
+	/** The bracket that closes this container. */
+	private readonly closer: "]" | "}";
+	/** What an entry is called in a delimiter error ("a list item"). */
+	private readonly entryName: string;
+	/** The delimiter owed after the last entry handed over. `child` is that entry when it is a
 	 * container that is not yet done. */
-	private owed?: {child?: ArrayProgressive<any, any> | ObjectProgressive<any>};
+	private owed?: {child?: ContainerProgressive};
 	/** The last settle of the owed delimiter; a failed one stays failed. */
 	private settled: Promise<void> = Promise.resolve();
-	private constructor(prog: ProgressiveArray) {
+	/** The first failed read of this container or of a container inside it. A failed read may have
+	 * eaten part of a token, so every later read rejects with this instead of reading on. */
+	private failure?: {error: unknown};
+	protected constructor(prog: ProgressiveArray, closer: "]" | "}", entryName: string) {
 		this.prog = prog;
+		this.closer = closer;
+		this.entryName = entryName;
 		this.finished = new Promise<void>((resolve, reject) => {
 			this.resolveFinished = resolve;
 			this.rejectFinished = reject;
 		});
 		this.finished.catch(() => {});
 	}
-	/** The first failed read of this container or of a container inside it. A failed read may have
-	 * eaten part of a token, so every later read rejects with this instead of reading on. */
-	private failure?: {error: unknown};
 	private fail = (error: unknown) => {
 		this.failure ??= {error};
 		this.rejectFinished(error);
 	};
 	/** Passes `read` through, failing this container when it rejects. */
-	private async failOn<R>(read: Promise<R>): Promise<R> {
+	protected async failOn<R>(read: Promise<R>): Promise<R> {
 		try {
 			return await read;
 		} catch (error) {
@@ -251,23 +258,20 @@ export class ArrayProgressive<T, X extends Array<T>> {
 			throw error;
 		}
 	}
-	static async make(prog: ProgressiveArray) {
-		const o = new ArrayProgressive(prog);
-		await o.check();
-		return o;
+	private close() {
+		this.done = true;
+		this.resolveFinished();
 	}
 	async check() {
 		const lastChar = await getNextNonWhiteSpace(this.prog);
-		if (lastChar === "]") {
-			this.done = true;
-			this.resolveFinished();
-			return;
+		if (lastChar === this.closer) {
+			this.close();
 		} else {
 			this.prog.putBackChar(lastChar);
 		}
 	}
-	/** Reads the delimiter owed after the last item handed over, if there is one. */
-	private settle(): Promise<void> {
+	/** Reads the delimiter owed after the last entry handed over, if there is one. */
+	protected settle(): Promise<void> {
 		if (this.failure) return Promise.reject(this.failure.error);
 		const owed = this.owed;
 		if (owed) {
@@ -276,35 +280,51 @@ export class ArrayProgressive<T, X extends Array<T>> {
 				(async () => {
 					if (owed.child) await owed.child.finished;
 					const lastChar = await getNextNonWhiteSpace(this.prog);
-					if (lastChar === "]") {
-						this.done = true;
-						this.resolveFinished();
-					} else if (lastChar !== ",")
-						throw new SyntaxError("expected ',' or ']' after a list item, got: " + lastChar);
+					if (lastChar === this.closer) this.close();
+					else if (lastChar !== ",")
+						throw new SyntaxError(
+							`expected ',' or '${this.closer}' after ${this.entryName}, got: ` + lastChar,
+						);
 				})(),
 			);
 		}
 		return this.settled;
 	}
+	/** Marks `entry` handed over: the delimiter after it is now owed, and when it is a container not
+	 * yet done, that delimiter waits for it to close. */
+	protected handOver(entry: unknown) {
+		this.owed = {};
+		if (entry instanceof ContainerProgressive && !entry.done) {
+			this.owed.child = entry;
+			// The child reads this container's stream: once it fails, so has this container, at once,
+			// so a container above that waits on this one fails too even if nobody reads this one again.
+			entry.finished.catch(this.fail);
+		}
+	}
 	/**
-	 * Whether another item follows. This reads the delimiter owed after the last item handed over,
-	 * so a nested container item must be read to its end first, or this waits for it.
+	 * Whether another entry follows. This reads the delimiter owed after the last entry handed over,
+	 * so a nested container entry must be read to its end first, or this waits for it.
 	 */
 	async more(): Promise<boolean> {
 		await this.settle();
 		return !this.done;
 	}
+}
+/** A list being decoded; the reading contract is ContainerProgressive's. */
+export class ArrayProgressive<T, X extends Array<T>> extends ContainerProgressive {
+	private constructor(prog: ProgressiveArray) {
+		super(prog, "]", "a list item");
+	}
+	static async make(prog: ProgressiveArray) {
+		const o = new ArrayProgressive(prog);
+		await o.check();
+		return o;
+	}
 	async getNext(): Promise<Progressive<T>> {
 		await this.settle();
 		if (this.done) throw new Error("no more array");
 		const ret = (await this.failOn(identifyType(this.prog))) as Progressive<T>;
-		this.owed = {};
-		if ((ret instanceof ArrayProgressive || ret instanceof ObjectProgressive) && !ret.done) {
-			this.owed.child = ret;
-			// The child reads this list's stream: once it fails, so has this list, at once, so a
-			// container above that waits on this one fails too even if nobody reads this one again.
-			ret.finished.catch(this.fail);
-		}
+		this.handOver(ret);
 		return ret;
 	}
 	async *[Symbol.asyncIterator]() {
@@ -331,85 +351,15 @@ export class ArrayProgressive<T, X extends Array<T>> {
 		return arr as X;
 	}
 }
-/** The same as ArrayProgressive, for an object's pairs; the reading contract is the same. */
-export class ObjectProgressive<X extends Object> {
-	prog: ProgressiveArray;
-	done = false;
-	/** Resolves once this object reads its closing `}`; rejects as ArrayProgressive's does. */
-	readonly finished: Promise<void>;
-	private resolveFinished!: () => void;
-	private rejectFinished!: (error: unknown) => void;
-	/** The delimiter owed after the last pair handed over. `child` is that pair's value when it is
-	 * a container that is not yet done. */
-	private owed?: {child?: ArrayProgressive<any, any> | ObjectProgressive<any>};
-	/** The last settle of the owed delimiter; a failed one stays failed. */
-	private settled: Promise<void> = Promise.resolve();
+/** An object being decoded, pair by pair; the reading contract is ContainerProgressive's. */
+export class ObjectProgressive<X extends Object> extends ContainerProgressive {
 	private constructor(prog: ProgressiveArray) {
-		this.prog = prog;
-		this.finished = new Promise<void>((resolve, reject) => {
-			this.resolveFinished = resolve;
-			this.rejectFinished = reject;
-		});
-		this.finished.catch(() => {});
-	}
-	/** The first failed read of this container or of a container inside it. A failed read may have
-	 * eaten part of a token, so every later read rejects with this instead of reading on. */
-	private failure?: {error: unknown};
-	private fail = (error: unknown) => {
-		this.failure ??= {error};
-		this.rejectFinished(error);
-	};
-	/** Passes `read` through, failing this container when it rejects. */
-	private async failOn<R>(read: Promise<R>): Promise<R> {
-		try {
-			return await read;
-		} catch (error) {
-			this.fail(error);
-			throw error;
-		}
+		super(prog, "}", "an object pair");
 	}
 	static async make(prog: ProgressiveArray) {
 		const o = new ObjectProgressive(prog);
 		await o.check();
 		return o;
-	}
-	async check() {
-		const lastChar = await getNextNonWhiteSpace(this.prog);
-		if (lastChar === "}") {
-			this.done = true;
-			this.resolveFinished();
-			return;
-		} else {
-			this.prog.putBackChar(lastChar);
-		}
-	}
-	/** Reads the delimiter owed after the last pair handed over, if there is one. */
-	private settle(): Promise<void> {
-		if (this.failure) return Promise.reject(this.failure.error);
-		const owed = this.owed;
-		if (owed) {
-			delete this.owed;
-			this.settled = this.failOn(
-				(async () => {
-					if (owed.child) await owed.child.finished;
-					const lastChar = await getNextNonWhiteSpace(this.prog);
-					if (lastChar === "}") {
-						this.done = true;
-						this.resolveFinished();
-					} else if (lastChar !== ",")
-						throw new SyntaxError("expected ',' or '}' after an object pair, got: " + lastChar);
-				})(),
-			);
-		}
-		return this.settled;
-	}
-	/**
-	 * Whether another pair follows. This reads the delimiter owed after the last pair handed over,
-	 * so a nested container value must be read to its end first, or this waits for it.
-	 */
-	async more(): Promise<boolean> {
-		await this.settle();
-		return !this.done;
 	}
 	async getNextPair(): Promise<{[K in keyof X]: {key: K; value: Progressive<X[K]>}}[keyof X]> {
 		await this.settle();
@@ -425,12 +375,7 @@ export class ObjectProgressive<X extends Object> {
 				return {key, value: (await identifyType(this.prog)) as unknown};
 			})(),
 		);
-		this.owed = {};
-		if ((value instanceof ArrayProgressive || value instanceof ObjectProgressive) && !value.done) {
-			this.owed.child = value;
-			// As in ArrayProgressive.getNext: a failed child fails this object at once.
-			value.finished.catch(this.fail);
-		}
+		this.handOver(value);
 		return {key, value} as any;
 	}
 	/**
@@ -451,7 +396,6 @@ export class ObjectProgressive<X extends Object> {
 		return obj as X;
 	}
 }
-Object.entries;
 type Progressive<T> =
 	T extends Array<any>
 		? ArrayProgressive<T extends Array<infer X> ? X : never, T>
