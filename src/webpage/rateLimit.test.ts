@@ -8,7 +8,7 @@ const {Channel} = await import("./channel");
 const {Localuser} = await import("./localuser");
 const {I18n} = await import("./i18n");
 const {fetchRetryOnce, retryAfterMs, retryAfterMsFromBody} = await import("./utils/rateLimit");
-const {rateLimitRemaining} = await import("./utils/rateLimitWindows");
+const {armRateLimit, rateLimitRemaining, waitRateLimit} = await import("./utils/rateLimitWindows");
 const {acceptInvite} = await import("./invite");
 const {Message, fetchReactionUsers} = await import("./message");
 const {Components} = await import("./interactions/compontents");
@@ -947,6 +947,94 @@ describe("fetchRetryOnce inside the shared 429 windows", () => {
 		expect(newerRes.status).toBe(200);
 		// The first call's retry and the newer call reached the server; the older one did not.
 		expect(asked).toHaveLength(3);
+	});
+
+	// RED (TASK-92): at HEAD a call made once the window has ended, while an earlier call is still
+	// parked on it, skips the queue and reaches the server first.
+	it("a call made after the window ends still sends after the calls already waiting on it", async () => {
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
+		try {
+			const url = API + "/rl/fifo";
+			const asked = captureRequests(url, () => Response.json({}));
+			armRateLimit(url, {retry_after: 0.1}, "PATCH");
+			const a = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "a"})});
+			vi.setSystemTime(Date.now() + 100); // the window has ended; a's timer has not run yet
+			const b = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "b"})});
+			await vi.advanceTimersByTimeAsync(100);
+			await Promise.all([a, b]);
+
+			expect(asked).toEqual([{n: "a"}, {n: "b"}]);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	// RED (TASK-92 review): a call made the moment an earlier waiter resumes, after the bucket's
+	// last waiter has already left the queue but before that waiter has sent, went out first.
+	it("a call made as an earlier waiter resumes still sends after the waiters queued before it", async () => {
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
+		try {
+			const url = API + "/rl/fifo-gap";
+			const asked = captureRequests(url, () => Response.json({}));
+			armRateLimit(url, {retry_after: 0.1}, "PATCH");
+			let c: Promise<Response> | undefined;
+			const a = waitRateLimit(url, "PATCH").then(() => {
+				c = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "c"})});
+			});
+			const b = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "b"})});
+			await vi.advanceTimersByTimeAsync(100);
+			await Promise.all([a, b]);
+			await c;
+
+			expect(asked).toEqual([{n: "b"}, {n: "c"}]);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("once the drained queue is dropped, an unheld call sends synchronously again", async () => {
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
+		try {
+			const url = API + "/rl/fifo-drain";
+			const asked = captureRequests(url, () => Response.json({}));
+			armRateLimit(url, {retry_after: 0.1}, "PATCH");
+			await vi.advanceTimersByTimeAsync(0);
+			const a = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "a"})});
+			await vi.advanceTimersByTimeAsync(100);
+			await a;
+			await vi.advanceTimersByTimeAsync(1); // the queue's cleanup task
+
+			const d = fetchRetryOnce(url, {method: "PATCH", body: JSON.stringify({n: "d"})});
+			expect(asked).toEqual([{n: "a"}, {n: "d"}]); // sent before any await
+			await d;
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("a stale call made while the drained queue lingers gets the synthesized 429, unsent", async () => {
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
+		try {
+			const url = API + "/rl/fifo-stale";
+			const asked = captureRequests(url, () => Response.json({}));
+			armRateLimit(url, {retry_after: 0.1}, "PATCH");
+			let late: Promise<Response> | undefined;
+			const a = waitRateLimit(url, "PATCH").then(() => {
+				late = fetchRetryOnce(
+					url,
+					{method: "PATCH", body: JSON.stringify({n: "late"})},
+					{shouldRetry: () => false},
+				);
+			});
+			await vi.advanceTimersByTimeAsync(100);
+			await a;
+			const res = await late!;
+
+			expect(res.status).toBe(429);
+			expect(asked).toEqual([]);
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 
 	// RED (pre-change): at HEAD a slowmode 429 is retried after its countdown (2 asks, 200 answer).

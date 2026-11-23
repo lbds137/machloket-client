@@ -84,9 +84,10 @@ const MAJOR_ROOTS = new Set(["channels", "guilds", "webhooks"]);
 const globalUntil = new Map<string, number>();
 /** The end of each route's window, by base and bucket (a JSON pair: no separator can clash). */
 const bucketUntil = new Map<string, number>();
-/** Shared waits, by their end time: every caller waiting on one end shares one timer and
- * promise, so they resume in the order they started waiting. */
-const waits = new Map<number, Promise<void>>();
+/** The last waiter queued on each bucket (same key as `bucketUntil`): it settles once that
+ * waiter has resumed. Each new waiter waits on it first, so a bucket's callers resume in the
+ * order they started waiting, whatever their timers do. */
+const queueTails = new Map<string, Promise<void>>();
 
 /** Drops every window whose end has passed, so windows for routes nobody asks again don't pile up. */
 function sweepExpired(): void {
@@ -122,7 +123,11 @@ export function armRateLimit(input: RequestInfo | URL, body: unknown, method?: s
  * as they are found. */
 export function rateLimitRemaining(input: RequestInfo | URL, method?: string): number {
 	const key = rateLimitKey(input, method);
-	if (!key) return 0;
+	return key ? remainingFor(key) : 0;
+}
+
+/** `rateLimitRemaining` for a key already read (a waiter keeps the key it was queued under). */
+function remainingFor(key: {base: string; bucket: string}): number {
 	const now = Date.now();
 	const ends: number[] = [];
 	const globalEnd = globalUntil.get(key.base);
@@ -139,26 +144,45 @@ export function rateLimitRemaining(input: RequestInfo | URL, method?: string): n
 	return ends.length ? Math.max(...ends) - now : 0;
 }
 
-/** Resolves once `rateLimitRemaining(input)` is 0. A window extended while the caller waits
- * makes it wait again. */
+/** Whether `waitRateLimit(input)` would hold the caller: a window is armed for the request, or
+ * earlier callers are still queued on its bucket. False for a request that is not an API call. */
+export function rateLimitHeld(input: RequestInfo | URL, method?: string): boolean {
+	const key = rateLimitKey(input, method);
+	if (!key) return false;
+	return queueTails.has(JSON.stringify([key.base, key.bucket])) || remainingFor(key) > 0;
+}
+
+/** Resolves once the request's windows are over and every earlier waiter on the same bucket
+ * has resumed: callers of one bucket resume first-in, first-out, even one that arrives after
+ * the window ended while earlier waiters are still parked. A window extended while the caller
+ * waits makes it wait again. A caller that sends synchronously once this resolves sends in
+ * that order too. The bucket's queue outlives its last waiter until a later timer task, so a call made while
+ * resumed waiters are still on their way to sending is held behind them (`rateLimitHeld` is true
+ * for it, so a stale caller gets the synthesized 429 instead of sending). */
 export async function waitRateLimit(input: RequestInfo | URL, method?: string): Promise<void> {
-	for (
-		let remaining = rateLimitRemaining(input, method);
-		remaining > 0;
-		remaining = rateLimitRemaining(input, method)
-	) {
-		const end = Date.now() + remaining;
-		let shared = waits.get(end);
-		if (!shared) {
-			shared = new Promise<void>((resolve) =>
-				setTimeout(() => {
-					waits.delete(end);
-					resolve();
-				}, remaining),
-			);
-			waits.set(end, shared);
+	const key = rateLimitKey(input, method);
+	if (!key) return;
+	const id = JSON.stringify([key.base, key.bucket]);
+	const before = queueTails.get(id);
+	if (!before && remainingFor(key) === 0) return;
+	let release!: () => void;
+	const tail = new Promise<void>((resolve) => (release = resolve));
+	queueTails.set(id, tail);
+	try {
+		await before;
+		for (let remaining = remainingFor(key); remaining > 0; remaining = remainingFor(key)) {
+			await new Promise<void>((resolve) => setTimeout(resolve, remaining));
 		}
-		await shared;
+	} finally {
+		release();
+		// Dropped in a later timer task, not here: the waiters resumed now send during this task's
+		// microtasks, and a call made meanwhile must queue behind them instead of going out unheld.
+		// A waiter with a successor leaves the cleanup to it.
+		if (queueTails.get(id) === tail) {
+			setTimeout(() => {
+				if (queueTails.get(id) === tail) queueTails.delete(id);
+			}, 0);
+		}
 	}
 }
 
@@ -189,9 +213,9 @@ export function rateLimitWindowCountForTests(): number {
 	return globalUntil.size + bucketUntil.size;
 }
 
-/** Test-only reset: forgets every window and every shared wait. */
+/** Test-only reset: forgets every window and every bucket queue. */
 export function resetRateLimitsForTests(): void {
 	globalUntil.clear();
 	bucketUntil.clear();
-	waits.clear();
+	queueTails.clear();
 }

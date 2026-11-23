@@ -1,6 +1,6 @@
 import {apiFetch, type ApiRequestInit} from "./apiFetch.js";
 import {
-	rateLimitRemaining,
+	rateLimitHeld,
 	rateLimitKey,
 	readBodyBounded,
 	retryAfterMs,
@@ -11,8 +11,9 @@ export {retryAfterMs, retryAfterMsFromBody} from "./rateLimitWindows.js";
 
 /** `fetch`, and on a 429 one more try after the window the server named. The second answer is
  * returned whatever it is. The 429's body is read from a clone, so the returned response still
- * carries its body. A call made inside a window another request armed waits that window out
- * first (the registry in rateLimitWindows). `shouldRetry` lets a caller cancel its own send
+ * carries its body. A call made inside a window another request armed, or behind calls still
+ * queued on its bucket, waits its turn first (the registry in rateLimitWindows); calls of one
+ * bucket go out in the order they were made. `shouldRetry` lets a caller cancel its own send
  * when the request became stale: asked when the window ends and again when the 429 arrives, a
  * false returns the 429 as it is (a synthesized 429 when the stale check fails before the send).
  * A slowmode 429 (code 20016) is returned at once: its countdown is the caller's. */
@@ -24,7 +25,9 @@ export async function fetchRetryOnce(
 	const fetchOpts = options?.timeoutMs !== undefined ? {timeoutMs: options.timeoutMs} : undefined;
 	const stale = () => options?.shouldRetry?.() === false;
 	const method = init?.method ?? "GET";
-	if (rateLimitRemaining(input, method) > 0) {
+	// A call nothing holds goes out synchronously (callers rely on that). The queue outlives its
+	// last waiter until a later task, so a call made as earlier waiters resume is held behind them.
+	if (rateLimitHeld(input, method)) {
 		await waitRateLimit(input, method);
 		if (stale()) {
 			return new Response(
