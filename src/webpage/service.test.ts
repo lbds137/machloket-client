@@ -161,12 +161,57 @@ async function markerText(): Promise<string | undefined> {
 	return await (await (await caches.open("cache")).match("/getupdates"))?.text();
 }
 
-async function until(what: string, fn: () => boolean | Promise<boolean>, timeoutMs = 5000) {
+/** `diagnose`, when given, runs once on timeout and its text joins the error: a flake's
+ * failure line then carries the evidence instead of only "timed out" (TASK-71). */
+async function until(
+	what: string,
+	fn: () => boolean | Promise<boolean>,
+	timeoutMs = 5000,
+	diagnose?: () => Promise<string>,
+) {
 	const start = Date.now();
 	while (!(await fn())) {
-		if (Date.now() - start > timeoutMs) throw new Error(`timed out waiting for ${what}`);
+		const elapsed = Date.now() - start;
+		if (elapsed > timeoutMs) {
+			// `elapsed` is read before the probe runs: the reported wait excludes its own time.
+			const detail = diagnose ? `; ${await diagnose()}` : "";
+			throw new Error(`timed out waiting for ${what} after ${elapsed} ms${detail}`);
+		}
 		await new Promise((res) => setTimeout(res, 50));
 	}
+}
+
+/** On a missing reply: is the worker behind `port` alive (answers ping within 2 s) or dead,
+ * how long the pong took, what the port has delivered so far, and whether the marker the
+ * test seeded is still in place. The worker's port handler is async, so a check suspended on
+ * an await doesn't block the ping: a pong with no reply means the check is stuck in an await
+ * (its fetch or a cache call), not that the worker is wedged. */
+async function portDiagnosis(
+	port: MessagePort,
+	messages: {code: string}[],
+	controller: ServiceWorker,
+): Promise<string> {
+	const seen = messages.map((m) => m.code).join(",") || "none";
+	const sent = Date.now();
+	port.postMessage({code: "ping"});
+	let pong: number | undefined;
+	while (Date.now() - sent < 2000) {
+		if (messages.some((m) => m.code === "pong")) {
+			pong = Date.now() - sent;
+			break;
+		}
+		await new Promise((res) => setTimeout(res, 25));
+	}
+	const after = messages.map((m) => m.code).join(",");
+	return [
+		pong === undefined
+			? "ping: no pong within 2000 ms (worker dead or wedged)"
+			: `ping: pong in ${pong} ms`,
+		`messages before ping: ${seen}`,
+		`messages after: ${after || "none"}`,
+		`controller state: ${controller.state}`,
+		`marker: ${JSON.stringify(await markerText())}`,
+	].join("; ");
 }
 
 async function controlledFrame() {
@@ -209,7 +254,12 @@ it("a CheckUpdate against an up-to-date marker answers updates:false", async () 
 	await seedMarker("junk-marker");
 	try {
 		port.postMessage({code: "CheckUpdate"});
-		await until("the updates reply", () => messages.some((m) => m.code === "updates"));
+		await until(
+			"the updates reply",
+			() => messages.some((m) => m.code === "updates"),
+			5000,
+			() => portDiagnosis(port, messages, controller),
+		);
 		expect(messages.some((m) => m.code === "updates" && m.updates === true)).toBe(false);
 		expect(messages.find((m) => m.code === "updates")!.updates).toBe(false);
 	} finally {
@@ -279,7 +329,12 @@ it("with updates unavailable, the cached app shell is bypassed for network", asy
 		// unavailable; a stale shell seeded afterwards must then never be served.
 		await setUpdates("<html>fallback</html>", "text/html");
 		port.postMessage({code: "CheckUpdate"});
-		await until("the updates reply", () => messages.some((m) => m.code === "updates"));
+		await until(
+			"the updates reply",
+			() => messages.some((m) => m.code === "updates"),
+			5000,
+			() => portDiagnosis(port, messages, controller),
+		);
 		await (
 			await caches.open("cache")
 		).put("/app", new Response("<html>stale shell</html>", {headers: {"x-usw1": "cache-hit"}}));
@@ -326,6 +381,7 @@ it("the updates broadcast does not precede the download's cache writes", async (
 			"the updates:true broadcast",
 			() => messages.some((m) => m.code === "updates" && m.updates === true),
 			3000,
+			() => portDiagnosis(port, messages, controller),
 		);
 		expect(await (await caches.open("cache")).match("/robots.txt")).not.toBeNull();
 	} finally {
