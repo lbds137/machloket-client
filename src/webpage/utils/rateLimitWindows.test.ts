@@ -1,4 +1,4 @@
-import {describe, expect, it} from "vitest";
+import {describe, expect, it, vi} from "vitest";
 import {
 	armRateLimit,
 	rateLimitKey,
@@ -107,6 +107,84 @@ describe("waitRateLimit", () => {
 		await Promise.all([a, b]);
 
 		expect(order).toEqual(["a", "b"]);
+	});
+
+	/** Runs `body` with setTimeout faked and Date.now read from `clock.now`; `clock.skew` is
+	 * subtracted from the next read only (a timer that fires a tick before the wall clock). */
+	async function withClock(
+		body: (clock: {now: number; skew: number}) => Promise<void>,
+	): Promise<void> {
+		const clock = {now: 1_000_000, skew: 0};
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+		const spy = vi.spyOn(Date, "now").mockImplementation(() => {
+			const t = clock.now - clock.skew;
+			clock.skew = 0;
+			return t;
+		});
+		try {
+			await body(clock);
+		} finally {
+			spy.mockRestore();
+			vi.useRealTimers();
+		}
+	}
+
+	// RED (TASK-92): at HEAD the first waiter re-checks, sees 1 ms left and re-arms; the second sees 0 and goes first.
+	it("keeps its callers in order when the timer fires a tick before the window's end", async () => {
+		await withClock(async (clock) => {
+			const url = A + "/channels/1/messages";
+			armRateLimit(url, {retry_after: 0.1});
+			const order: string[] = [];
+			const a = waitRateLimit(url).then(() => order.push("a"));
+			const b = waitRateLimit(url).then(() => order.push("b"));
+			await vi.advanceTimersByTimeAsync(0); // the waiters' first checks run and arm their timers
+			expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+			clock.now += 100;
+			clock.skew = 1;
+			await vi.advanceTimersByTimeAsync(100);
+			// The first wake read 1 ms left: nobody has resumed yet.
+			expect(order).toEqual([]);
+			await vi.advanceTimersByTimeAsync(10);
+			await Promise.all([a, b]);
+
+			expect(order).toEqual(["a", "b"]);
+		});
+	});
+
+	// RED (TASK-92): at HEAD a caller arriving after the window's end, before the first waiter's
+	// timer has run, sees 0 left and overtakes it.
+	it("queues a caller behind earlier waiters even once the window has ended", async () => {
+		await withClock(async (clock) => {
+			const url = A + "/channels/1/messages";
+			armRateLimit(url, {retry_after: 0.1});
+			const order: string[] = [];
+			const a = waitRateLimit(url).then(() => order.push("a"));
+			await vi.advanceTimersByTimeAsync(0); // a's first check runs and arms its timer
+			expect(vi.getTimerCount()).toBe(1);
+
+			clock.now += 100;
+			const b = waitRateLimit(url).then(() => order.push("b"));
+			await vi.advanceTimersByTimeAsync(100);
+			await Promise.all([a, b]);
+
+			expect(order).toEqual(["a", "b"]);
+		});
+	});
+
+	it("a queue on one bucket never holds a caller on another", async () => {
+		await withClock(async (clock) => {
+			armRateLimit(A + "/channels/1/messages", {retry_after: 0.1});
+			const order: string[] = [];
+			const a = waitRateLimit(A + "/channels/1/messages").then(() => order.push("a"));
+			const b = waitRateLimit(A + "/channels/2/messages").then(() => order.push("b"));
+
+			await b;
+			expect(order).toEqual(["b"]);
+			clock.now += 100;
+			await vi.advanceTimersByTimeAsync(100);
+			await a;
+		});
 	});
 
 	it("waits again when the window was extended while it waited", async () => {
