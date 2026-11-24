@@ -348,6 +348,8 @@ test("the send button keeps its box while its icon is still loading", async ({
 	expect(held, "the icon request must have been held").toBeGreaterThan(0);
 });
 
+// Pins what the redirect keeps when it goes through pageNav.go. The old `location.pathname =`
+// kept query and hash too, so this passes on it; navigationGuard.test.ts is what refuses it.
 test("/app opens the app with its query and hash", async ({page, mockInstance}) => {
 	// With no account the app shows its login, which looks up the default instance.
 	void mockInstance;

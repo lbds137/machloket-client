@@ -185,10 +185,19 @@ async function landOnLoginWithHandoff(page: Page): Promise<void> {
 			if (sessionStorage.getItem("e2e.seeded")) return;
 			sessionStorage.setItem("e2e.seeded", "1");
 			const id = "sessiononly@example.test" + origin;
-			sessionStorage.setItem(
-				key,
-				JSON.stringify({users: {[id]: {email: "sessiononly@example.test"}}, currentuser: id}),
-			);
+			// A whole account, as the app writes one: the login page's account list drops an
+			// entry it can't build.
+			const account = {
+				email: "sessiononly@example.test",
+				token: "tok",
+				serverurls: {
+					api: origin + "/api/v9",
+					cdn: origin,
+					gateway: "ws://localhost:4173",
+					wellknown: origin,
+				},
+			};
+			sessionStorage.setItem(key, JSON.stringify({users: {[id]: account}, currentuser: id}));
 		},
 		[HANDOFF_KEY, MOCK_INSTANCE_ORIGIN],
 	);
@@ -228,12 +237,22 @@ test("an in-app navigation to the page already open keeps the hand-off: it is no
 	void mockInstance;
 	await landOnLoginWithHandoff(page);
 
-	// The shape of pageNav.go to the current URL (the switcher's logout lands where it already is).
+	// Marks this document: the check after the navigation proves a new one loaded, since the
+	// first page's own entry also reads "navigate".
 	await page.evaluate(() => {
-		window.location.href = window.location.href;
+		(window as {e2eFirstDocument?: boolean}).e2eFirstDocument = true;
 	});
-	await page.waitForLoadState("load");
+	// The shape of pageNav.go to the current URL (the switcher's logout lands where it already is).
+	await Promise.all([
+		page.waitForEvent("framenavigated"),
+		page.evaluate(() => {
+			window.location.href = window.location.href;
+		}),
+	]);
 	await expect(loginForm(page)).toBeVisible();
+	expect(
+		await page.evaluate(() => (window as {e2eFirstDocument?: boolean}).e2eFirstDocument),
+	).toBeUndefined();
 	expect(await navigationType(page)).toBe("navigate");
-	expect(await readHandoff(page)).not.toBeNull();
+	expect(await readHandoff(page)).toContain("sessiononly@example.test");
 });
