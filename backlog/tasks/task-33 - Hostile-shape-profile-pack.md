@@ -21,6 +21,5 @@ ordinal: 540
 - avatar_decoration_data.asset non-string throws buildpfp for ANY user payload.
 - userupdate copies wrong-typed fields onto a cached User (user.ts:1030-1050), so later buildpfp/createWidget throw (member list, message author, DM list) — fix at the type boundary (validate in userupdate / typeof asset check in buildpfp).
 - instanceName non-string -> "undefined" title (localuser.ts:5141 — skip, don't refuse); instance-info non-string truthy tosPage/publicUrl/frontPage/correspondenceEmail draw "[object Object]" (~5142-5152).
-- member.ts ~477 Member.highInfo is dormant (no callers) — adopt user.ts's guards or delete it on next touch.
 Trigger: hostile-instance hardening pass / profile-shape sweep / next userupdate touch.
 <!-- SECTION:DESCRIPTION:END -->
