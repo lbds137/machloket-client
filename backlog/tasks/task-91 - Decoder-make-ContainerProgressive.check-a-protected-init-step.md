@@ -1,10 +1,10 @@
 ---
 id: TASK-91
 title: 'Decoder: make ContainerProgressive.check() a protected init step'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-23T15:19:00Z'
-updated_date: '2026-11-23T16:44:00Z'
+updated_date: '2026-11-24T03:15:00Z'
 labels:
   - u-api
 dependencies: []
@@ -22,4 +22,6 @@ From the TASK-90 council review (2026-11-23): check() in src/webpage/utils/proge
 
 <!-- SECTION:NOTES:BEGIN -->
 From PR #184 review (Low): rename the private ContainerProgressive.close() (marks the container done) to markDone() or similar, so it is not confused with ProgressiveArray.close() used as list.prog.close() (guild.ts). Do it in the same pass as the check() change.
+
+Shipped in PR #195 (merged 2026-11-24 03:13Z): check() protected + private close() renamed markDone(). Review low ruled out: making check() private (base-class init that make() awaits) would let the compiler forbid a late call from a future subclass, but both subclasses sit in progessiveLoad.ts beside the doc comment that states the init-only contract; the restructure buys no protection for any current caller.
 <!-- SECTION:NOTES:END -->
