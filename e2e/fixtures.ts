@@ -12,6 +12,7 @@ import {
 	OTHER_GUILD_ID,
 	mountMockInstance,
 } from "./mock";
+import {CSP_VIOLATIONS, type CspViolation, watchCspViolations} from "./cspNet";
 
 // The shared e2e test: every spec imports this, not @playwright/test directly, so the
 // network net is inherited. Anything that leaves the preview server (http(s) to any other
@@ -34,8 +35,19 @@ export const test = base.extend<{
 	mockInstance: MockInstanceHandle;
 	mockInstanceOptions: MockInstanceOptions;
 	network: void;
+	cspViolations: CspViolation[];
 }>({
 	mockInstanceOptions: [{}, {option: true}],
+	// A page the deployed policy would break fails its spec (e2e/cspNet.ts). A spec that
+	// provokes a violation on purpose reads this list and empties it.
+	cspViolations: [
+		async ({context}, use) => {
+			const violations = await watchCspViolations(context);
+			await use(violations);
+			expect(violations, CSP_VIOLATIONS).toEqual([]);
+		},
+		{auto: true},
+	],
 	network: [
 		async ({context}, use) => {
 			const escaped: string[] = [];

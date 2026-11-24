@@ -130,48 +130,55 @@ class AVoice {
 		}
 		return [new AVoice(special, 0, 0, length), name];
 	}
-	static parseExpression(read: BinRead): (t: number, freq: number) => number {
-		return new Function("t", "f", `return ${this.PEHelper(read)};`) as (
-			t: number,
-			freq: number,
-		) => number;
-	}
-	static PEHelper(read: BinRead): string {
-		let state = read.read8();
-		switch (state) {
-			case 0:
-				// Parenthesised: a negative constant can be a power's base, (-5)**2.
-				return `(${read.readFloat32()})`;
+	/** A sound file's formula (a prefix tree of one-byte ops) as a function of time and frequency.
+	 * Built from closures, never compiled from a string: the Content-Security-Policy refuses
+	 * eval. The whole tree is read here, once, operands in written order. */
+	static parseExpression(read: BinRead): Wave {
+		const op = read.read8();
+		switch (op) {
+			case 0: {
+				const value = read.readFloat32();
+				return () => value;
+			}
 			case 1:
-				return "t";
+				return (t) => t;
 			case 2:
-				return "f";
+				return (_t, f) => f;
 			case 3:
-				return `Math.PI`;
+				return () => Math.PI;
 			case 4:
-				return `Math.sin(${this.PEHelper(read)})`;
+				return unary(this.parseExpression(read), Math.sin);
 			case 5:
-				return `(${this.PEHelper(read)}*${this.PEHelper(read)})`;
+				return binary(this.parseExpression(read), this.parseExpression(read), (a, b) => a * b);
 			case 6:
-				return `(${this.PEHelper(read)}+${this.PEHelper(read)})`;
+				return binary(this.parseExpression(read), this.parseExpression(read), (a, b) => a + b);
 			case 7:
-				return `(${this.PEHelper(read)}/${this.PEHelper(read)})`;
+				return binary(this.parseExpression(read), this.parseExpression(read), (a, b) => a / b);
 			case 8:
-				return `(${this.PEHelper(read)}-${this.PEHelper(read)})`;
+				return binary(this.parseExpression(read), this.parseExpression(read), (a, b) => a - b);
 			case 9:
-				return `(${this.PEHelper(read)}**${this.PEHelper(read)})`;
+				return binary(this.parseExpression(read), this.parseExpression(read), (a, b) => a ** b);
 			case 10:
-				return `(${this.PEHelper(read)}%${this.PEHelper(read)})`;
+				return binary(this.parseExpression(read), this.parseExpression(read), (a, b) => a % b);
 			case 11:
-				return `Math.abs(${this.PEHelper(read)})`;
+				return unary(this.parseExpression(read), Math.abs);
 			case 12:
-				return `Math.round(${this.PEHelper(read)})`;
+				return unary(this.parseExpression(read), Math.round);
 			case 13:
-				return `Math.cos(${this.PEHelper(read)})`;
+				return unary(this.parseExpression(read), Math.cos);
 			default:
 				throw new Error("unexpected case found!");
 		}
 	}
+}
+
+type Wave = (t: number, freq: number) => number;
+function unary(operand: Wave, fn: (x: number) => number): Wave {
+	return (t, f) => fn(operand(t, f));
+}
+// Called with both operands already parsed, left first: argument order is evaluation order.
+function binary(left: Wave, right: Wave, fn: (a: number, b: number) => number): Wave {
+	return (t, f) => fn(left(t, f), right(t, f));
 }
 
 export {AVoice as AVoice};
