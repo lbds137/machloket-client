@@ -98,12 +98,77 @@ function handFedList() {
 	return {respond, send, close: () => feed.close()};
 }
 
+const nextFrame = () => new Promise((r) => requestAnimationFrame(r));
+
 /** Waits real animation frames (rAF is untouched when only setTimeout/clearTimeout are faked)
- * until `until()` holds or `max` frames pass. */
+ * until `until()` holds, failing if `max` frames pass first. */
 async function frames(until: () => boolean, max = 300) {
+	for (let i = 0; i < max && !until(); i++) await nextFrame();
+	expect(until()).toBe(true);
+}
+
+/** Like `frames`, advancing faked timers by 1 ms each frame until `until()` holds. */
+async function framesAdvancing(until: () => boolean, max = 300) {
 	for (let i = 0; i < max && !until(); i++) {
-		await new Promise((r) => requestAnimationFrame(r));
+		await nextFrame();
+		vi.advanceTimersByTime(1);
 	}
+	expect(until()).toBe(true);
+}
+
+type PagerOpts = {count?: number; guild?: unknown};
+function openBanPager(opts: PagerOpts = {}) {
+	const {count = 51, guild: g = guild} = opts;
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
+	const {respond, send, close} = handFedList();
+	captureRequests(BANS, respond);
+	const root = banList(g);
+	const raw = Array.from({length: count}, (_, i) => ban(String(i + 1), `u${i + 1}`));
+	send("[" + raw.map((b) => JSON.stringify(b)).join(","));
+	const buttons = Array.from(root.querySelectorAll("button"));
+	const back = buttons.find((b) => b.textContent === I18n.search.back())!;
+	const next = buttons.find((b) => b.textContent === I18n.search.next())!;
+	return {root, back, next, send, close, fetchSpy};
+}
+
+async function finishStream(pager: ReturnType<typeof openBanPager>) {
+	pager.send("]");
+	pager.close();
+	const load = pager.fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
+	await frames(() => load?.[1]?.signal?.aborted === true);
+	await nextFrame();
+	await nextFrame();
+}
+
+/** Ends a pager's stream and waits until its first page shows every ban it was fed. All the bans
+ * go out in the first chunk, so that page holds `min(count, 50)` rows, with Next enabled only
+ * when there is a second page. */
+async function loadAll(pager: ReturnType<typeof openBanPager>, count: number) {
+	pager.send("]");
+	pager.close();
+	await frames(
+		() =>
+			pager.root.querySelectorAll(".bandiv").length === Math.min(count, 50) &&
+			pager.next.disabled === count <= 50,
+	);
+}
+
+/** A guild whose unban succeeds and records the user id it was asked for. */
+const unbanningGuild = () => ({...guild, unban: vi.fn(async (_id: string) => true)});
+
+type Menu = ReturnType<typeof banList>["menu"];
+type SubMenu = {options: {textContent?: string; onClick?: () => unknown}[]};
+async function unban(root: HTMLElement, menu: Menu, username: string) {
+	const spy = vi.spyOn(menu, "addSubOptions");
+	const rows = Array.from(root.querySelectorAll<HTMLElement>(".bandiv"));
+	const row = rows.find((r) => r.textContent === username);
+	expect(row).toBeDefined();
+	row!.click();
+	const opt = spy.mock.results.at(-1)?.value as SubMenu | undefined;
+	const label = I18n.user.unban(username);
+	const btn = opt?.options.find((o) => "onClick" in o && o.textContent === label);
+	expect(btn).toBeDefined();
+	await btn!.onClick!();
 }
 
 it("a refused invite list says why", async () => {
@@ -180,38 +245,21 @@ it("a whole ban list shows no failure line (the control)", async () => {
 });
 
 it("Next pressed while a row batch is still pending shows only page 2's rows", async () => {
-	const {respond, send, close} = handFedList();
-	captureRequests(BANS, respond);
-	const fetchSpy = vi.spyOn(globalThis, "fetch");
 	vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
 	try {
-		const root = banList();
-		send(
-			"[" +
-				Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
-					",",
-				),
-		);
-		const next = Array.from(root.querySelectorAll("button")).find(
-			(b) => b.textContent === I18n.search.next(),
-		)!;
+		const pager = openBanPager();
+		const {root, next} = pager;
 		await frames(() => !next.disabled);
 		expect(next.disabled).toBe(false);
 		expect(root.querySelectorAll(".bandiv")).toHaveLength(0);
 
 		next.click();
 		vi.advanceTimersByTime(1);
-		await Promise.resolve();
 		const rows = root.querySelectorAll(".bandiv");
 		expect(rows).toHaveLength(1);
 		expect(rows[0]?.textContent).toContain("u51");
 
-		send("]");
-		close();
-		const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
-		await frames(() => load?.[1]?.signal?.aborted === true);
-		await frames(() => false, 2);
-		expect(load?.[1]?.signal?.aborted).toBe(true);
+		await finishStream(pager);
 		expect(root.querySelector<HTMLElement>("[role=alert]")?.hidden).toBe(true);
 		const settledRows = root.querySelectorAll(".bandiv");
 		expect(settledRows).toHaveLength(1);
@@ -222,33 +270,20 @@ it("Next pressed while a row batch is still pending shows only page 2's rows", a
 });
 
 it("Back pressed while page 2 is shown redraws page 1 once", async () => {
-	const {respond, send, close} = handFedList();
-	captureRequests(BANS, respond);
-	const fetchSpy = vi.spyOn(globalThis, "fetch");
 	vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
 	try {
-		const root = banList();
-		send(
-			"[" +
-				Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
-					",",
-				),
-		);
-		const buttons = Array.from(root.querySelectorAll("button"));
-		const back = buttons.find((b) => b.textContent === I18n.search.back())!;
-		const next = buttons.find((b) => b.textContent === I18n.search.next())!;
+		const pager = openBanPager();
+		const {root, back, next} = pager;
 		await frames(() => !next.disabled);
 		expect(next.disabled).toBe(false);
 
 		next.click();
 		vi.advanceTimersByTime(1);
-		await Promise.resolve();
 		expect(back.disabled).toBe(false);
 		expect(next.disabled).toBe(true);
 
 		back.click();
 		vi.advanceTimersByTime(1);
-		await Promise.resolve();
 		expect(back.disabled).toBe(true);
 		expect(next.disabled).toBe(false);
 
@@ -259,12 +294,7 @@ it("Back pressed while page 2 is shown redraws page 1 once", async () => {
 		const names = rows.map((r) => r.textContent);
 		expect(new Set(names).size).toBe(50);
 
-		send("]");
-		close();
-		const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
-		await frames(() => load?.[1]?.signal?.aborted === true);
-		await frames(() => false, 2);
-		expect(load?.[1]?.signal?.aborted).toBe(true);
+		await finishStream(pager);
 		expect(root.querySelectorAll(".bandiv")).toHaveLength(50);
 	} finally {
 		vi.useRealTimers();
@@ -272,44 +302,24 @@ it("Back pressed while page 2 is shown redraws page 1 once", async () => {
 });
 
 it("a ban that arrives after Next fills in under page 2's rows", async () => {
-	const {respond, send, close} = handFedList();
-	captureRequests(BANS, respond);
-	const fetchSpy = vi.spyOn(globalThis, "fetch");
 	vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
 	try {
-		const root = banList();
-		send(
-			"[" +
-				Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
-					",",
-				),
-		);
-		const next = Array.from(root.querySelectorAll("button")).find(
-			(b) => b.textContent === I18n.search.next(),
-		)!;
+		const pager = openBanPager();
+		const {root, next, send} = pager;
 		await frames(() => !next.disabled);
 		expect(next.disabled).toBe(false);
 
 		next.click();
 		vi.advanceTimersByTime(1);
-		await Promise.resolve();
 		expect(root.querySelectorAll(".bandiv")).toHaveLength(1);
 
-		const timersBefore = vi.getTimerCount();
 		send("," + JSON.stringify(ban("52", "u52")));
-		await frames(() => vi.getTimerCount() > timersBefore);
-		vi.advanceTimersByTime(1);
-		await Promise.resolve();
+		await framesAdvancing(() => root.querySelectorAll(".bandiv").length === 2);
 		const rows = Array.from(root.querySelectorAll(".bandiv"));
 		expect(rows).toHaveLength(2);
 		expect(rows.map((r) => r.textContent)).toEqual(["u51", "u52"]);
 
-		send("]");
-		close();
-		const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
-		await frames(() => load?.[1]?.signal?.aborted === true);
-		await frames(() => false, 2);
-		expect(load?.[1]?.signal?.aborted).toBe(true);
+		await finishStream(pager);
 		expect(root.querySelector<HTMLElement>("[role=alert]")?.hidden).toBe(true);
 		const settledRows = Array.from(root.querySelectorAll(".bandiv"));
 		expect(settledRows).toHaveLength(2);
@@ -320,42 +330,55 @@ it("a ban that arrives after Next fills in under page 2's rows", async () => {
 });
 
 it("unbanning the only ban on the last page steps back to the page before", async () => {
-	const {respond, send, close} = handFedList();
-	captureRequests(BANS, respond);
-	const fetchSpy = vi.spyOn(globalThis, "fetch");
-	const root = banList({...guild, unban: async () => true});
-	const spy = vi.spyOn(root.menu, "addSubOptions");
-
-	send(
-		"[" +
-			Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
-				",",
-			) +
-			"]",
-	);
-	close();
-	const buttons = Array.from(root.querySelectorAll("button"));
-	const back = buttons.find((b) => b.textContent === I18n.search.back())!;
-	const next = buttons.find((b) => b.textContent === I18n.search.next())!;
-	await frames(() => !next.disabled);
-	const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
-	await frames(() => load?.[1]?.signal?.aborted === true);
-	await frames(() => false, 2);
+	const g = unbanningGuild();
+	const pager = openBanPager({guild: g});
+	const {root, back, next} = pager;
+	await loadAll(pager, 51);
 
 	next.click();
 	const page2Rows = root.querySelectorAll(".bandiv");
 	expect(page2Rows).toHaveLength(1);
-	const row = page2Rows[0]!;
-	expect(row.textContent).toContain("u51");
+	expect(page2Rows[0]?.textContent).toContain("u51");
 
-	(row as HTMLElement).click();
-	const opt = spy.mock.results[0].value as {options: {onClick?: () => unknown}[]};
-	await opt.options.find((o) => "onClick" in o)!.onClick!();
+	await unban(root, root.menu, "u51");
+	expect(g.unban).toHaveBeenCalledExactlyOnceWith("51");
 
 	const rows = root.querySelectorAll(".bandiv");
 	expect(rows).toHaveLength(50);
 	expect(rows[0]?.textContent).toContain("u1");
 	expect(back.disabled).toBe(true);
+	expect(next.disabled).toBe(true);
+});
+
+it("unbanning the only ban leaves an empty first page with both pager buttons disabled", async () => {
+	const g = unbanningGuild();
+	const pager = openBanPager({count: 1, guild: g});
+	const {root, back, next} = pager;
+	await loadAll(pager, 1);
+
+	await unban(root, root.menu, "u1");
+	expect(g.unban).toHaveBeenCalledExactlyOnceWith("1");
+
+	expect(root.querySelectorAll(".bandiv")).toHaveLength(0);
+	expect(back.disabled).toBe(true);
+	expect(next.disabled).toBe(true);
+});
+
+it("unbanning a ban on page 2 of 100 stays on page 2", async () => {
+	const g = unbanningGuild();
+	const pager = openBanPager({count: 100, guild: g});
+	const {root, back, next} = pager;
+	await loadAll(pager, 100);
+
+	next.click();
+	await unban(root, root.menu, "u100");
+	expect(g.unban).toHaveBeenCalledExactlyOnceWith("100");
+
+	const rows = Array.from(root.querySelectorAll(".bandiv"));
+	expect(rows).toHaveLength(49);
+	expect(rows[0]?.textContent).toBe("u51");
+	expect(rows.map((r) => r.textContent)).not.toContain("u100");
+	expect(back.disabled).toBe(false);
 	expect(next.disabled).toBe(true);
 });
 
