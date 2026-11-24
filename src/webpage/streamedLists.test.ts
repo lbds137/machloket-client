@@ -73,13 +73,13 @@ async function inviteList() {
 	return root;
 }
 
-function banList() {
+function banList(g: unknown = guild) {
 	const menu = new Settings("").addButton("bans");
 	const areas = vi.spyOn(menu, "addHTMLArea");
-	const root = makeBanList(menu, guild as never);
+	const root = makeBanList(menu, g as never);
 	for (const [area] of areas.mock.calls) root.prepend(area as HTMLElement);
 	document.body.append(root);
-	return root;
+	return Object.assign(root, {menu});
 }
 
 /** A 200 whose body the test feeds and closes by hand. */
@@ -317,6 +317,46 @@ it("a ban that arrives after Next fills in under page 2's rows", async () => {
 	} finally {
 		vi.useRealTimers();
 	}
+});
+
+it("unbanning the only ban on the last page steps back to the page before", async () => {
+	const {respond, send, close} = handFedList();
+	captureRequests(BANS, respond);
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
+	const root = banList({...guild, unban: async () => true});
+	const spy = vi.spyOn(root.menu, "addSubOptions");
+
+	send(
+		"[" +
+			Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
+				",",
+			) +
+			"]",
+	);
+	close();
+	const buttons = Array.from(root.querySelectorAll("button"));
+	const back = buttons.find((b) => b.textContent === I18n.search.back())!;
+	const next = buttons.find((b) => b.textContent === I18n.search.next())!;
+	await frames(() => !next.disabled);
+	const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
+	await frames(() => load?.[1]?.signal?.aborted === true);
+	await frames(() => false, 2);
+
+	next.click();
+	const page2Rows = root.querySelectorAll(".bandiv");
+	expect(page2Rows).toHaveLength(1);
+	const row = page2Rows[0]!;
+	expect(row.textContent).toContain("u51");
+
+	(row as HTMLElement).click();
+	const opt = spy.mock.results[0].value as {options: {onClick?: () => unknown}[]};
+	await opt.options.find((o) => "onClick" in o)!.onClick!();
+
+	const rows = root.querySelectorAll(".bandiv");
+	expect(rows).toHaveLength(50);
+	expect(rows[0]?.textContent).toContain("u1");
+	expect(back.disabled).toBe(true);
+	expect(next.disabled).toBe(true);
 });
 
 it("the streamed lists drop apiFetch's whole-request budget for an idle one", async () => {
