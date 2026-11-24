@@ -28,7 +28,7 @@ Status: **Agreed**, client half of TASK-136, joint with the Machloket Server pro
   - **The rule for the client:** the body is the truth. `auth_mode === "cookie"` means a cookie session, and anything else is a header-token session.
 - **Using it:**
   - Cookie-authenticated requests send no `Authorization`. If `Authorization` is present, it is the only credential the server reads; a bad header never falls back to the cookie.
-  - Every cookie-authenticated request other than GET, HEAD or OPTIONS needs `X-Machloket-CSRF: 1` and an allowlisted `Origin`. Without both, the server answers 403.
+  - Every cookie-authenticated request other than GET, HEAD or OPTIONS needs `X-Machloket-CSRF: 1` and an allowlisted `Origin`. Without both, the server answers 403. Three GETs that change state or hand out a credential take the same checks: `/auth/generate-registration-tokens`, `/connections/:name/authorize` and `/users/@me/connections/:name/:id/access-token`.
 - **Rotations:** a rotation on a cookie session (TOTP enable and disable, a password change) answers with a fresh cookie, `"auth_mode": "cookie"` and no body token. The gateway sends no token refresh to a cookie session (see Gateway). Bot create and reset still return the bot token in the body.
 - **Gateway:** Identify (op 2) and Resume (op 6) may leave `d.token` empty or absent. The WebSocket upgrade's cookie then authenticates. READY carries no `auth_token` for a cookie session.
 - **Migration:** `POST /auth/session-cookie`, sent with the current header token plus the opt-in and CSRF headers, moves the login into a new cookie session and answers 204. The old header token dies (answer 3).
@@ -106,11 +106,12 @@ These answers are in the merged server contract (checked 2026-11-24).
 
 - **Credentials:** every authenticated request gets them from the account, never from a raw token.
   - **Header account:** `Authorization: <token>`.
-  - **Cookie account:** no `Authorization`, plus `X-Machloket-CSRF: 1` on every request. Sending it on every method is simpler than sorting by method at 142 call sites, and the server requires it on some GETs too (for example `/auth/generate-registration-tokens`, which the client calls at `localuser.ts:5238`). It adds no preflight, because those requests already carry `Content-type: application/json`.
+  - **Cookie account:** no `Authorization`, plus `X-Machloket-CSRF: 1` on every request. Sending it on every method is simpler than sorting by method at 142 call sites, and three GETs require it too (contract, CSRF; the client calls one, `/auth/generate-registration-tokens`, at `localuser.ts:5238`). It does add a CORS preflight where a request would otherwise be simple: GETs and `FormData` sends with no JSON `Content-type`. That cost is accepted, since preflights are cached for 60 s (answer 6).
 - **One builder:** `Localuser.headers` becomes the output of that builder, mutated in place on migration or rotation so every holder of the object (`guild.headers`, interaction hosts) sees the change. The builder can leave out `Content-type` for `FormData` sends. The raw-token pages (bot invite, invite acceptance, template joining, logout, the 401 probe) take the account instead of its token.
 - **Bots stay outside it:** `Bot` requests keep their raw bot token, and the 401 path never matches them to an account.
 - **XHRs:** the two message-send XHRs set `withCredentials` for a cookie account.
 - **Credentials don't depend on the global wrapper:** the builder's requests for a cookie account, and every issuing request, set `credentials: "include"` themselves. The wrapper's host list misses a first login and an in-app login (see The client today).
+- **The wrapper stops adding credentials for cookie hosts:** for an API host with a cookie account, the global wrapper leaves `credentials` as the caller set it. Only requests that asked for the cookie send it (see The ambient-cookie hazard).
 
 ### The ambient-cookie hazard
 
@@ -118,6 +119,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 - **The hazard:** if that request lacks `Authorization` (a call site that forgot it), the server acts as the cookie account.
 - **The guard:** the account-keyed builder makes "no `Authorization`" possible only for the cookie account. A unit test pins that a header account's request always carries its token.
+- **Requests outside the builder:** today's 30 raw `fetch(` calls, pre-auth requests (discovery, a second account's login or register) and any future call site that skips the builder would still carry the cookie if the wrapper added it. Unsafe methods are stopped by the CSRF check, but GETs are not. So the wrapper no longer adds credentials for a cookie host (One account-keyed request path), and a unit test pins that a raw `fetch` to that host goes without them.
 
 ### Login, register and the MFA steps of login
 
@@ -159,8 +161,9 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 - **Cookie account logout:** logout of a cookie account sends credentials and the CSRF header.
 - **A header account's logout** sends its `Authorization`, so the cookie account on the same host stays logged in (contract, Logout).
-- **A failed logout:** if the logout fails and the user removes the account anyway, the client records a pending logout for that API host. It retries `POST /auth/logout` by cookie at the next start (answer 5), so a removed account's cookie does not linger. A 204 or a 401 both end the pending logout (a 401 means the cookie was already dead, and the server cleared it).
+- **A failed logout:** if the logout of the host's cookie account fails and the user removes the account anyway, the client records a pending logout for that API host. A header account's failed logout records none: a cookie retry would end the cookie account's session, not the header account's. It retries `POST /auth/logout` by cookie at the next start (answer 5), so a removed account's cookie does not linger. A 204 or a 401 both end the pending logout (a 401 means the cookie was already dead, and the server cleared it).
   - **Cleared first:** a pending logout is dropped when a new cookie login or a migration on that host succeeds first, so the retry never ends the new session.
+  - **Dropped at start** when a stored, logged-in cookie account exists on that host: the cookie then belongs to that account.
   - **Runs first:** at start, the pending logout runs before migration.
   - **Session-only store:** the pending logout is written like the accounts. When the store refuses the write, it rides the same session overlay, so a refused store gives a pending logout that lasts the session, not one that is lost silently.
 
@@ -179,8 +182,9 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 ## Found work (TASK-145, TASK-146, TASK-147)
 
-- **Rotated tokens are dropped:** TOTP enable and disable and the password change ignore the token they return. Per Server (answer 3, from its code), the caller's old session stays valid on all three, so the account is not logged out. The cost is an unused live session left on the server per TOTP rotation. Neither claim has been confirmed by a run; the real-server tier can.
+- **Rotated tokens are dropped:** TOTP enable and disable and the password change ignore the token they return. For a header session, per Server (from its code; recorded in TASK-145's notes), the caller's old session stays valid on all three, so the account is not logged out. Answer 3 covers cookie sessions, where a rotation replaces the old session. The cost is an unused live session left on the server per TOTP rotation. Neither claim has been confirmed by a run; the real-server tier can.
 - **Bot tokens are stored in clear text:** a reset bot token is persisted in `perminfo.applications` in localStorage when an entry exists there (`localuser.ts:5600`), and loaded from it (`:5370`). decision-9 keeps bots on header tokens, but whether they must be persisted is separate.
+- **Gateway close 4004 ends at "Unable to connect"** (TASK-147): see The client today. It can land on its own before this design; its red-first test is the mock-e2e case "gateway close 4004 routes to `/login`" below.
 
 ## Tests
 
@@ -188,7 +192,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
   - the builder's output for each account mode;
   - a header account always sends its token;
   - the 401 path for a cookie account;
-  - both login response shapes;
+  - both login response shapes, including an opt-in the cookie-mode host ignored (a body `token`, no `auth_mode`);
   - migration: 204, a refused save, and a non-204;
   - a header account's 401 whose cookie probe answers 200 converts the record instead of logging out;
   - no handler writes an absent token;
@@ -196,7 +200,8 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
   - `FormData` sends get no JSON `Content-type`; the message-send XHRs set `withCredentials` for a cookie account;
   - each raw-token page builds through the account;
   - a bot request never invalidates an account;
-  - pending logout: retried at start, dropped by a newer cookie login, run before migration.
+  - a raw `fetch` to a cookie host goes without credentials;
+  - pending logout: recorded only for the cookie account, never for a header account; retried at start; dropped by a newer cookie login or a logged-in cookie account on the host; run before migration.
 - **Mock e2e:**
   - the opt-in and CSRF headers on login, and on both MFA steps;
   - cookie-mode requests carry no `Authorization`, and send credentials right after an in-app login;
