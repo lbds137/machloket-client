@@ -6,6 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-24T02:07:00Z'
+updated_date: '2026-11-24T03:59:00Z'
 labels:
   - tests
   - bans
@@ -19,3 +20,9 @@ ordinal: 36920
 <!-- SECTION:DESCRIPTION:BEGIN -->
 From the claude-review on PR #193 (TASK-98), all in src/webpage/streamedLists.test.ts. (1) "a ban that arrives after Next fills in under page 2s rows" waits on vi.getTimerCount() growing; if the stream path ever re-arms a faked timer per chunk, frames() spins 300 frames (~5 s) and continues - wait on the observable effect instead (advance 1 ms inside the frame loop until 2 rows show). (2) The three ban-pager tests repeat the 51-ban feed, button lookup and close-then-wait-for-abort tail; a small helper (e.g. openBansWith51 / finishStream) keeps them in step. (3) The await Promise.resolve() after each vi.advanceTimersByTime(1) is a no-op (the draw runs synchronously in the timer callback); drop it. Anchors as of 85315f9e; re-grep.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+From the TASK-103 review (PR for 7d5afe45), fold in with the helper: (4) the new 'unbanning the only ban on the last page' test reuses the abort-then-2-frames wait; switch it to the same effect-based wait as (1). (5) It finds the unban button via spy.mock.results[0].value.options and '"onClick" in o', which couples it to Options internals; the shared helper should own one lookup. (6) Add the clamp's edge cases: unbanning the only ban (0 left, page 0, both pager buttons disabled) and 100 bans with one unbanned on page 2 (stays on page 2). Base this task on main after TASK-103 merges: it adds a fourth ban-pager test in the same file.
+<!-- SECTION:NOTES:END -->
