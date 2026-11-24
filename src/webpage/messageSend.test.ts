@@ -196,10 +196,16 @@ describe("a message the server refuses", () => {
 
 describe("a send the server rate-limits", () => {
 	let realbox: HTMLDivElement | undefined;
+	/** Errors `fakeXHRByHand` raised inside `send()`. The attachment path swallows any throw
+	 * from `send()` into a failed bubble, so the test body only sees a send that never went
+	 * out; this hook names the cause, and vitest reports it beside the body's own failure. */
+	const fakeErrors: string[] = [];
 	afterEach(() => {
 		realbox?.remove();
 		realbox = undefined;
 		vi.useRealTimers();
+		const raised = fakeErrors.splice(0);
+		if (raised.length) throw new Error(raised.join("\n"));
 	});
 	function mountComposer() {
 		realbox = document.createElement("div");
@@ -336,8 +342,10 @@ describe("a send the server rate-limits", () => {
 	 * answered, unless `autoOk` is set, which answers every later send with 200. `sent` holds
 	 * each send's message content, in the order they reached the wire. `throwOnSend` lists the
 	 * 0-based send indices whose `send()` throws before recording or answering (every call counts,
-	 * the throwing ones included). An attachment send's content is read from its `payload_json`,
-	 * and a FormData body whose `payload_json` is missing or not a string throws a named error. */
+	 * the throwing ones included). An attachment send's content is read from its `payload_json`.
+	 * A FormData body whose `payload_json` is missing or not a string throws a named error; the
+	 * attachment path swallows it, so it is also recorded in `fakeErrors`, which this describe's
+	 * `afterEach` fails the test on. */
 	function fakeXHRByHand() {
 		const sent: string[] = [];
 		const pending: ((status: number, response: unknown) => void)[] = [];
@@ -359,9 +367,10 @@ describe("a send the server rate-limits", () => {
 				if (body instanceof FormData) {
 					const raw = body.get("payload_json");
 					if (typeof raw !== "string") {
-						throw new Error(
-							"fakeXHRByHand: FormData body's payload_json is missing or not a string",
-						);
+						const message =
+							"fakeXHRByHand: FormData body's payload_json is missing or not a string";
+						fakeErrors.push(message);
+						throw new Error(message);
 					}
 					payload = raw;
 				} else {
