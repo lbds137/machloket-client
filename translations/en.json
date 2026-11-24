@@ -244,6 +244,7 @@
 		}
 	},
 	"channelLink": "# $1",
+	"sourceOffer": "Machloket is free software (AGPL-3.0). Source for this build: $1. Based on Fermo (AGPL-3.0) by its authors.",
 	"clientDesc": "Client version: $1\n\n[Help translate Machloket](https://github.com/lbds137/machloket-client/tree/main/translations) \n\n[Help create Machloket](https://github.com/lbds137/machloket-client)\n\n[Help maintain the instance software Machloket relies on](https://github.com/spacebarchat/server)\n\nCalculated rights: $3",
 	"commands": {
 		"errorNotValid": "$1 is not a valid choice for $2",

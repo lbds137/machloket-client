@@ -90,6 +90,7 @@ import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
 import {externalUrl, pageNav} from "./utils/netUtils.js";
+import {creditLine} from "./utils/sourceOffer.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
 import {commandFailureText, showCommandStatus} from "./interactions/commandStatus.js";
@@ -5125,6 +5126,7 @@ class Localuser {
 			jankInfo.addHTMLArea(img);
 			img.width = 128;
 			img.height = 128;
+			jankInfo.addHTMLArea(creditLine(I18n.sourceOffer, __SOURCE_URL__));
 			let ver = "dev";
 			try {
 				const response = await fetch("/getupdates", {cache: "no-store"});

@@ -12,6 +12,7 @@ import {
 } from "fs";
 import {execSync} from "child_process";
 import {mergeInstanceLists} from "./src/webpage/utils/instanceOverlay.ts";
+import {sourceUrl} from "./src/webpage/utils/sourceOffer.ts";
 import {printTestTree} from "./e2e/testTree.ts";
 
 // Dev and build load this config too, and neither is a test run.
@@ -384,6 +385,9 @@ export default defineConfig({
 	// stable name, this one differing line is what makes the browser ever reinstall it.
 	define: {
 		__BUILD_REVISION__: JSON.stringify(getBuildVersion()),
+		// Client information's "source for this build" (AGPL-3.0 section 13; utils/sourceOffer.ts).
+		// MACHLOKET_SOURCE_URL names the repository a modified build's source is published in.
+		__SOURCE_URL__: JSON.stringify(sourceUrl(process.env.MACHLOKET_SOURCE_URL, getBuildVersion())),
 	},
 
 	build: {

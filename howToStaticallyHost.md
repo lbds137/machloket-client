@@ -12,6 +12,8 @@ Here's the other thing you need to do:
 
 Firstly you'll need to build Machloket like normal and host out the `./dist/webpage` directory.
 
+Build from a git checkout: Client information links "Source for this build" to the commit the build was made from (`VER=<revision>` overrides the commit; with neither, it links the repository itself). A build with your own changes in it must offer its users that changed source (AGPL-3.0, section 13): push it, then build with `MACHLOKET_SOURCE_URL=https://your.host/you/your-fork npm run build`. The link is `<repository>/tree/<revision>`.
+
 You need to make some rewrites, not redirects from these addresses:
 
 - `/channels/*` -> `/app.html`

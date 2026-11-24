@@ -73,6 +73,30 @@ test.describe("desktop", () => {
 	});
 });
 
+// The landing page's "Simple Yet Professional" image (public/features/fermo-settings-design.webp,
+// index.html): settings on a desktop window the old image's size, converted to WebP by hand.
+test.describe("landing", () => {
+	test.use({
+		viewport: {width: 1208, height: 1002},
+		userAgent:
+			"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+		isMobile: false,
+		hasTouch: false,
+	});
+
+	test("capture: settings (landing feature image)", async ({page, mockInstance}) => {
+		await loginAndOpenChannel(page);
+		void mockInstance;
+
+		await page.locator("#settings").click();
+		await page
+			.locator('.settingbuttons .cardLink[data-section="App settings"]', {hasText: "Appearance"})
+			.click();
+		await expect(page.locator("#card-appearance")).toBeVisible();
+		await shot(page, "landing-settings.png");
+	});
+});
+
 test("capture: GIF picker (phone)", async ({page, mockInstance}) => {
 	await loginAndOpenChannel(page);
 	void mockInstance;
