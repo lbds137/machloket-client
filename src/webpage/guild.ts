@@ -281,7 +281,8 @@ export function makeBanList(banMenu: Options, guild: Guild): HTMLElement {
 			opt.addButtonInput("", I18n.user.unban(ban.user.username), async () => {
 				if (!(await guild.unban(ban.user.id))) return;
 				bansArr = bansArr.filter((_) => _ !== ban);
-				loadPage(currentPage);
+				// Step back if unbanning emptied the last page (TASK-103).
+				loadPage(Math.min(currentPage, Math.max(0, Math.ceil(bansArr.length / PAGE_SIZE) - 1)));
 				banMenu.returnFromSub();
 			});
 		};
