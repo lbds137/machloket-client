@@ -347,3 +347,10 @@ test("the send button keeps its box while its icon is still loading", async ({
 	// trivially over a loaded icon.
 	expect(held, "the icon request must have been held").toBeGreaterThan(0);
 });
+
+test("/app opens the app with its query and hash", async ({page, mockInstance}) => {
+	// With no account the app shows its login, which looks up the default instance.
+	void mockInstance;
+	await page.goto("/app?templateID=abc123#x");
+	await expect(page).toHaveURL(/\/channels\/@me\?templateID=abc123#x$/);
+});
