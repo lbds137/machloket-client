@@ -633,6 +633,8 @@ type channeljson = {
 	thread_metadata?: threadMetadata;
 	permission_overwrites: {
 		id: string;
+		/** Whose overwrite this is: 0 a role's, 1 a member's, 2 a group's (the fork's openapi). */
+		type: number;
 		allow: string;
 		deny: string;
 	}[];

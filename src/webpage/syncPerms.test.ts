@@ -23,6 +23,7 @@ function category() {
 		headers: {},
 		children: [child("c1"), child("c2")],
 		permission_overwrites: new Map(),
+		overwriteTypes: new Map(),
 	}) as InstanceType<typeof Channel>;
 }
 
@@ -81,4 +82,20 @@ it("a sync sends the category's role and member overwrites, and leaves threads a
 		},
 	]);
 	expect(thread).toEqual([]);
+});
+
+it("a sync keeps each overwrite's type as the server gave it, even for a role since deleted", async () => {
+	const {Permissions} = await import("./permissions");
+	const forum = category();
+	// r-gone was a role's overwrite (type 0); the guild no longer lists that role.
+	forum.permission_overwrites = new Map([["r-gone", new Permissions("1024", "0")]]);
+	forum.overwriteTypes = new Map([["r-gone", 0]]);
+	const c1 = captureRequests(API + "/channels/c1", () => Response.json({}));
+	captureRequests(API + "/channels/c2", () => Response.json({}));
+
+	await forum.syncPermsToChildren();
+
+	expect(c1).toEqual([
+		{permission_overwrites: [{id: "r-gone", type: 0, allow: "1024", deny: "0"}]},
+	]);
 });
