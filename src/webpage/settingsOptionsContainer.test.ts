@@ -33,6 +33,26 @@ it("a sub-form opened after the container was collected has working controls", (
 	expect(html.textContent).toContain("Sub");
 });
 
+it("a rendered Options opens its sub-form in the page it rendered, not off-page", () => {
+	const options = new Dialog("").options;
+	const html = options.generateHTML();
+	document.body.append(html);
+	try {
+		const container = options.container.deref();
+		expect(container?.isConnected).toBe(true);
+
+		const form = options.addSubForm("Sub", () => {});
+
+		// The sub-form's name goes in the title, outside the container; its body is its own
+		// Options' container, which must land inside the page's container.
+		const formBody = form.options.container.deref();
+		expect(formBody?.isConnected).toBe(true);
+		expect(container?.contains(formBody!)).toBe(true);
+	} finally {
+		html.remove();
+	}
+});
+
 it("an Options rendered and then dropped still opens a sub-form", () => {
 	const options = new Dialog("").options;
 	options.generateHTML();
