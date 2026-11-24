@@ -862,6 +862,11 @@ a:hover,
 	text-decoration: underline;
 }
 
+/* Client information's source link: underlined, so it reads as a link without its colour. */
+.sourceOffer a {
+	text-decoration: underline;
+}
+
 .clickable {
 	color: unset;
 }

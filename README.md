@@ -22,8 +22,8 @@ Please report Machloket issues on this repository only. Machloket is a fork: the
 
 ## AI-assisted development
 
-Development of Machloket is AI-assisted (Claude Code), openly labeled as such. Every change is reviewed and tested by the maintainer before it lands.
+Development of Machloket is AI-assisted (Claude Code), openly labeled as such. Every change lands by pull request after an independent AI review, the full automated test suite and CI; the maintainer decides product and design questions.
 
 ## Licence
 
-AGPL-3.0 — see [LICENSE](./LICENSE). As a web application, the source you are reading is the offer of source required by section 13.
+AGPL-3.0 — see [LICENSE](./LICENSE). Section 13 asks a program used over a network to offer its users the source of the version they run. Machloket makes that offer in the app, under Settings → Instance Info → Client information, linking the commit the build was made from. If you deploy a modified build, publish your source and set `MACHLOKET_SOURCE_URL` to its repository when you build (see [How to statically host Machloket](./howToStaticallyHost.md)).
