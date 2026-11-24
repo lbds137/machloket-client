@@ -229,8 +229,9 @@ describe("waitRateLimit", () => {
 			e.preventDefault();
 		};
 		window.addEventListener("unhandledrejection", onReject);
-		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
 		try {
+			// Inside the try: if installing the fake timers threw, the listener still comes off.
+			vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
 			armRateLimit(url, {retry_after: 0.05});
 			void waitRateLimit(url);
 			expect(rateLimitWaiterCountForTests(url)).toBe(1);
