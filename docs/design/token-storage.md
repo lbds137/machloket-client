@@ -20,7 +20,9 @@ Status: **DRAFT**, client half of TASK-136, joint with the Machloket Server proj
 
 - **When cookie mode exists:** only on a deployment where the client origin and the API share one site (`machloket.chat` and a subdomain of it), with the API and gateway on one host, and with the client's exact origin on the server's allowlist. Everywhere else, everything stays header tokens.
 - **How the client knows:** the pre-auth discovery answer carries `"authCookie": true` (answer 1 below).
-- **Opting in:** a login-type request (login, register, the MFA steps of login) asks for a cookie with the header `X-Machloket-Auth: cookie`. That request also carries `X-Machloket-CSRF: 1`.
+- **Origins:** the client origin must differ from the API's origin (for example `https://machloket.chat` and `https://api.machloket.chat`). Serving the client from the API host turns cookie mode off.
+- **Opting in:** a login-type request (login, register, the MFA steps of login) asks for a cookie with the header `X-Machloket-Auth: cookie`. That request must also carry `X-Machloket-CSRF: 1`; without it the opt-in is ignored.
+  - **MFA logins:** a login answering `mfa: true` sets no cookie. The second-factor call (`/auth/mfa/totp` or `/auth/mfa/webauthn`) carries the opt-in and CSRF headers itself.
   - **Honoured:** the server sets an httpOnly, `Secure`, `SameSite=Strict`, host-only cookie on the API host. The body has no `token` and has `"auth_mode": "cookie"`.
   - **Ignored:** the server ignores the opt-in when cookie mode is off, when the origin is not allowlisted, or when the browser already holds a valid cookie for a different user. The body then has a `token` exactly as today.
   - **The rule for the client:** the body is the truth. `auth_mode === "cookie"` means a cookie session, and anything else is a header-token session.
@@ -98,7 +100,7 @@ The answers will be folded into the server draft. Re-check them against it befor
 
 - **Credentials:** every authenticated request gets them from the account, never from a raw token.
   - **Header account:** `Authorization: <token>`.
-  - **Cookie account:** no `Authorization`, plus `X-Machloket-CSRF: 1` on every request. Sending it on every method is simpler than sorting by method at 142 call sites. It adds no preflight, because those requests already carry `Content-type: application/json`.
+  - **Cookie account:** no `Authorization`, plus `X-Machloket-CSRF: 1` on every request. Sending it on every method is simpler than sorting by method at 142 call sites, and the server requires it on some GETs too (for example `/auth/generate-registration-tokens`, which the client calls at `localuser.ts:5238`). It adds no preflight, because those requests already carry `Content-type: application/json`.
 - **One builder:** `Localuser.headers` becomes the output of that builder. The raw-token pages (bot invite, invite acceptance, logout, the 401 probe) take the account instead of its token.
 - **XHR uploads:** these set `withCredentials` for a cookie account.
 - **Issuing requests:** these set `credentials: "include"` themselves. They cannot rely on the global wrapper, whose host list is empty before the first account.
