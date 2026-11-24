@@ -232,6 +232,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 }
 /** The guild's ban list (streamed, 50 a page) for the Bans settings pane. */
 export function makeBanList(banMenu: Options, guild: Guild): HTMLElement {
+	const PAGE_SIZE = 50;
 	const banDiv = document.createElement("div");
 	const failure = listFailureLine();
 	const createBanHTML = (ban: banObj) => {
@@ -287,74 +288,66 @@ export function makeBanList(banMenu: Options, guild: Guild): HTMLElement {
 		return div;
 	};
 	let bansArr: banObj[] = [];
-	let onpage = 0;
+	let currentPage = 0;
+	// How many of `currentPage`'s rows are already in `banDiv` (`drawRows` resumes from here).
+	let drawn = 0;
+	// Zero-delay timer batching streamed arrivals on `currentPage` into one `drawRows` call.
+	let pendingDraw: ReturnType<typeof setTimeout> | undefined;
+	function drawRows() {
+		for (; drawn < PAGE_SIZE; drawn++) {
+			const ban = bansArr[currentPage * PAGE_SIZE + drawn];
+			if (!ban) break;
+			banDiv.append(createBanHTML(ban));
+		}
+	}
 	async function loadArr() {
-		let bansArr2: banObj[] = [];
-		let waiting = false;
-		function flushRows() {
-			banDiv.append(...bansArr2.map((ban) => createBanHTML(ban)));
-			bansArr2 = [];
-		}
-		async function addHTML() {
-			if (waiting) return;
-			waiting = true;
-			await new Promise((res) => setTimeout(res, 0));
-			waiting = false;
-			flushRows();
-		}
 		const stopped = await streamList<banObj>(
 			guild.info.api + "/guilds/" + guild.id + "/bans",
 			guild.headers,
 			(ban) => {
 				bansArr.push(ban);
-				if (onpage < 50) {
-					bansArr2.push(ban);
-					void addHTML();
-					onpage++;
-				} else {
-					next.disabled = false;
+				if (
+					bansArr.length > currentPage * PAGE_SIZE &&
+					bansArr.length <= (currentPage + 1) * PAGE_SIZE
+				) {
+					pendingDraw ??= setTimeout(() => {
+						pendingDraw = undefined;
+						drawRows();
+					}, 0);
 				}
+				next.disabled = bansArr.length <= (currentPage + 1) * PAGE_SIZE;
 			},
 		);
-		// A list cut short keeps the bans that arrived; the line under them says why. The rows still
-		// waiting on addHTML's timer go in first, so the line never shows above an emptier list.
-		flushRows();
+		// A list cut short keeps the bans that arrived; the line under them says why. Any rows on
+		// the current page still waiting on the draw timer go in first, so the line never shows above
+		// an emptier list.
+		clearTimeout(pendingDraw);
+		pendingDraw = undefined;
+		drawRows();
 		failure.show(stopped);
 	}
-	let currentPage = 0;
 	function loadPage(page = 0) {
+		currentPage = page;
+		clearTimeout(pendingDraw);
+		pendingDraw = undefined;
 		banDiv.innerHTML = "";
-		for (onpage = 0; onpage < 50; onpage++) {
-			const ban = bansArr[onpage + page * 50];
-			if (!ban) break;
-			banDiv.append(createBanHTML(ban));
-		}
-		if (onpage === 50 && bansArr[onpage + page * 50]) {
-			next.disabled = false;
-		} else {
-			next.disabled = true;
-		}
+		drawn = 0;
+		drawRows();
+		next.disabled = bansArr.length <= (currentPage + 1) * PAGE_SIZE;
+		back.disabled = currentPage === 0;
 	}
 
 	const pageNav = document.createElement("div");
 	const back = document.createElement("button");
 	back.textContent = I18n.search.back();
-	back.disabled = !currentPage;
-	back.onclick = () => {
-		back.disabled = !(currentPage - 1);
-		next.disabled = false;
-		loadPage(--currentPage);
-	};
+	back.onclick = () => loadPage(currentPage - 1);
 
 	const next = document.createElement("button");
 	next.textContent = I18n.search.next();
 	next.disabled = true;
 	pageNav.append(back, next);
 	banMenu.addHTMLArea(pageNav);
-	next.onclick = () => {
-		loadPage(++currentPage);
-		back.disabled = false;
-	};
+	next.onclick = () => loadPage(currentPage + 1);
 
 	void loadArr();
 	loadPage(currentPage);

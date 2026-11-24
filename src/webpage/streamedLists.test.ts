@@ -75,9 +75,35 @@ async function inviteList() {
 
 function banList() {
 	const menu = new Settings("").addButton("bans");
+	const areas = vi.spyOn(menu, "addHTMLArea");
 	const root = makeBanList(menu, guild as never);
+	for (const [area] of areas.mock.calls) root.prepend(area as HTMLElement);
 	document.body.append(root);
 	return root;
+}
+
+/** A 200 whose body the test feeds and closes by hand. */
+function handFedList() {
+	let feed!: ReadableStreamDefaultController<Uint8Array>;
+	const respond = () =>
+		new Response(
+			new ReadableStream<Uint8Array>({
+				start(controller) {
+					feed = controller;
+				},
+			}),
+			{status: 200},
+		);
+	const send = (text: string) => feed.enqueue(new TextEncoder().encode(text));
+	return {respond, send, close: () => feed.close()};
+}
+
+/** Waits real animation frames (rAF is untouched when only setTimeout/clearTimeout are faked)
+ * until `until()` holds or `max` frames pass. */
+async function frames(until: () => boolean, max = 300) {
+	for (let i = 0; i < max && !until(); i++) {
+		await new Promise((r) => requestAnimationFrame(r));
+	}
 }
 
 it("a refused invite list says why", async () => {
@@ -151,6 +177,146 @@ it("a whole ban list shows no failure line (the control)", async () => {
 
 	await vi.waitFor(() => expect(root.querySelectorAll(".bandiv")).toHaveLength(2));
 	expect(root.textContent).not.toContain(I18n.requestFailed("offline"));
+});
+
+it("Next pressed while a row batch is still pending shows only page 2's rows", async () => {
+	const {respond, send, close} = handFedList();
+	captureRequests(BANS, respond);
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
+	vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+	try {
+		const root = banList();
+		send(
+			"[" +
+				Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
+					",",
+				),
+		);
+		const next = Array.from(root.querySelectorAll("button")).find(
+			(b) => b.textContent === I18n.search.next(),
+		)!;
+		await frames(() => !next.disabled);
+		expect(next.disabled).toBe(false);
+		expect(root.querySelectorAll(".bandiv")).toHaveLength(0);
+
+		next.click();
+		vi.advanceTimersByTime(1);
+		await Promise.resolve();
+		const rows = root.querySelectorAll(".bandiv");
+		expect(rows).toHaveLength(1);
+		expect(rows[0]?.textContent).toContain("u51");
+
+		send("]");
+		close();
+		const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
+		await frames(() => load?.[1]?.signal?.aborted === true);
+		await frames(() => false, 2);
+		expect(load?.[1]?.signal?.aborted).toBe(true);
+		expect(root.querySelector<HTMLElement>("[role=alert]")?.hidden).toBe(true);
+		const settledRows = root.querySelectorAll(".bandiv");
+		expect(settledRows).toHaveLength(1);
+		expect(settledRows[0]?.textContent).toContain("u51");
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("Back pressed while page 2 is shown redraws page 1 once", async () => {
+	const {respond, send, close} = handFedList();
+	captureRequests(BANS, respond);
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
+	vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+	try {
+		const root = banList();
+		send(
+			"[" +
+				Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
+					",",
+				),
+		);
+		const buttons = Array.from(root.querySelectorAll("button"));
+		const back = buttons.find((b) => b.textContent === I18n.search.back())!;
+		const next = buttons.find((b) => b.textContent === I18n.search.next())!;
+		await frames(() => !next.disabled);
+		expect(next.disabled).toBe(false);
+
+		next.click();
+		vi.advanceTimersByTime(1);
+		await Promise.resolve();
+		expect(back.disabled).toBe(false);
+		expect(next.disabled).toBe(true);
+
+		back.click();
+		vi.advanceTimersByTime(1);
+		await Promise.resolve();
+		expect(back.disabled).toBe(true);
+		expect(next.disabled).toBe(false);
+
+		const rows = Array.from(root.querySelectorAll(".bandiv"));
+		expect(rows).toHaveLength(50);
+		expect(rows[0]?.textContent).toBe("u1");
+		expect(rows[49]?.textContent).toBe("u50");
+		const names = rows.map((r) => r.textContent);
+		expect(new Set(names).size).toBe(50);
+
+		send("]");
+		close();
+		const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
+		await frames(() => load?.[1]?.signal?.aborted === true);
+		await frames(() => false, 2);
+		expect(load?.[1]?.signal?.aborted).toBe(true);
+		expect(root.querySelectorAll(".bandiv")).toHaveLength(50);
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+it("a ban that arrives after Next fills in under page 2's rows", async () => {
+	const {respond, send, close} = handFedList();
+	captureRequests(BANS, respond);
+	const fetchSpy = vi.spyOn(globalThis, "fetch");
+	vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout"]});
+	try {
+		const root = banList();
+		send(
+			"[" +
+				Array.from({length: 51}, (_, i) => JSON.stringify(ban(String(i + 1), `u${i + 1}`))).join(
+					",",
+				),
+		);
+		const next = Array.from(root.querySelectorAll("button")).find(
+			(b) => b.textContent === I18n.search.next(),
+		)!;
+		await frames(() => !next.disabled);
+		expect(next.disabled).toBe(false);
+
+		next.click();
+		vi.advanceTimersByTime(1);
+		await Promise.resolve();
+		expect(root.querySelectorAll(".bandiv")).toHaveLength(1);
+
+		const timersBefore = vi.getTimerCount();
+		send("," + JSON.stringify(ban("52", "u52")));
+		await frames(() => vi.getTimerCount() > timersBefore);
+		vi.advanceTimersByTime(1);
+		await Promise.resolve();
+		const rows = Array.from(root.querySelectorAll(".bandiv"));
+		expect(rows).toHaveLength(2);
+		expect(rows.map((r) => r.textContent)).toEqual(["u51", "u52"]);
+
+		send("]");
+		close();
+		const load = fetchSpy.mock.calls.find((call) => String(call[0]) === BANS);
+		await frames(() => load?.[1]?.signal?.aborted === true);
+		await frames(() => false, 2);
+		expect(load?.[1]?.signal?.aborted).toBe(true);
+		expect(root.querySelector<HTMLElement>("[role=alert]")?.hidden).toBe(true);
+		const settledRows = Array.from(root.querySelectorAll(".bandiv"));
+		expect(settledRows).toHaveLength(2);
+		expect(settledRows.map((r) => r.textContent)).toEqual(["u51", "u52"]);
+	} finally {
+		vi.useRealTimers();
+	}
 });
 
 it("the streamed lists drop apiFetch's whole-request budget for an idle one", async () => {
