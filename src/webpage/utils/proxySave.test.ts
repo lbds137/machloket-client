@@ -90,3 +90,23 @@ it("keeps a value for this session when the store refuses every write", () => {
 	user.localuserStore.guilds ??= {};
 	expect(user.localuserStore.guilds).toEqual({});
 });
+
+it("a large value kept on a full store is in the session's accounts too, not only in memory", async () => {
+	const {readItem, resetSettingOverlayForTests} = await import("./storage/settingOverlay.js");
+	vi.spyOn(console, "error").mockImplementation(() => {});
+	const user = makeUser();
+	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+		throw quota();
+	});
+	try {
+		const large = "LARGE".padEnd(20_000, "x");
+		user.localuserStore.kept = {note: large};
+		expect(user.localuserStore.kept).toEqual({note: large});
+		// The session's accounts (what a navigation hands on, and what other readers see) must
+		// hold what memory holds, not the copy from before the value was put back.
+		const session = JSON.parse(readItem("userinfos")!);
+		expect(session.users[user.uid].localuserStore.kept).toEqual({note: large});
+	} finally {
+		resetSettingOverlayForTests();
+	}
+});

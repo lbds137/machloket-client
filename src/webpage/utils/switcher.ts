@@ -1,4 +1,5 @@
 import {Contextmenu} from "../contextmenu";
+import {pageNav} from "./netUtils.js";
 import {I18n} from "../i18n.js";
 import {Localuser} from "../localuser.js";
 import {createImg, getBulkInfo, Specialuser} from "./utils.js";
@@ -80,9 +81,9 @@ export class AccountSwitcher {
 						if (specialUser.uid === Localuser.users.currentuser) {
 							const info = getBulkInfo();
 							if (Object.keys(info.users).length > 0) {
-								window.location.href = "/channels/@me";
+								pageNav.go("/channels/@me");
 							} else {
-								window.location.href = "/login";
+								pageNav.go("/login");
 							}
 						}
 					}
@@ -116,7 +117,7 @@ export class AccountSwitcher {
 				switchAccountDiv.classList.add("switchtable");
 				switchAccountDiv.textContent = this.loginText();
 				switchAccountDiv.addEventListener("click", () => {
-					window.location.href = this.loginurl;
+					pageNav.go(this.loginurl);
 				});
 				table.append(switchAccountDiv);
 			}
@@ -125,7 +126,7 @@ export class AccountSwitcher {
 				switchAccountDiv.classList.add("switchtable");
 				switchAccountDiv.textContent = I18n.createAccount();
 				switchAccountDiv.addEventListener("click", () => {
-					window.location.href = this.registerurl;
+					pageNav.go(this.registerurl);
 				});
 				table.append(switchAccountDiv);
 			}

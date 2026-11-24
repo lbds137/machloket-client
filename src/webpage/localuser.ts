@@ -89,7 +89,7 @@ import {getLocalSettings, ServiceWorkerModeValues} from "./utils/storage/localSe
 import {PromiseLock} from "./utils/promiseLock.js";
 import {CDNParams} from "./utils/cdnParams.js";
 import {SEARCH_RESULT_CLASS} from "./utils/searchView.js";
-import {externalUrl} from "./utils/netUtils.js";
+import {externalUrl, pageNav} from "./utils/netUtils.js";
 import {SnowFlake} from "./snowflake.js";
 import {InteractionModal} from "./interactions/modal.js";
 import {commandFailureText, showCommandStatus} from "./interactions/commandStatus.js";
@@ -4662,7 +4662,7 @@ class Localuser {
 				"",
 				() => {
 					this.userinfo.remove();
-					window.location.href = "/";
+					pageNav.go("/");
 				},
 				{
 					headers: this.headers,

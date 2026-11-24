@@ -11,6 +11,9 @@ const WELLKNOWN = "http://sessioninvite.test";
 const API = WELLKNOWN + "/api/v9";
 const CODE = "session";
 const UID = "ann@sessioninvite.test" + WELLKNOWN;
+// A literal, not settingOverlay's ACCOUNT_HANDOFF_KEY: the hand-off is set here, before any
+// app module is imported (importing settingOverlay for the constant would load its hand-off
+// first). It also pins the key a page written by an older build hands over.
 const HANDOFF_KEY = "machloket.sessionAccounts";
 history.replaceState(null, "", `/invite/${CODE}?instance=${encodeURIComponent(WELLKNOWN)}`);
 localStorage.setItem("userinfos", JSON.stringify({users: {}, currentuser: null}));

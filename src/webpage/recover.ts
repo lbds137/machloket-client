@@ -1,4 +1,5 @@
 import {I18n} from "./i18n.js";
+import {pageNav} from "./utils/netUtils.js";
 import {Dialog, FormError} from "./settings.js";
 import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
 await I18n.done;
@@ -40,7 +41,7 @@ function makeMenu2(email: string | void, linkToken?: string) {
 		"",
 		async (obj) => {
 			if ("token" in obj && typeof obj.token === "string") {
-				window.location.href = "/login" + window.location.search;
+				pageNav.go("/login" + window.location.search);
 			}
 		},
 		{

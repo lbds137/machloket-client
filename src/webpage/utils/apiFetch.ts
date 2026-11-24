@@ -1,5 +1,4 @@
 import {pageNav} from "./netUtils.js";
-import {carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
 import {armRateLimit, readBodyBounded} from "./rateLimitWindows.js";
 
 /** Default budget (30 s) for authorized API calls. `timeoutMs: 0` opts out (large uploads). */
@@ -93,7 +92,6 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 				return;
 			}
 			queueMicrotask(() => {
-				carryAccountsAcrossNavigation();
 				pageNav.go("/login");
 			});
 		} catch (error) {
