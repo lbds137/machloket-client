@@ -1,6 +1,7 @@
 import {I18n} from "./i18n";
 import {setTheme, SW} from "./utils/utils";
 import {reloadIfWorkerServes} from "./utils/notFoundReload";
+import {pageNav} from "./utils/netUtils.js";
 if (document.getElementById("404-page")) {
 	await setTheme();
 	await I18n.done;
@@ -29,7 +30,9 @@ if (document.getElementById("404-page")) {
 		url: window.location.href,
 		hasWorker: () => SW.worker?.state === "activated",
 		isValid: (url) => SW.isValid(url),
-		reload: () => window.location.reload(),
+		// A navigation to this URL, not a reload: the worker serves it all the same, and a reload
+		// would sign out accounts kept for this session only.
+		reload: () => pageNav.go(window.location.href),
 		storage: () => sessionStorage,
 	});
 }

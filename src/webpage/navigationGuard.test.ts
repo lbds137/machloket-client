@@ -97,3 +97,47 @@ it("every allowlisted navigation still exists", () => {
 it("the real tree navigates only through pageNav", () => {
 	expect(rawNavigations(sources)).toEqual([]);
 });
+
+// A reload drops session-only accounts, so the app reloads only where the user pressed a
+// refresh or update button (whether those should keep the accounts is TASK-131). A reload the
+// app starts on its own (the 404 page's service-worker recovery) navigates through pageNav.
+const RELOAD = /\.reload\s*\(/g;
+const USER_RELOADS: {file: string; line: string}[] = [
+	{file: "./index.ts", line: "window.location.reload();"},
+	{file: "./localuser.ts", line: "window.location.reload();"},
+	{file: "./localuser.ts", line: "window.location.reload(true);"},
+	// notFoundReload's injected step: 404.ts decides what it does.
+	{file: "./utils/notFoundReload.ts", line: "env.reload();"},
+];
+
+function appReloads(sources: Record<string, string>): string[] {
+	const found: string[] = [];
+	for (const [file, text] of Object.entries(sources)) {
+		text.split("\n").forEach((line, i) => {
+			for (const _ of line.matchAll(RELOAD)) {
+				const ok = USER_RELOADS.some((a) => a.file === file && line.trim() === a.line);
+				if (!ok) found.push(`${file}:${i + 1}: ${line.trim()}`);
+			}
+		});
+	}
+	return found;
+}
+
+it("reports a reload outside the listed user-started ones", () => {
+	expect(appReloads({"./a.ts": "reload: () => window.location.reload(),"})).toEqual([
+		"./a.ts:1: reload: () => window.location.reload(),",
+	]);
+});
+
+it("every listed user-started reload still exists", () => {
+	for (const a of USER_RELOADS) {
+		expect(
+			sources[a.file]?.split("\n").some((l) => l.trim() === a.line),
+			`${a.file}: ${a.line}`,
+		).toBe(true);
+	}
+});
+
+it("the real tree reloads only where the user asked to", () => {
+	expect(appReloads(sources)).toEqual([]);
+});
