@@ -290,9 +290,17 @@ class Bot {
 			gen.options.push(permsisions);
 			gen.generate(permsisions);
 		}
+		// The container WeakRef stays filled while the Options object lives, so it can't say the
+		// generator was closed; its element leaving the document can. A generator made on a page
+		// that is already showing counts as shown from its first line, so leaving before the first
+		// tick stops it too; only one made off-page keeps ticking until it has been shown once.
+		let shown = Boolean(gen.container.deref()?.isConnected);
 		const cancel = setInterval(() => {
-			if (!gen.container.deref()) {
+			const shownIn = gen.container.deref();
+			if (shownIn?.isConnected) shown = true;
+			if (!shownIn || (shown && !shownIn.isConnected)) {
 				clearInterval(cancel);
+				return;
 			}
 			params.set("permissions", perms.allow.toString());
 			const encoded = params.toString();

@@ -50,3 +50,52 @@ it("Bot holds the caller's User instead of re-wrapping it", async () => {
 	expect(clone).toHaveBeenCalledOnce();
 	expect(clone.mock.instances[0]).toBe(bot);
 });
+
+// InviteMaker refreshes the invite URL on a 100 ms interval. Its stop test asked whether the
+// generator's container WeakRef had emptied, which never happens while the Options object is
+// alive, so every opened generator kept ticking for the rest of the session.
+it("InviteMaker's refresh interval stops once its generator leaves the page", async () => {
+	vi.useFakeTimers();
+	try {
+		const {Dialog} = await import("./settings");
+		const dialog = new Dialog("");
+		const form = dialog.options.addForm("", () => {});
+		dialog.show();
+		const base = vi.getTimerCount();
+
+		Bot.InviteMaker("1", form, {wellknown: "http://bot.test"} as never);
+		vi.advanceTimersByTime(200);
+		expect(document.body.textContent).toContain("/oauth2/authorize?");
+		expect(vi.getTimerCount()).toBe(base + 1);
+
+		document.body.replaceChildren();
+		vi.advanceTimersByTime(200);
+		expect(vi.getTimerCount()).toBe(base);
+	} finally {
+		vi.useRealTimers();
+	}
+});
+
+// A generator opened on a page that is already showing is on the page from its first line, so
+// leaving before the first 100 ms tick must stop the interval too. The detached container stays
+// strongly held through the generator's own toggles, so its WeakRef never empties to stop it.
+it("InviteMaker's refresh interval stops when its page goes before the first tick", async () => {
+	vi.useFakeTimers();
+	try {
+		const {Dialog} = await import("./settings");
+		const dialog = new Dialog("");
+		const form = dialog.options.addForm("", () => {});
+		dialog.show();
+		const base = vi.getTimerCount();
+
+		Bot.InviteMaker("1", form, {wellknown: "http://bot.test"} as never);
+		vi.advanceTimersByTime(50);
+		expect(vi.getTimerCount()).toBe(base + 1);
+
+		document.body.replaceChildren();
+		vi.advanceTimersByTime(200);
+		expect(vi.getTimerCount()).toBe(base);
+	} finally {
+		vi.useRealTimers();
+	}
+});
