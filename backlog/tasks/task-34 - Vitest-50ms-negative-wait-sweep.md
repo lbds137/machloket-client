@@ -4,7 +4,7 @@ title: Vitest 50ms negative-wait sweep
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-24T17:01:00Z'
+updated_date: '2026-11-24T17:57:00Z'
 labels:
   - test-robustness
   - deferred
@@ -23,4 +23,6 @@ ordinal: 550
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-24: first observed failure. settingsGetRefusals.test.ts 'an instance-connection-types GET that never arrived says why and still mounts the pane' (~:516) failed once in a full gate (TASK-6 branch, t6-gate3) on its POSITIVE wait: expected the requestFailed('offline') text after setTimeout(r, 50), got the pane without it. 56/56 on three solo reruns, and the branch doesn't touch that code, so load timing. Positive 50 ms waits belong in this sweep too, not only negative ones.
+
+2026-11-24: second occurrence, same file, another positive wait: 'a refused connections GET says why and still lists the instance's connection types' (:194) failed in t6-gate4; the whole unit suite passed alone right after (2330/2330). Two of six settingsGetRefusals waits seen flaking in one afternoon under heavy Deck load.
 <!-- SECTION:NOTES:END -->

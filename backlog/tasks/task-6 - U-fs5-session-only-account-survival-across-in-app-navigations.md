@@ -1,10 +1,10 @@
 ---
 id: TASK-6
 title: 'U-fs5: session-only account survival across in-app navigations'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-20T02:37:00Z'
+updated_date: '2026-11-24T17:56:00Z'
 labels:
   - store
 dependencies: []
@@ -24,3 +24,9 @@ From the #139 review lows (deferred to U-fs5):
 
 Test: add-account from a session-only account keeps it (red-first).
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-24: shipped in PR #208 (merged 3ed183a1); review lows filed as TASK-133; CodeQL #70/#71 (test fixtures) dismissed per Lila's AUQ ruling 11-24.
+<!-- SECTION:NOTES:END -->
