@@ -1,4 +1,4 @@
-import {afterEach, expect, it} from "vitest";
+import {afterEach, expect, it, vi} from "vitest";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first), so load that before utils.
@@ -407,3 +407,49 @@ it("the updates broadcast does not precede the download's cache writes", async (
 		frame.remove();
 	}
 }, 20000);
+
+it("until's timeout keeps its own message when the diagnose probe throws", async () => {
+	await expect(
+		until(
+			"x",
+			() => false,
+			0,
+			async () => {
+				throw new Error("boom");
+			},
+		),
+	).rejects.toThrow(/timed out waiting for x after \d+ ms; diagnose failed: Error: boom/);
+});
+
+it("portDiagnosis ignores a pong that arrived before its ping", async () => {
+	const messages = [{code: "pong"}];
+	const port = {postMessage() {}} as unknown as MessagePort;
+	const controller = {state: "activated"} as unknown as ServiceWorker;
+	const out = await portDiagnosis(port, messages, controller);
+	expect(out).toContain("ping: no pong within 2000 ms");
+	expect(out).toContain("messages before ping: pong");
+	expect(out).toContain("messages after: none");
+}, 10000);
+
+it("portDiagnosis counts a pong that arrives after its ping", async () => {
+	const messages: {code: string}[] = [];
+	const port = {postMessage: () => messages.push({code: "pong"})} as unknown as MessagePort;
+	const controller = {state: "activated"} as unknown as ServiceWorker;
+	const out = await portDiagnosis(port, messages, controller);
+	expect(out).toMatch(/ping: pong in \d+ ms/);
+	expect(out).toContain("messages after: pong");
+});
+
+it("portDiagnosis keeps the ping evidence when the marker read fails", async () => {
+	const messages: {code: string}[] = [];
+	const port = {postMessage: () => messages.push({code: "pong"})} as unknown as MessagePort;
+	const controller = {state: "activated"} as unknown as ServiceWorker;
+	const spy = vi.spyOn(caches, "open").mockRejectedValue(new Error("nope"));
+	try {
+		const out = await portDiagnosis(port, messages, controller);
+		expect(out).toContain("marker: read failed: Error: nope");
+		expect(out).toContain("ping: pong in");
+	} finally {
+		spy.mockRestore();
+	}
+});
