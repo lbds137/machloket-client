@@ -3,10 +3,10 @@ id: TASK-99
 title: >-
   ownerCode.test bot-owns-guilds 403 test: 'Tried to make a sub menu when the
   options weren't rendered' under full-suite load
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-23T21:07:00Z'
-updated_date: '2026-11-24T01:29:00Z'
+updated_date: '2026-11-24T03:48:00Z'
 labels:
   - test-flake
 dependencies: []
@@ -24,4 +24,6 @@ First sighting 2026-11-23 in the TASK-71 branch gate (test run started 16:01:56 
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-23: second sighting in the TASK-100 branch gate (full suite, 1 failed / 2292): src/webpage/intentFlags.test.ts:297 via openAppForm (intentFlags.test.ts:148), which also passes an unrendered new Dialog("").options; same throw at settings.ts:1811 (Options.genTop). Isolated/next run green. Hypothesis (unverified): settings.ts:1762 initialises `container` as a WeakRef to a detached div nothing else holds; under full-suite memory pressure GC collects it, deref() returns undefined and genTop throws. Fits "only under load" in both sightings. Red-first idea: run Chromium with --js-flags=--expose-gc in one test and call gc() before addSubForm, or a WeakRef stub whose deref() returns undefined.
+
+Shipped in PR #197 (merged 2026-11-24 03:45Z). Accepted trade-off: an Options whose page is gone still builds its controls into the detached placeholder and runs their side effects (e.g. an ImageInput sets img.src). Removing the throw is worth that cost. Review lows: InviteMaker's GC-only interval stop -> TASK-109; no test that a live rendered Options renders into its real container -> TASK-110; class loss through container.deref() -> TASK-106 (from the pre-PR review). Ruled out: typing CheckboxInput.input as optional to avoid the test's double cast. Every production CheckboxInput runs generateHTML() before it is handed out, so the optional type would add null checks at sites that are always set, only to suit one defensive test.
 <!-- SECTION:NOTES:END -->
