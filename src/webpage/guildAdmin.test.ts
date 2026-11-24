@@ -9,19 +9,22 @@ const {Member} = await import("./member");
 
 describe("opening a channel as an admin", () => {
 	it("writes nothing to the server (reading whether you can message is pure)", () => {
-		const addRoleToPerms = vi.fn();
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		const channel = Object.assign(Object.create(Channel.prototype), {
 			permission_overwritesar: [],
 			owner: {roles: [{name: "@everyone", id: "g1"}]},
 			hasPermission: () => true,
 			isThread: () => false,
-			addRoleToPerms,
 		}) as InstanceType<typeof Channel>;
 
-		void channel.canMessage;
-		void channel.canMessage;
+		try {
+			void channel.canMessage;
+			void channel.canMessage;
 
-		expect(addRoleToPerms).not.toHaveBeenCalled();
+			expect(fetchSpy).not.toHaveBeenCalled();
+		} finally {
+			fetchSpy.mockRestore();
+		}
 	});
 });
 

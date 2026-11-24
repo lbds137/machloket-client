@@ -5006,21 +5006,6 @@ class Channel extends SnowFlake {
 		}
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
-	async addRoleToPerms(role: Role | User) {
-		await apiFetch(this.info.api + "/channels/" + this.id + "/permissions/" + role.id, {
-			method: "PUT",
-			headers: this.headers,
-			body: JSON.stringify({
-				allow: "0",
-				deny: "0",
-				id: role.id,
-				type: role instanceof User ? 1 : 0,
-			}),
-		});
-		const perm = new Permissions("0", "0");
-		this.permission_overwrites.set(role.id, perm);
-		this.permission_overwritesar.push([role.id, perm]);
-	}
 	async updateRolePermissions(id: string, perms: Permissions): Promise<boolean> {
 		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
 		const {allow, deny} = perms;
