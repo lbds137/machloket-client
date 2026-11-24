@@ -336,7 +336,8 @@ describe("a send the server rate-limits", () => {
 	 * answered, unless `autoOk` is set, which answers every later send with 200. `sent` holds
 	 * each send's message content, in the order they reached the wire. `throwOnSend` lists the
 	 * 0-based send indices whose `send()` throws before recording or answering (every call counts,
-	 * the throwing ones included). An attachment send's content is read from its `payload_json`. */
+	 * the throwing ones included). An attachment send's content is read from its `payload_json`,
+	 * and a FormData body whose `payload_json` is missing or not a string throws a named error. */
 	function fakeXHRByHand() {
 		const sent: string[] = [];
 		const pending: ((status: number, response: unknown) => void)[] = [];
@@ -354,7 +355,18 @@ describe("a send the server rate-limits", () => {
 			send(body: string | FormData) {
 				const index = sendCount++;
 				if (state.throwOnSend.includes(index)) throw new Error("send failed");
-				const payload = body instanceof FormData ? (body.get("payload_json") as string) : body;
+				let payload: string;
+				if (body instanceof FormData) {
+					const raw = body.get("payload_json");
+					if (typeof raw !== "string") {
+						throw new Error(
+							"fakeXHRByHand: FormData body's payload_json is missing or not a string",
+						);
+					}
+					payload = raw;
+				} else {
+					payload = body;
+				}
 				sent.push((JSON.parse(payload) as {content: string}).content);
 				const answer = (status: number, response: unknown) => {
 					this.status = status;
