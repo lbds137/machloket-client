@@ -110,8 +110,8 @@ These answers are in the merged server contract (checked 2026-11-24).
 - **One builder:** `Localuser.headers` becomes the output of that builder, mutated in place on migration or rotation so every holder of the object (`guild.headers`, interaction hosts) sees the change. The builder can leave out `Content-type` for `FormData` sends. The raw-token pages (bot invite, invite acceptance, template joining, logout, the 401 probe) take the account instead of its token.
 - **Bots stay outside it:** `Bot` requests keep their raw bot token, and the 401 path never matches them to an account.
 - **XHRs:** the two message-send XHRs set `withCredentials` for a cookie account.
-- **Credentials don't depend on the global wrapper:** the builder's requests for a cookie account, and every issuing request, set `credentials: "include"` themselves. The wrapper's host list misses a first login and an in-app login (see The client today).
-- **The wrapper stops adding credentials for cookie hosts:** for a cookie-mode host, the global wrapper leaves `credentials` as the caller set it. A cookie-mode host is one whose discovery answered `"authCookie": true` (kept with the account's server record) or that has a pending logout. That does not depend on a cookie account being stored: after a removed cookie account's logout failed, the orphaned cookie is still in the browser while a header account on the same host keeps the host in the wrapper's list. Only requests that asked for the cookie send it (see The ambient-cookie hazard).
+- **Credentials ride the CSRF marker:** `credentials` is a `RequestInit` field, not a header, so `Localuser.headers` cannot carry it, and the 142 call sites pass only `headers`. The global wrapper therefore keys on the marker the builder already adds: a request to a cookie-mode host that carries `X-Machloket-CSRF: 1` gets `credentials: "include"` (unless the caller set `credentials` itself). Only three kinds of request carry the marker: the cookie account's builder output, the issuing requests (login, register, MFA steps, migration) and the pending-logout retry. No call site changes. Unlike today's host list, this also covers a first login and an in-app login (see The client today).
+- **The wrapper stops adding credentials for unmarked requests:** for a cookie-mode host, a request without the marker keeps `credentials` as the caller set it. A cookie-mode host is one whose discovery answered `"authCookie": true` (kept with the account's server record) or that has a pending logout. That does not depend on a cookie account being stored: after a removed cookie account's logout failed, the orphaned cookie is still in the browser while a header account on the same host keeps the host in the wrapper's list. Only marked requests send the cookie (see The ambient-cookie hazard).
 
 ### The ambient-cookie hazard
 
@@ -119,7 +119,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 - **The hazard:** if that request lacks `Authorization` (a call site that forgot it), the server acts as the cookie account.
 - **The guard:** the account-keyed builder makes "no `Authorization`" possible only for the cookie account. A unit test pins that a header account's request always carries its token.
-- **Requests outside the builder:** today's 30 raw `fetch(` calls, pre-auth requests (discovery, a second account's login or register) and any future call site that skips the builder would still carry the cookie if the wrapper added it. Unsafe methods are stopped by the CSRF check, but GETs are not. So the wrapper no longer adds credentials for a cookie host (One account-keyed request path), and a unit test pins that a raw `fetch` to that host goes without them.
+- **Requests outside the builder:** today's 30 raw `fetch(` calls, pre-auth requests (discovery, a second account's login or register) and any future call site that skips the builder would still carry the cookie if the wrapper added it. Unsafe methods are stopped by the CSRF check, but GETs are not. So the wrapper adds credentials on a cookie-mode host only to requests carrying the CSRF marker (One account-keyed request path), and a unit test pins that a raw `fetch` to that host goes without them.
 
 ### Login, register and the MFA steps of login
 
@@ -163,14 +163,14 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 - **A header account's logout** sends its `Authorization`, so the cookie account on the same host stays logged in (contract, Logout).
 - **A failed logout:** if the logout of the host's cookie account fails and the user removes the account anyway, the client records a pending logout for that API host. A header account's failed logout records none: a cookie retry would end the cookie account's session, not the header account's. It retries `POST /auth/logout` by cookie at the next start (answer 5), so a removed account's cookie does not linger. A 204 or a 401 both end the pending logout (a 401 means the cookie was already dead, and the server cleared it).
   - **Cleared first:** a pending logout is dropped when a new cookie login or a migration on that host succeeds first, so the retry never ends the new session.
-  - **Dropped at start** when a stored, logged-in cookie account exists on that host: the cookie then belongs to that account.
+  - **Dropped at start, instead of retried,** when a stored, logged-in cookie account exists on that host: the cookie then belongs to that account. This check runs before the retry.
   - **Runs first:** at start, the pending logout runs before migration.
   - **Session-only store:** the pending logout is written like the accounts. When the store refuses the write, it rides the same session overlay, so a refused store gives a pending logout that lasts the session, not one that is lost silently.
 
 ### When the record and the cookie disagree
 
 - **The record says cookie, but the cookie is gone** (cleared site data, expiry): HTTP requests get 401, and the gateway closes with 4004. Both run the 401 path, which marks the account logged out and clears its `auth_mode`. The user logs in again.
-- **A cookie exists, but no record does** (the failed logout above): the pending logout covers the case the client knows about. Any other case is server-revocable. The hazard guard and the wrapper rule (cookie-mode hosts get no automatic credentials) keep the client from acting through it.
+- **A cookie exists, but no record does** (the failed logout above): the pending logout covers the case the client knows about. Any other case is server-revocable. For `fetch` requests, the hazard guard and the wrapper rule (unmarked requests to cookie-mode hosts get no credentials) keep the client from acting through it. Other channels are covered under What this does and does not fix.
 
 ## What this does and does not fix
 
@@ -178,6 +178,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 - **Does not fix:**
   - A script injection can still act through the open session while the page is open. The CSP from TASK-135 is the layer for that.
   - These still sit in localStorage as today: tokens of extra own-deployment accounts, other-instance accounts, and bots.
+  - The wrapper rule governs `fetch` only. The browser still sends the cookie, whatever the client does, on a WebSocket upgrade, on `<img>` and media GETs, and on navigations to the API host. That is accepted: header accounts' Identify carries their own token, the cookie is read on API paths only, and the three credential-handing GETs need the CSRF header and an allowlisted Origin.
 - **The CodeQL "clear-text storage" dismissals:** their wording stays Lila's call after this ships.
 
 ## Found work (TASK-145, TASK-146, TASK-147)
@@ -200,7 +201,9 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
   - `FormData` sends get no JSON `Content-type`; the message-send XHRs set `withCredentials` for a cookie account;
   - each raw-token page builds through the account;
   - a bot request never invalidates an account;
-  - a raw `fetch` to a cookie-mode host goes without credentials, including a host with a pending logout and only header accounts stored;
+  - an unmarked raw `fetch` to a cookie-mode host goes without credentials, including a host with a pending logout and only header accounts stored;
+  - a cookie account's `apiFetch(url, {headers: this.headers})` and a raw `fetch` with its headers both go with credentials;
+  - the pending-logout retry sends credentials and the CSRF header;
   - pending logout: recorded only for the cookie account, never for a header account; retried at start; dropped by a newer cookie login or a logged-in cookie account on the host; run before migration.
 - **Mock e2e:**
   - the opt-in and CSRF headers on login, and on both MFA steps;
