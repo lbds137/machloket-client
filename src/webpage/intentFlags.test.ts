@@ -263,10 +263,10 @@ describe("the application edit form's flags wiring", () => {
 	});
 
 	it("CheckboxInput.setState updates value when the input was never generated", () => {
-		const options = new Dialog("").options;
-		options.container = {deref: () => undefined} as WeakRef<HTMLDivElement>;
-		const ungenerated = options.addCheckboxInput("x", () => {});
-		expect(ungenerated.input).toBeUndefined();
+		// Options always renders a new box (into a detached placeholder when its page is gone;
+		// TASK-99), so the never-generated state is set up by hand.
+		const ungenerated = new Dialog("").options.addCheckboxInput("x", () => {});
+		ungenerated.input = undefined as unknown as WeakRef<HTMLInputElement>;
 		ungenerated.setState(true);
 		expect(ungenerated.value).toBe(true);
 	});
