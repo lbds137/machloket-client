@@ -3,10 +3,10 @@ id: TASK-105
 title: >-
   PR #193 review lows: ban-pager test wait, setup duplication, no-op microtask
   awaits
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-24T02:07:00Z'
-updated_date: '2026-11-24T03:59:00Z'
+updated_date: '2026-11-24T13:36:00Z'
 labels:
   - tests
   - bans
@@ -25,4 +25,6 @@ From the claude-review on PR #193 (TASK-98), all in src/webpage/streamedLists.te
 
 <!-- SECTION:NOTES:BEGIN -->
 From the TASK-103 review (PR for 7d5afe45), fold in with the helper: (4) the new 'unbanning the only ban on the last page' test reuses the abort-then-2-frames wait; switch it to the same effect-based wait as (1). (5) It finds the unban button via spy.mock.results[0].value.options and '"onClick" in o', which couples it to Options internals; the shared helper should own one lookup. (6) Add the clamp's edge cases: unbanning the only ban (0 left, page 0, both pager buttons disabled) and 100 bans with one unbanned on page 2 (stays on page 2). Base this task on main after TASK-103 merges: it adds a fourth ban-pager test in the same file.
+
+Shipped in PR #202 (merged 2026-11-24, head cbf51708). First Gemini review BLOCKed on item (4), which the draft PR body mis-claimed as done; fixed with loadAll + asserting frames + unban id checks; Gemini re-review PASS; claude-review PASS, its 4 lows filed as one follow-up.
 <!-- SECTION:NOTES:END -->
