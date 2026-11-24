@@ -223,19 +223,23 @@ describe("waitRateLimit", () => {
 	// it wakes, instead of throwing on the missing waiter. (The parked caller is dropped on purpose.)
 	it("a pump whose line a reset emptied wakes without throwing", async () => {
 		const url = A + "/channels/1/messages";
-		armRateLimit(url, {retry_after: 0.05});
-		void waitRateLimit(url);
-		expect(rateLimitWaiterCountForTests(url)).toBe(1);
 		const errors: unknown[] = [];
 		const onReject = (e: PromiseRejectionEvent) => {
 			errors.push(e.reason);
 			e.preventDefault();
 		};
 		window.addEventListener("unhandledrejection", onReject);
+		vi.useFakeTimers({toFake: ["setTimeout", "clearTimeout", "Date"]});
 		try {
+			armRateLimit(url, {retry_after: 0.05});
+			void waitRateLimit(url);
+			expect(rateLimitWaiterCountForTests(url)).toBe(1);
 			resetRateLimitsForTests();
-			await new Promise((r) => setTimeout(r, 120)); // past the window: the pump has woken
+			await vi.advanceTimersByTimeAsync(100); // past the window: the pump has woken
 		} finally {
+			vi.useRealTimers();
+			// The browser reports an unhandled rejection in a later real task.
+			await new Promise((r) => setTimeout(r, 0));
 			window.removeEventListener("unhandledrejection", onReject);
 		}
 
