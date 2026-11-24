@@ -17,15 +17,22 @@ function pageWasReloaded(): boolean {
 	return entry?.type === "reload";
 }
 
+/** Set by pageNav.reload to the URL it reloads: that one reload is the app's, not the user's,
+ * and keeps the hand-off. Read and cleared by the next page load, whatever it is. */
+export const APP_RELOAD_KEY = "machloket.appReload";
+
 /** Reads the accounts the previous page handed off. A reload drops them instead, on every page
  * (not only the app's, which also uses them up at boot): session-only accounts end at a reload,
- * as their Dialog says. */
+ * as their Dialog says. The app's own reload of this URL (APP_RELOAD_KEY) is the exception. */
 export function loadAccountHandoff(): void {
 	try {
+		const appReloadOf = sessionStorage.getItem(APP_RELOAD_KEY);
+		sessionStorage.removeItem(APP_RELOAD_KEY);
 		const handoff = sessionStorage.getItem(ACCOUNT_HANDOFF_KEY);
 		if (handoff === null) return;
-		if (pageWasReloaded()) sessionStorage.removeItem(ACCOUNT_HANDOFF_KEY);
-		else overlay.set("userinfos", handoff);
+		if (pageWasReloaded() && appReloadOf !== window.location.href) {
+			sessionStorage.removeItem(ACCOUNT_HANDOFF_KEY);
+		} else overlay.set("userinfos", handoff);
 	} catch {
 		// Where storage is blocked, reaching sessionStorage throws.
 	}

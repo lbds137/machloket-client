@@ -9,8 +9,13 @@ const {I18n} = await import("../i18n.js");
 const {adduser} = await import("./utils.js");
 const {AccountSwitcher} = await import("./switcher.js");
 const {pageNav} = await import("./netUtils.js");
-const {ACCOUNT_HANDOFF_KEY, isAccountStored, readItem, resetSettingOverlayForTests} =
-	await import("./storage/settingOverlay.js");
+const {
+	ACCOUNT_HANDOFF_KEY,
+	APP_RELOAD_KEY,
+	isAccountStored,
+	readItem,
+	resetSettingOverlayForTests,
+} = await import("./storage/settingOverlay.js");
 await I18n.done;
 
 const quota = () => new DOMException("The quota has been exceeded.", "QuotaExceededError");
@@ -95,4 +100,19 @@ it("an account is stored only when the browser's store itself holds it", () => {
 it("an unreadable store holds no account", () => {
 	localStorage.setItem("userinfos", "{not json");
 	expect(isAccountStored("anyone")).toBe(false);
+});
+
+// The app's own reloads (the 404 page's recovery) keep session-only accounts: a navigation to a
+// URL with a #fragment only scrolls, so recovery has to be a real reload.
+it("an app reload hands the accounts to the reloaded page, marked for its URL", () => {
+	stubFullLocalStorage();
+	const u = adduser(account("reload@session-nav.test"));
+	const reloadPage = vi.spyOn(pageNav, "reloadPage").mockImplementation(() => {});
+
+	pageNav.reload();
+
+	expect(reloadPage).toHaveBeenCalledOnce();
+	expect(JSON.parse(sessionStorage.getItem(ACCOUNT_HANDOFF_KEY)!).users[u.uid]).toBeDefined();
+	expect(sessionStorage.getItem(APP_RELOAD_KEY)).toBe(window.location.href);
+	sessionStorage.removeItem(APP_RELOAD_KEY);
 });
