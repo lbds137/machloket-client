@@ -98,27 +98,37 @@ it("the real tree navigates only through pageNav", () => {
 	expect(rawNavigations(sources)).toEqual([]);
 });
 
-// A reload drops session-only accounts, so the app reloads only where the user pressed a
-// refresh or update button (whether those should keep the accounts is TASK-131). A reload the
-// app starts on its own (the 404 page's service-worker recovery) navigates through pageNav.
-const RELOAD = /\.reload\s*\(/g;
-const USER_RELOADS: {file: string; line: string}[] = [
-	{file: "./index.ts", line: "window.location.reload();"},
-	{file: "./localuser.ts", line: "window.location.reload();"},
-	{file: "./localuser.ts", line: "window.location.reload(true);"},
+// A browser reload drops session-only accounts, so the app reloads the browser directly only
+// where the user pressed a refresh or update button (whether those should keep the accounts is
+// TASK-131), each listed with how many times its line appears. A reload the app starts on its
+// own (the 404 page's service-worker recovery) goes through pageNav.reload, which keeps them.
+// Matched across lines (`.` then a line break), and through `?.(`; pageNav.reload( is the way
+// through, so it isn't one.
+const RELOAD = /(?<!\bpageNav\s*)\.\s*reload\s*(?:\?\.)?\(/g;
+const USER_RELOADS: {file: string; line: string; count: number}[] = [
+	{file: "./index.ts", line: "window.location.reload();", count: 1},
+	{file: "./localuser.ts", line: "window.location.reload();", count: 1},
+	{file: "./localuser.ts", line: "window.location.reload(true);", count: 1},
+	// pageNav.reload's own step, after it carries the accounts.
+	{file: "./utils/netUtils.ts", line: "window.location.reload();", count: 1},
 	// notFoundReload's injected step: 404.ts decides what it does.
-	{file: "./utils/notFoundReload.ts", line: "env.reload();"},
+	{file: "./utils/notFoundReload.ts", line: "env.reload();", count: 1},
 ];
 
 function appReloads(sources: Record<string, string>): string[] {
 	const found: string[] = [];
 	for (const [file, text] of Object.entries(sources)) {
-		text.split("\n").forEach((line, i) => {
-			for (const _ of line.matchAll(RELOAD)) {
-				const ok = USER_RELOADS.some((a) => a.file === file && line.trim() === a.line);
-				if (!ok) found.push(`${file}:${i + 1}: ${line.trim()}`);
-			}
-		});
+		const lines = text.split("\n");
+		const seen = new Map<string, number>();
+		for (const m of text.matchAll(RELOAD)) {
+			// The line the call's "reload" sits on.
+			const at = text.slice(0, m.index + m[0].search(/reload/)).split("\n").length - 1;
+			const line = lines[at].trim();
+			const n = (seen.get(line) ?? 0) + 1;
+			seen.set(line, n);
+			const allowed = USER_RELOADS.find((a) => a.file === file && a.line === line);
+			if (!allowed || n > allowed.count) found.push(`${file}:${at + 1}: ${line}`);
+		}
 	}
 	return found;
 }
@@ -129,15 +139,30 @@ it("reports a reload outside the listed user-started ones", () => {
 	]);
 });
 
+it("reports a listed line that appears more often than listed", () => {
+	const twice = ["window.location.reload();", "window.location.reload();"].join("\n");
+	expect(appReloads({"./index.ts": twice})).toEqual(["./index.ts:2: window.location.reload();"]);
+});
+
+it("reports an optional call and a call split across lines", () => {
+	expect(
+		appReloads({"./a.ts": ["location.reload?.();", "window.location.", "\treload();"].join("\n")}),
+	).toEqual(["./a.ts:1: location.reload?.();", "./a.ts:3: reload();"]);
+});
+
 it("every listed user-started reload still exists", () => {
 	for (const a of USER_RELOADS) {
 		expect(
-			sources[a.file]?.split("\n").some((l) => l.trim() === a.line),
+			sources[a.file]?.split("\n").filter((l) => l.trim() === a.line).length,
 			`${a.file}: ${a.line}`,
-		).toBe(true);
+		).toBe(a.count);
 	}
 });
 
 it("the real tree reloads only where the user asked to", () => {
 	expect(appReloads(sources)).toEqual([]);
+});
+
+it("lets the app's own reload through pageNav", () => {
+	expect(appReloads({"./a.ts": "reload: () => pageNav.reload(),"})).toEqual([]);
 });

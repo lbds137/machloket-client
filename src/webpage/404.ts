@@ -30,9 +30,9 @@ if (document.getElementById("404-page")) {
 		url: window.location.href,
 		hasWorker: () => SW.worker?.state === "activated",
 		isValid: (url) => SW.isValid(url),
-		// A navigation to this URL, not a reload: the worker serves it all the same, and a reload
-		// would sign out accounts kept for this session only.
-		reload: () => pageNav.go(window.location.href),
+		// The app's reload, which keeps accounts kept for this session only (a plain reload
+		// signs them out; a navigation to a URL with a #fragment only scrolls).
+		reload: () => pageNav.reload(),
 		storage: () => sessionStorage,
 	});
 }

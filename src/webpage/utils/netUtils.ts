@@ -1,4 +1,4 @@
-import {carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
+import {APP_RELOAD_KEY, carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
 
 /**
  * A signed CDN link (its `ex` is the expiry in ms, hex) is re-signed once it has less than this
@@ -62,7 +62,7 @@ export function postLoginRedirect(redir: string | null): string {
 /** The app's full-page navigations, behind an object so a test can observe where one lands.
  * Every one goes through `go` (navigationGuard.test.ts holds the tree to it): accounts signed
  * in for this session only live in memory, and the next page reads them from the hand-off it
- * writes. A reload is not a navigation; it drops them, as their Dialog says. */
+ * writes. The user's reload is not a navigation; it drops them, as their Dialog says. */
 export const pageNav = {
 	go(href: string) {
 		carryAccountsAcrossNavigation();
@@ -71,5 +71,20 @@ export const pageNav = {
 	/** The browser's navigation itself. */
 	load(href: string) {
 		window.location.href = href;
+	},
+	/** A reload the app starts on its own (the 404 page's recovery), keeping the accounts. A
+	 * navigation can't stand in: to a URL with a #fragment it only scrolls the page. */
+	reload() {
+		carryAccountsAcrossNavigation();
+		try {
+			sessionStorage.setItem(APP_RELOAD_KEY, window.location.href);
+		} catch {
+			// Storage blocked: there is no hand-off to keep either.
+		}
+		pageNav.reloadPage();
+	},
+	/** The browser's reload itself. */
+	reloadPage() {
+		window.location.reload();
 	},
 };

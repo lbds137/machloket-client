@@ -185,8 +185,8 @@ async function landOnLoginWithHandoff(page: Page): Promise<void> {
 			if (sessionStorage.getItem("e2e.seeded")) return;
 			sessionStorage.setItem("e2e.seeded", "1");
 			const id = "sessiononly@example.test" + origin;
-			// A whole account, as the app writes one: the login page's account list drops an
-			// entry it can't build.
+			// A whole account, as the app writes one. These tests read only the stored hand-off;
+			// what the next page carries on from memory is pinned in sessionOnlyNavigation.test.ts.
 			const account = {
 				email: "sessiononly@example.test",
 				token: "tok",
@@ -227,6 +227,43 @@ test("a reload of the login page drops a session-only account the hand-off carri
 	await page.reload();
 	await expect(loginForm(page)).toBeVisible();
 	expect(await navigationType(page)).toBe("reload");
+	expect(await readHandoff(page)).toBeNull();
+});
+
+const APP_RELOAD_KEY = "machloket.appReload";
+const markAppReload = (page: Page, href?: string) =>
+	page.evaluate(({key, h}) => sessionStorage.setItem(key, h ?? location.href), {
+		key: APP_RELOAD_KEY,
+		h: href,
+	});
+
+test("the app's own reload keeps the hand-off once; the user's next reload drops it", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	await landOnLoginWithHandoff(page);
+
+	// What pageNav.reload leaves for the page it reloads.
+	await markAppReload(page);
+	await page.reload();
+	await expect(loginForm(page)).toBeVisible();
+	expect(await navigationType(page)).toBe("reload");
+	expect(await readHandoff(page)).toContain("sessiononly@example.test");
+	expect(await page.evaluate((key) => sessionStorage.getItem(key), APP_RELOAD_KEY)).toBeNull();
+
+	await page.reload();
+	await expect(loginForm(page)).toBeVisible();
+	expect(await readHandoff(page)).toBeNull();
+});
+
+test("a reload marked for another page still drops the hand-off", async ({page, mockInstance}) => {
+	void mockInstance;
+	await landOnLoginWithHandoff(page);
+
+	await markAppReload(page, "http://localhost:4173/channels/@me");
+	await page.reload();
+	await expect(loginForm(page)).toBeVisible();
 	expect(await readHandoff(page)).toBeNull();
 });
 
