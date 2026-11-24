@@ -16,8 +16,11 @@ const sources = import.meta.glob(["./**/*.ts", "!./**/*.test.ts", "!./test/**"],
 	eager: true,
 }) as Record<string, string>;
 
-// `location.href = x` (not `==`), `location.assign(`, `location.replace(`, `location = x`.
-const NAV = /\blocation\s*(?:\.\s*href\s*=(?!=)|\.\s*assign\s*\(|\.\s*replace\s*\(|=(?!=))/g;
+// `location.href = x` (not `==`), the parts that navigate when written (`location.pathname = x`,
+// search, host, hostname, port, protocol; not hash, which stays on the page), `location.assign(`,
+// `location.replace(`, `location = x`.
+const NAV =
+	/\blocation\s*(?:\.\s*(?:href|pathname|search|host|hostname|port|protocol)\s*=(?!=)|\.\s*assign\s*\(|\.\s*replace\s*\(|=(?!=))/g;
 
 // The one raw navigation: pageNav's own.
 const ALLOWED: {file: string; line: string}[] = [
@@ -45,6 +48,12 @@ it("reports each raw navigation shape", () => {
 				'location.assign("/x");',
 				'window.location.replace("/y");',
 				'window.location = "/z";',
+				'window.location.pathname = "/channels/@me";',
+				'location.search = "?a=1";',
+				'location.host = "h:1";',
+				'location.hostname = "h";',
+				'location.port = "1";',
+				'location.protocol = "https:";',
 			].join("\n"),
 		}),
 	).toEqual([
@@ -52,6 +61,12 @@ it("reports each raw navigation shape", () => {
 		'./a.ts:2: location.assign("/x");',
 		'./a.ts:3: window.location.replace("/y");',
 		'./a.ts:4: window.location = "/z";',
+		'./a.ts:5: window.location.pathname = "/channels/@me";',
+		'./a.ts:6: location.search = "?a=1";',
+		'./a.ts:7: location.host = "h:1";',
+		'./a.ts:8: location.hostname = "h";',
+		'./a.ts:9: location.port = "1";',
+		'./a.ts:10: location.protocol = "https:";',
 	]);
 });
 
@@ -63,6 +78,8 @@ it("does not report reads, comparisons or reloads", () => {
 				"if (location.href === y) {}",
 				"window.location.reload();",
 				"self.location.href;",
+				'location.hash = "#x";',
+				"if (location.pathname === p) {}",
 			].join("\n"),
 		}),
 	).toEqual([]);

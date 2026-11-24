@@ -35,9 +35,11 @@ import {
 } from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
 import {isValidTemplateCode} from "./utils/templateCode.js";
+import {pageNav} from "./utils/netUtils.js";
 
 if (window.location.pathname === "/app") {
-	window.location.pathname = "/channels/@me";
+	// The query and hash go along (a templateID is read from the query on /channels).
+	pageNav.go("/channels/@me" + window.location.search + window.location.hash);
 }
 export interface CustomHTMLDivElement extends HTMLDivElement {
 	markdown: MarkDown;

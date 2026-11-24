@@ -1,4 +1,4 @@
-import {expect} from "@playwright/test";
+import {expect, type Page} from "@playwright/test";
 import {
 	drain,
 	loginAndOpenChannel,
@@ -165,4 +165,75 @@ test("booting a stored account from a hand-off that also carries a session-only 
 	expect(await page.evaluate((key) => sessionStorage.getItem(key), HANDOFF_KEY)).toBeNull();
 	await drain(page);
 	await expect(page.locator(".dialogModal")).toHaveCount(0);
+});
+
+// A session-only account rides a hand-off to a page that doesn't boot the app (the login page,
+// after the switcher's add-account): the hand-off is what lands there, before any reload.
+async function landOnLoginWithHandoff(page: Page): Promise<void> {
+	await page.addInitScript(() => {
+		const realSetItem = Storage.prototype.setItem;
+		Storage.prototype.setItem = function (key: string, value: string) {
+			if (this === window.localStorage) {
+				throw new DOMException(`Quota exceeded writing ${key}`, "QuotaExceededError");
+			}
+			return realSetItem.call(this, key, value);
+		};
+	});
+	await page.addInitScript(
+		([key, origin]) => {
+			// Only the first load gets the hand-off, as the navigation that carried it would leave it.
+			if (sessionStorage.getItem("e2e.seeded")) return;
+			sessionStorage.setItem("e2e.seeded", "1");
+			const id = "sessiononly@example.test" + origin;
+			sessionStorage.setItem(
+				key,
+				JSON.stringify({users: {[id]: {email: "sessiononly@example.test"}}, currentuser: id}),
+			);
+		},
+		[HANDOFF_KEY, MOCK_INSTANCE_ORIGIN],
+	);
+	await page.goto("/login.html");
+	await expect(loginForm(page)).toBeVisible();
+}
+
+const HANDOFF_KEY = "machloket.sessionAccounts";
+const readHandoff = (page: Page) =>
+	page.evaluate((key) => sessionStorage.getItem(key), HANDOFF_KEY);
+const navigationType = (page: Page) =>
+	page.evaluate(
+		() => (performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming).type,
+	);
+const loginForm = (page: Page) =>
+	page.locator(".FormSettings", {has: page.getByRole("button", {name: "Login", exact: true})});
+
+test("a reload of the login page drops a session-only account the hand-off carried there", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	await landOnLoginWithHandoff(page);
+	// Landing keeps it: the next in-app navigation still has it to carry.
+	expect(await readHandoff(page)).not.toBeNull();
+
+	await page.reload();
+	await expect(loginForm(page)).toBeVisible();
+	expect(await navigationType(page)).toBe("reload");
+	expect(await readHandoff(page)).toBeNull();
+});
+
+test("an in-app navigation to the page already open keeps the hand-off: it is not a reload", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	await landOnLoginWithHandoff(page);
+
+	// The shape of pageNav.go to the current URL (the switcher's logout lands where it already is).
+	await page.evaluate(() => {
+		window.location.href = window.location.href;
+	});
+	await page.waitForLoadState("load");
+	await expect(loginForm(page)).toBeVisible();
+	expect(await navigationType(page)).toBe("navigate");
+	expect(await readHandoff(page)).not.toBeNull();
 });

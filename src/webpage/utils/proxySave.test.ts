@@ -24,10 +24,16 @@ function storedUser(uid: string) {
 	return JSON.parse(localStorage.getItem("userinfos")!).users[uid];
 }
 
+const {resetSettingOverlayForTests} = await import("./storage/settingOverlay.js");
+
+// Each test leaves the accounts as it found them: in the store (removed if there were none)
+// and in the session overlay a refused write fills.
 const stored = localStorage.getItem("userinfos");
 afterEach(() => {
 	vi.restoreAllMocks();
 	if (stored !== null) localStorage.setItem("userinfos", stored);
+	else localStorage.removeItem("userinfos");
+	resetSettingOverlayForTests();
 });
 
 it("drops a value too big to store, so the account's later saves still land", () => {
@@ -92,21 +98,17 @@ it("keeps a value for this session when the store refuses every write", () => {
 });
 
 it("a large value kept on a full store is in the session's accounts too, not only in memory", async () => {
-	const {readItem, resetSettingOverlayForTests} = await import("./storage/settingOverlay.js");
+	const {readItem} = await import("./storage/settingOverlay.js");
 	vi.spyOn(console, "error").mockImplementation(() => {});
 	const user = makeUser();
 	vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
 		throw quota();
 	});
-	try {
-		const large = "LARGE".padEnd(20_000, "x");
-		user.localuserStore.kept = {note: large};
-		expect(user.localuserStore.kept).toEqual({note: large});
-		// The session's accounts (what a navigation hands on, and what other readers see) must
-		// hold what memory holds, not the copy from before the value was put back.
-		const session = JSON.parse(readItem("userinfos")!);
-		expect(session.users[user.uid].localuserStore.kept).toEqual({note: large});
-	} finally {
-		resetSettingOverlayForTests();
-	}
+	const large = "LARGE".padEnd(20_000, "x");
+	user.localuserStore.kept = {note: large};
+	expect(user.localuserStore.kept).toEqual({note: large});
+	// The session's accounts (what a navigation hands on, and what other readers see) must
+	// hold what memory holds, not the copy from before the value was put back.
+	const session = JSON.parse(readItem("userinfos")!);
+	expect(session.users[user.uid].localuserStore.kept).toEqual({note: large});
 });

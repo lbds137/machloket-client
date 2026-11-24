@@ -10,10 +10,22 @@ const notifiedThisSession = new Set<"setting" | "account">();
 // must not open into the next one. In the app it never changes.
 let sessionGeneration = 0;
 
+/** Whether this page was loaded by a reload, not a navigation. A navigation to the URL already
+ * open (the switcher's logout) still reads as "navigate". */
+function pageWasReloaded(): boolean {
+	const [entry] = performance.getEntriesByType("navigation") as PerformanceNavigationTiming[];
+	return entry?.type === "reload";
+}
+
+/** Reads the accounts the previous page handed off. A reload drops them instead, on every page
+ * (not only the app's, which also uses them up at boot): session-only accounts end at a reload,
+ * as their Dialog says. */
 export function loadAccountHandoff(): void {
 	try {
 		const handoff = sessionStorage.getItem(ACCOUNT_HANDOFF_KEY);
-		if (handoff !== null) overlay.set("userinfos", handoff);
+		if (handoff === null) return;
+		if (pageWasReloaded()) sessionStorage.removeItem(ACCOUNT_HANDOFF_KEY);
+		else overlay.set("userinfos", handoff);
 	} catch {
 		// Where storage is blocked, reaching sessionStorage throws.
 	}
