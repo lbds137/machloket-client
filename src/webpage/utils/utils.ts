@@ -665,44 +665,6 @@ export const instancefetch = instancesIndexed.then(async (list) => {
 	instancesLoaded = true;
 });
 
-const catalogBotsUrl = "https://sbar.fyi/api/catalog/bots";
-type CatalogBot = {
-	id: string;
-	name: string;
-	maintainer?: string;
-	maintainer_link?: string;
-	maintainer_image?: string;
-	tags?: string[];
-	short?: string;
-	description?: string;
-};
-let botCatalog: Promise<CatalogBot[]> | undefined;
-/** The catalog is fetched only when a bot profile first asks — a third-party request the
- * user never asked for shouldn't ride every app start. One fetch per session; a failure
- * is cached as an empty catalog. */
-function fetchBotCatalog(): Promise<CatalogBot[]> {
-	botCatalog ??= fetch(catalogBotsUrl)
-		.then(async (res) => {
-			if (!res.ok) {
-				throw new Error("Failed to fetch bot catalog");
-			}
-			return (await res.json()) as CatalogBot[];
-		})
-		.catch(() => {
-			return [] as CatalogBot[];
-		});
-	return botCatalog;
-}
-
-export async function getExplorerBotByUsername(username: string): Promise<CatalogBot | undefined> {
-	const bots = await fetchBotCatalog();
-	return bots.find((bot) => bot.name.toLowerCase() === username.toLowerCase());
-}
-
-export function getExplorerBotUrl(botId: string): string {
-	return new URL(`/bots/${encodeURIComponent(botId)}`, "https://sbar.fyi").href;
-}
-
 const stringURLMap = new Map<string, string>();
 
 export interface InstanceUrls {

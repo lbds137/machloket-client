@@ -148,9 +148,6 @@
 	"botGuilds": "Servers the bot is in:",
 	"botProfile": "Profile",
 	"botSettings": "Bot Settings",
-	"botExplorerTitle": "A catalog bot with this name",
-	"botExplorerLink": "Open on Spacebar Explorer",
-	"botExplorerMaintainer": "Maintainer: $1",
 	"cancel": "Cancel",
 	"channel": {
 		"SlowmodeCool": "Slowmode cooldown: $1",
@@ -1074,7 +1071,6 @@
 	},
 	"searchGifs": "Search $1",
 	"failedToLoadGifs": "Failed to load GIFs.",
-	"tenorMigrationInfo": "Tenor migration info",
 	"settingNotSaved": "Couldn't save this setting: this browser's storage for Machloket is full. It applies until you reload.",
 	"accountNotSaved": "Signed in for this session only: this browser's storage for Machloket is full, so you'll need to sign in again after a reload.",
 	"settings": {

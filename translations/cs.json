@@ -121,9 +121,6 @@
 	"bot": "BOT",
 	"botGuilds": "Servery, na kterých je bot:",
 	"botSettings": "Nastavení bota",
-	"botExplorerTitle": "Katalogový bot s tímto názvem",
-	"botExplorerLink": "Otevřít v Spacebar Explorer",
-	"botExplorerMaintainer": "Správce: $1",
 	"cancel": "Zrušit",
 	"channel": {
 		"SlowmodeCool": "Prodleva pomalého režimu: $1",
@@ -952,7 +949,6 @@
 	},
 	"searchGifs": "Hledat $1",
 	"failedToLoadGifs": "GIFy se nepodařilo načíst.",
-	"tenorMigrationInfo": "Informace o migraci z Tenoru",
 	"settings": {
 		"clear": "Vymazat",
 		"img": "Nahrát obrázek",

@@ -123,9 +123,6 @@
 	"bot": "Bot",
 	"botGuilds": "El bot del gremio está en:",
 	"botSettings": "Ajustes del bot",
-	"botExplorerTitle": "Un bot del catálogo con este nombre",
-	"botExplorerLink": "Abrir en el Explorador",
-	"botExplorerMaintainer": "Mantenedor: $1",
 	"cancel": "Cancelar",
 	"channel": {
 		"SlowmodeCool": "Cooldown de modo lento: $1",
@@ -954,7 +951,6 @@
 	},
 	"searchGifs": "Buscar $1",
 	"failedToLoadGifs": "No se pudieron cargar los GIFs.",
-	"tenorMigrationInfo": "Información sobre la migración de Tenor",
 	"settings": {
 		"clear": "Borrar",
 		"img": "Subir imagen",

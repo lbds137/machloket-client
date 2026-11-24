@@ -57,7 +57,7 @@ it("an invite that never reached the server says so", async () => {
 it("an invite with a use limit doesn't grant temporary membership", async () => {
 	const sent = captureRequests(API + "/channels/c1/invites", () => Response.json({code: "abc"}));
 	const link = await openInvite();
-	expect(link.textContent).toContain("/i/abc");
+	expect(link.textContent).toContain("/invite/abc");
 
 	const uses = document.querySelectorAll<HTMLSelectElement>(".dialogModal select")[1];
 	uses.selectedIndex = 1; // a single use

@@ -48,7 +48,7 @@ import {API_TIMEOUT_MS, apiFetch} from "./utils/apiFetch.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {serverReason} from "./utils/refusalText.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
-import {holdsInviteLink, showNewInvite} from "./utils/inviteLink.js";
+import {holdsInviteLink, inviteUrl, showNewInvite} from "./utils/inviteLink.js";
 /** Streams an API list endpoint's JSON array of objects, handing each over as it arrives.
  * Resolves null once the whole list arrived, else the line saying why it stopped: the server's
  * refusal, listUnreadable for a 200 that isn't an array of objects, or "offline" for a load that
@@ -148,16 +148,7 @@ export async function makeInviteMenu(inviteMenu: Options, guild: Guild, url: str
 		div.onclick = () => {
 			const opt = inviteMenu.addSubOptions(invite.code);
 
-			opt.addMDText(
-				new MarkDown(
-					"https://sbar.fyi" +
-						"/i/" +
-						invite.code +
-						"?" +
-						new URLSearchParams([["instance", guild.info.wellknown]]),
-					undefined,
-				),
-			);
+			opt.addMDText(new MarkDown(inviteUrl(invite.code, guild.info.wellknown), undefined));
 
 			opt.addText(I18n.invite.used(invite.uses + (invite.max_uses ? "/" + invite.max_uses : "")));
 			if (invite.max_uses !== 0) opt.addText(I18n.invite.maxUses(invite.max_uses + ""));

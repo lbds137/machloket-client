@@ -5698,12 +5698,6 @@ class Localuser {
 			const msg = document.createElement("p");
 			msg.textContent = I18n.failedToLoadGifs();
 			errDiv.appendChild(msg);
-			const link = document.createElement("a");
-			link.href = "https://sbar.fyi/articles/tenor-migration";
-			link.target = "_blank";
-			link.rel = "noopener noreferrer";
-			link.textContent = I18n.tenorMigrationInfo();
-			errDiv.appendChild(link);
 			menu.appendChild(errDiv);
 		};
 		const fetchTrending = async (provider: string) => {
