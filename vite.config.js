@@ -129,14 +129,14 @@ function inlineScriptPages(distDir) {
 	return listFilesRecursive(distDir).filter(
 		(file) =>
 			file.endsWith(".html") &&
-			// Comments stripped first (app.html keeps some old tags commented out); an empty src
-			// counts as inline.
-			/<script\b(?![^>]*\bsrc\s*=\s*["']?[^\s"'>])[^>]*>/i.test(
-				readFileSync(file, "utf-8").replace(/<!--[\s\S]*?-->/g, ""),
-			),
+			// An empty src counts as inline. Comments are not stripped: a regex can't tell a real
+			// comment from "<!--" inside an attribute, so stripping could hide a live script. A
+			// commented-out inline script fails the build too; delete it from the page.
+			/<script\b(?![^>]*\bsrc\s*=\s*["']?[^\s"'>])[^>]*>/i.test(readFileSync(file, "utf-8")),
 	);
 }
-const TRUSTED_TYPES_MODULE = /[\\/]utils[\\/]trustedTypes\.ts$/;
+/** The policy and the one module it imports: both go in the policy's own chunk. */
+const TRUSTED_TYPES_MODULES = /[\\/]utils[\\/](trustedTypes|contentSecurityPolicy)\.ts$/;
 /** Pages whose first module script isn't the Trusted Types policy's chunk: anything that runs
  * before it meets a document that refuses every script sink. */
 function policyLastPages(distDir) {
@@ -148,11 +148,21 @@ function policyLastPages(distDir) {
 		return !first || !/^\/assets\/trustedTypes-[\w-]+\.js$/.test(first[1]);
 	});
 }
+/** Policy chunks that import anything: an imported chunk's top-level code runs before the
+ * policy's own, so being loaded first isn't enough. */
+function importingPolicyChunks(distDir) {
+	return listFilesRecursive(distDir).filter(
+		(file) =>
+			/[\\/]trustedTypes-[\w-]+\.js$/.test(file) && /\bimport\b/.test(readFileSync(file, "utf-8")),
+	);
+}
 function evalCallFiles(distDir) {
 	return listFilesRecursive(distDir).filter(
 		(file) =>
 			file.endsWith(".js") &&
 			// A bare call, or one through the global object (window.eval, globalThis.Function).
+			// Not caught here: a string to setTimeout/setInterval, or x.constructor("..."). The CSP
+			// refuses those at runtime too, and the e2e violation net reports them where it reaches.
 			/(^|[^\w$.]|\b(?:window|globalThis|self)\s*\.\s*)(eval\s*\(|(new\s+)?Function\s*\()/.test(
 				readFileSync(file, "utf-8"),
 			),
@@ -205,6 +215,12 @@ function generateBuildFiles() {
 	if (policyLast.length) {
 		throw new Error(
 			`${policyLast.join(", ")} load code before the Trusted Types policy (utils/trustedTypes.ts)`,
+		);
+	}
+	const importingPolicy = importingPolicyChunks(distDir);
+	if (importingPolicy.length) {
+		throw new Error(
+			`${importingPolicy.join(", ")} imports another chunk, whose code runs before the policy`,
 		);
 	}
 	const evalCalls = evalCallFiles(distDir);
@@ -471,7 +487,7 @@ export default defineConfig({
 				// worker's registration) met a document with no policy yet. policyLastPages
 				// refuses a build that loads it anywhere but first.
 				codeSplitting: {
-					groups: [{name: "trustedTypes", test: TRUSTED_TYPES_MODULE, priority: 100}],
+					groups: [{name: "trustedTypes", test: TRUSTED_TYPES_MODULES, priority: 100}],
 				},
 			},
 		},
