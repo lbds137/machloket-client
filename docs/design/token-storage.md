@@ -1,6 +1,6 @@
 # Token storage: the client half
 
-Status: **DRAFT**, client half of TASK-136, joint with the Machloket Server project. The server half (the contract) is a draft in the server repo, which stays private until its public release, so this doc restates every contract point the client depends on. The contract below was read from the server draft on 2026-11-24 at 16:08 EST, then updated from Server's answers and its contract PR's review changes (relayed by 2026-11-24 16:30). No client questions are open. This doc leaves DRAFT when the server contract PR merges.
+Status: **Agreed**, client half of TASK-136, joint with the Machloket Server project. The server half (the contract) is agreed and merged in the server repo, which stays private until its public release, so this doc restates every contract point the client depends on. The contract below was read from the server draft on 2026-11-24 at 16:08 EST, then updated from Server's answers and its contract PR's review changes (relayed by 2026-11-24 16:30). On 2026-11-24 this session diffed that 16:08 copy against the merged contract and added the one client-facing point it was missing (Other clears). Server's implementation units are its TASK-313, then TASK-321 to TASK-323.
 
 ## Decided
 
@@ -34,12 +34,13 @@ Status: **DRAFT**, client half of TASK-136, joint with the Machloket Server proj
 - **Migration:** `POST /auth/session-cookie`, sent with the current header token plus the opt-in and CSRF headers, moves the login into a new cookie session and answers 204. The old header token dies (answer 3).
   - **Refusals (Server, 2026-11-24 after 16:27):** 204 only when the cookie was set for this session. 403 when the opt-in, Origin or CSRF check fails, cookie mode is off, or the caller is a bot; 409 when the browser holds a valid cookie for a different user. On every refusal nothing changes: the old session and its header token stay valid, and the client keeps its header account.
 - **Logout:** a logout with no `Authorization` (the cookie account's) clears the cookie. A logout with `Authorization` (a header account on the same host) leaves the cookie alone. The auth layer clears a dead cookie on any API route, so a logout carrying only a dead cookie answers 401 with the cookie cleared: the client treats a 401 on logout as logged out. A route's own 401 never clears the cookie (answer 2).
+- **Other clears:** a cookie-authenticated "log out all sessions", removing the caller's own session from the sessions list, account disable and account delete also clear the cookie. The client needs no special handling: the account's next request gets 401, and the 401 path marks it logged out.
 - **Same user, new login:** a login by the same user while their valid cookie is present replaces the cookie and ends its old session.
 - **Sliding refresh:** a cookie-authenticated response re-sets the cookie when it was last set over 30 days ago, so the browser's roughly 400-day cap only logs out someone idle that long. No client work.
 
 ## Server's answers to the client's questions (Machloket Server, 2026-11-24 16:15)
 
-The answers will be folded into the server draft. Re-check them against it before this doc leaves DRAFT.
+These answers are in the merged server contract (checked 2026-11-24).
 
 1. **When to opt in:** the discovery route the client already fetches before login, `GET /policies/instance/domains` (`utils/utils.ts:921`), gains `"authCookie": true`. The server sends it only when cookie mode is on and the request's `Origin` is allowlisted, and leaves it out otherwise. The client opts in only when it is `true`. Stock instances never send it.
 2. **Which 401s clear the cookie:** only the auth layer rejecting the cookie credential itself. A route's own 401 (a wrong password, a rejected TOTP code, an MFA step-up refusal) never clears it.
