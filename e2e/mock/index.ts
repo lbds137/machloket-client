@@ -352,7 +352,7 @@ export const MOCK_HIDDEN_CHANNEL: channeljson = {
 	name: "staff",
 	topic: "",
 	position: 1,
-	permission_overwrites: [{id: MOCK_GUILD_ID, allow: "0", deny: "1024"}],
+	permission_overwrites: [{id: MOCK_GUILD_ID, type: 0, allow: "0", deny: "1024"}],
 };
 
 // An 18+ channel for the sensitive-content settings (S4): the mock account has

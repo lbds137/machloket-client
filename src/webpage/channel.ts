@@ -111,6 +111,8 @@ class Channel extends SnowFlake {
 	guild_id!: string;
 	permission_overwrites!: Map<string, Permissions>;
 	permission_overwritesar: [string, Permissions][] = [];
+	/** Each overwrite's type as the server sent it, so a save sends it back unchanged. */
+	overwriteTypes = new Map<string, number>();
 	topic!: string;
 	nsfw!: boolean;
 	position: number = 0;
@@ -952,13 +954,7 @@ class Channel extends SnowFlake {
 		this.children = [];
 		this.icon = json.icon;
 		this.guild_id = json.guild_id;
-		this.permission_overwrites = new Map();
-		this.permission_overwrites = new Map();
-		this.permission_overwritesar = (json.permission_overwrites ?? []).map((r) => {
-			const p = new Permissions(r.allow, r.deny);
-			this.permission_overwrites.set(r.id, p);
-			return [r.id, p];
-		});
+		this.setOverwrites(json.permission_overwrites);
 
 		this.topic = json.topic;
 		this.nsfw = json.nsfw;
@@ -2527,7 +2523,7 @@ class Channel extends SnowFlake {
 		for (const [id, perms] of this.permission_overwrites) {
 			overwrites.push({
 				id,
-				type: this.guild.roleids.has(id) ? 0 : 1,
+				type: this.overwriteType(id),
 				allow: perms.allow.toString(),
 				deny: perms.deny.toString(),
 			});
@@ -4026,12 +4022,7 @@ class Channel extends SnowFlake {
 
 		this.guild_id = json.guild_id;
 		const oldover = this.permission_overwrites;
-		this.permission_overwrites = new Map();
-		this.permission_overwritesar = (json.permission_overwrites ?? []).map((r) => {
-			const p = new Permissions(r.allow, r.deny);
-			this.permission_overwrites.set(r.id, p);
-			return [r.id, p];
-		});
+		this.setOverwrites(json.permission_overwrites);
 		const nchange = [...new Set<string>().union(oldover).difference(this.permission_overwrites)];
 		const pchange = [...new Set<string>().union(this.permission_overwrites).difference(oldover)];
 		for (const thing of nchange) {
@@ -5006,6 +4997,24 @@ class Channel extends SnowFlake {
 		}
 	}
 	voiceMode: "VoiceOnly" | "ChatAndVoice" = "VoiceOnly";
+	/** Takes the server's overwrites, keeping each one's type for the saves that send it back. */
+	private setOverwrites(list: channeljson["permission_overwrites"] | undefined) {
+		this.permission_overwrites = new Map();
+		this.overwriteTypes = new Map();
+		this.permission_overwritesar = (list ?? []).map((r) => {
+			const p = new Permissions(r.allow, r.deny);
+			this.permission_overwrites.set(r.id, p);
+			// Only the contract's types (role, member, group); anything else falls back to a guess.
+			if (r.type === 0 || r.type === 1 || r.type === 2) this.overwriteTypes.set(r.id, r.type);
+			return [r.id, p];
+		});
+	}
+	/** The type to send for `id`'s overwrite: the one the server gave it, or for a new overwrite,
+	 * a role's (0) when the guild has that role and a member's (1) otherwise. Guessing from the
+	 * cached users or the current roles alone mislabels an uncached member or a deleted role. */
+	private overwriteType(id: string): number {
+		return this.overwriteTypes.get(id) ?? (this.guild.roleids.has(id) ? 0 : 1);
+	}
 	async updateRolePermissions(id: string, perms: Permissions): Promise<boolean> {
 		// The editor keeps mutating `perms` (another role opened mid-save); keep what was sent.
 		const {allow, deny} = perms;
@@ -5016,7 +5025,7 @@ class Channel extends SnowFlake {
 				allow: allow.toString(),
 				deny: deny.toString(),
 				id,
-				type: this.localuser.userMap.get(id) ? 1 : 0,
+				type: this.overwriteType(id),
 			}),
 		}).catch(() => undefined);
 		// Refused, e.g. bits one doesn't hold (403 50013): the overwrite stays as it was.

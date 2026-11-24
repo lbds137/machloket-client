@@ -1227,7 +1227,8 @@ describe("refusal unification (C14)", () => {
 			id: "c1",
 			headers: {Authorization: "fake-token"},
 			permission_overwrites: new Map([["r1", new Permissions("1", "2")]]),
-			owner: {info: {api: API}, localuser: {userMap: new Map()}},
+			overwriteTypes: new Map([["r1", 0]]),
+			owner: {info: {api: API}},
 		}) as InstanceType<typeof Channel>;
 
 		await channel.updateRolePermissions("r1", new Permissions("8", "4"));

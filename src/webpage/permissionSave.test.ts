@@ -65,13 +65,85 @@ it("a refused channel overwrite save says so and keeps the overwrite as it was",
 		id: "c1",
 		headers: {},
 		permission_overwrites: new Map([["r1", overwrite]]),
-		owner: {info: {api: API}, localuser: {userMap: new Map()}},
+		overwriteTypes: new Map([["r1", 0]]),
+		owner: {info: {api: API}},
 	}) as InstanceType<typeof Channel>;
 
 	await channel.updateRolePermissions("r1", new Permissions("8", "4"));
 
 	expect([overwrite.allow, overwrite.deny]).toEqual([1n, 2n]);
 	expect(shown).toHaveBeenCalled();
+});
+
+it("a member's overwrite saves as a member's even when that user isn't loaded", async () => {
+	const sent = captureRequests(API + "/channels/c1/permissions/u9");
+	const channel = Object.assign(Object.create(Channel.prototype), {
+		id: "c1",
+		headers: {},
+		permission_overwrites: new Map([["u9", new Permissions("0", "0")]]),
+		// The server sent this overwrite as a member's (type 1); u9's user isn't loaded.
+		overwriteTypes: new Map([["u9", 1]]),
+		owner: {info: {api: API}, roleids: new Map()},
+	}) as InstanceType<typeof Channel>;
+
+	expect(await channel.updateRolePermissions("u9", new Permissions("1024", "0"))).toBe(true);
+
+	expect(sent).toEqual([{allow: "1024", deny: "0", id: "u9", type: 1}]);
+});
+
+it("a new overwrite saves as a role's for a role and as a member's for anyone else", async () => {
+	const toRole = captureRequests(API + "/channels/c1/permissions/r1");
+	const toMember = captureRequests(API + "/channels/c1/permissions/u9");
+	const channel = Object.assign(Object.create(Channel.prototype), {
+		id: "c1",
+		headers: {},
+		permission_overwrites: new Map(),
+		overwriteTypes: new Map(),
+		owner: {info: {api: API}, roleids: new Map([["r1", {}]])},
+	}) as InstanceType<typeof Channel>;
+
+	await channel.updateRolePermissions("r1", new Permissions("0", "0"));
+	await channel.updateRolePermissions("u9", new Permissions("0", "0"));
+
+	expect(toRole).toMatchObject([{type: 0}]);
+	expect(toMember).toMatchObject([{type: 1}]);
+});
+
+it("a channel the server sent keeps each overwrite's type for its saves", async () => {
+	const toRole = captureRequests(API + "/channels/c1/permissions/r-gone");
+	const toMember = captureRequests(API + "/channels/c1/permissions/u9");
+	// What updateChannel reads. Neither id is a current role and u9's user isn't loaded, so only
+	// the server's type tells them apart.
+	const channel = Object.assign(Object.create(Channel.prototype), {
+		id: "c1",
+		headers: {},
+		permission_overwrites: new Map(),
+		permission_overwritesar: [],
+		nameSpan: {deref: () => undefined},
+		owner: {
+			info: {api: API},
+			roleids: new Map(),
+			localuser: {channelids: new Map(), getUser: async () => undefined},
+		},
+		renderIcon: () => {},
+		slowmode: () => {},
+		fireEvents: () => {},
+	}) as InstanceType<typeof Channel>;
+
+	channel.updateChannel({
+		type: 0,
+		name: "general",
+		position: 0,
+		permission_overwrites: [
+			{id: "r-gone", type: 0, allow: "0", deny: "0"},
+			{id: "u9", type: 1, allow: "0", deny: "0"},
+		],
+	} as never);
+	await channel.updateRolePermissions("r-gone", new Permissions("1024", "0"));
+	await channel.updateRolePermissions("u9", new Permissions("1024", "0"));
+
+	expect(toRole).toMatchObject([{type: 0}]);
+	expect(toMember).toMatchObject([{type: 1}]);
 });
 
 it("opening another role while a save is in flight doesn't give the saved role its bits", async () => {
@@ -240,7 +312,9 @@ it("a channel with no overwrites: a refused second save keeps the first save's b
 		id: "c1",
 		headers: {},
 		permission_overwrites: new Map(), // no overwrites yet
-		owner: {info: {api: API}, localuser: {userMap: new Map()}},
+		overwriteTypes: new Map(),
+		// @everyone's role id is the guild's.
+		owner: {info: {api: API}, roleids: new Map([["g1", {}]])},
 	}) as InstanceType<typeof Channel>;
 	// What channel.ts's settings build for an overwrite-less channel: @everyone with a fresh pair.
 	const stored = new Permissions("0", "0");
