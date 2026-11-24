@@ -29,15 +29,20 @@ export async function showNewInvite(
 		return;
 	}
 	const json = (await res.json().catch(() => null)) as {code?: unknown; message?: unknown} | null;
-	// A refusal (no invite permission) has no code: say why, not ".../i/undefined".
+	// A refusal (no invite permission) has no code: say why, not ".../invite/undefined".
 	if (typeof json?.code !== "string") {
 		link.textContent = serverReason(json) ?? I18n.requestFailed("HTTP " + res.status);
 		return;
 	}
+	link.textContent = inviteUrl(json.code, wellknown);
+}
+
+/** An invite's link: this client's own /invite page, naming the instance it belongs to. */
+export function inviteUrl(code: string, wellknown: string): string {
 	const params = new URLSearchParams([["instance", wellknown]]);
-	link.textContent = `https://sbar.fyi/i/${json.code}?${params}`;
+	return `${location.origin}/invite/${encodeURIComponent(code)}?${params}`;
 }
 
 /** Whether `link` holds an invite link (not the reason there's none), so copying it is useful. */
 export const holdsInviteLink = (link: HTMLElement) =>
-	link.textContent?.startsWith("https://sbar.fyi/i/") ?? false;
+	link.textContent?.startsWith(location.origin + "/invite/") ?? false;

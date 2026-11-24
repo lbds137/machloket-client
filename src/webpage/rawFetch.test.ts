@@ -154,12 +154,6 @@ const ALLOWED: Allowed[] = [
 	},
 	{
 		file: "./utils/utils.ts",
-		snippet: "fetch(catalogBotsUrl)",
-		count: 1,
-		reason: "third-party bot catalog, token-less",
-	},
-	{
-		file: "./utils/utils.ts",
 		snippet: "fetch(url, {signal: controller.signal}",
 		count: 1,
 		reason: "discoveryJson follows redirects on purpose (2e task 3)",

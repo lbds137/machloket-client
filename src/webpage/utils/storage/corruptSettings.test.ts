@@ -23,7 +23,8 @@ afterEach(() => {
 describe.each(CORRUPT)("stored value %s", (stored) => {
 	it("trusted link domains read as the defaults", () => {
 		localStorage.setItem("trustedDomains", stored);
-		expect([...MarkDown.getTrusted()]).toEqual([location.host, "*.sbar.fyi"]);
+		// The defaults are the own host only: *.sbar.fyi's default trust was dropped (ruled 11-10).
+		expect([...MarkDown.getTrusted()]).toEqual([location.host]);
 	});
 });
 

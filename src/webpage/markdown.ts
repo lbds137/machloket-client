@@ -5,9 +5,13 @@ import type {Guild} from "./guild.js";
 import {I18n} from "./i18n.js";
 import {Dialog} from "./settings.js";
 import {Contextmenu} from "./contextmenu.js";
-import {normalizeInviteLink} from "./utils/inviteUtils.js";
 import {externalUrl} from "./utils/netUtils.js";
 import {readItem, saveSetting} from "./utils/storage/settingOverlay.js";
+
+// The trusted-hosts default before owner ruling 11-10 (TASK-18): the upstream short-link host.
+const OLD_SHORT_LINK_DEFAULT = "*.sbar.fyi";
+// Set by every save of the trusted list: a list saved since holds only the user's own picks.
+const SHORT_LINK_DROPPED = "trustedDomainsShortLinkDropped";
 
 const ESCAPE_CHARS = new Set("\\`{}[]()<>*_#+-.!|@");
 const BULLET_CHARS = new Set("*+- ");
@@ -679,7 +683,6 @@ class MarkDown {
 					URL.canParse(build) &&
 					ALLOWED_PROTOCOLS.has(new URL(build).protocol)
 				) {
-					build = normalizeInviteLink(build);
 					appendcurrent();
 					const a = document.createElement("a");
 					getLinkMenu().bindContextmenu(a, build);
@@ -1394,17 +1397,19 @@ class MarkDown {
 			try {
 				const parsed: unknown = JSON.parse(domains);
 				if (Array.isArray(parsed)) {
-					return new Set(parsed.filter((d): d is string => typeof d === "string"));
+					const list = parsed.filter((d): d is string => typeof d === "string");
+					// The old upstream short-link wildcard was a default every save stored (a click
+					// trusts one bare host). It drops once, from a list saved before this build; a list
+					// this build saved (the marker) holds only the user's own picks.
+					if (readItem(SHORT_LINK_DROPPED) !== null) return new Set(list);
+					return new Set(list.filter((d) => d !== OLD_SHORT_LINK_DEFAULT));
 				}
 				console.warn("trustedDomains store is not a list, using defaults");
 			} catch (error) {
 				console.warn("trustedDomains store is malformed, using defaults", error);
 			}
 		}
-		return new Set([
-			location.host,
-			"*.sbar.fyi", // invite
-		]);
+		return new Set([location.host]);
 	}
 	static isTrustedHost(host: string) {
 		// A host-less link (an older build could save "" as trusted) is never trusted.
@@ -1426,6 +1431,7 @@ class MarkDown {
 		const domains = JSON.stringify([...this.trustedDomains]);
 
 		saveSetting("trustedDomains", domains);
+		saveSetting(SHORT_LINK_DROPPED, "1");
 	}
 	/** A link click that should act: not a right click, not inside a spoiler still hidden. */
 	static isLiveClick(elm: HTMLElement, e: MouseEvent) {

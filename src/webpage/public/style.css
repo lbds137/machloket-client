@@ -5298,15 +5298,6 @@ img.bigembedimg {
 	color: var(--secondary-text-soft);
 }
 
-.explorerInfo p {
-	margin: 4px 0;
-}
-
-.explorerInfo a {
-	color: var(--link);
-	font-weight: 600;
-}
-
 .rolesbox {
 	flex-wrap: wrap;
 	gap: 2px;

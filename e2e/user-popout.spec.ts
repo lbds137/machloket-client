@@ -37,11 +37,10 @@ test.use({
 	},
 });
 
-test.beforeEach(async ({mockInstance, page}) => {
-	// mount the mock's routes; the handle stays unread
+test.beforeEach(async ({mockInstance}) => {
+	// mount the mock's routes; the handle stays unread. No third-party route: a bot popout asks
+	// no one but the instance (the harness fails any off-origin request).
 	void mockInstance;
-	// A bot popout asks sbar.fyi's bot catalog for its explorer card: an empty catalog is the answer.
-	await page.route("https://sbar.fyi/api/catalog/bots", (route) => route.fulfill({json: []}));
 });
 
 /** The avatar of the message group whose text is `text`. */

@@ -18,13 +18,7 @@ import {I18n} from "./i18n.js";
 import {Emoji} from "./emoji.js";
 import {Hover} from "./hover.js";
 import {Dialog, Float, Options} from "./settings.js";
-import {
-	createImg,
-	removeAni,
-	safeImg,
-	getExplorerBotByUsername,
-	getExplorerBotUrl,
-} from "./utils/utils.js";
+import {createImg, removeAni, safeImg} from "./utils/utils.js";
 import {Direct} from "./direct.js";
 import {Permissions} from "./permissions.js";
 import {Channel} from "./channel.js";
@@ -1330,55 +1324,6 @@ class User extends SnowFlake {
 		});
 		userbody.append(actionRow);
 	}
-	private async appendExplorerBotInfo(userbody: HTMLDivElement) {
-		if (!this.bot) return;
-		let botInfo;
-		try {
-			botInfo = await getExplorerBotByUsername(this.username);
-		} catch {
-			return;
-		}
-		if (!botInfo) return;
-
-		const explorerInfo = document.createElement("div");
-		explorerInfo.classList.add("explorerInfo");
-
-		const explorerTitle = document.createElement("h4");
-		explorerTitle.textContent = I18n.getTranslation("botExplorerTitle");
-		explorerInfo.appendChild(explorerTitle);
-
-		if (botInfo.short) {
-			const short = document.createElement("p");
-			short.textContent = botInfo.short;
-			explorerInfo.appendChild(short);
-		}
-
-		const explorerLink = document.createElement("a");
-		explorerLink.href = getExplorerBotUrl(botInfo.id);
-		explorerLink.target = "_blank";
-		explorerLink.rel = "noopener noreferrer";
-		explorerLink.textContent = I18n.getTranslation("botExplorerLink");
-		explorerInfo.appendChild(explorerLink);
-
-		if (botInfo.maintainer) {
-			const maintainer = document.createElement("p");
-			const maintainerUrl = botInfo.maintainer_link ? externalUrl(botInfo.maintainer_link) : null;
-			if (maintainerUrl) {
-				const maintainerLink = document.createElement("a");
-				maintainerLink.href = maintainerUrl.href;
-				maintainerLink.target = "_blank";
-				maintainerLink.rel = "noopener noreferrer";
-				maintainerLink.textContent = botInfo.maintainer;
-				maintainer.append(I18n.getTranslation("botExplorerMaintainer", "") + " ");
-				maintainer.appendChild(maintainerLink);
-			} else {
-				maintainer.textContent = I18n.getTranslation("botExplorerMaintainer", botInfo.maintainer);
-			}
-			explorerInfo.appendChild(maintainer);
-		}
-
-		userbody.appendChild(explorerInfo);
-	}
 	private appendWebhookBotInfo(userbody: HTMLDivElement) {
 		if (!this.webhook?.application_id) return;
 		this.localuser.getUser(this.webhook.application_id).then((user) => {
@@ -1824,7 +1769,6 @@ class User extends SnowFlake {
 		pronounshtml.classList.add("pronouns");
 		userbody.appendChild(pronounshtml);
 
-		this.appendExplorerBotInfo(userbody);
 		this.appendWebhookBotInfo(userbody);
 		this.addBotConfigButton(userbody, () => removeAni(background));
 
@@ -2248,7 +2192,6 @@ class User extends SnowFlake {
 		pronounshtml.classList.add("pronouns");
 		userbody.appendChild(pronounshtml);
 
-		this.appendExplorerBotInfo(userbody);
 		this.appendWebhookBotInfo(userbody);
 		this.addBotConfigButton(userbody, () => removeAni(div));
 
