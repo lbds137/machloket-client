@@ -4,7 +4,7 @@ title: 'Token storage design: httpOnly session cookie vs header tokens'
 status: To Do
 assignee: []
 created_date: '2026-11-24T18:11:00Z'
-updated_date: '2026-11-24T18:25:00Z'
+updated_date: '2026-11-24T21:55:00Z'
 labels:
   - security-hardening
   - design
@@ -24,4 +24,6 @@ Design task, joint with Machloket Server; Lila's call (via Deck 11-24). Account 
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-24 Product decision (Lila, relayed by Deck at 13:24; decision-9): ours first, others best-effort. Design target: same-site cookie login on our own deployment; header tokens stay for other instances and bots; picker and discovery stay; no new stock-Spacebar workarounds.
+
+2026-11-24: design agreed with Machloket Server. Client half: docs/design/token-storage.md (PR #211, plus the review follow-up). Server contract merged (server PR #280); server units are its TASK-313, then 321-323. Client implementation sequence is in the doc: unit 1 (one account-keyed request path + 401 handling) and unit 2 (TASK-145) need no server work; units 3-5 wait on the server units. TASK-147 (gateway 4004) can land on its own.
 <!-- SECTION:NOTES:END -->
