@@ -313,9 +313,20 @@ export function renderCommandPanel(
 	switchTab(0);
 }
 
-function clockIcon(): HTMLElement {
+export function clockIcon(): HTMLElement {
+	// Built with DOM calls: the Trusted Types policy refuses markup strings (utils/trustedTypes.ts).
+	const svgElement = (tag: string, attributes: Record<string, string>) => {
+		const element = document.createElementNS("http://www.w3.org/2000/svg", tag);
+		for (const [name, value] of Object.entries(attributes)) element.setAttribute(name, value);
+		return element;
+	};
+	const stroke = {fill: "none", stroke: "currentColor", "stroke-width": "2"};
+	const svg = svgElement("svg", {viewBox: "0 0 24 24", width: "24", height: "24"});
+	svg.append(
+		svgElement("circle", {cx: "12", cy: "12", r: "9", ...stroke}),
+		svgElement("path", {d: "M12 7v5l3 2", ...stroke, "stroke-linecap": "round"}),
+	);
 	const span = document.createElement("span");
-	span.innerHTML =
-		'<svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+	span.append(svg);
 	return span;
 }

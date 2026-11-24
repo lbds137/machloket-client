@@ -1,3 +1,5 @@
+// First: the Trusted Types default policy must exist before any module writes to a sink.
+import "./utils/trustedTypes.js";
 import {Localuser} from "./localuser.js";
 import {Contextmenu} from "./contextmenu.js";
 import {bootAccountId, getViewportHeight, mobile, Specialuser} from "./utils/utils.js";

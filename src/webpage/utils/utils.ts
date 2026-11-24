@@ -549,7 +549,9 @@ class Directory {
 	}
 	initWorker() {
 		if (this.writeWorker) return this.writeWorker;
-		this.writeWorker = new Worker("/utils/dirrWorker.js");
+		// This exact form is what Vite recognises and bundles; the build never shipped the
+		// literal /utils/dirrWorker.js path this used to name.
+		this.writeWorker = new Worker(new URL("./dirrWorker.ts", import.meta.url));
 		this.writeWorker.onmessage = (event) => {
 			const res = this.wMap.get(event.data[0]);
 			this.wMap.delete(event.data[0]);

@@ -14,3 +14,10 @@ declare const __BUILD_REVISION__: string;
 /** Where this build's source is published, at the build's revision (vite.config.js, from
  * utils/sourceOffer.ts); Client information links it. */
 declare const __SOURCE_URL__: string;
+
+/** Vite bundles the module (with its imports) as its own script and returns that file's URL:
+ * how a worklet is shipped as code the Content-Security-Policy's script-src 'self' allows. */
+declare module "*?worker&url" {
+	const url: string;
+	export default url;
+}

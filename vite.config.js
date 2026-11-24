@@ -14,6 +14,10 @@ import {execSync} from "child_process";
 import {mergeInstanceLists} from "./src/webpage/utils/instanceOverlay.ts";
 import {sourceUrl} from "./src/webpage/utils/sourceOffer.ts";
 import {printTestTree} from "./e2e/testTree.ts";
+import {
+	CONTENT_SECURITY_POLICY,
+	pagesHeadersFile,
+} from "./src/webpage/utils/contentSecurityPolicy.ts";
 
 // Dev and build load this config too, and neither is a test run.
 if (process.env.VITEST) printTestTree("vitest");
@@ -93,11 +97,12 @@ function listFilesRecursive(dir) {
 	return files;
 }
 
-// Is is really meh meh but yk yk
+// The unhashed stylesheets get the build's version as a query, so a new build's pages never pair
+// with a cached old sheet. (An inline script used to re-apply the same query at runtime; it never
+// changed a link the rewrite below had already versioned, and the CSP refuses inline script.)
 function patchStylesheetCacheBusting(distDir, version) {
 	const cacheVersion = version.slice(0, 12);
 	const versionedStylesheets = new Set(["/style.css", "/themes.css"]);
-	const bustScript = `<script>(function(){var v="${cacheVersion}";document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){var h=l.getAttribute("href");if(!h) return;var u=new URL(h,location.href);if(!["/style.css","/themes.css"].includes(u.pathname))return;if(u.searchParams.get("v")===v)return;u.searchParams.set("v",v);l.setAttribute("href",u.pathname+u.search);});})();</script>`;
 	for (const file of listFilesRecursive(distDir)) {
 		if (!file.endsWith(".html")) continue;
 		let html = readFileSync(file, "utf-8");
@@ -113,18 +118,45 @@ function patchStylesheetCacheBusting(distDir, version) {
 			changed = true;
 			return `href="${pathname}?v=${cacheVersion}"`;
 		});
-		if (!html.includes("machloketStylesheetBust")) {
-			const patched = html.replace(
-				/(<link href="\/(?:style|themes)\.css[^"]*" rel="stylesheet"[^>]*>)/,
-				`${bustScript}<!--machloketStylesheetBust-->\n$1`,
-			);
-			if (patched !== html) {
-				html = patched;
-				changed = true;
-			}
-		}
 		if (changed) writeFileSync(file, html);
 	}
+}
+
+/** Refuses a build the Content-Security-Policy would break at runtime: an inline <script> in a
+ * page (script-src has no 'unsafe-inline') or an eval-like call in the emitted code (no
+ * 'unsafe-eval'). Each returns the offending files, so the error names them. */
+function inlineScriptPages(distDir) {
+	return listFilesRecursive(distDir).filter(
+		(file) =>
+			file.endsWith(".html") &&
+			// Comments stripped first (app.html keeps some old tags commented out); an empty src
+			// counts as inline.
+			/<script\b(?![^>]*\bsrc\s*=\s*["']?[^\s"'>])[^>]*>/i.test(
+				readFileSync(file, "utf-8").replace(/<!--[\s\S]*?-->/g, ""),
+			),
+	);
+}
+const TRUSTED_TYPES_MODULE = /[\\/]utils[\\/]trustedTypes\.ts$/;
+/** Pages whose first module script isn't the Trusted Types policy's chunk: anything that runs
+ * before it meets a document that refuses every script sink. */
+function policyLastPages(distDir) {
+	return listFilesRecursive(distDir).filter((file) => {
+		if (!file.endsWith(".html")) return false;
+		const first = /<script\b[^>]*\btype="module"[^>]*\bsrc="([^"]+)"/i.exec(
+			readFileSync(file, "utf-8"),
+		);
+		return !first || !/^\/assets\/trustedTypes-[\w-]+\.js$/.test(first[1]);
+	});
+}
+function evalCallFiles(distDir) {
+	return listFilesRecursive(distDir).filter(
+		(file) =>
+			file.endsWith(".js") &&
+			// A bare call, or one through the global object (window.eval, globalThis.Function).
+			/(^|[^\w$.]|\b(?:window|globalThis|self)\s*\.\s*)(eval\s*\(|(new\s+)?Function\s*\()/.test(
+				readFileSync(file, "utf-8"),
+			),
+	);
 }
 
 function generateBuildFiles() {
@@ -142,6 +174,8 @@ function generateBuildFiles() {
 /invite/* /invite 200
 /template/* /template 200`,
 	);
+	// The Content-Security-Policy, from the same source the preview server sends it from.
+	writeFileSync(resolve(distDir, "_headers"), pagesHeadersFile());
 
 	const legacyRuntimeFiles = ["emoji.bin", "manifest.json"];
 	for (const file of legacyRuntimeFiles) {
@@ -163,9 +197,27 @@ function generateBuildFiles() {
 		}
 	}
 
+	const inlineScripts = inlineScriptPages(distDir);
+	if (inlineScripts.length) {
+		throw new Error(`Inline <script> in ${inlineScripts.join(", ")}: the CSP refuses it`);
+	}
+	const policyLast = policyLastPages(distDir);
+	if (policyLast.length) {
+		throw new Error(
+			`${policyLast.join(", ")} load code before the Trusted Types policy (utils/trustedTypes.ts)`,
+		);
+	}
+	const evalCalls = evalCallFiles(distDir);
+	if (evalCalls.length) {
+		throw new Error(`eval or Function() in ${evalCalls.join(", ")}: the CSP refuses it`);
+	}
+
 	// The service worker precaches every file listed here on each update (service.ts,
-	// downloadAllFiles). Written last so it lists the files above too.
+	// downloadAllFiles). Written last so it lists the files above too. The host's own config
+	// files aren't app files (Pages doesn't serve them).
 	const files = fileTree(distDir);
+	delete files["_headers"];
+	delete files["_redirects"];
 	files["files.json"] = "files.json";
 	writeFileSync(resolve(distDir, "files.json"), JSON.stringify(files));
 
@@ -413,6 +465,14 @@ export default defineConfig({
 				// identity (utils.ts, SW.register) and its scope is the directory it's served from.
 				entryFileNames: (chunk) =>
 					chunk.name === "service" ? "service.js" : "assets/[name]-[hash].js",
+				// The Trusted Types default policy gets a chunk of its own, which each page loads
+				// first. Left to the bundler it is inlined into the entry chunk, whose body runs
+				// after the shared chunks it imports, so their top-level code (the service
+				// worker's registration) met a document with no policy yet. policyLastPages
+				// refuses a build that loads it anywhere but first.
+				codeSplitting: {
+					groups: [{name: "trustedTypes", test: TRUSTED_TYPES_MODULE, priority: 100}],
+				},
 			},
 		},
 	},
@@ -437,6 +497,8 @@ export default defineConfig({
 		port: 8081,
 		host: true,
 		allowedHosts,
+		// The deployed policy (the build's _headers file), so the e2e tier runs under it.
+		headers: {"Content-Security-Policy": CONTENT_SECURITY_POLICY},
 	},
 
 	appType: "spa",

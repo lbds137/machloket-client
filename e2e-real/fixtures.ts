@@ -1,6 +1,7 @@
 import {execFileSync} from "node:child_process";
 import {createHmac, randomBytes} from "node:crypto";
 import {test as base, expect, type BrowserContext, type Page} from "@playwright/test";
+import {CSP_VIOLATIONS, type CspViolation, watchCspViolations} from "../e2e/cspNet";
 
 const INSTANCE_NAME = "Throwaway";
 
@@ -341,6 +342,8 @@ const ESCAPED = "requests that left the preview server and the instance";
  */
 export const test = base.extend<{
 	network: void;
+	/** What the page broke of the deployed Content-Security-Policy; must end empty. */
+	cspViolations: CspViolation[];
 	gatewaySockets: string[];
 	/** Opens one more desktop browser context (its own storage, so its own login), guarded like
 	 * the first; they close after the test. */
@@ -353,6 +356,7 @@ export const test = base.extend<{
 	},
 	extraPage: async ({browser, baseURL}, use) => {
 		const guards: string[][] = [];
+		const violations: CspViolation[][] = [];
 		const contexts: BrowserContext[] = [];
 		await use(async () => {
 			const context = await browser.newContext({
@@ -364,13 +368,24 @@ export const test = base.extend<{
 			});
 			contexts.push(context);
 			guards.push(await guardContext(context, baseURL!));
+			violations.push(await watchCspViolations(context));
 			return context.newPage();
 		});
 		// Judged first: a context that fails to close mustn't hide an escaped request.
 		const escaped = guards.flat();
+		const broken = violations.flat();
 		for (const context of contexts) await context.close().catch(() => {});
 		expect(escaped, ESCAPED).toEqual([]);
+		expect(broken, CSP_VIOLATIONS).toEqual([]);
 	},
+	cspViolations: [
+		async ({context}, use) => {
+			const violations = await watchCspViolations(context);
+			await use(violations);
+			expect(violations, CSP_VIOLATIONS).toEqual([]);
+		},
+		{auto: true},
+	],
 	network: [
 		async ({context, baseURL}, use) => {
 			const escaped = await guardContext(context, baseURL!);
