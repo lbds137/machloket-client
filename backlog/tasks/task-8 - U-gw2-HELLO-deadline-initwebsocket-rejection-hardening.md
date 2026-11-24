@@ -4,11 +4,11 @@ title: 'U-gw2: HELLO deadline + initwebsocket rejection hardening'
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:20:00Z'
-updated_date: '2026-11-20T02:37:00Z'
+updated_date: '2026-11-24T13:26:00Z'
 labels:
   - gateway
 dependencies: []
-priority: medium
+priority: high
 ordinal: 80
 ---
 
@@ -20,3 +20,9 @@ From gateway review 2:
 - G2 MED: no deadline between socket creation and HELLO — the watchdog arms only at op 10, so a never-arriving HELLO strands the splash (localuser.ts:634 comment overstates). Fix: one-shot HELLO deadline (~30s) -> socketClosed(ws, 4000), cleared at op 10.
 - G6 LOW/MED: initwebsocket rejections unhandled (localuser.ts:778/:847 .then without catch); new WebSocket throws on a malformed gateway/resume URL; a bare DecompressionStream identifier throws where absent — try/catch to the socketClosed path, typeof guard.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Promoted to high 2026-11-24 (Lila via Deck: finish highs, then park): verified on main, the gateway watchdog arms only at op 10 (src/webpage/localuser.ts:1511), so a HELLO that never arrives leaves the splash up forever with no recovery.
+<!-- SECTION:NOTES:END -->

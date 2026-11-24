@@ -4,7 +4,7 @@ title: Role/permission save riders
 status: To Do
 assignee: []
 created_date: '2026-11-19T22:21:00Z'
-updated_date: '2026-11-20T02:38:00Z'
+updated_date: '2026-11-24T13:26:00Z'
 labels:
   - deferred
 dependencies: []
@@ -21,3 +21,9 @@ ordinal: 850
 (d) guild.ts ~460 role-members list: Promise.all over Member.new — one refused member rejects the whole list.
 Trigger: next permissions/role UI touch.
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+2026-11-24 triage: (a) is shipped - syncPermsToChildren reports the first refusal via showRefusal (src/webpage/channel.ts:2547). (b)-(d) not re-checked.
+<!-- SECTION:NOTES:END -->
