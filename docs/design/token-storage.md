@@ -19,6 +19,7 @@ Status: **DRAFT**, client half of TASK-136, joint with the Machloket Server proj
 ## The contract the client depends on (server draft, restated)
 
 - **When cookie mode exists:** only on a deployment where the client origin and the API share one site (`machloket.chat` and a subdomain of it), with the API and gateway on one host, and with the client's exact origin on the server's allowlist. Everywhere else, everything stays header tokens.
+- **How the client knows:** the pre-auth discovery answer carries `"authCookie": true` (answer 1 below).
 - **Opting in:** a login-type request (login, register, the MFA steps of login) asks for a cookie with the header `X-Machloket-Auth: cookie`. That request also carries `X-Machloket-CSRF: 1`.
   - **Honoured:** the server sets an httpOnly, `Secure`, `SameSite=Strict`, host-only cookie on the API host. The body has no `token` and has `"auth_mode": "cookie"`.
   - **Ignored:** the server ignores the opt-in when cookie mode is off, when the origin is not allowlisted, or when the browser already holds a valid cookie for a different user. The body then has a `token` exactly as today.
@@ -28,24 +29,22 @@ Status: **DRAFT**, client half of TASK-136, joint with the Machloket Server proj
   - Every cookie-authenticated request other than GET, HEAD or OPTIONS needs `X-Machloket-CSRF: 1` and an allowlisted `Origin`. Without both, the server answers 403.
 - **Rotations:** a rotation on a cookie session answers with a fresh cookie and no body token. The rotations are TOTP enable and disable, a password change, and the gateway's token refresh.
 - **Gateway:** Identify (op 2) and Resume (op 6) may leave `d.token` empty or absent. The WebSocket upgrade's cookie then authenticates. READY carries no `auth_token` for a cookie session.
-- **Migration:** `POST /auth/session-cookie`, sent with the current header token plus the opt-in and CSRF headers, converts that same session to a cookie and answers 204.
-- **Logout:** logout clears the cookie. A 401 on a cookie-authenticated request also clears it.
+- **Migration:** `POST /auth/session-cookie`, sent with the current header token plus the opt-in and CSRF headers, moves the login into a new cookie session and answers 204. The old header token dies (answer 3).
+- **Logout:** logout clears the cookie, also when sent by cookie alone. A 401 from the auth layer on a cookie-authenticated request also clears it; a route's own 401 does not (answer 2).
 
-## Open questions for Server (they block leaving DRAFT, not drafting)
+## Server's answers to the client's questions (Machloket Server, 2026-11-24 16:15)
 
-1. **When to opt in.** The client cannot read an httpOnly cookie, and sending a custom header to a stock instance's login adds a preflight that may fail.
-   - **Ask:** a pre-auth signal that cookie mode is on for this origin. For example, an `auth_cookie: true` field in a discovery response the client already fetches before login.
-   - **Fallback** if Server declines: opt in only when the API host is the client's own host or a subdomain of it. That is a weaker test.
-2. **Which 401s clear the cookie.** Some routes answer a bare 401 for a wrong password or a rejected TOTP code (the client's 401 handler already guards against this: see `isPreAuthEndpoint` and `tokenIsDead` in `utils/apiFetch.ts`). Does the clear fire only when the auth middleware rejects the credential? Otherwise a typo logs the user out.
-3. **A stale header token after migration or rotation.** A second tab, or a failed storage write, may still send the old header token. Because a bad header never falls back to the cookie, that request gets 401.
-   - Does the migrated session's JWT stay valid as a header token? The contract says the same session is converted in place, which suggests it does.
-   - On a rotation, does the old token die?
-4. **Migration idempotency.** Does a second `POST /auth/session-cookie` on an already-converted session answer 204 again?
-5. **A failed logout.** If logout never reaches the server, the client removes the account locally, but the httpOnly cookie stays and still authenticates.
-   - The client plans to retry the logout at the next start, by cookie alone (see Logout below).
-   - Does `POST /auth/logout` with no `Authorization` log out the cookie session?
-6. **CORS for the new headers.** Does the preflight answer allow `X-Machloket-Auth` and `X-Machloket-CSRF`, and with what `Access-Control-Max-Age`?
-7. **`resume_gateway_url`.** The client resumes on the URL READY gives it (`localuser.ts:649`). In cookie mode, that must be the API's host, or the cookie never reaches the resume upgrade.
+The answers will be folded into the server draft. Re-check them against it before this doc leaves DRAFT.
+
+1. **When to opt in:** the discovery route the client already fetches before login, `GET /policies/instance/domains` (`utils/utils.ts:921`), gains `"authCookie": true`. The server sends it only when cookie mode is on and the request's `Origin` is allowlisted, and leaves it out otherwise. The client opts in only when it is `true`. Stock instances never send it.
+2. **Which 401s clear the cookie:** only the auth layer rejecting the cookie credential itself. A route's own 401 (a wrong password, a rejected TOTP code, an MFA step-up refusal) never clears it.
+3. **A stale header token:**
+   - **Migration rotates.** `POST /auth/session-cookie` mints a new session into the cookie and removes the old one, so the old header token dies. Any tab or stored record still holding it gets 401.
+   - **Rotations on a cookie session** (TOTP enable or disable) replace the caller's own session, so only the new cookie stays valid. A password change already ends every other session.
+4. **Migration repeated:** a call authenticated by the cookie, with no `Authorization`, answers 204 and changes nothing. A call with the dead header token answers 401.
+5. **Logout by cookie:** `POST /auth/logout` with no `Authorization`, authenticated by the cookie, with the CSRF header and an allowlisted Origin, ends that session and clears the cookie. A retry at the next start works.
+6. **CORS:** the preflight allows both custom headers, and allowlisted origins get credentials. `Access-Control-Max-Age` is 60 s.
+7. **`resume_gateway_url`:** the client resumes on it (`localuser.ts:649`). Under the one-host precondition the contract requires it to be the API host; a deployment where it is not has cookie mode off.
 
 ## The client today (main `e6330c6b`, read 2026-11-24)
 
@@ -113,14 +112,14 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 ### Login, register and the MFA steps of login
 
-- **When the client opts in:** only when the instance signals cookie mode (Open question 1) and no cookie account exists on that host.
+- **When the client opts in:** only when the instance's discovery answer has `"authCookie": true` and no cookie account exists on that host.
 - **Response handling:** the login handler branches on `auth_mode`. It stores a cookie account, or a header account exactly as today.
 - **Reset and email verify:** these send no opt-in, because the client does not consume their token.
 
 ### Rotations
 
 - **Cookie account:** a rotation needs nothing from the client; the server re-sets the cookie.
-- **Header account:** the client starts storing the rotated token from TOTP enable and disable and from a password change. Today it drops them (see Found work).
+- **Header account:** today the client drops the rotated token from TOTP enable and disable and from a password change. Whether it should store it is TASK-145 (see Found work).
 - **The rule in every handler:** never write an absent `token` over a stored one.
 
 ### Gateway
@@ -133,6 +132,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 - **Keyed by account:** `handleUnauthorized` and `invalidateAccount` are keyed by account (`uid`), not by token.
 - **The cookie account's probe:** `GET /users/@me` with credentials and no `Authorization`. The existing guards stay: the pre-auth exemption, verifying before invalidating, and a single page-wide latch.
+- **A header account whose token died by migration:** before marking a header account on a cookie-mode host logged out, the client also probes by cookie. If that answers 200 for the same user id, the account was migrated (by another tab, or by a save that was refused), and the client converts the record to a cookie account instead of logging it out.
 
 ### Migrating existing sessions
 
@@ -140,15 +140,14 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 - **The steps:**
   1. `POST /auth/session-cookie`.
   2. On 204, set `auth_mode`, remove `token`, and save through the existing `tryUpdateLocal` path (its refusal semantics are pinned in `utils/accountSave.test.ts`).
-- **A refused save:** the old token stays stored, and the next start migrates again. That depends on Open questions 3 and 4.
-- **Other tabs:**
-  - Other tabs read the record from storage and switch at their next request build.
-  - Until then, a tab that still sends the old header token depends on Open question 3.
+- **A refused save:** the stored record keeps the now-dead token, while the in-memory overlay holds the converted record for this session. At the next start, the dead token's 401 runs the cookie probe above, which converts the record.
+- **Other tabs:** they read the record from storage and switch at their next request build. A request sent before that with the old token gets 401, and the cookie probe converts the record instead of logging the account out.
+- **A repeated migration** by cookie is a no-op 204 (answer 4), so a retry is safe.
 
 ### Logout and removing an account
 
 - **Cookie account logout:** logout of a cookie account sends credentials and the CSRF header.
-- **A failed logout:** if the logout fails and the user removes the account anyway, the client records a pending logout for that API host. It retries `POST /auth/logout` by cookie at the next start (Open question 5), so a removed account's cookie does not linger.
+- **A failed logout:** if the logout fails and the user removes the account anyway, the client records a pending logout for that API host. It retries `POST /auth/logout` by cookie at the next start (answer 5), so a removed account's cookie does not linger.
 
 ### When the record and the cookie disagree
 
@@ -165,7 +164,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 
 ## Found work (TASK-145, TASK-146)
 
-- **Rotated tokens are dropped:** TOTP enable and disable and the password change ignore the token they return. If the server invalidates the old token on those rotations, the account is logged out at its next 401. This is from reading the code; no run has confirmed it, and the real-server tier can.
+- **Rotated tokens are dropped:** TOTP enable and disable and the password change ignore the token they return. Per Server (answer 3, from its code), the caller's old session stays valid on all three, so the account is not logged out. The cost is an unused live session left on the server per TOTP rotation. Neither claim has been confirmed by a run; the real-server tier can.
 - **Bot tokens are stored in clear text:** they are stored in `perminfo.applications` in localStorage. decision-9 keeps bots on header tokens, but whether they must be persisted is separate.
 
 ## Tests
@@ -176,6 +175,7 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
   - the 401 path for a cookie account;
   - both login response shapes;
   - migration: 204, a refused save, and a non-204;
+  - a header account's 401 whose cookie probe answers 200 converts the record instead of logging out;
   - no handler writes an absent token.
 - **Mock e2e:**
   - the opt-in and CSRF headers on login;
@@ -190,8 +190,8 @@ The global wrapper sends credentials to every known API host. Once a cookie exis
 ## Sequence
 
 1. **The account-keyed request path and 401 handling.** A refactor with no behaviour change. It can land before any server work.
-2. **Storing rotated tokens for header accounts** (Found work).
-3. **Cookie login and register,** after the server's issuance, CSRF and CORS tasks and an answer to Open question 1.
+2. **TASK-145, rotated tokens for header accounts:** confirm the behaviour on the real-server tier, then decide.
+3. **Cookie login and register,** after the server's issuance, CSRF and CORS tasks and its `authCookie` discovery field.
 4. **Token-less gateway,** after the server's gateway task.
 5. **Migration and pending logout,** after `POST /auth/session-cookie`.
 6. **The real-server specs.**
