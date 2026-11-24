@@ -1,9 +1,10 @@
 ---
 id: TASK-135
 title: Strict CSP + Trusted Types via a Pages _headers file
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-24T18:11:00Z'
+updated_date: '2026-11-24T20:45:00Z'
 labels:
   - security-hardening
   - deploy
