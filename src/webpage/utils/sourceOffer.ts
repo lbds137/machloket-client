@@ -16,21 +16,31 @@ export function sourceUrl(repo: string | undefined, revision: string): string {
 	if (/[\s()[\]<>]/.test(base) || !URL.canParse(base)) {
 		throw new Error(`MACHLOKET_SOURCE_URL must be a web address, got: ${base}`);
 	}
-	const {protocol} = new URL(base);
+	const {protocol, search, hash} = new URL(base);
 	if (protocol !== "https:" && protocol !== "http:") {
 		throw new Error(`MACHLOKET_SOURCE_URL must be an http(s) address, got: ${base}`);
 	}
+	// "/tree/<revision>" is appended to it, so it ends at its path.
+	if (search || hash || /[?#]/.test(base)) {
+		throw new Error(`MACHLOKET_SOURCE_URL must be a repository address, no ? or #: ${base}`);
+	}
 	const rev = revision.trim();
-	if (!rev || rev === "dev") return base;
-	return `${base}/tree/${encodeURIComponent(rev)}`;
+	// "." and ".." name no revision: as a path segment they would climb out of /tree/.
+	if (!rev || rev === "dev" || rev === "." || rev === "..") return base;
+	const segment = encodeURIComponent(rev).replace(
+		/[()]/g,
+		(c) => "%" + c.charCodeAt(0).toString(16).toUpperCase(),
+	);
+	return `${base}/tree/${segment}`;
 }
 
 /** The credit line, with the source link as a plain anchor: the app's Markdown gives a link to
  * an untrusted host no href, and this offer must always open. `line` is the translated text,
- * given what to put where the link goes. */
+ * given what to put where the link goes. The first placeholder becomes the link and any later
+ * one the address as text; a translation that drops it still gets the link, after its text. */
 export function creditLine(line: (link: string) => string, url: string): HTMLParagraphElement {
 	const marker = String.fromCharCode(1);
-	const [before, after = ""] = line(marker).split(marker);
+	const [before, ...rest] = line(marker).split(marker);
 	const a = document.createElement("a");
 	a.href = url;
 	a.textContent = url;
@@ -38,6 +48,7 @@ export function creditLine(line: (link: string) => string, url: string): HTMLPar
 	a.rel = "noreferrer";
 	const p = document.createElement("p");
 	p.className = "sourceOffer";
-	p.append(before, a, after);
+	if (rest.length === 0) p.append(before, " ", a);
+	else p.append(before, a, rest.join(url));
 	return p;
 }
