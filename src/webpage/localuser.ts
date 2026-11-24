@@ -126,6 +126,8 @@ type inboxEntry = {
 	isDm: boolean;
 };
 const wsCodesRetry = new Set([4000, 4001, 4002, 4003, 4005, 4007, 4008, 4009]);
+/** How long a new socket may go without HELLO (op 10) before it is closed and replaced. */
+const HELLO_TIMEOUT_MS = 30_000;
 // How long a join waits for its GUILD_CREATE before a late one no longer opens the guild: the
 // window the removed discovery poll used.
 const JOIN_ARRIVAL_WINDOW_MS = 15_000;
@@ -251,18 +253,21 @@ class Localuser {
 		sessionStorage.setItem("currentuser", specialUser.uid);
 		saveAccounts(JSON.stringify(Localuser.users));
 
-		thisUser.initwebsocket().then(async () => {
-			const loaddesc = document.getElementById("load-desc") as HTMLElement;
-			try {
-				thisUser.loaduser();
-				loaddesc.textContent = I18n.loaded();
-				loading.classList.add("doneloading");
-				loading.classList.remove("loading");
-				await thisUser.init();
-			} catch (e) {
-				console.error(e);
-			}
-		});
+		thisUser
+			.initwebsocket()
+			.then(async () => {
+				const loaddesc = document.getElementById("load-desc") as HTMLElement;
+				try {
+					thisUser.loaduser();
+					loaddesc.textContent = I18n.loaded();
+					loading.classList.add("doneloading");
+					loading.classList.remove("loading");
+					await thisUser.init();
+				} catch (e) {
+					console.error(e);
+				}
+			})
+			.catch((e) => console.error(e));
 
 		onswap?.(thisUser);
 	}
@@ -634,20 +639,41 @@ class Localuser {
 			this.idToPrev.clear();
 			this.idToNext.clear();
 		}
-		const doComp = DecompressionStream && !getDeveloperSettings().gatewayCompression;
-		const ws = new WebSocket(
-			(resume ? this.resume_gateway_url : this.serverurls.gateway.toString()) +
-				"?encoding=json&v=9" +
-				(doComp ? "&compress=zlib-stream" : ""),
-		);
+		// A browser without DecompressionStream has no such global; a bare read would throw.
+		const hasDS = typeof DecompressionStream !== "undefined";
+		const doComp = hasDS && !getDeveloperSettings().gatewayCompression;
+		let ws: WebSocket;
+		try {
+			ws = new WebSocket(
+				(resume ? this.resume_gateway_url : this.serverurls.gateway.toString()) +
+					"?encoding=json&v=9" +
+					(doComp ? "&compress=zlib-stream" : ""),
+			);
+		} catch (e) {
+			// A URL the browser refuses (SyntaxError) is a failed connect: the reconnect path
+			// owns it. This call never resolves, like one whose socket drops before READY.
+			console.error(e);
+			void this.socketClosed(undefined, 1006);
+			await new Promise<never>(() => {});
+			return;
+		}
 		this.ws = ws;
 		// A fresh socket starts its silence clock at birth, before its HELLO arrives.
 		this.lastFrameAt = Date.now();
+		// A socket that opens (or hangs) but never sends HELLO arms no watchdog; this deadline
+		// replaces it. op 10 clears it (stopHeartbeat) only when it is the live socket's.
+		if (this.helloTimer) clearTimeout(this.helloTimer);
+		this.helloTimer = setTimeout(() => {
+			this.helloTimer = undefined;
+			if (this.ws !== ws) return;
+			ws.close(4000);
+			void this.socketClosed(ws, 4000); // reconnect now; the close guard ignores the late event
+		}, HELLO_TIMEOUT_MS);
 		let ds: DecompressionStream;
 		let w: WritableStreamDefaultWriter;
 		let arr: Uint8Array;
 
-		if (DecompressionStream) {
+		if (hasDS) {
 			ds = new DecompressionStream("deflate");
 			w = ds.writable.getWriter();
 			this.deflateWriters.set(ws, w);
@@ -685,7 +711,7 @@ class Localuser {
 									release_channel: "Custom",
 									browser_user_agent: navigator.userAgent,
 								},
-								compress: Boolean(DecompressionStream),
+								compress: hasDS,
 								presence: {
 									status: this.identifiedStatus,
 									since: null, //new Date().getTime()
@@ -699,7 +725,7 @@ class Localuser {
 				}
 			});
 
-			if (DecompressionStream) {
+			if (hasDS) {
 				(async () => {
 					let build = "";
 					for await (const data of ds.readable.pipeThrough(new TextDecoderStream())) {
@@ -780,22 +806,25 @@ class Localuser {
 	/** Everything a closing socket tears down and reconnects from. The close listener reaches
 	 * it only for the live socket (the identity guard above); the watchdog calls it directly
 	 * so the reconnect doesn't wait for the browser's close handshake on a half-open socket. */
-	async socketClosed(ws: WebSocket, code: number) {
+	async socketClosed(ws: WebSocket | undefined, code: number) {
 		this.ws = undefined;
 		this.stopHeartbeat();
 		console.log("WebSocket closed with code " + code);
 		this.abandonMemberRequests();
 		// Closing a deflate stream whose input was truncated (a socket that died mid-frame
 		// among them) throws; the writer is dropped either way.
-		try {
-			this.deflateWriters
-				.get(ws)
-				?.close()
-				.catch(() => {});
-		} catch {
-			// already gone
+		// A socket the browser refused to construct (ws undefined) never had a writer.
+		if (ws) {
+			try {
+				this.deflateWriters
+					.get(ws)
+					?.close()
+					.catch(() => {});
+			} catch {
+				// already gone
+			}
+			this.deflateWriters.delete(ws);
 		}
-		this.deflateWriters.delete(ws);
 		// An account switched away from: the screen belongs to the new account now.
 		if (this.swapped) return;
 		// 1000 comes from the server only (this client closes with 40xx): it follows op 7.
@@ -809,10 +838,12 @@ class Localuser {
 			// first connect this is the only build: the startup chain waits on the dropped
 			// socket forever.
 			const identifies = !this.resume_gateway_url || !this.session_id;
-			this.initwebsocket(true).then(async () => {
-				this.loaduser();
-				if (identifies) await this.init();
-			});
+			this.initwebsocket(true)
+				.then(async () => {
+					this.loaduser();
+					if (identifies) await this.init();
+				})
+				.catch((e) => console.error(e));
 			return;
 		}
 		this.unload();
@@ -874,11 +905,13 @@ class Localuser {
 				() => {
 					if (this.swapped) return;
 					loaddesc.textContent = I18n.retrying();
-					this.initwebsocket().then(async () => {
-						this.loaduser();
-						await this.init();
-						loaddesc.textContent = I18n.loaded();
-					});
+					this.initwebsocket()
+						.then(async () => {
+							this.loaduser();
+							await this.init();
+							loaddesc.textContent = I18n.loaded();
+						})
+						.catch((e) => console.error(e));
 				},
 				Math.round((0.2 + this.errorBackoff * 2.8) * 1000),
 			);
@@ -1532,14 +1565,18 @@ class Localuser {
 	}
 	heartbeatTimer: ReturnType<typeof setInterval> | undefined;
 	watchdogTimer: ReturnType<typeof setInterval> | undefined;
+	/** The live socket's HELLO deadline, armed at connect until op 10 arrives. */
+	helloTimer: ReturnType<typeof setTimeout> | undefined;
 	/** Last time a frame arrived, whatever it was — the watchdog's silence clock. */
 	lastFrameAt = 0;
-	/** Clears the heartbeat and watchdog timers (a closing socket owns none). */
+	/** Clears the heartbeat, watchdog and HELLO-deadline timers (a closing socket owns none). */
 	stopHeartbeat() {
 		if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
 		if (this.watchdogTimer) clearInterval(this.watchdogTimer);
+		if (this.helloTimer) clearTimeout(this.helloTimer);
 		this.heartbeatTimer = undefined;
 		this.watchdogTimer = undefined;
+		this.helloTimer = undefined;
 	}
 	generateReasons() {
 		const reasons: string[] = [];

@@ -154,6 +154,124 @@ describe("gateway heartbeat and watchdog", () => {
 		}
 	});
 
+	it("a socket whose HELLO never comes is closed and replaced", async () => {
+		const user = gatewayUser();
+		void user.initwebsocket();
+		const A = FakeWebSocket.sockets[0];
+		A.emit("open", {});
+		// The watchdog arms only at HELLO; before it, a 30s deadline is all that stands
+		// between a silent server and a splash that never lifts.
+		await vi.advanceTimersByTimeAsync(29_000);
+		expect(A.closed).toBeUndefined();
+		await vi.advanceTimersByTimeAsync(2_000);
+		expect(A.closed).toBe(4000);
+		expect(FakeWebSocket.sockets).toHaveLength(2);
+		expect(user.ws).toBe(FakeWebSocket.sockets[1]);
+	});
+
+	it("a HELLO that arrives in time leaves the socket alone", async () => {
+		const ws = await connect(gatewayUser());
+		// Frames keep coming, so the watchdog stays quiet; only a leftover HELLO deadline
+		// could close it.
+		for (let t = 0; t < 60_000; t += 4_000) {
+			await vi.advanceTimersByTimeAsync(4_000);
+			ws.emit("message", {data: JSON.stringify({op: 11, d: null})});
+		}
+		expect(ws.closed).toBeUndefined();
+	});
+
+	it("a replaced socket's late HELLO doesn't call off its replacement's deadline", async () => {
+		const user = gatewayUser();
+		void user.initwebsocket();
+		const A = FakeWebSocket.sockets[0];
+		await vi.advanceTimersByTimeAsync(31_000);
+		const B = FakeWebSocket.sockets[1];
+		expect(user.ws).toBe(B);
+		// A's HELLO finally shows up after A was given up on.
+		A.emit("open", {});
+		A.emit("message", {data: JSON.stringify({op: 10, d: {heartbeat_interval: 5000}})});
+		await vi.advanceTimersByTimeAsync(0);
+		B.emit("open", {});
+		// B's failure is the second in a row, so the close path would take the backoff branch
+		// (splash DOM this harness doesn't build); recording the call is all this test needs.
+		const socketClosed = vi.fn();
+		user.socketClosed = socketClosed;
+		await vi.advanceTimersByTimeAsync(31_000);
+		expect(B.closed).toBe(4000);
+		expect(socketClosed).toHaveBeenCalledWith(B, 4000);
+	});
+
+	it("an old socket's deadline doesn't close the socket that replaced it", async () => {
+		const user = gatewayUser();
+		void user.initwebsocket();
+		await vi.advanceTimersByTimeAsync(10_000);
+		// A new connection starts before the first one's deadline (an account reconnect).
+		void user.initwebsocket();
+		const B = FakeWebSocket.sockets[1];
+		B.emit("open", {});
+		B.emit("message", {data: JSON.stringify({op: 10, d: {heartbeat_interval: 5000}})});
+		await vi.advanceTimersByTimeAsync(0);
+		// Past the first socket's 30s mark; B is talking.
+		for (let t = 0; t < 28_000; t += 4_000) {
+			await vi.advanceTimersByTimeAsync(4_000);
+			B.emit("message", {data: JSON.stringify({op: 11, d: null})});
+		}
+		expect(B.closed).toBeUndefined();
+		expect(user.ws).toBe(B);
+	});
+
+	it("a gateway URL the browser refuses goes to the reconnect path, not a rejection", async () => {
+		const user = gatewayUser();
+		const loaduser = vi.fn();
+		user.loaduser = loaduser;
+		let refused = false;
+		vi.stubGlobal(
+			"WebSocket",
+			class extends FakeWebSocket {
+				constructor(url: string) {
+					// The first construction throws, as the browser does on a malformed URL.
+					if (!refused) {
+						refused = true;
+						throw new DOMException("bad url", "SyntaxError");
+					}
+					super(url);
+				}
+			},
+		);
+		let outcome = "pending";
+		user.initwebsocket().then(
+			() => (outcome = "resolved"),
+			() => (outcome = "rejected"),
+		);
+		await vi.advanceTimersByTimeAsync(0);
+		// The startup chain builds the app on resolve: a socket that never existed must not
+		// resolve it, and a rejection would go unhandled at every caller.
+		expect(outcome).toBe("pending");
+		expect(loaduser).not.toHaveBeenCalled();
+		// The close path's first retry runs at once and gets a socket.
+		expect(FakeWebSocket.sockets).toHaveLength(1);
+		expect(user.ws).toBe(FakeWebSocket.sockets[0]);
+		expect(user.errorBackoff).toBe(1);
+	});
+
+	it("a browser without DecompressionStream connects uncompressed", async () => {
+		const saved = Object.getOwnPropertyDescriptor(globalThis, "DecompressionStream");
+		// Deleting it (not stubbing undefined) makes the bare identifier a ReferenceError.
+		delete (globalThis as {DecompressionStream?: unknown}).DecompressionStream;
+		try {
+			const user = gatewayUser();
+			void user.initwebsocket();
+			const ws = FakeWebSocket.sockets[0];
+			expect(ws).toBeDefined();
+			expect(ws.url).not.toContain("compress");
+			ws.emit("open", {});
+			expect(ws.sent.find((m) => m.op === 2)).toMatchObject({d: {compress: false}});
+		} finally {
+			if (saved) Object.defineProperty(globalThis, "DecompressionStream", saved);
+		}
+		expect(typeof DecompressionStream).toBe("function");
+	});
+
 	it("a watchdog kill reconnects immediately; the browser's late close event is ignored", async () => {
 		const user = sessionUser();
 		user.initwebsocket(true);

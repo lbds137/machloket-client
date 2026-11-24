@@ -111,22 +111,25 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 
 		regSwap(thisUser);
-		thisUser.initwebsocket().then(async () => {
-			const loading = document.getElementById("loading") as HTMLDivElement;
-			try {
-				thisUser.loaduser();
-				loaddesc.textContent = I18n.loaded();
-				loading.classList.add("doneloading");
-				loading.classList.remove("loading");
-				showChangelogPopup();
-				if (templateID) {
-					thisUser.passTemplateID(templateID);
+		thisUser
+			.initwebsocket()
+			.then(async () => {
+				const loading = document.getElementById("loading") as HTMLDivElement;
+				try {
+					thisUser.loaduser();
+					loaddesc.textContent = I18n.loaded();
+					loading.classList.add("doneloading");
+					loading.classList.remove("loading");
+					showChangelogPopup();
+					if (templateID) {
+						thisUser.passTemplateID(templateID);
+					}
+					await thisUser.init();
+				} catch (e) {
+					console.error(e);
 				}
-				await thisUser.init();
-			} catch (e) {
-				console.error(e);
-			}
-		});
+			})
+			.catch((e) => console.error(e));
 	} catch (e) {
 		console.error(e);
 		loaddesc.textContent = I18n.accountNotStart();
