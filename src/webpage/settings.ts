@@ -1759,7 +1759,13 @@ class Options implements OptionsElement<void> {
 	value!: void;
 	readonly html: WeakMap<OptionsElement<any>, WeakRef<HTMLDivElement>> = new WeakMap();
 	readonly noSubmit: boolean = false;
-	container: WeakRef<HTMLDivElement> = new WeakRef(document.createElement("div"));
+	/** Held strongly because a WeakRef alone lets GC take the placeholder at any moment (and a
+	 * sub-menu opened then threw; TASK-99); also where an Options renders after its page is gone. */
+	private readonly detached = document.createElement("div");
+	container: WeakRef<HTMLDivElement> = new WeakRef(this.detached);
+	private liveContainer(): HTMLDivElement {
+		return this.container.deref() ?? this.detached;
+	}
 	vsmaller = false;
 	constructor(
 		name: string,
@@ -1778,10 +1784,7 @@ class Options implements OptionsElement<void> {
 		while (this.options.length) {
 			this.options.pop();
 		}
-		const container = this.container.deref();
-		if (container) {
-			container.innerHTML = "";
-		}
+		this.liveContainer().innerHTML = "";
 	}
 	watchForChange() {}
 	addOptions(name: string, {ltr = false, noSubmit = false} = {}) {
@@ -1798,17 +1801,12 @@ class Options implements OptionsElement<void> {
 	}
 	subOptions: Options | Form | undefined;
 	genTop() {
-		const container = this.container.deref();
-		if (container) {
-			if (this.isTop()) {
-				this.generateContainer();
-			} else if (this.owner instanceof Options) {
-				this.owner.genTop();
-			} else {
-				(this.owner as Form).owner.genTop();
-			}
+		if (this.isTop()) {
+			this.generateContainer();
+		} else if (this.owner instanceof Options) {
+			this.owner.genTop();
 		} else {
-			throw new Error("Tried to make a sub menu when the options weren't rendered");
+			(this.owner as Form).owner.genTop();
 		}
 	}
 	addSubOptions(name: string, {ltr = false, noSubmit = false} = {}) {
@@ -2039,17 +2037,14 @@ class Options implements OptionsElement<void> {
 		return options;
 	}
 	generate(elm: OptionsElement<any>) {
-		const container = this.container.deref();
-		if (container) {
-			const div = document.createElement("div");
-			if (!(elm instanceof Options)) {
-				div.classList.add("optionElement");
-			}
-			const html = elm.generateHTML();
-			div.append(html);
-			this.html.set(elm, new WeakRef(div));
-			container.append(div);
+		const div = document.createElement("div");
+		if (!(elm instanceof Options)) {
+			div.classList.add("optionElement");
 		}
+		const html = elm.generateHTML();
+		div.append(html);
+		this.html.set(elm, new WeakRef(div));
+		this.liveContainer().append(div);
 	}
 	deleteElm(opt: OptionsElement<any>) {
 		const html = this.html.get(opt)?.deref();
@@ -2131,38 +2126,34 @@ class Options implements OptionsElement<void> {
 		);
 	}
 	generateContainer() {
-		const container = this.container.deref();
-		if (container) {
-			container.innerHTML = "";
-			const title = this.title.deref();
-			if (title) title.innerHTML = "";
+		const container = this.liveContainer();
+		container.innerHTML = "";
+		const title = this.title.deref();
+		if (title) title.innerHTML = "";
 
-			if (this.isTop()) {
-				if (title) {
-					const elms = this.generateName();
-					title.append(...elms);
-				}
+		if (this.isTop()) {
+			if (title) {
+				const elms = this.generateName();
+				title.append(...elms);
 			}
-			if (!this.subOptions) {
-				for (const thing of this.options) {
-					this.generate(thing);
-				}
-			} else {
-				container.append(this.subOptions.generateHTML());
-			}
-			if (title && title.innerText !== "") {
-				title.classList.add("settingstitle");
-			} else if (title) {
-				title.classList.remove("settingstitle");
-			}
-			if (this.owner instanceof Form && this.owner.button) {
-				const button = this.owner.button.deref();
-				if (button) {
-					button.hidden = false;
-				}
+		}
+		if (!this.subOptions) {
+			for (const thing of this.options) {
+				this.generate(thing);
 			}
 		} else {
-			console.warn("tried to generate container, but it did not exist");
+			container.append(this.subOptions.generateHTML());
+		}
+		if (title && title.innerText !== "") {
+			title.classList.add("settingstitle");
+		} else if (title) {
+			title.classList.remove("settingstitle");
+		}
+		if (this.owner instanceof Form && this.owner.button) {
+			const button = this.owner.button.deref();
+			if (button) {
+				button.hidden = false;
+			}
 		}
 	}
 	changed() {
