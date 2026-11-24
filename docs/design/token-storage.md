@@ -32,6 +32,7 @@ Status: **DRAFT**, client half of TASK-136, joint with the Machloket Server proj
 - **Rotations:** a rotation on a cookie session (TOTP enable and disable, a password change) answers with a fresh cookie, `"auth_mode": "cookie"` and no body token. The gateway sends no token refresh to a cookie session (see Gateway). Bot create and reset still return the bot token in the body.
 - **Gateway:** Identify (op 2) and Resume (op 6) may leave `d.token` empty or absent. The WebSocket upgrade's cookie then authenticates. READY carries no `auth_token` for a cookie session.
 - **Migration:** `POST /auth/session-cookie`, sent with the current header token plus the opt-in and CSRF headers, moves the login into a new cookie session and answers 204. The old header token dies (answer 3).
+  - **Open (asked 2026-11-24 16:27):** what the call answers when it cannot set the cookie (another user's cookie present, cookie mode off, Origin not allowlisted). The client needs 204 only when the cookie was set, and a non-2xx that leaves the old session alive otherwise, because it deletes the stored token on 204.
 - **Logout:** a logout with no `Authorization` (the cookie account's) clears the cookie, even when its session is already dead. A logout with `Authorization` (a header account on the same host) leaves the cookie alone. A 401 from the auth layer on a cookie-authenticated request also clears it; a route's own 401 does not (answer 2).
 
 ## Server's answers to the client's questions (Machloket Server, 2026-11-24 16:15)
