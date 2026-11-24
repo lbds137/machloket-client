@@ -30,6 +30,7 @@ import {pickFiles} from "./utils/filePicker.js";
 import {restoreFailedSend} from "./composerRestore.js";
 import {
 	consumeAccountHandoff,
+	isAccountStored,
 	notifyAccountKeptForSession,
 } from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
@@ -107,7 +108,9 @@ if (window.location.pathname.startsWith("/channels")) {
 			thisUser = new Localuser(await new Promise<Specialuser>((res) => makeLogin(true, "", res)));
 		} else {
 			thisUser = new Localuser(Localuser.users.users[current]);
-			if (handedOff) notifyAccountKeptForSession();
+			// Only an account the store doesn't hold is "for this session only"; a hand-off can
+			// carry a stored one beside it.
+			if (handedOff && !isAccountStored(current)) notifyAccountKeptForSession();
 		}
 
 		regSwap(thisUser);

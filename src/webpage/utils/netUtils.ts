@@ -1,3 +1,5 @@
+import {carryAccountsAcrossNavigation} from "./storage/settingOverlay.js";
+
 /**
  * A signed CDN link (its `ex` is the expiry in ms, hex) is re-signed once it has less than this
  * left, so a page doesn't start loading a link that expires mid-request.
@@ -57,9 +59,17 @@ export function postLoginRedirect(redir: string | null): string {
 	return "/channels/@me";
 }
 
-/** The page's navigation, behind an object so a test can observe where an accept or 401 lands. */
+/** The app's full-page navigations, behind an object so a test can observe where one lands.
+ * Every one goes through `go` (navigationGuard.test.ts holds the tree to it): accounts signed
+ * in for this session only live in memory, and the next page reads them from the hand-off it
+ * writes. A reload is not a navigation; it drops them, as their Dialog says. */
 export const pageNav = {
 	go(href: string) {
+		carryAccountsAcrossNavigation();
+		pageNav.load(href);
+	},
+	/** The browser's navigation itself. */
+	load(href: string) {
 		window.location.href = href;
 	},
 };

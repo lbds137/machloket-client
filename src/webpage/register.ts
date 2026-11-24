@@ -3,8 +3,7 @@ import {adduser, InstanceInfo, Specialuser, pingResponse} from "./utils/utils.js
 import {makeLogin} from "./login.js";
 import {MarkDown} from "./markdown.js";
 import {Dialog, FormError} from "./settings.js";
-import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
-import {carryAccountsAcrossNavigation} from "./utils/storage/settingOverlay.js";
+import {pageNav, postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 import {apiFetch} from "./utils/apiFetch.js";
 export async function makeRegister(
 	trasparentBg = false,
@@ -63,10 +62,11 @@ export async function makeRegister(
 					handle(u);
 					return;
 				}
-				carryAccountsAcrossNavigation();
-				window.location.href = invite
-					? "/channels/@me"
-					: postLoginRedirect(new URLSearchParams(window.location.search).get("goback"));
+				pageNav.go(
+					invite
+						? "/channels/@me"
+						: postLoginRedirect(new URLSearchParams(window.location.search).get("goback")),
+				);
 			}
 		},
 		{

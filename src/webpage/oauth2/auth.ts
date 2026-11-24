@@ -1,4 +1,5 @@
 import {I18n} from "../i18n.js";
+import {pageNav} from "../utils/netUtils.js";
 import {getapiurls, getDefaultInstanceUrl, instancefetch} from "../utils/utils.js";
 import {getBulkUsers, Specialuser} from "../utils/utils.js";
 import {Permissions} from "../permissions.js";
@@ -141,14 +142,14 @@ async function showBotInvite(well: string, params: URLSearchParams) {
 			const l = new URLSearchParams("?");
 			l.set("goback", window.location.href);
 			l.set("instance", well);
-			window.location.href = "/login?" + l.toString();
+			pageNav.go("/login?" + l.toString());
 		});
 
 		if (!joinable.length) {
 			const l = new URLSearchParams("?");
 			l.set("goback", window.location.href);
 			l.set("instance", well);
-			window.location.href = "/login?" + l.toString();
+			pageNav.go("/login?" + l.toString());
 		}
 
 		table.append(td);

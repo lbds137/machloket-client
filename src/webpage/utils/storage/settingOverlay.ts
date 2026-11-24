@@ -167,6 +167,20 @@ export function notifyAccountKeptForSession(): void {
 	notifyOnce("account");
 }
 
+/** Whether the browser's store itself holds the account, not only this session's overlay: a
+ * hand-off can carry a stored account beside a session-only one, and only a session-only
+ * account is lost on reload. An unreadable store holds none. */
+export function isAccountStored(uid: string): boolean {
+	try {
+		const raw = localStorage.getItem("userinfos");
+		if (!raw) return false;
+		const users = (JSON.parse(raw) as {users?: unknown} | null)?.users;
+		return Boolean(users && typeof users === "object" && Object.hasOwn(users, uid));
+	} catch {
+		return false;
+	}
+}
+
 export function resetSettingOverlayForTests(): void {
 	overlay.clear();
 	notifiedThisSession.clear();

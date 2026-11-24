@@ -2,9 +2,8 @@ import {InstanceInfo, adduser, Specialuser} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
-import {postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
+import {pageNav, postLoginRedirect, trimTrailingSlashes} from "./utils/netUtils";
 import {formErrors} from "./utils/refusalText.js";
-import {carryAccountsAcrossNavigation} from "./utils/storage/settingOverlay.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
 import {apiFetch} from "./utils/apiFetch.js";
 function generateRecArea(recover = document.getElementById("recover")) {
@@ -106,10 +105,7 @@ export async function makeLogin(
 					dialog.hide();
 					return;
 				}
-				carryAccountsAcrossNavigation();
-				window.location.href = postLoginRedirect(
-					new URLSearchParams(window.location.search).get("goback"),
-				);
+				pageNav.go(postLoginRedirect(new URLSearchParams(window.location.search).get("goback")));
 			} else {
 				// A success without a session: nothing to log in with.
 				throw new FormError(password, I18n.requestFailed("no token"));

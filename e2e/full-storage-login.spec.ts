@@ -1,5 +1,11 @@
 import {expect} from "@playwright/test";
-import {drain, MOCK_INSTANCE_NAME, MOCK_INSTANCE_ORIGIN, test} from "./fixtures";
+import {
+	drain,
+	loginAndOpenChannel,
+	MOCK_INSTANCE_NAME,
+	MOCK_INSTANCE_ORIGIN,
+	test,
+} from "./fixtures";
 
 const ACCOUNT_NOT_SAVED_COPY =
 	"Signed in for this session only: this browser's storage for Machloket is full, so you'll need to sign in again after a reload.";
@@ -130,4 +136,33 @@ test("a session-only account the app can't start is used up without its Dialog, 
 			has: page.getByRole("button", {name: "Login", exact: true}),
 		}),
 	).toBeVisible();
+});
+
+test("booting a stored account from a hand-off that also carries a session-only one shows no session-only Dialog", async ({
+	page,
+	mockInstance,
+}) => {
+	void mockInstance;
+	const HANDOFF_KEY = "machloket.sessionAccounts";
+	await loginAndOpenChannel(page);
+	await drain(page);
+	await expect(page.locator(".dialogModal")).toHaveCount(0);
+
+	// What a navigation leaves when the store refused a second, session-only account: the
+	// hand-off lists both, and the account that boots is the stored one.
+	await page.evaluate((key) => {
+		const info = JSON.parse(localStorage.getItem("userinfos")!);
+		const stored = info.users[info.currentuser];
+		info.users["sessiononly@example.test" + stored.serverurls.wellknown] = {
+			...stored,
+			email: "sessiononly@example.test",
+		};
+		sessionStorage.setItem(key, JSON.stringify(info));
+	}, HANDOFF_KEY);
+
+	await page.goto("/channels/@me");
+	await expect(page.locator("#loading")).toHaveClass(/doneloading/, {timeout: 15_000});
+	expect(await page.evaluate((key) => sessionStorage.getItem(key), HANDOFF_KEY)).toBeNull();
+	await drain(page);
+	await expect(page.locator(".dialogModal")).toHaveCount(0);
 });

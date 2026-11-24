@@ -1,4 +1,5 @@
 import {I18n} from "./i18n.js";
+import {pageNav} from "./utils/netUtils.js";
 import {templateSkim} from "./jsontypes.js";
 import {getapiurls, getDefaultInstanceUrl, instancefetch} from "./utils/utils.js";
 import {getBulkUsers, Specialuser} from "./utils/utils.js";
@@ -133,7 +134,7 @@ if (window.location.pathname.startsWith("/template"))
 					const search = new URLSearchParams();
 					search.set("templateID", code);
 					sessionStorage.setItem("currentuser", user.uid);
-					window.location.assign("/channels/@me?" + search);
+					pageNav.go("/channels/@me?" + search);
 				});
 			}
 
@@ -141,7 +142,7 @@ if (window.location.pathname.startsWith("/template"))
 				const l = new URLSearchParams("?");
 				l.set("goback", window.location.href);
 				l.set("instance", well!);
-				window.location.href = "/login?" + l.toString();
+				pageNav.go("/login?" + l.toString());
 			}
 
 			table.classList.add("flexttb", "accountSwitcher");

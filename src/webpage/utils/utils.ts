@@ -302,7 +302,11 @@ export class Specialuser {
 				else Reflect.deleteProperty(target, p);
 				if (this.updateLocalQuietly()) return bool;
 				// The store refuses even the account without it (full): keep it for this session.
+				// The refused retry left the session overlay (and any pending hand-off) holding
+				// the account without it; write again so they hold what memory holds (refused
+				// too, the write still updates them).
 				Reflect.set(target, p, newValue, receiver);
+				this.updateLocalQuietly();
 				return bool;
 			},
 			get: (target, p, receiver) => {
