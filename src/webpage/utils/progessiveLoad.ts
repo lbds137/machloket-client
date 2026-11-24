@@ -262,7 +262,10 @@ abstract class ContainerProgressive {
 		this.done = true;
 		this.resolveFinished();
 	}
-	async check() {
+	/** The init step `make()` runs before anyone holds the container: closes it at once when it
+	 * is empty. Protected because it reads the stream outside `settle()`/`failOn()`, so a later
+	 * call would skip the failure latch and the owed delimiter (TASK-91). */
+	protected async check() {
 		const lastChar = await getNextNonWhiteSpace(this.prog);
 		if (lastChar === this.closer) {
 			this.close();
