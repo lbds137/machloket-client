@@ -437,6 +437,7 @@ it("portDiagnosis counts a pong that arrives after its ping", async () => {
 	const controller = {state: "activated"} as unknown as ServiceWorker;
 	const out = await portDiagnosis(port, messages, controller);
 	expect(out).toMatch(/ping: pong in \d+ ms/);
+	expect(out).toContain("messages before ping: none;");
 	expect(out).toContain("messages after: pong");
 });
 
