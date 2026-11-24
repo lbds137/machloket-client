@@ -258,17 +258,17 @@ abstract class ContainerProgressive {
 			throw error;
 		}
 	}
-	private close() {
+	private markDone() {
 		this.done = true;
 		this.resolveFinished();
 	}
-	/** The init step `make()` runs before anyone holds the container: closes it at once when it
+	/** The init step `make()` runs before anyone holds the container: marks it done at once when it
 	 * is empty. Protected because it reads the stream outside `settle()`/`failOn()`, so a later
 	 * call would skip the failure latch and the owed delimiter (TASK-91). */
 	protected async check() {
 		const lastChar = await getNextNonWhiteSpace(this.prog);
 		if (lastChar === this.closer) {
-			this.close();
+			this.markDone();
 		} else {
 			this.prog.putBackChar(lastChar);
 		}
@@ -283,7 +283,7 @@ abstract class ContainerProgressive {
 				(async () => {
 					if (owed.child) await owed.child.finished;
 					const lastChar = await getNextNonWhiteSpace(this.prog);
-					if (lastChar === this.closer) this.close();
+					if (lastChar === this.closer) this.markDone();
 					else if (lastChar !== ",")
 						throw new SyntaxError(
 							`expected ',' or '${this.closer}' after ${this.entryName}, got: ` + lastChar,
