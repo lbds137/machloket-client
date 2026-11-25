@@ -200,7 +200,7 @@ const ALLOWED: Allowed[] = [
 	// apiFetch's own internals.
 	{
 		file: "./utils/apiFetch.ts",
-		snippet: "fetch(parsed.origin",
+		snippet: "fetch(apiUrl.origin",
 		count: 1,
 		reason: "apiFetch's own internals",
 	},
