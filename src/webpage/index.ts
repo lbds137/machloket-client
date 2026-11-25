@@ -5,6 +5,7 @@ import {Contextmenu} from "./contextmenu.js";
 import {
 	bootAccountId,
 	getViewportHeight,
+	migrateToCookieSession,
 	mobile,
 	runPendingLogouts,
 	Specialuser,
@@ -120,6 +121,9 @@ if (window.location.pathname.startsWith("/channels")) {
 			// A sign-in here that the full store refuses shows the Dialog itself (adduser).
 			thisUser = new Localuser(await new Promise<Specialuser>((res) => makeLogin(true, "", res)));
 		} else {
+			// Before the gateway connects: the exchange ends the header session, and the server
+			// would drop a socket identified with it (SB_SESSION_REMOVE).
+			await migrateToCookieSession(Localuser.users.users[current]);
 			thisUser = new Localuser(Localuser.users.users[current]);
 			// Only an account the store doesn't hold is "for this session only"; a hand-off can
 			// carry a stored one beside it.

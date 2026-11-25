@@ -6,6 +6,8 @@ export type AccountAuth = {
 	readonly uid: string;
 	readonly token?: string;
 	readonly authMode?: "cookie";
+	/** The account's user id, once a READY stored it: the cookie probe compares against it. */
+	readonly id?: string;
 	/** The account's own API base (`…/api/v9`). The 401 probe goes only there. */
 	readonly serverurls?: {readonly api: string};
 };

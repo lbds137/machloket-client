@@ -123,7 +123,7 @@ describe("account uid tagging", () => {
 		const user = makeHeaderUser("fake-tok-plain");
 		const plain = {
 			"Content-type": "application/json; charset=UTF-8",
-			Authorization: user.token,
+			Authorization: user.token!, // a header account's fixture: it has one
 		};
 		expect(accountUidOf({headers: plain})).toBeUndefined();
 		expect(accountUidOf({headers: deriveHeaders(plain, {json: false})})).toBeUndefined();

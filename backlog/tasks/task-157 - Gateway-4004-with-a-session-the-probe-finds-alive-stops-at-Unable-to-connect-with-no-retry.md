@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-25T19:25:00Z'
-updated_date: '2026-11-25T19:28:00Z'
+updated_date: '2026-11-25T22:17:00Z'
 labels:
   - bug
   - gateway
@@ -25,4 +25,6 @@ From claude-review on PR #215. After TASK-147, a gateway close 4004 probes <api>
 
 <!-- SECTION:NOTES:BEGIN -->
 Lila ruling 2026-11-25 (AskUserQuestion): after a live probe, retry IDENTIFY automatically once; if the gateway closes 4004 again, show a Retry button on the loading screen instead of the dead end.
+
+2026-11-25 (TASK-150 Mistral review): same stop on an UNANSWERED probe — the token or the TASK-150 cookie probe gets no verdict (no answer, 429/5xx), Localuser.awaitingAuthVerdict stays set, nothing retries. One bounded retry policy should cover both the alive and the unanswered case.
 <!-- SECTION:NOTES:END -->
