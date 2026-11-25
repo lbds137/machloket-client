@@ -1,9 +1,10 @@
 ---
 id: TASK-148
 title: 'Token storage unit 1: one account-keyed request path and 401 handling'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-24T22:40:00Z'
+updated_date: '2026-11-25T00:14:00Z'
 labels:
   - security-hardening
   - auth
