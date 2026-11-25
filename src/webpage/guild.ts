@@ -48,6 +48,7 @@ import {API_TIMEOUT_MS, apiFetch} from "./utils/apiFetch.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {serverReason} from "./utils/refusalText.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
+import {deriveHeaders} from "./utils/accountHeaders.js";
 import {holdsInviteLink, inviteUrl, showNewInvite} from "./utils/inviteLink.js";
 /** Streams an API list endpoint's JSON array of objects, handing each over as it arrives.
  * Resolves null once the whole list arrived, else the line saying why it stopped: the server's
@@ -1138,9 +1139,11 @@ class Guild extends SnowFlake {
 				const opt = banMenu.addSubOptions(I18n.guild.banId(), {noSubmit: true});
 				const reason = opt.addTextInput(I18n.member["reason:"](), () => {});
 				opt.addTextInput(I18n.guild.idSel(), async (id) => {
-					const headers = structuredClone(this.headers);
-					if (reason.value)
-						(headers as any)["x-audit-log-reason"] = encodeURIComponent(reason.value);
+					const headers = deriveHeaders(this.headers, {
+						extra: reason.value
+							? {"x-audit-log-reason": encodeURIComponent(reason.value)}
+							: undefined,
+					});
 					const ret = await apiFetch(`${this.info.api}/guilds/${this.id}/bans/${id}`, {
 						method: "PUT",
 						headers,
@@ -1300,9 +1303,7 @@ class Guild extends SnowFlake {
 					}
 					const res = await apiFetch(this.info.api + "/guilds/" + this.id + "/stickers", {
 						method: "POST",
-						headers: {
-							Authorization: this.headers.Authorization,
-						},
+						headers: deriveHeaders(this.headers, {json: false}),
 						body,
 						timeoutMs: 0,
 					}).catch(() => undefined);

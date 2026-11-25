@@ -462,7 +462,7 @@ class Embed {
 			button.onclick = (_) => {
 				if (this.localuser.info.api.startsWith(info.api)) {
 					button.disabled = true;
-					acceptInvite(this.localuser.info.api, json.code, this.localuser.headers.Authorization)
+					acceptInvite(this.localuser.info.api, json.code, this.localuser.headers)
 						.then(
 							(result) => {
 								// The accept and the already-member refusal both land in the guild; a real refusal alerts.

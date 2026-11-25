@@ -570,6 +570,29 @@ it("the security key prompt's request carries one JSON content type", async () =
 	expect(headers[0]!.get("authorization")).toBe("t");
 });
 
+it("the security key prompt's request keeps the account tag, so its 401 can log a dead session out", async () => {
+	const {accountUidOf, buildAccountHeaders} = await import("./utils/accountHeaders");
+	captureRequests(API + "/users/@me/mfa/webauthn", () =>
+		Response.json({message: "401: Unauthorized"}, {status: 401}),
+	);
+	const tags: (string | undefined)[] = [];
+	const baseFetch = globalThis.fetch;
+	vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+		if (String(input) === API + "/users/@me/mfa/webauthn") tags.push(accountUidOf(init));
+		return baseFetch(input, init);
+	});
+
+	await fetchWithMfa(
+		{factor: "webauthn"},
+		API,
+		buildAccountHeaders({uid: "mfa-tag-uid", token: "t"}) as Record<string, string>,
+		async () => Response.json({code: 60003, message: "Two factor required"}, {status: 400}),
+		() => {},
+	);
+
+	expect(tags).toEqual(["mfa-tag-uid"]);
+});
+
 it("a double click on a key's Delete sends one request and shows one prompt", async () => {
 	await I18n.done;
 	spyFetchHeaders();

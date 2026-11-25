@@ -8,6 +8,7 @@ import {refusalText} from "./utils/refusalText.js";
 import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
 import {isValidTemplateCode} from "./utils/templateCode.js";
 import {apiFetch} from "./utils/apiFetch.js";
+import {buildAccountHeaders} from "./utils/accountHeaders.js";
 if (window.location.pathname.startsWith("/template"))
 	(async () => {
 		const users = getBulkUsers();
@@ -77,7 +78,7 @@ if (window.location.pathname.startsWith("/template"))
 			method: "GET",
 			// Signed out, the instance may refuse (Spacebar wants a token here): the page then names
 			// no template (a generic heading), and the button still leads to sign-in.
-			headers: joinable[0] ? {Authorization: joinable[0].token} : {},
+			headers: joinable[0] ? buildAccountHeaders(joinable[0], {json: false}) : {},
 		})
 			.catch(() => undefined)
 			.then(async (response) => {

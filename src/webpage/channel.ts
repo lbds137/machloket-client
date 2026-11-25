@@ -57,6 +57,7 @@ import {apiFetch, configureApiXhr, handleUnauthorized} from "./utils/apiFetch.js
 import {serverReason} from "./utils/refusalText.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {resolveTypedMentions} from "./utils/typedMentions.js";
+import {setXhrAccountHeaders} from "./utils/accountHeaders.js";
 
 const FORUM_MESSAGE_PREVIEW_MAX_LENGTH = 200;
 
@@ -4646,7 +4647,7 @@ class Channel extends SnowFlake {
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
 			// The timeout the send was configured with stands: the attachment path is untimed
 			// (configureApiXhr), and re-capping it here would hang the bubble with no handler.
-			res.setRequestHeader("Authorization", this.headers.Authorization);
+			setXhrAccountHeaders(res, this.headers);
 			if (ctype) {
 				res.setRequestHeader("Content-type", ctype);
 			}
@@ -4760,8 +4761,10 @@ class Channel extends SnowFlake {
 			configureApiXhr(res, fail);
 			prom = new Promise<void>(promiseHandler);
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages");
-			res.setRequestHeader("Content-type", (ctype = this.headers["Content-type"]));
-			res.setRequestHeader("Authorization", this.headers.Authorization);
+			if ((ctype = this.headers["Content-type"])) {
+				res.setRequestHeader("Content-type", ctype);
+			}
+			setXhrAccountHeaders(res, this.headers);
 			funcs = await this.makeFakeMessage(
 				// The bubble doesn't draw a poll: its question says which one a failed bubble is.
 				content || poll?.question.text || "",
@@ -4813,7 +4816,7 @@ class Channel extends SnowFlake {
 			prom = new Promise<void>(promiseHandler);
 			res.open("POST", this.info.api + "/channels/" + this.id + "/messages", true);
 
-			res.setRequestHeader("Authorization", this.headers.Authorization);
+			setXhrAccountHeaders(res, this.headers);
 
 			funcs = await this.makeFakeMessage(
 				content,

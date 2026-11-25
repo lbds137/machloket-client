@@ -10,6 +10,7 @@ import {previewURL} from "./utils/previewURL.js";
 import {assignableKey} from "./utils/assignableKey.js";
 import {showRefusal} from "./utils/showRefusal.js";
 import {apiFetch} from "./utils/apiFetch.js";
+import {deriveHeaders} from "./utils/accountHeaders.js";
 import {readDataURL, saveProfile} from "./utils/profileSave.js";
 
 class Member extends SnowFlake {
@@ -594,7 +595,7 @@ class Member extends SnowFlake {
 		menu.show();
 	}
 	async removeTimeout(): Promise<boolean> {
-		const headers = structuredClone(this.guild.headers);
+		const headers = deriveHeaders(this.guild.headers, {});
 		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
@@ -609,8 +610,9 @@ class Member extends SnowFlake {
 		return true;
 	}
 	async timeoutAPI(reason: string, length: number): Promise<boolean> {
-		const headers = structuredClone(this.guild.headers);
-		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
+		const headers = deriveHeaders(this.guild.headers, {
+			extra: reason ? {"x-audit-log-reason": encodeURIComponent(reason)} : undefined,
+		});
 		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "PATCH",
 			headers,
@@ -625,8 +627,9 @@ class Member extends SnowFlake {
 		return true;
 	}
 	async kickAPI(reason: string): Promise<boolean> {
-		const headers = structuredClone(this.guild.headers);
-		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
+		const headers = deriveHeaders(this.guild.headers, {
+			extra: reason ? {"x-audit-log-reason": encodeURIComponent(reason)} : undefined,
+		});
 		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/members/${this.id}`, {
 			method: "DELETE",
 			headers,
@@ -675,8 +678,9 @@ class Member extends SnowFlake {
 		return true;
 	}
 	async banAPI(reason: string): Promise<boolean> {
-		const headers = structuredClone(this.guild.headers);
-		if (reason) (headers as any)["x-audit-log-reason"] = encodeURIComponent(reason);
+		const headers = deriveHeaders(this.guild.headers, {
+			extra: reason ? {"x-audit-log-reason": encodeURIComponent(reason)} : undefined,
+		});
 		const res = await apiFetch(`${this.info.api}/guilds/${this.guild.id}/bans/${this.id}`, {
 			method: "PUT",
 			headers,

@@ -1,3 +1,4 @@
+import {type AccountHeaders, deriveHeaders} from "./accountHeaders.js";
 import {fetchRetryOnce} from "./rateLimit.js";
 import {serverReason} from "./refusalText.js";
 
@@ -10,13 +11,11 @@ import {serverReason} from "./refusalText.js";
 export async function acceptInvite(
 	api: string,
 	code: string,
-	token: string,
+	headers: AccountHeaders,
 ): Promise<{ok: boolean; message?: string; alreadyMember?: boolean; guildId?: string}> {
 	const res = await fetchRetryOnce(`${api}/invites/${code}`, {
 		method: "POST",
-		headers: {
-			Authorization: token,
-		},
+		headers: deriveHeaders(headers, {json: false}),
 	});
 	if (res.ok) {
 		// Discord's invite object names the guild in `guild`; the older answer had `guild_id`.
