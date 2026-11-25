@@ -107,7 +107,27 @@ function parseStoredAccounts(raw: string | null): {
 	if (!info || typeof info !== "object") return null;
 	const users = (info as {users?: unknown}).users;
 	if (!users || typeof users !== "object" || Array.isArray(users)) return null;
+	const pending = (info as {pendingLogouts?: unknown}).pendingLogouts;
+	if (pending !== undefined) {
+		// Another build or an extension may have written it: keep only API bases whose host is
+		// their key, so no reader throws on one and the next save writes the store clean.
+		(info as {pendingLogouts?: Record<string, string>}).pendingLogouts =
+			validPendingLogouts(pending);
+	}
 	return info as {users: Record<string, any>};
+}
+function validPendingLogouts(pending: unknown): Record<string, string> {
+	const valid: Record<string, string> = {};
+	if (!pending || typeof pending !== "object" || Array.isArray(pending)) return valid;
+	for (const [host, api] of Object.entries(pending)) {
+		if (typeof api !== "string") continue;
+		try {
+			if (new URL(api).host === host) valid[host] = api;
+		} catch {
+			// Not a URL: dropped.
+		}
+	}
+	return valid;
 }
 /** userinfos when it holds a usable `users` map; null when it is missing, unparseable or
  * shapeless (another tab or an extension changed the store), which is the store's state. */
@@ -281,7 +301,16 @@ export class Specialuser {
 			sessionStorage.removeItem("currentuser");
 		}
 		const info = readStoredAccounts();
-		if (!info) return;
+		if (!info) {
+			if (orphanedCookieApi !== undefined) {
+				console.warn(
+					"userinfos store is unreadable: the pending logout for",
+					orphanedCookieApi,
+					"can't be recorded; its cookie stays until a login or logout on that host",
+				);
+			}
+			return;
+		}
 		delete info.users[this.uid];
 		if (orphanedCookieApi !== undefined) addPendingLogout(info, orphanedCookieApi);
 		if (info.currentuser === this.uid) {
@@ -442,11 +471,17 @@ export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	// The replaced record's live cookie, unless this login takes over its slot: a header login,
 	// or a cookie login on another hostname (the instance's API moved), leaves it with no
 	// record, so the next start ends it like any other orphaned cookie, at its own API base.
-	const replacedApi: string | undefined = replaced?.serverurls?.api;
+	const replacedApi: unknown = replaced?.serverurls?.api;
+	let replacedSlot: string | undefined;
+	try {
+		if (typeof replacedApi === "string") replacedSlot = cookieSlot(replacedApi);
+	} catch {
+		// A stored record whose API isn't a URL holds no cookie this client could end.
+	}
 	const orphans =
-		replacedApi !== undefined &&
-		holdsCookieSlot(replaced, cookieSlot(replacedApi)) &&
-		!(suser.authMode === "cookie" && cookieSlot(replacedApi) === slot);
+		replacedSlot !== undefined &&
+		holdsCookieSlot(replaced, replacedSlot) &&
+		!(suser.authMode === "cookie" && replacedSlot === slot);
 	if (suser.authMode === "cookie") {
 		// The browser keeps one cookie per hostname, whatever the port, and it is this login's
 		// now: a pending retry would end this session, and another cookie record on the hostname
@@ -461,7 +496,7 @@ export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 		}
 		cookieModeHosts.add(new URL(suser.serverurls.api).host);
 	}
-	if (orphans) addPendingLogout(info, replacedApi);
+	if (orphans) addPendingLogout(info, replacedApi as string);
 	info.users[suser.uid] = suser;
 	info.currentuser = suser.uid;
 	sessionStorage.setItem("currentuser", suser.uid);
@@ -520,7 +555,8 @@ const pendingLogoutRuns = new Map<string, Promise<void>>();
  * The opt-in headers for a login, register or second-factor request to `instance`, or
  * undefined when it shouldn't ask for a cookie: discovery didn't offer cookie sessions, or a
  * logged-in cookie account already holds the host's cookie. It first waits for any retry of the
- * host's pending logout, so that retry can't end the session this request starts.
+ * host's pending logout already running here or in another tab, so that retry can't end the
+ * session this request starts. The lock isn't held through the request itself.
  */
 export async function cookieOptInHeaders(
 	instance: InstanceUrls,
