@@ -1206,6 +1206,9 @@ export interface MockInstanceHandle {
 	 * asked for - a connection that drops mid-close never reports the app's code back. It stays
 	 * set until the test ends, so every later close the app makes completes with it too. */
 	closeCompletesWith?: number;
+	/** Set per test: the server answers IDENTIFY by closing the socket with this code (4004:
+	 * the token it carried is dead) in place of READY. Stays set until the test ends. */
+	identifyCloses?: number;
 	/** Set per test: REST member lookups (GET /guilds/:id/members/:id, how a guild created
 	 * mid-session resolves the viewer's member) get no answer until releaseMembers(), so the
 	 * member is still on its way (a slow server). op 8 chunks are not held. */
@@ -1386,6 +1389,10 @@ export async function mountMockInstance(
 
 			// IDENTIFY (op 2) -> READY, then GUILD_CREATE
 			if (parsed.op === 2) {
+				if (handle.identifyCloses !== undefined) {
+					ws.close({code: handle.identifyCloses, reason: "Authentication failed"}).catch(() => {});
+					return;
+				}
 				sendFrame(send, MOCK_READY_FRAME);
 				sendFrame(send, guildCreateFrame);
 				return;

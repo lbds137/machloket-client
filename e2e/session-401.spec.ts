@@ -9,6 +9,43 @@ test.beforeEach(({mockInstance}) => {
 	void mockInstance;
 });
 
+// Gateway close 4004 is the server's "authentication failed": a token that died while the app
+// was closed meets it at the next IDENTIFY. It takes the same verified path (TASK-147).
+test("a gateway closing 4004 on a dead session routes to /login", async ({page, mockInstance}) => {
+	await loginAndOpenChannel(page);
+	const probes: (string | null)[] = [];
+	await page.route("**/api/v9/users/@me", async (route) => {
+		probes.push(await route.request().headerValue("authorization"));
+		await route.fulfill({status: 401, json: {message: "401: Unauthorized", code: 0}});
+	});
+	mockInstance.identifyCloses = 4004;
+
+	await page.reload();
+
+	await expect(page).toHaveURL(/\/login/);
+	expect(probes.length).toBe(1);
+	expect(probes[0]).toBeTruthy();
+});
+
+test("a gateway closing 4004 while the probe finds the session alive logs no one out", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	let probes = 0;
+	await page.route("**/api/v9/users/@me", async (route) => {
+		probes++;
+		await route.fulfill({status: 200, json: {id: "1", username: "alive"}});
+	});
+	mockInstance.identifyCloses = 4004;
+
+	await page.reload();
+
+	await expect(page.locator("#load-desc")).toHaveText(/Unable to connect/);
+	await expect.poll(() => probes).toBe(1);
+	expect(page.url()).not.toMatch(/\/login/);
+});
+
 test("a send refused because the session died routes to /login", async ({page}) => {
 	await loginAndOpenChannel(page);
 	const probes: (string | null)[] = [];

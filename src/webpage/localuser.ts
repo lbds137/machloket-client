@@ -113,7 +113,7 @@ import {
 } from "./utils/pollValidation.js";
 import {fetchMessageLimit} from "./utils/messageLimit.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
-import {apiFetch} from "./utils/apiFetch.js";
+import {apiFetch, handleUnauthorized} from "./utils/apiFetch.js";
 import {
 	type AccountHeaders,
 	applyAccountHeaders,
@@ -919,7 +919,13 @@ class Localuser {
 				},
 				Math.round((0.2 + this.errorBackoff * 2.8) * 1000),
 			);
-		} else loaddesc.textContent = I18n.unableToConnect();
+		} else {
+			loaddesc.textContent = I18n.unableToConnect();
+			// 4004 is the gateway's "authentication failed": a token that died while the app was
+			// closed. It takes the REST 401's verified path - probe the account's own API, and
+			// only a confirmed dead session is logged out and routed to /login.
+			if (code === 4004) handleUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
+		}
 	}
 	interNonceMap = new Map<string, Message>();
 	/**
