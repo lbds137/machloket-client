@@ -921,9 +921,10 @@ class Localuser {
 			);
 		} else {
 			loaddesc.textContent = I18n.unableToConnect();
-			// 4004 is the gateway's "authentication failed": a token that died while the app was
-			// closed. It takes the REST 401's verified path - probe the account's own API, and
-			// only a confirmed dead session is logged out and routed to /login.
+			// 4004 is the gateway's "authentication failed": it rejected the credential (a token
+			// that died while the app was closed, typically). It takes the REST 401's verified
+			// path - probe the account's own API; only a confirmed dead session is logged out and
+			// routed to /login.
 			if (code === 4004) handleUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
 		}
 	}

@@ -13,9 +13,10 @@ test.beforeEach(({mockInstance}) => {
 // was closed meets it at the next IDENTIFY. It takes the same verified path (TASK-147).
 test("a gateway closing 4004 on a dead session routes to /login", async ({page, mockInstance}) => {
 	await loginAndOpenChannel(page);
-	const probes: (string | null)[] = [];
+	const probes: string[] = [];
 	await page.route("**/api/v9/users/@me", async (route) => {
-		probes.push(await route.request().headerValue("authorization"));
+		const req = route.request();
+		probes.push(`${req.method()} ${req.url()} ${await req.headerValue("authorization")}`);
 		await route.fulfill({status: 401, json: {message: "401: Unauthorized", code: 0}});
 	});
 	mockInstance.identifyCloses = 4004;
@@ -23,8 +24,7 @@ test("a gateway closing 4004 on a dead session routes to /login", async ({page, 
 	await page.reload();
 
 	await expect(page).toHaveURL(/\/login/);
-	expect(probes.length).toBe(1);
-	expect(probes[0]).toBeTruthy();
+	expect(probes).toEqual([`GET ${mockInstance.api}/users/@me ${mockInstance.token}`]);
 });
 
 test("a gateway closing 4004 while the probe finds the session alive logs no one out", async ({
@@ -39,10 +39,21 @@ test("a gateway closing 4004 while the probe finds the session alive logs no one
 	});
 	mockInstance.identifyCloses = 4004;
 
+	const probed = page.waitForResponse("**/api/v9/users/@me");
 	await page.reload();
+	await probed;
 
 	await expect(page.locator("#load-desc")).toHaveText(/Unable to connect/);
-	await expect.poll(() => probes).toBe(1);
+	// The probe's answer is in: a live session stays stored as logged in, and no /login.
+	await expect
+		.poll(() =>
+			page.evaluate(() => {
+				const users = JSON.parse(localStorage.getItem("userinfos") ?? "{}").users ?? {};
+				return Object.values(users).map((u) => (u as {loggedin?: boolean}).loggedin);
+			}),
+		)
+		.toEqual([true]);
+	expect(probes).toBe(1);
 	expect(page.url()).not.toMatch(/\/login/);
 });
 
