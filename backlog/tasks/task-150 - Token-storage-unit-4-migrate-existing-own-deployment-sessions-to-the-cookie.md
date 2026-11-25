@@ -1,10 +1,10 @@
 ---
 id: TASK-150
 title: 'Token storage unit 4: migrate existing own-deployment sessions to the cookie'
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-24T22:40:00Z'
-updated_date: '2026-11-25T22:34:00Z'
+updated_date: '2026-11-25T22:48:00Z'
 labels:
   - security-hardening
   - auth
@@ -31,6 +31,8 @@ TASK-136 design unit 4 (docs/design/token-storage.md, Sequence 4, "Migrating exi
 2026-11-24 BLOCKED on Machloket Server (parked 11-24): server TASK-323 (POST /auth/session-cookie) must be merged and deployed first, plus everything TASK-149 waits on (server 313, 321, 322). Trigger: Server unparks and ships 323.
 
 2026-11-25: implemented (cookieMigration.test.ts; utils migrateToCookieSession / cookieVerdictFor401; apiFetch 401 path; Localuser in-place headers + 4004 reconnect incl. identifiedToken). Server 323 merged (server 915ed8d74), deploy not verified; lands dark (clientOrigins unset on A, [] on B). Reviews: council OpenAI + Mistral (cross-family; agy at cap), real findings fixed red-first; store-wide write lock + live demotion -> private tracker cookie-slot entry; unanswered-probe stop -> TASK-157 note.
+
+Shipped in PR #217 (merged 329c8331, 2026-11-25). claude-review PASS, lows: start-up discovery latency -> TASK-164; 403/409/5xx exchange tests -> TASK-165; unanswered verdict -> TASK-157 note; refused-save split -> private tracker (cookie-slot race entry). CodeQL #87-90 dismissed as used in tests (owner AUQ 2026-11-25).
 <!-- SECTION:NOTES:END -->
 
 ## Comments
