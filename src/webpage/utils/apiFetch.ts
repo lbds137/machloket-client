@@ -81,12 +81,20 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 	const url = input instanceof Request ? input.url : String(input);
 	void (async () => {
 		try {
-			const dead = await tokenIsDead(url, account);
+			// The credential as the probe sends it, so invalidation compares against that very
+			// one: a token READY swaps in while the probe is out belongs to a live session.
+			const probed: AccountAuth = {
+				uid: account.uid,
+				token: account.token,
+				authMode: account.authMode,
+				serverurls: account.serverurls,
+			};
+			const dead = await tokenIsDead(url, probed);
 			if (gen !== unauthorizedNavGen) return;
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
 			// graph, and a static import made any module that imports apiFetch before
 			// localuser hit "Cannot access 'Guild' before initialization" (direct.ts).
-			if (!dead || !(await import("./utils.js")).invalidateAccount(account)) {
+			if (!dead || !(await import("./utils.js")).invalidateAccount(probed)) {
 				unauthorizedNavPending = false;
 				return;
 			}

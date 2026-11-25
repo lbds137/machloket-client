@@ -1071,6 +1071,44 @@ describe("apiFetch wrapper", () => {
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledWith("/login"));
 	});
 
+	it("a token READY replaces while the probe is out is not the one invalidated (TASK-153)", async () => {
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "ready-refresh@example.test",
+			token: "fake-ready-old",
+			loggedin: true,
+		});
+		captureRequests(API + "/users/@me/settings", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		let probes = 0;
+		captureRequests(API + "/users/@me", () => {
+			probes++;
+			// READY lands while the probe of the old token is out.
+			user.token = "fake-ready-new";
+			user.json.token = "fake-ready-new";
+			user.tryUpdateLocal();
+			return Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+		});
+
+		await fetchRetryOnce(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(user),
+			body: JSON.stringify({status: "idle"}),
+		});
+		await vi.waitFor(() => expect(probes).toBe(1));
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(user.loggedin).toBe(true);
+		expect(JSON.parse(localStorage.getItem("userinfos")!).users[user.uid].loggedin).toBe(true);
+	});
+
 	it("a dead cookie session does not log out a header re-login stored for the same uid (TASK-153)", async () => {
 		vi.spyOn(pageNav, "go").mockImplementation(() => {});
 		const serverurls = () => ({
