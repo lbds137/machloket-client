@@ -21,6 +21,7 @@ import {
 	getViewportHeight,
 	keepAuthCookie,
 	installPGet,
+	onCookieSessionAdopted,
 	SW,
 	readStoredAccounts,
 	setTheme,
@@ -408,6 +409,7 @@ class Localuser {
 			});
 		});
 		this.headers = buildAccountHeaders(this.userinfo);
+		onCookieSessionAdopted(this);
 		this.favorites = new Favorites(this);
 		const rights = this.perminfo.user.rights || "875069521787904";
 		this.rights = new Rights(rights);
@@ -634,6 +636,48 @@ class Localuser {
 		applyAccountHeaders(this.headers, this.userinfo);
 		this.userinfo.tryUpdateLocal();
 	}
+	/** Set while a gateway that closed with 4004 waits on the 401 path's verdict: a session that
+	 * moved into the cookie (another tab's migration) reconnects instead of staying at "Unable to
+	 * connect". */
+	awaitingAuthVerdict = false;
+	/** The 401 path or the migration converted account `uid` to its cookie session (utils.ts
+	 * onCookieSessionAdopted): the headers switch in place, so every holder (guilds, the gateway's
+	 * `token`) sends the cookie's, and a gateway that closed on the dead token reconnects. */
+	cookieSessionAdopted(uid: string) {
+		if (uid !== this.userinfo.uid) return;
+		applyAccountHeaders(this.headers, this.userinfo);
+		if (!this.awaitingAuthVerdict) return;
+		this.reconnectAfterAuth();
+	}
+	/** The token the open socket's Identify or Resume carried (undefined for a cookie session). */
+	identifiedToken?: string;
+	/** The gateway closed with 4004, "authentication failed", on the credential it identified
+	 * with. It takes the REST 401's verified path - probe the account's own API; only a
+	 * confirmed dead session is logged out and routed to /login. A socket that identified with a
+	 * token the account no longer sends (its session moved into the cookie while the socket
+	 * opened) reconnects with the current credential instead: the probe would find that one alive
+	 * and leave the gateway closed. */
+	gatewayAuthFailed() {
+		if (this.token !== this.identifiedToken) {
+			this.reconnectAfterAuth();
+			return;
+		}
+		this.awaitingAuthVerdict = true;
+		handleUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
+	}
+	private reconnectAfterAuth() {
+		if (this.swapped) return;
+		this.awaitingAuthVerdict = false;
+		const loaddesc = document.getElementById("load-desc");
+		if (loaddesc) loaddesc.textContent = I18n.retrying();
+		this.initwebsocket()
+			.then(async () => {
+				this.loaduser();
+				await this.init();
+				if (loaddesc) loaddesc.textContent = I18n.loaded();
+			})
+			.catch((e) => console.error(e));
+	}
 	resume_gateway_url?: string;
 	session_id?: string;
 	/** Each socket's deflate-stream writer, so a dead socket's stream is closed and dropped. */
@@ -693,6 +737,7 @@ class Localuser {
 			returny = res;
 			ws.addEventListener("open", (_event) => {
 				console.log("WebSocket connected");
+				this.identifiedToken = this.token;
 				if (resume) {
 					ws.send(
 						JSON.stringify({
@@ -930,7 +975,7 @@ class Localuser {
 			// that died while the app was closed, typically). It takes the REST 401's verified
 			// path - probe the account's own API; only a confirmed dead session is logged out and
 			// routed to /login.
-			if (code === 4004) handleUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
+			if (code === 4004) this.gatewayAuthFailed();
 		}
 	}
 	interNonceMap = new Map<string, Message>();

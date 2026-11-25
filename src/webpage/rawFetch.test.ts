@@ -171,6 +171,13 @@ const ALLOWED: Allowed[] = [
 		count: 1,
 		reason: "credentials shim wraps window.fetch",
 	},
+	// The 401 path's cookie probe (TASK-150), as apiFetch's own token probe.
+	{
+		file: "./utils/utils.ts",
+		snippet: 'fetch(trimTrailingSlashes(api) + "/users/@me"',
+		count: 1,
+		reason: "runs inside the 401 path, which apiFetch would re-enter",
+	},
 	// Default `fetcher` parameters; their callers pass CDN URLs.
 	{
 		file: "./utils/progessiveLoad.ts",

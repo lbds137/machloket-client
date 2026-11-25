@@ -87,14 +87,26 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 				uid: account.uid,
 				token: account.token,
 				authMode: account.authMode,
+				id: account.id,
 				serverurls: account.serverurls,
 			};
 			const dead = await tokenIsDead(url, probed);
 			if (gen !== unauthorizedNavGen) return;
+			// A live session releases the latch at once: a later 401 must not find it held.
+			if (!dead) {
+				unauthorizedNavPending = false;
+				return;
+			}
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
 			// graph, and a static import made any module that imports apiFetch before
 			// localuser hit "Cannot access 'Guild' before initialization" (direct.ts).
-			if (!dead || !(await import("./utils.js")).invalidateAccount(probed)) {
+			const utils = await import("./utils.js");
+			if (gen !== unauthorizedNavGen) return;
+			// A header token that died because its session moved into the cookie (another
+			// tab's migration, or a refused save of this one's) converts instead.
+			const verdict = await utils.cookieVerdictFor401(probed);
+			if (gen !== unauthorizedNavGen) return;
+			if (verdict !== "dead" || !utils.invalidateAccount(probed)) {
 				unauthorizedNavPending = false;
 				return;
 			}

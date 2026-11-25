@@ -217,7 +217,8 @@ const liveSpecialUserRegistry = new FinalizationRegistry<WeakRef<Specialuser>>((
 export class Specialuser {
 	serverurls: InstanceUrls;
 	email: string;
-	token: string;
+	/** A header account's token; a cookie account has none. */
+	token?: string;
 	json;
 	constructor(json: any) {
 		if (json instanceof Specialuser) {
@@ -638,6 +639,241 @@ export function runPendingLogouts(): Promise<void> {
 		return run;
 	});
 	return Promise.all(runs).then(() => {});
+}
+
+//region Moving header sessions into the cookie (TASK-150)
+type CookieSessionListener = {cookieSessionAdopted(uid: string): void};
+/** Told when an account's session moved into the cookie: each live Localuser, which re-applies
+ * its headers in place and reconnects a gateway that closed on the dead token. Held weakly, so
+ * a Localuser swapped away isn't kept alive by it. */
+const cookieSessionListeners = new Set<WeakRef<CookieSessionListener>>();
+export function onCookieSessionAdopted(listener: CookieSessionListener): void {
+	cookieSessionListeners.add(new WeakRef(listener));
+}
+function announceCookieSession(uid: string): void {
+	for (const ref of cookieSessionListeners) {
+		const listener = ref.deref();
+		if (!listener) {
+			cookieSessionListeners.delete(ref);
+			continue;
+		}
+		try {
+			listener.cookieSessionAdopted(uid);
+		} catch (e) {
+			console.error("A listener failed on the move into the cookie session:", e);
+		}
+	}
+}
+/** Whether `api`'s host offers cookie sessions as far as this page can tell. Re-reads the store
+ * beside the page's set: a tab started before the host turned cookie mode on learns it from the
+ * record another tab's start refreshed. */
+function isCookieModeApi(api: string): boolean {
+	const host = new URL(api).host;
+	if (cookieModeHosts.has(host)) return true;
+	const info = readStoredAccounts();
+	if (Object.hasOwn(info?.pendingLogouts ?? {}, host)) return true;
+	return Object.values(info?.users ?? {}).some((u) => {
+		try {
+			return (
+				new URL(u.serverurls.api).host === host &&
+				(u.serverurls.authCookie === true || u.auth_mode === "cookie")
+			);
+		} catch {
+			return false;
+		}
+	});
+}
+/** The id of the user whose session the browser's cookie on `api`'s host holds: a string on a
+ * 200 naming one, null when the server said there is none (a 401) or answered a JSON 200
+ * without an id, undefined when it gave no verdict (no answer, a redirect, a body cut off or not
+ * JSON - a proxy's page -, a 429 or 5xx). Raw fetch, briefly timed, never cached: it runs inside
+ * the 401 path, which apiFetch would re-enter. */
+async function cookieSessionUserId(api: string): Promise<string | null | undefined> {
+	let text: string;
+	try {
+		const res = await fetch(trimTrailingSlashes(api) + "/users/@me", {
+			headers: {[CSRF_HEADER]: "1"},
+			credentials: "include",
+			cache: "no-store",
+			redirect: "error",
+			signal: AbortSignal.timeout(10_000),
+		});
+		if (res.status === 401) return null;
+		if (res.status !== 200) return undefined;
+		text = await res.text();
+	} catch {
+		return undefined;
+	}
+	try {
+		const body: unknown = JSON.parse(text);
+		const id = (body as {id?: unknown} | null)?.id;
+		return typeof id === "string" && id ? id : null;
+	} catch {
+		return undefined;
+	}
+}
+/** Whether converting `uid` to the slot's cookie would override a later decision: a logout
+ * pending on the slot (the cookie is to end), the account logged out, or a newer header login
+ * stored for it. A stored cookie record is the same move made by another tab; no stored record
+ * is an account this page holds for the session only. */
+function cookieAdoptionIsStale(uid: string, deadToken: string, slot: string): boolean {
+	const info = readStoredAccounts();
+	if (Object.keys(info?.pendingLogouts ?? {}).some((host) => hostnameOf(host) === slot))
+		return true;
+	const stored = info?.users[uid] as
+		{token?: unknown; auth_mode?: unknown; loggedin?: unknown} | undefined;
+	if (!stored) return false;
+	if (stored.loggedin === false) return true;
+	return stored.auth_mode !== "cookie" && !holdsCredential(stored, {uid, token: deadToken});
+}
+/**
+ * Converts the records of `uid` that still hold `deadToken` into cookie accounts, after the
+ * server confirmed the browser's cookie on `api`'s hostname is that account's session: the
+ * exchange's 204, or a cookie probe answering its user id. The caller holds the slot's lock.
+ * The account record saves through tryUpdateLocal (refusal semantics: utils/accountSave.test.ts);
+ * the slot's other state goes in a second write, as the cookie now belongs to this account: a
+ * pending logout there would end it, and another cookie record there would send it as its own.
+ */
+function adoptCookieSession(uid: string, deadToken: string, api: string): void {
+	const dead: AccountAuth = {uid, token: deadToken};
+	let saver: Specialuser | undefined;
+	for (const ref of liveSpecialUsers) {
+		const u = ref.deref();
+		if (!u) {
+			liveSpecialUsers.delete(ref);
+			continue;
+		}
+		if (u.uid !== uid || !holdsCredential(u.json, dead)) continue;
+		u.json.auth_mode = "cookie";
+		delete u.json.token;
+		u.token = undefined;
+		saver = u;
+	}
+	const before = readStoredAccounts();
+	const storedRecord = before?.users[uid] as {token?: unknown; auth_mode?: unknown} | undefined;
+	// Over a newer login stored since (another tab's), the whole-record save would undo it.
+	const storedHoldsDead = !!storedRecord && holdsCredential(storedRecord, dead);
+	if (saver && (storedHoldsDead || !storedRecord)) saver.tryUpdateLocal();
+	const slot = cookieSlot(api);
+	const info = readStoredAccounts();
+	if (info) {
+		let changed = false;
+		for (const host of Object.keys(info.pendingLogouts ?? {})) {
+			if (hostnameOf(host) !== slot) continue;
+			delete info.pendingLogouts![host];
+			changed = true;
+		}
+		for (const [otherUid, other] of Object.entries(info.users)) {
+			if (otherUid === uid) {
+				// No live copy to save it (another tab's 401 path): convert the stored one.
+				if (!saver && other && holdsCredential(other, dead)) {
+					other.auth_mode = "cookie";
+					delete other.token;
+					changed = true;
+				}
+				continue;
+			}
+			if (!holdsCookieSlot(other, slot)) continue;
+			other.loggedin = false;
+			delete other.auth_mode;
+			changed = true;
+		}
+		if (changed) saveAccounts(serialiseForStore(info));
+	}
+	cookieModeHosts.add(new URL(api).host);
+	announceCookieSession(uid);
+}
+/** Converts `account` when the cookie is its own session (the probe answers its user id) and no
+ * later decision stands in the way (cookieAdoptionIsStale), under the caller's slot lock. True
+ * when converted; false when the cookie is someone else's or dead, the record has no id to
+ * compare, or the move is stale; undefined when the probe gave no verdict. */
+async function adoptCookieIfSameUser(
+	account: AccountAuth,
+	deadToken: string,
+): Promise<boolean | undefined> {
+	const api = account.serverurls?.api;
+	if (!api || typeof account.id !== "string" || !account.id) return false;
+	const found = await cookieSessionUserId(api);
+	if (found === undefined) return undefined;
+	if (found !== account.id) return false;
+	// Read after the probe: a logout can land while it is out.
+	if (cookieAdoptionIsStale(account.uid, deadToken, cookieSlot(api))) return false;
+	adoptCookieSession(account.uid, deadToken, api);
+	return true;
+}
+/**
+ * The 401 path's second look at a header account whose token probe answered 401: on a host that
+ * offers cookie sessions, the session may have moved into the cookie (another tab's migration,
+ * or this one's whose save was refused). "adopted" when the cookie is the account's own and the
+ * record is converted, "dead" when the account is to be logged out as before, "unanswered" when
+ * the cookie probe got no answer (left alone, as an unanswered token probe is).
+ */
+export async function cookieVerdictFor401(
+	account: AccountAuth,
+): Promise<"adopted" | "dead" | "unanswered"> {
+	const api = account.serverurls?.api;
+	const token = account.token;
+	if (account.authMode === "cookie" || typeof token !== "string" || !token || !api) return "dead";
+	if (!isCookieModeApi(api)) return "dead";
+	return withCookieLock(cookieSlot(api), async () => {
+		const adopted = await adoptCookieIfSameUser(account, token);
+		return adopted === true ? "adopted" : adopted === undefined ? "unanswered" : "dead";
+	});
+}
+/** The exchange answers fast or not at all; the app's start waits on it. */
+const SESSION_COOKIE_EXCHANGE_MS = 10_000;
+/**
+ * Moves the current account's header session into the cookie at start: its own discovery
+ * refreshes the stored `authCookie` (a plain start runs none otherwise), and when the instance
+ * offers cookie sessions and no logged-in cookie account holds the hostname's cookie, it calls
+ * `POST /auth/session-cookie`. A 204 converts the record; a 401 (another tab moved it already)
+ * converts it when the cookie probe answers this user; anything else, or no answer, keeps the
+ * header account. It waits for the host's pending-logout retry, then holds the slot's lock from
+ * the check through the record's save. Never throws: the start goes on with whatever it got.
+ */
+export async function migrateToCookieSession(user: Specialuser): Promise<void> {
+	try {
+		if (user.authMode === "cookie" || user.loggedin === false) return;
+		if (typeof user.token !== "string") return;
+		const api = user.serverurls.api;
+		const offered = await discoverAuthCookie(api);
+		if (offered !== undefined && offered !== user.serverurls.authCookie) {
+			user.serverurls.authCookie = offered; // the record's own serverurls object
+			user.tryUpdateLocal();
+		}
+		if (user.serverurls.authCookie !== true) return;
+		cookieModeHosts.add(new URL(api).host);
+		const slot = cookieSlot(api);
+		await Promise.all(
+			[...pendingLogoutRuns].filter(([host]) => hostnameOf(host) === slot).map(([, run]) => run),
+		);
+		await withCookieLock(slot, async () => {
+			if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return;
+			const token = user.token;
+			if (user.authMode === "cookie" || typeof token !== "string") return;
+			let res: Response;
+			try {
+				// Untagged headers: this request's 401 is answered here, not by the 401 path.
+				res = await apiFetch(
+					trimTrailingSlashes(api) + "/auth/session-cookie",
+					{
+						method: "POST",
+						headers: {Authorization: token, [AUTH_OPT_IN_HEADER]: "cookie", [CSRF_HEADER]: "1"},
+					},
+					{timeoutMs: SESSION_COOKIE_EXCHANGE_MS},
+				);
+			} catch (e) {
+				console.warn("The session cookie exchange got no answer; staying on the token", e);
+				return;
+			}
+			if (res.status === 204) adoptCookieSession(user.uid, token, api);
+			else if (res.status === 401) await adoptCookieIfSameUser(user, token);
+			// 403 (cookie mode off for this origin, a bot) and 409 (another user's cookie) change
+			// nothing on the server: the header account stays.
+		});
+	} catch (e) {
+		console.warn("Moving the session into the cookie failed; staying on the token", e);
+	}
 }
 //endregion
 function isValidAccount(user: unknown): boolean {
