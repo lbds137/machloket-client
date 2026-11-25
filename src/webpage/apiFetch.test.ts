@@ -1006,6 +1006,8 @@ describe("apiFetch wrapper", () => {
 				loggedin: true,
 			});
 		const boot = addTwin();
+		// getBulkUsers builds its twins from the stored record, so the account is stored.
+		boot.updateLocal();
 		const refreshed = addTwin();
 		captureRequests(API + "/users/@me/delete", () =>
 			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
@@ -1147,6 +1149,44 @@ describe("apiFetch wrapper", () => {
 		expect(stored.token).toBe("fake-relogin-header");
 		expect(stored.loggedin).toBe(true);
 		expect(header.loggedin).toBe(true);
+	});
+
+	it("a dead session another tab already removed is not stored back as a logged-out entry (TASK-155)", async () => {
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "removed-elsewhere@example.test",
+			token: "fake-removed-elsewhere",
+			loggedin: true,
+		});
+		// Another tab removes the account while this one still holds it live.
+		const info = JSON.parse(localStorage.getItem("userinfos")!);
+		delete info.users[user.uid];
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		captureRequests(API + "/users/@me/settings", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+
+		await fetchRetryOnce(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(user),
+			body: JSON.stringify({status: "idle"}),
+		});
+		// The live instance still flips, so this tab treats the session as dead...
+		await vi.waitFor(() => expect(user.loggedin).toBe(false));
+
+		// ...but the store keeps the other tab's removal.
+		expect(Object.hasOwn(JSON.parse(localStorage.getItem("userinfos")!).users, user.uid)).toBe(
+			false,
+		);
 	});
 
 	it("the probe uses the FIRST /vN base, not a later /vN segment in the path", async () => {
