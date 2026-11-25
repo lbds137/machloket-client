@@ -1066,6 +1066,38 @@ describe("apiFetch wrapper", () => {
 		expect(user.loggedin).toBe(false);
 	});
 
+	it("a 401 from a host other than the account's API sends no probe there and logs no one out", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "foreign-401@example.test",
+			token: "fake-foreign-401-token",
+			loggedin: true,
+		});
+		const FOREIGN = "http://foreign401.test/api/v9";
+		let foreignProbes = 0;
+		captureRequests(FOREIGN + "/rooms", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(FOREIGN + "/users/@me", () => {
+			foreignProbes++;
+			return Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+		});
+
+		await fetchRetryOnce(FOREIGN + "/rooms", {headers: buildAccountHeaders(user)});
+		// Let any probe the 401 path would start reach the interceptor.
+		await new Promise((r) => setTimeout(r, 50));
+
+		expect(foreignProbes).toBe(0);
+		expect(user.loggedin).toBe(true);
+		expect(nav).not.toHaveBeenCalled();
+	});
+
 	it("makeGuild 401 with a dead-token probe invalidates the stored account and routes to /login", async () => {
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
 		const user = adduser({

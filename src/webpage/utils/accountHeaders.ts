@@ -4,6 +4,8 @@ export type AccountAuth = {
 	readonly uid: string;
 	readonly token?: string;
 	readonly authMode?: "cookie";
+	/** The account's own API base (`…/api/v9`). The 401 probe goes only there. */
+	readonly serverurls?: {readonly api: string};
 };
 
 export type AccountHeaders = {
