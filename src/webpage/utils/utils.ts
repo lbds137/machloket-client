@@ -10,7 +10,12 @@ import {readItem, saveAccounts, writeAccounts} from "./storage/settingOverlay";
 import {isStoreRefusal, trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
 import {API_TIMEOUT_MS, apiFetch} from "./apiFetch.js";
-import {buildAccountHeaders, cookieModeHosts, credentialsFor} from "./accountHeaders.js";
+import {
+	type AccountAuth,
+	buildAccountHeaders,
+	cookieModeHosts,
+	credentialsFor,
+} from "./accountHeaders.js";
 
 fix();
 const apiDoms = new Set<string>();
@@ -428,9 +433,17 @@ function isValidAccount(user: unknown): boolean {
 		user && typeof user === "object" && (user as {loggedin?: unknown}).loggedin !== false,
 	);
 }
-/** Marks the account whose uid matches the 401'd request invalid, persisting through
- * tryUpdateLocal so E5 save-refusal semantics apply. Returns whether anything matched. */
-export function invalidateAccount(uid: string): boolean {
+/** Whether a stored or live account record holds the credential the probe found dead. A record
+ * for the same uid with another credential is a newer login (another tab's), not this session. */
+function holdsCredential(record: {token?: unknown; auth_mode?: unknown}, dead: AccountAuth) {
+	if (dead.authMode === "cookie") return record.auth_mode === "cookie";
+	return record.auth_mode !== "cookie" && record.token === dead.token;
+}
+/** Marks invalid the records of the 401'd request's account that still hold its dead credential,
+ * persisting through tryUpdateLocal so E5 save-refusal semantics apply. A record of the same uid
+ * holding another credential (a re-login stored since) stays. Returns whether anything matched. */
+export function invalidateAccount(dead: AccountAuth): boolean {
+	const uid = dead.uid;
 	let matched = 0;
 	const handled = new Set<string>();
 	// Several live instances can share one uid (getBulkUsers constructs a fresh
@@ -443,7 +456,7 @@ export function invalidateAccount(uid: string): boolean {
 			liveSpecialUsers.delete(ref);
 			continue;
 		}
-		if (u.uid === uid) {
+		if (u.uid === uid && holdsCredential(u.json, dead)) {
 			matched++;
 			handled.add(u.uid);
 			if (u.json.loggedin !== false) {
@@ -453,7 +466,15 @@ export function invalidateAccount(uid: string): boolean {
 			}
 		}
 	}
+	const storedRecord = (raw: unknown) =>
+		(raw instanceof Specialuser ? raw.json : raw) as
+			{token?: unknown; auth_mode?: unknown} | null | undefined;
+	const before = readStoredAccounts();
 	for (const instances of toSave.values()) {
+		// The save writes the whole record: over a newer login's, it would put the dead token
+		// back. Then only these live instances flip, and the stored login stays.
+		const stored = storedRecord(before?.users[uid]);
+		const persist = !stored || typeof stored !== "object" || holdsCredential(stored, dead);
 		const prevs = instances.map((u) => ({
 			loggedin: u.json.loggedin,
 			hasAuthMode: "auth_mode" in u.json,
@@ -464,7 +485,7 @@ export function invalidateAccount(uid: string): boolean {
 			delete u.json.auth_mode;
 		}
 		try {
-			instances[instances.length - 1].tryUpdateLocal();
+			if (persist) instances[instances.length - 1].tryUpdateLocal();
 		} catch (e) {
 			instances.forEach((u, i) => {
 				u.json.loggedin = prevs[i].loggedin; // raw write (see above)
@@ -482,6 +503,8 @@ export function invalidateAccount(uid: string): boolean {
 			if (!raw || typeof raw !== "object") continue;
 			if (storedUid !== uid) continue;
 			if (handled.has(storedUid)) continue;
+			const record = storedRecord(raw);
+			if (!record || !holdsCredential(record, dead)) continue;
 			matched++;
 			if ((raw as {loggedin?: unknown}).loggedin === false) continue;
 			try {
