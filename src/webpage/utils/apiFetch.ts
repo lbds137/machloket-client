@@ -86,7 +86,7 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
 			// graph, and a static import made any module that imports apiFetch before
 			// localuser hit "Cannot access 'Guild' before initialization" (direct.ts).
-			if (!dead || !(await import("./utils.js")).invalidateAccount(account.uid)) {
+			if (!dead || !(await import("./utils.js")).invalidateAccount(account)) {
 				unauthorizedNavPending = false;
 				return;
 			}

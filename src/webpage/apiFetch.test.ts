@@ -1028,6 +1028,89 @@ describe("apiFetch wrapper", () => {
 		expect(JSON.parse(localStorage.getItem("userinfos")!).users[boot.uid].loggedin).toBe(false);
 	});
 
+	it("a dead old token does not log out the fresh session another tab stored for the same uid (TASK-153)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const serverurls = () => ({
+			api: API,
+			cdn: "http://apifetch.test",
+			gateway: "ws://apifetch.test",
+			wellknown: "http://apifetch.test",
+		});
+		// This tab booted on the old token; another tab then logged in again and stored a new one.
+		const stale = adduser({
+			serverurls: serverurls(),
+			email: "relogin@example.test",
+			token: "fake-relogin-old",
+			loggedin: true,
+		});
+		const fresh = adduser({
+			serverurls: serverurls(),
+			email: "relogin@example.test",
+			token: "fake-relogin-new",
+			loggedin: true,
+		});
+		captureRequests(API + "/users/@me/settings", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+
+		await fetchRetryOnce(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(stale),
+			body: JSON.stringify({status: "idle"}),
+		});
+		await vi.waitFor(() => expect(stale.loggedin).toBe(false));
+
+		const stored = JSON.parse(localStorage.getItem("userinfos")!).users[fresh.uid];
+		expect(stored.token).toBe("fake-relogin-new");
+		expect(stored.loggedin).toBe(true);
+		expect(fresh.loggedin).toBe(true);
+		// The stale tab still leaves for /login: its own session is dead.
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledWith("/login"));
+	});
+
+	it("a dead cookie session does not log out a header re-login stored for the same uid (TASK-153)", async () => {
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const serverurls = () => ({
+			api: API,
+			cdn: "http://apifetch.test",
+			gateway: "ws://apifetch.test",
+			wellknown: "http://apifetch.test",
+		});
+		const cookie = adduser({
+			serverurls: serverurls(),
+			email: "relogin-cookie@example.test",
+			auth_mode: "cookie",
+			loggedin: true,
+		});
+		const header = adduser({
+			serverurls: serverurls(),
+			email: "relogin-cookie@example.test",
+			token: "fake-relogin-header",
+			loggedin: true,
+		});
+		captureRequests(API + "/users/@me/settings", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+		captureRequests(API + "/users/@me", () =>
+			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		);
+
+		await fetchRetryOnce(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(cookie),
+			body: JSON.stringify({status: "idle"}),
+		});
+		await vi.waitFor(() => expect(cookie.loggedin).toBe(false));
+
+		const stored = JSON.parse(localStorage.getItem("userinfos")!).users[header.uid];
+		expect(stored.token).toBe("fake-relogin-header");
+		expect(stored.loggedin).toBe(true);
+		expect(header.loggedin).toBe(true);
+	});
+
 	it("the probe uses the FIRST /vN base, not a later /vN segment in the path", async () => {
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
 		const user = adduser({
