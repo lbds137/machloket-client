@@ -99,6 +99,12 @@ describe("account uid tagging", () => {
 			Authorization: "fake-tok-a",
 			"X-Discord-MFA-Authorization": "fake-mfa",
 		});
+		// The result's type admits the keys `extra` adds: this line only type-checks if it does.
+		const mfaValue: string = withExtra["X-Discord-MFA-Authorization"];
+		expect(mfaValue).toBe("fake-mfa");
+		// ...and only those: a key neither `built` nor `extra` declares stays a type error.
+		// @ts-expect-error "X-Discord-MFA-Authorisation" is no key of the derived headers
+		expect(withExtra["X-Discord-MFA-Authorisation"]).toBeUndefined();
 
 		const withoutJson = deriveHeaders(built, {json: false});
 		expect(accountUidOf({headers: withoutJson})).toBe(headerUser.uid);
