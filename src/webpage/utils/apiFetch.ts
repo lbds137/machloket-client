@@ -34,21 +34,26 @@ export function resetUnauthorizedNavForTests(): void {
 }
 
 /** Whether the session behind a 401'd request is really dead: the instance's auth middleware
- * rejects any request carrying a bad credential before routing, so a GET to /users/@me under the
- * same /vN base answers 401 for a dead session and anything else for a live one. Endpoints
+ * rejects any request carrying a bad credential before routing, so a GET to the account's own
+ * `<api>/users/@me` answers 401 for a dead session and anything else for a live one. Endpoints
  * can answer their own bare 401s for reasons that are not a dead session — a wrong password
  * on the delete/disable forms, a rejected TOTP verify — and those must never log a valid
- * account out. When the URL has no recognizable /vN base, the probe cannot verify the session
- * and fails closed (leaves the session alone); the cost is that a truly dead credential on such
- * an instance never auto-routes to /login — recovery is switching accounts or logging in
- * again. Raw fetch (no apiFetch recursion), briefly timed. */
+ * account out. The probe goes only to the account's own API, never to the 401'd request's
+ * host: it carries the account's current credential, which READY may have refreshed since the
+ * request left. A 401 from outside that API (another host, or a path off its `/vN` base), or
+ * an account with no known API, fails closed (leaves the session alone); the cost is that such
+ * a 401 never auto-routes to /login. Raw fetch (no apiFetch recursion), briefly timed. */
 async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<boolean> {
 	try {
+		const api = account.serverurls?.api;
+		if (!api) return false;
+		const apiUrl = new URL(api);
+		const apiPath = apiUrl.pathname.replace(/\/+$/, "");
 		const parsed = new URL(requestUrl, window.location.href);
-		const base = /^(.*?\/v\d+)(?=\/)/.exec(parsed.pathname)?.[0];
-		// No recognizable API base: the probe cannot verify the token, so leave the session alone.
-		if (!base) return false;
-		const probe = await fetch(parsed.origin + base + "/users/@me", {
+		if (parsed.origin !== apiUrl.origin || !parsed.pathname.startsWith(apiPath + "/")) {
+			return false;
+		}
+		const probe = await fetch(apiUrl.origin + apiPath + "/users/@me", {
 			headers: buildAccountHeaders(account, {json: false}),
 			signal: AbortSignal.timeout(10_000),
 		});
