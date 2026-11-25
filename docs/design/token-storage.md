@@ -42,7 +42,7 @@ Status: **Agreed**, client half of TASK-136, joint with the Machloket Server pro
 
 These answers are in the merged server contract (checked 2026-11-24).
 
-1. **When to opt in:** the discovery route the client already fetches before login, `GET /policies/instance/domains` (`utils/utils.ts:921`), gains `"authCookie": true`. The server sends it only when cookie mode is on and the request's `Origin` is allowlisted, and leaves it out otherwise. The client opts in only when it is `true`. Stock instances never send it.
+1. **When to opt in:** the discovery route the client already fetches before login, `GET /policies/instance/domains` (`utils.ts` `discoverAuthCookie`, which asks the resolved API base), gains `"authCookie": true`. The server sends it only when cookie mode is on and the request's `Origin` is allowlisted, and leaves it out otherwise. The client opts in only when it is `true`. Stock instances never send it.
 2. **Which 401s clear the cookie:** only the auth layer rejecting the cookie credential itself. A route's own 401 (a wrong password, a rejected TOTP code, an MFA step-up refusal) never clears it.
 3. **A stale header token:**
    - **Migration rotates.** `POST /auth/session-cookie` mints a new session into the cookie and removes the old one, so the old header token dies. Any tab or stored record still holding it gets 401.
@@ -126,7 +126,8 @@ Today's global wrapper (before this design) sends credentials to every known API
 
 ### Login, register and the MFA steps of login
 
-- **When the client opts in:** only when the instance's discovery answer has `"authCookie": true` and no cookie account exists on that host.
+- **When the client opts in:** only when the instance's discovery answer has `"authCookie": true` and no logged-in cookie account exists on that hostname. Cookies ignore the port, so the cookie slot is the hostname: two API ports on one hostname share one cookie. A login there first waits for a running retry of its pending logout.
+- **One cookie account per hostname:** storing a cookie login demotes any other logged-in cookie account on the hostname to logged out (its record stays, without `auth_mode`), because the browser's one cookie is the new session now; otherwise that record would send the new account's session as its own.
 - **MFA steps:** the opt-in, CSRF header and `credentials: "include"` reach the second-factor calls too (`settings.ts:2318`, `:2432` build their own headers today), because a login answering `mfa: true` sets no cookie.
 - **Response handling:** the login handler branches on `auth_mode`. It stores a cookie account, or a header account exactly as today.
 - **Reset and email verify:** these send no opt-in, because the client does not consume their token.
@@ -164,8 +165,9 @@ Today's global wrapper (before this design) sends credentials to every known API
 
 - **Cookie account logout:** logout of a cookie account sends credentials and the CSRF header.
 - **A header account's logout** sends its `Authorization`, so the cookie account on the same host stays logged in (contract, Logout).
-- **A failed logout:** if the logout of the host's cookie account fails and the user removes the account anyway, the client records a pending logout for that API host. A header account's failed logout records none: a cookie retry would end the cookie account's session, not the header account's. The client retries that pending `POST /auth/logout` by cookie at the next start (answer 5), so a removed account's cookie does not linger. A 204 or a 401 both end the pending logout (a 401 means the cookie was already dead, and the server cleared it).
+- **A failed logout:** if the logout of the host's cookie account fails and the user removes the account anyway, the client records a pending logout for that API host, in the same store write that removes the account. A header account's failed logout records none: a cookie retry would end the cookie account's session, not the header account's. The client retries that pending `POST /auth/logout` by cookie at the next start (answer 5), so a removed account's cookie does not linger. A 2xx or a 401 ends the pending logout (a 401 means the cookie was already dead, and the server cleared it); any other answer, a 403 included, keeps it for the next start, since the cookie may still be live. The retry reads the entry under the slot lock and clears it only if it is still the one it sent for.
   - **Cleared first:** a pending logout is dropped when a new cookie login or a migration on that host succeeds first, so the retry never ends the new session.
+  - **A header login over a live cookie record** (the same account answered with a token, the server having ignored the opt-in) records a pending logout for that host, at the replaced record's API base: no record holds that cookie any more. So does a cookie login of the same account on another hostname (the instance's API moved).
   - **Dropped at start, instead of retried,** when a stored, logged-in cookie account exists on that host: the cookie then belongs to that account. This check runs before the retry.
   - **Runs first:** at start, the pending logout runs before migration.
   - **Session-only store:** the pending logout is written like the accounts. When the store refuses the write, it rides the same session overlay, so a refused store gives a pending logout that lasts the session, not one that is lost silently.
@@ -200,7 +202,7 @@ Today's global wrapper (before this design) sends credentials to every known API
   - migration: 204, a refused save, and a non-204;
   - a header account's 401 whose cookie probe answers 200 converts the record instead of logging out;
   - no handler writes an absent token;
-  - no opt-in without `authCookie: true`, or when a logged-in cookie account exists on the host;
+  - no opt-in without `authCookie: true`, or when a logged-in cookie account exists on the hostname (any port);
   - `FormData` sends get no JSON `Content-type`; the message-send XHRs set `withCredentials` for a cookie account;
   - each raw-token page builds through the account;
   - a bot request never invalidates an account;
@@ -208,7 +210,8 @@ Today's global wrapper (before this design) sends credentials to every known API
   - a cookie account's `apiFetch(url, {headers: this.headers})` and a raw `fetch` with its headers both go with credentials;
   - the pending-logout retry and both cookie probes send credentials and the CSRF header;
   - a first login's marked request to a host with no stored account goes with credentials;
-  - pending logout: recorded only for the cookie account, never for a header account; retried at start; dropped by a newer cookie login or a logged-in cookie account on the host; run before migration.
+  - pending logout: recorded only for the cookie account, never for a header account; retried at start; dropped by a newer cookie login or a logged-in cookie account on the hostname; kept on a 403; run before migration.
+  - a cookie login demotes another logged-in cookie account on the same hostname;
 - **Mock e2e:**
   - the opt-in and CSRF headers on login, and on both MFA steps;
   - cookie-mode requests carry no `Authorization`, and send credentials right after an in-app login;

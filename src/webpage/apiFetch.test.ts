@@ -2041,7 +2041,7 @@ describe("U-api 2e: the tail on apiFetch", () => {
 		let probes = 0;
 		captureRequests(API + "/auth/logout", () => {
 			logoutCalls++;
-			return logoutCalls === 1 ? unauthorized() : new Response(null, {status: 204});
+			return unauthorized();
 		});
 		captureRequests(API + "/users/@me", () => {
 			probes++;
@@ -2051,7 +2051,8 @@ describe("U-api 2e: the tail on apiFetch", () => {
 		expect(await user.logout()).toBe(true);
 		await new Promise((r) => setTimeout(r, 0));
 
-		expect(logoutCalls).toBe(2);
+		// One call: a logout 401 means the session is already gone, so it isn't retried (TASK-149).
+		expect(logoutCalls).toBe(1);
 		expect(probes).toBe(0);
 		expect(nav).not.toHaveBeenCalled();
 		const logoutInit = fetchSpy.mock.calls.find(([u]) => String(u).endsWith("/auth/logout"))?.[1];

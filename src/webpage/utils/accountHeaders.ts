@@ -1,4 +1,6 @@
 export const CSRF_HEADER = "X-Machloket-CSRF";
+/** Asks a login, register or second-factor step for a cookie session instead of a body token. */
+export const AUTH_OPT_IN_HEADER = "X-Machloket-Auth";
 
 export type AccountAuth = {
 	readonly uid: string;
@@ -19,7 +21,8 @@ export type AccountHeaders = {
  * refreshes that one), never another live copy of the same uid that holds an older token. */
 const builtFor = new WeakMap<object, AccountAuth>();
 
-// Filled from discovery's authCookie by TASK-149; empty until then.
+/** API hosts whose unmarked requests get no credentials: discovery offered cookie sessions
+ * there, a cookie account is stored there, or a pending logout's cookie is (utils.ts fills it). */
 export const cookieModeHosts = new Set<string>();
 
 export function applyAccountHeaders(target: AccountHeaders, account: AccountAuth): void {

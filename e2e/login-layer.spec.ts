@@ -170,6 +170,10 @@ test("the instance-rewrite dialog renders above the raised auth dialog", async (
 	await page.route("http://127.0.0.1:4173/api/v9/policies/instance/config", (route) =>
 		route.fulfill({status: 404, body: ""}),
 	);
+	// And for its cookie-session discovery (TASK-149); a 404 leaves cookie sessions off.
+	await page.route("http://127.0.0.1:4173/api/v9/policies/instance/domains", (route) =>
+		route.fulfill({status: 404, body: ""}),
+	);
 
 	await page.goto("/");
 	await page.getByRole("heading", {name: "Remote Mock", exact: true}).click();

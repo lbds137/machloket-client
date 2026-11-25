@@ -1,5 +1,11 @@
 import {I18n} from "./i18n.js";
-import {adduser, InstanceInfo, Specialuser, pingResponse} from "./utils/utils.js";
+import {
+	adduserFromAuth,
+	cookieOptInHeaders,
+	InstanceInfo,
+	Specialuser,
+	pingResponse,
+} from "./utils/utils.js";
 import {makeLogin} from "./login.js";
 import {MarkDown} from "./markdown.js";
 import {Dialog, FormError} from "./settings.js";
@@ -46,16 +52,13 @@ export async function makeRegister(
 	const form = opt.addForm(
 		"",
 		(res, sent) => {
-			if ("token" in res && typeof res.token == "string") {
-				const submittedInstance = submittedInstances.get(sent);
-				if (!submittedInstance) {
-					throw new Error("Registration succeeded before any instance was applied");
-				}
-				const u = adduser({
-					serverurls: submittedInstance,
-					email: email.value,
-					token: res.token,
-				});
+			const submittedInstance = submittedInstances.get(sent);
+			if (!submittedInstance) {
+				throw new Error("Registration succeeded before any instance was applied");
+			}
+			// A header account (`token`) or a cookie account (`auth_mode: "cookie"`).
+			const u = adduserFromAuth(res, submittedInstance, email.value);
+			if (u) {
 				u.username = user.value;
 				if (handle) {
 					dialog.hide();
@@ -102,6 +105,10 @@ export async function makeRegister(
 		e.consent = check.checked;
 		if (registerInstance) submittedInstances.set(e, registerInstance);
 	});
+	form.submitHeaders = async (sent) => {
+		const instance = submittedInstances.get(sent);
+		return instance ? await cookieOptInHeaders(instance) : undefined;
+	};
 	const toshtml = document.createElement("div");
 	const md = document.createElement("span");
 	const check = document.createElement("input");

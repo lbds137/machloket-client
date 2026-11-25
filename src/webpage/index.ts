@@ -2,7 +2,13 @@
 import "./utils/trustedTypes.js";
 import {Localuser} from "./localuser.js";
 import {Contextmenu} from "./contextmenu.js";
-import {bootAccountId, getViewportHeight, mobile, Specialuser} from "./utils/utils.js";
+import {
+	bootAccountId,
+	getViewportHeight,
+	mobile,
+	runPendingLogouts,
+	Specialuser,
+} from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
 import {consumeMembersPop, installMembersView} from "./utils/membersView.js";
 import {consumeSearchPop, installSearchView} from "./utils/searchView.js";
@@ -106,6 +112,9 @@ if (window.location.pathname.startsWith("/channels")) {
 		// Used up before anything below can throw: a reload after a failed boot must sign a
 		// session-only account out, as its Dialog says. The overlay already holds the accounts.
 		const handedOff = consumeAccountHandoff();
+		// Ends cookies whose accounts were removed with their logout failed. Not awaited: a
+		// cookie login waits for its own host's retry (cookieOptInHeaders).
+		void runPendingLogouts();
 		const current = bootAccountId(Localuser.users);
 		if (!current || !Localuser.users.users[current]) {
 			// A sign-in here that the full store refuses shows the Dialog itself (adduser).

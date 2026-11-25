@@ -20,6 +20,7 @@
  * REST API (/api/v9 and /_spacebar):
  * - GET  /api/v9/ping                               -> MOCK_PING (instance metadata + tosPage: null)
  * - GET  /api/v9/policies/instance/config           -> MOCK_POLICIES_CONFIG (can_recover_account: false, register_dateOfBirth_required: true)
+ * - GET  /api/v9/policies/instance/domains          -> cdn/gateway/apiEndpoint, + authCookie: true with that option
  * - POST /api/v9/auth/login                         -> MOCK_LOGIN_RESPONSE (neutral e2e-mock-token)
  * - GET  /api/v9/users/@me/settings-proto/2/json    -> MOCK_SETTINGS_PROTO (empty favoriteGifs proto)
  * - PATCH /api/v9/users/@me/settings-proto/2/json   -> MOCK_SETTINGS_PROTO
@@ -1159,6 +1160,9 @@ export interface MockInstanceOptions {
 	suppressChangelog?: boolean;
 	/** Override fields returned by GET /api/v9/policies/instance/config. */
 	policiesConfig?: Partial<typeof MOCK_POLICIES_CONFIG> & {limits_message_maxCharacters?: number};
+	/** Whether GET /api/v9/policies/instance/domains offers cookie sessions (`authCookie: true`).
+	 * Defaults to false: the stock answer, a header-token instance. */
+	authCookie?: boolean;
 	/** Permission names (entries of `Permissions.permisions` in `src/webpage/permissions.ts`,
 	 * where the array's index is the bit) merged via bitwise OR into the `@everyone` role's
 	 * `permissions` string served to the app. */
@@ -1242,6 +1246,7 @@ export async function mountMockInstance(
 		members: memberOverrides,
 		extraChannels,
 		archivedThread = false,
+		authCookie = false,
 	} = options;
 
 	const memberById = new Map<string, memberjson>([
@@ -1534,6 +1539,17 @@ export async function mountMockInstance(
 			// 4. Instance policies config (src/webpage/login.ts, src/webpage/register.ts)
 			if (method === "GET" && pathname === "/api/v9/policies/instance/config") {
 				return fulfillJson({...MOCK_POLICIES_CONFIG, ...policiesConfig});
+			}
+
+			// 4b. Discovery (utils.ts getapiurls: the instance's cookie-session offer)
+			if (method === "GET" && pathname === "/api/v9/policies/instance/domains") {
+				return fulfillJson({
+					cdn: handle.origin,
+					gateway: handle.gateway,
+					defaultApiVersion: "9",
+					apiEndpoint: handle.api,
+					...(authCookie && {authCookie: true}),
+				});
 			}
 
 			// 5. Login (src/webpage/login.ts makeLogin)

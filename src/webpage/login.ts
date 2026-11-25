@@ -1,4 +1,10 @@
-import {InstanceInfo, adduser, Specialuser} from "./utils/utils.js";
+import {
+	InstanceInfo,
+	adduserFromAuth,
+	cookieOptInHeaders,
+	runPendingLogouts,
+	Specialuser,
+} from "./utils/utils.js";
 import {I18n} from "./i18n.js";
 import {Dialog, Form, FormError} from "./settings.js";
 import {makeRegister} from "./register.js";
@@ -91,14 +97,11 @@ export async function makeLogin(
 	form = opt.addForm(
 		"",
 		(res, sent) => {
-			if ("token" in res && typeof res.token == "string") {
-				const submittedInstance = submittedInstances.get(sent);
-				if (!submittedInstance) throw new Error("Login succeeded before any instance was applied");
-				const u = adduser({
-					serverurls: submittedInstance,
-					email: email.value,
-					token: res.token,
-				});
+			const submittedInstance = submittedInstances.get(sent);
+			if (!submittedInstance) throw new Error("Login succeeded before any instance was applied");
+			// A header account (`token`) or a cookie account (`auth_mode: "cookie"`).
+			const u = adduserFromAuth(res, submittedInstance, email.value);
+			if (u) {
 				u.username = email.value;
 				if (handle) {
 					handle(u);
@@ -136,6 +139,10 @@ export async function makeLogin(
 		}
 		if (loginInstance) submittedInstances.set(sent, loginInstance);
 	});
+	form.submitHeaders = async (sent) => {
+		const instance = submittedInstances.get(sent);
+		return instance ? await cookieOptInHeaders(instance) : undefined;
+	};
 	const button = form.button.deref();
 	picker.giveButton(button);
 	button?.classList.add("createAccount");
@@ -175,5 +182,7 @@ export async function makeLogin(
 }
 await I18n.done;
 if (window.location.pathname.startsWith("/login")) {
+	// The login page is a start too: a removed account's cookie ends before a new login.
+	void runPendingLogouts();
 	makeLogin();
 }
