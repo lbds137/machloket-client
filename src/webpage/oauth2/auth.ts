@@ -65,7 +65,7 @@ async function showBotInvite(well: string, params: URLSearchParams) {
 	await I18n.done;
 	function showGuilds(user: Specialuser) {
 		if (!urls) return;
-		fetchBotInvite(urls.api, user.token, window.location.search).then((json) => {
+		fetchBotInvite(urls.api, user, window.location.search).then((json) => {
 			if (typeof json === "string") return alert(json);
 			const guilds: botjsonfetch["guilds"] = [];
 			for (const guild of json.guilds) {
@@ -98,7 +98,7 @@ async function showBotInvite(well: string, params: URLSearchParams) {
 			dialog.append(button);
 			button.onclick = () => {
 				const clientId = params.get("client_id") as string;
-				authorizeBot(urls.api, user.token, clientId, select.value, permstr).then((added) =>
+				authorizeBot(urls.api, user, clientId, select.value, permstr).then((added) =>
 					alert(added === true ? I18n.invite.botAdded() : added),
 				);
 			};
@@ -163,7 +163,7 @@ async function showBotInvite(well: string, params: URLSearchParams) {
 		if (title) title.textContent = I18n.invite.botHeading();
 	}
 	if (user && urls) {
-		fetchBotInvite(urls.api, user.token, window.location.search).then((json) => {
+		fetchBotInvite(urls.api, user, window.location.search).then((json) => {
 			const title = document.getElementById("invitename");
 			// No invite to show (an unknown bot, an expired login…): say why in its place.
 			if (typeof json === "string") {

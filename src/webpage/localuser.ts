@@ -114,6 +114,12 @@ import {
 import {fetchMessageLimit} from "./utils/messageLimit.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
 import {apiFetch} from "./utils/apiFetch.js";
+import {
+	type AccountHeaders,
+	applyAccountHeaders,
+	buildAccountHeaders,
+	deriveHeaders,
+} from "./utils/accountHeaders.js";
 type traceObj = {
 	micros: number;
 	calls?: (string | traceObj)[];
@@ -164,7 +170,7 @@ class Localuser {
 	serverurls!: Specialuser["serverurls"];
 	initialized!: boolean;
 	info!: Specialuser["serverurls"];
-	headers!: {"Content-type": string; Authorization: string};
+	headers!: AccountHeaders;
 	ready!: readyjson;
 	guilds!: Guild[];
 	guildids: Map<string, Guild> = new Map();
@@ -400,10 +406,7 @@ class Localuser {
 				oldurl: e.url,
 			});
 		});
-		this.headers = {
-			"Content-type": "application/json; charset=UTF-8",
-			Authorization: this.userinfo.token,
-		};
+		this.headers = buildAccountHeaders(this.userinfo);
 		this.favorites = new Favorites(this);
 		const rights = this.perminfo.user.rights || "875069521787904";
 		this.rights = new Rights(rights);
@@ -506,7 +509,7 @@ class Localuser {
 		if (ready.d.auth_token) {
 			this.userinfo.token = ready.d.auth_token;
 			this.userinfo.json.token = ready.d.auth_token;
-			this.headers.Authorization = ready.d.auth_token;
+			applyAccountHeaders(this.headers, this.userinfo);
 			this.userinfo.tryUpdateLocal();
 		}
 
@@ -2772,7 +2775,7 @@ class Localuser {
 					parsed = e.code;
 				}
 				// The form shows only a FormError; a raw network failure would vanish without a word.
-				const result = await acceptInvite(this.info.api, parsed, this.headers.Authorization).catch(
+				const result = await acceptInvite(this.info.api, parsed, this.headers).catch(
 					(err: unknown) => {
 						console.error(err);
 						throw new FormError(text, I18n.requestFailed("offline"));
@@ -3952,7 +3955,7 @@ class Localuser {
 									this.headers,
 									(mfaHeaders) =>
 										apiFetch(this.info.api + "/users/@me/mfa/codes-verification", {
-											headers: {...this.headers, ...mfaHeaders},
+											headers: deriveHeaders(this.headers, {extra: mfaHeaders}),
 											method: "POST",
 											body: JSON.stringify({key: pw.value, ...body}),
 										}).catch(() => undefined),
@@ -4067,7 +4070,7 @@ class Localuser {
 									this.headers,
 									(mfaHeaders) =>
 										apiFetch(this.info.api + "/users/@me/mfa/webauthn/credentials/" + key.id, {
-											headers: {...this.headers, ...mfaHeaders},
+											headers: deriveHeaders(this.headers, {extra: mfaHeaders}),
 											method: "DELETE",
 										}).catch(() => undefined),
 									(m) => new Dialog(m).show(),
@@ -4117,7 +4120,7 @@ class Localuser {
 									this.headers,
 									(mfaHeaders) =>
 										apiFetch(this.info.api + "/users/@me/mfa/webauthn/credentials", {
-											headers: {...this.headers, ...mfaHeaders},
+											headers: deriveHeaders(this.headers, {extra: mfaHeaders}),
 											method: "POST",
 											body: JSON.stringify({
 												ticket: body.ticket,

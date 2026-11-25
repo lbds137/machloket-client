@@ -16,8 +16,16 @@ const {Dialog} = await import("./settings");
 const {I18n} = await import("./i18n");
 const {pageNav, acceptInvite} = await import("./invite");
 const {fetchRetryOnce} = await import("./utils/rateLimit");
-const {API_TIMEOUT_MS, apiFetch, configureApiXhr, isPreAuthEndpoint, resetUnauthorizedNavForTests} =
-	await import("./utils/apiFetch");
+const {
+	API_TIMEOUT_MS,
+	apiFetch,
+	configureApiXhr,
+	handleUnauthorized,
+	isPreAuthEndpoint,
+	resetUnauthorizedNavForTests,
+} = await import("./utils/apiFetch");
+const {CSRF_HEADER, accountUidOf, applyAccountHeaders, buildAccountHeaders} =
+	await import("./utils/accountHeaders");
 const {showNewInvite} = await import("./utils/inviteLink");
 const {adduser, Specialuser, pingResponse, getApiUrlsV2} = await import("./utils/utils");
 const {saveProfile} = await import("./utils/profileSave");
@@ -94,16 +102,17 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/channels/c1/invites", unauthorized);
 		captureRequests(API + "/users/@me", unauthorized);
 
+		const headers = buildAccountHeaders(user);
 		await Promise.all([
 			fetchRetryOnce(API + "/users/@me/settings", {
 				method: "PATCH",
-				headers: {Authorization: user.token},
+				headers,
 				body: JSON.stringify({status: "idle"}),
 			}),
-			acceptInvite(API, "abc", user.token),
+			acceptInvite(API, "abc", headers),
 			showNewInvite(
 				API + "/channels/c1/invites",
-				{Authorization: user.token},
+				headers,
 				{max_age: 0, max_uses: 0},
 				"http://apifetch.test",
 				document.createElement("span"),
@@ -162,7 +171,7 @@ describe("apiFetch wrapper", () => {
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
 			method: "PATCH",
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 			body: JSON.stringify({status: "dnd"}),
 		});
 
@@ -263,7 +272,7 @@ describe("apiFetch wrapper", () => {
 			.spyOn(globalThis, "fetch")
 			.mockResolvedValue(Response.json({code: "abc", guild_id: "g1"}));
 
-		await acceptInvite(API, "abc", "fake-token");
+		await acceptInvite(API, "abc", {Authorization: "fake-token"});
 
 		expect(fetchSpy).toHaveBeenCalledTimes(1);
 		expect(fetchSpy.mock.calls[0][1]).toMatchObject({redirect: "error"});
@@ -332,7 +341,7 @@ describe("apiFetch wrapper", () => {
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
 			method: "PATCH",
-			headers: {Authorization: "fake-token-b"},
+			headers: buildAccountHeaders(b),
 			body: JSON.stringify({status: "idle"}),
 		});
 		// Probe-verified: wait for the navigation before reading the invalidation's side effects.
@@ -370,7 +379,7 @@ describe("apiFetch wrapper", () => {
 
 		await fetchRetryOnce(API + "/users/@me/delete", {
 			method: "POST",
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 			body: JSON.stringify({password: "nope"}),
 		});
 
@@ -402,11 +411,11 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/users/@me", unauthorized);
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		});
 		await new Promise((r) => setTimeout(r, 0));
 		await fetchRetryOnce(API + "/users/@me", {
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		});
 
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
@@ -445,7 +454,7 @@ describe("apiFetch wrapper", () => {
 
 		await fetchRetryOnce("http://apifetch.test/users/@me/delete", {
 			method: "POST",
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 			body: JSON.stringify({password: "nope"}),
 		});
 
@@ -477,7 +486,7 @@ describe("apiFetch wrapper", () => {
 		});
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		});
 		await vi.waitFor(() => expect(probes).toBe(1));
 		await new Promise((r) => setTimeout(r, 0));
@@ -485,7 +494,7 @@ describe("apiFetch wrapper", () => {
 		expect(user.loggedin).toBe(true);
 
 		await fetchRetryOnce(API + "/users/@me/settings", {
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		});
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 		expect(nav).toHaveBeenCalledWith("/login");
@@ -519,7 +528,7 @@ describe("apiFetch wrapper", () => {
 
 		await fetchRetryOnce(API + "/users/@me/delete", {
 			method: "POST",
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 			body: JSON.stringify({password: "nope"}),
 		});
 		await vi.waitFor(() => expect(probes).toBe(1));
@@ -530,7 +539,7 @@ describe("apiFetch wrapper", () => {
 		tokenDead = true;
 		await fetchRetryOnce(API + "/users/@me/delete", {
 			method: "POST",
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 			body: JSON.stringify({password: "nope"}),
 		});
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
@@ -738,7 +747,7 @@ describe("apiFetch wrapper", () => {
 		const guild = Object.assign(Object.create(Guild.prototype), {
 			id: "g1",
 			owner: {info: {api: API}},
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		}) as InstanceType<typeof Guild>;
 
 		expect(await guild.unban("u1")).toBe(false);
@@ -774,7 +783,7 @@ describe("apiFetch wrapper", () => {
 		const guild = Object.assign(Object.create(Guild.prototype), {
 			id: "g1",
 			owner: {info: {api: API}},
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		}) as InstanceType<typeof Guild>;
 
 		expect(await guild.unban("u1")).toBe(false);
@@ -889,7 +898,7 @@ describe("apiFetch wrapper", () => {
 		try {
 			await fetchRetryOnce(API + "/users/@me/delete", {
 				method: "POST",
-				headers: {Authorization: user.token},
+				headers: buildAccountHeaders(user),
 				body: JSON.stringify({password: "nope"}),
 			});
 			await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
@@ -898,7 +907,7 @@ describe("apiFetch wrapper", () => {
 
 			await fetchRetryOnce(API + "/users/@me/delete", {
 				method: "POST",
-				headers: {Authorization: user.token},
+				headers: buildAccountHeaders(user),
 				body: JSON.stringify({password: "nope"}),
 			});
 			await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
@@ -946,7 +955,16 @@ describe("apiFetch wrapper", () => {
 		try {
 			await fetchRetryOnce(API + "/users/@me/delete", {
 				method: "POST",
-				headers: {Authorization: savedAccount.token},
+				headers: buildAccountHeaders(savedAccount),
+				body: JSON.stringify({password: "nope"}),
+			});
+			await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+			nav.mockClear();
+			resetUnauthorizedNavForTests();
+
+			await fetchRetryOnce(API + "/users/@me/delete", {
+				method: "POST",
+				headers: buildAccountHeaders(rolledBack),
 				body: JSON.stringify({password: "nope"}),
 			});
 			await vi.waitFor(() => expect(warn).toHaveBeenCalledTimes(1));
@@ -998,7 +1016,7 @@ describe("apiFetch wrapper", () => {
 
 		await fetchRetryOnce(API + "/users/@me/delete", {
 			method: "POST",
-			headers: {Authorization: boot.token},
+			headers: buildAccountHeaders(boot),
 			body: JSON.stringify({password: "nope"}),
 		});
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
@@ -1038,7 +1056,7 @@ describe("apiFetch wrapper", () => {
 		});
 
 		await fetchRetryOnce(API + "/legacy/v2/rooms", {
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		});
 
 		await vi.waitFor(() => expect(wrongBaseProbes + rightBaseProbes).toBe(1));
@@ -1071,7 +1089,7 @@ describe("apiFetch wrapper", () => {
 		});
 		const localuser = Object.assign(Object.create(Localuser.prototype), {
 			info: {api: API},
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		}) as InstanceType<typeof Localuser>;
 
 		expect(await localuser.makeGuild({name: "Server", icon: null})).toBe(false);
@@ -1104,7 +1122,7 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/users/@me", () => Response.json({id: "u-alive"}));
 		const localuser = Object.assign(Object.create(Localuser.prototype), {
 			info: {api: API},
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		}) as InstanceType<typeof Localuser>;
 
 		expect(await localuser.makeGuild({name: "Server", icon: null})).toBe(false);
@@ -1617,7 +1635,7 @@ describe("U-api 2d: channel, member and message wiring", () => {
 		const channel = Object.assign(Object.create(Channel.prototype), {
 			id: "c1",
 			owner: {info: {api: API}},
-			headers: {Authorization: user.token},
+			headers: buildAccountHeaders(user),
 		}) as InstanceType<typeof Channel>;
 
 		await channel.putmessages();
@@ -1650,7 +1668,7 @@ describe("U-api 2d: channel, member and message wiring", () => {
 		);
 		const member = Object.assign(Object.create(Member.prototype), {
 			id: "u1",
-			owner: {id: "g1", info: {api: API}, headers: {Authorization: user.token}},
+			owner: {id: "g1", info: {api: API}, headers: buildAccountHeaders(user)},
 		}) as unknown as {kickAPI: (reason: string) => Promise<boolean>};
 
 		expect(await member.kickAPI("")).toBe(false);
@@ -1685,7 +1703,7 @@ describe("U-api 2d: channel, member and message wiring", () => {
 		});
 		const member = Object.assign(Object.create(Member.prototype), {
 			id: "u1",
-			owner: {id: "g1", info: {api: API}, headers: {Authorization: user.token}},
+			owner: {id: "g1", info: {api: API}, headers: buildAccountHeaders(user)},
 		}) as unknown as {kickAPI: (reason: string) => Promise<boolean>};
 
 		expect(await member.kickAPI("")).toBe(false);
@@ -1716,10 +1734,11 @@ describe("U-api 2d: channel, member and message wiring", () => {
 		captureRequests(API + "/users/@me", () =>
 			Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
 		);
+		const headers = buildAccountHeaders(user);
 		const message = Object.assign(Object.create(Message.prototype), {
 			id: "m1",
-			owner: {id: "c1", info: {api: API}, headers: {Authorization: user.token}},
-			headers: {Authorization: user.token},
+			owner: {id: "c1", info: {api: API}, headers},
+			headers,
 		}) as InstanceType<typeof Message>;
 
 		await message.delete();
@@ -1824,7 +1843,7 @@ describe("U-api 2e: the tail on apiFetch", () => {
 		const other = Object.create(User.prototype, {
 			id: {value: "u2"},
 			info: {value: {api: API}},
-			headers: {value: {Authorization: user.token}},
+			headers: {value: buildAccountHeaders(user)},
 		}) as InstanceType<typeof User>;
 
 		await other.saveNotes("hello");
@@ -1847,7 +1866,7 @@ describe("U-api 2e: the tail on apiFetch", () => {
 		captureRequests(API + "/oauth2/authorize", unauthorized);
 		captureRequests(API + "/users/@me", unauthorized);
 
-		await authorizeBot(API, user.token, "bot1", "g1", null);
+		await authorizeBot(API, user, "bot1", "g1", null);
 
 		await vi.waitFor(() => {
 			expect(userinfoOf(user.uid).loggedin).toBe(false);
@@ -1858,6 +1877,7 @@ describe("U-api 2e: the tail on apiFetch", () => {
 
 	it("PIN: a logout 401 with a dead token sends no probe and routes nowhere (the logout flow owns it)", async () => {
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
 		const user = adduser({
 			serverurls,
 			email: "logout-dead@example.test",
@@ -1881,6 +1901,9 @@ describe("U-api 2e: the tail on apiFetch", () => {
 		expect(logoutCalls).toBe(2);
 		expect(probes).toBe(0);
 		expect(nav).not.toHaveBeenCalled();
+		const logoutInit = fetchSpy.mock.calls.find(([u]) => String(u).endsWith("/auth/logout"))?.[1];
+		expect(accountUidOf(logoutInit)).toBe(user.uid);
+		expect(logoutInit?.headers).toEqual({Authorization: "fake-logout-dead-token"});
 	});
 
 	it("PIN: instance discovery's well-known GET is not redirect-refused (a trailing-slash redirect is followed)", async () => {
@@ -1917,5 +1940,200 @@ describe("U-api 2e: the tail on apiFetch", () => {
 		const init = fetchSpy.mock.calls[0][1] as RequestInit;
 		expect(init.redirect).toBe("error");
 		expect(init.signal).toBeUndefined();
+	});
+});
+
+describe("401 handling keyed by account uid (TASK-148)", () => {
+	const userinfoOf = (uid: string) => JSON.parse(localStorage.getItem("userinfos")!).users[uid];
+	const unauthorized = () => Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+	const serverurls = {
+		api: API,
+		cdn: "http://apifetch.test",
+		gateway: "ws://apifetch.test",
+		wellknown: "http://apifetch.test",
+	};
+
+	it("invalidates only account A when A's tagged request 401s and probe 401s (B on the same host stays logged in)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const a = adduser({
+			serverurls,
+			email: "uid-a@example.test",
+			token: "fake-token-a",
+			loggedin: true,
+		});
+		const b = adduser({
+			serverurls,
+			email: "uid-b@example.test",
+			token: "fake-token-b",
+			loggedin: true,
+		});
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		captureRequests(API + "/users/@me", unauthorized);
+
+		await apiFetch(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(a),
+			body: JSON.stringify({status: "idle"}),
+		});
+
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(a.loggedin).toBe(false);
+		expect(userinfoOf(a.uid).loggedin).toBe(false);
+		expect(b.loggedin).toBe(true);
+		expect(userinfoOf(b.uid).loggedin).toBe(true);
+	});
+
+	it("returns false from handleUnauthorized for an untagged request carrying an Authorization header", () => {
+		adduser({
+			serverurls,
+			email: "untagged@example.test",
+			token: "fake-untagged-token",
+			loggedin: true,
+		});
+		expect(
+			handleUnauthorized(API + "/users/@me/settings", {
+				headers: {Authorization: "fake-untagged-token"},
+			}),
+		).toBe(false);
+	});
+
+	it("probes with the account's new token after READY replaced an old one, keeping the account logged in", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const a = adduser({
+			serverurls,
+			email: "stale-ready@example.test",
+			token: "old",
+			loggedin: true,
+		});
+		const staleRequestHeaders = buildAccountHeaders(a);
+		// READY refreshes the account's token in memory before the stale request's 401 lands.
+		const liveHeaders = buildAccountHeaders(a);
+		a.token = "new";
+		a.json.token = "new";
+		applyAccountHeaders(liveHeaders, a);
+
+		let probeAuth: string | undefined;
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		captureRequests(API + "/users/@me", () => {
+			const probeCall = fetchSpy.mock.calls.find(([u]) => String(u) === API + "/users/@me");
+			probeAuth = (probeCall?.[1]?.headers as {Authorization?: string} | undefined)?.Authorization;
+			return probeAuth === "new" ? Response.json({id: "u-alive"}) : unauthorized();
+		});
+
+		await apiFetch(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: staleRequestHeaders,
+			body: JSON.stringify({status: "idle"}),
+		});
+
+		await vi.waitFor(() => expect(probeAuth).toBe("new"));
+		await new Promise((r) => setTimeout(r, 0));
+		expect(a.loggedin).toBe(true);
+		expect(userinfoOf(a.uid).loggedin).toBe(true);
+		expect(nav).not.toHaveBeenCalled();
+	});
+
+	it("probes with the instance that built the headers, not a later copy of the same uid holding an older token", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const a = adduser({
+			serverurls,
+			email: "dup-instance@example.test",
+			token: "fresh",
+			loggedin: true,
+		});
+		const headers = buildAccountHeaders(a);
+		// An embed's getBulkUsers builds another live instance of the same uid, still on an old token.
+		const copy = new Specialuser({...structuredClone(a.json), token: "stale"});
+		expect(copy.uid).toBe(a.uid);
+
+		let probeAuth: string | undefined;
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		captureRequests(API + "/users/@me", () => {
+			const probeCall = fetchSpy.mock.calls.find(([u]) => String(u) === API + "/users/@me");
+			probeAuth = (probeCall?.[1]?.headers as {Authorization?: string} | undefined)?.Authorization;
+			return probeAuth === "fresh" ? Response.json({id: "u-alive"}) : unauthorized();
+		});
+
+		await apiFetch(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers,
+			body: JSON.stringify({status: "idle"}),
+		});
+
+		await vi.waitFor(() => expect(probeAuth).toBeDefined());
+		await new Promise((r) => setTimeout(r, 0));
+		expect(probeAuth).toBe("fresh");
+		expect(a.loggedin).toBe(true);
+		expect(nav).not.toHaveBeenCalled();
+	});
+
+	it("a cookie account whose invalidation save throws keeps its auth_mode and stays logged in", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const cookieUser = adduser({
+			serverurls,
+			email: "cookie-rollback@example.test",
+			auth_mode: "cookie",
+			loggedin: true,
+		});
+		const spy = vi.spyOn(Specialuser.prototype, "tryUpdateLocal").mockImplementation(() => {
+			throw new DOMException("not found", "NotFoundError");
+		});
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		captureRequests(API + "/users/@me", unauthorized);
+
+		try {
+			await apiFetch(API + "/users/@me/settings", {
+				method: "PATCH",
+				headers: buildAccountHeaders(cookieUser),
+				body: JSON.stringify({status: "idle"}),
+			});
+			await vi.waitFor(() => expect(warn).toHaveBeenCalled());
+			expect(nav).not.toHaveBeenCalled();
+			expect(cookieUser.loggedin).toBe(true);
+			expect(cookieUser.authMode).toBe("cookie");
+			expect(cookieUser.json.auth_mode).toBe("cookie");
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
+	it("probes a cookie account with the CSRF marker and no Authorization, and clears json.auth_mode when dead", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const fetchSpy = vi.spyOn(globalThis, "fetch");
+		const cookieUser = adduser({
+			serverurls,
+			email: "cookie-dead@example.test",
+			auth_mode: "cookie",
+			loggedin: true,
+		});
+		expect(cookieUser.authMode).toBe("cookie");
+
+		let probeHeaders: Record<string, unknown> | undefined;
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		captureRequests(API + "/users/@me", () => {
+			const probeCall = fetchSpy.mock.calls.find(([u]) => String(u) === API + "/users/@me");
+			probeHeaders = probeCall?.[1]?.headers as Record<string, unknown> | undefined;
+			return unauthorized();
+		});
+
+		await apiFetch(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(cookieUser),
+			body: JSON.stringify({status: "idle"}),
+		});
+
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(probeHeaders).toBeDefined();
+		expect(probeHeaders?.[CSRF_HEADER]).toBe("1");
+		expect("Authorization" in (probeHeaders ?? {})).toBe(false);
+		expect(cookieUser.loggedin).toBe(false);
+		expect(cookieUser.authMode).toBeUndefined();
+		expect("auth_mode" in cookieUser.json).toBe(false);
+		expect(userinfoOf(cookieUser.uid).loggedin).toBe(false);
+		expect("auth_mode" in userinfoOf(cookieUser.uid)).toBe(false);
 	});
 });

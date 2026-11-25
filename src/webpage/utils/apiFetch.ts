@@ -1,3 +1,4 @@
+import {type AccountAuth, accountOf, buildAccountHeaders} from "./accountHeaders.js";
 import {pageNav} from "./netUtils.js";
 import {armRateLimit, readBodyBounded} from "./rateLimitWindows.js";
 
@@ -21,46 +22,34 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 	return PRE_AUTH_PATH.test(url.pathname);
 }
 
-function requestAuthToken(input: RequestInfo | URL, init?: RequestInit): string | null {
-	const headers = init?.headers ?? (input instanceof Request ? input.headers : undefined);
-	if (!headers) return null;
-	if (headers instanceof Headers) return headers.get("Authorization");
-	if (Array.isArray(headers)) {
-		const found = headers.find(([k]) => k.toLowerCase() === "authorization");
-		return found ? found[1] : null;
-	}
-	for (const [k, v] of Object.entries(headers)) {
-		if (k.toLowerCase() === "authorization" && typeof v === "string") return v;
-	}
-	return null;
-}
-
 let unauthorizedNavPending = false;
+let unauthorizedNavGen = 0;
 
-/** Test-only reset: the latch is shared across all tokens (one in-flight probe for the whole
- * page, released when the token proves alive or invalidation fails, and held once a confirmed
- * dead token schedules the /login navigation); tests reset it between cases. */
+/** Test-only reset: the latch is shared across all accounts (one in-flight probe for the whole
+ * page, released when the session proves alive or invalidation fails, and held once a confirmed
+ * dead session schedules the /login navigation); tests reset it between cases. */
 export function resetUnauthorizedNavForTests(): void {
 	unauthorizedNavPending = false;
+	unauthorizedNavGen++;
 }
 
-/** Whether the token behind a 401'd request is really dead: the instance's auth middleware
- * rejects any request carrying a bad token before routing, so a GET to /users/@me under the
- * same /vN base answers 401 for a dead token and anything else for a live one. Endpoints
+/** Whether the session behind a 401'd request is really dead: the instance's auth middleware
+ * rejects any request carrying a bad credential before routing, so a GET to /users/@me under the
+ * same /vN base answers 401 for a dead session and anything else for a live one. Endpoints
  * can answer their own bare 401s for reasons that are not a dead session — a wrong password
  * on the delete/disable forms, a rejected TOTP verify — and those must never log a valid
- * account out. When the URL has no recognizable /vN base, the probe cannot verify the token
- * and fails closed (leaves the session alone); the cost is that a truly dead token on such
+ * account out. When the URL has no recognizable /vN base, the probe cannot verify the session
+ * and fails closed (leaves the session alone); the cost is that a truly dead credential on such
  * an instance never auto-routes to /login — recovery is switching accounts or logging in
  * again. Raw fetch (no apiFetch recursion), briefly timed. */
-async function tokenIsDead(requestUrl: string, token: string): Promise<boolean> {
+async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<boolean> {
 	try {
 		const parsed = new URL(requestUrl, window.location.href);
 		const base = /^(.*?\/v\d+)(?=\/)/.exec(parsed.pathname)?.[0];
 		// No recognizable API base: the probe cannot verify the token, so leave the session alone.
 		if (!base) return false;
 		const probe = await fetch(parsed.origin + base + "/users/@me", {
-			headers: {Authorization: token},
+			headers: buildAccountHeaders(account, {json: false}),
 			signal: AbortSignal.timeout(10_000),
 		});
 		return probe.status === 401;
@@ -69,36 +58,42 @@ async function tokenIsDead(requestUrl: string, token: string): Promise<boolean> 
 	}
 }
 
-/** Marks the account behind a VERIFIED dead token invalid and schedules one navigation to
- * /login. Only engages on a post-auth endpoint whose request carried a token (a token-less
- * 401 — a CDN PUT, a 2FA attempt — never logs anyone out), and invalidates only after the
- * probe confirms the token is dead. One probe is in flight at a time; the latch releases
- * when the token proves alive so a later real death can still route. Returns whether the
- * path was engaged (not whether it will invalidate — the probe decides that). */
+/** Marks the account behind a VERIFIED dead session invalid and schedules one navigation to
+ * /login. Only engages on a post-auth endpoint whose request was built for an account (bots,
+ * pre-auth, and raw untagged requests never log anyone out), and invalidates only after the
+ * probe confirms the account's current credential is dead. One probe is in flight at a time;
+ * the latch releases when the session proves alive so a later real death can still route.
+ * Returns whether the path was engaged (the probe decides whether it will invalidate). */
 export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit): boolean {
 	if (isPreAuthEndpoint(input)) return false;
-	const token = requestAuthToken(input, init);
-	if (token === null) return false;
+	// The account object the headers were built from: its fields are read at probe time, so a
+	// token READY replaced since the request was sent is the one probed.
+	const account = accountOf(init);
+	if (!account) return false;
 	if (unauthorizedNavPending) return true;
 	unauthorizedNavPending = true;
+	const gen = unauthorizedNavGen;
 	const url = input instanceof Request ? input.url : String(input);
-	void tokenIsDead(url, token).then(async (dead) => {
+	void (async () => {
 		try {
+			const dead = await tokenIsDead(url, account);
+			if (gen !== unauthorizedNavGen) return;
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
 			// graph, and a static import made any module that imports apiFetch before
 			// localuser hit "Cannot access 'Guild' before initialization" (direct.ts).
-			if (!dead || !(await import("./utils.js")).invalidateAccount(token)) {
+			if (!dead || !(await import("./utils.js")).invalidateAccount(account.uid)) {
 				unauthorizedNavPending = false;
 				return;
 			}
 			queueMicrotask(() => {
+				if (gen !== unauthorizedNavGen) return;
 				pageNav.go("/login");
 			});
 		} catch (error) {
-			unauthorizedNavPending = false;
+			if (gen === unauthorizedNavGen) unauthorizedNavPending = false;
 			console.warn("machloket: 401 handling failed:", error);
 		}
-	});
+	})();
 	return true;
 }
 

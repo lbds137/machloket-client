@@ -10,6 +10,7 @@ import {readItem, saveAccounts, writeAccounts} from "./storage/settingOverlay";
 import {isStoreRefusal, trySetItem} from "./storage/trySetItem";
 import {MarkDown} from "../markdown.js";
 import {API_TIMEOUT_MS, apiFetch} from "./apiFetch.js";
+import {buildAccountHeaders, cookieModeHosts, credentialsFor} from "./accountHeaders.js";
 
 fix();
 const apiDoms = new Set<string>();
@@ -202,9 +203,12 @@ export class Specialuser {
 		const ref = new WeakRef(this);
 		liveSpecialUsers.add(ref);
 		liveSpecialUserRegistry.register(this, ref);
-		if (!this.serverurls || !this.email || !this.token) {
+		if (!this.serverurls || !this.email || (!this.token && this.authMode !== "cookie")) {
 			console.error("There are fundamentally missing pieces of info missing from this user");
 		}
+	}
+	get authMode(): "cookie" | undefined {
+		return this.json.auth_mode === "cookie" ? "cookie" : undefined;
 	}
 	set loggedin(e: boolean | undefined) {
 		this.json.loggedin = e;
@@ -219,7 +223,7 @@ export class Specialuser {
 				const ok = (
 					await apiFetch(this.serverurls.api + "/auth/logout", {
 						method: "POST",
-						headers: {Authorization: this.token},
+						headers: buildAccountHeaders(this, {json: false}),
 					})
 				).ok;
 				if (ok) break;
@@ -424,9 +428,9 @@ function isValidAccount(user: unknown): boolean {
 		user && typeof user === "object" && (user as {loggedin?: unknown}).loggedin !== false,
 	);
 }
-/** Marks the account whose token matches the 401'd request invalid, persisting through
+/** Marks the account whose uid matches the 401'd request invalid, persisting through
  * tryUpdateLocal so E5 save-refusal semantics apply. Returns whether anything matched. */
-export function invalidateAccount(token: string): boolean {
+export function invalidateAccount(uid: string): boolean {
 	let matched = 0;
 	const handled = new Set<string>();
 	// Several live instances can share one uid (getBulkUsers constructs a fresh
@@ -439,7 +443,7 @@ export function invalidateAccount(token: string): boolean {
 			liveSpecialUsers.delete(ref);
 			continue;
 		}
-		if (u.token === token || u.json?.token === token) {
+		if (u.uid === uid) {
 			matched++;
 			handled.add(u.uid);
 			if (u.json.loggedin !== false) {
@@ -450,15 +454,21 @@ export function invalidateAccount(token: string): boolean {
 		}
 	}
 	for (const instances of toSave.values()) {
-		const prevs = instances.map((u) => u.json.loggedin);
+		const prevs = instances.map((u) => ({
+			loggedin: u.json.loggedin,
+			hasAuthMode: "auth_mode" in u.json,
+			authMode: u.json.auth_mode,
+		}));
 		for (const u of instances) {
 			u.json.loggedin = false; // raw write: the setter would save mid-loop
+			delete u.json.auth_mode;
 		}
 		try {
 			instances[instances.length - 1].tryUpdateLocal();
 		} catch (e) {
 			instances.forEach((u, i) => {
-				u.json.loggedin = prevs[i]; // raw write (see above)
+				u.json.loggedin = prevs[i].loggedin; // raw write (see above)
+				if (prevs[i].hasAuthMode) u.json.auth_mode = prevs[i].authMode;
 			});
 			// A non-refusal throw ends the pass on purpose — later groups and the
 			// stored-accounts pass stay untouched, and the released 401 latch lets the
@@ -468,16 +478,18 @@ export function invalidateAccount(token: string): boolean {
 	}
 	const info = readStoredAccounts();
 	if (info) {
-		for (const [uid, raw] of Object.entries(info.users)) {
+		for (const [storedUid, raw] of Object.entries(info.users)) {
 			if (!raw || typeof raw !== "object") continue;
-			if ((raw as {token?: unknown}).token !== token) continue;
-			if (handled.has(uid)) continue;
+			if (storedUid !== uid) continue;
+			if (handled.has(storedUid)) continue;
 			matched++;
 			if ((raw as {loggedin?: unknown}).loggedin === false) continue;
 			try {
 				const suser = raw instanceof Specialuser ? raw : new Specialuser(raw);
+				delete suser.json.auth_mode;
 				suser.loggedin = false;
 			} catch {
+				delete (raw as {auth_mode?: unknown}).auth_mode;
 				(raw as {loggedin?: boolean}).loggedin = false;
 				try {
 					saveAccounts(serialiseForStore(info));
@@ -1084,9 +1096,9 @@ async function checkInstance(instance: string): Promise<InstanceInfo | undefined
 	const originalFetch = window.fetch;
 	window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
 		const url = new URL(input instanceof Request ? input.url : input, window.location.href);
-		if (apiDoms.has(url.host)) {
-			init = init || {};
-			init.credentials ??= "include";
+		const credentials = credentialsFor(url, init, apiDoms, cookieModeHosts);
+		if (credentials !== undefined && init?.credentials === undefined) {
+			init = {...init, credentials};
 		}
 
 		return originalFetch(input, init);

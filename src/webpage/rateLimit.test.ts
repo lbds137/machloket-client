@@ -364,7 +364,7 @@ describe("accepting an invite", () => {
 			sequence(limited, () => Response.json({})),
 		);
 
-		const result = await acceptInvite(API, "abc", "tok");
+		const result = await acceptInvite(API, "abc", {Authorization: "tok"});
 
 		expect(asked).toHaveLength(2);
 		expect(result.ok).toBe(true);
@@ -373,7 +373,7 @@ describe("accepting an invite", () => {
 	it("a second 429 isn't a join", async () => {
 		captureRequests(API + "/invites/abc", limited);
 
-		const result = await acceptInvite(API, "abc", "tok");
+		const result = await acceptInvite(API, "abc", {Authorization: "tok"});
 
 		expect(result.ok).toBe(false);
 	});

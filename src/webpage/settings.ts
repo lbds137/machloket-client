@@ -14,6 +14,7 @@ import {MarkDown} from "./markdown.js";
 import {fetchRetryOnce} from "./utils/rateLimit.js";
 import {errorPaths, nodeMessages, serverReason} from "./utils/refusalText.js";
 import {trySetItem} from "./utils/storage/trySetItem.js";
+import {deriveHeaders} from "./utils/accountHeaders.js";
 import packageJson from "./../../package.json";
 
 let initialBootHash = typeof window !== "undefined" ? window.location.hash : "";
@@ -2494,10 +2495,10 @@ export type MfaRetry = {
 	store?: (token: string | null) => void;
 };
 /** `auth` with one JSON content type. Header names ignore case, so a session's `Content-type`
- * beside a `Content-Type` isn't replaced: fetch joins the values, and the server refuses that. */
+ * beside a `Content-Type` isn't replaced: fetch joins the values, and the server refuses that.
+ * deriveHeaders keeps the account tag, so a 401 here still runs the dead-session path. */
 function mfaRequestHeaders(auth: Record<string, string>): Record<string, string> {
-	const rest = Object.entries(auth).filter(([name]) => name.toLowerCase() !== "content-type");
-	return {...Object.fromEntries(rest), "Content-Type": "application/json"};
+	return deriveHeaders(auth, {json: false, extra: {"Content-Type": "application/json"}});
 }
 async function handleMfa(
 	factor: "totp" | "webauthn",
@@ -3101,7 +3102,7 @@ class Form implements OptionsElement<object> {
 							{
 								method: this.method,
 								body: JSON.stringify(build),
-								headers: {...this.headers, ...mfaAuthHeader},
+								headers: deriveHeaders(this.headers, {extra: mfaAuthHeader}),
 							},
 							carriesUpload ? {timeoutMs: 0} : undefined,
 						);

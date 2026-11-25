@@ -1,3 +1,4 @@
+import {type AccountAuth, buildAccountHeaders} from "../utils/accountHeaders.js";
 import {refusalText} from "../utils/refusalText.js";
 import {apiFetch} from "../utils/apiFetch.js";
 
@@ -48,11 +49,11 @@ export type botjsonfetch = {
  * page's query: client_id, permissions…), or the line saying why there are none. */
 export async function fetchBotInvite(
 	api: string,
-	token: string,
+	account: AccountAuth,
 	search: string,
 ): Promise<botjsonfetch | string> {
 	const res = await apiFetch(api + "/oauth2/authorize/" + search, {
-		headers: {Authorization: token},
+		headers: buildAccountHeaders(account, {json: false}),
 	}).catch(() => undefined);
 	const answer = res?.ok
 		? await res
@@ -68,7 +69,7 @@ export async function fetchBotInvite(
 /** Adds the bot `clientId` to server `guildId`: true when it's added, else the line saying why. */
 export async function authorizeBot(
 	api: string,
-	token: string,
+	account: AccountAuth,
 	clientId: string,
 	guildId: string,
 	permissions: string | null,
@@ -77,7 +78,7 @@ export async function authorizeBot(
 	const res = await apiFetch(api + "/oauth2/authorize?" + params, {
 		method: "POST",
 		body: JSON.stringify({authorize: true, guild_id: guildId, permissions}),
-		headers: {"Content-type": "application/json; charset=UTF-8", Authorization: token},
+		headers: buildAccountHeaders(account),
 	}).catch(() => undefined);
 	return res?.ok || refusalText(res);
 }

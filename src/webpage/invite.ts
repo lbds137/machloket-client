@@ -9,6 +9,7 @@ import {instanceUnreachableText} from "./utils/instanceUnreachable.js";
 import {pageNav} from "./utils/netUtils.js";
 import {saveAccounts} from "./utils/storage/settingOverlay.js";
 import {apiFetch} from "./utils/apiFetch.js";
+import {buildAccountHeaders} from "./utils/accountHeaders.js";
 // Re-exported: the accept lives in utils (no page side effects), and this page's tests import it here.
 export {acceptInvite, pageNav};
 /** How long an accept waits for the invite's details before it lands on the home page. */
@@ -174,7 +175,7 @@ if (window.location.pathname.startsWith("/invite"))
 						]),
 				},
 			).show();
-			acceptInvite(urls!.api, code, user.token)
+			acceptInvite(urls!.api, code, buildAccountHeaders(user, {json: false}))
 				.then(
 					async (result) => {
 						// The in-app accept shows the server's message in its form; this page has no form.
