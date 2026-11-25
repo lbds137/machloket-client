@@ -28,5 +28,5 @@ TASK-136 design unit 3 (docs/design/token-storage.md, Sequence 3). Blocked on th
 ## Implementation Notes
 
 <!-- SECTION:NOTES:BEGIN -->
-Built ahead of the server (2026-11-25): cookie mode only switches on where discovery answers authCookie:true, which needs server TASK-342 (same-origin discovery: isAllowlistedOrigin is false with no Origin header) plus clientOrigins set on the instance (unset live per the server session). Until then the header path stays live and every cookie path is dormant. Follow-ups filed: TASK-158 (WebAuthn opt-in test), TASK-159 (submit progress while a retry waits), TASK-160 (cookieModeHosts port key).
+Built ahead of the server (2026-11-25): cookie mode only switches on where discovery answers authCookie:true, which needs clientOrigins set on the instance (unset on A, [] on B per the server session; server TASK-342 was ruled out by Lila 11-25: the client never runs on the API host, so discovery is cross-origin and already sends Origin). Until then the header path stays live and every cookie path is dormant. Follow-ups filed: TASK-158 (WebAuthn opt-in test), TASK-159 (submit progress while a retry waits), TASK-160 (cookieModeHosts port key).
 <!-- SECTION:NOTES:END -->
