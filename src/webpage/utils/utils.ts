@@ -922,9 +922,9 @@ export function invalidateAccount(dead: AccountAuth): boolean {
 	const before = readStoredAccounts();
 	for (const instances of toSave.values()) {
 		// The save writes the whole record: over a newer login's, it would put the dead token
-		// back, and with no record (another tab removed the account) it would re-add it. Then
-		// only these live instances flip, and the store stays as it is. (An unreadable store
-		// saves nothing either: updateLocal's NotFoundError is a refusal tryUpdateLocal keeps.)
+		// back, and with no record (another tab removed the account) it would re-add it. So it
+		// saves only over a record still holding the dead credential; otherwise only these live
+		// instances flip, and the store stays as it is.
 		const stored = storedRecord(before?.users[uid]);
 		const persist = !!stored && typeof stored === "object" && holdsCredential(stored, dead);
 		const prevs = instances.map((u) => ({
