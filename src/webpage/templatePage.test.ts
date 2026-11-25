@@ -198,6 +198,25 @@ it("signed in, the template shows under its name and the button offers to use it
 	expect(use.textContent).toBe(I18n.useTemplateButton());
 });
 
+it("signed in, the template request carries the account tag, so its 401 can log a dead session out", async () => {
+	const {accountUidOf} = await import("./utils/accountHeaders");
+	const tags: (string | undefined)[] = [];
+	const baseFetch = globalThis.fetch;
+	const fetchSpy = vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+		const url = input instanceof Request ? input.url : String(input);
+		if (url.endsWith("/api/v9/guilds/templates/abc")) tags.push(accountUidOf(init));
+		return baseFetch(input, init);
+	});
+	onTestFinished(() => {
+		fetchSpy.mockRestore();
+	});
+
+	await openSignedIn(() => Response.json({name: "Book club", description: ""}));
+
+	// openSignedIn stores one account, keyed (as Specialuser.uid) by email + wellknown.
+	expect(tags).toEqual(["ann@templatepage.test" + getDefaultInstanceUrl()]);
+});
+
 it("signed in, a template the instance refuses says why", async () => {
 	const {name, description} = await openSignedIn(() =>
 		Response.json({code: 10057, message: "Unknown Guild Template"}, {status: 404}),

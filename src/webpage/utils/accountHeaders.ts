@@ -49,11 +49,12 @@ export function buildAccountHeaders(account: AccountAuth, opts?: {json?: boolean
 
 /** A copy of `base` carrying its account tag. `json: false` drops every content type, whatever
  * its case (fetch joins a `Content-type` and a `Content-Type`, and the server refuses that);
- * `extra` applies after the drop, so it may set its own. */
-export function deriveHeaders<T extends Record<string, string | undefined>>(
-	base: T,
-	opts: {extra?: Record<string, string>; json?: boolean},
-): T {
+ * `extra` applies after the drop, so it may set its own. The result's type carries `extra`'s
+ * keys (over `T`'s where they collide) and no others. */
+export function deriveHeaders<
+	T extends Record<string, string | undefined>,
+	E extends Record<string, string> = Record<never, string>,
+>(base: T, opts: {extra?: E; json?: boolean}): Omit<T, keyof E> & E {
 	const copy: Record<string, string | undefined> = {...base};
 	if (opts.json === false) {
 		for (const name of Object.keys(copy)) {
@@ -63,7 +64,7 @@ export function deriveHeaders<T extends Record<string, string | undefined>>(
 	Object.assign(copy, opts.extra);
 	const account = builtFor.get(base);
 	if (account !== undefined) builtFor.set(copy, account);
-	return copy as T;
+	return copy as Omit<T, keyof E> & E;
 }
 
 /** The account a request's headers were built from, or undefined (bots, pre-auth, raw requests). */

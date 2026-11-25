@@ -23,6 +23,8 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 }
 
 let unauthorizedNavPending = false;
+// Bumped only by resetUnauthorizedNavForTests, for test isolation: a probe left over from one
+// test sees a new generation and never navigates in the next. Production never changes it.
 let unauthorizedNavGen = 0;
 
 /** Test-only reset: the latch is shared across all accounts (one in-flight probe for the whole
