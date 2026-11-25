@@ -4,7 +4,7 @@ title: 'Token storage unit 4: migrate existing own-deployment sessions to the co
 status: To Do
 assignee: []
 created_date: '2026-11-24T22:40:00Z'
-updated_date: '2026-11-24T22:51:00Z'
+updated_date: '2026-11-25T20:24:00Z'
 labels:
   - security-hardening
   - auth
@@ -30,3 +30,15 @@ TASK-136 design unit 4 (docs/design/token-storage.md, Sequence 4, "Migrating exi
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-24 BLOCKED on Machloket Server (parked 11-24): server TASK-323 (POST /auth/session-cookie) must be merged and deployed first, plus everything TASK-149 waits on (server 313, 321, 322). Trigger: Server unparks and ships 323.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-25T20:24:00Z
+
+---
+
+From TASK-149: converting a 401 on an own-deployment header account into a cookie probe (instead of the session-expired path) belongs to this unit, with the migration, not to TASK-149.
+
+---
+<!-- COMMENTS:END -->

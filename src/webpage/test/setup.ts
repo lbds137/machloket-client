@@ -21,10 +21,20 @@ function json(body: unknown) {
 	return new Response(JSON.stringify(body), {headers: {"Content-Type": "application/json"}});
 }
 
-/** A Spacebar instance at `origin` whose well-known answers after `delayMs`. */
-export function addInstance(origin: string, delayMs = 0) {
+/** A Spacebar instance at `origin` whose well-known answers after `delayMs`. `authCookie`
+ * makes its discovery (`/policies/instance/domains`) offer cookie sessions; without it the
+ * route answers like a stock instance, with no `authCookie` key. */
+export function addInstance(origin: string, delayMs = 0, opts?: {authCookie?: boolean}) {
 	// Register asks /ping for the instance's terms-of-service page.
 	testNetwork.set(origin + "/api/v9/ping", async () => json({instance: {tosPage: null}}));
+	testNetwork.set(origin + "/api/v9/policies/instance/domains", async () =>
+		json({
+			api: origin + "/api/",
+			cdn: origin,
+			gateway: origin.replace(/^http/, "ws"),
+			...(opts?.authCookie && {authCookie: true}),
+		}),
+	);
 	testNetwork.set(
 		origin + "/.well-known/spacebar/client",
 		() =>
@@ -97,6 +107,24 @@ export function captureRequests(
 	captures.set(url, {bodies, respond});
 	return bodies;
 }
+/** One request `recordRequests` saw: its parsed JSON body, headers and credentials mode. */
+export type RecordedRequest = {body: unknown; headers: Headers; credentials?: RequestCredentials};
+/**
+ * Like captureRequests, but keeps each request's headers and `credentials` too (as the app's
+ * fetch wrapper left them), for asserts on what a request carried.
+ */
+export function recordRequests(
+	url: string,
+	respond: () => Response | Promise<Response> = () => new Response(null, {status: 204}),
+) {
+	const requests: RecordedRequest[] = [];
+	recorders.set(url, {requests, respond});
+	return requests;
+}
+const recorders = new Map<
+	string,
+	{requests: RecordedRequest[]; respond: () => Response | Promise<Response>}
+>();
 const captures = new Map<
 	string,
 	{bodies: unknown[]; respond: () => Response | Promise<Response>}
@@ -105,6 +133,15 @@ const captures = new Map<
 const realFetch = globalThis.fetch.bind(globalThis);
 vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
 	const url = new URL(input instanceof Request ? input.url : input, location.href);
+	const recorder = recorders.get(url.origin + url.pathname);
+	if (recorder) {
+		recorder.requests.push({
+			body: typeof init?.body === "string" ? JSON.parse(init.body) : init?.body,
+			headers: new Headers(init?.headers),
+			credentials: init?.credentials,
+		});
+		return recorder.respond();
+	}
 	const capture = captures.get(url.origin + url.pathname);
 	if (capture) {
 		capture.bodies.push(typeof init?.body === "string" ? JSON.parse(init.body) : init?.body);

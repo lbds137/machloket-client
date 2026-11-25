@@ -12,9 +12,11 @@ import {MarkDown} from "../markdown.js";
 import {API_TIMEOUT_MS, apiFetch} from "./apiFetch.js";
 import {
 	type AccountAuth,
+	AUTH_OPT_IN_HEADER,
 	buildAccountHeaders,
 	cookieModeHosts,
 	credentialsFor,
+	CSRF_HEADER,
 } from "./accountHeaders.js";
 
 fix();
@@ -50,11 +52,18 @@ export function getBulkUsers() {
 	for (const thing in json.users) {
 		try {
 			const user = (json.users[thing] = new Specialuser(json.users[thing]));
-			apiDoms.add(new URL(user.serverurls.api).host);
+			const host = new URL(user.serverurls.api).host;
+			apiDoms.add(host);
+			// Add-only: a stale entry only withholds credentials from unmarked requests.
+			if (user.serverurls.authCookie === true || user.authMode === "cookie") {
+				cookieModeHosts.add(host);
+			}
 		} catch {
 			delete json.users[thing];
 		}
 	}
+	// A pending logout's cookie is still in the browser, whatever accounts remain.
+	for (const host of Object.keys(json.pendingLogouts ?? {})) cookieModeHosts.add(host);
 	if (getDeveloperSettings().interceptApiTraces) {
 		SW.postMessage({
 			code: "apiUrls",
@@ -84,6 +93,8 @@ function parseStoredAccounts(raw: string | null): {
 	instances?: Record<string, any>;
 	preferences?: {notifications: boolean; notisound: string};
 	accent_color?: string;
+	/** API host -> its API base: a removed cookie account whose logout failed (TASK-149). */
+	pendingLogouts?: Record<string, string>;
 } | null {
 	if (!raw) return null;
 	let info: unknown;
@@ -223,15 +234,16 @@ export class Specialuser {
 		return this.json.loggedin;
 	}
 	async logout() {
+		let ended = false;
 		for (let i = 0; i < 3; i++) {
 			try {
-				const ok = (
-					await apiFetch(this.serverurls.api + "/auth/logout", {
-						method: "POST",
-						headers: buildAccountHeaders(this, {json: false}),
-					})
-				).ok;
-				if (ok) break;
+				const res = await apiFetch(this.serverurls.api + "/auth/logout", {
+					method: "POST",
+					headers: buildAccountHeaders(this, {json: false}),
+				});
+				// A 401 means the session was already dead: logged out all the same.
+				ended = res.ok || res.status === 401;
+				if (ended) break;
 			} catch {}
 			if (i == 2) {
 				const d = new Dialog("");
@@ -255,16 +267,23 @@ export class Specialuser {
 					return false;
 			}
 		}
-		this.remove();
+		// Removed with its session still live: the cookie stays in the browser, so the next start
+		// retries its logout. A header account's token goes with its record; a cookie retry would
+		// end some other account's session, not this one's.
+		this.remove(!ended && this.authMode === "cookie" ? this.serverurls.api : undefined);
 		return true;
 	}
-	remove() {
+	/** Removes this account from the store. `orphanedCookieApi`, for a cookie account whose
+	 * session outlived it, records the pending logout in the same write: no state in between
+	 * holds both the live account and the entry (another tab's retry would drop it). */
+	remove(orphanedCookieApi?: string) {
 		if (sessionStorage.getItem("currentuser") === this.uid) {
 			sessionStorage.removeItem("currentuser");
 		}
 		const info = readStoredAccounts();
 		if (!info) return;
 		delete info.users[this.uid];
+		if (orphanedCookieApi !== undefined) addPendingLogout(info, orphanedCookieApi);
 		if (info.currentuser === this.uid) {
 			// `users` is keyed by uid, not an array.
 			const user = Object.values(info.users)[0];
@@ -418,6 +437,31 @@ export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	let info = readStoredAccounts();
 	const unreadable = info ? null : readItem("userinfos");
 	info ??= defaultUserInfos();
+	const slot = cookieSlot(suser.serverurls.api);
+	const replaced = info.users[suser.uid];
+	// The replaced record's live cookie, unless this login takes over its slot: a header login,
+	// or a cookie login on another hostname (the instance's API moved), leaves it with no
+	// record, so the next start ends it like any other orphaned cookie, at its own API base.
+	const replacedApi: string | undefined = replaced?.serverurls?.api;
+	const orphans =
+		replacedApi !== undefined &&
+		holdsCookieSlot(replaced, cookieSlot(replacedApi)) &&
+		!(suser.authMode === "cookie" && cookieSlot(replacedApi) === slot);
+	if (suser.authMode === "cookie") {
+		// The browser keeps one cookie per hostname, whatever the port, and it is this login's
+		// now: a pending retry would end this session, and another cookie record on the hostname
+		// would send this account's session as its own.
+		for (const host of Object.keys(info.pendingLogouts ?? {})) {
+			if (hostnameOf(host) === slot) delete info.pendingLogouts![host];
+		}
+		for (const [uid, other] of Object.entries(info.users)) {
+			if (uid === suser.uid || !holdsCookieSlot(other, slot)) continue;
+			other.loggedin = false;
+			delete other.auth_mode;
+		}
+		cookieModeHosts.add(new URL(suser.serverurls.api).host);
+	}
+	if (orphans) addPendingLogout(info, replacedApi);
 	info.users[suser.uid] = suser;
 	info.currentuser = suser.uid;
 	sessionStorage.setItem("currentuser", suser.uid);
@@ -428,6 +472,138 @@ export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	if (unreadable !== null) keepUnreadableAccounts(unreadable);
 	return suser;
 }
+/** The account a login, register or second-factor answer signs in, or null when the answer
+ * carries no session. A body `token` wins: the server answers one when it ignored the opt-in. */
+export function adduserFromAuth(
+	res: {token?: unknown; auth_mode?: unknown},
+	serverurls: InstanceUrls,
+	email: string,
+): Specialuser | null {
+	if (typeof res.token === "string") return adduser({serverurls, email, token: res.token});
+	if (res.auth_mode === "cookie") return adduser({serverurls, email, auth_mode: "cookie"});
+	return null;
+}
+
+//region Cookie sessions (TASK-149)
+/** The cookie slot an API base's session cookie lives in: its hostname. Cookies ignore the
+ * port, so two API ports on one hostname share one cookie. */
+function cookieSlot(api: string): string {
+	return new URL(api).hostname;
+}
+/** The hostname of a `host[:port]` key (pendingLogouts keys, cookieModeHosts entries). */
+function hostnameOf(host: string): string {
+	return new URL("http://" + host).hostname;
+}
+/** Whether a stored account record is a logged-in cookie account in cookie slot `slot`: the
+ * slot's one cookie is then that account's. */
+function holdsCookieSlot(u: any, slot: string): boolean {
+	if (u?.auth_mode !== "cookie" || u.loggedin === false) return false;
+	try {
+		return cookieSlot(u.serverurls.api) === slot;
+	} catch {
+		return false;
+	}
+}
+function slotHasCookieAccount(users: Record<string, any> | undefined, slot: string): boolean {
+	return Object.values(users ?? {}).some((u) => holdsCookieSlot(u, slot));
+}
+/** Runs `fn` holding the cookie slot's lock, shared across tabs where the browser has Web
+ * Locks. */
+async function withCookieLock<T>(slot: string, fn: () => Promise<T>): Promise<T> {
+	if (!navigator.locks) return fn();
+	return navigator.locks.request("machloket-cookie-session:" + slot, fn);
+}
+/** Pending-logout retries this page started, by API host. They never reject. */
+const pendingLogoutRuns = new Map<string, Promise<void>>();
+
+/**
+ * The opt-in headers for a login, register or second-factor request to `instance`, or
+ * undefined when it shouldn't ask for a cookie: discovery didn't offer cookie sessions, or a
+ * logged-in cookie account already holds the host's cookie. It first waits for any retry of the
+ * host's pending logout, so that retry can't end the session this request starts.
+ */
+export async function cookieOptInHeaders(
+	instance: InstanceUrls,
+): Promise<Record<string, string> | undefined> {
+	if (instance.authCookie !== true) return undefined;
+	const slot = cookieSlot(instance.api);
+	if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return undefined;
+	await Promise.all(
+		[...pendingLogoutRuns].filter(([host]) => hostnameOf(host) === slot).map(([, run]) => run),
+	);
+	// Another tab's retry holds the lock for as long as its request is out.
+	await withCookieLock(slot, async () => {});
+	return {[AUTH_OPT_IN_HEADER]: "cookie", [CSRF_HEADER]: "1"};
+}
+
+/** Records in `info` (the caller saves it) that the cookie on `api`'s host outlived its
+ * account, for the next start to end. */
+function addPendingLogout(info: {pendingLogouts?: Record<string, string>}, api: string): void {
+	const host = new URL(api).host;
+	cookieModeHosts.add(host);
+	info.pendingLogouts = {...info.pendingLogouts, [host]: api};
+}
+/** Clears the host's pending logout if it is still the one for `api`: one written meanwhile is
+ * a newer orphaned cookie, still to end. */
+function clearPendingLogout(host: string, api: string): void {
+	const info = readStoredAccounts();
+	if (info?.pendingLogouts?.[host] !== api) return;
+	delete info.pendingLogouts[host];
+	saveAccounts(serialiseForStore(info));
+}
+/** Whether a logout answer ends the pending logout: done (2xx) or already dead (401). Anything
+ * else (a CSRF or Origin refusal, a 5xx, a rate limit) leaves the cookie possibly live, so the
+ * next start tries again. */
+function endsPendingLogout(status: number): boolean {
+	return (status >= 200 && status < 300) || status === 401;
+}
+async function retryPendingLogout(host: string): Promise<void> {
+	await withCookieLock(hostnameOf(host), async () => {
+		// Read under the lock: a cookie login stored since owns the cookie now, and the entry may
+		// have been replaced while this run waited.
+		const info = readStoredAccounts();
+		const api = info?.pendingLogouts?.[host];
+		if (!info || !api) return;
+		if (slotHasCookieAccount(info.users, hostnameOf(host))) {
+			clearPendingLogout(host, api);
+			return;
+		}
+		let res: Response;
+		try {
+			res = await apiFetch(trimTrailingSlashes(api) + "/auth/logout", {
+				method: "POST",
+				headers: {[CSRF_HEADER]: "1"},
+				credentials: "include",
+			});
+		} catch (e) {
+			console.warn("Pending logout for", host, "got no answer; retrying at the next start", e);
+			return;
+		}
+		if (endsPendingLogout(res.status)) clearPendingLogout(host, api);
+	});
+}
+/**
+ * Retries every pending logout by cookie. The app's start runs it (never module load: a test
+ * file importing this module would send it); a cookie opt-in on the same host waits for it.
+ */
+export function runPendingLogouts(): Promise<void> {
+	const pending = readStoredAccounts()?.pendingLogouts ?? {};
+	const runs = Object.keys(pending).map((host) => {
+		const run = retryPendingLogout(host)
+			// A failed run (a lock or store error) waits for the next start; it must not stall a
+			// login waiting on it, nor reject unhandled at start.
+			.catch((e) =>
+				console.warn("Pending logout for", host, "failed; retrying at the next start", e),
+			)
+			.finally(() => {
+				if (pendingLogoutRuns.get(host) === run) pendingLogoutRuns.delete(host);
+			});
+		pendingLogoutRuns.set(host, run);
+		return run;
+	});
+	return Promise.all(runs).then(() => {});
+}
+//endregion
 function isValidAccount(user: unknown): boolean {
 	return Boolean(
 		user && typeof user === "object" && (user as {loggedin?: unknown}).loggedin !== false,
@@ -716,13 +892,57 @@ export interface InstanceUrls {
 	cdn: string;
 	gateway: string;
 	wellknown: string;
+	/** Whether the instance's discovery (`/policies/instance/domains`) offers this client
+	 * origin cookie sessions. Absent when discovery didn't answer: a refresh then keeps the
+	 * stored value (keepAuthCookie). */
+	authCookie?: boolean;
 }
 
 export interface InstanceInfo extends InstanceUrls {
 	value: string;
 }
 
+/** Resolves `str` to its instance's URLs, with discovery's `authCookie` when it answered. */
 export async function getapiurls(str: string): Promise<InstanceUrls | null> {
+	const urls = await resolveApiUrls(str);
+	if (!urls) return null;
+	const authCookie = await discoverAuthCookie(urls.api);
+	if (authCookie !== undefined) urls.authCookie = authCookie;
+	if (authCookie) cookieModeHosts.add(new URL(urls.api).host);
+	return urls;
+}
+
+/** A refreshed discovery that got no `authCookie` answer keeps the one `old` had. */
+export function keepAuthCookie<T extends InstanceUrls>(fresh: T, old: InstanceUrls | undefined): T {
+	if (fresh.authCookie === undefined && old?.authCookie !== undefined) {
+		fresh.authCookie = old.authCookie;
+	}
+	return fresh;
+}
+
+/** A shorter budget than the well-known's: the URLs are already known, and a login must not
+ * wait 30 s on a flag. */
+const AUTH_COOKIE_DISCOVERY_MS = 5000;
+/** Discovery's `authCookie` for the instance at `api`: true or false when it answered, undefined
+ * when it didn't (an error status, no answer or a body that isn't our JSON). Its own request,
+ * though getApiUrlsV2 reads the same route: that one asks the base before resolution, and
+ * checkURLs may then swap the URLs; the flag must come from the API the account will use. That
+ * API is already resolved, so apiFetch's refused redirect is right here (unlike discoveryJson). */
+async function discoverAuthCookie(api: string): Promise<boolean | undefined> {
+	try {
+		const res = await apiFetch(trimTrailingSlashes(api) + "/policies/instance/domains", undefined, {
+			timeoutMs: AUTH_COOKIE_DISCOVERY_MS,
+		});
+		if (!res.ok) return undefined;
+		const body: unknown = await res.json();
+		if (!body || typeof body !== "object" || Array.isArray(body)) return undefined;
+		return (body as {authCookie?: unknown}).authCookie === true;
+	} catch {
+		return undefined;
+	}
+}
+
+async function resolveApiUrls(str: string): Promise<InstanceUrls | null> {
 	str = str.trim();
 	if (!str) return null;
 
@@ -752,7 +972,8 @@ export async function getInstanceInfo(str: string): Promise<InstanceInfo | null>
 	});
 
 	if (stringURLMap.has(str.toLowerCase())) {
-		return (await getapiurls(stringURLMap.get(str.toLowerCase())!)) as InstanceInfo;
+		// The resolver, not getapiurls: the outer getapiurls runs discovery once for both.
+		return (await resolveApiUrls(stringURLMap.get(str.toLowerCase())!)) as InstanceInfo;
 	}
 
 	return null;

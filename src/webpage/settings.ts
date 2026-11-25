@@ -2303,6 +2303,7 @@ function promptLoginCode(
 	api: string,
 	title: string,
 	hint?: string,
+	extraHeaders?: Record<string, string>,
 ): Promise<false | any> {
 	return new Promise<false | any>((resolution) => {
 		const better = new Dialog("");
@@ -2318,6 +2319,7 @@ function promptLoginCode(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					...extraHeaders,
 				},
 			},
 		);
@@ -2369,11 +2371,13 @@ function keyFallback(json: {totp?: unknown; backup?: unknown}) {
 	return null;
 }
 /** The second login step's answer, or false when it was cancelled or refused (a refusal's
- * reason goes to `onRefused`). */
+ * reason goes to `onRefused`). `extraHeaders` ride both second-factor requests: the first step
+ * of a login answering `mfa` sets no cookie, so its cookie opt-in must reach the second. */
 async function handle2fa(
 	json: any,
 	api: string,
 	onRefused: (message: string) => void,
+	extraHeaders?: Record<string, string>,
 ): Promise<false | any> {
 	if (json.ticket) {
 		if (json.webauthn) {
@@ -2411,7 +2415,7 @@ async function handle2fa(
 				const why = keyUnavailable ? I18n.backupCodes.keyUnavailable() : undefined;
 				if (fallback) {
 					const hint = why ? `${why} ${fallback.hint}` : fallback.hint;
-					return promptLoginCode(json, api, fallback.title, hint);
+					return promptLoginCode(json, api, fallback.title, hint, extraHeaders);
 				}
 				if (why) onRefused(why);
 				return false;
@@ -2432,6 +2436,7 @@ async function handle2fa(
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
+					...extraHeaders,
 				},
 				body: JSON.stringify({code: JSON.stringify(res), ticket: json.ticket}),
 			}).catch(() => undefined);
@@ -2466,6 +2471,7 @@ async function handle2fa(
 				api,
 				I18n["2faCode"](),
 				json.backup === true ? I18n.backupCodes.loginHint() : undefined,
+				extraHeaders,
 			);
 		}
 	} else {
@@ -2965,6 +2971,10 @@ class Form implements OptionsElement<object> {
 	addPreprocessor(func: (obj: Object) => void) {
 		this.preprocessor = func;
 	}
+	/** Headers for one submit's requests, second-factor steps included, worked out after the
+	 * preprocessor from the body it saw (login and register's cookie opt-in). A FormError it
+	 * throws shows like the preprocessor's. */
+	submitHeaders?: (sent: object) => Promise<Record<string, string> | undefined>;
 	onFormError = (_: FormError) => {};
 	/** Answers an error response (non-2xx) instead of onSubmit: throw a FormError to show it on a
 	 * field, or return true once handled; otherwise the server's message shows in a popup. */
@@ -3049,11 +3059,15 @@ class Form implements OptionsElement<object> {
 				this.handleError(unread.reason);
 				return;
 			}
+			let submitHeaders: Record<string, string> | undefined;
 			try {
 				this.preprocessor(build);
+				submitHeaders = await this.submitHeaders?.(build);
 			} catch (e) {
 				if (e instanceof FormError) {
 					this.handleError(e);
+				} else {
+					console.error(e);
 				}
 				return;
 			}
@@ -3102,7 +3116,9 @@ class Form implements OptionsElement<object> {
 							{
 								method: this.method,
 								body: JSON.stringify(build),
-								headers: deriveHeaders(this.headers, {extra: mfaAuthHeader}),
+								headers: deriveHeaders(this.headers, {
+									extra: {...submitHeaders, ...mfaAuthHeader},
+								}),
 							},
 							carriesUpload ? {timeoutMs: 0} : undefined,
 						);
@@ -3125,7 +3141,12 @@ class Form implements OptionsElement<object> {
 					if (captcha === "dismissed") return;
 					if (captcha === "solved") return await doFetch();
 					if (mfaApi && this.tfaCheck) {
-						const tried = await handle2fa(json, mfaApi, (m) => this.showPrimError(m));
+						const tried = await handle2fa(
+							json,
+							mfaApi,
+							(m) => this.showPrimError(m),
+							submitHeaders,
+						);
 						if (tried) {
 							return await onSubmit(tried);
 						}

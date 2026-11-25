@@ -19,6 +19,7 @@ import {
 	getapiurls,
 	getBulkUsers,
 	getViewportHeight,
+	keepAuthCookie,
 	installPGet,
 	SW,
 	readStoredAccounts,
@@ -506,12 +507,7 @@ class Localuser {
 		this.userinfo.id = this.user.id;
 		this.userinfo.pfpsrc = this.user.getpfpsrc();
 
-		if (ready.d.auth_token) {
-			this.userinfo.token = ready.d.auth_token;
-			this.userinfo.json.token = ready.d.auth_token;
-			applyAccountHeaders(this.headers, this.userinfo);
-			this.userinfo.tryUpdateLocal();
-		}
+		if (ready.d.auth_token) this.adoptReadyToken(ready.d.auth_token);
 
 		this.applySavedStatus(this.ready.d.user_settings.status);
 		if (this.channelfocus) {
@@ -629,6 +625,15 @@ class Localuser {
 		}
 	}
 	swapped = false;
+	/** READY's `auth_token` replaces a header account's token. A cookie account keeps none: its
+	 * session is the cookie, and a stored token would put one back in page script's reach. */
+	adoptReadyToken(token: string) {
+		if (this.userinfo.authMode === "cookie") return;
+		this.userinfo.token = token;
+		this.userinfo.json.token = token;
+		applyAccountHeaders(this.headers, this.userinfo);
+		this.userinfo.tryUpdateLocal();
+	}
 	resume_gateway_url?: string;
 	session_id?: string;
 	/** Each socket's deflate-stream writer, so a dead socket's stream is closed and dropped. */
@@ -876,7 +881,7 @@ class Localuser {
 				case 3:
 					const newurls = await getapiurls(this.info.wellknown);
 					if (newurls) {
-						this.info = newurls;
+						this.info = keepAuthCookie(newurls, this.info);
 						this.serverurls = newurls;
 						this.userinfo.json.serverurls = this.info;
 						break;
@@ -886,7 +891,7 @@ class Localuser {
 				case 4: {
 					const newurls = await getapiurls(new URL(this.info.wellknown).origin);
 					if (newurls) {
-						this.info = newurls;
+						this.info = keepAuthCookie(newurls, this.info);
 						this.serverurls = newurls;
 						this.userinfo.json.serverurls = this.info;
 						break;
@@ -898,7 +903,7 @@ class Localuser {
 					const url = "https://" + breakappart.at(-2) + "." + breakappart.at(-1);
 					const newurls = await getapiurls(url);
 					if (newurls) {
-						this.info = newurls;
+						this.info = keepAuthCookie(newurls, this.info);
 						this.serverurls = newurls;
 						this.userinfo.json.serverurls = this.info;
 					}
@@ -5013,7 +5018,11 @@ class Localuser {
 								currentUserInfos.users[user].serverurls.value ??
 								currentUserInfos.users[user].serverurls.wellknown ??
 								currentUserInfos.users[user].serverurls.api;
-							currentUserInfos.users[user].serverurls = await getapiurls(key);
+							const old = currentUserInfos.users[user].serverurls;
+							const fresh = await getapiurls(key);
+							// An instance that didn't answer keeps its URLs instead of losing them.
+							if (!fresh) return;
+							currentUserInfos.users[user].serverurls = keepAuthCookie(fresh, old);
 							saveAccounts(JSON.stringify(currentUserInfos));
 						}),
 					);
