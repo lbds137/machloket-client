@@ -437,7 +437,9 @@ function isValidAccount(user: unknown): boolean {
  * for the same uid with another credential is a newer login (another tab's), not this session. */
 function holdsCredential(record: {token?: unknown; auth_mode?: unknown}, dead: AccountAuth) {
 	if (dead.authMode === "cookie") return record.auth_mode === "cookie";
-	return record.auth_mode !== "cookie" && record.token === dead.token;
+	return (
+		typeof dead.token === "string" && record.auth_mode !== "cookie" && record.token === dead.token
+	);
 }
 /** Marks invalid the records of the 401'd request's account that still hold its dead credential,
  * persisting through tryUpdateLocal so E5 save-refusal semantics apply. A record of the same uid
