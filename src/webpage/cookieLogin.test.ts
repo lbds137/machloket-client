@@ -564,3 +564,40 @@ describe("review round 1", () => {
 		}
 	});
 });
+
+describe("review round 3 (PR #216)", () => {
+	it("adduser doesn't throw over a same-uid stored record whose API isn't a URL", () => {
+		const good = urlsFor("http://malformed.test");
+		const info = stored();
+		const uid = "m@x" + good.wellknown;
+		info.users[uid] = {serverurls: {...good, api: "not a url"}, email: "m@x", auth_mode: "cookie"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		expect(() =>
+			adduser({serverurls: {...good, authCookie: true}, email: "m@x", auth_mode: "cookie"}),
+		).not.toThrow();
+	});
+
+	it("malformed pending-logout entries are dropped, not retried or thrown on", async () => {
+		const info = stored() as any;
+		info.pendingLogouts = {"bad.test": 42, "junk host": "http://junk/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		await expect(runPendingLogouts()).resolves.toBeUndefined();
+		expect(() =>
+			adduser({
+				serverurls: {...urlsFor("http://junk"), authCookie: true},
+				email: "j@x",
+				auth_mode: "cookie",
+			}),
+		).not.toThrow();
+		expect(stored().pendingLogouts ?? {}).toEqual({});
+	});
+
+	it("removing a cookie account over an unreadable store warns that its pending logout is lost", () => {
+		const u = storeAccount("http://unreadable.test", "u@x", "cookie");
+		localStorage.setItem("userinfos", "{");
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		u.remove(u.serverurls.api);
+		expect(warn.mock.calls.some((c) => String(c[0]).includes("pending logout"))).toBe(true);
+		warn.mockRestore();
+	});
+});
