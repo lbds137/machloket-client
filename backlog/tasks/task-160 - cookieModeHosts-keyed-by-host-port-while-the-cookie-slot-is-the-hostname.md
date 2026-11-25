@@ -4,9 +4,11 @@ title: cookieModeHosts keyed by host:port while the cookie slot is the hostname
 status: To Do
 assignee: []
 created_date: '2026-11-25T20:24:00Z'
+updated_date: '2026-11-25T21:41:00Z'
 labels:
   - auth
 dependencies: []
+priority: medium
 ordinal: 91920
 ---
 

@@ -4,10 +4,12 @@ title: 'Cookie login: post-merge review lows from PR #216'
 status: To Do
 assignee: []
 created_date: '2026-11-25T21:37:00Z'
+updated_date: '2026-11-25T21:41:00Z'
 labels:
   - auth
   - tests
 dependencies: []
+priority: low
 ordinal: 94920
 ---
 

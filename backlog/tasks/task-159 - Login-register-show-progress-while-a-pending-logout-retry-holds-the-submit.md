@@ -4,11 +4,12 @@ title: 'Login/register: show progress while a pending logout retry holds the sub
 status: To Do
 assignee: []
 created_date: '2026-11-25T20:24:00Z'
-updated_date: '2026-11-25T21:10:00Z'
+updated_date: '2026-11-25T21:41:00Z'
 labels:
   - ux
   - auth
 dependencies: []
+priority: low
 ordinal: 90920
 ---
 

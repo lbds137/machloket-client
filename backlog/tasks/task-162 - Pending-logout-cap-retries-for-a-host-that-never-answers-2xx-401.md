@@ -4,9 +4,11 @@ title: 'Pending logout: cap retries for a host that never answers 2xx/401'
 status: To Do
 assignee: []
 created_date: '2026-11-25T21:10:00Z'
+updated_date: '2026-11-25T21:41:00Z'
 labels:
   - auth
 dependencies: []
+priority: low
 ordinal: 93920
 ---
 

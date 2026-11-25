@@ -4,10 +4,12 @@ title: 'getapiurls: cookie discovery only where authCookie is used'
 status: To Do
 assignee: []
 created_date: '2026-11-25T21:10:00Z'
+updated_date: '2026-11-25T21:41:00Z'
 labels:
   - performance
   - auth
 dependencies: []
+priority: medium
 ordinal: 92920
 ---
 
