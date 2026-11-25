@@ -3,10 +3,10 @@ id: TASK-149
 title: >-
   Token storage unit 3: cookie login, register, token-less gateway and pending
   logout
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-11-24T22:40:00Z'
-updated_date: '2026-11-25T20:24:00Z'
+updated_date: '2026-11-25T21:37:00Z'
 labels:
   - security-hardening
   - auth
@@ -30,3 +30,9 @@ TASK-136 design unit 3 (docs/design/token-storage.md, Sequence 3). Blocked on th
 <!-- SECTION:NOTES:BEGIN -->
 Built ahead of the server (2026-11-25): cookie mode only switches on where discovery answers authCookie:true, which needs clientOrigins set on the instance (unset on A, [] on B per the server session; server TASK-342 was ruled out by Lila 11-25: the client never runs on the API host, so discovery is cross-origin and already sends Origin). Until then the header path stays live and every cookie path is dormant. Follow-ups filed: TASK-158 (WebAuthn opt-in test), TASK-159 (submit progress while a retry waits), TASK-160 (cookieModeHosts port key).
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Merged in PR #216 (8eee2bac): cookie login/register with MFA opt-in, token-less gateway, pending logout under a per-hostname Web Lock. Dormant live until an instance sets clientOrigins. CodeQL test-fixture alerts #76-#86 dismissed per owner ruling 11-25. Follow-ups: TASK-158/159/160/161/162/163.
+<!-- SECTION:FINAL_SUMMARY:END -->
