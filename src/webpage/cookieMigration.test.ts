@@ -795,6 +795,17 @@ describe("Localuser after its session moved into the cookie", () => {
 		l.gatewayAuthRetried = false;
 		return {l, user};
 	}
+	/** The loading screen's Retry scaffold as app.html has it: the button hidden, the line
+	 * beneath it empty until the offer writes it. Both are appended; remove them in finally. */
+	function mountRetryScreen() {
+		const retry = document.createElement("button");
+		retry.id = "gatewayRetry";
+		retry.hidden = true;
+		const loadDesc = document.createElement("p");
+		loadDesc.id = "load-desc";
+		document.body.append(retry, loadDesc);
+		return {retry, loadDesc};
+	}
 
 	it("switches its live headers to the cookie in place, so the gateway sends no token", () => {
 		const {l, user} = liveUser("http://live-headers.test");
@@ -886,10 +897,7 @@ describe("Localuser after its session moved into the cookie", () => {
 			const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 			vi.spyOn(l, "loaduser").mockImplementation(() => {});
 			vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-			const retry = document.createElement("button");
-			retry.id = "gatewayRetry";
-			retry.hidden = true;
-			document.body.append(retry);
+			const {retry, loadDesc} = mountRetryScreen();
 			try {
 				l.identifiedToken = "tok-live@x";
 				l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
@@ -911,6 +919,7 @@ describe("Localuser after its session moved into the cookie", () => {
 				expect(l.connectionSucceed).toBe(0);
 			} finally {
 				retry.remove();
+				loadDesc.remove();
 			}
 		});
 	}
@@ -941,12 +950,7 @@ describe("Localuser after its session moved into the cookie", () => {
 			const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 			vi.spyOn(l, "loaduser").mockImplementation(() => {});
 			vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-			const retry = document.createElement("button");
-			retry.id = "gatewayRetry";
-			retry.hidden = true;
-			const loadDesc = document.createElement("p");
-			loadDesc.id = "load-desc";
-			document.body.append(retry, loadDesc);
+			const {retry, loadDesc} = mountRetryScreen();
 			try {
 				await I18n.done;
 				l.identifiedToken = "tok-live@x";
@@ -958,6 +962,9 @@ describe("Localuser after its session moved into the cookie", () => {
 				await vi.waitFor(() => expect(retry.hidden).toBe(false));
 				expect(reconnect).not.toHaveBeenCalled();
 				expect(loadDesc.textContent).toBe(line);
+				// The offer announces itself: focus lands on the button, which tells a keyboard
+				// or screen-reader user it appeared (TASK-174).
+				expect(document.activeElement).toBe(retry);
 			} finally {
 				retry.remove();
 				loadDesc.remove();
@@ -982,12 +989,7 @@ describe("Localuser after its session moved into the cookie", () => {
 		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 		vi.spyOn(l, "loaduser").mockImplementation(() => {});
 		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-		const retry = document.createElement("button");
-		retry.id = "gatewayRetry";
-		retry.hidden = true;
-		const loadDesc = document.createElement("p");
-		loadDesc.id = "load-desc";
-		document.body.append(retry, loadDesc);
+		const {retry, loadDesc} = mountRetryScreen();
 		try {
 			await I18n.done;
 			l.identifiedToken = "tok-live@x";
@@ -1003,6 +1005,87 @@ describe("Localuser after its session moved into the cookie", () => {
 			);
 			// No verdict of death: the account stays stored as logged in.
 			expect(stored().users[user.uid].loggedin).toBe(true);
+		} finally {
+			retry.remove();
+			loadDesc.remove();
+		}
+	});
+
+	// Headers with no account marker never engage the 401 path, so nothing checked the
+	// session - that is not proof of life, and the Retry line takes the unanswered wording
+	// (#232 review low; it said "still valid").
+	it("a second 4004 whose headers carry no account shows the unanswered line", async () => {
+		const host = "http://live-line-nomark.test";
+		const {l, user} = liveUser(host);
+		l.info = user.serverurls;
+		l.headers = {Authorization: "tok-live@x"}; // no account marker: the path never engages
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+		vi.spyOn(l, "loaduser").mockImplementation(() => {});
+		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+		const {retry, loadDesc} = mountRetryScreen();
+		try {
+			await I18n.done;
+			l.identifiedToken = "tok-live@x";
+			l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+			l.connectionSucceed = 0; // The 4004 closes no good connection.
+
+			l.gatewayAuthFailed();
+
+			await vi.waitFor(() => expect(retry.hidden).toBe(false));
+			expect(reconnect).not.toHaveBeenCalled();
+			expect(loadDesc.textContent).toBe(
+				"The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
+			);
+		} finally {
+			retry.remove();
+			loadDesc.remove();
+		}
+	});
+
+	// Both looks confirm the death (the token probe 401s, and the cookie layer's probe finds
+	// someone else's session), but no record holds the credential any more - a re-login
+	// elsewhere replaced it while the probe was out. Nothing is invalidated (and the newer
+	// login stays), yet this page's session is not proven valid either: the Retry line is
+	// the unanswered one, not "still valid" (#232 review low).
+	it("a second 4004 whose dead credential no record holds shows the unanswered line", async () => {
+		const host = "http://live-line-norecord.test";
+		const {l, user} = liveUser(host);
+		l.info = user.serverurls;
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const answers = [
+			() => Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+			// The cookie layer's look finds another user's session: "dead".
+			() => Response.json({id: "id-someone-else"}),
+		];
+		let probes = 0;
+		recordRequests(host + "/api/v9/users/@me", () => answers[probes++]());
+		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+		vi.spyOn(l, "loaduser").mockImplementation(() => {});
+		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+		const {retry, loadDesc} = mountRetryScreen();
+		try {
+			await I18n.done;
+			l.identifiedToken = "tok-live@x";
+			l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+			l.connectionSucceed = 0; // The 4004 closes no good connection.
+
+			l.gatewayAuthFailed();
+			// A re-login elsewhere replaces the credential while the probe is out (the probe
+			// snapshotted its account already): no record holds the dead token any more.
+			user.json.token = "tok-new@x";
+			const users = stored();
+			users.users[user.uid].token = "tok-new@x";
+			localStorage.setItem("userinfos", JSON.stringify(users));
+
+			await vi.waitFor(() => expect(retry.hidden).toBe(false));
+			expect(reconnect).not.toHaveBeenCalled();
+			expect(loadDesc.textContent).toBe(
+				"The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
+			);
+			// The newer login stays stored as logged in; no /login route either.
+			expect(stored().users[user.uid].loggedin).toBe(true);
+			expect(pageNav.go).not.toHaveBeenCalled();
 		} finally {
 			retry.remove();
 			loadDesc.remove();

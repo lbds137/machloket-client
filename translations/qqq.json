@@ -30,7 +30,7 @@
 				"file": {
 								"size": "$1 is the formatted file size (e.g. 1.5 kB)"
 				},
-				"gatewayRetryNoVerdict": "Shown above the loading screen's Retry button (after a second gateway 4004 whose session check the instance did not answer - a 5xx, a rate limit or a timeout): validity could not be confirmed. The line for a check that answered and kept the session is gatewayRetrySessionValid.",
+				"gatewayRetryNoVerdict": "Shown above the loading screen's Retry button (after a second gateway 4004 whose session check got no usable answer - a 5xx, a rate limit, a timeout, a network error, a proxy's page or status, or no API to check against): validity could not be confirmed. The line for a check that answered and kept the session is gatewayRetrySessionValid.",
 				"gatewayRetrySessionValid": "Shown above the loading screen's Retry button (after a second gateway 4004 whose session check answered and kept the session): the session is still valid, so retrying or switching accounts should recover. Compare gatewayRetryNoVerdict, for a check the instance did not answer.",
 				"guild": {
 								"disoveryTitle": "$1 is the number of guilds discovered",
