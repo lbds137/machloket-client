@@ -22,6 +22,7 @@ const {
 	configureApiXhr,
 	handleUnauthorized,
 	isPreAuthEndpoint,
+	probeUnauthorized,
 	resetUnauthorizedNavForTests,
 } = await import("./utils/apiFetch");
 const {CSRF_HEADER, accountUidOf, applyAccountHeaders, buildAccountHeaders} =
@@ -545,6 +546,56 @@ describe("apiFetch wrapper", () => {
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 		expect(nav).toHaveBeenCalledWith("/login");
 		expect(user.loggedin).toBe(false);
+	});
+
+	it("probeUnauthorized settles every run with its verdict; a held latch hands back that run (TASK-157)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = adduser({
+			serverurls: {
+				api: API,
+				cdn: "http://apifetch.test",
+				gateway: "ws://apifetch.test",
+				wellknown: "http://apifetch.test",
+			},
+			email: "probe-verdict@example.test",
+			token: "fake-probe-verdict-token",
+			loggedin: true,
+		});
+		const answers: (() => Response)[] = [
+			() => Response.json({id: "u-alive"}),
+			() => Response.json({message: "Service unavailable", code: 0}, {status: 503}),
+			() => {
+				throw new TypeError("Failed to fetch");
+			},
+			() => Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+		];
+		let probes = 0;
+		captureRequests(API + "/users/@me", () => answers[probes++]());
+		const probe = () => probeUnauthorized(API + "/users/@me", {headers: buildAccountHeaders(user)});
+
+		// Alive, no answer (5xx), no answer (network): no verdict of death, latch released.
+		for (let i = 0; i < 3; i++) {
+			const run = probe();
+			if (!run) throw new Error("the path did not engage");
+			expect(await run).toBe("notDead");
+		}
+		expect(user.loggedin).toBe(true);
+
+		const dying = probe();
+		// While that run is out, the account's latch hands back the same run, not a new probe.
+		expect(probe()).toBe(dying);
+		expect(await dying).toBe("dead");
+		expect(user.loggedin).toBe(false);
+		// The confirmed death keeps the latch until the /login navigation: still "dead".
+		expect(await probe()).toBe("dead");
+		expect(probes).toBe(4);
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+
+		// A pre-auth or untagged request never engages.
+		expect(probeUnauthorized(API + "/auth/login", {headers: buildAccountHeaders(user)})).toBe(
+			undefined,
+		);
+		expect(probeUnauthorized(API + "/users/@me", {headers: {Authorization: "x"}})).toBe(undefined);
 	});
 
 	it("AbortSignal.any fallback still rejects with the offline DOMException when a caller signal is present and fetch hangs", async () => {

@@ -22,10 +22,17 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 	return PRE_AUTH_PATH.test(url.pathname);
 }
 
+/** How a 401 path run ended. "dead": the session was confirmed dead and invalidated (and /login
+ * scheduled while its account is the active one). "adopted": the session had moved into the
+ * cookie and the account converted (onCookieSessionAdopted tells its holders). "notDead": no
+ * verdict of death - the session answered alive, or a probe got no answer (timeout, 429, 5xx),
+ * or no record still holds the probed credential; the session is left alone. "stale": a test
+ * reset superseded the run. */
+export type UnauthorizedVerdict = "dead" | "adopted" | "notDead" | "stale";
 /** The accounts (by uid) whose 401 probe is out, or whose confirmed death has scheduled the
- * /login navigation. Keyed per account: an account switch keeps the page, so the account
- * switched to must not wait behind the old one's probe. */
-const unauthorizedPending = new Set<string>();
+ * /login navigation, each with its run's verdict. Keyed per account: an account switch keeps the
+ * page, so the account switched to must not wait behind the old one's probe. */
+const unauthorizedPending = new Map<string, Promise<UnauthorizedVerdict>>();
 // Bumped only by resetUnauthorizedNavForTests, for test isolation: a probe left over from one
 // test sees a new generation and never navigates in the next. Production never changes it.
 let unauthorizedNavGen = 0;
@@ -87,17 +94,31 @@ async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<bo
  * nowhere: /login would take the page from the account switched to. Returns whether the path
  * was engaged (the probe decides whether it will invalidate). */
 export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit): boolean {
-	if (isPreAuthEndpoint(input)) return false;
+	return probeUnauthorized(input, init) !== undefined;
+}
+
+/** handleUnauthorized for a caller that acts on the outcome: the run's verdict, or undefined
+ * when the path does not engage. While the account's latch is held, the verdict is that run's -
+ * a confirmed death stays "dead" until the /login navigation it scheduled. Never rejects. */
+export function probeUnauthorized(
+	input: RequestInfo | URL,
+	init?: RequestInit,
+): Promise<UnauthorizedVerdict> | undefined {
+	if (isPreAuthEndpoint(input)) return undefined;
 	// The account object the headers were built from: its fields are read at probe time, so a
 	// token READY replaced since the request was sent is the one probed.
 	const account = accountOf(init);
-	if (!account) return false;
+	if (!account) return undefined;
 	const uid = account.uid;
-	if (unauthorizedPending.has(uid)) return true;
-	unauthorizedPending.add(uid);
+	const held = unauthorizedPending.get(uid);
+	if (held) return held;
 	const gen = unauthorizedNavGen;
 	const url = input instanceof Request ? input.url : String(input);
-	void (async () => {
+	// Every exit settles with a verdict: a caller waiting on it must never be left hanging.
+	const run = (async (): Promise<UnauthorizedVerdict> => {
+		// The latch is set below, once this first await hands control back: every release
+		// inside comes after it, even a throw before the probe.
+		await Promise.resolve();
 		try {
 			// The credential as the probe sends it, so invalidation compares against that very
 			// one: a token READY swaps in while the probe is out belongs to a live session.
@@ -109,24 +130,28 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 				serverurls: account.serverurls,
 			};
 			const dead = await tokenIsDead(url, probed);
-			if (gen !== unauthorizedNavGen) return;
+			if (gen !== unauthorizedNavGen) return "stale";
 			// A live session releases the latch at once: a later 401 must not find it held.
 			if (!dead) {
 				unauthorizedPending.delete(uid);
-				return;
+				return "notDead";
 			}
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
 			// graph, and a static import made any module that imports apiFetch before
 			// localuser hit "Cannot access 'Guild' before initialization" (direct.ts).
 			const utils = await import("./utils.js");
-			if (gen !== unauthorizedNavGen) return;
+			if (gen !== unauthorizedNavGen) return "stale";
 			// A header token that died because its session moved into the cookie (another
 			// tab's migration, or a refused save of this one's) converts instead.
 			const verdict = await utils.cookieVerdictFor401(probed);
-			if (gen !== unauthorizedNavGen) return;
+			if (gen !== unauthorizedNavGen) return "stale";
+			if (verdict === "adopted") {
+				unauthorizedPending.delete(uid);
+				return "adopted";
+			}
 			if (verdict !== "dead" || !utils.invalidateAccount(probed)) {
 				unauthorizedPending.delete(uid);
-				return;
+				return "notDead";
 			}
 			queueMicrotask(() => {
 				if (gen !== unauthorizedNavGen) return;
@@ -140,12 +165,16 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 				}
 				pageNav.go("/login");
 			});
+			return "dead";
 		} catch (error) {
-			if (gen === unauthorizedNavGen) unauthorizedPending.delete(uid);
+			if (gen !== unauthorizedNavGen) return "stale";
+			unauthorizedPending.delete(uid);
 			console.warn("machloket: 401 handling failed:", error);
+			return "notDead";
 		}
 	})();
-	return true;
+	unauthorizedPending.set(uid, run);
+	return run;
 }
 
 /** Arms the window a 429 names (rateLimitWindows) from a clone of its body, so the body stays
