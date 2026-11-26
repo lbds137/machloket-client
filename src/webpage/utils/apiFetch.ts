@@ -29,10 +29,20 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
  * or no record still holds the probed credential; the session is left alone. "stale": a test
  * reset superseded the run. */
 export type UnauthorizedVerdict = "dead" | "adopted" | "notDead" | "stale";
-/** The accounts (by uid) whose 401 probe is out, or whose confirmed death has scheduled the
- * /login navigation, each with its run's verdict. Keyed per account: an account switch keeps the
- * page, so the account switched to must not wait behind the old one's probe. */
+/** The credentials whose 401 probe is out, or whose confirmed death has scheduled the /login
+ * navigation, each with its run's verdict (keys: latchKey). Keyed per account: an account switch
+ * keeps the page, so the account switched to must not wait behind the old one's probe. And per
+ * credential within it: a token READY swaps in while the old one's probe is out is a session of
+ * its own, so its 401 is probed rather than handed the old token's verdict (TASK-169). */
 const unauthorizedPending = new Map<string, Promise<UnauthorizedVerdict>>();
+/** Whether a confirmed death has scheduled this page's /login navigation: one per page, however
+ * many of an account's credentials are found dead before it leaves. */
+let loginNavScheduled = false;
+/** The latch key of the credential a request carried: a cookie account's session is its cookie,
+ * a header account's its token. */
+function latchKey(account: AccountAuth): string {
+	return `${account.uid}\n${account.authMode === "cookie" ? "cookie" : `token:${account.token}`}`;
+}
 // Bumped only by resetUnauthorizedNavForTests, for test isolation: a probe left over from one
 // test sees a new generation and never navigates in the next. Production never changes it.
 let unauthorizedNavGen = 0;
@@ -46,11 +56,13 @@ export function noteActiveAccount(uid: string): void {
 	activeAccountUid = uid;
 }
 
-/** Test-only reset: clears every account's latch (released when the session proves alive, when
+/** Test-only reset: clears every credential's latch (released when the session proves alive, when
  * invalidation fails or the account is no longer the active one, and held once a confirmed dead
- * session schedules the /login navigation) and the registered active account. */
+ * session schedules the /login navigation), the page's navigation mark and the registered active
+ * account. */
 export function resetUnauthorizedNavForTests(): void {
 	unauthorizedPending.clear();
+	loginNavScheduled = false;
 	activeAccountUid = undefined;
 	unauthorizedNavGen++;
 }
@@ -88,7 +100,7 @@ async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<bo
 /** Marks the account behind a VERIFIED dead session invalid and schedules one navigation to
  * /login. Only engages on a post-auth endpoint whose request was built for an account (bots,
  * pre-auth, and raw untagged requests never log anyone out), and invalidates only after the
- * probe confirms the account's current credential is dead. One probe per account is in flight
+ * probe confirms the account's current credential is dead. One probe per credential is in flight
  * at a time; its latch releases when the session proves alive so a later real death can still
  * route. A probe that outlives an account switch still invalidates its own account but routes
  * nowhere: /login would take the page from the account switched to. Returns whether the path
@@ -98,7 +110,7 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 }
 
 /** handleUnauthorized for a caller that acts on the outcome: the run's verdict, or undefined
- * when the path does not engage. While the account's latch is held, the verdict is that run's -
+ * when the path does not engage. While the credential's latch is held, the verdict is that run's -
  * a confirmed death stays "dead" until the /login navigation it scheduled. Never rejects. */
 export function probeUnauthorized(
 	input: RequestInfo | URL,
@@ -110,7 +122,18 @@ export function probeUnauthorized(
 	const account = accountOf(init);
 	if (!account) return undefined;
 	const uid = account.uid;
-	const held = unauthorizedPending.get(uid);
+	// The credential as the probe sends it, taken now so the latch key and the probe agree:
+	// invalidation compares against that very one, and a token READY swaps in while the probe is
+	// out belongs to a session of its own (its own latch, its own probe).
+	const probed: AccountAuth = {
+		uid,
+		token: account.token,
+		authMode: account.authMode,
+		id: account.id,
+		serverurls: account.serverurls,
+	};
+	const key = latchKey(probed);
+	const held = unauthorizedPending.get(key);
 	if (held) return held;
 	const gen = unauthorizedNavGen;
 	const url = input instanceof Request ? input.url : String(input);
@@ -120,20 +143,11 @@ export function probeUnauthorized(
 		// inside comes after it, even a throw before the probe.
 		await Promise.resolve();
 		try {
-			// The credential as the probe sends it, so invalidation compares against that very
-			// one: a token READY swaps in while the probe is out belongs to a live session.
-			const probed: AccountAuth = {
-				uid: account.uid,
-				token: account.token,
-				authMode: account.authMode,
-				id: account.id,
-				serverurls: account.serverurls,
-			};
 			const dead = await tokenIsDead(url, probed);
 			if (gen !== unauthorizedNavGen) return "stale";
 			// A live session releases the latch at once: a later 401 must not find it held.
 			if (!dead) {
-				unauthorizedPending.delete(uid);
+				unauthorizedPending.delete(key);
 				return "notDead";
 			}
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
@@ -146,11 +160,11 @@ export function probeUnauthorized(
 			const verdict = await utils.cookieVerdictFor401(probed);
 			if (gen !== unauthorizedNavGen) return "stale";
 			if (verdict === "adopted") {
-				unauthorizedPending.delete(uid);
+				unauthorizedPending.delete(key);
 				return "adopted";
 			}
 			if (verdict !== "dead" || !utils.invalidateAccount(probed)) {
-				unauthorizedPending.delete(uid);
+				unauthorizedPending.delete(key);
 				return "notDead";
 			}
 			queueMicrotask(() => {
@@ -160,20 +174,22 @@ export function probeUnauthorized(
 				// session is not the dead one. Released, so a fresh sign-in of this account that
 				// later dies still routes.
 				if (activeAccountUid !== undefined && activeAccountUid !== uid) {
-					unauthorizedPending.delete(uid);
+					unauthorizedPending.delete(key);
 					return;
 				}
+				if (loginNavScheduled) return;
+				loginNavScheduled = true;
 				pageNav.go("/login");
 			});
 			return "dead";
 		} catch (error) {
 			if (gen !== unauthorizedNavGen) return "stale";
-			unauthorizedPending.delete(uid);
+			unauthorizedPending.delete(key);
 			console.warn("machloket: 401 handling failed:", error);
 			return "notDead";
 		}
 	})();
-	unauthorizedPending.set(uid, run);
+	unauthorizedPending.set(key, run);
 	return run;
 }
 
