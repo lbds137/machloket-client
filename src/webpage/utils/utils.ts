@@ -911,6 +911,58 @@ export async function cookieVerdictFor401(
 /** The exchange answers fast or not at all; the app's start waits on it. */
 const SESSION_COOKIE_EXCHANGE_MS = 10_000;
 /**
+ * The start's migration: `beforeStart` is what the start awaits before the gateway, `done` the
+ * whole run. A header account whose record says its instance offers no cookie sessions starts at
+ * once: its discovery only refreshes the stored flag behind the start, and an instance that has
+ * turned cookie mode on since is migrated at the next start, before that start's gateway (the
+ * exchange ends the header session, and the server would drop a live socket identified with it).
+ * An unset or `true` flag holds the start through discovery and the exchange, as before.
+ */
+export function startCookieMigration(user: Specialuser): {
+	beforeStart: Promise<void>;
+	done: Promise<void>;
+} {
+	if (user.serverurls.authCookie === false) {
+		return {beforeStart: Promise.resolve(), done: refreshAuthCookieFlag(user)};
+	}
+	const done = migrateToCookieSession(user);
+	return {beforeStart: done, done};
+}
+/** Refreshes the stored `authCookie` from the instance's discovery, for a header account; a
+ * missing or unusable answer keeps the flag. Discovery can take seconds, and meanwhile a logout
+ * may remove the record or another tab may move it into the cookie or log it in anew, so the
+ * whole-record save runs only while this user and its stored record still hold the token it
+ * started with. Never throws. */
+async function refreshAuthCookieFlag(user: Specialuser): Promise<void> {
+	try {
+		if (user.authMode === "cookie" || user.loggedin === false) return;
+		const token = user.token;
+		if (typeof token !== "string") return;
+		const api = user.serverurls.api;
+		const offered = await discoverAuthCookie(api);
+		if (offered ?? user.serverurls.authCookie) cookieModeHosts.add(new URL(api).host);
+		if (offered === undefined || offered === user.serverurls.authCookie) return;
+		if (!stillHeaderLoggedIn(user, token)) return;
+		user.serverurls.authCookie = offered; // the record's own serverurls object
+		user.tryUpdateLocal();
+	} catch (e) {
+		console.warn("Refreshing the instance's cookie-session flag failed", e);
+	}
+}
+/** Whether `user`, in memory and in storage, is still the logged-in header account holding
+ * `token`: false once a logout removed the record, another tab moved it into the cookie, or a
+ * newer login or an invalidation replaced it. */
+function stillHeaderLoggedIn(user: Specialuser, token: string): boolean {
+	if (user.authMode === "cookie" || user.loggedin === false || user.token !== token) return false;
+	const stored = readStoredAccounts()?.users[user.uid];
+	return (
+		stored !== null &&
+		typeof stored === "object" &&
+		stored.loggedin !== false &&
+		holdsCredential(stored, {uid: user.uid, token})
+	);
+}
+/**
  * Moves the current account's header session into the cookie at start: its own discovery
  * refreshes the stored `authCookie` (a plain start runs none otherwise), and when the instance
  * offers cookie sessions and no logged-in cookie account holds the hostname's cookie, it calls
@@ -922,16 +974,11 @@ const SESSION_COOKIE_EXCHANGE_MS = 10_000;
  */
 export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 	try {
+		await refreshAuthCookieFlag(user);
 		if (user.authMode === "cookie" || user.loggedin === false) return;
 		if (typeof user.token !== "string") return;
-		const api = user.serverurls.api;
-		const offered = await discoverAuthCookie(api);
-		if (offered !== undefined && offered !== user.serverurls.authCookie) {
-			user.serverurls.authCookie = offered; // the record's own serverurls object
-			user.tryUpdateLocal();
-		}
 		if (user.serverurls.authCookie !== true) return;
-		cookieModeHosts.add(new URL(api).host);
+		const api = user.serverurls.api;
 		// Without Web Locks the guards across tabs don't exist, so no cookie session starts: the
 		// account stays on its token (a cookie login goes by token there too).
 		if (!navigator.locks) return;
@@ -942,7 +989,9 @@ export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 		await withCookieLock(slot, async () => {
 			if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return;
 			const token = user.token;
-			if (user.authMode === "cookie" || typeof token !== "string") return;
+			// Discovery and the waits above can take seconds: a record logged out, removed or
+			// logged in anew meanwhile is not this session's to exchange.
+			if (typeof token !== "string" || !stillHeaderLoggedIn(user, token)) return;
 			let res: Response;
 			try {
 				// Untagged headers: this request's 401 is answered here, not by the 401 path.
