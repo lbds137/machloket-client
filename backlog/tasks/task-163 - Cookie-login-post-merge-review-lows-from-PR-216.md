@@ -1,10 +1,10 @@
 ---
 id: TASK-163
 title: 'Cookie login: post-merge review lows from PR #216'
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-25T21:37:00Z'
-updated_date: '2026-11-25T21:41:00Z'
+updated_date: '2026-11-26T04:23:00Z'
 labels:
   - auth
   - tests
@@ -22,3 +22,9 @@ Final claude-review on PR #216 (all low):
 3. cookieLogin.test.ts describe blocks named 'review round 1' / 'review round 3 (PR #216)': move the cases into the behaviour groups.
 4. e2e/cookie-login.spec.ts: assert x-machloket-csrf: 1 on a post-login API request (proves REST goes with credentials).
 <!-- SECTION:DESCRIPTION:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+Shipped in PR #222 (merge ed7335bd): exclusive cookie-login hold until submit settles; retry probes the hold before reading the store; adduser drop commented; tests regrouped; e2e CSRF asserts. Review lows → TASK-176. Store-wide RMW → TASK-175.
+<!-- SECTION:NOTES:END -->
