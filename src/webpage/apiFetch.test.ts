@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {captureRequests} from "./test/setup";
+import {captureRequests, recordRequests} from "./test/setup";
 
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first).
@@ -2475,5 +2475,108 @@ describe("401 handling across an account switch (TASK-156)", () => {
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 		expect(nav).toHaveBeenCalledWith("/login");
 		expect(b.loggedin).toBe(false);
+	});
+});
+
+describe("401 latch keyed by credential (TASK-169)", () => {
+	const unauthorized = () => Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+	const serverurls = {
+		api: API,
+		cdn: "http://apifetch.test",
+		gateway: "ws://apifetch.test",
+		wellknown: "http://apifetch.test",
+	};
+	const account = (token: string) =>
+		adduser({serverurls, email: "rotate@example.test", token, loggedin: true});
+	/** The probes answer in call order; each settles only when the test resolves it. */
+	function heldProbes() {
+		const answers: ((res: Response) => void)[] = [];
+		const requests = recordRequests(
+			API + "/users/@me",
+			() => new Promise<Response>((resolve) => answers.push(resolve)),
+		);
+		return {answers, requests};
+	}
+	/** What READY's auth_token does to a header account (Localuser.adoptReadyToken). */
+	const readyRotates = (user: InstanceType<typeof Specialuser>, token: string) => {
+		user.token = token;
+		user.json.token = token;
+		user.tryUpdateLocal();
+	};
+	const patchSettings = (user: InstanceType<typeof Specialuser>) =>
+		apiFetch(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(user),
+			body: JSON.stringify({status: "idle"}),
+		});
+	const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+	it("a token READY swapped in while the old token's probe is out gets its own probe when it 401s", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = account("fake-rotate-old");
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		const {answers, requests} = heldProbes();
+
+		await patchSettings(user);
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		readyRotates(user, "fake-rotate-new");
+		await patchSettings(user); // The new token is dead too: it must be probed, not wait.
+
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		expect(requests.map((r) => r.headers.get("Authorization"))).toEqual([
+			"fake-rotate-old",
+			"fake-rotate-new",
+		]);
+		answers[0](unauthorized()); // The old token is dead, but the record holds the new one.
+		await settle();
+		expect(user.loggedin).toBe(true);
+		expect(nav).not.toHaveBeenCalled();
+
+		answers[1](unauthorized());
+		await vi.waitFor(() => expect(user.loggedin).toBe(false));
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("a held run hands its verdict to the same credential only (the gateway's 4004 path)", async () => {
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = account("fake-held-old");
+		const {answers} = heldProbes();
+		const probe = () => probeUnauthorized(API + "/users/@me", {headers: buildAccountHeaders(user)});
+
+		const first = probe();
+		expect(probe()).toBe(first);
+		readyRotates(user, "fake-held-new");
+		const second = probe();
+		expect(second).not.toBe(first);
+
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		answers[0](unauthorized());
+		answers[1](Response.json({id: "rotate"}));
+		expect(await first).toBe("notDead"); // Dead, but no record holds it any more.
+		expect(await second).toBe("notDead");
+		expect(user.loggedin).toBe(true);
+	});
+
+	it("two dead credentials of one account route to /login once", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = account("fake-twice-old");
+		const {answers} = heldProbes();
+		const probe = () => probeUnauthorized(API + "/users/@me", {headers: buildAccountHeaders(user)});
+
+		const first = probe();
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		answers[0](unauthorized());
+		expect(await first).toBe("dead");
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+
+		// A token swapped in before the page leaves dies too.
+		readyRotates(user, "fake-twice-new");
+		const second = probe();
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		answers[1](unauthorized());
+		expect(await second).toBe("dead");
+		await settle();
+		expect(nav).toHaveBeenCalledTimes(1);
 	});
 });
