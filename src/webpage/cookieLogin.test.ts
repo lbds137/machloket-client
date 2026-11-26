@@ -252,6 +252,92 @@ describe("login's cookie opt-in", () => {
 
 		expect(order).toEqual(["logout sent", "logout answered", "login sent"]);
 	});
+
+	function pendingOn(host: string) {
+		const info = stored();
+		info.pendingLogouts = {...info.pendingLogouts, [host]: "http://" + host + "/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+	}
+
+	it("a retry that starts while a cookie login is out leaves the pending logout alone", async () => {
+		// Another tab's start, in effect: the login's Set-Cookie may already have landed, and a
+		// logout by cookie would end the session the login is starting.
+		addInstance("http://inflight.test", 0, {authCookie: true});
+		pendingOn("inflight.test");
+		const logouts = recordRequests("http://inflight.test/api/v9/auth/logout");
+		let answerLogin!: () => void;
+		const loginHeld = new Promise<void>((r) => (answerLogin = r));
+		const logins = recordRequests("http://inflight.test/api/v9/auth/login", async () => {
+			await loginHeld;
+			return json({auth_mode: "cookie"});
+		});
+		const loggedIn = new Promise<SpecialuserT>((res) => makeLogin(false, "", res));
+		await pickInstance("http://inflight.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await vi.waitUntil(() => logins.length === 1);
+		await runPendingLogouts();
+
+		expect(logouts).toHaveLength(0);
+		expect(stored().pendingLogouts?.["inflight.test"]).toBe("http://inflight.test/api/v9");
+		answerLogin();
+		await loggedIn;
+	});
+
+	it("a second cookie login on the hostname while one is out goes by token", async () => {
+		// The browser keeps one cookie per hostname: two cookie logins' answers could land in
+		// either order and leave a stored account that isn't the cookie's.
+		addInstance("http://twice.test", 0, {authCookie: true});
+		let answerFirst!: () => void;
+		const firstHeld = new Promise<void>((r) => (answerFirst = r));
+		const logins = recordRequests("http://twice.test/api/v9/auth/login", async () => {
+			if (logins.length === 1) {
+				await firstHeld;
+				return json({auth_mode: "cookie"});
+			}
+			return json({token: "second-token"});
+		});
+		const first = new Promise<SpecialuserT>((res) => makeLogin(false, "", res));
+		await pickInstance("http://twice.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await vi.waitUntil(() => logins.length === 1);
+		const second = new Promise<SpecialuserT>((res) => makeLogin(false, "", res));
+		// pickInstance waits for the pick to be saved; cleared so it waits for this form's.
+		localStorage.removeItem("instanceinfo");
+		await pickInstance("http://twice.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		// Recorded at the instance's login URL, so the second form had its instance resolved.
+		await vi.waitUntil(() => logins.length === 2, {timeout: 3000});
+
+		expect(logins[0].headers.get("X-Machloket-Auth")).toBe("cookie");
+		expect(logins[1].headers.get("X-Machloket-Auth")).toBeNull();
+		expect(logins[1].headers.get("X-Machloket-CSRF")).toBeNull();
+		expect((await second).token).toBe("second-token");
+		answerFirst();
+		await first;
+	});
+
+	it("a refused cookie login stops holding the retry off", async () => {
+		addInstance("http://refused.test", 0, {authCookie: true});
+		pendingOn("refused.test");
+		const logouts = recordRequests("http://refused.test/api/v9/auth/logout");
+		const logins = recordRequests("http://refused.test/api/v9/auth/login", () =>
+			json({message: "nope"}, 500),
+		);
+		makeLogin(false, "", () => {});
+		await pickInstance("http://refused.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await vi.waitUntil(() => logins.length === 1);
+		// The hold ends when the submit settles; until then each retry leaves the entry.
+		await vi.waitUntil(
+			async () => {
+				await runPendingLogouts();
+				return logouts.length === 1;
+			},
+			{timeout: 3000},
+		);
+
+		expect(stored().pendingLogouts?.["refused.test"]).toBeUndefined();
+	});
 });
 
 describe("register's cookie opt-in", () => {

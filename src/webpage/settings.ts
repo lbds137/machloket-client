@@ -2975,6 +2975,9 @@ class Form implements OptionsElement<object> {
 	 * preprocessor from the body it saw (login and register's cookie opt-in). A FormError it
 	 * throws shows like the preprocessor's. */
 	submitHeaders?: (sent: object) => Promise<Record<string, string> | undefined>;
+	/** Called once a submit is over, whatever its outcome (an answer handled, a refusal, a
+	 * dismissed captcha or second factor, no answer), with the body submitHeaders saw. */
+	submitSettled?: (sent: object) => void;
 	onFormError = (_: FormError) => {};
 	/** Answers an error response (non-2xx) instead of onSubmit: throw a FormError to show it on a
 	 * field, or return true once handled; otherwise the server's message shows in a popup. */
@@ -2990,8 +2993,10 @@ class Form implements OptionsElement<object> {
 		}
 		if (this.subbmitting || this.inFlight.has(this.fetchURL)) return;
 		this.subbmitting = true;
+		let sent: object | undefined;
 		try {
 			const build = {};
+			sent = build;
 			for (const key of Object.keys(this.values)) {
 				const thing = this.values[key];
 				if (thing instanceof Function) {
@@ -3211,6 +3216,7 @@ class Form implements OptionsElement<object> {
 			}
 		} finally {
 			this.subbmitting = false;
+			if (sent) this.submitSettled?.(sent);
 		}
 	}
 	showPrimError(error: string) {

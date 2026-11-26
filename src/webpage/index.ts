@@ -114,7 +114,8 @@ if (window.location.pathname.startsWith("/channels")) {
 		// session-only account out, as its Dialog says. The overlay already holds the accounts.
 		const handedOff = consumeAccountHandoff();
 		// Ends cookies whose accounts were removed with their logout failed. Not awaited: a
-		// cookie login waits for its own host's retry (cookieOptInHeaders).
+		// cookie login waits for its own host's retry, and a retry skips a host whose cookie
+		// login is out in another tab (cookieOptIn in utils/utils.ts).
 		void runPendingLogouts();
 		const current = bootAccountId(Localuser.users);
 		if (!current || !Localuser.users.users[current]) {

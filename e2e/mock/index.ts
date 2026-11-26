@@ -1120,6 +1120,8 @@ export interface CapturedRequest {
 	body: unknown;
 	/** The request's Authorization header: which account's token the app sent. */
 	authorization?: string;
+	/** The request's X-Machloket-CSRF header: a cookie account's requests carry "1". */
+	csrf?: string;
 }
 
 // Permission bit indices supported by `extraEveryonePermissions`. Kept local so the mock
@@ -1512,6 +1514,7 @@ export async function mountMockInstance(
 				method,
 				body: parsedBody,
 				authorization: request.headers()["authorization"],
+				csrf: request.headers()["x-machloket-csrf"],
 			});
 
 			const fulfillJson = (body: unknown, status = 200) =>
