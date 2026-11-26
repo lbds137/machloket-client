@@ -729,7 +729,7 @@ class Localuser {
 		retry.onclick = () => {
 			// The account switched to owns the screen (and this button) now.
 			if (this.swapped) return;
-			retry.hidden = true;
+			this.hideGatewayRetry();
 			this.reconnectAfterAuth();
 		};
 		retry.hidden = false;
@@ -737,6 +737,15 @@ class Localuser {
 		// screen-reader user it appeared and puts Enter on Retry; the line above is a polite
 		// live region (app.html's role="status"), so its wording is announced too (TASK-174).
 		retry.focus();
+	}
+	/** Hides the Retry offer; focus on it moves to the splash host first, so a keyboard
+	 * user's focus doesn't fall to the body (#233 low). Every connect attempt hides it. */
+	private hideGatewayRetry() {
+		if (document.activeElement?.id === "gatewayRetry") {
+			document.getElementById("loading")?.focus();
+		}
+		const retry = document.getElementById("gatewayRetry");
+		if (retry) retry.hidden = true;
 	}
 	private reconnectAfterAuth() {
 		if (this.swapped) return;
@@ -761,8 +770,7 @@ class Localuser {
 	async initwebsocket(resume = false): Promise<void> {
 		let returny: () => void;
 		// A Retry offered after an earlier 4004 (offerGatewayRetry) belongs to no attempt now.
-		const gatewayRetry = document.getElementById("gatewayRetry");
-		if (gatewayRetry) gatewayRetry.hidden = true;
+		this.hideGatewayRetry();
 		if (!this.resume_gateway_url || !this.session_id) {
 			resume = false;
 		}

@@ -81,7 +81,7 @@ if (window.location.pathname.startsWith("/channels")) {
 		}
 	});
 
-	const switchAccountsElement = document.getElementById("switchaccounts") as HTMLDivElement;
+	const switchAccountsElement = document.getElementById("switchaccounts") as HTMLButtonElement;
 	switchAccountsElement.addEventListener("click", async (event) => {
 		event.stopImmediatePropagation();
 		Localuser.showAccountSwitcher(thisUser);

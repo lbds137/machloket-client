@@ -1,4 +1,7 @@
 /* Machlakot (dev server): matches dev/icon.svg. */
 :root {
 	--brand-bg: #170a08;
+	/* The splash text and link pair, shared with the production palette (TASK-171). */
+	--brand-text: #f2f2f2;
+	--brand-link: #5ca9ed;
 }
