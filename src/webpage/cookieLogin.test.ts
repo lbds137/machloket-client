@@ -529,7 +529,12 @@ describe("the pending logout at start", () => {
 	it("without Web Locks the retry sends nothing and keeps the entry", async () => {
 		pending("nolocks-retry.test");
 		const sent = recordRequests("http://nolocks-retry.test/api/v9/auth/logout");
+		const warn = vi.spyOn(console, "warn");
 		await withoutWebLocks(() => runPendingLogouts());
+		const warnings = warn.mock.calls.length;
+		warn.mockRestore(); // this suite restores no mocks between tests
+		// The guard stopped it, not a lock call that threw and was caught (it would warn).
+		expect(warnings).toBe(0);
 
 		expect(sent).toHaveLength(0);
 		expect(stored().pendingLogouts?.["nolocks-retry.test"]).toBe(

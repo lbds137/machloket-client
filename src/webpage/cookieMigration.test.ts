@@ -97,10 +97,13 @@ describe("the migration at start", () => {
 			noContent,
 		);
 		const user = headerAccount("http://mig-nolocks.test", "nolocks@x");
+		const warn = vi.spyOn(console, "warn");
 
 		await withoutWebLocks(() => migrateToCookieSession(user));
 
 		expect(exchanges).toHaveLength(0);
+		// The guard stopped it, not a lock call that threw and was caught (it would warn).
+		expect(warn).not.toHaveBeenCalled();
 		expect(user.token).toBe("tok-nolocks@x");
 		// With the locks back the same account migrates: the run above held it, not the account.
 		await migrateToCookieSession(user);
@@ -194,19 +197,27 @@ describe("the migration at start", () => {
 		localStorage.setItem("userinfos", JSON.stringify(info));
 	}
 
-	it("doesn't write back a record removed while its background discovery was out", async () => {
-		const origin = "http://mig-bg-removed.test";
-		addInstance(origin, 0, {authCookie: true});
-		const answer = heldDiscovery(origin);
-		const user = headerAccount(origin, "gone@x", false);
+	it.each([
+		["removed", () => undefined],
+		["logged out", (record: any) => ({...record, loggedin: false})],
+		["replaced by a newer login", (record: any) => ({...record, token: "tok-newer"})],
+	])(
+		"doesn't write over a record %s while its background discovery was out (flag false)",
+		async (name, change) => {
+			const origin = `http://mig-bg-${name.replace(/\W/g, "-")}.test`;
+			addInstance(origin, 0, {authCookie: true});
+			const answer = heldDiscovery(origin);
+			const user = headerAccount(origin, "gone@x", false);
 
-		const {done} = startCookieMigration(user);
-		storeRecord(user.uid, () => undefined); // logged out from the switcher meanwhile
-		answer(true);
-		await done;
+			const {done} = startCookieMigration(user);
+			storeRecord(user.uid, change); // another tab, meanwhile
+			const meanwhile = stored().users[user.uid];
+			answer(true);
+			await done;
 
-		expect(stored().users[user.uid]).toBeUndefined();
-	});
+			expect(stored().users[user.uid]).toEqual(meanwhile);
+		},
+	);
 
 	it.each([
 		["unset", undefined],
@@ -238,8 +249,8 @@ describe("the migration at start", () => {
 		["removed", () => undefined],
 		["logged out", (record: any) => ({...record, loggedin: false})],
 		["replaced by a newer login", (record: any) => ({...record, token: "tok-newer"})],
-	])("sends no exchange for a record %s during discovery (flag true)", async (_name, change) => {
-		const origin = `http://mig-true-${_name.replace(/\W/g, "-")}.test`;
+	])("sends no exchange for a record %s during discovery (flag true)", async (name, change) => {
+		const origin = `http://mig-true-${name.replace(/\W/g, "-")}.test`;
 		addInstance(origin, 0, {authCookie: true});
 		const answer = heldDiscovery(origin);
 		const exchanges = recordRequests(origin + "/api/v9/auth/session-cookie", noContent);
@@ -251,6 +262,186 @@ describe("the migration at start", () => {
 		await done;
 
 		expect(exchanges).toHaveLength(0);
+	});
+
+	it.each([
+		["removed", () => undefined],
+		["logged out", (record: any) => ({...record, loggedin: false})],
+		["replaced by a newer login", (record: any) => ({...record, token: "tok-newer"})],
+		[
+			"replaced by a cookie login on another api host",
+			(record: any) => ({
+				...record,
+				token: undefined,
+				auth_mode: "cookie",
+				serverurls: urlsFor("http://moved-api.test", true),
+			}),
+		],
+	])(
+		"doesn't adopt a 204 for a record %s while the exchange was out: its cookie is logged out",
+		async (name, change) => {
+			const origin = `http://mig-204-${name.replace(/\W/g, "-")}.test`;
+			addInstance(origin, 0, {authCookie: true});
+			const user = headerAccount(origin, "late@x", true);
+			let meanwhile: unknown;
+			recordRequests(origin + "/api/v9/auth/session-cookie", () => {
+				storeRecord(user.uid, change); // another tab, while the exchange is out
+				meanwhile = stored().users[user.uid];
+				return noContent();
+			});
+			const logouts = recordRequests(origin + "/api/v9/auth/logout");
+
+			await migrateToCookieSession(user);
+
+			expect(stored().users[user.uid]).toEqual(meanwhile);
+			expect(user.authMode).toBeUndefined();
+			// The exchange ended the header session; its cookie now belongs to no account.
+			await vi.waitFor(() => expect(logouts).toHaveLength(1));
+			expect(logouts[0].headers.get("Authorization")).toBeNull();
+			expect(logouts[0].credentials).toBe("include");
+			await vi.waitFor(() => expect(stored().pendingLogouts ?? {}).toEqual({}));
+		},
+	);
+
+	it("logs the orphaned cookie out before a cookie login queued behind the exchange starts", async () => {
+		const origin = "http://mig-204-orphan-queued.test";
+		addInstance(origin, 0, {authCookie: true});
+		const user = headerAccount(origin, "queued@x", true);
+		const order: string[] = [];
+		let release!: () => void;
+		let queued!: Promise<unknown>;
+		recordRequests(origin + "/api/v9/auth/session-cookie", () => {
+			storeRecord(user.uid, () => undefined); // another tab's logout
+			// A cookie login queues on the slot's lock while the exchange holds it, and takes the
+			// login's hold once it gets the lock, as cookieOptIn does.
+			queued = navigator.locks.request(
+				"machloket-cookie-session:mig-204-orphan-queued.test",
+				() => {
+					order.push("login");
+					// Keeps the slot's lock until the hold is taken, as cookieOptIn does.
+					return new Promise<void>((taken) => {
+						void navigator.locks.request(
+							"machloket-cookie-login:mig-204-orphan-queued.test",
+							() => {
+								taken();
+								return new Promise<void>((r) => (release = r));
+							},
+						);
+					});
+				},
+			);
+			return noContent();
+		});
+		const logouts = recordRequests(origin + "/api/v9/auth/logout", () => {
+			order.push("logout");
+			return noContent();
+		});
+
+		try {
+			await migrateToCookieSession(user);
+			await queued;
+
+			// The login would go out with the orphaned cookie still live, and the server keeps a
+			// live cookie over a login's opt-in; the logout comes first.
+			expect(order).toEqual(["logout", "login"]);
+			expect(logouts).toHaveLength(1);
+			expect(stored().pendingLogouts ?? {}).toEqual({});
+		} finally {
+			release?.();
+		}
+	});
+
+	it("keeps the orphaned cookie's logout pending when it gets no answer", async () => {
+		const origin = "http://mig-204-orphan-down.test";
+		addInstance(origin, 0, {authCookie: true});
+		const user = headerAccount(origin, "orphan@x", true);
+		recordRequests(origin + "/api/v9/auth/session-cookie", () => {
+			storeRecord(user.uid, () => undefined);
+			return noContent();
+		});
+		const logouts = recordRequests(
+			origin + "/api/v9/auth/logout",
+			() => new Response(null, {status: 503}),
+		);
+
+		await migrateToCookieSession(user);
+
+		await vi.waitFor(() => expect(logouts).toHaveLength(1));
+		expect(stored().pendingLogouts).toEqual({"mig-204-orphan-down.test": origin + "/api/v9"});
+		expect(stored().users[user.uid]).toBeUndefined();
+	});
+
+	it("doesn't re-add a record removed while its 401's cookie probe was out", async () => {
+		const origin = "http://mig-401-removed.test";
+		addInstance(origin, 0, {authCookie: true});
+		recordRequests(origin + "/api/v9/auth/session-cookie", unauthorized);
+		const user = headerAccount(origin, "gone401@x", true);
+		const probes = recordRequests(origin + "/api/v9/users/@me", () => {
+			storeRecord(user.uid, () => undefined); // another tab's logout
+			return Response.json({id: "id-gone401@x"});
+		});
+
+		await migrateToCookieSession(user);
+
+		expect(probes).toHaveLength(1);
+		expect(stored().users[user.uid]).toBeUndefined();
+		expect(user.authMode).toBeUndefined();
+	});
+
+	it("doesn't adopt on a 401 when the record moved to a cookie login on another API host meanwhile", async () => {
+		const origin = "http://mig-401-moved.test";
+		addInstance(origin, 0, {authCookie: true});
+		const user = headerAccount(origin, "moved401@x", true);
+		let moved: unknown;
+		recordRequests(origin + "/api/v9/auth/session-cookie", () => {
+			// Another tab's cookie login for the same account, after the instance's API moved.
+			storeRecord(user.uid, (record) => ({
+				...record,
+				token: undefined,
+				auth_mode: "cookie",
+				serverurls: urlsFor("http://moved-api.test", true),
+			}));
+			moved = stored().users[user.uid];
+			return unauthorized();
+		});
+		const probes = recordRequests(origin + "/api/v9/users/@me", () =>
+			Response.json({id: "id-moved401@x"}),
+		);
+
+		await migrateToCookieSession(user);
+
+		expect(probes).toHaveLength(1);
+		expect(user.authMode).toBeUndefined();
+		expect(stored().users[user.uid]).toEqual(moved);
+	});
+
+	it("sends no exchange while a cookie login on the hostname is out (another tab's)", async () => {
+		const origin = "http://mig-login-out.test";
+		addInstance(origin, 0, {authCookie: true});
+		const exchanges = recordRequests(origin + "/api/v9/auth/session-cookie", noContent);
+		const user = headerAccount(origin, "waiting@x", true);
+		// The login's hold, as another tab's cookie login (waiting on a second factor) holds it.
+		let release!: () => void;
+		let taken!: () => void;
+		const isTaken = new Promise<void>((r) => (taken = r));
+		const hold = navigator.locks.request("machloket-cookie-login:mig-login-out.test", () => {
+			taken();
+			return new Promise<void>((r) => (release = r));
+		});
+		await isTaken;
+
+		try {
+			await migrateToCookieSession(user);
+
+			expect(exchanges).toHaveLength(0);
+			expect(user.token).toBe("tok-waiting@x");
+		} finally {
+			release();
+			await hold;
+		}
+		// The login settled: the next start migrates.
+		await migrateToCookieSession(user);
+		expect(exchanges).toHaveLength(1);
 	});
 
 	it.each([
@@ -431,20 +622,41 @@ describe("a header account's 401 on a cookie-mode host", () => {
 		expect(nav).not.toHaveBeenCalled();
 	});
 
-	it("still converts without Web Locks: the cookie already answers for this user", async () => {
+	it("logs out without Web Locks, sending no cookie probe: no cookie session is adopted there", async () => {
 		const origin = "http://probe-nolocks.test";
 		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
 		const user = headerAccount(origin, "nolocks401@x", true);
-		arrange(origin, () => Response.json({id: "id-nolocks401@x"}));
+		const probes = arrange(origin, () => Response.json({id: "id-nolocks401@x"}));
 
 		// Awaited inside: the 401 path runs after apiFetch answers.
 		await withoutWebLocks(async () => {
 			await send401(user, origin);
-			await vi.waitFor(() => expect(user.authMode).toBe("cookie"));
+			await vi.waitFor(() => expect(nav).toHaveBeenCalledWith("/login"));
 		});
 
-		expect(stored().users[user.uid].auth_mode).toBe("cookie");
-		expect(nav).not.toHaveBeenCalled();
+		expect(probes.map((p) => p.headers.get("Authorization"))).toEqual(["tok-nolocks401@x"]);
+		expect(user.authMode).toBeUndefined();
+		expect(stored().users[user.uid].loggedin).toBe(false);
+	});
+
+	it("doesn't re-add an account another tab removed while the cookie probe was out", async () => {
+		const origin = "http://probe-removed.test";
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = headerAccount(origin, "removed401@x", true);
+		const probes = arrange(origin, () => {
+			const info = stored();
+			delete info.users[user.uid]; // another tab's logout
+			localStorage.setItem("userinfos", JSON.stringify(info));
+			return Response.json({id: "id-removed401@x"});
+		});
+
+		await send401(user, origin);
+
+		// The 401 path's last step: everything before it has settled.
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledWith("/login"));
+		expect(probes).toHaveLength(2);
+		expect(stored().users[user.uid]).toBeUndefined();
+		expect(user.authMode).toBeUndefined();
 	});
 
 	it("logs out when the cookie answers for another user", async () => {
