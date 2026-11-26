@@ -1,10 +1,10 @@
 ---
 id: TASK-183
 title: Account switch leaves the old Localuser's service-worker listeners registered
-status: To Do
+status: In Progress
 assignee: []
 created_date: '2026-11-26T16:56:00Z'
-updated_date: '2026-11-26T17:34:00Z'
+updated_date: '2026-11-26T23:28:00Z'
 labels:
   - auth
   - leak
