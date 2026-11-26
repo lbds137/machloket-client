@@ -1,6 +1,6 @@
 import {expect, type Page} from "@playwright/test";
 import {test} from "./fixtures";
-import {MOCK_LOGIN_RESPONSE} from "./mock/index";
+import {MOCK_LOGIN_RESPONSE, type MockInstanceHandle} from "./mock/index";
 
 // TASK-149: an instance whose discovery offers cookie sessions gets a cookie login. The
 // session never reaches page script: no token in the login answer, the stored account, the
@@ -25,6 +25,20 @@ async function logIn(page: Page) {
 		.locator("input")
 		.fill("a-password");
 	await submit.click();
+}
+
+/** The account's REST requests from capture index `from` on: not auth, and not the instance's
+ * public reads (ping, its config), which go out with no account. */
+function accountCalls(mockInstance: MockInstanceHandle, from: number) {
+	return mockInstance.capturedRequests
+		.slice(from)
+		.filter(
+			(r) =>
+				r.pathname.startsWith("/api/v9/") &&
+				!r.pathname.startsWith("/api/v9/auth/") &&
+				r.pathname !== "/api/v9/ping" &&
+				!r.pathname.startsWith("/api/v9/policies/instance/"),
+		);
 }
 
 test.describe("cookie-session instance", () => {
@@ -72,17 +86,12 @@ test.describe("cookie-session instance", () => {
 				.filter(
 					(r) => r.pathname.startsWith("/api/v9/") && !r.pathname.startsWith("/api/v9/auth/"),
 				);
+		// Non-empty first: the checks below would pass on no requests at all.
+		await expect.poll(() => accountCalls(mockInstance, capturedAtLogin).length).toBeGreaterThan(0);
+		// After the poll, so the account's own REST is among what it checks.
 		expect(restCalls().filter((r) => r.authorization !== undefined)).toEqual([]);
-		// The instance's public reads (ping, its config) go out with no account, so unmarked.
-		const accountCalls = () =>
-			restCalls(capturedAtLogin).filter(
-				(r) =>
-					r.pathname !== "/api/v9/ping" && !r.pathname.startsWith("/api/v9/policies/instance/"),
-			);
-		// Non-empty first: the check below would pass on no requests at all.
-		await expect.poll(() => accountCalls().length).toBeGreaterThan(0);
 		// The cookie account's REST goes out marked: the wrapper sends credentials only then.
-		expect(accountCalls().filter((r) => r.csrf !== "1")).toEqual([]);
+		expect(accountCalls(mockInstance, capturedAtLogin).filter((r) => r.csrf !== "1")).toEqual([]);
 	});
 });
 
@@ -106,11 +115,10 @@ test("a stock instance logs in by token, with no cookie opt-in", async ({page, m
 		.toBe(true);
 	expect(loginHeaders).toHaveLength(1);
 	expect(loginHeaders[0]).not.toHaveProperty("x-machloket-auth");
-	const restAfterLogin = () =>
-		mockInstance.capturedRequests
-			.slice(capturedAtLogin)
-			.filter((r) => r.pathname.startsWith("/api/v9/") && !r.pathname.startsWith("/api/v9/auth/"));
-	await expect.poll(() => restAfterLogin().length).toBeGreaterThan(0);
+	// Non-empty first, and the account's own REST: the public reads carry no marker either way.
+	await expect.poll(() => accountCalls(mockInstance, capturedAtLogin).length).toBeGreaterThan(0);
 	// A header account's REST carries no cookie marker.
-	expect(restAfterLogin().filter((r) => r.csrf !== undefined)).toEqual([]);
+	expect(accountCalls(mockInstance, capturedAtLogin).filter((r) => r.csrf !== undefined)).toEqual(
+		[],
+	);
 });

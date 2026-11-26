@@ -547,8 +547,8 @@ function slotHasCookieAccount(users: Record<string, any> | undefined, slot: stri
 	return Object.values(users ?? {}).some((u) => holdsCookieSlot(u, slot));
 }
 /** Runs `fn` holding the cookie slot's lock, shared across tabs. Needs Web Locks: a cookie
- * login, a pending-logout retry and the migration stop first without them, so no cookie session
- * starts there; the 401 path's adoption decides its own unlocked case (cookieVerdictFor401). */
+ * login, a pending-logout retry, the migration and the 401 path's adoption all stop first
+ * without them, so no cookie session starts or is adopted there. */
 async function withCookieLock<T>(slot: string, fn: () => Promise<T>): Promise<T> {
 	return navigator.locks.request("machloket-cookie-session:" + slot, fn);
 }
@@ -574,8 +574,10 @@ function tryHoldLock(name: string): Promise<(() => void) | null> {
 			.catch(refused);
 	});
 }
-/** Whether a cookie login on the slot is out, in this tab or another. Needs Web Locks: its one
- * caller, retryPendingLogout, stops first without them. */
+/** Whether a cookie login on the slot is out, in this tab or another. Needs Web Locks: its
+ * callers (sendPendingLogout via retryPendingLogout or the migration, and migrateToCookieSession)
+ * stop first without them. Ask it under the slot's lock and before reading the store (see
+ * sendPendingLogout). */
 async function cookieLoginInFlight(slot: string): Promise<boolean> {
 	return navigator.locks.request(
 		cookieLoginLockName(slot),
@@ -671,37 +673,39 @@ async function retryPendingLogout(host: string): Promise<void> {
 	// Without Web Locks a cookie login out in another tab can't be seen, and its cookie may be
 	// the one this logout would end: the entry waits for a start that has them.
 	if (!navigator.locks) return;
-	await withCookieLock(hostnameOf(host), async () => {
-		// A cookie login is out on the hostname: the cookie may be its session already. Kept for
-		// a later start; a cookie login that lands drops it (adduser).
-		// ORDER MATTERS: this probe must come BEFORE readStoredAccounts below. No login can take
-		// its hold while this run holds the slot's lock, so a free answer here means any earlier
-		// login has already stored its account and released, and the read sees it. Read first,
-		// and a login that stores and releases between the read and the probe goes unseen: the
-		// logout would end its fresh session.
-		if (await cookieLoginInFlight(hostnameOf(host))) return;
-		// Read under the lock: a cookie login stored since owns the cookie now, and the entry may
-		// have been replaced while this run waited.
-		const info = readStoredAccounts();
-		const api = info?.pendingLogouts?.[host];
-		if (!info || !api) return;
-		if (slotHasCookieAccount(info.users, hostnameOf(host))) {
-			clearPendingLogout(host, api);
-			return;
-		}
-		let res: Response;
-		try {
-			res = await apiFetch(trimTrailingSlashes(api) + "/auth/logout", {
-				method: "POST",
-				headers: {[CSRF_HEADER]: "1"},
-				credentials: "include",
-			});
-		} catch (e) {
-			console.warn("Pending logout for", host, "got no answer; retrying at the next start", e);
-			return;
-		}
-		if (endsPendingLogout(res.status)) clearPendingLogout(host, api);
-	});
+	await withCookieLock(hostnameOf(host), () => sendPendingLogout(host));
+}
+/** `host`'s pending logout, sent by cookie. The caller holds the slot's lock (withCookieLock). */
+async function sendPendingLogout(host: string): Promise<void> {
+	// A cookie login is out on the hostname: the cookie may be its session already. Kept for
+	// a later start; a cookie login that lands drops it (adduser).
+	// ORDER MATTERS: this probe must come BEFORE readStoredAccounts below. No login can take
+	// its hold while the caller holds the slot's lock, so a free answer here means any earlier
+	// login has already stored its account and released, and the read sees it. Read first,
+	// and a login that stores and releases between the read and the probe goes unseen: the
+	// logout would end its fresh session.
+	if (await cookieLoginInFlight(hostnameOf(host))) return;
+	// Read under the lock: a cookie login stored since owns the cookie now, and the entry may
+	// have been replaced while the caller waited.
+	const info = readStoredAccounts();
+	const api = info?.pendingLogouts?.[host];
+	if (!info || !api) return;
+	if (slotHasCookieAccount(info.users, hostnameOf(host))) {
+		clearPendingLogout(host, api);
+		return;
+	}
+	let res: Response;
+	try {
+		res = await apiFetch(trimTrailingSlashes(api) + "/auth/logout", {
+			method: "POST",
+			headers: {[CSRF_HEADER]: "1"},
+			credentials: "include",
+		});
+	} catch (e) {
+		console.warn("Pending logout for", host, "got no answer; retrying at the next start", e);
+		return;
+	}
+	if (endsPendingLogout(res.status)) clearPendingLogout(host, api);
 }
 /**
  * Retries every pending logout by cookie. The app's start runs it (never module load: a test
@@ -796,19 +800,44 @@ async function cookieSessionUserId(api: string): Promise<string | null | undefin
 		return undefined;
 	}
 }
+/** Whether `uid`'s stored record no longer stands for the header session holding `deadToken`:
+ * removed (another tab's logout), logged out, or replaced by a newer login. A stored cookie
+ * record in slot `slot` is the same move made by another tab, so it still stands; one in another
+ * slot (a login after the API moved host) replaced it. A session-only account is stored too
+ * (readStoredAccounts reads the session overlay first), so no record means removed; an
+ * unreadable store reads the same way. */
+function cookieRecordSuperseded(uid: string, deadToken: string, slot: string): boolean {
+	const stored = readStoredAccounts()?.users[uid] as
+		{token?: unknown; auth_mode?: unknown; loggedin?: unknown} | null | undefined;
+	if (!stored || typeof stored !== "object") return true;
+	if (stored.loggedin === false) return true;
+	if (stored.auth_mode === "cookie") return !holdsCookieSlot(stored, slot);
+	return !holdsCredential(stored, {uid, token: deadToken});
+}
 /** Whether converting `uid` to the slot's cookie would override a later decision: a logout
- * pending on the slot (the cookie is to end), the account logged out, or a newer header login
- * stored for it. A stored cookie record is the same move made by another tab; no stored record
- * is an account this page holds for the session only. */
+ * pending on the slot (the cookie is to end), or the record superseded (cookieRecordSuperseded). */
 function cookieAdoptionIsStale(uid: string, deadToken: string, slot: string): boolean {
 	const info = readStoredAccounts();
 	if (Object.keys(info?.pendingLogouts ?? {}).some((host) => hostnameOf(host) === slot))
 		return true;
-	const stored = info?.users[uid] as
-		{token?: unknown; auth_mode?: unknown; loggedin?: unknown} | undefined;
-	if (!stored) return false;
-	if (stored.loggedin === false) return true;
-	return stored.auth_mode !== "cookie" && !holdsCredential(stored, {uid, token: deadToken});
+	return cookieRecordSuperseded(uid, deadToken, slot);
+}
+/** Records a pending logout for the cookie on `api`'s host, which belongs to no stored account
+ * now: the exchange moved a session into it whose record was removed, logged out or replaced
+ * meanwhile. Whether it was recorded. */
+function recordOrphanedCookie(api: string): boolean {
+	const info = readStoredAccounts();
+	if (!info) {
+		console.warn(
+			"userinfos store is unreadable: the pending logout for",
+			api,
+			"can't be recorded; its cookie stays until a login or logout on that host",
+		);
+		return false;
+	}
+	addPendingLogout(info, api);
+	saveAccounts(serialiseForStore(info));
+	return true;
 }
 /**
  * Converts the records of `uid` that still hold `deadToken` into cookie accounts, after the
@@ -835,9 +864,11 @@ function adoptCookieSession(uid: string, deadToken: string, api: string): void {
 	}
 	const before = readStoredAccounts();
 	const storedRecord = before?.users[uid] as {token?: unknown; auth_mode?: unknown} | undefined;
-	// Over a newer login stored since (another tab's), the whole-record save would undo it.
+	// Over a newer login stored since (another tab's), the whole-record save would undo it, and
+	// with no record (another tab removed the account) it would re-add it. The callers check
+	// both under the slot's lock first (cookieRecordSuperseded); this is the save's own guard.
 	const storedHoldsDead = !!storedRecord && holdsCredential(storedRecord, dead);
-	if (saver && (storedHoldsDead || !storedRecord)) saver.tryUpdateLocal();
+	if (saver && storedHoldsDead) saver.tryUpdateLocal();
 	const slot = cookieSlot(api);
 	const info = readStoredAccounts();
 	if (info) {
@@ -903,9 +934,10 @@ export async function cookieVerdictFor401(
 		const adopted = await adoptCookieIfSameUser(account, token);
 		return adopted === true ? "adopted" : adopted === undefined ? "unanswered" : "dead";
 	};
-	// Without Web Locks it adopts unlocked: only a cookie already answering for this user, and
-	// no cookie session starts without the locks, so that cookie was made where they existed.
-	if (!navigator.locks) return verdict();
+	// Without Web Locks no cookie session starts, so none is adopted either: the account is dead
+	// as on a host without cookie sessions. (A pending logout recorded there is never retried, so
+	// an unlocked adoption would also be refused forever by cookieAdoptionIsStale.)
+	if (!navigator.locks) return "dead";
 	return withCookieLock(cookieSlot(api), verdict);
 }
 /** The exchange answers fast or not at all; the app's start waits on it. */
@@ -966,11 +998,13 @@ function stillHeaderLoggedIn(user: Specialuser, token: string): boolean {
  * Moves the current account's header session into the cookie at start: its own discovery
  * refreshes the stored `authCookie` (a plain start runs none otherwise), and when the instance
  * offers cookie sessions and no logged-in cookie account holds the hostname's cookie, it calls
- * `POST /auth/session-cookie`. A 204 converts the record; a 401 (another tab moved it already)
+ * `POST /auth/session-cookie`. A 204 converts the record (or, when the record was logged out,
+ * removed or replaced meanwhile, logs the cookie out); a 401 (another tab moved it already)
  * converts it when the cookie probe answers this user; anything else, or no answer, keeps the
  * header account. It waits for the host's pending-logout retry, then holds the slot's lock from
- * the check through the record's save; without Web Locks it asks nothing and the account stays on
- * its token. Never throws: the start goes on with whatever it got.
+ * the check through the record's save, and asks nothing while a cookie login on the hostname is
+ * out; without Web Locks it asks nothing and the account stays on its token. Never throws: the
+ * start goes on with whatever it got.
  */
 export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 	try {
@@ -987,6 +1021,11 @@ export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 			[...pendingLogoutRuns].filter(([host]) => hostnameOf(host) === slot).map(([, run]) => run),
 		);
 		await withCookieLock(slot, async () => {
+			// A cookie login out in another tab (on a second factor, say) holds the login's hold,
+			// not this lock: its Set-Cookie and this exchange's could land in either order, and
+			// leave a stored cookie account that isn't the cookie's. The next start migrates.
+			// Asked before the store read, as in sendPendingLogout.
+			if (await cookieLoginInFlight(slot)) return;
 			if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return;
 			const token = user.token;
 			// Discovery and the waits above can take seconds: a record logged out, removed or
@@ -1007,8 +1046,19 @@ export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 				console.warn("The session cookie exchange got no answer; staying on the token", e);
 				return;
 			}
-			if (res.status === 204) adoptCookieSession(user.uid, token, api);
-			else if (res.status === 401) await adoptCookieIfSameUser(user, token);
+			if (res.status === 204) {
+				// The exchange ended the header session and moved it into the cookie. A logout,
+				// invalidation or newer login (a cookie one on another API host included) stored
+				// while it was out decided against this session: the record stays as decided, and
+				// the cookie, now no account's, is logged out. Still under this lock, so a cookie
+				// login queued behind the exchange goes out after it, not beside a live cookie
+				// the server would keep over its opt-in.
+				if (!stillHeaderLoggedIn(user, token)) {
+					if (recordOrphanedCookie(api)) await sendPendingLogout(new URL(api).host);
+					return;
+				}
+				adoptCookieSession(user.uid, token, api);
+			} else if (res.status === 401) await adoptCookieIfSameUser(user, token);
 			// 403 (cookie mode off for this origin, a bot) and 409 (another user's cookie) change
 			// nothing on the server: the header account stays.
 		});
