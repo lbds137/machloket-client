@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {addInstance, recordRequests} from "./test/setup";
+import {addInstance, recordRequests, withoutWebLocks} from "./test/setup";
 import type {Specialuser as SpecialuserT} from "./utils/utils";
 
 // Cookie sessions (TASK-149, docs/design/token-storage.md): discovery's authCookie, the opt-in
@@ -338,6 +338,33 @@ describe("login's cookie opt-in", () => {
 
 		expect(stored().pendingLogouts?.["refused.test"]).toBeUndefined();
 	});
+
+	it("without Web Locks a login goes by token: there are no guards across tabs", async () => {
+		addInstance("http://nolocks-login.test", 0, {authCookie: true});
+		const logins = recordRequests("http://nolocks-login.test/api/v9/auth/login", () =>
+			json({token: "nolocks-token"}),
+		);
+		const user = await withoutWebLocks(async () => {
+			const loggedIn = new Promise<SpecialuserT>((res) => makeLogin(false, "", res));
+			await pickInstance("http://nolocks-login.test");
+			newest<HTMLButtonElement>("button.createAccount").click();
+			// Awaited inside: the opt-in reads navigator.locks during the async submit.
+			return loggedIn;
+		});
+
+		expect(logins).toHaveLength(1);
+		expect(logins[0].headers.get("X-Machloket-Auth")).toBeNull();
+		expect(logins[0].headers.get("X-Machloket-CSRF")).toBeNull();
+		expect(user.token).toBe("nolocks-token");
+		// With the locks back the same instance opts in: the stub held the cookie off, not the
+		// instance's discovery.
+		const again = new Promise<SpecialuserT>((res) => makeLogin(false, "", res));
+		localStorage.removeItem("instanceinfo");
+		await pickInstance("http://nolocks-login.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await again;
+		expect(logins[1].headers.get("X-Machloket-Auth")).toBe("cookie");
+	});
 });
 
 describe("register's cookie opt-in", () => {
@@ -365,6 +392,33 @@ describe("register's cookie opt-in", () => {
 		expect(regs[0].headers.get("X-Machloket-CSRF")).toBe("1");
 		expect(user.authMode).toBe("cookie");
 		expect(user.token).toBeUndefined();
+	});
+
+	it("a refused cookie registration stops holding the retry off", async () => {
+		addInstance("http://reg-refused.test", 0, {authCookie: true});
+		const info = stored();
+		info.pendingLogouts = {"reg-refused.test": "http://reg-refused.test/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		const logouts = recordRequests("http://reg-refused.test/api/v9/auth/logout");
+		const regs = recordRequests("http://reg-refused.test/api/v9/auth/register", () =>
+			json({message: "nope"}, 500),
+		);
+		const addForm = vi.spyOn(Options.prototype, "addForm");
+		makeRegister(false, "http://reg-refused.test", () => {});
+		await pickInstance("http://reg-refused.test");
+		const form = addForm.mock.results.at(-1)!.value as {submit(): Promise<void>};
+		addForm.mockRestore();
+		const terms = [...document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')].at(
+			-1,
+		)!;
+		terms.checked = true;
+		// Settled once submit resolves: the refusal is handled inside it.
+		await form.submit();
+		await runPendingLogouts();
+
+		expect(regs[0].headers.get("X-Machloket-Auth")).toBe("cookie");
+		expect(logouts).toHaveLength(1);
+		expect(stored().pendingLogouts?.["reg-refused.test"]).toBeUndefined();
 	});
 });
 
@@ -470,6 +524,20 @@ describe("the pending logout at start", () => {
 		expect(sent[0].headers.get("X-Machloket-CSRF")).toBe("1");
 		expect(sent[0].credentials).toBe("include");
 		expect(stored().pendingLogouts?.["retry.test"]).toBeUndefined();
+	});
+
+	it("without Web Locks the retry sends nothing and keeps the entry", async () => {
+		pending("nolocks-retry.test");
+		const sent = recordRequests("http://nolocks-retry.test/api/v9/auth/logout");
+		await withoutWebLocks(() => runPendingLogouts());
+
+		expect(sent).toHaveLength(0);
+		expect(stored().pendingLogouts?.["nolocks-retry.test"]).toBe(
+			"http://nolocks-retry.test/api/v9",
+		);
+		// With the locks back the same entry goes out: the run above held it, not the entry.
+		await runPendingLogouts();
+		expect(sent).toHaveLength(1);
 	});
 
 	it("a 401 ends it too", async () => {

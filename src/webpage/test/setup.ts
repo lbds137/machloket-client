@@ -155,3 +155,17 @@ vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
 	if (url.origin !== location.origin) return new Response("not found", {status: 404});
 	return realFetch(input, init);
 });
+
+/** Runs `fn` with `navigator.locks` gone, as in an insecure context or a browser without Web
+ * Locks. The stub is an own property over the prototype's getter; whatever own property was
+ * there before (another stub's) comes back afterwards. */
+export async function withoutWebLocks<T>(fn: () => Promise<T>): Promise<T> {
+	const previous = Object.getOwnPropertyDescriptor(navigator, "locks");
+	Object.defineProperty(navigator, "locks", {configurable: true, value: undefined});
+	try {
+		return await fn();
+	} finally {
+		if (previous) Object.defineProperty(navigator, "locks", previous);
+		else Reflect.deleteProperty(navigator, "locks");
+	}
+}

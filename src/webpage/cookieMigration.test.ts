@@ -1,5 +1,5 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
-import {addInstance, recordRequests} from "./test/setup";
+import {addInstance, recordRequests, withoutWebLocks} from "./test/setup";
 
 // Migrating existing sessions to the cookie (TASK-150, docs/design/token-storage.md "Migrating
 // existing sessions" and "401 handling"): the migration at start, and a header account's 401
@@ -83,6 +83,23 @@ describe("the migration at start", () => {
 		expect(user.token).toBe("tok-refused@x");
 		expect(stored().users[user.uid].token).toBe("tok-refused@x");
 		expect(stored().users[user.uid].loggedin).toBe(true);
+	});
+
+	it("doesn't ask without Web Locks: the session stays on the token", async () => {
+		addInstance("http://mig-nolocks.test", 0, {authCookie: true});
+		const exchanges = recordRequests(
+			"http://mig-nolocks.test/api/v9/auth/session-cookie",
+			noContent,
+		);
+		const user = headerAccount("http://mig-nolocks.test", "nolocks@x");
+
+		await withoutWebLocks(() => migrateToCookieSession(user));
+
+		expect(exchanges).toHaveLength(0);
+		expect(user.token).toBe("tok-nolocks@x");
+		// With the locks back the same account migrates: the run above held it, not the account.
+		await migrateToCookieSession(user);
+		expect(exchanges).toHaveLength(1);
 	});
 
 	it("keeps the header account when the exchange gets no answer", async () => {
@@ -281,6 +298,22 @@ describe("a header account's 401 on a cookie-mode host", () => {
 		expect(stored().users[user.uid].loggedin).toBe(true);
 		expect(adopted).toEqual([user.uid]);
 		await new Promise((r) => setTimeout(r, 0));
+		expect(nav).not.toHaveBeenCalled();
+	});
+
+	it("still converts without Web Locks: the cookie already answers for this user", async () => {
+		const origin = "http://probe-nolocks.test";
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const user = headerAccount(origin, "nolocks401@x", true);
+		arrange(origin, () => Response.json({id: "id-nolocks401@x"}));
+
+		// Awaited inside: the 401 path runs after apiFetch answers.
+		await withoutWebLocks(async () => {
+			await send401(user, origin);
+			await vi.waitFor(() => expect(user.authMode).toBe("cookie"));
+		});
+
+		expect(stored().users[user.uid].auth_mode).toBe("cookie");
 		expect(nav).not.toHaveBeenCalled();
 	});
 

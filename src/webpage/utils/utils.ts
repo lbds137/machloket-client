@@ -546,10 +546,10 @@ function holdsCookieSlot(u: any, slot: string): boolean {
 function slotHasCookieAccount(users: Record<string, any> | undefined, slot: string): boolean {
 	return Object.values(users ?? {}).some((u) => holdsCookieSlot(u, slot));
 }
-/** Runs `fn` holding the cookie slot's lock, shared across tabs where the browser has Web
- * Locks. */
+/** Runs `fn` holding the cookie slot's lock, shared across tabs. Needs Web Locks: a cookie
+ * login, a pending-logout retry and the migration stop first without them, so no cookie session
+ * starts there; the 401 path's adoption decides its own unlocked case (cookieVerdictFor401). */
 async function withCookieLock<T>(slot: string, fn: () => Promise<T>): Promise<T> {
-	if (!navigator.locks) return fn();
 	return navigator.locks.request("machloket-cookie-session:" + slot, fn);
 }
 /** Pending-logout retries this page started, by API host. They never reject. */
@@ -574,9 +574,9 @@ function tryHoldLock(name: string): Promise<(() => void) | null> {
 			.catch(refused);
 	});
 }
-/** Whether a cookie login on the slot is out, in this tab or another. */
+/** Whether a cookie login on the slot is out, in this tab or another. Needs Web Locks: its one
+ * caller, retryPendingLogout, stops first without them. */
 async function cookieLoginInFlight(slot: string): Promise<boolean> {
-	if (!navigator.locks) return false;
 	return navigator.locks.request(
 		cookieLoginLockName(slot),
 		{ifAvailable: true},
@@ -595,12 +595,19 @@ async function cookieLoginInFlight(slot: string): Promise<boolean> {
  * any later retry on the hostname (another tab's start) leave its pending logout for a later
  * start: the login's cookie may land before its account is stored. The slot's lock itself isn't
  * held through the login, which can wait minutes on a second factor while another tab's start
- * waits on that lock to migrate. Without Web Locks (an insecure context) there is no hold.
+ * waits on that lock to migrate. Without Web Locks (an insecure context, a very old browser)
+ * none of these guards exist across tabs, so the login goes by token.
+ *
+ * A re-submit of the same form while its first submit waits on a second factor finds that
+ * submit's hold taken and goes by token too: the same rule as two forms' logins. It is
+ * reachable: the code prompt (a Dialog) sets no focus trap, and Tab gets back to the form's
+ * submit button behind it.
  */
 async function cookieOptIn(
 	instance: InstanceUrls,
 ): Promise<{headers: Record<string, string>; release: () => void} | undefined> {
 	if (instance.authCookie !== true) return undefined;
+	if (!navigator.locks) return undefined;
 	const slot = cookieSlot(instance.api);
 	if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return undefined;
 	await Promise.all(
@@ -611,7 +618,6 @@ async function cookieOptIn(
 	const release = await withCookieLock(slot, async () => {
 		// Re-read: a cookie login may have been stored while this one waited.
 		if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return null;
-		if (!navigator.locks) return () => {};
 		return tryHoldLock(cookieLoginLockName(slot));
 	});
 	if (!release) return undefined;
@@ -662,11 +668,17 @@ function endsPendingLogout(status: number): boolean {
 	return (status >= 200 && status < 300) || status === 401;
 }
 async function retryPendingLogout(host: string): Promise<void> {
+	// Without Web Locks a cookie login out in another tab can't be seen, and its cookie may be
+	// the one this logout would end: the entry waits for a start that has them.
+	if (!navigator.locks) return;
 	await withCookieLock(hostnameOf(host), async () => {
 		// A cookie login is out on the hostname: the cookie may be its session already. Kept for
-		// a later start; a cookie login that lands drops it (adduser). Asked before the store is
-		// read: no login can start while this run holds the slot's lock, so a free answer means
-		// any earlier login has already stored its account, and the read below sees it.
+		// a later start; a cookie login that lands drops it (adduser).
+		// ORDER MATTERS: this probe must come BEFORE readStoredAccounts below. No login can take
+		// its hold while this run holds the slot's lock, so a free answer here means any earlier
+		// login has already stored its account and released, and the read sees it. Read first,
+		// and a login that stores and releases between the read and the probe goes unseen: the
+		// logout would end its fresh session.
 		if (await cookieLoginInFlight(hostnameOf(host))) return;
 		// Read under the lock: a cookie login stored since owns the cookie now, and the entry may
 		// have been replaced while this run waited.
@@ -887,10 +899,14 @@ export async function cookieVerdictFor401(
 	const token = account.token;
 	if (account.authMode === "cookie" || typeof token !== "string" || !token || !api) return "dead";
 	if (!isCookieModeApi(api)) return "dead";
-	return withCookieLock(cookieSlot(api), async () => {
+	const verdict = async () => {
 		const adopted = await adoptCookieIfSameUser(account, token);
 		return adopted === true ? "adopted" : adopted === undefined ? "unanswered" : "dead";
-	});
+	};
+	// Without Web Locks it adopts unlocked: only a cookie already answering for this user, and
+	// no cookie session starts without the locks, so that cookie was made where they existed.
+	if (!navigator.locks) return verdict();
+	return withCookieLock(cookieSlot(api), verdict);
 }
 /** The exchange answers fast or not at all; the app's start waits on it. */
 const SESSION_COOKIE_EXCHANGE_MS = 10_000;
@@ -901,7 +917,8 @@ const SESSION_COOKIE_EXCHANGE_MS = 10_000;
  * `POST /auth/session-cookie`. A 204 converts the record; a 401 (another tab moved it already)
  * converts it when the cookie probe answers this user; anything else, or no answer, keeps the
  * header account. It waits for the host's pending-logout retry, then holds the slot's lock from
- * the check through the record's save. Never throws: the start goes on with whatever it got.
+ * the check through the record's save; without Web Locks it asks nothing and the account stays on
+ * its token. Never throws: the start goes on with whatever it got.
  */
 export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 	try {
@@ -915,6 +932,9 @@ export async function migrateToCookieSession(user: Specialuser): Promise<void> {
 		}
 		if (user.serverurls.authCookie !== true) return;
 		cookieModeHosts.add(new URL(api).host);
+		// Without Web Locks the guards across tabs don't exist, so no cookie session starts: the
+		// account stays on its token (a cookie login goes by token there too).
+		if (!navigator.locks) return;
 		const slot = cookieSlot(api);
 		await Promise.all(
 			[...pendingLogoutRuns].filter(([host]) => hostnameOf(host) === slot).map(([, run]) => run),
