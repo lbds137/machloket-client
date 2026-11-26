@@ -1,7 +1,7 @@
 import {I18n} from "./i18n.js";
 import {
 	adduserFromAuth,
-	cookieOptInHeaders,
+	addCookieOptIn,
 	InstanceInfo,
 	Specialuser,
 	pingResponse,
@@ -105,10 +105,7 @@ export async function makeRegister(
 		e.consent = check.checked;
 		if (registerInstance) submittedInstances.set(e, registerInstance);
 	});
-	form.submitHeaders = async (sent) => {
-		const instance = submittedInstances.get(sent);
-		return instance ? await cookieOptInHeaders(instance) : undefined;
-	};
+	addCookieOptIn(form, (sent) => submittedInstances.get(sent));
 	const toshtml = document.createElement("div");
 	const md = document.createElement("span");
 	const check = document.createElement("input");

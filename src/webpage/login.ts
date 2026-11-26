@@ -1,7 +1,7 @@
 import {
 	InstanceInfo,
 	adduserFromAuth,
-	cookieOptInHeaders,
+	addCookieOptIn,
 	runPendingLogouts,
 	Specialuser,
 } from "./utils/utils.js";
@@ -139,10 +139,7 @@ export async function makeLogin(
 		}
 		if (loginInstance) submittedInstances.set(sent, loginInstance);
 	});
-	form.submitHeaders = async (sent) => {
-		const instance = submittedInstances.get(sent);
-		return instance ? await cookieOptInHeaders(instance) : undefined;
-	};
+	addCookieOptIn(form, (sent) => submittedInstances.get(sent));
 	const button = form.button.deref();
 	picker.giveButton(button);
 	button?.classList.add("createAccount");

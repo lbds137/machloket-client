@@ -486,7 +486,10 @@ export function adduser(user: typeof Specialuser.prototype.json): Specialuser {
 	if (suser.authMode === "cookie") {
 		// The browser keeps one cookie per hostname, whatever the port, and it is this login's
 		// now: a pending retry would end this session, and another cookie record on the hostname
-		// would send this account's session as its own.
+		// would send this account's session as its own. Dropping a pending logout strands no live
+		// session by the server contract (docs/design/token-storage.md): over another user's valid
+		// cookie the server ignores the opt-in and answers a token, so that login never reaches
+		// here, and a login by the same user ends the old cookie's session as it replaces it.
 		for (const host of Object.keys(info.pendingLogouts ?? {})) {
 			if (hostnameOf(host) === slot) delete info.pendingLogouts![host];
 		}
@@ -552,25 +555,89 @@ async function withCookieLock<T>(slot: string, fn: () => Promise<T>): Promise<T>
 /** Pending-logout retries this page started, by API host. They never reject. */
 const pendingLogoutRuns = new Map<string, Promise<void>>();
 
+/** The lock a cookie login on the slot holds while it is out. */
+function cookieLoginLockName(slot: string): string {
+	return "machloket-cookie-login:" + slot;
+}
+/** Takes `name` if no one holds it and resolves to its release, or to null when it is held.
+ * The browser drops it with the page, so a closed or crashed tab never holds it. */
+function tryHoldLock(name: string): Promise<(() => void) | null> {
+	return new Promise((settled, refused) => {
+		navigator.locks
+			.request(name, {ifAvailable: true}, (lock) => {
+				if (!lock) {
+					settled(null);
+					return;
+				}
+				return new Promise<void>((release) => settled(release));
+			})
+			.catch(refused);
+	});
+}
+/** Whether a cookie login on the slot is out, in this tab or another. */
+async function cookieLoginInFlight(slot: string): Promise<boolean> {
+	if (!navigator.locks) return false;
+	return navigator.locks.request(
+		cookieLoginLockName(slot),
+		{ifAvailable: true},
+		async (lock) => lock === null,
+	);
+}
+
 /**
- * The opt-in headers for a login, register or second-factor request to `instance`, or
- * undefined when it shouldn't ask for a cookie: discovery didn't offer cookie sessions, or a
- * logged-in cookie account already holds the host's cookie. It first waits for any retry of the
- * host's pending logout already running here or in another tab, so that retry can't end the
- * session this request starts. The lock isn't held through the request itself.
+ * The opt-in headers for a login, register or second-factor request to `instance`, with the
+ * release of the login's hold, or undefined when it shouldn't ask for a cookie: discovery
+ * didn't offer cookie sessions, a logged-in cookie account already holds the host's cookie, or
+ * another cookie login on the hostname is out (this tab's or another's: the browser keeps one
+ * cookie there, and two logins' answers could land in either order, so this one goes by token).
+ * It first waits for any retry of the host's pending logout already running here or in another
+ * tab, so that retry can't end the session this request starts. Until released, the hold makes
+ * any later retry on the hostname (another tab's start) leave its pending logout for a later
+ * start: the login's cookie may land before its account is stored. The slot's lock itself isn't
+ * held through the login, which can wait minutes on a second factor while another tab's start
+ * waits on that lock to migrate. Without Web Locks (an insecure context) there is no hold.
  */
-export async function cookieOptInHeaders(
+async function cookieOptIn(
 	instance: InstanceUrls,
-): Promise<Record<string, string> | undefined> {
+): Promise<{headers: Record<string, string>; release: () => void} | undefined> {
 	if (instance.authCookie !== true) return undefined;
 	const slot = cookieSlot(instance.api);
 	if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return undefined;
 	await Promise.all(
 		[...pendingLogoutRuns].filter(([host]) => hostnameOf(host) === slot).map(([, run]) => run),
 	);
-	// Another tab's retry holds the lock for as long as its request is out.
-	await withCookieLock(slot, async () => {});
-	return {[AUTH_OPT_IN_HEADER]: "cookie", [CSRF_HEADER]: "1"};
+	// Another tab's retry holds the slot's lock for as long as its request is out. The hold is
+	// taken under it, so a retry that gets the lock next sees the login.
+	const release = await withCookieLock(slot, async () => {
+		// Re-read: a cookie login may have been stored while this one waited.
+		if (slotHasCookieAccount(readStoredAccounts()?.users, slot)) return null;
+		if (!navigator.locks) return () => {};
+		return tryHoldLock(cookieLoginLockName(slot));
+	});
+	if (!release) return undefined;
+	return {headers: {[AUTH_OPT_IN_HEADER]: "cookie", [CSRF_HEADER]: "1"}, release};
+}
+/** A login or register form's cookie opt-in: each submit to a cookie-session instance asks for
+ * a cookie and holds pending-logout retries off until the submit is over (cookieOptIn). */
+export function addCookieOptIn(
+	form: {
+		submitHeaders?: (sent: object) => Promise<Record<string, string> | undefined>;
+		submitSettled?: (sent: object) => void;
+	},
+	instanceFor: (sent: object) => InstanceUrls | undefined,
+): void {
+	const releases = new WeakMap<object, () => void>();
+	form.submitHeaders = async (sent) => {
+		const instance = instanceFor(sent);
+		const optIn = instance ? await cookieOptIn(instance) : undefined;
+		if (!optIn) return undefined;
+		releases.set(sent, optIn.release);
+		return optIn.headers;
+	};
+	form.submitSettled = (sent) => {
+		releases.get(sent)?.();
+		releases.delete(sent);
+	};
 }
 
 /** Records in `info` (the caller saves it) that the cookie on `api`'s host outlived its
@@ -596,6 +663,11 @@ function endsPendingLogout(status: number): boolean {
 }
 async function retryPendingLogout(host: string): Promise<void> {
 	await withCookieLock(hostnameOf(host), async () => {
+		// A cookie login is out on the hostname: the cookie may be its session already. Kept for
+		// a later start; a cookie login that lands drops it (adduser). Asked before the store is
+		// read: no login can start while this run holds the slot's lock, so a free answer means
+		// any earlier login has already stored its account, and the read below sees it.
+		if (await cookieLoginInFlight(hostnameOf(host))) return;
 		// Read under the lock: a cookie login stored since owns the cookie now, and the entry may
 		// have been replaced while this run waited.
 		const info = readStoredAccounts();

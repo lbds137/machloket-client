@@ -35,8 +35,10 @@ test.describe("cookie-session instance", () => {
 		mockInstance,
 	}) => {
 		const loginHeaders: Record<string, string>[] = [];
+		let capturedAtLogin = Infinity;
 		mockInstance.onLogin = (route) => {
 			loginHeaders.push(route.request().headers());
+			capturedAtLogin = mockInstance.capturedRequests.length;
 			return route.fulfill({
 				status: 200,
 				contentType: "application/json",
@@ -64,17 +66,32 @@ test.describe("cookie-session instance", () => {
 		expect(users[0].auth_mode).toBe("cookie");
 		expect(users[0]).not.toHaveProperty("token");
 
-		const afterLogin = mockInstance.capturedRequests.filter(
-			(r) => r.pathname.startsWith("/api/v9/") && !r.pathname.startsWith("/api/v9/auth/"),
-		);
-		expect(afterLogin.filter((r) => r.authorization !== undefined)).toEqual([]);
+		const restCalls = (from = 0) =>
+			mockInstance.capturedRequests
+				.slice(from)
+				.filter(
+					(r) => r.pathname.startsWith("/api/v9/") && !r.pathname.startsWith("/api/v9/auth/"),
+				);
+		expect(restCalls().filter((r) => r.authorization !== undefined)).toEqual([]);
+		// The instance's public reads (ping, its config) go out with no account, so unmarked.
+		const accountCalls = () =>
+			restCalls(capturedAtLogin).filter(
+				(r) =>
+					r.pathname !== "/api/v9/ping" && !r.pathname.startsWith("/api/v9/policies/instance/"),
+			);
+		// Non-empty first: the check below would pass on no requests at all.
+		await expect.poll(() => accountCalls().length).toBeGreaterThan(0);
+		// The cookie account's REST goes out marked: the wrapper sends credentials only then.
+		expect(accountCalls().filter((r) => r.csrf !== "1")).toEqual([]);
 	});
 });
 
 test("a stock instance logs in by token, with no cookie opt-in", async ({page, mockInstance}) => {
 	const loginHeaders: Record<string, string>[] = [];
+	let capturedAtLogin = Infinity;
 	mockInstance.onLogin = (route) => {
 		loginHeaders.push(route.request().headers());
+		capturedAtLogin = mockInstance.capturedRequests.length;
 		return route.fulfill({
 			status: 200,
 			contentType: "application/json",
@@ -89,4 +106,11 @@ test("a stock instance logs in by token, with no cookie opt-in", async ({page, m
 		.toBe(true);
 	expect(loginHeaders).toHaveLength(1);
 	expect(loginHeaders[0]).not.toHaveProperty("x-machloket-auth");
+	const restAfterLogin = () =>
+		mockInstance.capturedRequests
+			.slice(capturedAtLogin)
+			.filter((r) => r.pathname.startsWith("/api/v9/") && !r.pathname.startsWith("/api/v9/auth/"));
+	await expect.poll(() => restAfterLogin().length).toBeGreaterThan(0);
+	// A header account's REST carries no cookie marker.
+	expect(restAfterLogin().filter((r) => r.csrf !== undefined)).toEqual([]);
 });
