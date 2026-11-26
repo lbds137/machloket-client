@@ -5,10 +5,10 @@ import {Contextmenu} from "./contextmenu.js";
 import {
 	bootAccountId,
 	getViewportHeight,
-	migrateToCookieSession,
 	mobile,
 	runPendingLogouts,
 	Specialuser,
+	startCookieMigration,
 } from "./utils/utils.js";
 import {setTheme} from "./utils/utils.js";
 import {consumeMembersPop, installMembersView} from "./utils/membersView.js";
@@ -123,8 +123,9 @@ if (window.location.pathname.startsWith("/channels")) {
 			thisUser = new Localuser(await new Promise<Specialuser>((res) => makeLogin(true, "", res)));
 		} else {
 			// Before the gateway connects: the exchange ends the header session, and the server
-			// would drop a socket identified with it (SB_SESSION_REMOVE).
-			await migrateToCookieSession(Localuser.users.users[current]);
+			// would drop a socket identified with it (SB_SESSION_REMOVE). A record whose instance
+			// offers no cookie sessions starts at once; its flag refreshes behind the start.
+			await startCookieMigration(Localuser.users.users[current]).beforeStart;
 			thisUser = new Localuser(Localuser.users.users[current]);
 			// Only an account the store doesn't hold is "for this session only"; a hand-off can
 			// carry a stored one beside it.

@@ -5,8 +5,13 @@ import {addInstance, recordRequests, withoutWebLocks} from "./test/setup";
 // existing sessions" and "401 handling"): the migration at start, and a header account's 401
 // whose cookie probe finds the session moved. Same bootstrap order as the other suites.
 const {Localuser} = await import("./localuser");
-const {migrateToCookieSession, onCookieSessionAdopted, adduser, runPendingLogouts} =
-	await import("./utils/utils");
+const {
+	migrateToCookieSession,
+	startCookieMigration,
+	onCookieSessionAdopted,
+	adduser,
+	runPendingLogouts,
+} = await import("./utils/utils");
 const {apiFetch, resetUnauthorizedNavForTests} = await import("./utils/apiFetch");
 const {buildAccountHeaders, cookieModeHosts, CSRF_HEADER} = await import("./utils/accountHeaders");
 const {pageNav} = await import("./invite");
@@ -141,6 +146,131 @@ describe("the migration at start", () => {
 		expect(exchanges).toHaveLength(1);
 		expect(stored().users[user.uid].serverurls.authCookie).toBe(true);
 		expect(stored().users[user.uid].auth_mode).toBe("cookie");
+	});
+
+	/** Discovery that answers only when the test says so. */
+	function heldDiscovery(origin: string) {
+		let answer!: (authCookie: boolean) => void;
+		const answered = new Promise<boolean>((res) => (answer = res));
+		recordRequests(origin + "/api/v9/policies/instance/domains", async () =>
+			Response.json({api: origin + "/api/", authCookie: await answered}),
+		);
+		return answer;
+	}
+	/** "started" when `beforeStart` settles within 200 ms, "held" otherwise. */
+	function startState(beforeStart: Promise<void>) {
+		return Promise.race([
+			beforeStart.then(() => "started"),
+			new Promise((res) => setTimeout(() => res("held"), 200)),
+		]);
+	}
+
+	it("starts at once when the record says no cookie sessions; the flag refreshes behind it", async () => {
+		const origin = "http://mig-bg.test";
+		addInstance(origin, 0, {authCookie: true});
+		const answer = heldDiscovery(origin);
+		const exchanges = recordRequests(origin + "/api/v9/auth/session-cookie", noContent);
+		const user = headerAccount(origin, "bg@x", false);
+
+		const {beforeStart, done} = startCookieMigration(user);
+
+		expect(await startState(beforeStart)).toBe("started");
+		answer(true);
+		await done;
+		// The exchange waits for the next start, before its gateway: this one's socket is live.
+		expect(exchanges).toHaveLength(0);
+		expect(user.token).toBe("tok-bg@x");
+		expect(stored().users[user.uid].serverurls.authCookie).toBe(true);
+		expect(stored().users[user.uid].token).toBe("tok-bg@x");
+		expect(cookieModeHosts.has("mig-bg.test")).toBe(true);
+	});
+
+	/** Rewrites the stored record of `uid` (another tab's write, or a logout's removal). */
+	function storeRecord(uid: string, change: (record: any) => any) {
+		const info = stored();
+		const next = change(info.users[uid]);
+		if (next === undefined) delete info.users[uid];
+		else info.users[uid] = next;
+		localStorage.setItem("userinfos", JSON.stringify(info));
+	}
+
+	it("doesn't write back a record removed while its background discovery was out", async () => {
+		const origin = "http://mig-bg-removed.test";
+		addInstance(origin, 0, {authCookie: true});
+		const answer = heldDiscovery(origin);
+		const user = headerAccount(origin, "gone@x", false);
+
+		const {done} = startCookieMigration(user);
+		storeRecord(user.uid, () => undefined); // logged out from the switcher meanwhile
+		answer(true);
+		await done;
+
+		expect(stored().users[user.uid]).toBeUndefined();
+	});
+
+	it.each([
+		["unset", undefined],
+		["false", false],
+	])(
+		"doesn't overwrite a record another tab moved into the cookie during discovery (flag %s)",
+		async (_name, flag) => {
+			const origin = `http://mig-moved-${String(flag)}.test`;
+			addInstance(origin, 0, {authCookie: true});
+			const answer = heldDiscovery(origin);
+			recordRequests(origin + "/api/v9/auth/session-cookie", unauthorized);
+			const user = headerAccount(origin, "moved@x", flag);
+
+			const {done} = startCookieMigration(user);
+			storeRecord(user.uid, (record) => {
+				const {token: _dead, ...rest} = record;
+				return {...rest, auth_mode: "cookie"};
+			});
+			answer(true);
+			await done;
+
+			const record = stored().users[user.uid];
+			expect(record.auth_mode).toBe("cookie");
+			expect("token" in record).toBe(false);
+		},
+	);
+
+	it.each([
+		["removed", () => undefined],
+		["logged out", (record: any) => ({...record, loggedin: false})],
+		["replaced by a newer login", (record: any) => ({...record, token: "tok-newer"})],
+	])("sends no exchange for a record %s during discovery (flag true)", async (_name, change) => {
+		const origin = `http://mig-true-${_name.replace(/\W/g, "-")}.test`;
+		addInstance(origin, 0, {authCookie: true});
+		const answer = heldDiscovery(origin);
+		const exchanges = recordRequests(origin + "/api/v9/auth/session-cookie", noContent);
+		const user = headerAccount(origin, "true@x", true);
+
+		const {done} = startCookieMigration(user);
+		storeRecord(user.uid, change);
+		answer(true);
+		await done;
+
+		expect(exchanges).toHaveLength(0);
+	});
+
+	it.each([
+		["unset", undefined],
+		["true", true],
+	])("holds the start on discovery when the record's flag is %s", async (_name, flag) => {
+		const origin = `http://mig-hold-${String(flag)}.test`;
+		addInstance(origin, 0, {authCookie: true});
+		const answer = heldDiscovery(origin);
+		const exchanges = recordRequests(origin + "/api/v9/auth/session-cookie", noContent);
+		const user = headerAccount(origin, "hold@x", flag);
+
+		const {beforeStart, done} = startCookieMigration(user);
+
+		expect(await startState(beforeStart)).toBe("held");
+		answer(true);
+		await beforeStart;
+		expect(exchanges).toHaveLength(1);
+		expect(stored().users[user.uid].auth_mode).toBe("cookie");
+		await done;
 	});
 
 	it("doesn't ask when a logged-in cookie account holds the hostname's cookie, any port", async () => {
