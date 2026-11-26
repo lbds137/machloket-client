@@ -662,6 +662,7 @@ class Localuser {
 	 * a server bug or a token-rotation race - or the probe got no answer) retries IDENTIFY once
 	 * on its own; after that, the loading screen offers a Retry (TASK-157). */
 	gatewayAuthFailed() {
+		this.endConnectionMeasure();
 		if (this.token !== this.identifiedToken) {
 			this.reconnectAfterAuth();
 			return;
@@ -684,8 +685,23 @@ class Localuser {
 	}
 	/** Counts gatewayAuthFailed calls, so only the latest one's verdict acts. */
 	gatewayAuthAttempt = 0;
-	/** Whether the automatic IDENTIFY retry after a 4004 has been spent; READY re-arms it. */
+	/** Whether the automatic IDENTIFY retry after a 4004 has been spent; a connection that stayed
+	 * up 20 s re-arms it (endConnectionMeasure). */
 	gatewayAuthRetried = false;
+	/** Ends the closed connection's uptime measure (connectionSucceed, its first heartbeat ACK),
+	 * so the next connection is measured from its own ACK. One that stayed up 20 s was a good
+	 * connection: the reconnect backoff starts over and a later 4004 gets its automatic retry
+	 * again. READY alone does not count: a server that sends READY and then 4004 would loop
+	 * IDENTIFY with no backoff (TASK-173). Returns whether it was a good connection. */
+	private endConnectionMeasure(): boolean {
+		const good = this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + 20000;
+		this.connectionSucceed = 0;
+		if (good) {
+			this.errorBackoff = 0;
+			this.gatewayAuthRetried = false;
+		}
+		return good;
+	}
 	/** The loading screen's Retry button (app.html), shown where a 4004 would otherwise be a dead
 	 * end; every connect attempt hides it again (initwebsocket). */
 	private offerGatewayRetry() {
@@ -942,14 +958,11 @@ class Localuser {
 		(document.getElementById("loading") as HTMLElement).classList.add("loading");
 		const loaddesc = document.getElementById("load-desc") as HTMLElement;
 		if ((code >= 1000 && code < 1016) || wsCodesRetry.has(code) || code == 4041) {
-			if (this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + 20000) {
-				this.errorBackoff = 0;
-			} else {
+			if (!this.endConnectionMeasure()) {
 				// Capped: a long outage must stretch the delay, never quietly stop
 				// retrying while the app is in use.
 				this.errorBackoff = Math.min(this.errorBackoff + 1, 20);
 			}
-			this.connectionSucceed = 0;
 
 			loaddesc.innerHTML = "";
 			loaddesc.append(
@@ -1251,8 +1264,6 @@ class Localuser {
 				}
 				case "READY":
 					if (stale) break;
-					// The session identified: a later 4004 gets its own automatic retry.
-					this.gatewayAuthRetried = false;
 					await this.gottenReady(temp as readyjson);
 					break;
 				case "RESUMED":

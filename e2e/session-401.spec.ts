@@ -91,6 +91,31 @@ for (const [name, probeAnswer] of [
 	});
 }
 
+// A server that answers IDENTIFY with READY, then closes 4004 while REST finds the session alive,
+// must not loop: READY alone does not re-arm the automatic retry, so the second refusal offers
+// Retry instead of a third IDENTIFY (TASK-173).
+test("a gateway that sends READY then closes 4004 retries once, then offers Retry", async ({
+	page,
+	mockInstance,
+}) => {
+	await loginAndOpenChannel(page);
+	const retry = page.locator("#gatewayRetry");
+	let probes = 0;
+	await page.route("**/api/v9/users/@me", async (route) => {
+		probes++;
+		await route.fulfill({status: 200, json: {id: "1", username: "alive"}});
+	});
+	mockInstance.readyThenCloses = 4004;
+	const before = identifies(mockInstance);
+
+	await page.reload();
+
+	await expect(retry).toBeVisible();
+	expect(identifies(mockInstance) - before).toBe(2);
+	expect(probes).toBe(2);
+	expect(page.url()).not.toMatch(/\/login/);
+});
+
 test("a send refused because the session died routes to /login", async ({page}) => {
 	await loginAndOpenChannel(page);
 	const probes: (string | null)[] = [];
