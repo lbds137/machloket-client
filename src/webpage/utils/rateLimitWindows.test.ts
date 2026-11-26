@@ -99,6 +99,78 @@ describe("the registry's windows", () => {
 	});
 });
 
+// Server TASK-249 exposes the rate-limit headers to a cross-origin client; an instance on older
+// code sends none (headers.get answers null), so the body stays the fallback.
+describe("the registry's windows from a 429's headers", () => {
+	it("a Retry-After header names the wait over the body's retry_after", () => {
+		armRateLimit(
+			A + "/channels/1/messages",
+			{retry_after: 0.05},
+			undefined,
+			new Headers({"Retry-After": "2"}),
+		);
+
+		expect(rateLimitRemaining(A + "/channels/1/messages")).toBeGreaterThan(1500);
+	});
+
+	it("X-RateLimit-Global: true arms the whole base, whatever the body says", () => {
+		armRateLimit(
+			A + "/channels/1/messages",
+			{global: false, retry_after: 0.2},
+			undefined,
+			new Headers({"X-RateLimit-Global": "true", "Retry-After": "1"}),
+		);
+
+		expect(rateLimitRemaining(A + "/guilds/9")).toBeGreaterThan(0);
+	});
+
+	it.each([
+		["no headers", undefined],
+		["headers without the rate-limit ones (an older instance)", new Headers()],
+		["a non-numeric Retry-After", new Headers({"Retry-After": "soon"})],
+		["an empty Retry-After", new Headers({"Retry-After": " "})],
+		["a negative Retry-After", new Headers({"Retry-After": "-1"})],
+	])("%s: the body's window stands", (_name, headers) => {
+		armRateLimit(A + "/channels/1/messages", {retry_after: 0.2}, undefined, headers);
+
+		const left = rateLimitRemaining(A + "/channels/1/messages");
+		expect(left).toBeGreaterThan(0);
+		expect(left).toBeLessThanOrEqual(200);
+	});
+
+	it("caps a header's wait at 30 s", () => {
+		armRateLimit(A + "/channels/1/messages", {}, undefined, new Headers({"Retry-After": "600"}));
+
+		expect(rateLimitRemaining(A + "/channels/1/messages")).toBeLessThanOrEqual(30_000);
+		expect(rateLimitRemaining(A + "/channels/1/messages")).toBeGreaterThan(29_000);
+	});
+
+	// PIN: every response on a route no route limiter covers carries the error limiter's bucket
+	// header, a non-limiter 429 included, so "error" can't tell the IP-wide refusal apart.
+	it("X-RateLimit-Bucket: error doesn't widen the window to the base", () => {
+		armRateLimit(
+			A + "/users/@me/settings",
+			{retry_after: 0.2},
+			"PATCH",
+			new Headers({"X-RateLimit-Bucket": "error", "Retry-After": "1"}),
+		);
+
+		expect(rateLimitRemaining(A + "/guilds/9")).toBe(0);
+	});
+
+	it("a slowmode body still arms nothing, whatever the headers say", () => {
+		armRateLimit(
+			A + "/channels/1/messages",
+			{code: 20016, retry_after: 0.2},
+			"POST",
+			new Headers({"X-RateLimit-Global": "true", "Retry-After": "5"}),
+		);
+
+		expect(rateLimitRemaining(A + "/guilds/9")).toBe(0);
+		expect(rateLimitRemaining(A + "/channels/1/messages", "POST")).toBe(0);
+	});
+});
+
 describe("waitRateLimit", () => {
 	it("resumes its callers in the order they started waiting", async () => {
 		armRateLimit(A + "/channels/1/messages", {retry_after: 0.1});

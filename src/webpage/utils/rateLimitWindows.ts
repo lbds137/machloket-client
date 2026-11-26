@@ -4,14 +4,26 @@
  * `GET channels/1/messages` and `GET channels/2/messages` are separate buckets, and a message's
  * reactions collapse to one `:id`/`:emoji` pattern per channel. A `global` 429 (the server's `global` and `ip`
  * buckets) covers every route of its base. One known gap: the server's `error` limiter (IP-wide,
- * every route, counts 4xx) reports `global: false`, so its 429 is filed under the request's path
- * only. Windows are read from the 429's body alone: the server sends no rate-limit headers to a
- * cross-origin client. */
+ * every route, counts 4xx) reports `global: false` in its body and its headers alike, and its
+ * `X-RateLimit-Bucket: error` is also what every response on a route without a route limiter
+ * carries, so its 429 is filed under the request's path only. A window's length comes from the
+ * 429's `Retry-After` header where the instance exposes it to a cross-origin client (server
+ * TASK-249), else from the body's `retry_after`, which older instances send alone. */
 
-/** A 429's wait in ms, or null for any other status. Spacebar's body carries retry_after in
- * SECONDS (a number, or a numeric string); a missing or unreadable body waits 5 s. Capped for sanity. */
-export function retryAfterMs(status: number, bodyText: string | null, cap = 30_000): number | null {
+/** Reads a response's headers: a fetch `Headers`, or an XHR's `getResponseHeader` wrapped. */
+export type HeaderSource = {get(name: string): string | null};
+
+/** A 429's wait in ms, or null for any other status: its `Retry-After` header when usable, else
+ * the body's retry_after (see `retryAfterMsFromBody`). Capped for sanity. */
+export function retryAfterMs(
+	status: number,
+	bodyText: string | null,
+	headers?: HeaderSource | null,
+	cap = 30_000,
+): number | null {
 	if (status !== 429) return null;
+	const fromHeader = retryAfterMsFromHeaders(headers, cap);
+	if (fromHeader !== null) return fromHeader;
 	let body: unknown = null;
 	try {
 		body = JSON.parse(bodyText ?? "");
@@ -19,6 +31,20 @@ export function retryAfterMs(status: number, bodyText: string | null, cap = 30_0
 		// A non-JSON 429 keeps the default.
 	}
 	return retryAfterMsFromBody(body, cap);
+}
+
+/** The wait a `Retry-After` header names, in ms, or null when it is absent or not a number of
+ * seconds >= 0 (the server sends whole seconds; an HTTP-date form is not one it sends, and reads
+ * as absent). Capped like the body's. */
+export function retryAfterMsFromHeaders(
+	headers: HeaderSource | null | undefined,
+	cap = 30_000,
+): number | null {
+	const raw = headers?.get("Retry-After")?.trim();
+	if (!raw) return null;
+	const seconds = Number(raw);
+	if (!Number.isFinite(seconds) || seconds < 0) return null;
+	return Math.min(seconds * 1000, cap);
 }
 
 /** The same window read from a body that is already parsed (the XHR path's `response`). */
@@ -115,17 +141,26 @@ function extend(windows: Map<string, number>, key: string, until: number): void 
 	windows.set(key, Math.max(windows.get(key) ?? 0, until));
 }
 
-/** Arms the window a 429's body names for the request's route, or for its whole base when the
- * body says `global: true`. A slowmode body (code 20016) never arms a window: Discord answers
+/** Arms the window a 429 names (its `Retry-After` header, else its body's `retry_after`) for the
+ * request's route, or for its whole base when `X-RateLimit-Global: true` or the body's
+ * `global: true` says so. A slowmode body (code 20016) never arms a window: Discord answers
  * slowmode with a 429 too, and its own countdown owns that wait. A request that is not an API
  * call arms nothing. */
-export function armRateLimit(input: RequestInfo | URL, body: unknown, method?: string): void {
+export function armRateLimit(
+	input: RequestInfo | URL,
+	body: unknown,
+	method?: string,
+	headers?: HeaderSource | null,
+): void {
 	const key = rateLimitKey(input, method);
 	if (!key) return;
 	if ((body as {code?: unknown} | null | undefined)?.code === 20016) return;
 	sweepExpired();
-	const until = Date.now() + retryAfterMsFromBody(body);
-	if ((body as {global?: unknown} | null | undefined)?.global === true) {
+	const until = Date.now() + (retryAfterMsFromHeaders(headers) ?? retryAfterMsFromBody(body));
+	const global =
+		headers?.get("X-RateLimit-Global")?.trim().toLowerCase() === "true" ||
+		(body as {global?: unknown} | null | undefined)?.global === true;
+	if (global) {
 		extend(globalUntil, key.base, until);
 	} else {
 		extend(bucketUntil, JSON.stringify([key.base, key.bucket]), until);

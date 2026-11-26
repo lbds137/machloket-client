@@ -3805,7 +3805,8 @@ class Channel extends SnowFlake {
 		try {
 			let res = await apiFetch(msgsUrl + "?limit=100&" + query, {headers: this.headers});
 			if (res.status === 429) {
-				// apiFetch armed the window from the 429's body: wait it out, then ask once more.
+				// apiFetch armed the window from the 429: wait it out, then ask once more. msgsUrl
+				// always has a window key (Specialuser normalizes every API base to end in /v9).
 				await waitRateLimit(msgsUrl, "GET");
 				res = await apiFetch(msgsUrl + "?limit=100&" + query, {headers: this.headers});
 			}
@@ -4682,12 +4683,14 @@ class Channel extends SnowFlake {
 					// window (every later send on this route waits it out) and re-sends once when
 					// the window ends, the bubble staying in flight meanwhile.
 					if (limit?.code !== 20016) {
-						armRateLimit(sendUrl, limit, "POST");
+						const headers = {get: (name: string) => res.getResponseHeader(name)};
+						armRateLimit(sendUrl, limit, "POST", headers);
 						if (!rateLimitRetried) {
 							rateLimitRetried = true;
 							// Waits the bucket's window as it stands when it ends: a longer window armed
 							// meanwhile holds the resend too. The send's ticket keeps its place ahead of
-							// later sends on the channel. A throw from resend fails the bubble.
+							// later sends on the channel. sendUrl always has a window key: Specialuser
+							// normalizes every API base to end in /v9. A throw from resend fails the bubble.
 							void (async () => {
 								await waitRateLimit(sendUrl, "POST", ticket);
 								resend();
