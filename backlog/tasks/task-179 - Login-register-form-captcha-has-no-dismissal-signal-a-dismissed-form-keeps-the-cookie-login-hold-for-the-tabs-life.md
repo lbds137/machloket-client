@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-26T09:54:00Z'
-updated_date: '2026-11-26T09:59:00Z'
+updated_date: '2026-11-26T13:36:00Z'
 labels:
   - auth
 dependencies: []
@@ -24,4 +24,6 @@ Found by the cross-family re-review of PR #222 (TASK-163), 2026-11-26. login.ts:
 
 <!-- SECTION:NOTES:BEGIN -->
 Prep 2026-11-26: Dialog.hide (settings.ts:1546) runs removeAni, and the element leaves the DOM once its exit animation ends, so the inline wait can end when the form captcha div is no longer connected (per-instance this.div.isConnected, not the shared static Captcha.hcaptcha node, which another form can adopt). Covers dialog close AND the switch to register (dialog.hide then makeRegister). Standalone login.html never detaches the form, so it is unaffected. Red-first: cookieLogin.test.ts, a captcha answer to /auth/login, hide the dialog, assert the cookie-login hold is free.
+
+Same class, fold in (review low, 2026-11-26): a second submit of the same login form while its first submit waits on a second factor leaves the first 2FA dialog and its cookie-login hold open (the re-submit logs in by token by design, see TASK-176). Fix with the dismissal signal: closing or superseding the first 2FA dialog releases its hold; red-first test in cookieLogin.test.ts.
 <!-- SECTION:NOTES:END -->
