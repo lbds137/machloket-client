@@ -6,7 +6,7 @@ title: >-
 status: To Do
 assignee: []
 created_date: '2026-11-26T16:36:00Z'
-updated_date: '2026-11-26T16:37:00Z'
+updated_date: '2026-11-26T18:13:00Z'
 labels:
   - auth
   - server-contract
@@ -29,4 +29,6 @@ Shape to decide at unit time: (1) read the 401 body code (bounded, a clone so ca
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-26 (Machloket Server session, from reading upstream Spacebar master; not verified here): stock Spacebar also answers 40001 for a refused or missing credential (upstream src/api/middlewares/Route.ts:139, DiscordApiErrors.UNAUTHORIZED), so 40001 means dead there too. Exception: upstream src/api/routes/oauth2/authorize.ts:202 throws 40001 with the session LIVE (the bot being authorized is already a member with cached permissions). Our fork dropped that site. So on unknown instances a 40001 from POST /oauth2/authorize is not a dead verdict: probe there. Code 0 is the Discord/no-contract shape (Discord answers {"message":"401: Unauthorized","code":0}). Upstream has no age lock (the 25062 case is fork-only). Deploy ping for A and B is in the server role Handoff.
+
+2026-11-26 (Machloket Server, PR #306 378c89337, not yet on A/B): live-session access refusals that answered 401 (code 401) now answer 403 code 50001 Missing access: the six guild application-command routes (/applications/:app/guilds/:guild/commands[/:id]) when the app is not in the guild; GET /guilds/:id for a non-member; POST /guilds/:id/delete for a non-owner. Server rule: 401 + 40001 is the only dead-credential signal; remaining live-session 401s are server TASK-361 (invite join to an INTERNAL_EMPLOYEE_ONLY guild, webhook-message mismatch). At unit time: grep the client for 401 branches at these three sites and give each a 403/50001 path.
 <!-- SECTION:NOTES:END -->
