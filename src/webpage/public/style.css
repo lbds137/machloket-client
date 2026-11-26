@@ -2894,6 +2894,15 @@ span.instanceStatus {
 	cursor: pointer;
 }
 
+/* The splash stays brand-dark in every theme, where a dark theme's button fill all but vanishes
+   (1.1:1 on Onyx): the label-coloured border gives the button its shape there (14:1 and up);
+   light themes' fills carry it (10:1 and up). */
+#gatewayRetry {
+	min-height: 32px;
+	border: 1px solid currentColor;
+	text-align: center;
+}
+
 #loadingdiv.loading {
 	display: flex;
 }

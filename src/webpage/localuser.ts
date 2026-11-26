@@ -115,7 +115,7 @@ import {
 } from "./utils/pollValidation.js";
 import {fetchMessageLimit} from "./utils/messageLimit.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
-import {apiFetch, handleUnauthorized, noteActiveAccount} from "./utils/apiFetch.js";
+import {apiFetch, noteActiveAccount, probeUnauthorized} from "./utils/apiFetch.js";
 import {
 	type AccountHeaders,
 	applyAccountHeaders,
@@ -657,14 +657,46 @@ class Localuser {
 	 * confirmed dead session is logged out and routed to /login. A socket that identified with a
 	 * token the account no longer sends (its session moved into the cookie while the socket
 	 * opened) reconnects with the current credential instead: the probe would find that one alive
-	 * and leave the gateway closed. */
+	 * and leave the gateway closed. A probe with no verdict of death (the session answered alive -
+	 * a server bug or a token-rotation race - or the probe got no answer) retries IDENTIFY once
+	 * on its own; after that, the loading screen offers a Retry (TASK-157). */
 	gatewayAuthFailed() {
 		if (this.token !== this.identifiedToken) {
 			this.reconnectAfterAuth();
 			return;
 		}
 		this.awaitingAuthVerdict = true;
-		handleUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
+		const attempt = ++this.gatewayAuthAttempt;
+		const verdict = probeUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
+		void (verdict ?? Promise.resolve("notDead" as const)).then((outcome) => {
+			// A later 4004, an adoption's reconnect (cookieSessionAdopted) or an account switch
+			// has taken over since; "dead" routes to /login and "adopted" reconnects already.
+			if (attempt !== this.gatewayAuthAttempt || !this.awaitingAuthVerdict || this.swapped) return;
+			if (outcome !== "notDead") return;
+			if (!this.gatewayAuthRetried) {
+				this.gatewayAuthRetried = true;
+				this.reconnectAfterAuth();
+				return;
+			}
+			this.offerGatewayRetry();
+		});
+	}
+	/** Counts gatewayAuthFailed calls, so only the latest one's verdict acts. */
+	gatewayAuthAttempt = 0;
+	/** Whether the automatic IDENTIFY retry after a 4004 has been spent; READY re-arms it. */
+	gatewayAuthRetried = false;
+	/** The loading screen's Retry button (app.html), shown where a 4004 would otherwise be a dead
+	 * end; every connect attempt hides it again (initwebsocket). */
+	private offerGatewayRetry() {
+		const retry = document.getElementById("gatewayRetry");
+		if (!(retry instanceof HTMLButtonElement)) return;
+		retry.onclick = () => {
+			// The account switched to owns the screen (and this button) now.
+			if (this.swapped) return;
+			retry.hidden = true;
+			this.reconnectAfterAuth();
+		};
+		retry.hidden = false;
 	}
 	private reconnectAfterAuth() {
 		if (this.swapped) return;
@@ -685,6 +717,9 @@ class Localuser {
 	private deflateWriters = new WeakMap<WebSocket, WritableStreamDefaultWriter>();
 	async initwebsocket(resume = false): Promise<void> {
 		let returny: () => void;
+		// A Retry offered after an earlier 4004 (offerGatewayRetry) belongs to no attempt now.
+		const gatewayRetry = document.getElementById("gatewayRetry");
+		if (gatewayRetry) gatewayRetry.hidden = true;
 		if (!this.resume_gateway_url || !this.session_id) {
 			resume = false;
 		}
@@ -1215,6 +1250,8 @@ class Localuser {
 				}
 				case "READY":
 					if (stale) break;
+					// The session identified: a later 4004 gets its own automatic retry.
+					this.gatewayAuthRetried = false;
 					await this.gottenReady(temp as readyjson);
 					break;
 				case "RESUMED":

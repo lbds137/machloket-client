@@ -414,6 +414,9 @@ describe("Localuser after its session moved into the cookie", () => {
 		const l = Object.create(Localuser.prototype) as InstanceType<typeof Localuser>;
 		l.userinfo = user;
 		l.headers = buildAccountHeaders(user);
+		// Object.create skips the class-field initializers the 4004 retry reads.
+		l.gatewayAuthAttempt = 0;
+		l.gatewayAuthRetried = false;
 		return {l, user};
 	}
 
@@ -469,7 +472,7 @@ describe("Localuser after its session moved into the cookie", () => {
 		expect(l.awaitingAuthVerdict).toBe(false);
 	});
 
-	it("waits for the 401 path's verdict on a 4004 for the token it still sends", () => {
+	it("waits for the 401 path's verdict on a 4004 for the token it still sends", async () => {
 		const {l, user} = liveUser("http://live-same.test");
 		l.info = user.serverurls;
 		vi.spyOn(pageNav, "go").mockImplementation(() => {});
@@ -477,12 +480,44 @@ describe("Localuser after its session moved into the cookie", () => {
 			Response.json({id: "id-live@x"}),
 		);
 		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+		vi.spyOn(l, "loaduser").mockImplementation(() => {});
+		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
 		l.identifiedToken = "tok-live@x";
 
 		l.gatewayAuthFailed();
 
 		expect(reconnect).not.toHaveBeenCalled();
 		expect(l.awaitingAuthVerdict).toBe(true);
+		// The probe finds the session alive: IDENTIFY is retried once on its own (TASK-157).
+		await vi.waitFor(() => expect(reconnect).toHaveBeenCalledTimes(1));
+		expect(l.awaitingAuthVerdict).toBe(false);
+	});
+
+	it("a verdict landing after an adoption's reconnect connects no second time (TASK-157)", async () => {
+		const {l, user} = liveUser("http://live-race.test");
+		l.info = user.serverurls;
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		let answer!: (r: Response) => void;
+		const probes = recordRequests(
+			"http://live-race.test/api/v9/users/@me",
+			() => new Promise<Response>((r) => (answer = r)),
+		);
+		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+		vi.spyOn(l, "loaduser").mockImplementation(() => {});
+		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+		l.identifiedToken = "tok-live@x";
+
+		l.gatewayAuthFailed();
+		await vi.waitFor(() => expect(probes).toHaveLength(1));
+		// Another tab's migration converts the account while the probe is out: it reconnects.
+		user.json.auth_mode = "cookie";
+		l.cookieSessionAdopted(user.uid);
+		expect(reconnect).toHaveBeenCalledTimes(1);
+
+		answer(Response.json({id: "id-live@x"}));
+		await new Promise((r) => setTimeout(r, 50));
+		expect(reconnect).toHaveBeenCalledTimes(1);
+		expect(l.gatewayAuthRetried).toBe(false);
 	});
 
 	it("ignores another account's adoption", () => {
