@@ -3,10 +3,10 @@ id: TASK-179
 title: >-
   Login/register form captcha has no dismissal signal; a dismissed form keeps
   the cookie-login hold for the tab's life
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-26T09:54:00Z'
-updated_date: '2026-11-26T13:36:00Z'
+updated_date: '2026-11-26T15:59:00Z'
 labels:
   - auth
 dependencies: []
@@ -27,3 +27,9 @@ Prep 2026-11-26: Dialog.hide (settings.ts:1546) runs removeAni, and the element 
 
 Same class, fold in (review low, 2026-11-26): a second submit of the same login form while its first submit waits on a second factor leaves the first 2FA dialog and its cookie-login hold open (the re-submit logs in by token by design, see TASK-176). Fix with the dismissal signal: closing or superseding the first 2FA dialog releases its hold; red-first test in cookieLogin.test.ts.
 <!-- SECTION:NOTES:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Shipped in PR #228 (43cce82e): captcha and second-factor prompts end when their form leaves or is re-submitted; answers already sent finish.
+<!-- SECTION:FINAL_SUMMARY:END -->
