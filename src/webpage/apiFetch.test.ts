@@ -2331,3 +2331,98 @@ describe("401 handling keyed by account uid (TASK-148)", () => {
 		expect("auth_mode" in userinfoOf(cookieUser.uid)).toBe(false);
 	});
 });
+
+describe("401 handling across an account switch (TASK-156)", () => {
+	const unauthorized = () => Response.json({message: "401: Unauthorized", code: 0}, {status: 401});
+	const serverurls = {
+		api: API,
+		cdn: "http://apifetch.test",
+		gateway: "ws://apifetch.test",
+		wellknown: "http://apifetch.test",
+	};
+	const twoAccounts = () => ({
+		a: adduser({
+			serverurls,
+			email: "switch-a@example.test",
+			token: "fake-switch-a",
+			loggedin: true,
+		}),
+		b: adduser({
+			serverurls,
+			email: "switch-b@example.test",
+			token: "fake-switch-b",
+			loggedin: true,
+		}),
+	});
+	/** The probe answers in call order; each answer settles only when the test resolves it. */
+	function heldProbes() {
+		const answers: ((res: Response) => void)[] = [];
+		captureRequests(
+			API + "/users/@me",
+			() => new Promise<Response>((resolve) => answers.push(resolve)),
+		);
+		return answers;
+	}
+	const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+	// The Localuser constructor writes the search box's hint (updateTranslations).
+	beforeEach(() => {
+		const searchBox = document.createElement("div");
+		searchBox.id = "searchBox";
+		document.body.append(searchBox);
+	});
+	afterEach(() => document.getElementById("searchBox")?.remove());
+	const patchSettings = (account: InstanceType<typeof Specialuser>) =>
+		apiFetch(API + "/users/@me/settings", {
+			method: "PATCH",
+			headers: buildAccountHeaders(account),
+			body: JSON.stringify({status: "idle"}),
+		});
+
+	it("the switched-to account's dead session routes to /login while the old account's probe is still out", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const {a, b} = twoAccounts();
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		const answers = heldProbes();
+
+		await patchSettings(a); // A's probe goes out and stays out.
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		new Localuser(b); // The tab switches to B (showAccountSwitcher, no reload).
+		await patchSettings(b); // B's session is dead: its own probe must go out.
+
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		answers[1](unauthorized());
+		await vi.waitFor(() => expect(b.loggedin).toBe(false));
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+
+		answers[0](Response.json({id: "a"})); // A was alive all along.
+		await settle();
+		expect(a.loggedin).toBe(true);
+		expect(nav).toHaveBeenCalledTimes(1);
+	});
+
+	it("a probe that outlives the switch logs the old account out without routing the new one to /login", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const {a, b} = twoAccounts();
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		const answers = heldProbes();
+
+		await patchSettings(a);
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		new Localuser(b);
+		answers[0](unauthorized()); // A's session was dead.
+
+		await vi.waitFor(() => expect(a.loggedin).toBe(false));
+		await settle();
+		expect(nav).not.toHaveBeenCalled();
+		expect(b.loggedin).toBe(true);
+
+		// A's verdict left nothing held: B's own later death still routes.
+		await patchSettings(b);
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		answers[1](unauthorized());
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(b.loggedin).toBe(false);
+	});
+});
