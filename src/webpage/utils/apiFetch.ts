@@ -25,10 +25,14 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 /** How a 401 path run ended. "dead": the session was confirmed dead and invalidated (and /login
  * scheduled while its account is the active one). "adopted": the session had moved into the
  * cookie and the account converted (onCookieSessionAdopted tells its holders). "notDead": no
- * verdict of death - the session answered alive, or a probe got no answer (timeout, 429, 5xx),
- * or no record still holds the probed credential; the session is left alone. "stale": a test
- * reset superseded the run. */
-export type UnauthorizedVerdict = "dead" | "adopted" | "notDead" | "stale";
+ * verdict of death - the session answered the check alive (or a dead credential was kept by the
+ * cookie layer), or no record still holds the probed credential; the session is left alone.
+ * "unanswered": the check itself produced no verdict (a 429 or 5xx answer, a proxy's page or
+ * status, a timeout, a network error, or no usable API to check against), or a confirmed-dead
+ * credential's second look at the cookie layer got no answer; validity is unconfirmed, the
+ * session is left alone here too, and the gateway Retry line names the difference (TASK-172).
+ * "stale": a test reset superseded the run. */
+export type UnauthorizedVerdict = "dead" | "adopted" | "notDead" | "stale" | "unanswered";
 /** The credentials whose 401 probe is out, or whose confirmed death has scheduled the /login
  * navigation, each with its run's verdict (keys: latchKey). Keyed per account: an account switch
  * keeps the page, so the account switched to must not wait behind the old one's probe. And per
@@ -69,33 +73,53 @@ export function resetUnauthorizedNavForTests(): void {
 	unauthorizedNavGen++;
 }
 
-/** Whether the session behind a 401'd request is really dead: the instance's auth middleware
+/** What the instance says about the session behind a 401'd request: its auth middleware
  * rejects any request carrying a bad credential before routing, so a GET to the account's own
- * `<api>/users/@me` answers 401 for a dead session and anything else for a live one. Endpoints
- * can answer their own bare 401s for reasons that are not a dead session — a wrong password
- * on the delete/disable forms, a rejected TOTP verify — and those must never log a valid
- * account out. The probe goes only to the account's own API, never to the 401'd request's
- * host: it carries the account's current credential, which READY may have refreshed since the
- * request left. A 401 from outside that API (another host, or a path off its `/vN` base), or
- * an account with no known API, fails closed (leaves the session alone); the cost is that such
- * a 401 never auto-routes to /login. Raw fetch (no apiFetch recursion), briefly timed. */
-async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<boolean> {
+ * `<api>/users/@me` answers 401 for a dead session and 200 with a user-naming JSON body for a
+ * live one. Endpoints can answer their own bare 401s for reasons that are not a dead session —
+ * a wrong password on the delete/disable forms, a rejected TOTP verify — and those must never
+ * log a valid account out. The probe goes only to the account's own API, never to the 401'd
+ * request's host: it carries the account's current credential, which READY may have refreshed
+ * since the request left. A 401 from outside that API (another host, or a path off its `/vN`
+ * base), or an account with no known API, fails closed ("unanswered": no verdict about the
+ * session came out of the check; the session is left alone, and such a 401 never auto-routes
+ * to /login). Any other non-401 answer is "unanswered" too - a 429 rate-limited the check, a
+ * 5xx never reached the middleware, a 403/404 is a proxy or a missing route - and so is a 200
+ * whose body does not name a user: a verdict of life is the app's own answer, at
+ * cookieSessionUserId's bar (TASK-172). Raw fetch (no apiFetch recursion), briefly timed. */
+async function tokenIsDead(
+	requestUrl: string,
+	account: AccountAuth,
+): Promise<"dead" | "alive" | "unanswered"> {
 	try {
 		const api = account.serverurls?.api;
-		if (!api) return false;
+		if (!api) return "unanswered";
 		const apiUrl = new URL(api);
 		const apiPath = apiUrl.pathname.replace(/\/+$/, "");
 		const parsed = new URL(requestUrl, window.location.href);
 		if (parsed.origin !== apiUrl.origin || !parsed.pathname.startsWith(apiPath + "/")) {
-			return false;
+			return "unanswered";
 		}
 		const probe = await fetch(apiUrl.origin + apiPath + "/users/@me", {
 			headers: buildAccountHeaders(account, {json: false}),
 			signal: AbortSignal.timeout(10_000),
 		});
-		return probe.status === 401;
+		if (probe.status === 401) return "dead";
+		// Any other status is no verdict about the session: a 429 rate-limited the check, a 5xx
+		// never reached the middleware, a 403/404 is a proxy or a missing route - fetch answers
+		// them all. The Retry line reports them as an unanswered check (TASK-172).
+		if (probe.status !== 200) return "unanswered";
+		// A verdict of life is the app's own answer, at cookieSessionUserId's bar: a JSON body
+		// naming the user. A proxy's HTML maintenance page parses as neither.
+		let id: unknown;
+		try {
+			id = (await probe.json())?.id;
+		} catch {
+			return "unanswered";
+		}
+		return typeof id === "string" && id ? "alive" : "unanswered";
 	} catch {
-		return false; // The probe could not answer (or the URL never parsed); a bare 401 alone is not proof.
+		return "unanswered"; // The probe could not answer (or the URL never parsed); a bare 401 alone is not proof.
 	}
 }
 
@@ -145,12 +169,14 @@ export function probeUnauthorized(
 		// inside comes after it, even a throw before the probe.
 		await Promise.resolve();
 		try {
-			const dead = await tokenIsDead(url, probed);
+			const checked = await tokenIsDead(url, probed);
 			if (gen !== unauthorizedNavGen) return "stale";
-			// A live session releases the latch at once: a later 401 must not find it held.
-			if (!dead) {
+			// No verdict of death releases the latch at once: a later 401 must not find it held.
+			// "alive" keeps the "notDead" verdict; an unanswered check reports its own
+			// "unanswered", which leaves the session alone too (TASK-172).
+			if (checked !== "dead") {
 				unauthorizedPending.delete(key);
-				return "notDead";
+				return checked === "alive" ? "notDead" : "unanswered";
 			}
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
 			// graph, and a static import made any module that imports apiFetch before
@@ -164,6 +190,12 @@ export function probeUnauthorized(
 			if (verdict === "adopted") {
 				unauthorizedPending.delete(key);
 				return "adopted";
+			}
+			if (verdict === "unanswered") {
+				// The token probe confirmed death, but the cookie layer's second look got no
+				// answer: validity unconfirmed, not proven - the Retry line says so (TASK-172).
+				unauthorizedPending.delete(key);
+				return "unanswered";
 			}
 			if (verdict !== "dead" || !utils.invalidateAccount(probed)) {
 				unauthorizedPending.delete(key);
@@ -188,7 +220,8 @@ export function probeUnauthorized(
 			if (gen !== unauthorizedNavGen) return "stale";
 			unauthorizedPending.delete(key);
 			console.warn("machloket: 401 handling failed:", error);
-			return "notDead";
+			// The check could not run to a verdict: validity is unconfirmed, not proven.
+			return "unanswered";
 		}
 	})();
 	unauthorizedPending.set(key, run);

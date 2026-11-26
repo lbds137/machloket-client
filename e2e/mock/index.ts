@@ -1218,7 +1218,10 @@ export interface MockInstanceHandle {
 	/** Set per test: the server answers IDENTIFY with READY and GUILD_CREATE as usual, then
 	 * closes the socket with this code (a server that accepts the session, then refuses it).
 	 * The close waits for the app's GIF-provider lookup, which READY's handling sends, so the
-	 * app has handled READY before the socket closes. Stays set until the test ends. */
+	 * app has handled READY before the socket closes. That lookup is also how the close is
+	 * detected: READY handling that sent no fresh GIF-provider request would leave the socket
+	 * open, and the spec would time out waiting for #gatewayRetry. Stays set until the test
+	 * ends. */
 	readyThenCloses?: number;
 	/** Set per test: REST member lookups (GET /guilds/:id/members/:id, how a guild created
 	 * mid-session resolves the viewer's member) get no answer until releaseMembers(), so the

@@ -36,10 +36,19 @@ test("a gateway closing 4004 on a dead session routes to /login", async ({page, 
 // A 4004 whose probe does not find the session dead - it answers alive (REST accepts the token
 // the gateway refused: a server bug or a token-rotation race) or gives no verdict (5xx, 429, no
 // answer) - retries IDENTIFY once on its own; a second 4004 shows a Retry button on the loading
-// screen instead of a dead end, and a Retry never re-arms the automatic one (TASK-157).
-for (const [name, probeAnswer] of [
-	["finds the session alive", {status: 200, json: {id: "1", username: "alive"}}],
-	["gets no verdict", {status: 503, json: {message: "Service unavailable", code: 0}}],
+// screen instead of a dead end, and a Retry never re-arms the automatic one (TASK-157). The
+// Retry state's line names what the probe found (TASK-172).
+for (const [name, probeAnswer, retryLine] of [
+	[
+		"finds the session alive",
+		{status: 200, json: {id: "1", username: "alive"}},
+		"The instance refused the connection, but your session is still valid. Retry, or switch accounts if it keeps happening.",
+	],
+	[
+		"gets no verdict",
+		{status: 503, json: {message: "Service unavailable", code: 0}},
+		"The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
+	],
 ] as const) {
 	test(`a gateway closing 4004 while the probe ${name} retries once, then offers Retry`, async ({
 		page,
@@ -62,7 +71,7 @@ for (const [name, probeAnswer] of [
 		// One automatic retry: two IDENTIFYs, each refused and probed, and no third on its own.
 		expect(identifies(mockInstance) - before).toBe(2);
 		expect(probes).toBe(2);
-		await expect(page.locator("#load-desc")).toHaveText(/Unable to connect/);
+		await expect(page.locator("#load-desc")).toHaveText(retryLine);
 		// No verdict of death: the account stays stored as logged in, and no /login.
 		await expect
 			.poll(() =>
@@ -111,6 +120,11 @@ test("a gateway that sends READY then closes 4004 retries once, then offers Retr
 	await page.reload();
 
 	await expect(retry).toBeVisible();
+	// The line the offer set stands once the retried socket's init settles: "Loaded" must not
+	// clobber the Retry state's line while the button is still up (TASK-172).
+	await expect(page.locator("#load-desc")).toHaveText(
+		"The instance refused the connection, but your session is still valid. Retry, or switch accounts if it keeps happening.",
+	);
 	expect(identifies(mockInstance) - before).toBe(2);
 	expect(probes).toBe(2);
 	expect(page.url()).not.toMatch(/\/login/);

@@ -365,6 +365,8 @@
 		"pending:": "Pending friend requests:",
 		"removeFriend": "Remove friend"
 	},
+	"gatewayRetryNoVerdict": "The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
+	"gatewayRetrySessionValid": "The instance refused the connection, but your session is still valid. Retry, or switch accounts if it keeps happening.",
 	"goThere": "Yes, let's go",
 	"goThereTrust": "Yes & trust this domain from now on",
 	"goingToURL": "This hyperlink will send you to $1. Are you sure you want to go there?",

@@ -30,12 +30,15 @@
 				"file": {
 								"size": "$1 is the formatted file size (e.g. 1.5 kB)"
 				},
+				"gatewayRetryNoVerdict": "Shown above the loading screen's Retry button (after a second gateway 4004 whose session check the instance did not answer - a 5xx, a rate limit or a timeout): validity could not be confirmed. The line for a check that answered and kept the session is gatewayRetrySessionValid.",
+				"gatewayRetrySessionValid": "Shown above the loading screen's Retry button (after a second gateway 4004 whose session check answered and kept the session): the session is still valid, so retrying or switching accounts should recover. Compare gatewayRetryNoVerdict, for a check the instance did not answer.",
 				"guild": {
 								"disoveryTitle": "$1 is the number of guilds discovered",
 								"iconAlt": "Alt text of a server's icon in a picker; $1 is the server's name"
 				},
 				"htmlPages": {
-								"box1Items": "this string is slightly atypical, it has a list of items separated by |, please try to keep the same list size as this"
+								"box1Items": "this string is slightly atypical, it has a list of items separated by |, please try to keep the same list size as this",
+								"gatewayRetry": "The loading screen's Retry button, shown when the gateway repeatedly refuses the session (4004) but a session check does not confirm it dead."
 				},
 				"instanceUnreachable": "Shown on a link's landing page (server invite, bot invite, template) when the instance (server) the link points at doesn't answer. $1 is that instance's host name, such as chat.example.org. Not the same as noInstanceConfigured, where the site has no instance set up at all.",
 				"instanceUnreachableUnnamed": "As instanceUnreachable, when the link's instance can't be named safely (it is neither a web address nor the name of an instance this site lists), so the message names none.",
