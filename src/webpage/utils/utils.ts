@@ -600,10 +600,12 @@ async function cookieLoginInFlight(slot: string): Promise<boolean> {
  * waits on that lock to migrate. Without Web Locks (an insecure context, a very old browser)
  * none of these guards exist across tabs, so the login goes by token.
  *
- * A re-submit of the same form while its first submit waits on a second factor finds that
- * submit's hold taken and goes by token too: the same rule as two forms' logins. It is
- * reachable: the code prompt (a Dialog) sets no focus trap, and Tab gets back to the form's
- * submit button behind it.
+ * A re-submit of the same form while its first submit waits on a captcha or second factor
+ * closes that prompt (Form.prompts): the first submit settles and releases its hold, once any
+ * code or key assertion it already sent has its answer (that answer may start a session). If the
+ * re-submit's opt-in runs before that release lands, it finds the hold taken and goes by token:
+ * the same rule as two forms' logins. It is reachable: the code prompt (a Dialog) sets no focus
+ * trap, and Tab gets back to the form's submit button behind it.
  */
 async function cookieOptIn(
 	instance: InstanceUrls,
