@@ -3,10 +3,10 @@ id: TASK-169
 title: >-
   401 latch keyed by uid: a new credential's 401 for the same account waits
   behind the old credential's probe
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-26T01:01:00Z'
-updated_date: '2026-11-26T02:13:00Z'
+updated_date: '2026-11-26T16:45:00Z'
 labels:
   - auth
   - bug
@@ -25,4 +25,6 @@ From the council (gpt-5.5) review of TASK-156 (code-reading; not runtime-confirm
 
 <!-- SECTION:NOTES:BEGIN -->
 2026-11-25 (TASK-157 council review, gpt-6.2-sol): since TASK-157 the gateway's 4004 path ACTS on the latch's verdict (probeUnauthorized returns the held run's promise), so a held run for an older credential now also hands its verdict to a newer credential's 4004. Checked safe by reading (not runtime-confirmed): notDead costs one bounded IDENTIFY retry with the current credential; adopted changes the token, so gatewayAuthFailed's token check reconnects first. Keying the latch by uid + credential fixes both.
+
+2026-11-26: shipped in PR #229. Reachable via READY auth_token rotation (localuser.ts adoptReadyToken) while a probe is out; latch keyed by uid + credential (latchKey), credential snapshot taken at call time, page-level loginNavScheduled keeps one /login navigation. Review lows carried to the next PR (role Next).
 <!-- SECTION:NOTES:END -->
