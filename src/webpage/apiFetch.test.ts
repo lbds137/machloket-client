@@ -565,6 +565,14 @@ describe("apiFetch wrapper", () => {
 		const answers: (() => Response)[] = [
 			() => Response.json({id: "u-alive"}),
 			() => Response.json({message: "Service unavailable", code: 0}, {status: 503}),
+			() => Response.json({message: "Too many requests", code: 0}, {status: 429}),
+			() => Response.json({message: "Forbidden", code: 0}, {status: 403}),
+			// A proxy's maintenance page: a 200 that is no verdict about the session.
+			() =>
+				new Response("<html>under maintenance</html>", {
+					status: 200,
+					headers: {"content-type": "text/html"},
+				}),
 			() => {
 				throw new TypeError("Failed to fetch");
 			},
@@ -574,11 +582,21 @@ describe("apiFetch wrapper", () => {
 		captureRequests(API + "/users/@me", () => answers[probes++]());
 		const probe = () => probeUnauthorized(API + "/users/@me", {headers: buildAccountHeaders(user)});
 
-		// Alive, no answer (5xx), no answer (network): no verdict of death, latch released.
-		for (let i = 0; i < 3; i++) {
+		// Alive: the check answered and kept the session (the Retry state says so, TASK-172).
+		// 5xx, 429, a proxy's 403, a proxy's HTML page and a network error: the check went
+		// unanswered, validity unconfirmed. None is a verdict of death; each releases the latch.
+		const expectedVerdicts = [
+			"notDead",
+			"unanswered",
+			"unanswered",
+			"unanswered",
+			"unanswered",
+			"unanswered",
+		] as const;
+		for (let i = 0; i < 6; i++) {
 			const run = probe();
 			if (!run) throw new Error("the path did not engage");
-			expect(await run).toBe("notDead");
+			expect(await run).toBe(expectedVerdicts[i]);
 		}
 		expect(user.loggedin).toBe(true);
 
@@ -589,7 +607,7 @@ describe("apiFetch wrapper", () => {
 		expect(user.loggedin).toBe(false);
 		// The confirmed death keeps the latch until the /login navigation: still "dead".
 		expect(await probe()).toBe("dead");
-		expect(probes).toBe(4);
+		expect(probes).toBe(7);
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 
 		// A pre-auth or untagged request never engages.

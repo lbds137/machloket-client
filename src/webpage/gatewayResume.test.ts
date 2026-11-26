@@ -3,6 +3,7 @@ import {afterEach, beforeEach, describe, expect, it, vi} from "vitest";
 // The app's modules import each other in cycles that evaluate correctly only in the entry's
 // order (index.ts imports localuser first) — same bootstrap as the other suites.
 await import("./localuser");
+const {GOOD_CONNECTION_MS} = await import("./localuser");
 const {FakeWebSocket, gatewayUser} = await import("./test/gateway");
 
 /** A user mid-session: READY gave it a session to resume. */
@@ -182,7 +183,7 @@ describe("gateway resume", () => {
 		it("a connection that stayed up 20 s, closing on the backoff path, re-arms the 4004 auto-retry (TASK-173)", async () => {
 			const {user, ws} = await resumedUser();
 			user.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
-			user.connectionSucceed = Date.now() - 60_000;
+			user.connectionSucceed = Date.now() - GOOD_CONNECTION_MS * 3;
 			user.errorBackoff = 1;
 
 			ws.emit("close", {code: 1006});

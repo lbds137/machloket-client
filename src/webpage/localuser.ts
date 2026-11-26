@@ -154,6 +154,11 @@ export function newTotpSecret(): string {
 	return Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => alphabet[b & 31]).join("");
 }
 
+/** How long a gateway connection's first heartbeat ACK must have held for the connection to
+ * count as good (endConnectionMeasure): the reconnect backoff restarts and the 4004 automatic
+ * retry re-arms. READY alone never counts, however long it held. (Exported for the tests.) */
+export const GOOD_CONNECTION_MS = 20_000;
+
 class Localuser {
 	badges = new Map<
 		string,
@@ -660,7 +665,8 @@ class Localuser {
 	 * opened) reconnects with the current credential instead: the probe would find that one alive
 	 * and leave the gateway closed. A probe with no verdict of death (the session answered alive -
 	 * a server bug or a token-rotation race - or the probe got no answer) retries IDENTIFY once
-	 * on its own; after that, the loading screen offers a Retry (TASK-157). */
+	 * on its own; after that, the loading screen offers a Retry, whose line says whether the
+	 * session checked out (TASK-157, TASK-172). */
 	gatewayAuthFailed() {
 		this.endConnectionMeasure();
 		if (this.token !== this.identifiedToken) {
@@ -674,27 +680,32 @@ class Localuser {
 			// A later 4004, an adoption's reconnect (cookieSessionAdopted) or an account switch
 			// has taken over since; "dead" routes to /login and "adopted" reconnects already.
 			if (attempt !== this.gatewayAuthAttempt || !this.awaitingAuthVerdict || this.swapped) return;
-			if (outcome !== "notDead") return;
+			// Both leave the session: "notDead" proved it alive, "unanswered" could not check
+			// (the Retry line names the difference, TASK-172).
+			if (outcome !== "notDead" && outcome !== "unanswered") return;
 			if (!this.gatewayAuthRetried) {
 				this.gatewayAuthRetried = true;
 				this.reconnectAfterAuth();
 				return;
 			}
-			this.offerGatewayRetry();
+			this.offerGatewayRetry(outcome === "unanswered");
 		});
 	}
 	/** Counts gatewayAuthFailed calls, so only the latest one's verdict acts. */
 	gatewayAuthAttempt = 0;
-	/** Whether the automatic IDENTIFY retry after a 4004 has been spent; a connection that stayed
-	 * up 20 s re-arms it (endConnectionMeasure). */
+	/** Whether the automatic IDENTIFY retry after a 4004 has been spent. Only a connection whose
+	 * first heartbeat ACK held for GOOD_CONNECTION_MS re-arms it (endConnectionMeasure): a server
+	 * that sends READY but never ACKs a heartbeat keeps the retry spent, and its 4004s land on
+	 * the Retry button after the one automatic attempt. */
 	gatewayAuthRetried = false;
 	/** Ends the closed connection's uptime measure (connectionSucceed, its first heartbeat ACK),
-	 * so the next connection is measured from its own ACK. One that stayed up 20 s was a good
-	 * connection: the reconnect backoff starts over and a later 4004 gets its automatic retry
-	 * again. READY alone does not count: a server that sends READY and then 4004 would loop
-	 * IDENTIFY with no backoff (TASK-173). Returns whether it was a good connection. */
+	 * so the next connection is measured from its own ACK. One that stayed up GOOD_CONNECTION_MS
+	 * was a good connection: the reconnect backoff starts over and a later 4004 gets its
+	 * automatic retry again. READY alone does not count: a server that sends READY and then 4004
+	 * would loop IDENTIFY with no backoff (TASK-173). Returns whether it was a good connection. */
 	private endConnectionMeasure(): boolean {
-		const good = this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + 20000;
+		const good =
+			this.connectionSucceed !== 0 && Date.now() > this.connectionSucceed + GOOD_CONNECTION_MS;
 		this.connectionSucceed = 0;
 		if (good) {
 			this.errorBackoff = 0;
@@ -703,10 +714,16 @@ class Localuser {
 		return good;
 	}
 	/** The loading screen's Retry button (app.html), shown where a 4004 would otherwise be a dead
-	 * end; every connect attempt hides it again (initwebsocket). */
-	private offerGatewayRetry() {
+	 * end; every connect attempt hides it again (initwebsocket). The line above it says what the
+	 * probe found: an unanswered check could not confirm the session (TASK-172). */
+	private offerGatewayRetry(unanswered: boolean) {
 		const retry = document.getElementById("gatewayRetry");
 		if (!(retry instanceof HTMLButtonElement)) return;
+		const loaddesc = document.getElementById("load-desc");
+		if (loaddesc)
+			loaddesc.textContent = unanswered
+				? I18n.gatewayRetryNoVerdict()
+				: I18n.gatewayRetrySessionValid();
 		retry.onclick = () => {
 			// The account switched to owns the screen (and this button) now.
 			if (this.swapped) return;
@@ -722,9 +739,12 @@ class Localuser {
 		if (loaddesc) loaddesc.textContent = I18n.retrying();
 		this.initwebsocket()
 			.then(async () => {
+				// "Loaded" when the session is back up, before the guilds stream in (index.ts's
+				// order): set after init(), a 4004 on this socket could land the Retry line
+				// first, and this would clobber it while the button still shows (TASK-172).
+				if (loaddesc) loaddesc.textContent = I18n.loaded();
 				this.loaduser();
 				await this.init();
-				if (loaddesc) loaddesc.textContent = I18n.loaded();
 			})
 			.catch((e) => console.error(e));
 	}
@@ -1011,9 +1031,10 @@ class Localuser {
 					loaddesc.textContent = I18n.retrying();
 					this.initwebsocket()
 						.then(async () => {
+							// "Loaded" before init(), as in reconnectAfterAuth (TASK-172).
+							loaddesc.textContent = I18n.loaded();
 							this.loaduser();
 							await this.init();
-							loaddesc.textContent = I18n.loaded();
 						})
 						.catch((e) => console.error(e));
 				},

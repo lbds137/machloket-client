@@ -4,7 +4,7 @@ import {addInstance, recordRequests, withoutWebLocks} from "./test/setup";
 // Migrating existing sessions to the cookie (TASK-150, docs/design/token-storage.md "Migrating
 // existing sessions" and "401 handling"): the migration at start, and a header account's 401
 // whose cookie probe finds the session moved. Same bootstrap order as the other suites.
-const {Localuser} = await import("./localuser");
+const {Localuser, GOOD_CONNECTION_MS} = await import("./localuser");
 const {
 	migrateToCookieSession,
 	startCookieMigration,
@@ -13,6 +13,7 @@ const {
 	runPendingLogouts,
 } = await import("./utils/utils");
 const {apiFetch, resetUnauthorizedNavForTests} = await import("./utils/apiFetch");
+const {I18n} = await import("./i18n");
 const {buildAccountHeaders, cookieModeHosts, CSRF_HEADER} = await import("./utils/accountHeaders");
 const {pageNav} = await import("./invite");
 const {readItem, resetSettingOverlayForTests} = await import("./utils/storage/settingOverlay");
@@ -871,7 +872,7 @@ describe("Localuser after its session moved into the cookie", () => {
 	for (const [name, upFor, retries] of [
 		[
 			"a connection that stayed up 20 s re-arms the spent automatic retry and restarts the backoff",
-			21_000,
+			GOOD_CONNECTION_MS + 1_000,
 			true,
 		],
 		["a connection up for less than 20 s re-arms neither", 1_000, false],
@@ -913,6 +914,100 @@ describe("Localuser after its session moved into the cookie", () => {
 			}
 		});
 	}
+
+	// The Retry state's status line names what the probe found (Lila 11-26): an answered
+	// check that kept the session says it is still valid; a check with no answer (5xx, 429,
+	// timeout) says the instance didn't answer a session check (TASK-172).
+	for (const [name, slug, answer, line] of [
+		[
+			"a second 4004 whose probe kept the session shows the valid-session line (TASK-172)",
+			"line-valid",
+			() => Response.json({id: "id-live@x"}),
+			"The instance refused the connection, but your session is still valid. Retry, or switch accounts if it keeps happening.",
+		],
+		[
+			"a second 4004 whose probe got no verdict (503) shows the unanswered line (TASK-172)",
+			"line-unanswered",
+			() => Response.json({message: "Service unavailable", code: 0}, {status: 503}),
+			"The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
+		],
+	] as const) {
+		it(name, async () => {
+			const host = `http://live-${slug}.test`;
+			const {l, user} = liveUser(host);
+			l.info = user.serverurls;
+			vi.spyOn(pageNav, "go").mockImplementation(() => {});
+			recordRequests(host + "/api/v9/users/@me", answer);
+			const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+			vi.spyOn(l, "loaduser").mockImplementation(() => {});
+			vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+			const retry = document.createElement("button");
+			retry.id = "gatewayRetry";
+			retry.hidden = true;
+			const loadDesc = document.createElement("p");
+			loadDesc.id = "load-desc";
+			document.body.append(retry, loadDesc);
+			try {
+				await I18n.done;
+				l.identifiedToken = "tok-live@x";
+				l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+				l.connectionSucceed = 0; // The 4004 closes no good connection.
+
+				l.gatewayAuthFailed();
+
+				await vi.waitFor(() => expect(retry.hidden).toBe(false));
+				expect(reconnect).not.toHaveBeenCalled();
+				expect(loadDesc.textContent).toBe(line);
+			} finally {
+				retry.remove();
+				loadDesc.remove();
+			}
+		});
+	}
+
+	// The token probe answers 401 (the credential the gateway refused is dead on REST too) but
+	// the cookie layer's second look gets no verdict: validity unconfirmed, so the Retry line
+	// is the unanswered one, not "still valid" - and the session is not logged out (TASK-172).
+	it("a second 4004 whose token probe dies and whose cookie check gets no verdict shows the unanswered line (TASK-172)", async () => {
+		const host = "http://live-line-cookie.test";
+		const {l, user} = liveUser(host);
+		l.info = user.serverurls;
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const answers = [
+			() => Response.json({message: "401: Unauthorized", code: 0}, {status: 401}),
+			() => Response.json({message: "Service unavailable", code: 0}, {status: 503}),
+		];
+		let probes = 0;
+		recordRequests(host + "/api/v9/users/@me", () => answers[probes++]());
+		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+		vi.spyOn(l, "loaduser").mockImplementation(() => {});
+		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+		const retry = document.createElement("button");
+		retry.id = "gatewayRetry";
+		retry.hidden = true;
+		const loadDesc = document.createElement("p");
+		loadDesc.id = "load-desc";
+		document.body.append(retry, loadDesc);
+		try {
+			await I18n.done;
+			l.identifiedToken = "tok-live@x";
+			l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+			l.connectionSucceed = 0; // The 4004 closes no good connection.
+
+			l.gatewayAuthFailed();
+
+			await vi.waitFor(() => expect(retry.hidden).toBe(false));
+			expect(reconnect).not.toHaveBeenCalled();
+			expect(loadDesc.textContent).toBe(
+				"The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
+			);
+			// No verdict of death: the account stays stored as logged in.
+			expect(stored().users[user.uid].loggedin).toBe(true);
+		} finally {
+			retry.remove();
+			loadDesc.remove();
+		}
+	});
 
 	it("a verdict landing after an adoption's reconnect connects no second time (TASK-157)", async () => {
 		const {l, user} = liveUser("http://live-race.test");
