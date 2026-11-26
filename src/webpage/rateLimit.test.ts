@@ -1062,6 +1062,49 @@ describe("fetchRetryOnce inside the shared 429 windows", () => {
 		}
 	});
 
+	it("a 429's Retry-After header holds the retry past the body's shorter window", async () => {
+		const asked = captureRequests(
+			API + "/rl/hdr",
+			sequence(
+				() =>
+					Response.json(
+						{message: "rate limited", retry_after: 0.05},
+						{status: 429, headers: {"Retry-After": "1"}},
+					),
+				() => Response.json({}),
+			),
+		);
+
+		const res = fetchRetryOnce(API + "/rl/hdr");
+		await new Promise((r) => setTimeout(r, 300)); // past the body's 0.05 s
+
+		expect(asked).toHaveLength(1);
+		await res;
+		expect(asked).toHaveLength(2);
+	});
+
+	it("a URL outside the windows (no /vN) waits its 429's Retry-After header too", async () => {
+		const url = "http://limit.test/plain/hdr";
+		const asked = captureRequests(
+			url,
+			sequence(
+				() =>
+					Response.json(
+						{message: "rate limited", retry_after: 0.05},
+						{status: 429, headers: {"Retry-After": "1"}},
+					),
+				() => Response.json({}),
+			),
+		);
+
+		const res = fetchRetryOnce(url);
+		await new Promise((r) => setTimeout(r, 300));
+
+		expect(asked).toHaveLength(1);
+		await res;
+		expect(asked).toHaveLength(2);
+	});
+
 	// RED (pre-change): at HEAD a slowmode 429 is retried after its countdown (2 asks, 200 answer).
 	it("a 429 with code 20016 (slowmode) is returned as is, with no retry and a readable body", async () => {
 		const asked = captureRequests(

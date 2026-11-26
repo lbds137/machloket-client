@@ -193,7 +193,7 @@ async function armRateLimitFrom429(
 		} catch {
 			// An unreadable body arms the default window.
 		}
-		armRateLimit(input, parsed, method);
+		armRateLimit(input, parsed, method, res.headers);
 	} catch {
 		// Arming is best-effort: the caller's own handling of the 429 stands.
 	}

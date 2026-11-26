@@ -51,11 +51,11 @@ export async function fetchRetryOnce(
 	}
 	if ((body as {code?: unknown} | null | undefined)?.code === 20016) return res;
 	if (stale()) return res;
-	// apiFetch armed the window from this body; an untracked URL (no API base) waits the body's own window.
+	// apiFetch armed the window from this 429; an untracked URL (no API base) waits its own window.
 	if (rateLimitKey(input, method)) {
 		await waitRateLimit(input, method, ticket);
 	} else {
-		await new Promise((r) => setTimeout(r, retryAfterMs(429, text)!));
+		await new Promise((r) => setTimeout(r, retryAfterMs(429, text, res.headers)!));
 	}
 	if (stale()) return res;
 	return apiFetch(input, init, fetchOpts);

@@ -18,6 +18,9 @@ function fakeXHR(status: number, response: unknown) {
 		onerror: (() => void) | null = null;
 		open() {}
 		setRequestHeader() {}
+		getResponseHeader() {
+			return null;
+		}
 		send() {
 			this.status = status;
 			this.response = response;
@@ -28,9 +31,12 @@ function fakeXHR(status: number, response: unknown) {
 
 /**
  * An XMLHttpRequest whose sends answer in turn from `answers` (the last answer repeats once they
- * run out, so an extra send shows up in `sent`). `sent` holds every request body, in order.
+ * run out, so an extra send shows up in `sent`). `sent` holds every request body, in order. An
+ * answer's `headers` are what `getResponseHeader` reads (none: null, an older instance's answer).
  */
-function fakeXHRSequence(answers: {status: number; response: unknown}[]) {
+function fakeXHRSequence(
+	answers: {status: number; response: unknown; headers?: Record<string, string>}[],
+) {
 	const sent: unknown[] = [];
 	class FakeXHR {
 		status = 0;
@@ -39,13 +45,18 @@ function fakeXHRSequence(answers: {status: number; response: unknown}[]) {
 		upload = {onprogress: null};
 		onload: (() => void) | null = null;
 		onerror: (() => void) | null = null;
+		private headers = new Headers();
 		open() {}
 		setRequestHeader() {}
+		getResponseHeader(name: string) {
+			return this.headers.get(name);
+		}
 		send(body: unknown) {
 			const answer = answers[Math.min(sent.length, answers.length - 1)];
 			sent.push(body);
 			this.status = answer.status;
 			this.response = answer.response;
+			this.headers = new Headers(answer.headers);
 			queueMicrotask(() => this.onload?.());
 		}
 	}
@@ -295,6 +306,27 @@ describe("a send the server rate-limits", () => {
 		await vi.waitFor(() => expect(answers).toEqual(["Ok"]));
 	});
 
+	it("a send's 429 waits its Retry-After header over the body's shorter window", async () => {
+		mountComposer();
+		const {XHR} = fakeXHRSequence([
+			{status: 429, response: {retry_after: 0.01}, headers: {"Retry-After": "1"}},
+			ok,
+		]);
+		vi.stubGlobal("XMLHttpRequest", XHR);
+		vi.stubGlobal("fetch", () => Promise.reject(new TypeError("Failed to fetch")));
+		const {channel} = focusedChannel();
+		const url = "http://send.test/api/v9/channels/" + channel.id + "/messages";
+		const {rateLimitRemaining} = await import("./utils/rateLimitWindows");
+		const answers: string[] = [];
+
+		void channel.sendMessage("hi", {}, (r) => void answers.push(r));
+
+		await vi.waitFor(() => expect(rateLimitRemaining(url, "POST")).toBeGreaterThan(500), {
+			interval: 5,
+		});
+		await vi.waitFor(() => expect(answers).toEqual(["Ok"]), {timeout: 2000});
+	});
+
 	// RED: at HEAD the first 429 answers NotOk and shows the notice during what should be the wait.
 	it("still refuses when the retry is rate-limited again, and says so only at the end", async () => {
 		mountComposer();
@@ -360,6 +392,9 @@ describe("a send the server rate-limits", () => {
 			onerror: (() => void) | null = null;
 			open() {}
 			setRequestHeader() {}
+			getResponseHeader() {
+				return null;
+			}
 			send(body: string | FormData) {
 				const index = sendCount++;
 				if (state.throwOnSend.includes(index)) throw new Error("send failed");
@@ -614,6 +649,9 @@ describe("a send the server rate-limits", () => {
 			ontimeout: (() => void) | null = null;
 			open() {}
 			setRequestHeader() {}
+			getResponseHeader() {
+				return null;
+			}
 			send() {
 				sentConfig.push({timeout: this.timeout, timed: typeof this.ontimeout === "function"});
 				if (sentConfig.length === 1) {
@@ -656,6 +694,9 @@ describe("a send the server rate-limits", () => {
 			onerror: (() => void) | null = null;
 			open() {}
 			setRequestHeader() {}
+			getResponseHeader() {
+				return null;
+			}
 			send() {
 				sends++;
 				if (sends === 1) {
