@@ -1,0 +1,12 @@
+name: Machloket CodeQL config
+
+# Test code is left out of the scan: its fixtures write fabricated accounts and
+# mock tokens into web storage, which js/clear-text-storage-of-sensitive-data
+# flags on every new test (36 such alerts were dismissed by hand before this).
+# Application code under src/ is scanned as before.
+paths-ignore:
+  - "**/*.test.ts"
+  - src/webpage/test
+  - e2e
+  - e2e-real
+  - playwright*.config.ts
