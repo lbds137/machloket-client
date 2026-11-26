@@ -664,9 +664,9 @@ class Localuser {
 	 * token the account no longer sends (its session moved into the cookie while the socket
 	 * opened) reconnects with the current credential instead: the probe would find that one alive
 	 * and leave the gateway closed. A probe with no verdict of death (the session answered alive -
-	 * a server bug or a token-rotation race - or the probe got no answer) retries IDENTIFY once
-	 * on its own; after that, the loading screen offers a Retry, whose line says whether the
-	 * session checked out (TASK-157, TASK-172). */
+	 * a server bug or a token-rotation race - the probe got no answer, or the 401 path never
+	 * engaged to check at all) retries IDENTIFY once on its own; after that, the loading screen
+	 * offers a Retry, whose line says whether the session checked out (TASK-157, TASK-172). */
 	gatewayAuthFailed() {
 		this.endConnectionMeasure();
 		if (this.token !== this.identifiedToken) {
@@ -676,7 +676,9 @@ class Localuser {
 		this.awaitingAuthVerdict = true;
 		const attempt = ++this.gatewayAuthAttempt;
 		const verdict = probeUnauthorized(this.info.api + "/users/@me", {headers: this.headers});
-		void (verdict ?? Promise.resolve("notDead" as const)).then((outcome) => {
+		// undefined: the headers carry no account, so the 401 path never ran - nothing checked
+		// the session, which is no proof of life (#232 review low).
+		void (verdict ?? Promise.resolve("unanswered" as const)).then((outcome) => {
 			// A later 4004, an adoption's reconnect (cookieSessionAdopted) or an account switch
 			// has taken over since; "dead" routes to /login and "adopted" reconnects already.
 			if (attempt !== this.gatewayAuthAttempt || !this.awaitingAuthVerdict || this.swapped) return;
@@ -731,6 +733,10 @@ class Localuser {
 			this.reconnectAfterAuth();
 		};
 		retry.hidden = false;
+		// The offer announces itself: focus lands on the button, which tells a keyboard or
+		// screen-reader user it appeared and puts Enter on Retry; the line above is a polite
+		// live region (app.html's role="status"), so its wording is announced too (TASK-174).
+		retry.focus();
 	}
 	private reconnectAfterAuth() {
 		if (this.swapped) return;

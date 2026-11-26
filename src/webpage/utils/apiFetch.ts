@@ -26,12 +26,13 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
  * scheduled while its account is the active one). "adopted": the session had moved into the
  * cookie and the account converted (onCookieSessionAdopted tells its holders). "notDead": no
  * verdict of death - the session answered the check alive (or a dead credential was kept by the
- * cookie layer), or no record still holds the probed credential; the session is left alone.
- * "unanswered": the check itself produced no verdict (a 429 or 5xx answer, a proxy's page or
- * status, a timeout, a network error, or no usable API to check against), or a confirmed-dead
- * credential's second look at the cookie layer got no answer; validity is unconfirmed, the
- * session is left alone here too, and the gateway Retry line names the difference (TASK-172).
- * "stale": a test reset superseded the run. */
+ * cookie layer); the session is left alone. "unanswered": the check itself produced no verdict
+ * (a 429 or 5xx answer, a proxy's page or status, a timeout, a network error, or no usable API
+ * to check against), a confirmed-dead credential's second look at the cookie layer got no
+ * answer, or the death was confirmed but there was nothing to invalidate - no record still
+ * holds the credential (a logout or a re-login elsewhere handled it); validity is unconfirmed,
+ * the session is left alone here too, and the gateway Retry line names the difference
+ * (TASK-172). "stale": a test reset superseded the run. */
 export type UnauthorizedVerdict = "dead" | "adopted" | "notDead" | "stale" | "unanswered";
 /** The credentials whose 401 probe is out, or whose confirmed death has scheduled the /login
  * navigation, each with its run's verdict (keys: latchKey). Keyed per account: an account switch
@@ -198,8 +199,14 @@ export function probeUnauthorized(
 				return "unanswered";
 			}
 			if (verdict !== "dead" || !utils.invalidateAccount(probed)) {
+				// Not "notDead": nothing here says the session this page runs still holds. Either
+				// the death was confirmed but no record holds the credential any more - a logout
+				// or a re-login elsewhere already handled it, so there is nothing to invalidate
+				// and /login could yank a page whose account re-logged-in - or a future verdict
+				// of the cookie layer landed here unhandled, and the fail-closed answer is no
+				// verdict (#232 review low).
 				unauthorizedPending.delete(key);
-				return "notDead";
+				return "unanswered";
 			}
 			queueMicrotask(() => {
 				if (gen !== unauthorizedNavGen) return;

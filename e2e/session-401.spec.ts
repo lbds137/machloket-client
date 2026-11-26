@@ -72,6 +72,10 @@ for (const [name, probeAnswer, retryLine] of [
 		expect(identifies(mockInstance) - before).toBe(2);
 		expect(probes).toBe(2);
 		await expect(page.locator("#load-desc")).toHaveText(retryLine);
+		// The offer announces itself: focus lands on the button, and the line above it is a
+		// polite live region (TASK-174).
+		await expect(retry).toBeFocused();
+		await expect(page.locator("#load-desc")).toHaveAttribute("role", "status");
 		// No verdict of death: the account stays stored as logged in, and no /login.
 		await expect
 			.poll(() =>

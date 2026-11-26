@@ -2650,7 +2650,7 @@ describe("401 latch keyed by credential (TASK-169)", () => {
 		await vi.waitFor(() => expect(answers).toHaveLength(2));
 		answers[0](unauthorized());
 		answers[1](Response.json({id: "rotate"}));
-		expect(await first).toBe("notDead"); // Dead, but no record holds it any more.
+		expect(await first).toBe("unanswered"); // Dead, but no record holds it any more (TASK-174).
 		expect(await second).toBe("notDead");
 		expect(user.loggedin).toBe(true);
 	});
