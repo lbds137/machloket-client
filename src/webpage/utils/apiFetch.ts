@@ -84,7 +84,8 @@ async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<bo
  * probe confirms the account's current credential is dead. One probe per account is in flight
  * at a time; its latch releases when the session proves alive so a later real death can still
  * route. A probe that outlives an account switch still invalidates its own account but routes
- * nowhere: /login would take the page from the account switched to. Returns whether the path was engaged (the probe decides whether it will invalidate). */
+ * nowhere: /login would take the page from the account switched to. Returns whether the path
+ * was engaged (the probe decides whether it will invalidate). */
 export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit): boolean {
 	if (isPreAuthEndpoint(input)) return false;
 	// The account object the headers were built from: its fields are read at probe time, so a
@@ -127,15 +128,16 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 				unauthorizedPending.delete(uid);
 				return;
 			}
-			// The page switched to another account while the probe was out: that account's
-			// session is not the dead one. Released, so a fresh sign-in of this account that
-			// later dies still routes.
-			if (activeAccountUid !== undefined && activeAccountUid !== uid) {
-				unauthorizedPending.delete(uid);
-				return;
-			}
 			queueMicrotask(() => {
 				if (gen !== unauthorizedNavGen) return;
+				// The page switched to another account while the probe was out (checked here, at
+				// the last moment: the switcher resumes in a microtask too): that account's
+				// session is not the dead one. Released, so a fresh sign-in of this account that
+				// later dies still routes.
+				if (activeAccountUid !== undefined && activeAccountUid !== uid) {
+					unauthorizedPending.delete(uid);
+					return;
+				}
 				pageNav.go("/login");
 			});
 		} catch (error) {
