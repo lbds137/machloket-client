@@ -36,7 +36,8 @@ export type UnauthorizedVerdict = "dead" | "adopted" | "notDead" | "stale";
  * its own, so its 401 is probed rather than handed the old token's verdict (TASK-169). */
 const unauthorizedPending = new Map<string, Promise<UnauthorizedVerdict>>();
 /** Whether a confirmed death has scheduled this page's /login navigation: one per page, however
- * many of an account's credentials are found dead before it leaves. */
+ * many of an account's credentials are found dead before it leaves. Never cleared: pageNav.go
+ * leaves the page, so the mark dies with it. */
 let loginNavScheduled = false;
 /** The latch key of the credential a request carried: a cookie account's session is its cookie,
  * a header account's its token. */
@@ -46,8 +47,9 @@ function latchKey(account: AccountAuth): string {
 // Bumped only by resetUnauthorizedNavForTests, for test isolation: a probe left over from one
 // test sees a new generation and never navigates in the next. Production never changes it.
 let unauthorizedNavGen = 0;
-/** The account this page runs (a Localuser registers it on construction: boot and every
- * switch); undefined on pages that run none (the bot-authorize page). */
+/** The account this page runs (a Localuser registers it once its construction succeeds: boot
+ * and every switch); undefined on pages that run none (the bot-authorize page, a boot whose
+ * Localuser threw). */
 let activeAccountUid: string | undefined;
 
 /** Registers the account the page now runs: a dead session routes to /login only while its
@@ -117,8 +119,8 @@ export function probeUnauthorized(
 	init?: RequestInit,
 ): Promise<UnauthorizedVerdict> | undefined {
 	if (isPreAuthEndpoint(input)) return undefined;
-	// The account object the headers were built from: its fields are read at probe time, so a
-	// token READY replaced since the request was sent is the one probed.
+	// The account object the headers were built from: its fields are read when the 401 is
+	// handled, so a token READY replaced since the request was sent is the one probed.
 	const account = accountOf(init);
 	if (!account) return undefined;
 	const uid = account.uid;

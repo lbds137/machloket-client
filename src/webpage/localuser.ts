@@ -390,7 +390,6 @@ class Localuser {
 			return;
 		}
 		this.userinfo = userinfo;
-		noteActiveAccount(userinfo.uid);
 		this.perminfo.guilds ??= {};
 		this.perminfo.user ??= {};
 		this.perminfo.user.decorations ??= true;
@@ -417,6 +416,8 @@ class Localuser {
 
 		if (this.perminfo.user.disableColors === undefined) this.perminfo.user.disableColors = true;
 		this.updateTranslations();
+		// Last: an account whose construction threw never runs the page (index.ts boots none).
+		noteActiveAccount(userinfo.uid);
 	}
 	favorites!: Favorites;
 	inboxMenu?: HTMLDivElement;

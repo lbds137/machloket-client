@@ -22,13 +22,14 @@ const {
 	configureApiXhr,
 	handleUnauthorized,
 	isPreAuthEndpoint,
+	noteActiveAccount,
 	probeUnauthorized,
 	resetUnauthorizedNavForTests,
 } = await import("./utils/apiFetch");
 const {CSRF_HEADER, accountUidOf, applyAccountHeaders, buildAccountHeaders} =
 	await import("./utils/accountHeaders");
 const {showNewInvite} = await import("./utils/inviteLink");
-const {adduser, Specialuser, pingResponse, getApiUrlsV2} = await import("./utils/utils");
+const {adduser, Specialuser, SW, pingResponse, getApiUrlsV2} = await import("./utils/utils");
 const {saveProfile} = await import("./utils/profileSave");
 const {exportUserData} = await import("./utils/dataExport");
 const {authorizeBot} = await import("./oauth2/botInvite");
@@ -2415,13 +2416,23 @@ describe("401 handling across an account switch (TASK-156)", () => {
 		return answers;
 	}
 	const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
-	// The Localuser constructor writes the search box's hint (updateTranslations).
+	// The Localuser constructor writes the search box's hint (updateTranslations), and registers
+	// a service-worker listener that holds the instance: the tests that construct one drop the
+	// listeners it added.
+	let swRefreshBefore: Set<unknown>;
 	beforeEach(() => {
 		const searchBox = document.createElement("div");
 		searchBox.id = "searchBox";
 		document.body.append(searchBox);
+		swRefreshBefore = new Set(SW.eventListeners.get("refreshURL"));
 	});
-	afterEach(() => document.getElementById("searchBox")?.remove());
+	afterEach(() => {
+		document.getElementById("searchBox")?.remove();
+		const listeners = SW.eventListeners.get("refreshURL");
+		for (const listener of listeners ?? []) {
+			if (!swRefreshBefore.has(listener)) listeners?.delete(listener);
+		}
+	});
 	const patchSettings = (account: InstanceType<typeof Specialuser>) =>
 		apiFetch(API + "/users/@me/settings", {
 			method: "PATCH",
@@ -2437,7 +2448,7 @@ describe("401 handling across an account switch (TASK-156)", () => {
 
 		await patchSettings(a); // A's probe goes out and stays out.
 		await vi.waitFor(() => expect(answers).toHaveLength(1));
-		new Localuser(b); // The tab switches to B (showAccountSwitcher, no reload).
+		noteActiveAccount(b.uid); // The tab switches to B (showAccountSwitcher, no reload).
 		await patchSettings(b); // B's session is dead: its own probe must go out.
 
 		await vi.waitFor(() => expect(answers).toHaveLength(2));
@@ -2460,7 +2471,7 @@ describe("401 handling across an account switch (TASK-156)", () => {
 
 		await patchSettings(a);
 		await vi.waitFor(() => expect(answers).toHaveLength(1));
-		new Localuser(b);
+		noteActiveAccount(b.uid);
 		answers[0](unauthorized()); // A's session was dead.
 
 		await vi.waitFor(() => expect(a.loggedin).toBe(false));
@@ -2475,6 +2486,74 @@ describe("401 handling across an account switch (TASK-156)", () => {
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 		expect(nav).toHaveBeenCalledWith("/login");
 		expect(b.loggedin).toBe(false);
+	});
+
+	it("the switched-to account's gateway 4004 routes to /login while the old account's probe is still out (TASK-170)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const {a, b} = twoAccounts();
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		const answers = heldProbes();
+		// B's Localuser as the switch leaves it, built without the constructor's side effects.
+		const l = Object.create(Localuser.prototype) as InstanceType<typeof Localuser>;
+		l.userinfo = b;
+		l.info = b.serverurls;
+		l.headers = buildAccountHeaders(b);
+		l.identifiedToken = b.token;
+		l.gatewayAuthAttempt = 0;
+		l.gatewayAuthRetried = false;
+		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+
+		await patchSettings(a); // A's probe goes out and stays out.
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		noteActiveAccount(b.uid);
+		l.gatewayAuthFailed(); // B's socket closes 4004: its own probe must go out.
+
+		await vi.waitFor(() => expect(answers).toHaveLength(2));
+		answers[1](unauthorized());
+		await vi.waitFor(() => expect(b.loggedin).toBe(false));
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
+		expect(reconnect).not.toHaveBeenCalled();
+
+		answers[0](Response.json({id: "a"})); // A was alive all along.
+		await settle();
+		expect(a.loggedin).toBe(true);
+		expect(nav).toHaveBeenCalledTimes(1);
+	});
+
+	it("constructing a Localuser registers its account as the page's active one", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const {a, b} = twoAccounts();
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		const answers = heldProbes();
+		noteActiveAccount(a.uid);
+
+		await patchSettings(a);
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		new Localuser(b);
+		answers[0](unauthorized());
+
+		await vi.waitFor(() => expect(a.loggedin).toBe(false));
+		await settle();
+		expect(nav).not.toHaveBeenCalled(); // B runs the page now: A's death routes nowhere.
+	});
+
+	it("a Localuser whose construction throws does not register its account (index.ts falls back to none) (TASK-170)", async () => {
+		const nav = vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		const {a, b} = twoAccounts();
+		captureRequests(API + "/users/@me/settings", unauthorized);
+		const answers = heldProbes();
+		document.getElementById("searchBox")?.remove(); // updateTranslations throws without it.
+
+		expect(() => new Localuser(b)).toThrow(TypeError);
+		// The boot page runs no account: any account's confirmed death routes to /login.
+		await patchSettings(a);
+		await vi.waitFor(() => expect(answers).toHaveLength(1));
+		answers[0](unauthorized());
+
+		await vi.waitFor(() => expect(a.loggedin).toBe(false));
+		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
+		expect(nav).toHaveBeenCalledWith("/login");
 	});
 });
 
