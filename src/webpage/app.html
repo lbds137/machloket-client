@@ -34,12 +34,22 @@
 	</head>
 
 	<body class="no-theme">
-		<div id="loading" class="loading">
+		<div id="loading" class="loading" tabindex="-1">
 			<div class="centeritem splash">
 				<img class="splashLogo" src="/brand/icon.svg" alt="" width="120" height="120" />
 				<p id="load-desc" role="status" i18n="htmlPages.loaddesc">This shouldn't take long</p>
-				<button id="gatewayRetry" type="button" i18n="htmlPages.gatewayRetry" hidden>Retry</button>
-				<p id="switchaccounts" i18n="htmlPages.switchaccounts">Switch accounts</p>
+				<button
+					id="gatewayRetry"
+					type="button"
+					i18n="htmlPages.gatewayRetry"
+					aria-describedby="load-desc"
+					hidden
+				>
+					Retry
+				</button>
+				<button id="switchaccounts" type="button" i18n="htmlPages.switchaccounts">
+					Switch accounts
+				</button>
 			</div>
 		</div>
 		<div id="recoveryBanner" class="flexltr" hidden>

@@ -795,16 +795,21 @@ describe("Localuser after its session moved into the cookie", () => {
 		l.gatewayAuthRetried = false;
 		return {l, user};
 	}
-	/** The loading screen's Retry scaffold as app.html has it: the button hidden, the line
-	 * beneath it empty until the offer writes it. Both are appended; remove them in finally. */
+	/** The loading screen's Retry scaffold as app.html has it: the button hidden inside the
+	 * splash host, the line beneath it empty until the offer writes it. All are appended;
+	 * remove the screen in finally. */
 	function mountRetryScreen() {
+		const loading = document.createElement("div");
+		loading.id = "loading";
+		loading.tabIndex = -1;
 		const retry = document.createElement("button");
 		retry.id = "gatewayRetry";
 		retry.hidden = true;
 		const loadDesc = document.createElement("p");
 		loadDesc.id = "load-desc";
-		document.body.append(retry, loadDesc);
-		return {retry, loadDesc};
+		loading.append(retry, loadDesc);
+		document.body.append(loading);
+		return {loading, retry, loadDesc};
 	}
 
 	it("switches its live headers to the cookie in place, so the gateway sends no token", () => {
@@ -897,7 +902,7 @@ describe("Localuser after its session moved into the cookie", () => {
 			const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 			vi.spyOn(l, "loaduser").mockImplementation(() => {});
 			vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-			const {retry, loadDesc} = mountRetryScreen();
+			const {loading, retry} = mountRetryScreen();
 			try {
 				l.identifiedToken = "tok-live@x";
 				l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
@@ -918,8 +923,7 @@ describe("Localuser after its session moved into the cookie", () => {
 				// Measured once: the next connection's 20 s count starts from its own ACK.
 				expect(l.connectionSucceed).toBe(0);
 			} finally {
-				retry.remove();
-				loadDesc.remove();
+				loading.remove();
 			}
 		});
 	}
@@ -950,7 +954,7 @@ describe("Localuser after its session moved into the cookie", () => {
 			const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 			vi.spyOn(l, "loaduser").mockImplementation(() => {});
 			vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-			const {retry, loadDesc} = mountRetryScreen();
+			const {loading, retry, loadDesc} = mountRetryScreen();
 			try {
 				await I18n.done;
 				l.identifiedToken = "tok-live@x";
@@ -966,11 +970,47 @@ describe("Localuser after its session moved into the cookie", () => {
 				// or screen-reader user it appeared (TASK-174).
 				expect(document.activeElement).toBe(retry);
 			} finally {
-				retry.remove();
-				loadDesc.remove();
+				loading.remove();
 			}
 		});
 	}
+
+	// Hiding the Retry offer must not drop a keyboard user's focus to the body: it moves to
+	// the splash host, which the Retry click and every connect attempt share (#233 lows).
+	it("hiding the Retry offer leaves focus on the splash, not on the body", async () => {
+		const host = "http://live-focus.test";
+		const {l, user} = liveUser(host);
+		l.info = user.serverurls;
+		vi.spyOn(pageNav, "go").mockImplementation(() => {});
+		recordRequests(host + "/api/v9/users/@me", () =>
+			Response.json({message: "Service unavailable", code: 0}, {status: 503}),
+		);
+		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+		vi.spyOn(l, "loaduser").mockImplementation(() => {});
+		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+		const {loading, retry} = mountRetryScreen();
+		try {
+			await I18n.done;
+			l.identifiedToken = "tok-live@x"; // headerAccount's token: the gateway identified with it.
+			l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+			l.connectionSucceed = 0;
+
+			l.gatewayAuthFailed();
+
+			// The offer announces itself: focus is on the button (TASK-174).
+			await vi.waitFor(() => expect(retry.hidden).toBe(false), {timeout: 3000});
+			expect(document.activeElement).toBe(retry);
+
+			retry.click();
+
+			expect(retry.hidden).toBe(true);
+			expect(document.activeElement).toBe(loading);
+			// The click went through the offer's handler, which reconnects.
+			expect(reconnect).toHaveBeenCalledTimes(1);
+		} finally {
+			loading.remove();
+		}
+	});
 
 	// The token probe answers 401 (the credential the gateway refused is dead on REST too) but
 	// the cookie layer's second look gets no verdict: validity unconfirmed, so the Retry line
@@ -989,7 +1029,7 @@ describe("Localuser after its session moved into the cookie", () => {
 		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 		vi.spyOn(l, "loaduser").mockImplementation(() => {});
 		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-		const {retry, loadDesc} = mountRetryScreen();
+		const {loading, retry, loadDesc} = mountRetryScreen();
 		try {
 			await I18n.done;
 			l.identifiedToken = "tok-live@x";
@@ -1006,8 +1046,7 @@ describe("Localuser after its session moved into the cookie", () => {
 			// No verdict of death: the account stays stored as logged in.
 			expect(stored().users[user.uid].loggedin).toBe(true);
 		} finally {
-			retry.remove();
-			loadDesc.remove();
+			loading.remove();
 		}
 	});
 
@@ -1023,7 +1062,7 @@ describe("Localuser after its session moved into the cookie", () => {
 		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 		vi.spyOn(l, "loaduser").mockImplementation(() => {});
 		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-		const {retry, loadDesc} = mountRetryScreen();
+		const {loading, retry, loadDesc} = mountRetryScreen();
 		try {
 			await I18n.done;
 			l.identifiedToken = "tok-live@x";
@@ -1038,8 +1077,7 @@ describe("Localuser after its session moved into the cookie", () => {
 				"The instance refused the connection and didn't answer a session check. Retry, or switch accounts if it keeps happening.",
 			);
 		} finally {
-			retry.remove();
-			loadDesc.remove();
+			loading.remove();
 		}
 	});
 
@@ -1063,7 +1101,7 @@ describe("Localuser after its session moved into the cookie", () => {
 		const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
 		vi.spyOn(l, "loaduser").mockImplementation(() => {});
 		vi.spyOn(l, "init").mockResolvedValue(undefined as never);
-		const {retry, loadDesc} = mountRetryScreen();
+		const {loading, retry, loadDesc} = mountRetryScreen();
 		try {
 			await I18n.done;
 			l.identifiedToken = "tok-live@x";
@@ -1087,8 +1125,7 @@ describe("Localuser after its session moved into the cookie", () => {
 			expect(stored().users[user.uid].loggedin).toBe(true);
 			expect(pageNav.go).not.toHaveBeenCalled();
 		} finally {
-			retry.remove();
-			loadDesc.remove();
+			loading.remove();
 		}
 	});
 

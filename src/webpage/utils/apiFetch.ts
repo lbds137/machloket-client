@@ -25,8 +25,8 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 /** How a 401 path run ended. "dead": the session was confirmed dead and invalidated (and /login
  * scheduled while its account is the active one). "adopted": the session had moved into the
  * cookie and the account converted (onCookieSessionAdopted tells its holders). "notDead": no
- * verdict of death - the session answered the check alive (or a dead credential was kept by the
- * cookie layer); the session is left alone. "unanswered": the check itself produced no verdict
+ * verdict of death - the session answered the check alive; the session is left alone.
+ * "unanswered": the check itself produced no verdict
  * (a 429 or 5xx answer, a proxy's page or status, a timeout, a network error, or no usable API
  * to check against), a confirmed-dead credential's second look at the cookie layer got no
  * answer, or the death was confirmed but there was nothing to invalidate - no record still

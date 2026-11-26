@@ -1,4 +1,8 @@
 /* The splash colour matches the icon art and the manifest background_color. */
 :root {
 	--brand-bg: #0b0b12;
+	/* The splash's own text and link, paired with that background in every theme (TASK-171):
+	   the theme's own text and link go near-black on Light. */
+	--brand-text: #f2f2f2;
+	--brand-link: #5ca9ed;
 }

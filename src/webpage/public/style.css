@@ -2836,11 +2836,17 @@ span.instanceStatus {
 	color: var(--loading-text);
 	/* The logo's own background (brand/brand.css), so the icon's square doesn't show. */
 	background: var(--brand-bg, var(--loading-bg, inherit)) !important;
-	transition: transform 0.2s;
+	/* visibility slides in step with the transform: a dismissed splash must leave the tab
+	   order and the accessibility tree (its switcher is a real button now, TASK-186), but
+	   hiding it at once would cut the slide short. */
+	transition:
+		transform 0.2s,
+		visibility 0.2s;
 }
 
 #loading.doneloading {
 	transform: translate(0%, -100%);
+	visibility: hidden;
 }
 
 .splash {
@@ -2853,6 +2859,7 @@ span.instanceStatus {
 		margin: 0;
 	}
 	& #load-desc {
+		color: var(--brand-text);
 		opacity: 0.7;
 	}
 }
@@ -2888,10 +2895,13 @@ span.instanceStatus {
 	background: var(--primary-bg);
 }
 
+/* A real button on the brand-dark splash (TASK-186): the link look stays, the app-wide
+   button fill goes — its theme colours go near-black on Light. */
 #switchaccounts {
 	text-decoration: underline;
-	color: var(--link);
-	cursor: pointer;
+	color: var(--brand-link);
+	background: transparent;
+	text-align: center;
 }
 
 /* The splash stays brand-dark in every theme, where a dark theme's button fill all but vanishes
