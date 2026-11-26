@@ -6,7 +6,7 @@ import type {Specialuser as SpecialuserT} from "./utils/utils";
 // on login, register and both MFA steps, the token-less account, logout and the pending logout.
 // Same bootstrap order as the other suites: localuser first.
 const {Localuser} = await import("./localuser");
-const {Options} = await import("./settings");
+const {Options, Captcha} = await import("./settings");
 const {getapiurls, keepAuthCookie, Specialuser, runPendingLogouts, adduser} =
 	await import("./utils/utils");
 const {cookieModeHosts} = await import("./utils/accountHeaders");
@@ -23,7 +23,18 @@ afterEach(() => {
 	if (saved === null) localStorage.removeItem("userinfos");
 	else localStorage.setItem("userinfos", saved);
 	document.querySelectorAll("dialog, .background").forEach((e) => e.remove());
+	Captcha.hcaptcha = undefined;
 });
+
+/** The loaded hCaptcha widget (its script never runs here), shaped as captchaCancel.test.ts's:
+ * the answer lands in children[1]'s second child. */
+function fakeWidget() {
+	const widget = document.createElement("div");
+	const frame = document.createElement("div");
+	frame.append(document.createElement("iframe"), document.createElement("textarea"));
+	widget.append(document.createElement("span"), frame);
+	return widget;
+}
 
 function stored() {
 	return JSON.parse(localStorage.getItem("userinfos")!) as {
@@ -364,6 +375,134 @@ describe("login's cookie opt-in", () => {
 		newest<HTMLButtonElement>("button.createAccount").click();
 		await again;
 		expect(logins[1].headers.get("X-Machloket-Auth")).toBe("cookie");
+	});
+
+	/** Whether a cookie login on `slot` holds its lock. Lock names are origin-wide and test
+	 * files run at once on one origin, so each test below has a hostname of its own. */
+	async function loginHeld(slot: string) {
+		const {held = []} = await navigator.locks.query();
+		return held.some((lock) => lock.name === "machloket-cookie-login:" + slot);
+	}
+
+	it("a captcha on a login form that leaves the page ends the submit and its hold", async () => {
+		addInstance("http://captcha-hold.test", 0, {authCookie: true});
+		const logins = recordRequests("http://captcha-hold.test/api/v9/auth/login", () =>
+			json({captcha_sitekey: "site", captcha_service: "hcaptcha"}, 400),
+		);
+		Captcha.hcaptcha = fakeWidget();
+		makeLogin(false, "", () => {});
+		await pickInstance("http://captcha-hold.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await vi.waitUntil(() => Captcha.hcaptcha!.isConnected, {timeout: 3000});
+		expect(await loginHeld("captcha-hold.test")).toBe(true);
+		// "No account?": the login dialog goes and the register form opens in its place.
+		const toRegister = [...document.querySelectorAll("a")].filter(
+			(a) => a.textContent === I18n.htmlPages.noAccount(),
+		);
+		toRegister.at(-1)!.click();
+
+		await expect.poll(() => loginHeld("captcha-hold.test"), {timeout: 3000}).toBe(false);
+		expect(logins).toHaveLength(1);
+	});
+
+	it("a re-submit while the first waits on a second factor closes that prompt and ends its hold", async () => {
+		addInstance("http://resubmit-hold.test", 0, {authCookie: true});
+		const logins = recordRequests("http://resubmit-hold.test/api/v9/auth/login", () =>
+			logins.length === 1
+				? json({ticket: "tk", mfa: true, totp: true})
+				: json({message: "nope"}, 400),
+		);
+		const addForm = vi.spyOn(Options.prototype, "addForm");
+		makeLogin(false, "", () => {});
+		await pickInstance("http://resubmit-hold.test");
+		const loginButton = newest<HTMLButtonElement>("button.createAccount");
+		loginButton.click();
+		await vi.waitUntil(() =>
+			addForm.mock.calls.some((c) =>
+				(c[2] as {fetchURL?: string})?.fetchURL?.endsWith("/mfa/totp"),
+			),
+		);
+		addForm.mockRestore();
+		const codePrompt = newest<HTMLElement>(".background");
+		expect(await loginHeld("resubmit-hold.test")).toBe(true);
+		loginButton.click();
+		await vi.waitUntil(() => logins.length === 2, {timeout: 3000});
+
+		await expect.poll(() => codePrompt.isConnected, {timeout: 3000}).toBe(false);
+		await expect.poll(() => loginHeld("resubmit-hold.test"), {timeout: 3000}).toBe(false);
+	});
+
+	it("a later form's captcha taking the shared widget ends the first form's submit and its hold", async () => {
+		addInstance("http://adopted-a.test", 0, {authCookie: true});
+		addInstance("http://adopted-b.test", 0, {authCookie: true});
+		const captcha = () => json({captcha_sitekey: "site", captcha_service: "hcaptcha"}, 400);
+		const loginsA = recordRequests("http://adopted-a.test/api/v9/auth/login", captcha);
+		// The widget's answer isn't reset here, so B answers a captcha once: a second would loop.
+		const loginsB = recordRequests("http://adopted-b.test/api/v9/auth/login", () =>
+			loginsB.length === 1 ? captcha() : json({message: "nope"}, 400),
+		);
+		Captcha.hcaptcha = fakeWidget();
+		makeLogin(false, "", () => {});
+		await pickInstance("http://adopted-a.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await vi.waitUntil(() => Captcha.hcaptcha!.isConnected, {timeout: 3000});
+		const firstDialog = Captcha.hcaptcha!.closest(".background")!;
+		expect(await loginHeld("adopted-a.test")).toBe(true);
+		// A second login form, still beside the first, gets a captcha of its own.
+		makeLogin(false, "", () => {});
+		localStorage.removeItem("instanceinfo");
+		await pickInstance("http://adopted-b.test");
+		newest<HTMLButtonElement>("button.createAccount").click();
+		await vi.waitUntil(() => loginsB.length === 1, {timeout: 3000});
+		await vi.waitUntil(() => !firstDialog.contains(Captcha.hcaptcha!), {timeout: 3000});
+
+		expect(firstDialog.isConnected).toBe(true);
+		await expect.poll(() => loginHeld("adopted-a.test"), {timeout: 3000}).toBe(false);
+		// Solved in the second form: the answer goes out once, from that form only.
+		(Captcha.hcaptcha!.children[1].children[1] as HTMLTextAreaElement).value = "solved";
+		await vi.waitUntil(() => loginsB.length === 2, {timeout: 3000});
+		expect((loginsB[1].body as {captcha_key?: string}).captcha_key).toBe("solved");
+		expect(loginsA).toHaveLength(1);
+	});
+
+	it("a re-submit while the first submit's code is on the wire lets that code's answer land", async () => {
+		addInstance("http://code-wire.test", 0, {authCookie: true});
+		const logins = recordRequests("http://code-wire.test/api/v9/auth/login", () =>
+			logins.length === 1
+				? json({ticket: "tk", mfa: true, totp: true})
+				: json({message: "nope"}, 400),
+		);
+		let answerCode!: () => void;
+		const codeHeld = new Promise<void>((r) => (answerCode = r));
+		const codes = recordRequests("http://code-wire.test/api/v9/auth/mfa/totp", async () => {
+			await codeHeld;
+			return json({auth_mode: "cookie", user_id: "7"});
+		});
+		const addForm = vi.spyOn(Options.prototype, "addForm");
+		const loggedIn = new Promise<SpecialuserT>((res) => makeLogin(false, "", res));
+		await pickInstance("http://code-wire.test");
+		const loginButton = newest<HTMLButtonElement>("button.createAccount");
+		loginButton.click();
+		await vi.waitUntil(() =>
+			addForm.mock.calls.some((c) =>
+				(c[2] as {fetchURL?: string})?.fetchURL?.endsWith("/mfa/totp"),
+			),
+		);
+		const codeForm = addForm.mock.results.at(-1)!.value as {submit(): Promise<void>};
+		addForm.mockRestore();
+		const codePrompt = newest<HTMLElement>(".background");
+		void codeForm.submit();
+		await vi.waitUntil(() => codes.length === 1);
+		loginButton.click();
+		await vi.waitUntil(() => logins.length === 2, {timeout: 3000});
+		await expect.poll(() => codePrompt.isConnected, {timeout: 3000}).toBe(false);
+
+		// The code's answer may start the session: the hold stays until it lands.
+		expect(await loginHeld("code-wire.test")).toBe(true);
+		answerCode();
+		const user = await loggedIn;
+		expect(user.authMode).toBe("cookie");
+		await expect.poll(() => loginHeld("code-wire.test"), {timeout: 3000}).toBe(false);
 	});
 });
 

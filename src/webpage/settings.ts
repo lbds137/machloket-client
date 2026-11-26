@@ -2220,10 +2220,12 @@ class Captcha implements OptionsElement<string> {
 		this.onchange = func;
 	}
 	static hcaptcha?: HTMLDivElement;
-	/** The widget's answer once solved, or undefined if `cancelled` fires first. */
+	/** The widget's answer once solved, or undefined once `cancelled` says so first. `wake` ends
+	 * a poll's sleep early, so an abort is seen at once rather than up to 100 ms later. */
 	static async waitForCaptcha(
 		ctype: "hcaptcha",
-		cancelled?: AbortSignal,
+		cancelled: () => boolean,
+		wake?: AbortSignal,
 	): Promise<string | undefined> {
 		switch (ctype) {
 			case "hcaptcha":
@@ -2231,9 +2233,20 @@ class Captcha implements OptionsElement<string> {
 				const hcaptcha = this.hcaptcha;
 				//@ts-expect-error
 				while (!hcaptcha.children[1].children.length || !hcaptcha.children[1].children[1].value) {
-					if (cancelled?.aborted) return undefined;
-					await new Promise<void>((res) => setTimeout(res, 100));
+					if (cancelled()) return undefined;
+					await new Promise<void>((res) => {
+						const done = () => {
+							clearTimeout(timer);
+							wake?.removeEventListener("abort", done);
+							res();
+						};
+						const timer = setTimeout(done, 100);
+						wake?.addEventListener("abort", done, {once: true});
+					});
 				}
+				// Solved during the last sleep, or before this wait began: still not this form's
+				// answer once it is cancelled.
+				if (cancelled()) return undefined;
 				//@ts-expect-error
 				return hcaptcha.children[1].children[1].value;
 		}
@@ -2248,15 +2261,27 @@ class Captcha implements OptionsElement<string> {
 		},
 		cancelled?: AbortSignal,
 	): Promise<string | undefined> {
-		if (!this.div) throw new Error("Div doesn't exist yet to give catpcha");
+		const div = this.div;
+		if (!div) throw new Error("Div doesn't exist yet to give catpcha");
+		// A form that has left the page or is leaving it (its dialog closed or closing, login
+		// switched to register) can't be solved any more: that is a dismissal too. So is a
+		// later form's captcha taking the one shared widget out of this form's div: its answer
+		// is that form's.
+		const leaving = () => !div.isConnected || div.closest(".removeElm") !== null;
+		const gone = () =>
+			cancelled?.aborted === true ||
+			leaving() ||
+			(Captcha.hcaptcha !== undefined && !div.contains(Captcha.hcaptcha));
+		// Checked before adopting the widget: a form already gone must not take it from a live one.
+		if (cancelled?.aborted === true || leaving()) return undefined;
 		switch (captcha_service) {
 			case "hcaptcha":
 				if (Captcha.hcaptcha) {
-					this.div.append(Captcha.hcaptcha);
+					div.append(Captcha.hcaptcha);
 					Captcha.hcaptcha.setAttribute("data-sitekey", captcha_sitekey);
 					const hc = (globalThis as typeof globalThis & {hcaptcha?: {reset?: () => void}}).hcaptcha;
 					hc?.reset?.();
-					return Captcha.waitForCaptcha(captcha_service, cancelled);
+					return Captcha.waitForCaptcha(captcha_service, gone, cancelled);
 				} else {
 					const capt = document.createElement("div");
 					const capty = document.createElement("div");
@@ -2268,21 +2293,28 @@ class Captcha implements OptionsElement<string> {
 					capt.append(script);
 					capt.append(capty);
 					Captcha.hcaptcha = capt;
-					this.div.append(capt);
-					return Captcha.waitForCaptcha(captcha_service, cancelled);
+					div.append(capt);
+					return Captcha.waitForCaptcha(captcha_service, gone, cancelled);
 				}
 		}
 	}
-	static async makeCaptcha(json: {
-		captcha_sitekey: string;
-		captcha_service: "hcaptcha";
-	}): Promise<string | undefined> {
+	/** A captcha in a dialog of its own, for a form without one inline. `cancelled` (a re-submit
+	 * of that form) closes it as a dismissal does. */
+	static async makeCaptcha(
+		json: {
+			captcha_sitekey: string;
+			captcha_service: "hcaptcha";
+		},
+		cancelled?: AbortSignal,
+	): Promise<string | undefined> {
 		const float = new Dialog("", {noSubmit: true});
 		float.options.addTitle(I18n.form.captcha());
 		const cap = float.options.addForm("", () => {}, {traditionalSubmit: true}).addCaptcha();
 		// Dismissed (Escape, or a tap outside): the wait ends, and the form gives up this send.
 		const dismissed = new AbortController();
 		float.onhide = () => dismissed.abort();
+		if (cancelled?.aborted) return undefined;
+		cancelled?.addEventListener("abort", () => dismissed.abort(), {once: true});
 		float.show().parentElement!.style.zIndex = "200";
 		const token = await cap.makeCaptcha(json, dismissed.signal);
 		float.hide();
@@ -2298,12 +2330,31 @@ class FormError extends Error {
 		this.elem = elem;
 	}
 }
+/** Closes a second-factor prompt once `cancelled` fires (its form was submitted again), the
+ * same as a dismissal: its onhide answers "no second factor". A code already sent from it
+ * (`codeForm`'s submit still out) answers first: its answer may have started a session (a
+ * cookie one included), which must be stored rather than orphaned. */
+function closeWhenCancelled(
+	prompt: Dialog,
+	codeForm: Form,
+	cancelled: AbortSignal | undefined,
+): void {
+	if (!cancelled) return;
+	const close = async () => {
+		prompt.hide();
+		await codeForm.idle();
+		prompt.onhide();
+	};
+	if (cancelled.aborted) close();
+	else cancelled.addEventListener("abort", close, {once: true});
+}
 function promptLoginCode(
 	json: any,
 	api: string,
 	title: string,
 	hint?: string,
 	extraHeaders?: Record<string, string>,
+	cancelled?: AbortSignal,
 ): Promise<false | any> {
 	return new Promise<false | any>((resolution) => {
 		const better = new Dialog("");
@@ -2340,6 +2391,7 @@ function promptLoginCode(
 		// Dismissed (outside tap, Escape): no second factor.
 		better.onhide = () => resolution(false);
 		better.show().parentElement!.style.zIndex = "200";
+		closeWhenCancelled(better, form, cancelled);
 	});
 }
 /** What can finish a login whose key prompt didn't, by what the login's answer says; null is
@@ -2372,12 +2424,16 @@ function keyFallback(json: {totp?: unknown; backup?: unknown}) {
 }
 /** The second login step's answer, or false when it was cancelled or refused (a refusal's
  * reason goes to `onRefused`). `extraHeaders` ride both second-factor requests: the first step
- * of a login answering `mfa` sets no cookie, so its cookie opt-in must reach the second. */
+ * of a login answering `mfa` sets no cookie, so its cookie opt-in must reach the second.
+ * `cancelled` (a re-submit of the form) ends the step as a dismissal does while it is still
+ * a prompt; a key assertion or code already sent finishes, since its answer may have started a
+ * session that must be stored rather than orphaned. */
 async function handle2fa(
 	json: any,
 	api: string,
 	onRefused: (message: string) => void,
 	extraHeaders?: Record<string, string>,
+	cancelled?: AbortSignal,
 ): Promise<false | any> {
 	if (json.ticket) {
 		if (json.webauthn) {
@@ -2403,7 +2459,7 @@ async function handle2fa(
 				const options = PublicKeyCredential.parseRequestOptionsFromJSON(challenge);
 				// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
 				credential = (await navigator.credentials
-					.get({publicKey: options})
+					.get({publicKey: options, signal: cancelled})
 					.catch(() => null)) as unknown as WebauthnAssertion | null;
 			} catch (e) {
 				// No key API on this origin, or a malformed challenge: same as a cancel, but say why.
@@ -2411,11 +2467,13 @@ async function handle2fa(
 				credential = null;
 				keyUnavailable = true;
 			}
+			// Superseded by a re-submit of the form: no fallback prompt, nothing sent.
+			if (cancelled?.aborted) return false;
 			if (!credential) {
 				const why = keyUnavailable ? I18n.backupCodes.keyUnavailable() : undefined;
 				if (fallback) {
 					const hint = why ? `${why} ${fallback.hint}` : fallback.hint;
-					return promptLoginCode(json, api, fallback.title, hint, extraHeaders);
+					return promptLoginCode(json, api, fallback.title, hint, extraHeaders, cancelled);
 				}
 				if (why) onRefused(why);
 				return false;
@@ -2472,6 +2530,7 @@ async function handle2fa(
 				I18n["2faCode"](),
 				json.backup === true ? I18n.backupCodes.loginHint() : undefined,
 				extraHeaders,
+				cancelled,
 			);
 		}
 	} else {
@@ -2479,14 +2538,18 @@ async function handle2fa(
 	}
 }
 /** "solved" when the answer asked for a captcha and the user solved it (send again), "dismissed"
- * when they closed it (give up the send), "none" when no captcha was asked for. */
+ * when they closed it, its form left the page or `cancelled` fired (give up the send), "none"
+ * when no captcha was asked for. */
 async function handleCaptcha(
 	json: any,
 	build: any,
 	cap: Captcha | undefined,
+	cancelled: AbortSignal,
 ): Promise<"solved" | "dismissed" | "none"> {
 	if (json.captcha_sitekey) {
-		const token = cap ? await cap.makeCaptcha(json) : await Captcha.makeCaptcha(json);
+		const token = cap
+			? await cap.makeCaptcha(json, cancelled)
+			: await Captcha.makeCaptcha(json, cancelled);
 		if (token === undefined) return "dismissed";
 		build.captcha_key = token;
 		return "solved";
@@ -2506,11 +2569,15 @@ export type MfaRetry = {
 function mfaRequestHeaders(auth: Record<string, string>): Record<string, string> {
 	return deriveHeaders(auth, {json: false, extra: {"Content-Type": "application/json"}});
 }
+/** A fresh MFA token, or null when the step was dismissed, refused (the reason goes to
+ * `onRefused`) or cancelled by `cancelled` (a re-submit of the form) while still a prompt. A
+ * code or key assertion already sent finishes; the form decides what a late token is for. */
 async function handleMfa(
 	factor: "totp" | "webauthn",
 	api: string,
 	auth: Record<string, string>,
 	onRefused: (message: string) => void,
+	cancelled?: AbortSignal,
 ): Promise<string | null> {
 	const headers = mfaRequestHeaders(auth);
 	if (factor === "webauthn") {
@@ -2553,14 +2620,14 @@ async function handleMfa(
 		}
 		// A cancelled or timed-out key prompt rejects (NotAllowedError): no second factor.
 		const credential = (await navigator.credentials
-			.get({publicKey: options})
+			.get({publicKey: options, signal: cancelled})
 			.catch(() => null)) as unknown as {
 			rawId: ArrayBuffer;
 			response: {
 				[key: string]: ArrayBuffer;
 			};
 		} | null;
-		if (!credential) return null;
+		if (!credential || cancelled?.aborted) return null;
 		function toBase64(buf: ArrayBuffer) {
 			return btoa(String.fromCharCode(...new Uint8Array(buf)));
 		}
@@ -2619,6 +2686,7 @@ async function handleMfa(
 		// Dismissed (outside tap, Escape): no second factor.
 		better.onhide = () => resolution(null);
 		better.show().parentElement!.style.zIndex = "200";
+		closeWhenCancelled(better, form, cancelled);
 	});
 }
 async function promptMfa(
@@ -2626,8 +2694,9 @@ async function promptMfa(
 	api: string,
 	headers: Record<string, string>,
 	onRefused: (message: string) => void,
+	cancelled?: AbortSignal,
 ): Promise<string | null> {
-	const token = await handleMfa(retry.factor, api, headers, onRefused);
+	const token = await handleMfa(retry.factor, api, headers, onRefused, cancelled);
 	if (token !== null) retry.store?.(token);
 	return token;
 }
@@ -2976,8 +3045,13 @@ class Form implements OptionsElement<object> {
 	 * throws shows like the preprocessor's. */
 	submitHeaders?: (sent: object) => Promise<Record<string, string> | undefined>;
 	/** Called once a submit is over, whatever its outcome (an answer handled, a refusal, a
-	 * dismissed captcha or second factor, no answer), with the body submitHeaders saw. */
+	 * dismissed captcha or second factor, a captcha whose form left the page, a re-submit that
+	 * superseded it, no answer), with the body submitHeaders saw. */
 	submitSettled?: (sent: object) => void;
+	/** Cancels the captcha and second-factor prompts of this form's latest submit: a re-submit
+	 * while they are open supersedes them, so the earlier submit settles instead of waiting on a
+	 * prompt that would resend its stale body. */
+	private prompts?: AbortController;
 	onFormError = (_: FormError) => {};
 	/** Answers an error response (non-2xx) instead of onSubmit: throw a FormError to show it on a
 	 * field, or return true once handled; otherwise the server's message shows in a popup. */
@@ -2986,7 +3060,20 @@ class Form implements OptionsElement<object> {
 	/** URLs with a request still unanswered: a second tap waits, but a form re-pointed at
 	 * another URL (login after picking another instance) may send there. */
 	private readonly inFlight = new Set<string>();
-	async submit() {
+	/** This form's submits not yet settled. */
+	private readonly running = new Set<Promise<void>>();
+	submit(): Promise<void> {
+		const run = this.submitOnce();
+		this.running.add(run);
+		const forget = () => void this.running.delete(run);
+		run.then(forget, forget);
+		return run;
+	}
+	/** Resolves once every submit of this form that is out has settled. */
+	async idle(): Promise<void> {
+		while (this.running.size) await Promise.allSettled([...this.running]);
+	}
+	private async submitOnce() {
 		if (this.options.subOptions) {
 			this.options.subOptions.submit();
 			return;
@@ -2994,6 +3081,7 @@ class Form implements OptionsElement<object> {
 		if (this.subbmitting || this.inFlight.has(this.fetchURL)) return;
 		this.subbmitting = true;
 		let sent: object | undefined;
+		const prompts = new AbortController();
 		try {
 			const build = {};
 			sent = build;
@@ -3067,6 +3155,10 @@ class Form implements OptionsElement<object> {
 			let submitHeaders: Record<string, string> | undefined;
 			try {
 				this.preprocessor(build);
+				// A send is going out: an earlier submit still on a prompt gives up, and its
+				// submitSettled releases what it held (login's cookie hold) as early as it can.
+				this.prompts?.abort();
+				this.prompts = prompts;
 				submitHeaders = await this.submitHeaders?.(build);
 			} catch (e) {
 				if (e instanceof FormError) {
@@ -3142,7 +3234,7 @@ class Form implements OptionsElement<object> {
 					} finally {
 						this.inFlight.delete(fetchURL);
 					}
-					const captcha = await handleCaptcha(json, build, this.captcha);
+					const captcha = await handleCaptcha(json, build, this.captcha, prompts.signal);
 					if (captcha === "dismissed") return;
 					if (captcha === "solved") return await doFetch();
 					if (mfaApi && this.tfaCheck) {
@@ -3151,6 +3243,7 @@ class Form implements OptionsElement<object> {
 							mfaApi,
 							(m) => this.showPrimError(m),
 							submitHeaders,
+							prompts.signal,
 						);
 						if (tried) {
 							return await onSubmit(tried);
@@ -3171,9 +3264,17 @@ class Form implements OptionsElement<object> {
 								const cached = this.mfaRetry.token?.() ?? null;
 								const token =
 									cached ??
-									(await promptMfa(this.mfaRetry, mfaApi, this.headers, (m) =>
-										this.showPrimError(m),
+									(await promptMfa(
+										this.mfaRetry,
+										mfaApi,
+										this.headers,
+										(m) => this.showPrimError(m),
+										prompts.signal,
 									));
+								// Superseded by a re-submit: that one answers for the form. A token
+								// minted meanwhile is kept (promptMfa stores it) for the re-submit,
+								// and this submit's stale body isn't sent again.
+								if (prompts.signal.aborted) return;
 								if (token === null) {
 									// dismissed: fall through to the normal refusal display, form stays open
 								} else {
@@ -3216,6 +3317,7 @@ class Form implements OptionsElement<object> {
 			}
 		} finally {
 			this.subbmitting = false;
+			if (this.prompts === prompts) this.prompts = undefined;
 			if (sent) this.submitSettled?.(sent);
 		}
 	}
