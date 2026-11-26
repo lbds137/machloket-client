@@ -3,9 +3,10 @@ id: TASK-156
 title: >-
   401 handler latch and account switch: a second account is skipped, a stale
   probe can route the new account to /login
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-11-25T18:39:00Z'
+updated_date: '2026-11-26T01:50:00Z'
 labels:
   - auth
   - bug
