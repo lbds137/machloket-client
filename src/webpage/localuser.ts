@@ -115,7 +115,7 @@ import {
 } from "./utils/pollValidation.js";
 import {fetchMessageLimit} from "./utils/messageLimit.js";
 import {refusalText, showRefusal} from "./utils/showRefusal.js";
-import {apiFetch, handleUnauthorized} from "./utils/apiFetch.js";
+import {apiFetch, handleUnauthorized, noteActiveAccount} from "./utils/apiFetch.js";
 import {
 	type AccountHeaders,
 	applyAccountHeaders,
@@ -390,6 +390,7 @@ class Localuser {
 			return;
 		}
 		this.userinfo = userinfo;
+		noteActiveAccount(userinfo.uid);
 		this.perminfo.guilds ??= {};
 		this.perminfo.user ??= {};
 		this.perminfo.user.decorations ??= true;

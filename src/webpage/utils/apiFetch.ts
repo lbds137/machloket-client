@@ -22,16 +22,29 @@ export function isPreAuthEndpoint(input: RequestInfo | URL): boolean {
 	return PRE_AUTH_PATH.test(url.pathname);
 }
 
-let unauthorizedNavPending = false;
+/** The accounts (by uid) whose 401 probe is out, or whose confirmed death has scheduled the
+ * /login navigation. Keyed per account: an account switch keeps the page, so the account
+ * switched to must not wait behind the old one's probe. */
+const unauthorizedPending = new Set<string>();
 // Bumped only by resetUnauthorizedNavForTests, for test isolation: a probe left over from one
 // test sees a new generation and never navigates in the next. Production never changes it.
 let unauthorizedNavGen = 0;
+/** The account this page runs (a Localuser registers it on construction: boot and every
+ * switch); undefined on pages that run none (the bot-authorize page). */
+let activeAccountUid: string | undefined;
 
-/** Test-only reset: the latch is shared across all accounts (one in-flight probe for the whole
- * page, released when the session proves alive or invalidation fails, and held once a confirmed
- * dead session schedules the /login navigation); tests reset it between cases. */
+/** Registers the account the page now runs: a dead session routes to /login only while its
+ * account is the active one. */
+export function noteActiveAccount(uid: string): void {
+	activeAccountUid = uid;
+}
+
+/** Test-only reset: clears every account's latch (released when the session proves alive, when
+ * invalidation fails or the account is no longer the active one, and held once a confirmed dead
+ * session schedules the /login navigation) and the registered active account. */
 export function resetUnauthorizedNavForTests(): void {
-	unauthorizedNavPending = false;
+	unauthorizedPending.clear();
+	activeAccountUid = undefined;
 	unauthorizedNavGen++;
 }
 
@@ -68,17 +81,19 @@ async function tokenIsDead(requestUrl: string, account: AccountAuth): Promise<bo
 /** Marks the account behind a VERIFIED dead session invalid and schedules one navigation to
  * /login. Only engages on a post-auth endpoint whose request was built for an account (bots,
  * pre-auth, and raw untagged requests never log anyone out), and invalidates only after the
- * probe confirms the account's current credential is dead. One probe is in flight at a time;
- * the latch releases when the session proves alive so a later real death can still route.
- * Returns whether the path was engaged (the probe decides whether it will invalidate). */
+ * probe confirms the account's current credential is dead. One probe per account is in flight
+ * at a time; its latch releases when the session proves alive so a later real death can still
+ * route. A probe that outlives an account switch still invalidates its own account but routes
+ * nowhere: /login would take the page from the account switched to. Returns whether the path was engaged (the probe decides whether it will invalidate). */
 export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit): boolean {
 	if (isPreAuthEndpoint(input)) return false;
 	// The account object the headers were built from: its fields are read at probe time, so a
 	// token READY replaced since the request was sent is the one probed.
 	const account = accountOf(init);
 	if (!account) return false;
-	if (unauthorizedNavPending) return true;
-	unauthorizedNavPending = true;
+	const uid = account.uid;
+	if (unauthorizedPending.has(uid)) return true;
+	unauthorizedPending.add(uid);
 	const gen = unauthorizedNavGen;
 	const url = input instanceof Request ? input.url : String(input);
 	void (async () => {
@@ -96,7 +111,7 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 			if (gen !== unauthorizedNavGen) return;
 			// A live session releases the latch at once: a later 401 must not find it held.
 			if (!dead) {
-				unauthorizedNavPending = false;
+				unauthorizedPending.delete(uid);
 				return;
 			}
 			// Loaded lazily so apiFetch stays a leaf module: utils.ts pulls in the whole app
@@ -109,7 +124,14 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 			const verdict = await utils.cookieVerdictFor401(probed);
 			if (gen !== unauthorizedNavGen) return;
 			if (verdict !== "dead" || !utils.invalidateAccount(probed)) {
-				unauthorizedNavPending = false;
+				unauthorizedPending.delete(uid);
+				return;
+			}
+			// The page switched to another account while the probe was out: that account's
+			// session is not the dead one. Released, so a fresh sign-in of this account that
+			// later dies still routes.
+			if (activeAccountUid !== undefined && activeAccountUid !== uid) {
+				unauthorizedPending.delete(uid);
 				return;
 			}
 			queueMicrotask(() => {
@@ -117,7 +139,7 @@ export function handleUnauthorized(input: RequestInfo | URL, init?: RequestInit)
 				pageNav.go("/login");
 			});
 		} catch (error) {
-			if (gen === unauthorizedNavGen) unauthorizedNavPending = false;
+			if (gen === unauthorizedNavGen) unauthorizedPending.delete(uid);
 			console.warn("machloket: 401 handling failed:", error);
 		}
 	})();
