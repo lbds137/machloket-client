@@ -1,9 +1,11 @@
 ---
 id: TASK-186
 title: Splash switch-accounts affordance is unreachable by keyboard
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - machloket-client
 created_date: '2026-11-26T21:35:00Z'
+updated_date: '2026-11-26T22:08:00Z'
 labels:
   - accessibility
 dependencies: []

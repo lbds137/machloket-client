@@ -3,9 +3,11 @@ id: TASK-171
 title: >-
   Loading splash text is unreadable in light themes (brand-dark background,
   theme-coloured text)
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - machloket-client
 created_date: '2026-11-26T02:13:00Z'
+updated_date: '2026-11-26T22:08:00Z'
 labels:
   - accessibility
   - bug
