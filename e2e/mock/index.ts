@@ -1215,6 +1215,11 @@ export interface MockInstanceHandle {
 	/** Set per test: the server answers IDENTIFY by closing the socket with this code (4004:
 	 * the token it carried is dead) in place of READY. Stays set until the test ends. */
 	identifyCloses?: number;
+	/** Set per test: the server answers IDENTIFY with READY and GUILD_CREATE as usual, then
+	 * closes the socket with this code (a server that accepts the session, then refuses it).
+	 * The close waits for the app's GIF-provider lookup, which READY's handling sends, so the
+	 * app has handled READY before the socket closes. Stays set until the test ends. */
+	readyThenCloses?: number;
 	/** Set per test: REST member lookups (GET /guilds/:id/members/:id, how a guild created
 	 * mid-session resolves the viewer's member) get no answer until releaseMembers(), so the
 	 * member is still on its way (a slow server). op 8 chunks are not held. */
@@ -1328,6 +1333,8 @@ export async function mountMockInstance(
 	const activeSockets = new Set<(payload: string) => void>();
 	// REST member lookups waiting while a test holds them (holdMembers).
 	const heldMemberAnswers: (() => void)[] = [];
+	// The readyThenCloses close, waiting for the app to handle READY (the GIF route runs it).
+	let closeAfterReady: (() => void) | undefined;
 	let seq = 2;
 
 	const sendFrame = (
@@ -1402,6 +1409,12 @@ export async function mountMockInstance(
 				}
 				sendFrame(send, MOCK_READY_FRAME);
 				sendFrame(send, guildCreateFrame);
+				const readyCloseCode = handle.readyThenCloses;
+				if (readyCloseCode !== undefined) {
+					closeAfterReady = () => {
+						ws.close({code: readyCloseCode, reason: "Authentication failed"}).catch(() => {});
+					};
+				}
 				return;
 			}
 
@@ -1579,6 +1592,9 @@ export async function mountMockInstance(
 
 			// 7. GIF provider discovery (src/webpage/localuser.ts)
 			if (method === "GET" && pathname === "/_spacebar/api/v1/integrations/gif") {
+				const close = closeAfterReady;
+				closeAfterReady = undefined;
+				close?.();
 				return fulfillJson(MOCK_GIF_INTEGRATIONS);
 			}
 

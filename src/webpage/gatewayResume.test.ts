@@ -176,5 +176,33 @@ describe("gateway resume", () => {
 			expect(loading.classList.contains("loading")).toBe(false);
 			expect(loadDesc.textContent).toBe("loaded");
 		});
+
+		// A server restart: the long session's resume failed (errorBackoff 1), so this drop takes
+		// the backoff path, and the fresh IDENTIFY after it may meet a 4004.
+		it("a connection that stayed up 20 s, closing on the backoff path, re-arms the 4004 auto-retry (TASK-173)", async () => {
+			const {user, ws} = await resumedUser();
+			user.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+			user.connectionSucceed = Date.now() - 60_000;
+			user.errorBackoff = 1;
+
+			ws.emit("close", {code: 1006});
+			await vi.advanceTimersByTimeAsync(0);
+
+			expect(user.unload).toHaveBeenCalled(); // the backoff path, not the quick retry
+			expect(user.gatewayAuthRetried).toBe(false);
+			expect(user.errorBackoff).toBe(0);
+			expect(user.connectionSucceed).toBe(0);
+		});
+	});
+
+	it("READY alone leaves a spent 4004 auto-retry spent (TASK-173)", async () => {
+		const user = sessionUser();
+		vi.spyOn(user, "gottenReady").mockResolvedValue(undefined as never);
+		user.gatewayAuthRetried = true;
+
+		await user.handleEvent({op: 0, t: "READY", d: {}} as never);
+
+		expect(user.gottenReady).toHaveBeenCalled();
+		expect(user.gatewayAuthRetried).toBe(true);
 	});
 });

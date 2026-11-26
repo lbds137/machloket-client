@@ -868,6 +868,52 @@ describe("Localuser after its session moved into the cookie", () => {
 		expect(l.awaitingAuthVerdict).toBe(false);
 	});
 
+	for (const [name, upFor, retries] of [
+		[
+			"a connection that stayed up 20 s re-arms the spent automatic retry and restarts the backoff",
+			21_000,
+			true,
+		],
+		["a connection up for less than 20 s re-arms neither", 1_000, false],
+	] as const) {
+		it(`${name} (TASK-173)`, async () => {
+			const host = `http://live-rearm-${upFor}.test`;
+			const {l, user} = liveUser(host);
+			l.info = user.serverurls;
+			vi.spyOn(pageNav, "go").mockImplementation(() => {});
+			recordRequests(host + "/api/v9/users/@me", () => Response.json({id: "id-live@x"}));
+			const reconnect = vi.spyOn(l, "initwebsocket").mockResolvedValue();
+			vi.spyOn(l, "loaduser").mockImplementation(() => {});
+			vi.spyOn(l, "init").mockResolvedValue(undefined as never);
+			const retry = document.createElement("button");
+			retry.id = "gatewayRetry";
+			retry.hidden = true;
+			document.body.append(retry);
+			try {
+				l.identifiedToken = "tok-live@x";
+				l.gatewayAuthRetried = true; // An earlier 4004 spent the automatic retry.
+				l.connectionSucceed = Date.now() - upFor;
+				l.errorBackoff = 1; // The drop before this socket had started the backoff.
+
+				l.gatewayAuthFailed();
+
+				expect(l.errorBackoff).toBe(retries ? 0 : 1);
+
+				if (retries) {
+					await vi.waitFor(() => expect(reconnect).toHaveBeenCalledTimes(1));
+					expect(retry.hidden).toBe(true);
+				} else {
+					await vi.waitFor(() => expect(retry.hidden).toBe(false));
+					expect(reconnect).not.toHaveBeenCalled();
+				}
+				// Measured once: the next connection's 20 s count starts from its own ACK.
+				expect(l.connectionSucceed).toBe(0);
+			} finally {
+				retry.remove();
+			}
+		});
+	}
+
 	it("a verdict landing after an adoption's reconnect connects no second time (TASK-157)", async () => {
 		const {l, user} = liveUser("http://live-race.test");
 		l.info = user.serverurls;
