@@ -104,6 +104,14 @@ describe("discovery's authCookie", () => {
 		expect(urls).not.toBeNull();
 		expect(urls && "authCookie" in urls).toBe(false);
 	});
+
+	it("keepAuthCookie keeps the stored flag when discovery didn't answer, and takes a fresh one", () => {
+		const base: import("./utils/utils").InstanceUrls = urlsFor("http://k.test");
+		expect(keepAuthCookie({...base}, {...base, authCookie: true}).authCookie).toBe(true);
+		expect(
+			keepAuthCookie({...base, authCookie: false}, {...base, authCookie: true}).authCookie,
+		).toBe(false);
+	});
 });
 
 describe("login's cookie opt-in", () => {
@@ -319,6 +327,44 @@ describe("logout", () => {
 		expect(await failThenContinue(u)).toBe(true);
 		expect(stored().pendingLogouts?.["flaky-h.test"]).toBeUndefined();
 	});
+
+	it("a cookie logout that fails removes the account and records its pending logout in one write", async () => {
+		const u = storeAccount("http://order.test", "o@x", "cookie");
+		recordRequests("http://order.test/api/v9/auth/logout", () => new Response(null, {status: 500}));
+		const done = u.logout();
+		await vi.waitFor(() => expect(newest("button")).toBeTruthy());
+		// Every store state another tab could read: none may hold the live account and the
+		// pending logout together, or that tab's retry would drop the entry as superseded.
+		const writes: string[] = [];
+		const realSetItem = Storage.prototype.setItem;
+		const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
+			this: Storage,
+			key: string,
+			value: string,
+		) {
+			if (this === localStorage && key === "userinfos") writes.push(value);
+			realSetItem.call(this, key, value);
+		});
+		[...document.querySelectorAll("button")]
+			.filter((b) => b.textContent === I18n.logout.error.cont())
+			.at(-1)!
+			.click();
+		await done;
+		setItem.mockRestore();
+		expect(writes).toHaveLength(1);
+		const after = JSON.parse(writes[0]);
+		expect(after.users[u.uid]).toBeUndefined();
+		expect(after.pendingLogouts?.["order.test"]).toBe("http://order.test/api/v9");
+	});
+
+	it("removing a cookie account over an unreadable store warns that its pending logout is lost", () => {
+		const u = storeAccount("http://unreadable.test", "u@x", "cookie");
+		localStorage.setItem("userinfos", "{");
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		u.remove(u.serverurls.api);
+		expect(warn.mock.calls.some((c) => String(c[0]).includes("pending logout"))).toBe(true);
+		warn.mockRestore();
+	});
 });
 
 describe("the pending logout at start", () => {
@@ -369,14 +415,126 @@ describe("the pending logout at start", () => {
 		adduser({serverurls: urlsFor("http://relogin.test"), email: "n@x", auth_mode: "cookie"});
 		expect(stored().pendingLogouts?.["relogin.test"]).toBeUndefined();
 	});
+
+	it("a 403 keeps the pending logout: the cookie may still be live", async () => {
+		const info = stored();
+		info.pendingLogouts = {"forbid.test": "http://forbid.test/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		recordRequests(
+			"http://forbid.test/api/v9/auth/logout",
+			() => new Response(null, {status: 403}),
+		);
+		await runPendingLogouts();
+		expect(stored().pendingLogouts?.["forbid.test"]).toBe("http://forbid.test/api/v9");
+	});
+
+	it("the retry sends to the entry's API base as stored when it runs, and clears only that entry", async () => {
+		const info = stored();
+		info.pendingLogouts = {"swap.test": "http://swap.test/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		const sent = recordRequests("http://swap.test/api/v9/auth/logout", () => {
+			// Written while the request is out: a newer entry for the host.
+			const now = stored();
+			now.pendingLogouts = {"swap.test": "http://swap.test/v2/api/v9"};
+			localStorage.setItem("userinfos", JSON.stringify(now));
+			return new Response(null, {status: 204});
+		});
+		await runPendingLogouts();
+		expect(sent).toHaveLength(1);
+		expect(stored().pendingLogouts?.["swap.test"]).toBe("http://swap.test/v2/api/v9");
+	});
+
+	it("a rejected retry doesn't stall a cookie login on its host", async () => {
+		const info = stored();
+		info.pendingLogouts = {"reject.test": "http://reject.test/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		const locks = navigator.locks;
+		Object.defineProperty(navigator, "locks", {
+			configurable: true,
+			value: {request: () => Promise.reject(new Error("lock failed"))},
+		});
+		try {
+			await expect(runPendingLogouts()).resolves.toBeUndefined();
+		} finally {
+			Object.defineProperty(navigator, "locks", {configurable: true, value: locks});
+		}
+	});
+
+	it("malformed pending-logout entries are dropped, not retried or thrown on", async () => {
+		const info = stored() as any;
+		info.pendingLogouts = {"bad.test": 42, "junk host": "http://junk/api/v9"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		await expect(runPendingLogouts()).resolves.toBeUndefined();
+		expect(() =>
+			adduser({
+				serverurls: {...urlsFor("http://junk"), authCookie: true},
+				email: "j@x",
+				auth_mode: "cookie",
+			}),
+		).not.toThrow();
+		expect(stored().pendingLogouts ?? {}).toEqual({});
+	});
 });
 
-describe("a header login replacing the same account's cookie record", () => {
-	it("records a pending logout, so the orphaned cookie is ended", () => {
+describe("a login over a stored cookie record", () => {
+	it("a header login replacing the same account's cookie record records a pending logout, so the orphaned cookie is ended", () => {
 		const old = storeAccount("http://swap.test", "s@x", "cookie");
 		const fresh = adduser({serverurls: urlsFor("http://swap.test"), email: "s@x", token: "t2"});
 		expect(fresh.uid).toBe(old.uid);
 		expect(stored().pendingLogouts?.["swap.test"]).toBe("http://swap.test/api/v9");
+	});
+
+	it("a cookie login demotes another logged-in cookie account on the same hostname, any port", () => {
+		const older = storeAccount("http://slot.test:3001", "a@x", "cookie");
+		const newer = adduser({
+			serverurls: {...urlsFor("http://slot.test:3002"), authCookie: true},
+			email: "b@x",
+			auth_mode: "cookie",
+		});
+		// One browser cookie per hostname: it is the newer login's now.
+		expect(stored().users[older.uid].loggedin).toBe(false);
+		expect(stored().users[older.uid].auth_mode).toBeUndefined();
+		expect(stored().users[newer.uid].auth_mode).toBe("cookie");
+	});
+
+	it("a header login over a live cookie record records the replaced record's API base", () => {
+		const old = new Specialuser({
+			serverurls: {...urlsFor("http://moved.test"), api: "http://moved.test/old/api/v9"},
+			email: "m@x",
+			auth_mode: "cookie",
+			loggedin: true,
+		});
+		const info = stored();
+		info.users[old.uid] = old.toJSON();
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		adduser({serverurls: urlsFor("http://moved.test"), email: "m@x", token: "t"});
+		expect(stored().pendingLogouts?.["moved.test"]).toBe("http://moved.test/old/api/v9");
+	});
+
+	it("a cookie login for the same account on a new API hostname orphans the old hostname's cookie", () => {
+		const old = storeAccount("http://old-api.test", "h@x", "cookie");
+		// Same uid (email + wellknown); the instance's API moved to another hostname.
+		adduser({
+			serverurls: {
+				...urlsFor("http://new-api.test"),
+				wellknown: old.serverurls.wellknown,
+				authCookie: true,
+			},
+			email: "h@x",
+			auth_mode: "cookie",
+		});
+		expect(stored().pendingLogouts?.["old-api.test"]).toBe("http://old-api.test/api/v9");
+	});
+
+	it("adduser doesn't throw over a same-uid stored record whose API isn't a URL", () => {
+		const good = urlsFor("http://malformed.test");
+		const info = stored();
+		const uid = "m@x" + good.wellknown;
+		info.users[uid] = {serverurls: {...good, api: "not a url"}, email: "m@x", auth_mode: "cookie"};
+		localStorage.setItem("userinfos", JSON.stringify(info));
+		expect(() =>
+			adduser({serverurls: {...good, authCookie: true}, email: "m@x", auth_mode: "cookie"}),
+		).not.toThrow();
 	});
 });
 
@@ -437,167 +595,5 @@ describe("the gateway for a cookie account", () => {
 		lu.adoptReadyToken("rotated");
 		expect(u.token).toBe("rotated");
 		expect(lu.headers.Authorization).toBe("rotated");
-	});
-});
-
-describe("review round 1", () => {
-	it("a cookie login demotes another logged-in cookie account on the same hostname, any port", () => {
-		const older = storeAccount("http://slot.test:3001", "a@x", "cookie");
-		const newer = adduser({
-			serverurls: {...urlsFor("http://slot.test:3002"), authCookie: true},
-			email: "b@x",
-			auth_mode: "cookie",
-		});
-		// One browser cookie per hostname: it is the newer login's now.
-		expect(stored().users[older.uid].loggedin).toBe(false);
-		expect(stored().users[older.uid].auth_mode).toBeUndefined();
-		expect(stored().users[newer.uid].auth_mode).toBe("cookie");
-	});
-
-	it("a header login over a live cookie record records the replaced record's API base", () => {
-		const old = new Specialuser({
-			serverurls: {...urlsFor("http://moved.test"), api: "http://moved.test/old/api/v9"},
-			email: "m@x",
-			auth_mode: "cookie",
-			loggedin: true,
-		});
-		const info = stored();
-		info.users[old.uid] = old.toJSON();
-		localStorage.setItem("userinfos", JSON.stringify(info));
-		adduser({serverurls: urlsFor("http://moved.test"), email: "m@x", token: "t"});
-		expect(stored().pendingLogouts?.["moved.test"]).toBe("http://moved.test/old/api/v9");
-	});
-
-	it("a 403 keeps the pending logout: the cookie may still be live", async () => {
-		const info = stored();
-		info.pendingLogouts = {"forbid.test": "http://forbid.test/api/v9"};
-		localStorage.setItem("userinfos", JSON.stringify(info));
-		recordRequests(
-			"http://forbid.test/api/v9/auth/logout",
-			() => new Response(null, {status: 403}),
-		);
-		await runPendingLogouts();
-		expect(stored().pendingLogouts?.["forbid.test"]).toBe("http://forbid.test/api/v9");
-	});
-
-	it("the retry sends to the entry's API base as stored when it runs, and clears only that entry", async () => {
-		const info = stored();
-		info.pendingLogouts = {"swap.test": "http://swap.test/api/v9"};
-		localStorage.setItem("userinfos", JSON.stringify(info));
-		const sent = recordRequests("http://swap.test/api/v9/auth/logout", () => {
-			// Written while the request is out: a newer entry for the host.
-			const now = stored();
-			now.pendingLogouts = {"swap.test": "http://swap.test/v2/api/v9"};
-			localStorage.setItem("userinfos", JSON.stringify(now));
-			return new Response(null, {status: 204});
-		});
-		await runPendingLogouts();
-		expect(sent).toHaveLength(1);
-		expect(stored().pendingLogouts?.["swap.test"]).toBe("http://swap.test/v2/api/v9");
-	});
-
-	it("a cookie logout that fails removes the account and records its pending logout in one write", async () => {
-		const u = storeAccount("http://order.test", "o@x", "cookie");
-		recordRequests("http://order.test/api/v9/auth/logout", () => new Response(null, {status: 500}));
-		const done = u.logout();
-		await vi.waitFor(() => expect(newest("button")).toBeTruthy());
-		// Every store state another tab could read: none may hold the live account and the
-		// pending logout together, or that tab's retry would drop the entry as superseded.
-		const writes: string[] = [];
-		const realSetItem = Storage.prototype.setItem;
-		const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (
-			this: Storage,
-			key: string,
-			value: string,
-		) {
-			if (this === localStorage && key === "userinfos") writes.push(value);
-			realSetItem.call(this, key, value);
-		});
-		[...document.querySelectorAll("button")]
-			.filter((b) => b.textContent === I18n.logout.error.cont())
-			.at(-1)!
-			.click();
-		await done;
-		setItem.mockRestore();
-		expect(writes).toHaveLength(1);
-		const after = JSON.parse(writes[0]);
-		expect(after.users[u.uid]).toBeUndefined();
-		expect(after.pendingLogouts?.["order.test"]).toBe("http://order.test/api/v9");
-	});
-
-	it("a cookie login for the same account on a new API hostname orphans the old hostname's cookie", () => {
-		const old = storeAccount("http://old-api.test", "h@x", "cookie");
-		// Same uid (email + wellknown); the instance's API moved to another hostname.
-		adduser({
-			serverurls: {
-				...urlsFor("http://new-api.test"),
-				wellknown: old.serverurls.wellknown,
-				authCookie: true,
-			},
-			email: "h@x",
-			auth_mode: "cookie",
-		});
-		expect(stored().pendingLogouts?.["old-api.test"]).toBe("http://old-api.test/api/v9");
-	});
-
-	it("keepAuthCookie keeps the stored flag when discovery didn't answer, and takes a fresh one", () => {
-		const base: import("./utils/utils").InstanceUrls = urlsFor("http://k.test");
-		expect(keepAuthCookie({...base}, {...base, authCookie: true}).authCookie).toBe(true);
-		expect(
-			keepAuthCookie({...base, authCookie: false}, {...base, authCookie: true}).authCookie,
-		).toBe(false);
-	});
-
-	it("a rejected retry doesn't stall a cookie login on its host", async () => {
-		const info = stored();
-		info.pendingLogouts = {"reject.test": "http://reject.test/api/v9"};
-		localStorage.setItem("userinfos", JSON.stringify(info));
-		const locks = navigator.locks;
-		Object.defineProperty(navigator, "locks", {
-			configurable: true,
-			value: {request: () => Promise.reject(new Error("lock failed"))},
-		});
-		try {
-			await expect(runPendingLogouts()).resolves.toBeUndefined();
-		} finally {
-			Object.defineProperty(navigator, "locks", {configurable: true, value: locks});
-		}
-	});
-});
-
-describe("review round 3 (PR #216)", () => {
-	it("adduser doesn't throw over a same-uid stored record whose API isn't a URL", () => {
-		const good = urlsFor("http://malformed.test");
-		const info = stored();
-		const uid = "m@x" + good.wellknown;
-		info.users[uid] = {serverurls: {...good, api: "not a url"}, email: "m@x", auth_mode: "cookie"};
-		localStorage.setItem("userinfos", JSON.stringify(info));
-		expect(() =>
-			adduser({serverurls: {...good, authCookie: true}, email: "m@x", auth_mode: "cookie"}),
-		).not.toThrow();
-	});
-
-	it("malformed pending-logout entries are dropped, not retried or thrown on", async () => {
-		const info = stored() as any;
-		info.pendingLogouts = {"bad.test": 42, "junk host": "http://junk/api/v9"};
-		localStorage.setItem("userinfos", JSON.stringify(info));
-		await expect(runPendingLogouts()).resolves.toBeUndefined();
-		expect(() =>
-			adduser({
-				serverurls: {...urlsFor("http://junk"), authCookie: true},
-				email: "j@x",
-				auth_mode: "cookie",
-			}),
-		).not.toThrow();
-		expect(stored().pendingLogouts ?? {}).toEqual({});
-	});
-
-	it("removing a cookie account over an unreadable store warns that its pending logout is lost", () => {
-		const u = storeAccount("http://unreadable.test", "u@x", "cookie");
-		localStorage.setItem("userinfos", "{");
-		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-		u.remove(u.serverurls.api);
-		expect(warn.mock.calls.some((c) => String(c[0]).includes("pending logout"))).toBe(true);
-		warn.mockRestore();
 	});
 });
