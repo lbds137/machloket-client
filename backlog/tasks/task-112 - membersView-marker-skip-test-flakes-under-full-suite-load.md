@@ -1,10 +1,11 @@
 ---
 id: TASK-112
 title: membersView marker-skip test flakes under full-suite load
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - machloket-client
 created_date: '2026-11-24T04:53:00Z'
-updated_date: '2026-11-26T00:09:00Z'
+updated_date: '2026-11-27T01:30:00Z'
 labels:
   - test
   - flake
