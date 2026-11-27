@@ -8,7 +8,8 @@
 # host's hostname). Installs are best effort and reported, so the
 # suite run shows what is still missing. As root, it also copies the repo to an
 # unprivileged test user (CLOUD_TEST_USER, default cloudtest), runs `npm ci` there,
-# installs the chromium browser into that user's cache, writes the user's env file
+# installs the chromium browser as root into the image's browser dir (/opt/pw-browsers;
+# a test-user install dies on EACCES there, run 1), writes the user's env file
 # ($CLOUD_ENV_FILE.user) and prints "suite as <user>:" and "e2e as <user>:" lines (best effort).
 # machloket-client needs no seyag clone: its gate chain (format:check, check, test, build,
 # e2e) is self-contained. CI=1 keeps the Deck-local screenshot pins skipped (its
@@ -74,9 +75,10 @@ echo "user $(id -un) (uid $(id -u))"
 echo "== env file $envf"; cat "$envf"
 
 # Root ignores file modes, and Chromium refuses to run sandboxed browser tests as root.
-# As root, copy the repo to an unprivileged user, install node_modules and the chromium
-# browser there, and print the line that runs the suite as that user. Best effort: any
-# failed step says so, and the suite still runs as root with the limits named in suite.md.
+# As root, copy the repo to an unprivileged user, install node_modules there, install the
+# chromium browser into the image's browser dir, and print the line that runs the suite as
+# that user. Best effort: any failed step says so, and the suite still runs as root with
+# the limits named in suite.md.
 [ "$(id -u)" = 0 ] || exit 0
 echo "== test user"
 tuser=${CLOUD_TEST_USER:-cloudtest}
@@ -125,7 +127,7 @@ else
   user_fail "npm ci"
 fi
 # Playwright's chromium: system libraries as root (its installer names the apt packages),
-# then the browser binary into the test user's cache.
+# then the browser binary, also as root (see the install below).
 # The deps installer must be the LOCKED playwright from the copy's node_modules: npx in the
 # source checkout (no node_modules yet) would fetch the latest release and run it as root.
 depout=$(mktemp) || user_fail "temp file for the install-deps log"
@@ -137,7 +139,13 @@ else
   tail -n 5 "$depout" 2>/dev/null | cut -c1-200 | sed 's/^/  pw: /'; echo "  pw: full log kept at $depout"
 fi
 brout=$(mktemp) || user_fail "temp file for the chromium log"
-if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && npx playwright install chromium" >"$brout" 2>&1; then
+# This image resolves playwright's browser dir to /opt/pw-browsers and keeps it root-owned
+# (run 1: the test-user install died on EACCES mkdir /opt/pw-browsers/__dirlock, and the
+# suites' launch errors named /opt/pw-browsers/chromium_headless_shell-*), so ROOT installs
+# the LOCKED playwright's chromium there and the test user only reads+executes it. The var
+# is set explicitly so the browser lands where the lookups go even if root's own env lacks
+# it; ${PLAYWRIGHT_BROWSERS_PATH:-...} honours an inherited override.
+if PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}" "$trepo/node_modules/.bin/playwright" install chromium >"$brout" 2>&1; then
   echo "chromium browser ok"
   rm -f "$brout"
 else
