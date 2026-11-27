@@ -1493,12 +1493,17 @@ export async function getApiUrlsV2(str: string): Promise<InstanceUrls | null> {
 export const pingTimeoutMs = 10_000;
 
 /** The /ping response inside the budget, or null once it passed: an abort and a network
- * failure both read as absent. (Exported for the pingGuard tests.) */
-export async function pingResponse(api: URL | string): Promise<Response | null> {
+ * failure both read as absent. (Exported for the pingGuard tests.) The budget is a
+ * parameter with the module default, so tests can wait out a short real budget instead of
+ * the production 10 s (fake timers are ruled out: see pingGuard.test.ts). */
+export async function pingResponse(
+	api: URL | string,
+	budgetMs: number = pingTimeoutMs,
+): Promise<Response | null> {
 	const base = api.toString();
 	try {
 		return await apiFetch(base + (base.endsWith("/") ? "" : "/") + "ping", {
-			timeoutMs: pingTimeoutMs,
+			timeoutMs: budgetMs,
 		});
 	} catch {
 		return null;
@@ -1507,15 +1512,19 @@ export async function pingResponse(api: URL | string): Promise<Response | null> 
 
 /** Whether an instance's API answers /ping, inside the budget. (Exported for the pingGuard
  * tests.) */
-export async function pingOK(api: URL | string): Promise<boolean> {
-	return (await pingResponse(api))?.ok === true;
+export async function pingOK(api: URL | string, budgetMs: number = pingTimeoutMs): Promise<boolean> {
+	return (await pingResponse(api, budgetMs))?.ok === true;
 }
 
 /**
  * this function checks if a string is an instance, it'll either return the API urls or null
  * (exported for the pingGuard tests)
  */
-export async function checkURLs(wellknown: string, urls: InstanceUrls) {
+export async function checkURLs(
+	wellknown: string,
+	urls: InstanceUrls,
+	budgetMs: number = pingTimeoutMs,
+) {
 	if (isLoopback(urls.api) !== isLoopback(wellknown)) {
 		return new Promise<InstanceUrls | null>(async (res) => {
 			// goAbove: the caller may have raised its own layer (the login dialog sits at
@@ -1555,7 +1564,7 @@ export async function checkURLs(wellknown: string, urls: InstanceUrls) {
 					// Setting `host` without a port keeps the old (loopback) one: take the site's own port.
 					for (const url of Object.values(tempurls)) url.port = temp.port;
 
-					if (!(await pingOK(tempurls.api))) {
+					if (!(await pingOK(tempurls.api, budgetMs))) {
 						res(null);
 						menu.hide();
 						return;
@@ -1577,7 +1586,7 @@ export async function checkURLs(wellknown: string, urls: InstanceUrls) {
 				clicked = true;
 				if (urls == null) throw new Error("URLs is undefined");
 				try {
-					if (!(await pingOK(urls.api))) {
+					if (!(await pingOK(urls.api, budgetMs))) {
 						res(null);
 						menu.hide();
 						return;

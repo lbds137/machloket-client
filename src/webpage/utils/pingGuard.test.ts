@@ -9,7 +9,13 @@ const {I18n} = await import("../i18n");
 // Button labels hydrate asynchronously; drive the dialog only once they have landed.
 await I18n.done;
 
-const {checkURLs, pingOK, pingTimeoutMs} = utils;
+const {checkURLs, pingOK} = utils;
+
+/** The injected /ping budget for the hang pins: real timers, just short. Faking the timers
+ * outright starves the dialog's render path and the abort budget never lands (a full
+ * afternoon of fake-timer variants, 10-29), so the budget stays real and the tests inject
+ * a short one instead of waiting out the production 10 s. */
+const BUDGET = 100;
 
 afterEach(() => {
 	// unstub — not restoreAllMocks: the latter would also tear down the harness setup's
@@ -54,12 +60,11 @@ async function clickDialogButton(label: string) {
 }
 
 /**
- * REAL timers throughout: faking them starves the dialog's render path and the abort
- * budget never lands (a full afternoon of fake-timer variants, 10-29), so the hang pins
- * wait out the real 10 s budget instead. Slow by design; each is bounded well under its
- * own timeout.
+ * REAL timers throughout (see BUDGET above); each hang pin is bounded well above the
+ * injected budget, and its race turns a never-settling hang into a red assertion instead
+ * of a timeout.
  */
-const HANG_IT = {timeout: 30_000} as const;
+const HANG_IT = {timeout: 5_000} as const;
 
 /** Resolves how the wait ended: the promise settled, or the budget-plus-slack ran out. */
 function withinBudget(p: Promise<unknown>): Promise<string> {
@@ -68,18 +73,18 @@ function withinBudget(p: Promise<unknown>): Promise<string> {
 			() => "settled",
 			() => "error",
 		),
-		new Promise<string>((r) => setTimeout(() => r("unsettled"), pingTimeoutMs + 5_000)),
+		new Promise<string>((r) => setTimeout(() => r("unsettled"), BUDGET + 2_000)),
 	]);
 }
 
 it("pingOK: a ping that never answers reads as a miss inside the budget", HANG_IT, async () => {
 	stubPings(() => "hang");
 	const verdict = await Promise.race([
-		pingOK(URLS.api).then(
+		pingOK(URLS.api, BUDGET).then(
 			(ok) => (ok ? "answered-true" : "miss"),
 			(e) => `threw:${(e as Error).name}`,
 		),
-		new Promise<string>((r) => setTimeout(() => r("pending"), pingTimeoutMs + 2_000)),
+		new Promise<string>((r) => setTimeout(() => r("pending"), BUDGET + 2_000)),
 	]);
 	expect(verdict).toBe("miss");
 });
@@ -94,7 +99,7 @@ it("pingOK: an ok ping is true and a non-ok ping is false", async () => {
 
 it("checkURLs: a hung ping still resolves null after the No button", HANG_IT, async () => {
 	stubPings(() => "hang");
-	const p = checkURLs(WELLKNOWN, URLS);
+	const p = checkURLs(WELLKNOWN, URLS, BUDGET);
 	await new Promise((r) => setTimeout(r, 50));
 	await clickDialogButton(I18n.no());
 	expect(await withinBudget(p)).toBe("settled");
@@ -103,7 +108,7 @@ it("checkURLs: a hung ping still resolves null after the No button", HANG_IT, as
 
 it("checkURLs: a hung ping still resolves null after the Yes button", HANG_IT, async () => {
 	stubPings(() => "hang");
-	const p = checkURLs(WELLKNOWN, URLS);
+	const p = checkURLs(WELLKNOWN, URLS, BUDGET);
 	await new Promise((r) => setTimeout(r, 50));
 	await clickDialogButton(I18n.yes());
 	expect(await withinBudget(p)).toBe("settled");
