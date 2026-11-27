@@ -1069,7 +1069,7 @@ describe("fetchRetryOnce inside the shared 429 windows", () => {
 				() =>
 					Response.json(
 						{message: "rate limited", retry_after: 0.05},
-						{status: 429, headers: {"Retry-After": "1"}},
+						{status: 429, headers: {"Retry-After": "0.5"}},
 					),
 				() => Response.json({}),
 			),
@@ -1091,7 +1091,7 @@ describe("fetchRetryOnce inside the shared 429 windows", () => {
 				() =>
 					Response.json(
 						{message: "rate limited", retry_after: 0.05},
-						{status: 429, headers: {"Retry-After": "1"}},
+						{status: 429, headers: {"Retry-After": "0.5"}},
 					),
 				() => Response.json({}),
 			),
