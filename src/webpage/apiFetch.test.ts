@@ -2620,8 +2620,7 @@ describe("401 handling across an account switch (TASK-156)", () => {
 			code: "refreshURL",
 			url: "https://other-host.example/attachments/x",
 		});
-		const refreshedPosts = () =>
-			postMessage.mock.calls.filter(([m]) => m.code === "refreshedUrl");
+		const refreshedPosts = () => postMessage.mock.calls.filter(([m]) => m.code === "refreshedUrl");
 		await vi.waitFor(() => expect(refreshedPosts().length).toBeGreaterThan(0));
 		await settle();
 
