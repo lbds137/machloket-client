@@ -1,0 +1,1320 @@
+
+> machloket@0.2.0 check:e2e
+> npx tsc -p tsconfig.e2e.json --noEmit
+
+
+> machloket@0.2.0 test:e2e
+> playwright test
+
+e2e: tree=/home/cloudtest/cloud/repo branch=(detached) sha=bf46c07
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - `__dirname` (vite.config.js:28:37). Use `import.meta.dirname` instead
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+[WebServer] [plugin builtin:vite-reporter] 
+[WebServer] (!) Some chunks are larger than 500 kB after minification. Consider:
+[WebServer] - Using dynamic import() to code-split the application
+[WebServer] - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+[WebServer] - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/webpage/i18n.ts is dynamically imported by src/webpage/utils/storage/settingOverlay.ts but also statically imported by src/webpage/404.ts, src/webpage/backupCodes.ts, src/webpage/bot.ts, src/webpage/changelog.ts, src/webpage/channel.ts, ..., dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] [INEFFECTIVE_DYNAMIC_IMPORT] src/webpage/utils/utils.ts is dynamically imported by src/webpage/utils/apiFetch.ts but also statically imported by src/webpage/404.ts, src/webpage/audio/page.ts, src/webpage/channel.ts, src/webpage/contextmenu.ts, src/webpage/direct.ts, ..., dynamic import will not move module into another chunk.
+[WebServer] 
+[WebServer] [plugin build-revision] [SOURCEMAP_BROKEN] Sourcemap is likely to be incorrect: a plugin (build-revision) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+[WebServer] 
+[WebServer] (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+[WebServer]   - `__dirname` (vite.config.js:28:37). Use `import.meta.dirname` instead
+[WebServer] Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+
+Running 202 tests using 1 worker
+
+  ✘    1 [chromium-phone] › e2e/app-boot.spec.ts:14:1 › picking the mock instance and logging in renders the fixture guild, channel, and messages (1ms)
+  ✘    2 [chromium-phone] › e2e/app-boot.spec.ts:99:1 › a bare guild deep link auto-opens the guild's channel (1ms)
+  ✘    3 [chromium-phone] › e2e/app-boot.spec.ts:107:1 › a guild arriving before the pillar is built shows one icon, below Home (1ms)
+  ✘    4 [chromium-phone] › e2e/app-boot.spec.ts:122:1 › a channel deep link boots into the named channel (1ms)
+  ✘    5 [chromium-phone] › e2e/app-boot.spec.ts:132:1 › a channel deep link boots with the guild's channels listed (1ms)
+  ✘    6 [chromium-phone] › e2e/app-boot.spec.ts:147:1 › a bare guild deep link lands with a working composer (1ms)
+  ✘    7 [chromium-phone] › e2e/app-boot.spec.ts:179:1 › a deep link to an unknown channel lands in the fallback with a working composer (1ms)
+  ✘    8 [chromium-phone] › e2e/app-boot.spec.ts:208:1 › a deep link to a hidden channel keeps the fallback focused (1ms)
+  ✘    9 [chromium-phone] › e2e/app-boot.spec.ts:229:1 › a reconnect re-init leaves a closed chat closed (1ms)
+  ✘   10 [chromium-phone] › e2e/app-boot.spec.ts:281:1 › a session-less retry over a live pillar leaves one pillar, the open guild marked (2ms)
+  ✘   11 [chromium-phone] › e2e/app-boot.spec.ts:319:1 › the send button keeps its box while its icon is still loading (1ms)
+  ✘   12 [chromium-phone] › e2e/app-boot.spec.ts:353:1 › /app opens the app with its query and hash (1ms)
+  ✘   13 [chromium-phone] › e2e/backup-codes.spec.ts:18:1 › the codes fit a phone and survive a tap outside and Escape, until I've saved them (1ms)
+  ✘   14 [chromium-phone] › e2e/backup-codes.spec.ts:77:1 › viewing codes from the security grid shows them; regenerate replaces them in the same dialog (1ms)
+  ✘   15 [chromium-phone] › e2e/blocked-bar.spec.ts:15:1 › the blocked run collapses behind one bar with the right count (1ms)
+  ✘   16 [chromium-phone] › e2e/blocked-bar.spec.ts:32:1 › expanding the bar shows the run and holds the view at the tap point, then re-collapses (1ms)
+  ✘   17 [chromium-phone] › e2e/channel-reopen.spec.ts:8:1 › re-tapping a channel still loading doesn't leave its skeleton up (1ms)
+  ✘   18 [chromium-phone] › e2e/channel-reopen.spec.ts:36:2 › on desktop › tapping a loading channel's own row doesn't leave its skeleton up (1ms)
+  ✘   19 [chromium-phone] › e2e/channel-reopen.spec.ts:60:2 › on desktop › leaving a channel still loading for a panel channel takes its skeleton down (1ms)
+  ✘   20 [chromium-phone] › e2e/channel-reopen.spec.ts:82:3 › on desktop › with a forum › leaving a channel still loading for a forum takes its skeleton down (1ms)
+  ✘   21 [chromium-phone] › e2e/channel-self-drop.spec.ts:34:1 › a channel dropped where it started stays listed and sends no reorder (1ms)
+  ✘   22 [chromium-phone] › e2e/composer-attachments.spec.ts:66:1 › two files waiting in the composer both come back after a channel switch, and both send (2ms)
+  ✘   23 [chromium-phone] › e2e/composer-attachments.spec.ts:79:1 › tapping the open channel again keeps both files (1ms)
+  ✘   24 [chromium-phone] › e2e/composer-attachments.spec.ts:89:1 › a file already sent doesn't come back after a channel switch (1ms)
+  ✘   25 [chromium-phone] › e2e/composer-attachments.spec.ts:100:1 › a file cleared with Escape doesn't come back after a channel switch (1ms)
+  ✘   26 [chromium-phone] › e2e/composer-attachments.spec.ts:112:1 › a spoiler marked after a channel switch is the one that sends (1ms)
+  ✘   27 [chromium-phone] › e2e/composer-attachments.spec.ts:122:1 › a file removed after a channel switch stays out of the send (1ms)
+  ✘   28 [chromium-phone] › e2e/composer-attachments.spec.ts:148:1 › a spoiler marked on a file a refused send gave back is the one that resends (1ms)
+  ✘   29 [chromium-phone] › e2e/composer-attachments.spec.ts:189:1 › a file refused after a switch away and back comes back, and its controls still work (1ms)
+  ✘   30 [chromium-phone] › e2e/composer-attachments.spec.ts:233:1 › a file a refused send gave back survives a trip to another server (1ms)
+  ✘   31 [chromium-phone] › e2e/composer-attachments.spec.ts:248:1 › files and text waiting in the composer survive a trip to another server (1ms)
+  ✘   32 [chromium-phone] › e2e/composer-attachments.spec.ts:265:1 › files and text waiting in the composer survive the home page and then another server (1ms)
+  ✘   33 [chromium-phone] › e2e/composer-attachments.spec.ts:285:1 › files and text waiting in the composer survive a reconnect that starts a new session (1ms)
+  ✘   34 [chromium-phone] › e2e/composer-attachments.spec.ts:308:1 › a file left in a channel that isn't open survives a new session, and its controls still work (2ms)
+  ✘   35 [chromium-phone] › e2e/composer-attachments.spec.ts:331:1 › files and text waiting in the composer survive a trip to the home page (1ms)
+  ✘   36 [chromium-phone] › e2e/composer-paste.spec.ts:51:1 › a message copied in the page pastes into the composer with its mention and emoji intact (2ms)
+  ✘   37 [chromium-phone] › e2e/composer-refusal.spec.ts:13:1 › a sent message empties the composer and takes the send button with it (1ms)
+  ✘   38 [chromium-phone] › e2e/composer-refusal.spec.ts:27:1 › the same text typed again right after a tap-send still shows the send button (1ms)
+  ✘   39 [chromium-phone] › e2e/composer-refusal.spec.ts:46:1 › a too-long message's refusal is spelled out in a notice above the composer (1ms)
+  ✘   40 [chromium-phone] › e2e/cookie-login.spec.ts:47:2 › cookie-session instance › logs in by cookie and connects with no token anywhere in page script (1ms)
+  ✘   41 [chromium-phone] › e2e/cookie-login.spec.ts:98:1 › a stock instance logs in by token, with no cookie opt-in (1ms)
+  ✘   42 [chromium-phone] › e2e/csp.spec.ts:17:1 › the preview serves the policy the build ships in _headers (1ms)
+  ✘   43 [chromium-phone] › e2e/csp.spec.ts:24:1 › control: an element can still be cleared through innerHTML (1ms)
+  ✘   44 [chromium-phone] › e2e/csp.spec.ts:36:1 › markup assigned to innerHTML is refused and reported (1ms)
+  ✘   45 [chromium-phone] › e2e/csp.spec.ts:55:1 › a cross-origin worker URL is refused (1ms)
+  ✘   46 [chromium-phone] › e2e/csp.spec.ts:78:1 › an injected inline event handler is refused and reported (1ms)
+  ✘   47 [chromium-phone] › e2e/csp.spec.ts:101:6 › a violation nobody expected fails the test (1ms)
+  ✓   48 [chromium-phone] › e2e/csp.spec.ts:117:1 › the page can fetch a blob: and a data: URL it made (1ms)
+  ✓   49 [chromium-phone] › e2e/csp.spec.ts:135:1 › the hCaptcha script may load (0ms)
+  ✓   50 [chromium-phone] › e2e/csp.spec.ts:165:2 › with the service worker on › it registers at boot under the policy (0ms)
+  ✓   51 [chromium-phone] › e2e/csp.spec.ts:185:1 › the sound editor parses its formulas and loads its worklet under the policy (0ms)
+  ✓   52 [chromium-phone] › e2e/embeds.spec.ts:10:1 › the rich embed shows its thumbnail at the top right, text flowing beside (0ms)
+  ✓   53 [chromium-phone] › e2e/embeds.spec.ts:52:1 › the video embed swaps its poster for a YouTube player iframe on tap (0ms)
+  ✓   54 [chromium-phone] › e2e/embeds.spec.ts:82:1 › the video embed's poster and player stay on a phone screen and keep their shape (0ms)
+  ✓   55 [chromium-phone] › e2e/embeds.spec.ts:117:1 › the player's border reset stays on the player, away from other frames (0ms)
+  ✓   56 [chromium-phone] › e2e/embeds.spec.ts:157:2 › an article embed whose image reports no size › stays on a phone screen and keeps its shape (0ms)
+  ✓   57 [chromium-phone] › e2e/emoji-button.spec.ts:14:2 › emoji button opens the picker (mouse) (0ms)
+  ✓   58 [chromium-phone] › e2e/emoji-button.spec.ts:14:2 › emoji button opens the picker (touch) (0ms)
+  ✓   59 [chromium-phone] › e2e/emoji-button.spec.ts:39:2 › a picked emoji lands at a mid-text caret (mouse) (0ms)
+  ✓   60 [chromium-phone] › e2e/emoji-button.spec.ts:39:2 › a picked emoji lands at a mid-text caret (touch) (0ms)
+  ✓   61 [chromium-phone] › e2e/emoji-button.spec.ts:78:1 › emoji button opens the picker on a fresh boot, before the box is touched (0ms)
+  ✓   62 [chromium-phone] › e2e/emoji-button.spec.ts:90:1 › with text selected in a message, a picked emoji goes after the draft (0ms)
+  ✓   63 [chromium-phone] › e2e/emoji-tone.spec.ts:13:1 › header tone selector applies tone modifier to flagged cells and leaves unflagged cells unchanged (0ms)
+  ✓   64 [chromium-phone] › e2e/emoji-tone.spec.ts:41:1 › picked skin tone persists across reload when reopening the picker (0ms)
+  ✓   65 [chromium-phone] › e2e/emoji-tone.spec.ts:67:1 › plain-clicking a flagged cell with a tone picked inserts the toned emoji into #typebox (0ms)
+  ✓   66 [chromium-phone] › e2e/emoji-tone.spec.ts:88:1 › hovering a picker cell shows :name: in .emojiFooter and moving off the picker clears it (0ms)
+  ✓   67 [chromium-phone] › e2e/forward.spec.ts:16:1 › a forwarded message renders its card from the snapshot (0ms)
+  ✓   68 [chromium-phone] › e2e/forward.spec.ts:32:1 › right-click -> Forward sends through the picker with the source reference (0ms)
+  ✓   69 [chromium-phone] › e2e/full-storage-boot.spec.ts:6:1 › a signed-in reload boots with localStorage full (0ms)
+  ✓   70 [chromium-phone] › e2e/full-storage-boot.spec.ts:63:1 › a plain signed-in reload doesn't rewrite userPreferences (0ms)
+  ✓   71 [chromium-phone] › e2e/full-storage-boot.spec.ts:86:1 › changing a setting on a full store applies it for the session and shows one dialog (0ms)
+  ✓   72 [chromium-phone] › e2e/full-storage-login.spec.ts:13:1 › signing in with localStorage full boots for the session with one dialog, and asks to sign in again after a reload (0ms)
+  ✓   73 [chromium-phone] › e2e/full-storage-login.spec.ts:75:1 › a session-only account the app can't start is used up without its Dialog, so a reload signs out (0ms)
+  ✓   74 [chromium-phone] › e2e/full-storage-login.spec.ts:141:1 › booting a stored account from a hand-off that also carries a session-only one shows no session-only Dialog (0ms)
+  ✓   75 [chromium-phone] › e2e/full-storage-login.spec.ts:218:1 › a reload of the login page drops a session-only account the hand-off carried there (0ms)
+  ✓   76 [chromium-phone] › e2e/full-storage-login.spec.ts:240:1 › the app's own reload keeps the hand-off once; the user's next reload drops it (0ms)
+  ✓   77 [chromium-phone] › e2e/full-storage-login.spec.ts:260:1 › a reload marked for another page still drops the hand-off (0ms)
+  ✓   78 [chromium-phone] › e2e/full-storage-login.spec.ts:270:1 › an in-app navigation to the page already open keeps the hand-off: it is not a reload (0ms)
+  ✓   79 [chromium-phone] › e2e/guild-menu.spec.ts:36:1 › Mute asks for a duration, mutes the guild icon; Unmute undoes it (0ms)
+  ✓   80 [chromium-phone] › e2e/guild-menu.spec.ts:78:1 › Copy server info puts the guild's name and id on the clipboard (0ms)
+  ✓   81 [chromium-phone] › e2e/guild-open.spec.ts:9:1 › a server opened before its member arrives opens its channel once the member does (0ms)
+  ✓   82 [chromium-phone] › e2e/guild-open.spec.ts:35:1 › a server left before its member arrives doesn't pull the user back when it does (0ms)
+  ✓   83 [chromium-phone] › e2e/harness.spec.ts:11:1 › control: an answered same-origin API request passes (1ms)
+  ✓   84 [chromium-phone] › e2e/harness.spec.ts:20:1 › control: a page load with no stray request passes (0ms)
+  ✓   85 [chromium-phone] › e2e/harness.spec.ts:25:6 › an unmocked same-origin API request fails the test (0ms)
+  ✘   86 [chromium-phone] › e2e/harness.spec.ts:31:6 › a request to another localhost port fails the test (1ms)
+  ✓   87 [chromium-phone] › e2e/harness.spec.ts:36:6 › an off-origin websocket fails the test (1ms)
+  ✘   88 [chromium-phone] › e2e/harness.spec.ts:49:6 › a same-origin request outside the mock's allowlist fails the test (1ms)
+  ✓   89 [chromium-phone] › e2e/harness.spec.ts:58:1 › control: a built-app static serves through the catch-all (1ms)
+  ✓   90 [chromium-phone] › e2e/icons.spec.ts:10:1 › the app chrome's icons resolve real mask files (1ms)
+  ✓   91 [chromium-phone] › e2e/icons.spec.ts:50:1 › the header's icons render and look right (0ms)
+  ✓   92 [chromium-phone] › e2e/icons.spec.ts:66:1 › the context menu's icons render and the menu looks right (0ms)
+  ✓   93 [chromium-phone] › e2e/icons.spec.ts:99:1 › the queued menu rows carry icons and every new mask serves (0ms)
+  ✓   94 [chromium-phone] › e2e/invite-embed.spec.ts:54:1 › an invite to another instance contacts it only after a tap (0ms)
+  ✓   95 [chromium-phone] › e2e/invite-errors.spec.ts:11:1 › a dead invite says so and drops the Accept button (0ms)
+  ✓   96 [chromium-phone] › e2e/invite-errors.spec.ts:32:1 › a server failure keeps Accept and explains itself (0ms)
+  ✓   97 [chromium-phone] › e2e/invite-errors.spec.ts:65:1 › an invite preview without a guild is a dead invite (0ms)
+  ✓   98 [chromium-phone] › e2e/invite.spec.ts:17:1 › the invite page previews the guild, and accept lands in it (0ms)
+  ✓   99 [chromium-phone] › e2e/join-landing.spec.ts:23:1 › joining a guild the session already knows lands in its channel (0ms)
+  ✓  100 [chromium-phone] › e2e/join-landing.spec.ts:38:1 › joining a guild before its GUILD_CREATE lands in it when it arrives (0ms)
+  ✓  101 [chromium-phone] › e2e/join-landing.spec.ts:55:1 › a server clicked before its member arrives shows a loading state, not the old channel (0ms)
+  ✓  102 [chromium-phone] › e2e/join-landing.spec.ts:79:1 › leaving for home during the member wait clears the loading state (0ms)
+  ✓  103 [chromium-phone] › e2e/login-layer.spec.ts:21:1 › a refused login shows the field refusal and stays on the form (0ms)
+  ✓  104 [chromium-phone] › e2e/login-layer.spec.ts:55:1 › a nested field refusal the form has no field for says its reason (0ms)
+  ✓  105 [chromium-phone] › e2e/login-layer.spec.ts:88:1 › Spacebar's own field refusal shows under the form and keeps it up (0ms)
+  ✓  106 [chromium-phone] › e2e/login-layer.spec.ts:130:1 › the instance-rewrite dialog renders above the raised auth dialog (0ms)
+  ✓  107 [chromium-phone] › e2e/login-layer.spec.ts:220:1 › the auth layer's instance picker renders input, suggestions and verdict (0ms)
+  ✓  108 [chromium-phone] › e2e/member-menu.spec.ts:80:1 › the member menu orders moderation, then roles, then copy-id, with dividers and red moderation rows (0ms)
+  ✓  109 [chromium-phone] › e2e/message-edit-empty.spec.ts:54:2 › a text message › an edit emptied out offers to delete, and saves nothing (0ms)
+  ✓  110 [chromium-phone] › e2e/message-edit-empty.spec.ts:66:2 › a text message › an edit emptied to whitespace offers to delete too (0ms)
+  ✓  111 [chromium-phone] › e2e/message-edit-empty.spec.ts:78:2 › a text message › a normal edit still saves (0ms)
+  ✓  112 [chromium-phone] › e2e/message-edit-empty.spec.ts:91:2 › a text message › editing a message twice shows the latest text and keeps it in channel history (1ms)
+  ✓  113 [chromium-phone] › e2e/message-edit-empty.spec.ts:127:2 › a text message › the confirm's No keeps the message and its text (0ms)
+  ✓  114 [chromium-phone] › e2e/message-edit-empty.spec.ts:142:2 › a text message › the confirm's Yes deletes the message (0ms)
+  ✓  115 [chromium-phone] › e2e/message-edit-empty.spec.ts:164:2 › a message with attachments › an edit emptied out still saves (0ms)
+  ✓  116 [chromium-phone] › e2e/message-length.spec.ts:39:1 › over the limit: nothing is sent, and the text and reply target stay (0ms)
+  ✓  117 [chromium-phone] › e2e/message-length.spec.ts:70:1 › a forum post over the limit isn't sent and says why (0ms)
+  ✓  118 [chromium-phone] › e2e/mock-perm.spec.ts:18:2 › when extraEveryonePermissions grants SEND_POLLS › composer "+" menu shows "Make poll" and "Upload" (0ms)
+  ✓  119 [chromium-phone] › e2e/mock-perm.spec.ts:32:1 › default mount: composer "+" menu omits "Make poll" and shows "Upload" (0ms)
+  ✓  120 [chromium-phone] › e2e/modal-server-errors.spec.ts:40:1 › a refused submit's server errors land under their fields and the modal stays open (0ms)
+  ✓  121 [chromium-phone] › e2e/modal-server-errors.spec.ts:65:1 › clearing the server refusal lets the resubmit through (0ms)
+  ✓  122 [chromium-phone] › e2e/modal-validation.spec.ts:29:1 › an empty submit is blocked with per-field errors and nothing sent (0ms)
+  ✓  123 [chromium-phone] › e2e/modal-validation.spec.ts:58:1 › the length window rejects out-of-band values, then a valid submit sends (0ms)
+  ✓  124 [chromium-phone] › e2e/notify-bar.spec.ts:20:1 › the bar shows while permission is unset (0ms)
+  ✓  125 [chromium-phone] › e2e/notify-bar.spec.ts:36:1 › dismissing the bar sticks across a reload (0ms)
+  ✓  126 [chromium-phone] › e2e/notify-bar.spec.ts:58:1 › with notifications granted, the bar never shows (0ms)
+  ✓  127 [chromium-phone] › e2e/phone-layout.spec.ts:27:1 › a bot's form is one sheet the size of the phone viewport (1ms)
+  ✓  128 [chromium-phone] › e2e/phone-layout.spec.ts:54:1 › with the keyboard up, the sheet fills the band above it and Submit stays in reach (0ms)
+  ✓  129 [chromium-phone] › e2e/phone-layout.spec.ts:94:1 › the form modal names the opener message in its submit (0ms)
+  ✓  130 [chromium-phone] › e2e/poll-modal.spec.ts:13:2 › poll modal validation (SEND_POLLS granted) › gates submit on validation, caps question/answer lengths live, and clamps answer rows between MIN and MAX (0ms)
+  ✓  131 [chromium-phone] › e2e/poll-modal.spec.ts:124:1 › default mount without SEND_POLLS omits "Make poll" and never opens the poll modal (0ms)
+  ✓  132 [chromium-phone] › e2e/recovery-banner.spec.ts:59:1 › with no request pending there's no bar and the app has the whole screen (0ms)
+  ✓  133 [chromium-phone] › e2e/recovery-banner.spec.ts:69:1 › a running hold warns on the phone's chat and channel list, with its date and time left (0ms)
+  ✓  134 [chromium-phone] › e2e/recovery-banner.spec.ts:98:1 › the phone's full-screen search leaves the warning and its button reachable (0ms)
+  ✓  135 [chromium-phone] › e2e/recovery-banner.spec.ts:115:1 › a hold whose notice isn't out yet warns with no countdown (0ms)
+  ✓  136 [chromium-phone] › e2e/recovery-banner.spec.ts:126:1 › cancelling sends the DELETE, and the app takes the room back (0ms)
+  ✓  137 [chromium-phone] › e2e/recovery-banner.spec.ts:140:1 › a refused cancel says so and leaves the warning and its button up (0ms)
+  ✓  138 [chromium-phone] › e2e/recovery-banner.spec.ts:157:1 › gateway frames raise and clear the warning on a running session (0ms)
+  ✓  139 [chromium-phone] › e2e/recovery-banner.spec.ts:186:1 › a resumed connection reads the state again, since a drop can miss an event (0ms)
+  ✓  140 [chromium-phone] › e2e/recovery-banner.spec.ts:202:2 › on a desktop › the bar spans the top and the app fills the rest (0ms)
+  ✓  141 [chromium-phone] › e2e/refused-send-bubble.spec.ts:26:1 › typing after a send: the refused message stays, failed, with Retry (0ms)
+  ✓  142 [chromium-phone] › e2e/refused-send-bubble.spec.ts:50:1 › changing channel after a send: the refused message is there when you come back (0ms)
+  ✓  143 [chromium-phone] › e2e/refused-send-bubble.spec.ts:74:1 › a send the gateway already delivered gets no failed bubble when its request errors (0ms)
+  ✓  144 [chromium-phone] › e2e/refused-send-bubble.spec.ts:143:1 › a refusal that arrives late does not pull the view down from history (0ms)
+  ✓  145 [chromium-phone] › e2e/register-dob.spec.ts:38:1 › default config keeps the DOB field, posts date_of_birth, and renders a server field error on it (0ms)
+  ✓  146 [chromium-phone] › e2e/register-dob.spec.ts:94:2 › when register_dateOfBirth_required is false › hides the DOB field and drops date_of_birth from the register payload (0ms)
+  ✓  147 [chromium-phone] › e2e/select-sheet.spec.ts:64:1 › tapping the select box opens the sheet without focusing it (0ms)
+  ✓  148 [chromium-phone] › e2e/select-sheet.spec.ts:89:1 › sheet chrome: rows, count, header join, disable-at-max, Apply sends (0ms)
+  ✓  149 [chromium-phone] › e2e/select-sheet.spec.ts:153:1 › closing the sheet discards: the choice reverts and nothing is sent (0ms)
+  ✓  150 [chromium-phone] › e2e/session-401.spec.ts:17:1 › a gateway closing 4004 on a dead session routes to /login (0ms)
+  ✓  151 [chromium-phone] › e2e/session-401.spec.ts:53:2 › a gateway closing 4004 while the probe finds the session alive retries once, then offers Retry (0ms)
+  ✓  152 [chromium-phone] › e2e/session-401.spec.ts:53:2 › a gateway closing 4004 while the probe gets no verdict retries once, then offers Retry (0ms)
+  ✓  153 [chromium-phone] › e2e/session-401.spec.ts:110:1 › a gateway that sends READY then closes 4004 retries once, then offers Retry (0ms)
+  ✓  154 [chromium-phone] › e2e/session-401.spec.ts:137:1 › a send refused because the session died routes to /login (0ms)
+  ✓  155 [chromium-phone] › e2e/settings-app.spec.ts:17:1 › Appearance holds the theme and accent controls; Notifications holds the sound controls (0ms)
+  ✓  156 [chromium-phone] › e2e/settings-app.spec.ts:40:1 › Chat holds the emoji font and join-avatar controls (0ms)
+  ✓  157 [chromium-phone] › e2e/settings-app.spec.ts:52:1 › Voice & video renders the input device picker with System default first (0ms)
+  ✓  158 [chromium-phone] › e2e/settings-app.spec.ts:71:1 › Application keeps Update settings and Trusted Domains and loses Language (0ms)
+  ✓  159 [chromium-phone] › e2e/settings-app.spec.ts:91:1 › deep link #settings/app-settings pre-activates the section (0ms)
+  ✓  160 [chromium-phone] › e2e/settings-content-controls.spec.ts:52:1 › spoiler media: covered by default, a placeholder on block, raw on show (0ms)
+  ✓  161 [chromium-phone] › e2e/settings-content-controls.spec.ts:73:1 › nsfw channel: the default asks, block refuses, show opens for an allowed account (0ms)
+  ✓  162 [chromium-phone] › e2e/settings-nav.spec.ts:12:1 › search box renders and filters nav rows live (0ms)
+  ✓  163 [chromium-phone] › e2e/settings-nav.spec.ts:37:1 › the chevron toggles a section and the label click navigates without collapsing (0ms)
+  ✓  164 [chromium-phone] › e2e/settings-nav.spec.ts:67:1 › activating a section sets the hash and reload pre-activates that section (0ms)
+  ✓  165 [chromium-phone] › e2e/settings-nav.spec.ts:91:1 › keyboard ArrowRight and ArrowLeft on a focused header flip aria-expanded (0ms)
+  ✓  166 [chromium-phone] › e2e/settings-nav.spec.ts:117:1 › foot build info row renders and contains a version-looking string (0ms)
+  ✓  167 [chromium-phone] › e2e/settings-persist.spec.ts:22:1 › theme change in Appearance updates body theme class and persists across a reboot (0ms)
+  ✓  168 [chromium-phone] › e2e/settings-persist.spec.ts:48:1 › Privacy spoiler Block selection survives a subsequent preference write and reload (1ms)
+  ✓  169 [chromium-phone] › e2e/settings-privacy.spec.ts:25:1 › the nav shows each section header with its leaves in order (0ms)
+  ✓  170 [chromium-phone] › e2e/settings-privacy.spec.ts:53:1 › Download your data saves the exported JSON with the Content-Disposition filename (0ms)
+  ✓  171 [chromium-phone] › e2e/settings-privacy.spec.ts:71:1 › a 500 on export shows the refusal line and triggers no download (0ms)
+  ✓  172 [chromium-phone] › e2e/settings-privacy.spec.ts:98:1 › an aborted export request shows the offline refusal line and triggers no download (0ms)
+  ✓  173 [chromium-phone] › e2e/settings-privacy.spec.ts:119:1 › sensitive-content selects persist across page reload (0ms)
+  ✓  174 [chromium-phone] › e2e/settings-privacy.spec.ts:152:1 › searching a query that matches only the Privacy leaf keeps the Your account header visible (0ms)
+  ✓  175 [chromium-phone] › e2e/single-select-sheet.spec.ts:11:1 › the single-select sheet answers on tap with radio markers and no Apply (0ms)
+  ✓  176 [chromium-phone] › e2e/slash-archived.spec.ts:13:1 › an archived thread shows the unavailable hint and no command rows (0ms)
+  ✓  177 [chromium-phone] › e2e/slash-archived.spec.ts:39:1 › the parent text channel still lists commands and shows no archived hint (0ms)
+  ✓  178 [chromium-phone] › e2e/slash-perms.spec.ts:12:1 › the slash popup lists allowed commands and filters denied ones (0ms)
+  ✓  179 [chromium-phone] › e2e/slash-perms.spec.ts:37:1 › the bare slash browse panel filters the same way (0ms)
+  ✓  180 [chromium-phone] › e2e/slash-perms.spec.ts:58:2 › a member without USE_APPLICATION_COMMANDS › the slash popup offers no commands, until the bit is granted (0ms)
+  ✓  181 [chromium-phone] › e2e/smoke.spec.ts:4:1 › the home page lists the bundled instances (0ms)
+  ✓  182 [chromium-phone] › e2e/source-offer.spec.ts:8:1 › Client information credits Fermo and links the source of this build (0ms)
+  ✓  183 [chromium-phone] › e2e/sticker-picker.spec.ts:38:2 › populated guild stickers › opens with Frequently Used section in score order when frecency is seeded in userinfos storage (0ms)
+  ✓  184 [chromium-phone] › e2e/sticker-picker.spec.ts:87:2 › populated guild stickers › picking a sticker sends it and records frecency so subsequent opens show Frequently Used in score order (0ms)
+  ✓  185 [chromium-phone] › e2e/sticker-picker.spec.ts:144:2 › populated guild stickers › closing without a pick settles cleanly with no unhandled rejection and the composer still works (0ms)
+  ✓  186 [chromium-phone] › e2e/sticker-picker.spec.ts:186:1 › empty-sticker mount (default MOCK_GUILD.stickers: []) shows no-stickers title, closes cleanly, and settles (0ms)
+  ✓  187 [chromium-phone] › e2e/text-without-key.spec.ts:8:1 › the header search box reads as searching for text that arrives without a key (0ms)
+  ✓  188 [chromium-phone] › e2e/text-without-key.spec.ts:20:1 › the GIF search runs on text that arrives without a key (0ms)
+  ✓  189 [chromium-phone] › e2e/typed-mention.spec.ts:11:1 › sending a typed @name resolves a unique member to <@id> and leaves an unknown name literal (0ms)
+  ✓  190 [chromium-phone] › e2e/user-dock.spec.ts:16:1 › a hovered dock panel never paints over the mic, whatever the name's width (0ms)
+  ✓  191 [chromium-phone] › e2e/user-popout.spec.ts:60:1 › the popout is a bottom sheet spanning a 412px phone, wherever the avatar was (0ms)
+  ✓  192 [chromium-phone] › e2e/user-popout.spec.ts:82:1 › a member's bio shows its role mention as @RoleName, and the nick is the name shown (0ms)
+  -  193 [chromium-phone] › e2e/ux-shots.spec.ts:37:1 › capture: floating emoji picker + bare rows (phone)
+  -  194 [chromium-phone] › e2e/ux-shots.spec.ts:64:2 › desktop › capture: floating emoji picker (desktop)
+  -  195 [chromium-phone] › e2e/ux-shots.spec.ts:87:2 › landing › capture: settings (landing feature image)
+  -  196 [chromium-phone] › e2e/ux-shots.spec.ts:100:1 › capture: GIF picker (phone)
+  -  197 [chromium-phone] › e2e/ux-shots.spec.ts:123:1 › capture: sticker picker (phone)
+  ✓  198 [chromium-phone] › e2e/voice-chat-toggle.spec.ts:39:2 › a voice channel's chat button › brings up the channel's messages (0ms)
+  ✓  199 [chromium-phone] › e2e/voice-chat-toggle.spec.ts:55:2 › a voice channel's chat button › hides the chat again on a second tap, and adds nothing to back (0ms)
+  ✓  200 [chromium-phone] › e2e/voice-chat-toggle.spec.ts:70:2 › a voice channel's chat button › reopens the chat with its messages after hiding it (0ms)
+  ✓  201 [chromium-phone] › e2e/voice-chat-toggle.spec.ts:88:2 › an 18+ voice channel's chat button › shows the age gate, not the messages, until it's answered (0ms)
+  ✓  202 [chromium-phone] › e2e/voice-chat-toggle.spec.ts:115:1 › leaving a channel still loading for a voice channel takes its skeleton down (0ms)
+
+
+  1) [chromium-phone] › e2e/app-boot.spec.ts:14:1 › picking the mock instance and logging in renders the fixture guild, channel, and messages 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-picking-the-mock--223a6--guild-channel-and-messages-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-picking-the-mock--223a6--guild-channel-and-messages-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-picking-the-mock--223a6--guild-channel-and-messages-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium-phone] › e2e/app-boot.spec.ts:99:1 › a bare guild deep link auto-opens the guild's channel 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-bare-guild-deep-2a735-o-opens-the-guild-s-channel-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-bare-guild-deep-2a735-o-opens-the-guild-s-channel-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-bare-guild-deep-2a735-o-opens-the-guild-s-channel-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium-phone] › e2e/app-boot.spec.ts:107:1 › a guild arriving before the pillar is built shows one icon, below Home 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-guild-arriving--ab212-t-shows-one-icon-below-Home-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-guild-arriving--ab212-t-shows-one-icon-below-Home-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-guild-arriving--ab212-t-shows-one-icon-below-Home-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  4) [chromium-phone] › e2e/app-boot.spec.ts:122:1 › a channel deep link boots into the named channel 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-channel-deep-link-boots-into-the-named-channel-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-channel-deep-link-boots-into-the-named-channel-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-channel-deep-link-boots-into-the-named-channel-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  5) [chromium-phone] › e2e/app-boot.spec.ts:132:1 › a channel deep link boots with the guild's channels listed 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-channel-deep-li-42e67-the-guild-s-channels-listed-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-channel-deep-li-42e67-the-guild-s-channels-listed-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-channel-deep-li-42e67-the-guild-s-channels-listed-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  6) [chromium-phone] › e2e/app-boot.spec.ts:147:1 › a bare guild deep link lands with a working composer 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-bare-guild-deep-9c74d-nds-with-a-working-composer-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-bare-guild-deep-9c74d-nds-with-a-working-composer-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-bare-guild-deep-9c74d-nds-with-a-working-composer-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  7) [chromium-phone] › e2e/app-boot.spec.ts:179:1 › a deep link to an unknown channel lands in the fallback with a working composer 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-deep-link-to-an-b7f22-ack-with-a-working-composer-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-deep-link-to-an-b7f22-ack-with-a-working-composer-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-deep-link-to-an-b7f22-ack-with-a-working-composer-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  8) [chromium-phone] › e2e/app-boot.spec.ts:208:1 › a deep link to a hidden channel keeps the fallback focused 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-deep-link-to-a--76df8--keeps-the-fallback-focused-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-deep-link-to-a--76df8--keeps-the-fallback-focused-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-deep-link-to-a--76df8--keeps-the-fallback-focused-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  9) [chromium-phone] › e2e/app-boot.spec.ts:229:1 › a reconnect re-init leaves a closed chat closed 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-reconnect-re-init-leaves-a-closed-chat-closed-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-reconnect-re-init-leaves-a-closed-chat-closed-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-reconnect-re-init-leaves-a-closed-chat-closed-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  10) [chromium-phone] › e2e/app-boot.spec.ts:281:1 › a session-less retry over a live pillar leaves one pillar, the open guild marked 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-a-session-less-re-4a22b-illar-the-open-guild-marked-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-a-session-less-re-4a22b-illar-the-open-guild-marked-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-a-session-less-re-4a22b-illar-the-open-guild-marked-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  11) [chromium-phone] › e2e/app-boot.spec.ts:319:1 › the send button keeps its box while its icon is still loading 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot-the-send-button-k-fd7c9-e-its-icon-is-still-loading-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot-the-send-button-k-fd7c9-e-its-icon-is-still-loading-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot-the-send-button-k-fd7c9-e-its-icon-is-still-loading-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  12) [chromium-phone] › e2e/app-boot.spec.ts:353:1 › /app opens the app with its query and hash ───
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/app-boot--app-opens-the-app-with-its-query-and-hash-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/app-boot--app-opens-the-app-with-its-query-and-hash-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/app-boot--app-opens-the-app-with-its-query-and-hash-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  13) [chromium-phone] › e2e/backup-codes.spec.ts:18:1 › the codes fit a phone and survive a tap outside and Escape, until I've saved them 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/backup-codes-the-codes-fit-cfaa8-scape-until-I-ve-saved-them-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/backup-codes-the-codes-fit-cfaa8-scape-until-I-ve-saved-them-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/backup-codes-the-codes-fit-cfaa8-scape-until-I-ve-saved-them-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  14) [chromium-phone] › e2e/backup-codes.spec.ts:77:1 › viewing codes from the security grid shows them; regenerate replaces them in the same dialog 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/backup-codes-viewing-codes-507e1-ces-them-in-the-same-dialog-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/backup-codes-viewing-codes-507e1-ces-them-in-the-same-dialog-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/backup-codes-viewing-codes-507e1-ces-them-in-the-same-dialog-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  15) [chromium-phone] › e2e/blocked-bar.spec.ts:15:1 › the blocked run collapses behind one bar with the right count 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/blocked-bar-the-blocked-ru-4feae-ne-bar-with-the-right-count-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/blocked-bar-the-blocked-ru-4feae-ne-bar-with-the-right-count-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/blocked-bar-the-blocked-ru-4feae-ne-bar-with-the-right-count-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  16) [chromium-phone] › e2e/blocked-bar.spec.ts:32:1 › expanding the bar shows the run and holds the view at the tap point, then re-collapses 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/blocked-bar-expanding-the--5f053-tap-point-then-re-collapses-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/blocked-bar-expanding-the--5f053-tap-point-then-re-collapses-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/blocked-bar-expanding-the--5f053-tap-point-then-re-collapses-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  17) [chromium-phone] › e2e/channel-reopen.spec.ts:8:1 › re-tapping a channel still loading doesn't leave its skeleton up 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/channel-reopen-re-tapping--40f4a-esn-t-leave-its-skeleton-up-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/channel-reopen-re-tapping--40f4a-esn-t-leave-its-skeleton-up-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/channel-reopen-re-tapping--40f4a-esn-t-leave-its-skeleton-up-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  18) [chromium-phone] › e2e/channel-reopen.spec.ts:36:2 › on desktop › tapping a loading channel's own row doesn't leave its skeleton up 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/channel-reopen-on-desktop--e47e2-esn-t-leave-its-skeleton-up-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/channel-reopen-on-desktop--e47e2-esn-t-leave-its-skeleton-up-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/channel-reopen-on-desktop--e47e2-esn-t-leave-its-skeleton-up-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  19) [chromium-phone] › e2e/channel-reopen.spec.ts:60:2 › on desktop › leaving a channel still loading for a panel channel takes its skeleton down 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/channel-reopen-on-desktop--3e7ef-nel-takes-its-skeleton-down-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/channel-reopen-on-desktop--3e7ef-nel-takes-its-skeleton-down-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/channel-reopen-on-desktop--3e7ef-nel-takes-its-skeleton-down-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  20) [chromium-phone] › e2e/channel-reopen.spec.ts:82:3 › on desktop › with a forum › leaving a channel still loading for a forum takes its skeleton down 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/channel-reopen-on-desktop--5e7ed-rum-takes-its-skeleton-down-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/channel-reopen-on-desktop--5e7ed-rum-takes-its-skeleton-down-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/channel-reopen-on-desktop--5e7ed-rum-takes-its-skeleton-down-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  21) [chromium-phone] › e2e/channel-self-drop.spec.ts:34:1 › a channel dropped where it started stays listed and sends no reorder 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/channel-self-drop-a-channe-b5b70-listed-and-sends-no-reorder-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/channel-self-drop-a-channe-b5b70-listed-and-sends-no-reorder-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/channel-self-drop-a-channe-b5b70-listed-and-sends-no-reorder-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  22) [chromium-phone] › e2e/composer-attachments.spec.ts:66:1 › two files waiting in the composer both come back after a channel switch, and both send 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-two-f-055e9-hannel-switch-and-both-send-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-two-f-055e9-hannel-switch-and-both-send-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-two-f-055e9-hannel-switch-and-both-send-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  23) [chromium-phone] › e2e/composer-attachments.spec.ts:79:1 › tapping the open channel again keeps both files 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-tappi-bb12a-nnel-again-keeps-both-files-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-tappi-bb12a-nnel-again-keeps-both-files-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-tappi-bb12a-nnel-again-keeps-both-files-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  24) [chromium-phone] › e2e/composer-attachments.spec.ts:89:1 › a file already sent doesn't come back after a channel switch 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-fil-efc8e-back-after-a-channel-switch-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-fil-efc8e-back-after-a-channel-switch-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-fil-efc8e-back-after-a-channel-switch-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  25) [chromium-phone] › e2e/composer-attachments.spec.ts:100:1 › a file cleared with Escape doesn't come back after a channel switch 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-fil-bde82-back-after-a-channel-switch-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-fil-bde82-back-after-a-channel-switch-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-fil-bde82-back-after-a-channel-switch-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  26) [chromium-phone] › e2e/composer-attachments.spec.ts:112:1 › a spoiler marked after a channel switch is the one that sends 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-spo-c6e1e-witch-is-the-one-that-sends-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-spo-c6e1e-witch-is-the-one-that-sends-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-spo-c6e1e-witch-is-the-one-that-sends-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  27) [chromium-phone] › e2e/composer-attachments.spec.ts:122:1 › a file removed after a channel switch stays out of the send 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-fil-18324-witch-stays-out-of-the-send-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-fil-18324-witch-stays-out-of-the-send-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-fil-18324-witch-stays-out-of-the-send-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  28) [chromium-phone] › e2e/composer-attachments.spec.ts:148:1 › a spoiler marked on a file a refused send gave back is the one that resends 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-spo-4be34-ack-is-the-one-that-resends-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-spo-4be34-ack-is-the-one-that-resends-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-spo-4be34-ack-is-the-one-that-resends-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  29) [chromium-phone] › e2e/composer-attachments.spec.ts:189:1 › a file refused after a switch away and back comes back, and its controls still work 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-fil-cc735-and-its-controls-still-work-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-fil-cc735-and-its-controls-still-work-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-fil-cc735-and-its-controls-still-work-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  30) [chromium-phone] › e2e/composer-attachments.spec.ts:233:1 › a file a refused send gave back survives a trip to another server 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-fil-b6d71-es-a-trip-to-another-server-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-fil-b6d71-es-a-trip-to-another-server-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-fil-b6d71-es-a-trip-to-another-server-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  31) [chromium-phone] › e2e/composer-attachments.spec.ts:248:1 › files and text waiting in the composer survive a trip to another server 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-files-37b1d-ve-a-trip-to-another-server-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-files-37b1d-ve-a-trip-to-another-server-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-files-37b1d-ve-a-trip-to-another-server-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  32) [chromium-phone] › e2e/composer-attachments.spec.ts:265:1 › files and text waiting in the composer survive the home page and then another server 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-files-bf239-age-and-then-another-server-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-files-bf239-age-and-then-another-server-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-files-bf239-age-and-then-another-server-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  33) [chromium-phone] › e2e/composer-attachments.spec.ts:285:1 › files and text waiting in the composer survive a reconnect that starts a new session 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-files-3cbdb-t-that-starts-a-new-session-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-files-3cbdb-t-that-starts-a-new-session-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-files-3cbdb-t-that-starts-a-new-session-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  34) [chromium-phone] › e2e/composer-attachments.spec.ts:308:1 › a file left in a channel that isn't open survives a new session, and its controls still work 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-a-fil-a87ee-and-its-controls-still-work-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-a-fil-a87ee-and-its-controls-still-work-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-a-fil-a87ee-and-its-controls-still-work-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  35) [chromium-phone] › e2e/composer-attachments.spec.ts:331:1 › files and text waiting in the composer survive a trip to the home page 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-attachments-files-76f86-ive-a-trip-to-the-home-page-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-attachments-files-76f86-ive-a-trip-to-the-home-page-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-attachments-files-76f86-ive-a-trip-to-the-home-page-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  36) [chromium-phone] › e2e/composer-paste.spec.ts:51:1 › a message copied in the page pastes into the composer with its mention and emoji intact 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-paste-a-message-c-a8ac0-ts-mention-and-emoji-intact-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-paste-a-message-c-a8ac0-ts-mention-and-emoji-intact-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-paste-a-message-c-a8ac0-ts-mention-and-emoji-intact-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  37) [chromium-phone] › e2e/composer-refusal.spec.ts:13:1 › a sent message empties the composer and takes the send button with it 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-refusal-a-sent-me-7da6a-kes-the-send-button-with-it-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-refusal-a-sent-me-7da6a-kes-the-send-button-with-it-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-refusal-a-sent-me-7da6a-kes-the-send-button-with-it-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  38) [chromium-phone] › e2e/composer-refusal.spec.ts:27:1 › the same text typed again right after a tap-send still shows the send button 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-refusal-the-same--ffd49-still-shows-the-send-button-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-refusal-the-same--ffd49-still-shows-the-send-button-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-refusal-the-same--ffd49-still-shows-the-send-button-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  39) [chromium-phone] › e2e/composer-refusal.spec.ts:46:1 › a too-long message's refusal is spelled out in a notice above the composer 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/composer-refusal-a-too-lon-2a490-a-notice-above-the-composer-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/composer-refusal-a-too-lon-2a490-a-notice-above-the-composer-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/composer-refusal-a-too-lon-2a490-a-notice-above-the-composer-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  40) [chromium-phone] › e2e/cookie-login.spec.ts:47:2 › cookie-session instance › logs in by cookie and connects with no token anywhere in page script 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/cookie-login-cookie-sessio-eae12-ken-anywhere-in-page-script-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cookie-login-cookie-sessio-eae12-ken-anywhere-in-page-script-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cookie-login-cookie-sessio-eae12-ken-anywhere-in-page-script-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  41) [chromium-phone] › e2e/cookie-login.spec.ts:98:1 › a stock instance logs in by token, with no cookie opt-in 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/cookie-login-a-stock-insta-95251-token-with-no-cookie-opt-in-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/cookie-login-a-stock-insta-95251-token-with-no-cookie-opt-in-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/cookie-login-a-stock-insta-95251-token-with-no-cookie-opt-in-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  42) [chromium-phone] › e2e/csp.spec.ts:17:1 › the preview serves the policy the build ships in _headers 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/csp-the-preview-serves-the-policy-the-build-ships-in-headers-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/csp-the-preview-serves-the-policy-the-build-ships-in-headers-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/csp-the-preview-serves-the-policy-the-build-ships-in-headers-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  43) [chromium-phone] › e2e/csp.spec.ts:24:1 › control: an element can still be cleared through innerHTML 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/csp-control-an-element-can-07ced-e-cleared-through-innerHTML-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/csp-control-an-element-can-07ced-e-cleared-through-innerHTML-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/csp-control-an-element-can-07ced-e-cleared-through-innerHTML-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  44) [chromium-phone] › e2e/csp.spec.ts:36:1 › markup assigned to innerHTML is refused and reported 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/csp-markup-assigned-to-innerHTML-is-refused-and-reported-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/csp-markup-assigned-to-innerHTML-is-refused-and-reported-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/csp-markup-assigned-to-innerHTML-is-refused-and-reported-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  45) [chromium-phone] › e2e/csp.spec.ts:55:1 › a cross-origin worker URL is refused ───────────────
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/csp-a-cross-origin-worker-URL-is-refused-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/csp-a-cross-origin-worker-URL-is-refused-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/csp-a-cross-origin-worker-URL-is-refused-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  46) [chromium-phone] › e2e/csp.spec.ts:78:1 › an injected inline event handler is refused and reported 
+
+    Error: browserType.launch: Executable doesn't exist at /home/cloudtest/cloud/pw-browsers/chromium_headless_shell-1255/chrome-headless-shell-linux64/chrome-headless-shell
+    ╔════════════════════════════════════════════════════════════╗
+    ║ Looks like Playwright was just installed or updated.       ║
+    ║ Please run the following command to download new browsers: ║
+    ║                                                            ║
+    ║     npx playwright install                                 ║
+    ║                                                            ║
+    ║ <3 Playwright Team                                         ║
+    ╚════════════════════════════════════════════════════════════╝
+
+    Error Context: test-results/csp-an-injected-inline-event-handler-is-refused-and-reported-chromium-phone/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/csp-an-injected-inline-event-handler-is-refused-and-reported-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/csp-an-injected-inline-event-handler-is-refused-and-reported-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  47) [chromium-phone] › e2e/harness.spec.ts:25:6 › an unmocked same-origin API request fails the test 
+
+    Expected to fail, but passed.
+
+    attachment #1: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/harness-an-unmocked-same-origin-API-request-fails-the-test-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/harness-an-unmocked-same-origin-API-request-fails-the-test-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  48) [chromium-phone] › e2e/harness.spec.ts:36:6 › an off-origin websocket fails the test ─────────
+
+    Expected to fail, but passed.
+
+    attachment #1: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/harness-an-off-origin-websocket-fails-the-test-chromium-phone/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/harness-an-off-origin-websocket-fails-the-test-chromium-phone/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  48 failed
+    [chromium-phone] › e2e/app-boot.spec.ts:14:1 › picking the mock instance and logging in renders the fixture guild, channel, and messages 
+    [chromium-phone] › e2e/app-boot.spec.ts:99:1 › a bare guild deep link auto-opens the guild's channel 
+    [chromium-phone] › e2e/app-boot.spec.ts:107:1 › a guild arriving before the pillar is built shows one icon, below Home 
+    [chromium-phone] › e2e/app-boot.spec.ts:122:1 › a channel deep link boots into the named channel 
+    [chromium-phone] › e2e/app-boot.spec.ts:132:1 › a channel deep link boots with the guild's channels listed 
+    [chromium-phone] › e2e/app-boot.spec.ts:147:1 › a bare guild deep link lands with a working composer 
+    [chromium-phone] › e2e/app-boot.spec.ts:179:1 › a deep link to an unknown channel lands in the fallback with a working composer 
+    [chromium-phone] › e2e/app-boot.spec.ts:208:1 › a deep link to a hidden channel keeps the fallback focused 
+    [chromium-phone] › e2e/app-boot.spec.ts:229:1 › a reconnect re-init leaves a closed chat closed 
+    [chromium-phone] › e2e/app-boot.spec.ts:281:1 › a session-less retry over a live pillar leaves one pillar, the open guild marked 
+    [chromium-phone] › e2e/app-boot.spec.ts:319:1 › the send button keeps its box while its icon is still loading 
+    [chromium-phone] › e2e/app-boot.spec.ts:353:1 › /app opens the app with its query and hash ─────
+    [chromium-phone] › e2e/backup-codes.spec.ts:18:1 › the codes fit a phone and survive a tap outside and Escape, until I've saved them 
+    [chromium-phone] › e2e/backup-codes.spec.ts:77:1 › viewing codes from the security grid shows them; regenerate replaces them in the same dialog 
+    [chromium-phone] › e2e/blocked-bar.spec.ts:15:1 › the blocked run collapses behind one bar with the right count 
+    [chromium-phone] › e2e/blocked-bar.spec.ts:32:1 › expanding the bar shows the run and holds the view at the tap point, then re-collapses 
+    [chromium-phone] › e2e/channel-reopen.spec.ts:8:1 › re-tapping a channel still loading doesn't leave its skeleton up 
+    [chromium-phone] › e2e/channel-reopen.spec.ts:36:2 › on desktop › tapping a loading channel's own row doesn't leave its skeleton up 
+    [chromium-phone] › e2e/channel-reopen.spec.ts:60:2 › on desktop › leaving a channel still loading for a panel channel takes its skeleton down 
+    [chromium-phone] › e2e/channel-reopen.spec.ts:82:3 › on desktop › with a forum › leaving a channel still loading for a forum takes its skeleton down 
+    [chromium-phone] › e2e/channel-self-drop.spec.ts:34:1 › a channel dropped where it started stays listed and sends no reorder 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:66:1 › two files waiting in the composer both come back after a channel switch, and both send 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:79:1 › tapping the open channel again keeps both files 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:89:1 › a file already sent doesn't come back after a channel switch 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:100:1 › a file cleared with Escape doesn't come back after a channel switch 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:112:1 › a spoiler marked after a channel switch is the one that sends 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:122:1 › a file removed after a channel switch stays out of the send 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:148:1 › a spoiler marked on a file a refused send gave back is the one that resends 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:189:1 › a file refused after a switch away and back comes back, and its controls still work 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:233:1 › a file a refused send gave back survives a trip to another server 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:248:1 › files and text waiting in the composer survive a trip to another server 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:265:1 › files and text waiting in the composer survive the home page and then another server 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:285:1 › files and text waiting in the composer survive a reconnect that starts a new session 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:308:1 › a file left in a channel that isn't open survives a new session, and its controls still work 
+    [chromium-phone] › e2e/composer-attachments.spec.ts:331:1 › files and text waiting in the composer survive a trip to the home page 
+    [chromium-phone] › e2e/composer-paste.spec.ts:51:1 › a message copied in the page pastes into the composer with its mention and emoji intact 
+    [chromium-phone] › e2e/composer-refusal.spec.ts:13:1 › a sent message empties the composer and takes the send button with it 
+    [chromium-phone] › e2e/composer-refusal.spec.ts:27:1 › the same text typed again right after a tap-send still shows the send button 
+    [chromium-phone] › e2e/composer-refusal.spec.ts:46:1 › a too-long message's refusal is spelled out in a notice above the composer 
+    [chromium-phone] › e2e/cookie-login.spec.ts:47:2 › cookie-session instance › logs in by cookie and connects with no token anywhere in page script 
+    [chromium-phone] › e2e/cookie-login.spec.ts:98:1 › a stock instance logs in by token, with no cookie opt-in 
+    [chromium-phone] › e2e/csp.spec.ts:17:1 › the preview serves the policy the build ships in _headers 
+    [chromium-phone] › e2e/csp.spec.ts:24:1 › control: an element can still be cleared through innerHTML 
+    [chromium-phone] › e2e/csp.spec.ts:36:1 › markup assigned to innerHTML is refused and reported ─
+    [chromium-phone] › e2e/csp.spec.ts:55:1 › a cross-origin worker URL is refused ─────────────────
+    [chromium-phone] › e2e/csp.spec.ts:78:1 › an injected inline event handler is refused and reported 
+    [chromium-phone] › e2e/harness.spec.ts:25:6 › an unmocked same-origin API request fails the test 
+    [chromium-phone] › e2e/harness.spec.ts:36:6 › an off-origin websocket fails the test ───────────
+  5 skipped
+  149 passed (19.3s)
