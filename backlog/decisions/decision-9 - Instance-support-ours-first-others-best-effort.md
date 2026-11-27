@@ -15,7 +15,7 @@ Our instance comes first; other Spacebar instances are best-effort. The option s
 ## Consequences
 
 - No new workarounds for stock Spacebar.
-- Existing compat guards may be deleted once our server makes them redundant, gated by the /_spacebar/api/version handshake (TASK-139).
+- Existing compat guards may be deleted once our server makes them redundant, gated by a capability probe only our server answers. (11-27 correction: not the /_spacebar/api/version handshake — stock serves that route with the same shape, so it cannot mark the fork; probe evidence in TASK-139, closed obsolete. The guards themselves turned out to be capability probes already, correct on both sides.)
 - The instance picker and discovery stay.
 - TASK-136's design targets same-site cookie login on our own deployment, with header tokens kept for other instances and bots.
 - Machloket Server gets the same ruling, through Deck.
