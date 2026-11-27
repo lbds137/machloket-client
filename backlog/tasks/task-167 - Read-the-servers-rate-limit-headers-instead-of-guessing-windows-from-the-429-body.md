@@ -6,7 +6,7 @@ title: >-
 status: Done
 assignee: []
 created_date: '2026-11-26T00:23:00Z'
-updated_date: '2026-11-26T11:27:00Z'
+updated_date: '2026-11-27T13:27:00Z'
 labels:
   - api
   - rate-limit
@@ -32,3 +32,15 @@ Plan revised (2026-11-26): (a) no X-RateLimit-Reset-After: every limiter 429 set
 
 Shipped in PR #225 (a2afb1cb), 2026-11-26: wait from Retry-After (capped 30 s), base-wide window on X-RateLimit-Global true; body fallback for older instances. TASK-89 item (6) folded as comments. claude-review lows 2-4 carried in the role file (console noise from getResponseHeader on unexposed headers; XHR-path Global test; ~3 s real-timer waits); low 1 filed separately.
 <!-- SECTION:NOTES:END -->
+
+## Comments
+
+<!-- COMMENTS:BEGIN -->
+created: 2026-11-27T13:27:00Z
+
+---
+
+11-27 08:2x: Machloket Server session: instance B redeployed at 704e7759f (PR #311) carrying 66f1e4af6 — exposed rate-limit headers verifiable on :3002 now; A still on the older build. Client probe (real-server tier: read the headers through the client fetch path on a real 429) deferred to the next free real-tier window — real tier shares dist/ with the mock tier, cloud-fix unit e2e in flight at record time.
+
+---
+<!-- COMMENTS:END -->
