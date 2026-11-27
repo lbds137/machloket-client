@@ -9,13 +9,13 @@
 # suite run shows what is still missing. As root, it also copies the repo to an
 # unprivileged test user (CLOUD_TEST_USER, default cloudtest), runs `npm ci` there,
 # installs the chromium browser into that user's cache, writes the user's env file
-# ($CLOUD_ENV_FILE.user) and prints a "suite as <user>:" line (best effort).
+# ($CLOUD_ENV_FILE.user) and prints "suite as <user>:" and "e2e as <user>:" lines (best effort).
 # machloket-client needs no seyag clone: its gate chain (format:check, check, test, build,
 # e2e) is self-contained. CI=1 keeps the Deck-local screenshot pins skipped (its
 # CLAUDE.md), so the DOM asserts still run.
 set -u
 envf=${CLOUD_ENV_FILE:-/tmp/cloud-env.sh}
-local_host=${CLOUD_SETUP_LOCAL_HOST:-steamdeck}   # tests set it to run the body on the Deck
+local_host=${CLOUD_SETUP_LOCAL_HOST:-steamdeck}   # set it to this machine's name to run the body elsewhere
 case "$(uname -n)" in "$local_host") echo "cloud setup: refusing on the Deck ($(uname -n))" >&2; exit 2 ;; esac
 # No path guard here: the VM session is root with the checkout under /home/user (dp-383-smoke),
 # so nothing checkable at runtime names the Deck's home. The hostname check above and
@@ -28,14 +28,16 @@ echo "npm: $(npm --version 2>&1)"
 for t in git chromium flock script timeout; do
   printf '%s: %s\n' "$t" "$(command -v "$t" || echo MISSING)"
 done
-case "$(node --version 2>&1)" in
-  v2[0-9].*|v[3-9][0-9].*) ;;
-  *) echo "node: VERSION PROBLEM (vite 8 needs Node 20.19+, this repo's CI uses 24); install Node 24 and rerun" ;;
+nv=$(node --version 2>&1); nvok=   # vite 8 floor: Node 20.19 (this repo's CI uses 24)
+case $nv in v[0-9]*.[0-9]*)
+  v=${nv#v}; maj=${v%%.*}; min=${v#*.}; min=${min%%.*}
+  if [ "$maj" -gt 20 ] || { [ "$maj" -eq 20 ] && [ "$min" -ge 19 ]; }; then nvok=1; fi ;;
 esac
+[ "$nvok" = 1 ] || echo "node: VERSION PROBLEM ($nv; vite 8 needs 20.19+, this repo's CI uses 24); install Node 24 and rerun"
 
 echo "== installs (best effort)"
 # command:package pairs the gate chain calls; playwright's own installer names its apt
-# deps, so the system libraries come from `npx playwright install-deps` below, not here.
+# deps, so the system libraries come from the copy's playwright install-deps below, not here.
 need=()
 for t in git; do
   command -v "$t" >/dev/null || need+=("$t")
@@ -47,7 +49,7 @@ if [ ${#need[@]} -gt 0 ]; then
     # update failed with no reason in the log). The update gets one retry.
     alog=$(mktemp) || alog=/dev/null
     apt_tail() { tail -n 3 "$alog" | cut -c1-200 | sed 's/^/  apt: /'; }
-    wait_s=${CLOUD_APT_RETRY_SLEEP:-15}   # the probe sets 0
+    wait_s=${CLOUD_APT_RETRY_SLEEP:-15}   # set 0 to skip the retry wait
     for try in 1 2; do
       if timeout 120 $sudo apt-get update -qq >"$alog" 2>&1; then break; else rc=$?; fi
       if [ "$try" = 1 ]; then echo "apt-get update failed (status $rc), retrying in $wait_s s:"; apt_tail; sleep "$wait_s"
@@ -90,44 +92,57 @@ mkdir -p "$trepo" && cp -a -- "$src/." "$trepo/" || user_fail "copy into $trepo"
 # artifacts, and the private tracker for withheld security work. It must not leave the
 # machine; settings.local.json is machine-local too.
 rm -rf -- "$trepo/docs/local" "$trepo/.claude/settings.local.json"
-chown -R "$tuser:" "$twork" || user_fail "chown $twork"
 # The copy must be exactly the tree the launcher cut, carrying nothing machine-local. cp -a
 # took the whole .git: machine-local refs (embargo/*, pre-rebase backups, the session's
 # working branch) and the linked-worktree checkouts under .claude/worktrees. The copy never
 # pushes anything (the suite only runs in it; pushes come from the session's own checkout, a
 # fresh clone whose refs all came from origin), so this is state hygiene, not a leak guard:
-# drop the copied worktree dirs first (worktree prune releases only stale entries, not
-# live-held branches), detach HEAD IN PLACE — the suite tests the cut tree, not wherever
-# origin/main sits — then delete every local branch and refuse loudly if any survive.
-rm -rf -- "$trepo/.claude/worktrees"
-git -C "$trepo" worktree prune
-git -C "$trepo" checkout -q --detach
+# drop the copied worktree checkout dirs AND the copied .git/worktrees metadata (its gitdir
+# files hold absolute paths into the SOURCE checkout, so a prune would never call the entries
+# stale), detach HEAD IN PLACE — the suite tests the cut tree, not wherever origin/main sits —
+# then delete every local branch and refuse loudly if any survive. All of this runs as root
+# BEFORE the chown below: git refuses a repo owned by another uid (dubious ownership, 2.35.2+),
+# and every git call here checks its rc so a refusal cannot pass as an empty-but-fine result.
+rm -rf -- "$trepo/.claude/worktrees" "$trepo/.git/worktrees"
+git -C "$trepo" checkout -q --detach || user_fail "detach HEAD in the copy"
 git -C "$trepo" for-each-ref --format='%(refname:short)' refs/heads/ \
   | while read -r b; do git -C "$trepo" branch -D "$b" >/dev/null 2>&1; done
-left=$(git -C "$trepo" for-each-ref --format='%(refname:short)' refs/heads/ | head -1)
+left=$(git -C "$trepo" for-each-ref --format='%(refname:short)' refs/heads/) || user_fail "list the copy's local branches"
 [ -z "$left" ] || user_fail "local branches survived the VM-copy cleanup: $left"
-treh=$(git -C "$trepo" rev-parse HEAD); srch=$(git -C "$src" rev-parse HEAD)
+treh=$(git -C "$trepo" rev-parse HEAD) || user_fail "read the copy's HEAD"
+srch=$(git -C "$src" rev-parse HEAD) || user_fail "read the source checkout's HEAD"
 [ "$treh" = "$srch" ] || { echo "test tree FAILED: copy is on $treh, source checkout on $srch; fix the copy or rerun setup before the suite"; exit 0; }
 echo "test tree: $treh"
-if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && npm ci --no-audit --no-fund" >/tmp/npm-ci.out 2>&1; then
-  echo "npm ci ok ($(grep -m1 '^added' /tmp/npm-ci.out 2>/dev/null || echo '?'))"
+# Hand the copy to the test user only after the root-side git work above.
+chown -R "$tuser:" "$twork" || user_fail "chown $twork"
+ciout=$(mktemp) || user_fail "temp file for the npm ci log"
+if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && npm ci --no-audit --no-fund" >"$ciout" 2>&1; then
+  echo "npm ci ok ($(grep -m1 '^added' "$ciout" 2>/dev/null || echo '?'))"
+  rm -f "$ciout"
 else
-  rc=$?; echo "npm ci FAILED (status $rc); tail:"; tail -n 5 /tmp/npm-ci.out 2>/dev/null | cut -c1-200 | sed 's/^/  npm: /'
+  rc=$?; echo "npm ci FAILED (status $rc); tail:"; tail -n 5 "$ciout" 2>/dev/null | cut -c1-200 | sed 's/^/  npm: /'
+  echo "  npm: full log kept at $ciout"
   user_fail "npm ci"
 fi
 # Playwright's chromium: system libraries as root (its installer names the apt packages),
 # then the browser binary into the test user's cache.
-if npx playwright install-deps chromium >/tmp/pw-deps.out 2>&1; then
+# The deps installer must be the LOCKED playwright from the copy's node_modules: npx in the
+# source checkout (no node_modules yet) would fetch the latest release and run it as root.
+depout=$(mktemp) || user_fail "temp file for the install-deps log"
+if "$trepo/node_modules/.bin/playwright" install-deps chromium >"$depout" 2>&1; then
   echo "playwright system deps ok"
+  rm -f "$depout"
 else
   rc=$?; echo "playwright install-deps FAILED (status $rc); tail:"
-  tail -n 5 /tmp/pw-deps.out 2>/dev/null | cut -c1-200 | sed 's/^/  pw: /'
+  tail -n 5 "$depout" 2>/dev/null | cut -c1-200 | sed 's/^/  pw: /'; echo "  pw: full log kept at $depout"
 fi
-if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && npx playwright install chromium" >/tmp/pw-browser.out 2>&1; then
+brout=$(mktemp) || user_fail "temp file for the chromium log"
+if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && npx playwright install chromium" >"$brout" 2>&1; then
   echo "chromium browser ok"
+  rm -f "$brout"
 else
   rc=$?; echo "chromium install FAILED (status $rc); tail:"
-  tail -n 5 /tmp/pw-browser.out 2>/dev/null | cut -c1-200 | sed 's/^/  pw: /'
+  tail -n 5 "$brout" 2>/dev/null | cut -c1-200 | sed 's/^/  pw: /'; echo "  pw: full log kept at $brout"
 fi
 uenv="$envf.user"
 { echo "# written by .claude/cloud/setup.sh for $tuser; source before running repo tools"
@@ -136,5 +151,7 @@ uenv="$envf.user"
   # command's ENOENT into EACCES (deck-platform r4). Keep only the entries it can search.
   echo '_p=; IFS=: read -ra _ds <<< "$PATH"; for _d in "${_ds[@]}"; do [ -n "$_d" ] && [ -x "$_d" ] && _p="${_p:+$_p:}$_d"; done; PATH=$_p; unset _p _d _ds'
 } > "$uenv" && chmod 644 "$uenv" || user_fail "write $uenv"
-GATE="npm run format:check && npm run check && npm test && npm run build && npm run check:e2e && npm run test:e2e"
+GATE="npm run format:check && npm run check && npm test && npm run build"
+E2E="npm run check:e2e && npm run test:e2e"
 printf 'suite as %s: runuser -u %q -- bash -c %q\n' "$tuser" "$tuser" "cd $(printf %q "$trepo") && . $(printf %q "$uenv") && $GATE"
+printf 'e2e as %s: runuser -u %q -- bash -c %q\n' "$tuser" "$tuser" "cd $(printf %q "$trepo") && . $(printf %q "$uenv") && $E2E"

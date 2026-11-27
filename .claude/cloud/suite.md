@@ -2,15 +2,17 @@ Run this repo's full test suite once on this VM and return the complete output t
 
 The suite is the commit gate chain plus the e2e tier, run in two Bash calls (each has its own 10-minute cap and its own rc file; the suite passes only when BOTH are green):
 
-1. After Step 0, run the commit gate with the `suite as <user>:` command from the setup output, but with its command replaced by the first four parts only, in one Bash call (timeout 600000 ms):
+1. After Step 0, run the `suite as <user>:` command from the setup output in one Bash call (timeout 600000 ms) — it runs the gate chain `npm run format:check && npm run check && npm test && npm run build`; send its output to `/tmp/suite.out 2>&1` and its exit code to `/tmp/suite.rc` (`echo rc=$? > /tmp/suite.rc`).
 
-   `npm run format:check && npm run check && npm test && npm run build`, its output sent to `/tmp/suite.out 2>&1` and its exit code to `/tmp/suite.rc` (`echo rc=$? > /tmp/suite.rc`).
-
-1b. Then the e2e tier (`npm run check:e2e && npm run test:e2e`; it builds first, so it never green-lights code the tests did not see), one Bash call (timeout 600000 ms), output to `/tmp/suite-e2e.out 2>&1` and exit code to `/tmp/suite-e2e.rc` (`echo rc=$? > /tmp/suite-e2e.rc`).
+1b. Then run the `e2e as <user>:` command from the setup output, one Bash call (timeout 600000 ms) — it runs `npm run check:e2e && npm run test:e2e` (the tier builds first, so it never green-lights code the tests did not see); output to `/tmp/suite-e2e.out 2>&1` and exit code to `/tmp/suite-e2e.rc` (`echo rc=$? > /tmp/suite-e2e.rc`).
 
    If there is no `suite as <user>:` line, run `. /tmp/cloud-env.sh && npm ci --no-audit --no-fund && npm run format:check && npm run check && npm run build` as root and say so in the report; the browser tiers (`npm test`, `npm run test:e2e`) cannot run as root (Chromium's sandbox), so leave them out and say that too.
 
-   If a call times out, first run `pgrep -a -f 'npm|vitest|playwright'`: if that call is still alive, do not start another; poll its rc file (`/tmp/suite.rc` or `/tmp/suite-e2e.rc`) every 2 minutes until it appears. Only if nothing is running and the rc file is absent, `rm -f` that call's output and rc files and rerun the same command under `nohup ... &` with `timeout 1500` in front of the chain, then poll its rc file every 2 minutes.
+   If a call times out, first run `pgrep -a -f 'npm|vitest|playwright'`: if that call is still alive, do not start another; poll its rc file (`/tmp/suite.rc` or `/tmp/suite-e2e.rc`) every 2 minutes until it appears. Only if nothing is running and the rc file is absent, `rm -f` that call's output and rc files and rerun that step's printed command in the background, with the rc capture INSIDE the quoted `bash -c` (an `echo rc=$?` outside it would record the rc of `&`, always 0) and the timeout around the whole chain. For the gate, exactly (with `<user>`, `<repo>`, `<envfile>` copied from the printed line):
+
+   `nohup runuser -u <user> -- bash -c 'cd <repo> && . <envfile> && timeout 1500 bash -c "npm run format:check && npm run check && npm test && npm run build"; echo rc=$? > /tmp/suite.rc' >/tmp/suite.out 2>&1 &`
+
+   For the e2e tier, the same shape with `npm run check:e2e && npm run test:e2e` and the `/tmp/suite-e2e.*` files. Poll its rc file every 2 minutes.
 
 2. Full logs of the failing parts: each of `format:check`, `check`, `test`, `build`, `check:e2e`, `test:e2e` counts as one part. For each part whose rc is non-zero, run that part alone as the same user and in the same way as its step (the same `runuser ... bash -c 'cd ... && . <env file> && ...'`), with `mkdir -p /tmp/probes && chmod 777 /tmp/probes` done once, and `timeout 600 npm run <part> > /tmp/probes/<part>.out 2>&1; echo "rc=$?" >> /tmp/probes/<part>.out` in place of the chain. Run them one at a time. With no failing parts, skip this step.
 
