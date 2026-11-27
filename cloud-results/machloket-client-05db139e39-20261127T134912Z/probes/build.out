@@ -1,0 +1,70 @@
+
+> machloket@0.2.0 build
+> vite build
+
+[33m(!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+  - `__dirname` (vite.config.js:28:37). Use `import.meta.dirname` instead
+Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.[39m
+[36mvite v8.3.8 [32mbuilding client environment for production...[36m[39m
+transforming...
+✓ 170 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/webpage/assets/dirrWorker-BJwWTiko.js      0.16 kB
+dist/webpage/reset.html                         1.04 kB │ gzip:   0.50 kB
+dist/webpage/login.html                         1.08 kB │ gzip:   0.52 kB
+dist/webpage/register.html                      1.22 kB │ gzip:   0.57 kB
+dist/webpage/template.html                      1.44 kB │ gzip:   0.68 kB
+dist/webpage/audio/index.html                   1.54 kB │ gzip:   0.77 kB
+dist/webpage/invite.html                        1.55 kB │ gzip:   0.71 kB
+dist/webpage/oauth2/authorize.html              1.61 kB │ gzip:   0.78 kB
+dist/webpage/404.html                           2.06 kB │ gzip:   0.87 kB
+dist/webpage/assets/worklet-C4YGe43Z.js         5.18 kB
+dist/webpage/index.html                         5.96 kB │ gzip:   1.92 kB
+dist/webpage/app.html                           6.55 kB │ gzip:   2.03 kB
+dist/webpage/assets/lb-DNIACTWa.json           11.52 kB │ gzip:   3.97 kB
+dist/webpage/assets/hi-wUSaok93.json           13.52 kB │ gzip:   3.86 kB
+dist/webpage/assets/lt-Bab5_Q2r.json           15.74 kB │ gzip:   5.23 kB
+dist/webpage/assets/pms-B_pzc1Nn.json          18.91 kB │ gzip:   6.19 kB
+dist/webpage/assets/ko-DKXXjFy7.json           19.63 kB │ gzip:   6.41 kB
+dist/webpage/assets/tr-C03QCjlo.json           23.09 kB │ gzip:   7.55 kB
+dist/webpage/assets/ja-DUphVMSx.json           23.12 kB │ gzip:   7.92 kB
+dist/webpage/assets/it-Dzk4wooe.json           24.85 kB │ gzip:   8.60 kB
+dist/webpage/assets/zh-hant-CKTTALE1.json      38.31 kB │ gzip:  13.91 kB
+dist/webpage/assets/zh-hans-B-LXlKAm.json      38.33 kB │ gzip:  13.80 kB
+dist/webpage/assets/pl-Ccdn7FKw.json           39.39 kB │ gzip:  13.01 kB
+dist/webpage/assets/pt-br-DyllPg6S.json        40.09 kB │ gzip:  12.98 kB
+dist/webpage/assets/de-UwqhvCKz.json           43.48 kB │ gzip:  14.10 kB
+dist/webpage/assets/ru-Cn521KOg.json           45.05 kB │ gzip:  11.92 kB
+dist/webpage/assets/ga-Do5n383o.json           45.64 kB │ gzip:  14.42 kB
+dist/webpage/assets/nl-oQmn7b_7.json           47.15 kB │ gzip:  15.28 kB
+dist/webpage/assets/cs-B6zj9BUU.json           48.43 kB │ gzip:  16.11 kB
+dist/webpage/assets/fr-DWqTYtYf.json           48.67 kB │ gzip:  15.29 kB
+dist/webpage/assets/es-BVGKGnQE.json           49.15 kB │ gzip:  15.54 kB
+dist/webpage/assets/en-TV__vrqh.json           52.20 kB │ gzip:  16.47 kB
+dist/webpage/assets/mk-CA1h2PwT.json           57.67 kB │ gzip:  14.91 kB
+dist/webpage/assets/webpage-KcQfR98o.css        6.71 kB │ gzip:   1.66 kB
+dist/webpage/assets/i18n-Bstd1-2m.js            0.05 kB │ gzip:   0.07 kB
+dist/webpage/assets/settings-R_XoLsDM.js        0.21 kB │ gzip:   0.17 kB
+dist/webpage/assets/assetCache-DM7YWfs4.js      0.64 kB │ gzip:   0.42 kB │ map:     2.29 kB
+dist/webpage/assets/utils-cwGvGKJH.js           0.83 kB │ gzip:   0.46 kB
+dist/webpage/assets/trustedTypes-qPz7OBR3.js    1.10 kB │ gzip:   0.48 kB │ map:     7.34 kB
+dist/webpage/service.js                         6.45 kB │ gzip:   2.58 kB │ map:     1.01 kB
+dist/webpage/assets/page-CoBIBKzY.js            7.03 kB │ gzip:   2.15 kB │ map:    26.92 kB
+dist/webpage/assets/webpage-CXTzpBWA.js        34.85 kB │ gzip:  10.62 kB │ map:   133.16 kB
+dist/webpage/assets/i18n-C1H_NdI1.js           61.97 kB │ gzip:  24.20 kB │ map:    34.03 kB
+dist/webpage/assets/localuser-DzhNer55.js     695.74 kB │ gzip: 195.05 kB │ map: 2,597.28 kB
+
+[33m[plugin builtin:vite-reporter] 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/webpage/i18n.ts is dynamically imported by src/webpage/utils/storage/settingOverlay.ts but also statically imported by src/webpage/404.ts, src/webpage/backupCodes.ts, src/webpage/bot.ts, src/webpage/changelog.ts, src/webpage/channel.ts, ..., dynamic import will not move module into another chunk.
+[39m
+[33m[33m[INEFFECTIVE_DYNAMIC_IMPORT] [0msrc/webpage/utils/utils.ts is dynamically imported by src/webpage/utils/apiFetch.ts but also statically imported by src/webpage/404.ts, src/webpage/audio/page.ts, src/webpage/channel.ts, src/webpage/contextmenu.ts, src/webpage/direct.ts, ..., dynamic import will not move module into another chunk.
+[39m
+[33m[plugin build-revision] [33m[SOURCEMAP_BROKEN] [0mSourcemap is likely to be incorrect: a plugin (build-revision) was used to transform files, but didn't generate a sourcemap for the transformation. Consult the plugin documentation for help: https://rolldown.rs/guide/troubleshooting#warning-sourcemap-is-likely-to-be-incorrect
+[39m
+[32m✓ built in 607ms[39m
+rc=0

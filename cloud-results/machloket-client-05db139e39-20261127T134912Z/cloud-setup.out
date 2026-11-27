@@ -1,0 +1,29 @@
+== host
+vm
+4
+Ubuntu 24.04.5 LTS
+node: v22.23.5
+npm: 10.9.9
+git: /usr/bin/git
+chromium: MISSING
+flock: /usr/bin/flock
+script: /usr/bin/script
+timeout: /usr/bin/timeout
+== installs (best effort)
+user root (uid 0)
+== env file /tmp/cloud-env.sh
+# written by .claude/cloud/setup.sh; source before running repo tools
+export CI=1
+== test user
+test tree: 05db139e3954cbf15b8c854352df722e9c979d53
+npm ci ok (added 84 packages in 2s)
+playwright system deps ok
+chromium install FAILED (status 1); tail:
+  pw: Error: Failed to download Chrome for Testing 159.0.8154.6 (playwright chromium v1255), caused by
+  pw: Error: Download failure, code=1
+  pw:     at ChildProcess.<anonymous> (/home/cloudtest/cloud/repo/node_modules/playwright-core/lib/coreBundle.js:34127:32)
+  pw:     at ChildProcess.emit (node:events:519:28)
+  pw:     at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+  pw: full log kept at /tmp/tmp.rXspllvsvs
+suite as cloudtest: runuser -u cloudtest -- bash -c cd\ /home/cloudtest/cloud/repo\ \&\&\ .\ /tmp/cloud-env.sh.user\ \&\&\ npm\ run\ format:check\ \&\&\ npm\ run\ check\ \&\&\ npm\ test\ \&\&\ npm\ run\ build
+e2e as cloudtest: runuser -u cloudtest -- bash -c cd\ /home/cloudtest/cloud/repo\ \&\&\ .\ /tmp/cloud-env.sh.user\ \&\&\ npm\ run\ check:e2e\ \&\&\ npm\ run\ test:e2e
