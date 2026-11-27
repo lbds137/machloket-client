@@ -1,0 +1,27 @@
+== host
+vm
+4
+Ubuntu 24.04.5 LTS
+node: v22.23.5
+npm: 10.9.9
+git: /usr/bin/git
+chromium: MISSING
+flock: /usr/bin/flock
+script: /usr/bin/script
+timeout: /usr/bin/timeout
+== installs (best effort)
+user root (uid 0)
+== env file /tmp/cloud-env.sh
+# written by .claude/cloud/setup.sh; source before running repo tools
+export CI=1
+== test user
+test tree: ad9e5b87baea1850fe938e3f16aa3285f1acd819
+npm ci ok (added 84 packages in 4s)
+playwright system deps ok
+chromium install FAILED (status 1); tail:
+  pw: Failed to install browsers
+  pw: Error: EACCES: permission denied, mkdir '/opt/pw-browsers/__dirlock'
+  pw: Set PLAYWRIGHT_BROWSERS_PATH to a writable directory.
+  pw: full log kept at /tmp/tmp.1HN3wooLtv
+suite as cloudtest: runuser -u cloudtest -- bash -c cd\ /home/cloudtest/cloud/repo\ \&\&\ .\ /tmp/cloud-env.sh.user\ \&\&\ npm\ run\ format:check\ \&\&\ npm\ run\ check\ \&\&\ npm\ test\ \&\&\ npm\ run\ build
+e2e as cloudtest: runuser -u cloudtest -- bash -c cd\ /home/cloudtest/cloud/repo\ \&\&\ .\ /tmp/cloud-env.sh.user\ \&\&\ npm\ run\ check:e2e\ \&\&\ npm\ run\ test:e2e
