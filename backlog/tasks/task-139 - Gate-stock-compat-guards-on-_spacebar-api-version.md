@@ -1,9 +1,11 @@
 ---
 id: TASK-139
 title: Gate stock-compat guards on /_spacebar/api/version
-status: To Do
-assignee: []
+status: In Progress
+assignee:
+  - machloket-client
 created_date: '2026-11-24T18:24:00Z'
+updated_date: '2026-11-27T18:35:00Z'
 labels:
   - api
   - compat
