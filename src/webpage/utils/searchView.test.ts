@@ -120,8 +120,12 @@ function swipe(target: HTMLElement, [x0, y0]: [number, number], [x1, y1]: [numbe
 const glide = () => new Promise((res) => setTimeout(res, 400));
 /** teardown drops the class only after the slide-out's 300ms window. */
 const afterCloseWindow = () => new Promise((res) => setTimeout(res, 360));
-/** Pops settle asynchronously, and a skip issues its own back() mid-listener. */
+/** Pops settle asynchronously, and a skip issues its own back() mid-listener (chained
+ * markers stack skips in one press), so the landing tests wait on the landing itself — the
+ * members view's twin of this fixed settle missed it twice under full-suite load (TASK-112).
+ * settle remains only for cross-test seating hygiene. */
 const settle = () => new Promise((res) => setTimeout(res, 120));
+const landed = (n: number) => vi.waitFor(() => expect(navStates.length).toBe(n), {timeout: 5000});
 
 const popArmed = () => new Promise((res) => window.addEventListener("popstate", res, {once: true}));
 
@@ -188,10 +192,13 @@ describe("opening the search view", () => {
 		const pop = popArmed();
 		history.back();
 		await pop;
-		await settle();
+		// The skip then lands on the base entry; wait for it before counting navigation.
+		await vi.waitFor(
+			() => expect((history.state as {testBase?: boolean} | null)?.testBase).toBe(true),
+			{timeout: 5000},
+		);
 		expect(boxHome()).toBe(true);
 		expect(navStates).toEqual([]);
-		expect((history.state as {testBase?: boolean} | null)?.testBase).toBe(true);
 	});
 });
 
@@ -286,9 +293,7 @@ describe("tapping a search result", () => {
 		// past it and navigates once.
 		const before = navStates.length;
 		history.back();
-		await settle();
-		await settle();
-		expect(navStates.length).toBe(before + 1);
+		await landed(before + 1);
 
 		await afterCloseWindow();
 		expect(searchShown()).toBe(false);
@@ -321,11 +326,9 @@ describe("tapping a search result", () => {
 		history.pushState({machloketSearchView: true}, "", location.href);
 
 		history.back();
-		await settle();
-		await settle();
+		await landed(1);
 
 		// Both markers skipped within one press; navigation never saw a marker state.
-		expect(navStates).toHaveLength(1);
 		expect((navStates[0] as {machloketSearchView?: boolean}).machloketSearchView).not.toBe(true);
 	});
 
@@ -338,19 +341,22 @@ describe("tapping a search result", () => {
 
 		expect(searchShown()).toBe(true);
 		// The queued traversal lands on the base entry; the close's suppressPop eats it.
-		await settle();
-		expect(
-			(history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView,
-		).toBeUndefined();
+		await vi.waitFor(
+			() =>
+				expect(
+					(history.state as {machloketSearchView?: boolean} | null)?.machloketSearchView,
+				).toBeUndefined(),
+			{timeout: 5000},
+		);
 
 		// The view is open with NO marker anywhere: Android back must close it (the guard's
 		// open-but-not-ours branch) and navigation must stand down. The class drops 300ms
 		// after teardown — wait the window out (probe-verified interleaving, review round 2).
 		history.back();
-		await settle();
-		await afterCloseWindow();
+		// The pop closes the view and the class drops after the slide-out's window: wait on
+		// the observable, not a fixed pair of timers.
+		await vi.waitFor(() => expect(searchShown()).toBe(false), {timeout: 5000});
 
-		expect(searchShown()).toBe(false);
 		expect(navStates).toHaveLength(0);
 	});
 });
@@ -368,9 +374,7 @@ describe("navigation closes the view (Discord's app behavior)", () => {
 
 		// One Android back from the channel: the buried marker is skipped, one navigation.
 		history.back();
-		await settle();
-		await settle();
-		expect(navStates).toHaveLength(1);
+		await landed(1);
 	});
 
 	it("a navigation with the view closed changes nothing", () => {
