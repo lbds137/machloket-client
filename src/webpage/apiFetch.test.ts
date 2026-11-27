@@ -2459,13 +2459,16 @@ describe("401 handling across an account switch (TASK-156)", () => {
 			document.getElementById(id)?.remove();
 		}
 		for (const u of constructedUsers.splice(0)) {
-			u.uncaptureRefreshURL?.();
+			u.uncaptureRefreshURL();
 		}
 		// Backstop for the throwing-construction test, which registers before updateTranslations throws.
 		const listeners = SW.eventListeners.get("refreshURL");
 		for (const listener of listeners ?? []) {
 			if (!swRefreshBefore.has(listener)) listeners?.delete(listener);
 		}
+		// The uncapture path plus the backstop must leave the baseline exactly; assert it
+		// so a missed cleanup fails loudly here instead of leaking across tests.
+		expect([...(SW.eventListeners.get("refreshURL") ?? [])]).toEqual([...swRefreshBefore]);
 	});
 	const patchSettings = (account: InstanceType<typeof Specialuser>) =>
 		apiFetch(API + "/users/@me/settings", {
@@ -2603,7 +2606,9 @@ describe("401 handling across an account switch (TASK-156)", () => {
 
 		const listeners = SW.eventListeners.get("refreshURL");
 		expect(listeners?.size).toBe(1);
-		expect([...(listeners ?? [])]).toEqual([capture.mock.calls[0]?.[1]]);
+		// The listener this block cares about, not whichever event captured first.
+		const refreshCaptures = capture.mock.calls.filter(([name]) => name === "refreshURL");
+		expect([...(listeners ?? [])]).toEqual([refreshCaptures[0]?.[1]]);
 	});
 
 	it("the swapped-out account no longer answers a refreshURL message", async () => {
@@ -2636,7 +2641,8 @@ describe("401 handling across an account switch (TASK-156)", () => {
 
 		user.unload();
 
-		const registered = capture.mock.calls[0]?.[1];
+		const refreshCaptures = capture.mock.calls.filter(([name]) => name === "refreshURL");
+		const registered = refreshCaptures[0]?.[1];
 		expect(registered).toEqual(expect.any(Function));
 		expect(SW.eventListeners.get("refreshURL")?.has(registered!)).toBe(true);
 	});

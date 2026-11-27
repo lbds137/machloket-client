@@ -293,9 +293,18 @@ describe("the closing swipe", () => {
 	});
 });
 
-/** Pops settle asynchronously, and the skip issues its own back() mid-listener; a short
- * settle (not a late-armed listener) is what reliably observes the landed state. */
-const settle = () => new Promise((res) => setTimeout(res, 120));
+/** Pops settle asynchronously, and the skip issues its own back() mid-listener: a fixed
+ * timer guessed the landing wrong under full-suite load (it bit two gates — TASK-112), so
+ * the tests wait for the landing itself: the view closed, the skip's navigation observed. */
+const landed = () =>
+	vi.waitFor(
+		() => {
+			expect(membersShown()).toBe(false);
+			expect(navStates.length).toBeGreaterThanOrEqual(1);
+		},
+		// One gate bite had the landing miss a 240 ms wait; leave real headroom for load.
+		{timeout: 5000},
+	);
 
 describe("the marker entry between channel entries", () => {
 	it("one Android back, with navigation stacked above the marker, lands on the channel below", async () => {
@@ -305,10 +314,8 @@ describe("the marker entry between channel entries", () => {
 		history.pushState({nav: "channel-b"}, "", location.href);
 
 		history.back();
-		await settle();
-		await settle();
+		await landed();
 
-		expect(membersShown()).toBe(false);
 		// One user back: the marker was skipped past and exactly one navigation ran.
 		expect(navStates).toHaveLength(1);
 	});
@@ -320,11 +327,7 @@ describe("the marker entry between channel entries", () => {
 		expect(membersShown()).toBe(false);
 
 		history.back(); // Android back: pops the navigation, lands on the stale marker
-		await settle();
-		await settle();
-
-		expect(membersShown()).toBe(false);
-		expect(navStates.length).toBeGreaterThanOrEqual(1);
+		await landed();
 	});
 });
 
@@ -368,8 +371,7 @@ describe("navigation closes the view (the owner's call, Discord's app behavior)"
 
 		// One Android back from the channel: the buried marker is skipped, one navigation.
 		history.back();
-		await settle();
-		await settle();
+		await landed();
 		expect(navStates).toHaveLength(1);
 	});
 
