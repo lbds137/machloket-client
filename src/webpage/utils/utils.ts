@@ -1512,7 +1512,10 @@ export async function pingResponse(
 
 /** Whether an instance's API answers /ping, inside the budget. (Exported for the pingGuard
  * tests.) */
-export async function pingOK(api: URL | string, budgetMs: number = pingTimeoutMs): Promise<boolean> {
+export async function pingOK(
+	api: URL | string,
+	budgetMs: number = pingTimeoutMs,
+): Promise<boolean> {
 	return (await pingResponse(api, budgetMs))?.ok === true;
 }
 
