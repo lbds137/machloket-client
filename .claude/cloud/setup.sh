@@ -5,7 +5,7 @@
 # Prints what the VM has, installs what the gate chain needs (npm ci, Playwright chromium
 # + system deps), and writes an env file every later Bash call sources. Exit 0 = env file
 # written; 1 = the env file could not be written (no env file); 2 = refused (the local
-# host's hostname, or a path under the invoking user's home). Installs are best effort and reported, so the
+# host's hostname). Installs are best effort and reported, so the
 # suite run shows what is still missing. As root, it also copies the repo to an
 # unprivileged test user (CLOUD_TEST_USER, default cloudtest), runs `npm ci` there,
 # installs the chromium browser into that user's cache, writes the user's env file
@@ -17,9 +17,9 @@ set -u
 envf=${CLOUD_ENV_FILE:-/tmp/cloud-env.sh}
 local_host=${CLOUD_SETUP_LOCAL_HOST:-steamdeck}   # tests set it to run the body on the Deck
 case "$(uname -n)" in "$local_host") echo "cloud setup: refusing on the Deck ($(uname -n))" >&2; exit 2 ;; esac
-for p in "$(pwd -P)" "$envf"; do   # a convenience guard against running on the Deck, not a boundary
-  case "$p" in "$HOME"|"$HOME"/*) echo "cloud setup: refusing a path under HOME ($p)" >&2; exit 2 ;; esac
-done
+# No path guard here: the VM session is root with the checkout under /home/user (dp-383-smoke),
+# so nothing checkable at runtime names the Deck's home. The hostname check above and
+# cloud-launch's own prompt guard (its Deck path is resolved launcher-side) carry that boundary.
 
 echo "== host"
 uname -n; nproc; . /etc/os-release 2>/dev/null && echo "$PRETTY_NAME"
@@ -29,8 +29,8 @@ for t in git chromium flock script timeout; do
   printf '%s: %s\n' "$t" "$(command -v "$t" || echo MISSING)"
 done
 case "$(node --version 2>&1)" in
-  v1[89].*|v[2-9][0-9].*) ;;
-  *) echo "node: VERSION PROBLEM (vite/vitest 5 need Node 18+); install Node 20+ and rerun" ;;
+  v2[0-9].*|v[3-9][0-9].*) ;;
+  *) echo "node: VERSION PROBLEM (vite 8 needs Node 20.19+, this repo's CI uses 24); install Node 24 and rerun" ;;
 esac
 
 echo "== installs (best effort)"
@@ -91,23 +91,26 @@ mkdir -p "$trepo" && cp -a -- "$src/." "$trepo/" || user_fail "copy into $trepo"
 # machine; settings.local.json is machine-local too.
 rm -rf -- "$trepo/docs/local" "$trepo/.claude/settings.local.json"
 chown -R "$tuser:" "$twork" || user_fail "chown $twork"
-# Ref hygiene before anything can commit or push in the copy. cp -a carried the whole .git:
-# machine-local refs (embargo/*, pre-rebase backups, the session's working branch) and the
-# linked-worktree checkouts under .claude/worktrees. The VM has no pre-push hook, so a local
-# ref surviving here could ride a cloud-test/* push to GitHub (Machloket Client, 11-26).
-# The suite flow cuts cloud-test/* from origin refs only (cloud-launch refuses a base not on
-# an origin branch), so no local branch is wanted on the VM at all: drop the copied worktree
-# dirs first (worktree prune releases only stale entries, not live-held branches), detach
-# HEAD, then delete every local branch and refuse loudly if any survive.
+# The copy must be exactly the tree the launcher cut, carrying nothing machine-local. cp -a
+# took the whole .git: machine-local refs (embargo/*, pre-rebase backups, the session's
+# working branch) and the linked-worktree checkouts under .claude/worktrees. The copy never
+# pushes anything (the suite only runs in it; pushes come from the session's own checkout, a
+# fresh clone whose refs all came from origin), so this is state hygiene, not a leak guard:
+# drop the copied worktree dirs first (worktree prune releases only stale entries, not
+# live-held branches), detach HEAD IN PLACE — the suite tests the cut tree, not wherever
+# origin/main sits — then delete every local branch and refuse loudly if any survive.
 rm -rf -- "$trepo/.claude/worktrees"
 git -C "$trepo" worktree prune
-git -C "$trepo" checkout -q --detach origin/main 2>/dev/null || git -C "$trepo" checkout -q --detach
+git -C "$trepo" checkout -q --detach
 git -C "$trepo" for-each-ref --format='%(refname:short)' refs/heads/ \
   | while read -r b; do git -C "$trepo" branch -D "$b" >/dev/null 2>&1; done
 left=$(git -C "$trepo" for-each-ref --format='%(refname:short)' refs/heads/ | head -1)
 [ -z "$left" ] || user_fail "local branches survived the VM-copy cleanup: $left"
+treh=$(git -C "$trepo" rev-parse HEAD); srch=$(git -C "$src" rev-parse HEAD)
+[ "$treh" = "$srch" ] || { echo "test tree FAILED: copy is on $treh, source checkout on $srch; fix the copy or rerun setup before the suite"; exit 0; }
+echo "test tree: $treh"
 if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && npm ci --no-audit --no-fund" >/tmp/npm-ci.out 2>&1; then
-  echo "npm ci ok ($(grep -c '^added' /tmp/npm-ci.out 2>/dev/null || echo '?') lines)"
+  echo "npm ci ok ($(grep -m1 '^added' /tmp/npm-ci.out 2>/dev/null || echo '?'))"
 else
   rc=$?; echo "npm ci FAILED (status $rc); tail:"; tail -n 5 /tmp/npm-ci.out 2>/dev/null | cut -c1-200 | sed 's/^/  npm: /'
   user_fail "npm ci"
