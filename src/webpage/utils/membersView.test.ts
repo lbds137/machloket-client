@@ -316,8 +316,13 @@ describe("the marker entry between channel entries", () => {
 		history.back();
 		await landed();
 
-		// One user back: the marker was skipped past and exactly one navigation ran.
+		// One user back: the marker was skipped past and exactly one navigation ran — and
+		// that navigation is the landing below, not the marker pop leaking through (a leak
+		// would put the marker state here; caught at the landing, no timing guess).
 		expect(navStates).toHaveLength(1);
+		expect(
+			(navStates[0] as {machloketMembersView?: boolean} | null)?.machloketMembersView,
+		).not.toBe(true);
 	});
 
 	it("a back that lands on a stale marker with the view closed still navigates", async () => {
@@ -343,16 +348,23 @@ describe("what a tap on the title is not", () => {
 		).not.toBe(true);
 	});
 
-	it("an empty member panel (a DM's cleared list) still opens — the tap must not dead-lock", () => {
+	it("an empty member panel (a DM's cleared list) still opens — the tap must not dead-lock", async () => {
 		// memberListUpdate clears #sideDiv for DMs and voice channels; refusing to open
 		// there made both the title tap and the members icon permanently dead (the
 		// phone-walk find). The view opens regardless; content is its own backlog item.
 		install();
 		page.querySelector("#sideDiv")!.innerHTML = "";
 
+		const pop = popArmed();
 		channelTitle.click();
 
 		expect(membersShown()).toBe(true);
+
+		// Close before ending: history outlives the per-test DOM, so an open view's marker
+		// would sit under the later landing tests — and a marker stacked under another
+		// marker falls through the single-shot skip (TASK-187).
+		maintoggleIcon.click();
+		await pop;
 	});
 });
 
@@ -369,10 +381,14 @@ describe("navigation closes the view (the owner's call, Discord's app behavior)"
 		expect(membersShown()).toBe(false);
 		expect((history.state as {nav?: string}).nav).toBe("channel-b");
 
-		// One Android back from the channel: the buried marker is skipped, one navigation.
+		// One Android back from the channel: the buried marker is skipped, one navigation —
+		// the landing, not the marker pop leaking through.
 		history.back();
 		await landed();
 		expect(navStates).toHaveLength(1);
+		expect(
+			(navStates[0] as {machloketMembersView?: boolean} | null)?.machloketMembersView,
+		).not.toBe(true);
 	});
 
 	it("a navigation with the view closed changes nothing", () => {

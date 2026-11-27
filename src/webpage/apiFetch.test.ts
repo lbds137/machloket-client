@@ -2466,8 +2466,10 @@ describe("401 handling across an account switch (TASK-156)", () => {
 		for (const listener of listeners ?? []) {
 			if (!swRefreshBefore.has(listener)) listeners?.delete(listener);
 		}
-		// The uncapture path plus the backstop must leave the baseline exactly; assert it
-		// so a missed cleanup fails loudly here instead of leaking across tests.
+		// The backstop has already removed every non-baseline listener, so this pins
+		// baseline preservation — nothing extra left, nothing baseline lost. It is not
+		// leak detection: catching a missed uncapture would need this snapshot taken
+		// between the uncapture loop and the backstop.
 		expect([...(SW.eventListeners.get("refreshURL") ?? [])]).toEqual([...swRefreshBefore]);
 	});
 	const patchSettings = (account: InstanceType<typeof Specialuser>) =>

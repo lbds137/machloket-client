@@ -294,6 +294,10 @@ describe("tapping a search result", () => {
 		const before = navStates.length;
 		history.back();
 		await landed(before + 1);
+		// The navigation that ran is the landing below the stale marker, not the marker pop.
+		expect((navStates[0] as {machloketSearchView?: boolean} | null)?.machloketSearchView).not.toBe(
+			true,
+		);
 
 		await afterCloseWindow();
 		expect(searchShown()).toBe(false);
@@ -372,9 +376,13 @@ describe("navigation closes the view (Discord's app behavior)", () => {
 
 		expect((history.state as {nav?: string}).nav).toBe("channel-b");
 
-		// One Android back from the channel: the buried marker is skipped, one navigation.
+		// One Android back from the channel: the buried marker is skipped, one navigation —
+		// the landing, not the marker pop leaking through.
 		history.back();
 		await landed(1);
+		expect((navStates[0] as {machloketSearchView?: boolean} | null)?.machloketSearchView).not.toBe(
+			true,
+		);
 	});
 
 	it("a navigation with the view closed changes nothing", () => {
