@@ -8,8 +8,10 @@
 # host's hostname). Installs are best effort and reported, so the
 # suite run shows what is still missing. As root, it also copies the repo to an
 # unprivileged test user (CLOUD_TEST_USER, default cloudtest), runs `npm ci` there,
-# installs the chromium browser as root into the image's browser dir (/opt/pw-browsers;
-# a test-user install dies on EACCES there, run 1), writes the user's env file
+# installs the chromium browser as the test user into the user's own browser dir and
+# writes its PLAYWRIGHT_BROWSERS_PATH into the user's env file (the image's shared
+# /opt/pw-browsers is root-owned: a test-user install there dies on EACCES, run 1, and
+# a root-side download died mid-download, run 2), writes the user's env file
 # ($CLOUD_ENV_FILE.user) and prints "suite as <user>:" and "e2e as <user>:" lines (best effort).
 # machloket-client needs no seyag clone: its gate chain (format:check, check, test, build,
 # e2e) is self-contained. CI=1 keeps the Deck-local screenshot pins skipped (its
@@ -76,7 +78,7 @@ echo "== env file $envf"; cat "$envf"
 
 # Root ignores file modes, and Chromium refuses to run sandboxed browser tests as root.
 # As root, copy the repo to an unprivileged user, install node_modules there, install the
-# chromium browser into the image's browser dir, and print the line that runs the suite as
+# chromium browser as that user (its own dir), and print the line that runs the suite as
 # that user. Best effort: any failed step says so, and the suite still runs as root with
 # the limits named in suite.md.
 [ "$(id -u)" = 0 ] || exit 0
@@ -127,7 +129,7 @@ else
   user_fail "npm ci"
 fi
 # Playwright's chromium: system libraries as root (its installer names the apt packages),
-# then the browser binary, also as root (see the install below).
+# then the browser binary as the test user (its own env and dir — see the install below).
 # The deps installer must be the LOCKED playwright from the copy's node_modules: npx in the
 # source checkout (no node_modules yet) would fetch the latest release and run it as root.
 depout=$(mktemp) || user_fail "temp file for the install-deps log"
@@ -139,13 +141,15 @@ else
   tail -n 5 "$depout" 2>/dev/null | cut -c1-200 | sed 's/^/  pw: /'; echo "  pw: full log kept at $depout"
 fi
 brout=$(mktemp) || user_fail "temp file for the chromium log"
-# This image resolves playwright's browser dir to /opt/pw-browsers and keeps it root-owned
-# (run 1: the test-user install died on EACCES mkdir /opt/pw-browsers/__dirlock, and the
-# suites' launch errors named /opt/pw-browsers/chromium_headless_shell-*), so ROOT installs
-# the LOCKED playwright's chromium there and the test user only reads+executes it. The var
-# is set explicitly so the browser lands where the lookups go even if root's own env lacks
-# it; ${PLAYWRIGHT_BROWSERS_PATH:-...} honours an inherited override.
-if PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/opt/pw-browsers}" "$trepo/node_modules/.bin/playwright" install chromium >"$brout" 2>&1; then
+# Install the browser as the same user that runs the suite, into a directory that user owns,
+# and point BOTH the install and the suite's lookups (the uenv export below) at it: run 1
+# died on EACCES (a test-user install defaults to the image's root-owned /opt/pw-browsers)
+# and run 2 died downloading as root ("Failed to download Chrome for Testing", code=1) —
+# npm ci as this user reaches the registry fine, so the download gets the suite's own
+# environment rather than root's. The dir sits in $twork, outside the repo copy, so reruns
+# reuse an already-downloaded browser.
+bdir="$twork/pw-browsers"
+if runuser -u "$tuser" -- bash -c "cd $(printf %q "$trepo") && PLAYWRIGHT_BROWSERS_PATH=$(printf %q "$bdir") $(printf %q "$trepo")/node_modules/.bin/playwright install chromium" >"$brout" 2>&1; then
   echo "chromium browser ok"
   rm -f "$brout"
 else
@@ -155,6 +159,9 @@ fi
 uenv="$envf.user"
 { echo "# written by .claude/cloud/setup.sh for $tuser; source before running repo tools"
   echo 'export CI=1'
+  # Playwright resolves browsers here: the install above put them in this user's own dir;
+  # without the export the lookups default back to the image's root-owned /opt/pw-browsers.
+  echo "export PLAYWRIGHT_BROWSERS_PATH=$(printf %q "$bdir")"
   # runuser keeps root's PATH; an entry this user can't search (under /root) turns a missing
   # command's ENOENT into EACCES (deck-platform r4). Keep only the entries it can search.
   echo '_p=; IFS=: read -ra _ds <<< "$PATH"; for _d in "${_ds[@]}"; do [ -n "$_d" ] && [ -x "$_d" ] && _p="${_p:+$_p:}$_d"; done; PATH=$_p; unset _p _d _ds'
