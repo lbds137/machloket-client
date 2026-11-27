@@ -30,6 +30,7 @@ const {CSRF_HEADER, accountUidOf, applyAccountHeaders, buildAccountHeaders} =
 	await import("./utils/accountHeaders");
 const {showNewInvite} = await import("./utils/inviteLink");
 const {adduser, Specialuser, SW, pingResponse, getApiUrlsV2} = await import("./utils/utils");
+const {AccountSwitcher} = await import("./utils/switcher");
 const {saveProfile} = await import("./utils/profileSave");
 const {exportUserData} = await import("./utils/dataExport");
 const {authorizeBot} = await import("./oauth2/botInvite");
@@ -2438,14 +2439,29 @@ describe("401 handling across an account switch (TASK-156)", () => {
 	// a service-worker listener that holds the instance: the tests that construct one drop the
 	// listeners it added.
 	let swRefreshBefore: Set<unknown>;
+	const constructedUsers: InstanceType<typeof Localuser>[] = [];
+	const trackUser = (u: InstanceType<typeof Localuser>) => {
+		constructedUsers.push(u);
+		return u;
+	};
 	beforeEach(() => {
-		const searchBox = document.createElement("div");
-		searchBox.id = "searchBox";
-		document.body.append(searchBox);
+		for (const id of ["searchBox", "loading", "servers", "channels"]) {
+			if (!document.getElementById(id)) {
+				const div = document.createElement("div");
+				div.id = id;
+				document.body.append(div);
+			}
+		}
 		swRefreshBefore = new Set(SW.eventListeners.get("refreshURL"));
 	});
 	afterEach(() => {
-		document.getElementById("searchBox")?.remove();
+		for (const id of ["searchBox", "loading", "servers", "channels"]) {
+			document.getElementById(id)?.remove();
+		}
+		for (const u of constructedUsers.splice(0)) {
+			u.uncaptureRefreshURL?.();
+		}
+		// Backstop for the throwing-construction test, which registers before updateTranslations throws.
 		const listeners = SW.eventListeners.get("refreshURL");
 		for (const listener of listeners ?? []) {
 			if (!swRefreshBefore.has(listener)) listeners?.delete(listener);
@@ -2548,7 +2564,7 @@ describe("401 handling across an account switch (TASK-156)", () => {
 
 		await patchSettings(a);
 		await vi.waitFor(() => expect(answers).toHaveLength(1));
-		new Localuser(b);
+		trackUser(new Localuser(b));
 		answers[0](unauthorized());
 
 		await vi.waitFor(() => expect(a.loggedin).toBe(false));
@@ -2572,6 +2588,58 @@ describe("401 handling across an account switch (TASK-156)", () => {
 		await vi.waitFor(() => expect(a.loggedin).toBe(false));
 		await vi.waitFor(() => expect(nav).toHaveBeenCalledTimes(1));
 		expect(nav).toHaveBeenCalledWith("/login");
+	});
+
+	it("an account switch leaves exactly one refreshURL listener — the new account's", async () => {
+		vi.spyOn(SW, "postMessage").mockResolvedValue();
+		vi.spyOn(Localuser.prototype, "initwebsocket").mockReturnValue(new Promise(() => {}));
+		const {a, b} = twoAccounts();
+		const first = trackUser(new Localuser(a));
+		first.onswap = trackUser;
+		const capture = vi.spyOn(SW, "captureEvent");
+		vi.spyOn(AccountSwitcher.prototype, "show").mockResolvedValue(b);
+
+		await Localuser.showAccountSwitcher(first);
+
+		const listeners = SW.eventListeners.get("refreshURL");
+		expect(listeners?.size).toBe(1);
+		expect([...(listeners ?? [])]).toEqual([capture.mock.calls[0]?.[1]]);
+	});
+
+	it("the swapped-out account no longer answers a refreshURL message", async () => {
+		const postMessage = vi.spyOn(SW, "postMessage").mockResolvedValue();
+		vi.spyOn(Localuser.prototype, "initwebsocket").mockReturnValue(new Promise(() => {}));
+		const {a, b} = twoAccounts();
+		const first = trackUser(new Localuser(a));
+		first.onswap = trackUser;
+		const firstRefresh = vi.spyOn(first, "refreshURL");
+		vi.spyOn(AccountSwitcher.prototype, "show").mockResolvedValue(b);
+
+		await Localuser.showAccountSwitcher(first);
+		await SW.handleMessage({
+			code: "refreshURL",
+			url: "https://other-host.example/attachments/x",
+		});
+		const refreshedPosts = () =>
+			postMessage.mock.calls.filter(([m]) => m.code === "refreshedUrl");
+		await vi.waitFor(() => expect(refreshedPosts().length).toBeGreaterThan(0));
+		await settle();
+
+		expect(firstRefresh).not.toHaveBeenCalled();
+		expect(refreshedPosts()).toHaveLength(1);
+	});
+
+	it("unload() alone keeps the refreshURL listener (gateway give-up unloads without swapping and must keep refreshing)", () => {
+		vi.spyOn(SW, "postMessage").mockResolvedValue();
+		const {a} = twoAccounts();
+		const capture = vi.spyOn(SW, "captureEvent");
+		const user = trackUser(new Localuser(a));
+
+		user.unload();
+
+		const registered = capture.mock.calls[0]?.[1];
+		expect(registered).toEqual(expect.any(Function));
+		expect(SW.eventListeners.get("refreshURL")?.has(registered!)).toBe(true);
 	});
 });
 

@@ -257,7 +257,10 @@ class Localuser {
 
 		const onswap = thisUser?.onswap;
 		thisUser?.unload();
-		if (thisUser) thisUser.swapped = true;
+		if (thisUser) {
+			thisUser.swapped = true;
+			thisUser.uncaptureRefreshURL();
+		}
 		const loading = document.getElementById("loading") as HTMLDivElement;
 		loading.classList.remove("doneloading");
 		loading.classList.add("loading");
@@ -406,13 +409,14 @@ class Localuser {
 			code: "canRefresh",
 			host: new URL(this.info.cdn).host,
 		});
-		SW.captureEvent("refreshURL", async (e) => {
+		this.refreshURLListener = async (e) => {
 			SW.postMessage({
 				code: "refreshedUrl",
 				url: await this.refreshURL(e.url),
 				oldurl: e.url,
 			});
-		});
+		};
+		SW.captureEvent("refreshURL", this.refreshURLListener);
 		this.headers = buildAccountHeaders(this.userinfo);
 		onCookieSessionAdopted(this);
 		this.favorites = new Favorites(this);
@@ -634,6 +638,10 @@ class Localuser {
 		}
 	}
 	swapped = false;
+	private refreshURLListener!: Parameters<typeof SW.captureEvent<"refreshURL">>[1];
+	uncaptureRefreshURL(): void {
+		SW.uncaptureEvent("refreshURL", this.refreshURLListener);
+	}
 	/** READY's `auth_token` replaces a header account's token. A cookie account keeps none: its
 	 * session is the cookie, and a stored token would put one back in page script's reach. */
 	adoptReadyToken(token: string) {
